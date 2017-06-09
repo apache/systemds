@@ -56,10 +56,6 @@ public class WriteSPInstruction extends SPInstruction
 	private CPOperand input3 = null;
 	private CPOperand input4 = null;
 	private FileFormatProperties formatProperties;
-	
-	//scalars might occur for transform
-	// TODO remove once transform over frames supported
-	private boolean isInputMatrixBlock = true; 
 
 	public WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
 		super(opcode, str);
@@ -100,10 +96,6 @@ public class WriteSPInstruction extends SPInstruction
 			boolean sparse = Boolean.parseBoolean(parts[6]);
 			FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
 			inst.setFormatProperties(formatProperties);
-			
-			boolean isInputMB = Boolean.parseBoolean(parts[7]);
-			inst.setInputMatrixBlock(isInputMB);
-
 			CPOperand in4 = new CPOperand(parts[8]);
 			inst.input4 = in4;
 		} else {
@@ -123,14 +115,6 @@ public class WriteSPInstruction extends SPInstruction
 	
 	public void setFormatProperties(FileFormatProperties prop) {
 		formatProperties = prop;
-	}
-	
-	public void setInputMatrixBlock(boolean isMB) {
-		isInputMatrixBlock = isMB;
-	}
-	
-	public boolean isInputMatrixBlock() {
-		return isInputMatrixBlock;
 	}
 	
 	@Override
@@ -180,7 +164,7 @@ public class WriteSPInstruction extends SPInstruction
 		{
 			//piggyback nnz maintenance on write
 			LongAccumulator aNnz = null;
-			if ( isInputMatrixBlock && !mc.nnzKnown() ) {
+			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
@@ -202,57 +186,25 @@ public class WriteSPInstruction extends SPInstruction
 			else
 				customSaveTextFile(ijv, fname, false);
 			
-			if ( isInputMatrixBlock && !mc.nnzKnown() )
+			if( !mc.nnzKnown() )
 				mc.setNonZeros( aNnz.value() );
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{
-			JavaRDD<String> out = null;
 			LongAccumulator aNnz = null;
 			
-			if ( isInputMatrixBlock ) {
-				//piggyback nnz computation on actual write
-				if( !mc.nnzKnown() ) {
-					aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
-					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-				}	
-				
-				out = RDDConverterUtils.binaryBlockToCsv(in1, mc, 
-						(CSVFileFormatProperties) formatProperties, true);
-			}
-			else 
-			{
-				// This case is applicable when the CSV output from transform() is written out
-				// TODO remove once transform over frames supported
-				@SuppressWarnings("unchecked")
-				JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) (sec.getMatrixObject(input1.getName())).getRDDHandle().getRDD();
-				out = rdd.values(); 
-
-				String sep = ",";
-				boolean hasHeader = false;
-				if(formatProperties != null) {
-					sep = ((CSVFileFormatProperties) formatProperties).getDelim();
-					hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
-				}
-				
-				if(hasHeader) {
-					StringBuffer buf = new StringBuffer();
-		    		for(int j = 1; j < mc.getCols(); j++) {
-		    			if(j != 1) {
-		    				buf.append(sep);
-		    			}
-		    			buf.append("C" + j);
-		    		}
-		    		ArrayList<String> headerContainer = new ArrayList<String>(1);
-		    		headerContainer.add(0, buf.toString());
-		    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
-		    		out = header.union(out);
-				}
-			}
+			//piggyback nnz computation on actual write
+			if( !mc.nnzKnown() ) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}	
 			
+			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
+				in1, mc, (CSVFileFormatProperties) formatProperties, true);
+
 			customSaveTextFile(out, fname, false);
 			
-			if( isInputMatrixBlock && !mc.nnzKnown() )
+			if( !mc.nnzKnown() )
 				mc.setNonZeros((long)aNnz.value().longValue());
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {

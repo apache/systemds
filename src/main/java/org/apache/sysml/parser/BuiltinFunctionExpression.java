@@ -28,14 +28,12 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
-	
 	protected Expression[] 	  _args = null;
 	private BuiltinFunctionOp _opcode;
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
-		this.setAllPositions(fname, blp, bcp, elp, ecp);
+		setAllPositions(fname, blp, bcp, elp, ecp);
 		args = expandConvolutionArguments(args);
 		_args = new Expression[args.size()];
 		for(int i=0; i < args.size(); i++) {
@@ -44,7 +42,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args, String fname, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		_args = new Expression[args.length];
 		for(int i=0; i < args.length; i++) {
@@ -235,7 +232,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return newParams;
 	}
 
-	private ArrayList<ParameterExpression>  replaceListParams(ArrayList<ParameterExpression> paramExpression,
+	private ArrayList<ParameterExpression> replaceListParams(ArrayList<ParameterExpression> paramExpression,
 			String inputVarName, String outputVarName, int startIndex) throws LanguageException {
 		ArrayList<ParameterExpression> newParamExpression = new ArrayList<ParameterExpression>();
 		int i = startIndex;
@@ -408,31 +405,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
 			
 			//unary aggregate
-			if (getSecondExpr() == null) 
-			{
+			if (getSecondExpr() == null) {
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
-				output.setDataType( DataType.SCALAR );
+				output.setDataType(DataType.SCALAR);
+				output.setValueType(id.getValueType());
 				output.setDimensions(0, 0);
 				output.setBlockDimensions (0, 0);
 			}
 			//binary operation
-			else
-			{
+			else {
 				checkNumParameters(2);
-				DataType dt1 = getFirstExpr().getOutput().getDataType();
-				DataType dt2 = getSecondExpr().getOutput().getDataType();
-				DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX)?
-				                   DataType.MATRIX : DataType.SCALAR;				
-				if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
-					checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
-				//determine output dimensions
-				long[] dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
-				output.setDataType( dtOut );
-				output.setDimensions(dims[0], dims[1]);
-				output.setBlockDimensions (dims[2], dims[3]);
+				setBinaryOutputProperties(output);
 			}
-			output.setValueType(id.getValueType());
 			
 			break;
 		
@@ -578,8 +563,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkMatrixParam(getFirstExpr());
 			if( dt2 == DataType.MATRIX )
 				checkMatrixParam(getSecondExpr());
-			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) //dt1==dt2
-			      checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
 			
 			//check operator
 			if (getThirdExpr().getOutput().getDataType() != DataType.SCALAR || 
@@ -588,12 +571,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Third argument in ppred() is not an operator ", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
-			//determine output dimensions
-			long[] dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
-			output.setDataType(DataType.MATRIX);
-			output.setDimensions(dims[0], dims[1]);
-			output.setBlockDimensions(dims[2], dims[3]);
-			output.setValueType(id.getValueType());
+			setBinaryOutputProperties(output);
 			break;
 
 		case TRANS:
@@ -1192,17 +1170,23 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		}
 		default:
-			if (this.isMathFunction()) {
-				// datatype and dimensions are same as this.getExpr()
-				if (this.getOpCode() == BuiltinFunctionOp.ABS) {
-					output.setValueType(getFirstExpr().getOutput().getValueType());
-				} else {
-					output.setValueType(ValueType.DOUBLE);
-				}
+			if( isMathFunction() ) {
 				checkMathFunctionParam();
-				output.setDataType(id.getDataType());
-				output.setDimensions(id.getDim1(), id.getDim2());
-				output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
+				//unary operations
+				if( getSecondExpr() == null ) {
+					output.setDataType(id.getDataType());
+					output.setValueType((output.getDataType()==DataType.SCALAR
+						&& getOpCode()==BuiltinFunctionOp.ABS)?id.getValueType():ValueType.DOUBLE );
+					output.setDimensions(id.getDim1(), id.getDim2());
+					output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
+				}
+				//binary operations
+				else {
+					setBinaryOutputProperties(output);
+					// override computed value type for special cases
+					if( getOpCode() == BuiltinFunctionOp.LOG )
+						output.setValueType(ValueType.DOUBLE);
+				}
 			} 
 			else {
 				// always unconditional (because unsupported operation)
@@ -1214,6 +1198,23 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			}
 		}
 		return;
+	}
+	
+	private void setBinaryOutputProperties(DataIdentifier output) 
+		throws LanguageException 
+	{
+		DataType dt1 = getFirstExpr().getOutput().getDataType();
+		DataType dt2 = getSecondExpr().getOutput().getDataType();
+		DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX) ? 
+			DataType.MATRIX : DataType.SCALAR;				
+		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
+			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
+		long[] dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
+		output.setDataType(dtOut);
+		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE : 
+			computeValueType(getFirstExpr(), getSecondExpr(), true));
+		output.setDimensions(dims[0], dims[1]);
+		output.setBlockDimensions (dims[2], dims[3]);
 	}
 	
 	private void expandArguments() {
@@ -1262,7 +1263,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ACOS:
 		case ASIN:
 		case ATAN:
-		case SIGN:	
+		case SIGN:
 		case SQRT:
 		case ABS:
 		case LOG:

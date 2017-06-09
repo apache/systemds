@@ -43,6 +43,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 public class DMLAppMaster 
 {
@@ -136,7 +137,7 @@ public class DMLAppMaster
 		
 		//write given message to hdfs
 		try {
-			FileSystem fs = FileSystem.get(_conf);
+			FileSystem fs = IOUtilFunctions.getFileSystem(msgPath, _conf);
 			try( FSDataOutputStream fout = fs.create(msgPath, true) ) {
 				fout.writeBytes( msg );
 			}

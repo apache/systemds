@@ -50,7 +50,6 @@ import org.apache.wink.json4j.JSONObject;
 
 public class TfMetaUtils 
 {
-
 	public static boolean isIDSpecification(String spec) throws DMLRuntimeException {
 		try {
 			JSONObject jSpec = new JSONObject(spec);

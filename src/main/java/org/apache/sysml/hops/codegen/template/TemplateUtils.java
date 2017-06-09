@@ -74,6 +74,11 @@ public class TemplateUtils
 			&& hop.getNumRows() == 1 && hop.getNumCols() != 1);
 	}
 	
+	public static boolean isMatrix(CNode hop) {
+		return (hop.getDataType() == DataType.MATRIX 
+			&& hop.getNumRows() != 1 && hop.getNumCols() != 1);
+	}
+	
 	public static CNode wrapLookupIfNecessary(CNode node, Hop hop) {
 		CNode ret = node;
 		if( isColVector(node) )
@@ -234,7 +239,9 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop input) {
 		if( HopRewriteUtils.isEqualSize(output, input) )
 			return RowType.NO_AGG;
-		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 )
+		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 
+			&& !(output instanceof AggBinaryOp && HopRewriteUtils
+				.isTransposeOfItself(output.getInput().get(0),input)))
 			return RowType.ROW_AGG;
 		else if( output.getDim1()==input.getDim2() && output.getDim2()==1 )
 			return RowType.COL_AGG_T;
@@ -343,10 +350,11 @@ public class TemplateUtils
 		for( CNode c : node.getInput() )
 			ret += countVectorIntermediates(c, memo);
 		//compute vector requirements of current node
-		int cntBin = ((node instanceof CNodeBinary 
-			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
-		int cntUn = ((node instanceof CNodeUnary
-				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+		int cntBin = (node instanceof CNodeBinary 
+			&& (((CNodeBinary)node).getType().isVectorScalarPrimitive() 
+			|| ((CNodeBinary)node).getType().isVectorVectorPrimitive())) ? 1 : 0;
+		int cntUn = (node instanceof CNodeUnary
+				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
 		return ret + cntBin + cntUn;
 	}
 

@@ -33,15 +33,15 @@
 # tol   Double 0.000001 Tolerance (epsilon) for WCSS change ratio
 # samp  Int       50    Average number of records per centroid in data samples
 # C     String  "C.mtx" Location to store the output matrix with the centroids
-# isY   Int        0    0 = do not write Y,  1 = write Y
+# isY   Boolean FALSE   do not write Y
 # Y     String  "Y.mtx" Location to store the mapping of records to centroids
 # fmt   String  "text"  Matrix output format, usually "text" or "csv"
-# verb  Int        0    0 = do not print per-iteration stats, 1 = print them
+# verb  Boolean FALSE   do not print per-iteration stats
 # ----------------------------------------------------------------------------
 #
 # Example:
 # hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 C=centroids.mtx
-# hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=1 Y=clusters.mtx verb=1
+# hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=TRUE Y=clusters.mtx verb=TRUE
 
 fileX = $X;
 fileY = ifdef ($Y, "Y.mtx");
@@ -51,8 +51,8 @@ num_centroids = $k;
 num_runs   = ifdef ($runs, 10);      # $runs=10;
 max_iter   = ifdef ($maxi, 1000);    # $maxi=1000;
 eps        = ifdef ($tol, 0.000001); # $tol=0.000001;
-is_write_Y = ifdef ($isY, 0);        # $isY=0;
-is_verbose = ifdef ($verb, 0);       # $verb=0;
+is_write_Y = ifdef ($isY, FALSE);    # $isY=FALSE;
+is_verbose = ifdef ($verb, FALSE);   # $verb=FALSE;
 fmtCY      = ifdef ($fmt, "text");   # $fmt="text";
 avg_sample_size_per_centroid = ifdef ($samp, 50);  # $samp=50;
 
@@ -149,7 +149,7 @@ parfor (run_index in 1 : num_runs, check = 0)
         # Compute the current centroid-based within-cluster sum of squares (WCSS)
         wcss_old = wcss;
         wcss = sumXsq + sum (minD);
-        if (is_verbose == 1) {
+        if (is_verbose == TRUE) {
             if (iter_count == 0) {
                 print ("Run " + run_index + ", At Start-Up:  Centroid WCSS = " + wcss);
             } else {
@@ -208,7 +208,7 @@ if (num_successful_runs > 0) {
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
     print ("Writing out the best-WCSS centroids...");
     write (C, fileC, format=fmtCY);
-    if (is_write_Y == 1) {
+    if (is_write_Y == TRUE) {
         print ("Writing out the best-WCSS cluster labels...");
         D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
         P = (D <= rowMins (D));

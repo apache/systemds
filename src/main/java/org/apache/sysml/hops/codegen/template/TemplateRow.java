@@ -87,12 +87,13 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop) 
 				&& (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
-					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)) ) 
+					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
+					|| HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) ) 
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 					&& TemplateCell.isValidOperation(hop))		
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
-			|| (hop instanceof AggBinaryOp && hop.getDim1()>1 
+			|| (hop instanceof AggBinaryOp && hop.getDim1()>1 && hop.getDim2()==1
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
 
@@ -100,8 +101,9 @@ public class TemplateRow extends TemplateBase
 	public boolean merge(Hop hop, Hop input) {
 		//merge rowagg tpl with cell tpl if input is a vector
 		return !isClosed() &&
-			((hop instanceof BinaryOp && input.getDim2()==1 //matrix-scalar/vector-vector ops )
-				&& TemplateUtils.isOperationSupported(hop))
+			((hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
+				&& (input.getDim2()==1 //matrix-scalar/vector-vector ops )
+					|| HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)))
 			 ||(hop instanceof AggBinaryOp && input.getDim2()==1
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
@@ -140,6 +142,8 @@ public class TemplateRow extends TemplateBase
 		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops.get(0)));
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.countVectorIntermediates(output, new HashSet<Long>()));
+		tpl.getOutput().resetVisitStatus();
+		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops.get(0).getHopID());
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
@@ -199,7 +203,9 @@ public class TemplateRow extends TemplateBase
 				inHops.remove(hop.getInput().get(0)); 
 				inHops.add(hop.getInput().get(0).getInput().get(0));
 				
+				//note: vectorMultAdd applicable to vector-scalar, and vector-vector
 				out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);
+				inHops2.put("X", hop.getInput().get(0).getInput().get(0));
 			}
 			else
 			{
@@ -244,10 +250,16 @@ public class TemplateRow extends TemplateBase
 			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 )
 			{
 				if( HopRewriteUtils.isBinary(hop, SUPPORTED_VECT_BINARY) ) {
-					String opname = "VECT_"+((BinaryOp)hop).getOp().name()+"_SCALAR";
-					if( TemplateUtils.isColVector(cdata2) )
-						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
-					out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
+					if( TemplateUtils.isMatrix(cdata1) && TemplateUtils.isMatrix(cdata2) ) {
+						String opname = "VECT_"+((BinaryOp)hop).getOp().name();
+						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
+					}
+					else {
+						String opname = "VECT_"+((BinaryOp)hop).getOp().name()+"_SCALAR";
+						if( TemplateUtils.isColVector(cdata2) )
+							cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
+						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
+					}
 				}
 				else 
 					throw new RuntimeException("Unsupported binary matrix "

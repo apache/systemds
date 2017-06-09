@@ -29,8 +29,8 @@ import org.junit.runners.Suite;
 	RewritesWeightedSigmoidTest.class,
 	WeightedCrossEntropyTest.class,
 	WeightedDivMatrixMultTest.class,
-	WeightedSquaredLossTest.class,
 	WeightedSigmoidTest.class,
+	WeightedSquaredLossTest.class,
 	WeightedUnaryMatrixMultTest.class
 })
 

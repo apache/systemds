@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,12 +22,8 @@ package org.apache.sysml.api.mlcontext;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -52,7 +48,6 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -78,6 +73,7 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.utils.MLContextProxy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -98,9 +94,8 @@ public final class MLContextUtil {
 	 * Complex data types supported by the MLContext API
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class,
-			BinaryBlockMatrix.class, BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(),
-			MatrixBlock.class, URL.class };
+	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class, Matrix.class,
+			Frame.class, (new double[][] {}).getClass(), MatrixBlock.class, URL.class };
 
 	/**
 	 * All data types supported by the MLContext API
@@ -111,7 +106,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Compare two version strings (ie, "1.4.0" and "1.4.1").
-	 * 
+	 *
 	 * @param versionStr1
 	 *            First version string.
 	 * @param versionStr2
@@ -157,7 +152,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Determine whether the Spark version is supported.
-	 * 
+	 *
 	 * @param sparkVersion
 	 *            Spark version string (ie, "1.5.0").
 	 * @param minimumRecommendedSparkVersion
@@ -171,7 +166,7 @@ public final class MLContextUtil {
 	/**
 	 * Check that the Spark version is supported. If it isn't supported, throw
 	 * an MLContextException.
-	 * 
+	 *
 	 * @param spark
 	 *            SparkSession
 	 * @throws MLContextException
@@ -186,12 +181,15 @@ public final class MLContextUtil {
 			minimumRecommendedSparkVersion = projectInfo.minimumRecommendedSparkVersion();
 		} catch (MLContextException e) {
 			try {
-				// During development (such as in an IDE), there is no jar file typically
-				// built, so attempt to obtain the minimum recommended Spark version from
+				// During development (such as in an IDE), there is no jar file
+				// typically
+				// built, so attempt to obtain the minimum recommended Spark
+				// version from
 				// the pom.xml file
 				minimumRecommendedSparkVersion = getMinimumRecommendedSparkVersionFromPom();
 			} catch (MLContextException e1) {
-				throw new MLContextException("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+				throw new MLContextException(
+						"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
 			}
 		}
 		String sparkVersion = spark.version();
@@ -203,18 +201,21 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain minimum recommended Spark version from the pom.xml file.
-	 * 
-	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
+	 *
+	 * @return the minimum recommended Spark version from XML parsing of the pom
+	 *         file (during development).
 	 */
 	static String getMinimumRecommendedSparkVersionFromPom() {
 		return getUniquePomProperty("spark.version");
 	}
 
 	/**
-	 * Obtain the text associated with an XML element from the pom.xml file. In this implementation,
-	 * the element should be uniquely named, or results will be unpredicable.
-	 * 
-	 * @param property unique property (element) from the pom.xml file
+	 * Obtain the text associated with an XML element from the pom.xml file. In
+	 * this implementation, the element should be uniquely named, or results
+	 * will be unpredicable.
+	 *
+	 * @param property
+	 *            unique property (element) from the pom.xml file
 	 * @return the text value associated with the given property
 	 */
 	static String getUniquePomProperty(String property) {
@@ -249,7 +250,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Set SystemML configuration properties based on a configuration file.
-	 * 
+	 *
 	 * @param configFilePath
 	 *            Path to configuration file.
 	 * @throws MLContextException
@@ -281,7 +282,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the types of input values are supported.
-	 * 
+	 *
 	 * @param inputs
 	 *            Map of String/Object pairs
 	 * @throws MLContextException
@@ -295,7 +296,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the type of input value is supported.
-	 * 
+	 *
 	 * @param name
 	 *            The name of the input
 	 * @param value
@@ -329,7 +330,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the type of input parameter value is supported.
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -367,7 +368,7 @@ public final class MLContextUtil {
 	/**
 	 * Is the object one of the supported basic data types? (Integer, Boolean,
 	 * Double, String)
-	 * 
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return {@code true} if type is a basic data type; otherwise
@@ -387,7 +388,7 @@ public final class MLContextUtil {
 	/**
 	 * Obtain the SystemML scalar value type string equivalent of an accepted
 	 * basic type (Integer, Boolean, Double, String)
-	 * 
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return a String representing the type as a SystemML scalar value type
@@ -412,8 +413,8 @@ public final class MLContextUtil {
 
 	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
-	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
-	 * 
+	 * DataFrame, Matrix, double[][], MatrixBlock, URL)
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return {@code true} if type is a complex data type; otherwise
@@ -433,7 +434,7 @@ public final class MLContextUtil {
 	/**
 	 * Converts non-string basic input parameter values to strings to pass to
 	 * the parser.
-	 * 
+	 *
 	 * @param basicInputParameterMap
 	 *            map of input parameters
 	 * @param scriptType
@@ -475,7 +476,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Convert input types to internal SystemML representations
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -488,7 +489,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Convert input types to internal SystemML representations
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -585,26 +586,29 @@ public final class MLContextUtil {
 					return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame);
 				}
 			}
-		} else if (value instanceof BinaryBlockMatrix) {
-			BinaryBlockMatrix binaryBlockMatrix = (BinaryBlockMatrix) value;
-			if (metadata == null) {
-				metadata = binaryBlockMatrix.getMatrixMetadata();
-			}
-			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = binaryBlockMatrix.getBinaryBlocks();
-			return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks, (MatrixMetadata) metadata);
-		} else if (value instanceof BinaryBlockFrame) {
-			BinaryBlockFrame binaryBlockFrame = (BinaryBlockFrame) value;
-			if (metadata == null) {
-				metadata = binaryBlockFrame.getFrameMetadata();
-			}
-			JavaPairRDD<Long, FrameBlock> binaryBlocks = binaryBlockFrame.getBinaryBlocks();
-			return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
 		} else if (value instanceof Matrix) {
 			Matrix matrix = (Matrix) value;
-			return matrix.toMatrixObject();
+			if ((matrix.hasBinaryBlocks()) && (!matrix.hasMatrixObject())) {
+				if (metadata == null) {
+					metadata = matrix.getMatrixMetadata();
+				}
+				JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = matrix.toBinaryBlocks();
+				return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks,
+						(MatrixMetadata) metadata);
+			} else {
+				return matrix.toMatrixObject();
+			}
 		} else if (value instanceof Frame) {
 			Frame frame = (Frame) value;
-			return frame.toFrameObject();
+			if ((frame.hasBinaryBlocks()) && (!frame.hasFrameObject())) {
+				if (metadata == null) {
+					metadata = frame.getFrameMetadata();
+				}
+				JavaPairRDD<Long, FrameBlock> binaryBlocks = frame.toBinaryBlocks();
+				return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
+			} else {
+				return frame.toFrameObject();
+			}
 		} else if (value instanceof double[][]) {
 			double[][] doubleMatrix = (double[][]) value;
 			return MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix, (MatrixMetadata) metadata);
@@ -626,7 +630,7 @@ public final class MLContextUtil {
 	/**
 	 * If no metadata is supplied for an RDD or JavaRDD, this method can be used
 	 * to determine whether the data appears to be matrix (or a frame)
-	 * 
+	 *
 	 * @param line
 	 *            a line of the RDD
 	 * @return {@code true} if all the csv-separated values are numbers,
@@ -651,7 +655,7 @@ public final class MLContextUtil {
 	/**
 	 * Examine the DataFrame schema to determine whether the data appears to be
 	 * a matrix.
-	 * 
+	 *
 	 * @param df
 	 *            the DataFrame
 	 * @return {@code true} if the DataFrame appears to be a matrix,
@@ -667,7 +671,7 @@ public final class MLContextUtil {
 			DataType dataType = field.dataType();
 			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
 					&& (dataType != DataTypes.LongType) && (!(dataType instanceof org.apache.spark.ml.linalg.VectorUDT))
-					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT)) ) {
+					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT))) {
 				// uncomment if we support arrays of doubles for matrices
 				// if (dataType instanceof ArrayType) {
 				// ArrayType arrayType = (ArrayType) dataType;
@@ -684,7 +688,7 @@ public final class MLContextUtil {
 	/**
 	 * Return a double-quoted string with inner single and double quotes
 	 * escaped.
-	 * 
+	 *
 	 * @param str
 	 *            the original string
 	 * @return double-quoted string with inner single and double quotes escaped
@@ -714,7 +718,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in a Map
-	 * 
+	 *
 	 * @param mapName
 	 *            the name of the map
 	 * @param map
@@ -745,7 +749,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the values in a Set
-	 * 
+	 *
 	 * @param setName
 	 *            the name of the Set
 	 * @param set
@@ -773,7 +777,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in the symbol table
-	 * 
+	 *
 	 * @param name
 	 *            the name of the symbol table
 	 * @param symbolTable
@@ -790,7 +794,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in the symbol table
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @return the keys and values in the symbol table as a String
@@ -823,7 +827,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a symbol table output type as a String
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the symbol table
 	 * @param outputName
@@ -850,12 +854,13 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of script inputs.
-	 * 
+	 *
 	 * @param name
 	 *            the title to display for the inputs
 	 * @param map
 	 *            the map of inputs
-	 * @param symbolTable the symbol table
+	 * @param symbolTable
+	 *            the symbol table
 	 * @return the script inputs represented as a String
 	 */
 	public static String displayInputs(String name, Map<String, Object> map, LocalVariableMap symbolTable) {
@@ -891,17 +896,18 @@ public final class MLContextUtil {
 				}
 				sb.append(") ");
 
-				 sb.append(key);
-				 sb.append(": ");
-				 String str = null;
-				 if(object instanceof MatrixBlock) {
-					 MatrixBlock mb = (MatrixBlock) object;
-					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";  
-				 }
-				 else 
-					 str = object.toString(); // TODO: Deal with OOM for other objects such as Frame, etc
-				 str = StringUtils.abbreviate(str, 100);
-				 sb.append(str);
+				sb.append(key);
+				sb.append(": ");
+				String str = null;
+				if (object instanceof MatrixBlock) {
+					MatrixBlock mb = (MatrixBlock) object;
+					str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros()
+							+ ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";
+				} else
+					str = object.toString(); // TODO: Deal with OOM for other
+												// objects such as Frame, etc
+				str = StringUtils.abbreviate(str, 100);
+				sb.append(str);
 				sb.append("\n");
 			}
 		}
@@ -910,7 +916,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of the script outputs.
-	 * 
+	 *
 	 * @param name
 	 *            the title to display for the outputs
 	 * @param outputNames
@@ -918,7 +924,7 @@ public final class MLContextUtil {
 	 * @param symbolTable
 	 *            the symbol table
 	 * @return the script outputs represented as a String
-	 * 
+	 *
 	 */
 	public static String displayOutputs(String name, Set<String> outputNames, LocalVariableMap symbolTable) {
 		StringBuilder sb = new StringBuilder();
@@ -930,13 +936,13 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of the script outputs.
-	 * 
+	 *
 	 * @param outputNames
 	 *            the names of the output variables
 	 * @param symbolTable
 	 *            the symbol table
 	 * @return the script outputs represented as a String
-	 * 
+	 *
 	 */
 	public static String displayOutputs(Set<String> outputNames, LocalVariableMap symbolTable) {
 		StringBuilder sb = new StringBuilder();
@@ -970,60 +976,26 @@ public final class MLContextUtil {
 
 	/**
 	 * The SystemML welcome message
-	 * 
+	 *
 	 * @return the SystemML welcome message
 	 */
 	public static String welcomeMessage() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nWelcome to Apache SystemML!\n");
-		return sb.toString();
-	}
-
-	/**
-	 * Generate a String history entry for a script.
-	 * 
-	 * @param script
-	 *            the script
-	 * @param when
-	 *            when the script was executed
-	 * @return a script history entry as a String
-	 */
-	public static String createHistoryForScript(Script script, long when) {
-		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
-		StringBuilder sb = new StringBuilder();
-		sb.append("Script Name: " + script.getName() + "\n");
-		sb.append("When: " + dateFormat.format(new Date(when)) + "\n");
-		sb.append(script.displayInputs());
-		sb.append(script.displayOutputs());
-		sb.append(script.displaySymbolTable());
-		return sb.toString();
-	}
-
-	/**
-	 * Generate a String listing of the script execution history.
-	 * 
-	 * @param scriptHistory
-	 *            the list of script history entries
-	 * @return the listing of the script execution history as a String
-	 */
-	public static String displayScriptHistory(List<String> scriptHistory) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("MLContext Script History:\n");
-		if (scriptHistory.isEmpty()) {
-			sb.append("None");
-		}
-		int i = 1;
-		for (String history : scriptHistory) {
-			sb.append("--------------------------------------------\n");
-			sb.append("#" + (i++) + ":\n");
-			sb.append(history);
+		try {
+			ProjectInfo info = ProjectInfo.getProjectInfo();
+			if (info.version() != null) {
+				sb.append("Version ");
+				sb.append(info.version());
+			}
+		} catch (MLContextException e) {
 		}
 		return sb.toString();
 	}
 
 	/**
 	 * Obtain the Spark Context
-	 * 
+	 *
 	 * @param mlContext
 	 *            the SystemML MLContext
 	 * @return the Spark Context
@@ -1034,7 +1006,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain the Java Spark Context
-	 * 
+	 *
 	 * @param mlContext
 	 *            the SystemML MLContext
 	 * @return the Java Spark Context
@@ -1045,39 +1017,39 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain the Spark Context from the MLContextProxy
-	 * 
+	 *
 	 * @return the Spark Context
 	 */
 	public static SparkContext getSparkContextFromProxy() {
-		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		MLContext activeMLContext = MLContextProxy.getActiveMLContextForAPI();
 		SparkContext sc = getSparkContext(activeMLContext);
 		return sc;
 	}
 
 	/**
 	 * Obtain the Java Spark Context from the MLContextProxy
-	 * 
+	 *
 	 * @return the Java Spark Context
 	 */
 	public static JavaSparkContext getJavaSparkContextFromProxy() {
-		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		MLContext activeMLContext = MLContextProxy.getActiveMLContextForAPI();
 		JavaSparkContext jsc = getJavaSparkContext(activeMLContext);
 		return jsc;
 	}
 
 	/**
 	 * Obtain the Spark Session from the MLContextProxy
-	 * 
+	 *
 	 * @return the Spark Session
 	 */
 	public static SparkSession getSparkSessionFromProxy() {
-		return ((MLContext) MLContextProxy.getActiveMLContextForAPI()).getSparkSession();
+		return MLContextProxy.getActiveMLContextForAPI().getSparkSession();
 	}
 
 	/**
 	 * Determine if the symbol table contains a FrameObject with the given
 	 * variable name.
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @param variableName
@@ -1093,7 +1065,7 @@ public final class MLContextUtil {
 	/**
 	 * Determine if the symbol table contains a MatrixObject with the given
 	 * variable name.
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @param variableName
@@ -1108,7 +1080,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Delete the 'remove variable' instructions from a runtime program.
-	 * 
+	 *
 	 * @param progam
 	 *            runtime program
 	 */
@@ -1131,7 +1103,7 @@ public final class MLContextUtil {
 	/**
 	 * Recursively traverse program block to delete 'remove variable'
 	 * instructions.
-	 * 
+	 *
 	 * @param pb
 	 *            Program block
 	 */
@@ -1158,7 +1130,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Delete 'remove variable' instructions.
-	 * 
+	 *
 	 * @param instructions
 	 *            list of instructions
 	 */

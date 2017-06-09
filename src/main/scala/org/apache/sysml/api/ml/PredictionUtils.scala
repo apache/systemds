@@ -30,18 +30,18 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils
 import org.apache.sysml.api.mlcontext.MLResults
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.mlcontext.Script
-import org.apache.sysml.api.mlcontext.BinaryBlockMatrix
+import org.apache.sysml.api.mlcontext.Matrix
 
 object PredictionUtils {
   
-  def getGLMPredictionScript(B_full: BinaryBlockMatrix, isSingleNode:Boolean, dfam:java.lang.Integer=1): (Script, String)  = {
+  def getGLMPredictionScript(B_full: Matrix, isSingleNode:Boolean, dfam:java.lang.Integer=1): (Script, String)  = {
     val script = dml(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath))
       .in("$X", " ")
       .in("$B", " ")
       .in("$dfam", dfam)
       .out("means")
     val ret = if(isSingleNode) {
-      script.in("B_full", B_full.getMatrixBlock, B_full.getMatrixMetadata)
+      script.in("B_full", B_full.toMatrixBlock, B_full.getMatrixMetadata)
     }
     else {
       script.in("B_full", B_full)
@@ -61,9 +61,9 @@ object PredictionUtils {
         Prediction = rowIndexMax(Prob); # assuming one-based label mapping
         write(Prediction, "tempOut", "csv");
         """).out("Prediction")
-    val probVar = mlscoreoutput.getBinaryBlockMatrix(inProbVar)
+    val probVar = mlscoreoutput.getMatrix(inProbVar)
     if(isSingleNode) {
-      ml.execute(script.in("Prob", probVar.getMatrixBlock, probVar.getMatrixMetadata))
+      ml.execute(script.in("Prob", probVar.toMatrixBlock, probVar.getMatrixMetadata))
     }
     else {
       ml.execute(script.in("Prob", probVar))

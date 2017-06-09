@@ -58,8 +58,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private static final String TMP_VARNAME = "__cf_tmp";
 	
 	//reuse basic execution runtime
-	private static ProgramBlock     _tmpPB = null;
-	private static ExecutionContext _tmpEC = null;
+	private ProgramBlock     _tmpPB = null;
+	private ExecutionContext _tmpEC = null;
 	
 	
 	@Override
@@ -232,7 +232,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return literal;
 	}
 	
-	private static ProgramBlock getProgramBlock() 
+	private ProgramBlock getProgramBlock() 
 		throws DMLRuntimeException
 	{
 		if( _tmpPB == null )
@@ -240,7 +240,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpPB;
 	}
 	
-	private static ExecutionContext getExecutionContext()
+	private ExecutionContext getExecutionContext()
 	{
 		if( _tmpEC == null )
 			_tmpEC = ExecutionContextFactory.createContext();

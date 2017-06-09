@@ -40,9 +40,9 @@ import org.junit.runners.Suite;
 	RoundTest.class,
 	SinTest.class,
 	SqrtTest.class,
+	StopTest.class,
 	StopTest2.class,
 	StopTestCtrlStr.class,
-	StopTest.class,
 	TanTest.class
 })
 

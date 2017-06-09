@@ -30,7 +30,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -123,6 +122,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
 		
+		// sanity check number of function paramters
+		if( _boundInputParamNames.size() < fpb.getInputParams().size() ) {
+			throw new DMLRuntimeException("Number of bound input parameters does not match the function signature "
+				+ "("+_boundInputParamNames.size()+", but "+fpb.getInputParams().size()+" expected)");
+		}
+		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
 		LocalVariableMap functionVariables = new LocalVariableMap();		
@@ -131,35 +136,25 @@ public class FunctionCallCPInstruction extends CPInstruction
 			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
 			String currFormalParamName = currFormalParam.getName();
 			Data currFormalParamValue = null; 
-			ValueType valType = fpb.getInputParams().get(i).getValueType();
 				
-			// CASE (a): default values, if call w/ less params than signature (scalars only)
-			if( i > _boundInputParamNames.size() )
-			{	
-				String defaultVal = fpb.getInputParams().get(i).getDefaultValue();
-				currFormalParamValue = ec.getScalarInput(defaultVal, valType, false);
+			CPOperand operand = _boundInputParamOperands.get(i);
+			String varname = operand.getName();
+			//error handling non-existing variables
+			if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
+				throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
+						DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 			}
-			// CASE (b) literals or symbol table entries
-			else {
-				CPOperand operand = _boundInputParamOperands.get(i);
-				String varname = operand.getName();
-				//error handling non-existing variables
-				if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
-					throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
-							DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
-				}
-				//get input matrix/frame/scalar
-				currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
-					ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
-				
-				//graceful value type conversion for scalar inputs with wrong type
-				if( currFormalParamValue.getDataType() == DataType.SCALAR
-					&& currFormalParamValue.getValueType() != operand.getValueType() )
-				{
-					ScalarObject so = (ScalarObject) currFormalParamValue;
-					currFormalParamValue = ScalarObjectFactory
-						.createScalarObject(operand.getValueType(), so);
-				}
+			//get input matrix/frame/scalar
+			currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
+				ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
+			
+			//graceful value type conversion for scalar inputs with wrong type
+			if( currFormalParamValue.getDataType() == DataType.SCALAR
+				&& currFormalParamValue.getValueType() != operand.getValueType() )
+			{
+				ScalarObject so = (ScalarObject) currFormalParamValue;
+				currFormalParamValue = ScalarObjectFactory
+					.createScalarObject(operand.getValueType(), so);
 			}
 			
 			functionVariables.put(currFormalParamName, currFormalParamValue);						

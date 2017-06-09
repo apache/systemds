@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,13 +37,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
-import org.apache.wink.json4j.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.MLContext;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
@@ -51,8 +46,6 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -66,6 +59,10 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.ParameterBuilder;
 import org.apache.sysml.utils.Statistics;
+import org.apache.wink.json4j.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 
 
 /**
@@ -79,38 +76,38 @@ import org.apache.sysml.utils.Statistics;
  * <li>check results</li>
  * <li>clean up after test run</li>
  * </ul>
- * 
+ *
  */
 @SuppressWarnings("deprecation")
-public abstract class AutomatedTestBase 
+public abstract class AutomatedTestBase
 {
-	
+
 	public enum ScriptType {
 		DML, PYDML;
-		
+
 		public String lowerCase() {
 			return super.toString().toLowerCase();
 		}
 	};
-	
+
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
-	
-	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite 
+
+	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite
 	public static final boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
-	
+
 	protected ScriptType scriptType;
-	
+
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available 
+	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available
 	// under $HADOOP_HOME/bin and hadoop.dll is available in the Java library
-	// path. The following static initializer sets up JVM variables so that 
+	// path. The following static initializer sets up JVM variables so that
 	// Hadoop can find these native binaries, assuming that any Hadoop code
 	// loads after this class and that the JVM's current working directory
 	// is the root of this project.
 	static {
-		
+
 		String osname = System.getProperty("os.name").toLowerCase();
 		if (osname.contains("win")) {
 			System.err.printf("AutomatedTestBase has detected a Windows OS and is overriding\n"
@@ -119,9 +116,9 @@ public abstract class AutomatedTestBase
 
 			System.setProperty("hadoop.home.dir", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows");
-			
+
 			if(TEST_GPU) {
-				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin"; 
+				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin";
 				System.setProperty("java.library.path", cwd + File.separator
 						+ "\\src\\test\\config\\hadoop_bin_windows\\bin" + File.pathSeparator
 						+ "/lib" + File.pathSeparator
@@ -130,18 +127,18 @@ public abstract class AutomatedTestBase
 			else {
 				System.setProperty("java.library.path", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows\\bin"
-					// For testing BLAS on Windows 
+					// For testing BLAS on Windows
 					// + File.pathSeparator + "C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2017.0.109\\windows\\redist\\intel64_win\\mkl"
 						);
 			}
-			
+
 
 		    // Need to muck around with the classloader to get it to use the new
 			// value of java.library.path.
 			try {
 				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
 				sysPathsField.setAccessible(true);
-		    
+
 				sysPathsField.set(null, null);
 			} catch (Exception e) {
 				// IBM Java throws an exception here, so don't print the stack trace.
@@ -151,7 +148,7 @@ public abstract class AutomatedTestBase
 		}
 	}
 	// *** END HACK ***
-	
+
 	/**
 	 * Script source directory for .dml and .r files only
 	 * (TEST_DATA_DIR for generated test data artifacts).
@@ -160,19 +157,19 @@ public abstract class AutomatedTestBase
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
-	
+
 	/** Location where this class writes files for inspection if DEBUG is set to true. */
 	private static final String DEBUG_TEMP_DIR = "./tmp/";
-	
+
 	/** Directory under which config files shared across tests are located. */
 	private static final String CONFIG_DIR = "./src/test/config/";
-	
+
 	/**
 	 * Location of the SystemML config file that we use as a template when
 	 * generating the configs for each test case.
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
-	
+
 	/**
 	 * Location under which we create local temporary directories for test cases.
 	 * To adjust where testTemp is located, use -Dsystemml.testTemp.root.dir=<new location>.  This is necessary
@@ -180,7 +177,7 @@ public abstract class AutomatedTestBase
 	 */
 	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemml.testTemp.root.dir","target/testTemp");
 	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
-	
+
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
 	protected static final String TEST_DATA_DIR = LOCAL_TEMP_ROOT_DIR + "/";
 	protected static final boolean TEST_CACHE_ENABLED = true;
@@ -191,23 +188,23 @@ public abstract class AutomatedTestBase
 	 * Runtime backend to use for all integration tests. Some individual tests
 	 * override this value, but the rest will use whatever is the default here.
 	 * <p>
-	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test 
+	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test
 	 * suite in spark mode
 	 */
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
-	
+
 	protected static final boolean DEBUG = false;
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
-	
+
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;
 	protected String fullRScriptName;
-	
+
 	protected static String baseDirectory;
 	protected static String sourceDirectory;
 	protected HashMap<String, TestConfiguration> availableTestConfigurations;
-	
+
 	/* For testing in the old way */
 	protected HashMap<String, String> testVariables; /* variables and their values */
 
@@ -215,16 +212,16 @@ public abstract class AutomatedTestBase
 	//protected String[] dmlArgs;            /* program-independent arguments to SystemML (e.g., debug, execution mode) */
 	protected String[] programArgs;        /* program-specific arguments, which are passed to SystemML via -args option */
 	protected String rCmd;                 /* Rscript foo.R arg1, arg2 ...          */
-	
+
 	protected String selectedTest;
 	protected String[] outputDirectories;
 	protected String[] comparisonFiles;
 	protected ArrayList<String> inputDirectories;
 	protected ArrayList<String> inputRFiles;
 	protected ArrayList<String> expectedFiles;
-	
+
 	private File curLocalTempDir = null;
-	
+
 
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
@@ -247,7 +244,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Adds a test configuration to the list of available test configurations.
 	 * </p>
-	 * 
+	 *
 	 * @param testName
 	 *            test name
 	 * @param config
@@ -262,7 +259,7 @@ public abstract class AutomatedTestBase
 	 * Adds a test configuration to the list of available test configurations based
 	 * on the test directory and the test name.
 	 * </p>
-	 * 
+	 *
 	 * @param testDirectory
 	 *            test directory
 	 * @param testName
@@ -272,8 +269,8 @@ public abstract class AutomatedTestBase
 		TestConfiguration config = new TestConfiguration(testDirectory, testName);
 		availableTestConfigurations.put(testName, config);
 	}
-	
-	
+
+
 	@Before
 	public final void setUpBase() {
 		availableTestConfigurations = new HashMap<String, TestConfiguration>();
@@ -284,7 +281,7 @@ public abstract class AutomatedTestBase
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
 		lTimeBeforeTest = System.currentTimeMillis();
-		
+
 		TestUtils.clearAssertionInformation();
 	}
 
@@ -293,7 +290,7 @@ public abstract class AutomatedTestBase
 	 * Returns a test configuration from the list of available configurations.
 	 * If no configuration is added for the specified name, the test will fail.
 	 * </p>
-	 * 
+	 *
 	 * @param testName
 	 *            test name
 	 * @return test configuration
@@ -304,15 +301,15 @@ public abstract class AutomatedTestBase
 
 		return availableTestConfigurations.get(testName);
 	}
-	
+
 	/**
 	 * <p>
 	 * Gets a test configuration from the list of available configurations
-	 * and loads it if it's available. It is then returned. 
+	 * and loads it if it's available. It is then returned.
 	 * If no configuration exists for the specified name, the test will fail.
-	 * 
+	 *
 	 * </p>
-	 * 
+	 *
 	 * @param testName
 	 *            test name
 	 * @return test configuration
@@ -322,11 +319,11 @@ public abstract class AutomatedTestBase
 		loadTestConfiguration(testConfiguration);
 		return testConfiguration;
 	}
-	
+
 	/**
 	 * Subclasses must call {@link #loadTestConfiguration(TestConfiguration)}
 	 * before calling this method.
-	 * 
+	 *
 	 * @return the directory where the current test case should write temp
 	 *         files. This directory also contains the current test's customized
 	 *         SystemML config file.
@@ -338,17 +335,17 @@ public abstract class AutomatedTestBase
 		}
 		return curLocalTempDir;
 	}
-	
+
 	/**
 	 * Subclasses must call {@link #loadTestConfiguration(TestConfiguration)}
 	 * before calling this method.
-	 * 
+	 *
 	 * @return the location of the current test case's SystemML config file
 	 */
 	protected File getCurConfigFile() {
 		return new File(getCurLocalTempDir(), "SystemML-config.xml");
 	}
-	
+
 	/**
 	 * <p>
 	 * Tests that use custom SystemML configuration should override to ensure
@@ -358,32 +355,13 @@ public abstract class AutomatedTestBase
 	protected File getConfigTemplateFile() {
 		return CONFIG_TEMPLATE_FILE;
 	}
-	
-	protected MLContext getMLContextForTesting() throws DMLRuntimeException {
-		synchronized(AutomatedTestBase.class) {
-			
-			RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
-			try {
-				DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
-				ExecutionContext ec = ExecutionContextFactory.createContext();
-				if(ec instanceof SparkExecutionContext) {
-					MLContext mlCtx = new MLContext(((SparkExecutionContext) ec).getSparkContext());
-					return mlCtx;
-				}
-			}
-			finally {
-				DMLScript.rtplatform = oldRT;
-			}
-			throw new DMLRuntimeException("Cannot create MLContext");
-		}
-	}
 
 	/**
 	 * <p>
 	 * Generates a random matrix with the specified characteristics and returns
 	 * it as a two dimensional array.
 	 * </p>
-	 * 
+	 *
 	 * @param rows
 	 *            number of rows
 	 * @param cols
@@ -407,7 +385,7 @@ public abstract class AutomatedTestBase
 	 * Generates a random matrix with the specified characteristics which does
 	 * not contain any zero values and returns it as a two dimensional array.
 	 * </p>
-	 * 
+	 *
 	 * @param rows
 	 *            number of rows
 	 * @param cols
@@ -429,7 +407,7 @@ public abstract class AutomatedTestBase
 	 * Generates a random matrix with the specified characteristics and writes
 	 * it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param rows
@@ -455,7 +433,7 @@ public abstract class AutomatedTestBase
 	 * Generates a random matrix with the specified characteristics and writes
 	 * it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param rows
@@ -488,7 +466,7 @@ public abstract class AutomatedTestBase
 	private void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 		MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
-		if ( cleanupRData ) 
+		if ( cleanupRData )
 			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtx");
 	}
 
@@ -496,7 +474,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Adds a matrix to the input path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -507,14 +485,14 @@ public abstract class AutomatedTestBase
 	protected double[][] writeInputMatrix(String name, double[][] matrix, boolean bIncludeR) {
 		String completePath = baseDirectory + INPUT_DIR + name + "/in";
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
-		
+
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
+
 		TestUtils.writeTestMatrix(completePath, matrix);
 		if (bIncludeR) {
 			TestUtils.writeTestMatrix(completeRPath, matrix, true);
@@ -527,22 +505,22 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR) 
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR)
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
-	
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, int nnz, boolean bIncludeR) 
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, int nnz, boolean bIncludeR)
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
-	
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) 
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc)
 	{
 		writeInputMatrix(name, matrix, bIncludeR);
-		
+
 		// write metadata file
 		try
 		{
@@ -554,15 +532,15 @@ public abstract class AutomatedTestBase
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-	
+
 		return matrix;
 	}
-	
+
 	/**
 	 * <p>
 	 * Adds a matrix to the input path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -576,7 +554,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Adds a matrix to the input path and writes it to a file in binary format.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -591,14 +569,14 @@ public abstract class AutomatedTestBase
 	protected void writeInputBinaryMatrix(String name, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
 		String completePath = baseDirectory + INPUT_DIR + name + "/in";
-		
+
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, false);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
+
 		if (rowsInBlock == 1 && colsInBlock == 1) {
 			TestUtils.writeBinaryTestMatrixCells(completePath, matrix);
 			if (DEBUG)
@@ -613,8 +591,8 @@ public abstract class AutomatedTestBase
 	}
 
 	/**
-	 * Writes the given matrix to input path, and writes the associated metadata file. 
-	 * 
+	 * Writes the given matrix to input path, and writes the associated metadata file.
+	 *
 	 * @param name
 	 * @param matrix
 	 * @param rowsInBlock
@@ -635,7 +613,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Adds a matrix to the expectation path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -650,7 +628,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Adds a matrix to the expectation path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -668,7 +646,7 @@ public abstract class AutomatedTestBase
 	 * Adds a matrix to the expectation path and writes it to a file in binary
 	 * format.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
@@ -705,7 +683,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Creates a expectation helper matrix which can be used to compare scalars.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            file name
 	 * @param value
@@ -732,36 +710,36 @@ public abstract class AutomatedTestBase
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
-	
+
 	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
-	
-	
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) 
-			throws DMLRuntimeException, IOException 
+
+
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo)
+			throws DMLRuntimeException, IOException
 	{
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
-		
+
 		MatrixCharacteristics md = readDMLMetaDataFile(fileName);
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) 
-			throws DMLRuntimeException, IOException 
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
+			throws DMLRuntimeException, IOException
 	{
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
-		
+
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) 
-			throws DMLRuntimeException, IOException 
+	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
+			throws DMLRuntimeException, IOException
 	{
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
@@ -769,7 +747,7 @@ public abstract class AutomatedTestBase
 		CSVFileFormatProperties fprop = new CSVFileFormatProperties();
 		fprop.setHeader(true);
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
-		
+
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
@@ -779,23 +757,13 @@ public abstract class AutomatedTestBase
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
-	
-	/**
-	 * 
-	 * @param fileName
-	 * @param mc
-	 */
+
 	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc) {
 		MatrixCharacteristics rmc = readDMLMetaDataFile(fileName);
 		Assert.assertEquals(mc.getRows(), rmc.getRows());
 		Assert.assertEquals(mc.getCols(), rmc.getCols());
 	}
-	
-	/**
-	 * 
-	 * @param fileName
-	 * @return
-	 */
+
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName)
 	{
 		try {
@@ -809,30 +777,41 @@ public abstract class AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 	}
-	
-	
+
+	public static ValueType readDMLMetaDataValueType(String fileName)
+	{
+		try {
+			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
+			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			return ValueType.valueOf(meta.get(DataExpression.VALUETYPEPARAM).toString().toUpperCase());
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
 	/**
 	 * <p>
 	 * Loads a test configuration with its parameters. Adds the output
 	 * directories to the output list as well as to the list of possible
 	 * comparison files.
 	 * </p>
-	 * 
+	 *
 	 * @param config
 	 *            test configuration name
-	 * 
+	 *
 	 */
 	protected void loadTestConfiguration(TestConfiguration config) {
 		loadTestConfiguration(config, null);
 	}
-	
+
 	/**
 	 * <p>
 	 * Loads a test configuration with its parameters. Adds the output
 	 * directories to the output list as well as to the list of possible
 	 * comparison files.
 	 * </p>
-	 * 
+	 *
 	 * @param config
 	 *            test configuration name
 	 * @param cacheDirectory
@@ -849,11 +828,11 @@ public abstract class AutomatedTestBase
 				sourceDirectory = SCRIPT_DIR + getSourceDirectory(testDirectory);
 			}
 			else {
-				baseDirectory = SCRIPT_DIR + testDirectory;				
+				baseDirectory = SCRIPT_DIR + testDirectory;
 				sourceDirectory = baseDirectory;
 			}
 		}
-		
+
 		setCacheDirectory(cacheDirectory);
 
 		selectedTest = config.getTestScript();
@@ -875,7 +854,7 @@ public abstract class AutomatedTestBase
 		testVariables.put("readhelper", "Helper = read(\"" + baseDirectory + INPUT_DIR + "helper/in\", "
 				+ "rows=1, cols=2, format=\"text\");");
 		testVariables.put("Routdir", baseDirectory + EXPECTED_DIR + cacheDir);
-		
+
 		// Create a temporary directory for this test case.
 		// Eventually all files written by the tests should go under here, but making
 		// that change will take quite a bit of effort.
@@ -889,22 +868,22 @@ public abstract class AutomatedTestBase
 				curLocalTempDir = new File(LOCAL_TEMP_ROOT, String.format(
 						"%s/%s", testDirectory, selectedTest));
 			}
-			
+
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
 
 			// Create a SystemML config file for this test case based on default template
 			// from src/test/config or derive from custom configuration provided by test.
 			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
-			
+
 			String localTemp = curLocalTempDir.getPath();
-			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
+			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>",
 					String.format("<scratch>%s/scratch_space</scratch>", localTemp));
-			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>", 
+			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>",
 					String.format("<localtmpdir>%s/localtmp</localtmpdir>", localTemp));
-			
+
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
-			
+
 			System.out.printf("This test case will use SystemML config file %s\n", getCurConfigFile());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -913,8 +892,8 @@ public abstract class AutomatedTestBase
 		if (DEBUG)
 			TestUtils.clearDirectory(DEBUG_TEMP_DIR + baseDirectory + INPUT_DIR);
 	}
-	
-	
+
+
 
 	/**
 	 * <p>
@@ -922,10 +901,10 @@ public abstract class AutomatedTestBase
 	 * directories to the output list as well as to the list of possible
 	 * comparison files.
 	 * </p>
-	 * 
+	 *
 	 * @param configurationName
 	 *            test configuration name
-	 * 
+	 *
 	 */
 	@Deprecated
 	protected void loadTestConfiguration(String configurationName) {
@@ -937,27 +916,27 @@ public abstract class AutomatedTestBase
 		loadTestConfiguration(config);
 	}
 
-	/** 
+	/**
 	 * Runs an R script, default to the old way
 	 */
 	protected void runRScript() {
 		runRScript(false);
-		
+
 	}
 	/**
 	 * Runs an R script in the old or the new way
 	 */
 	protected void runRScript(boolean newWay) {
-	
-		String executionFile = sourceDirectory + selectedTest + ".R"; 
-		
+
+		String executionFile = sourceDirectory + selectedTest + ".R";
+
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 		// Some of the R scripts will fail if the "expected" directory doesn't exist.
 		// Make sure the directory exists.
 		File expectedDir = new File(baseDirectory, "expected" + "/" + cacheDir);
 		expectedDir.mkdirs();
 		// *** END HACK ***
-		
+
 		String cmd;
 		if( !newWay ) {
 			executionFile = executionFile + "t";
@@ -976,9 +955,9 @@ public abstract class AutomatedTestBase
 					"Rscript --default-packages=methods,datasets,graphics,grDevices,stats,utils");
 			// *** END HACK ***
 		}
-		
+
 		if (System.getProperty("os.name").contains("Windows")) {
-			cmd = cmd.replace('/', '\\');                        
+			cmd = cmd.replace('/', '\\');
 			executionFile = executionFile.replace('/', '\\');
 		}
 		if (DEBUG) {
@@ -989,7 +968,7 @@ public abstract class AutomatedTestBase
 		if( !newWay ) {
 			ParameterBuilder.setVariablesInScript(sourceDirectory, selectedTest + ".R", testVariables);
 		}
-	
+
 		if (cacheDir.length() > 0)
 		{
 			File expectedFile = null;
@@ -999,7 +978,7 @@ public abstract class AutomatedTestBase
 			{
 				outputFiles = testConfig.getOutputFiles();
 			}
-			
+
 			if (outputFiles != null && outputFiles.length > 0)
 			{
 				expectedFile = new File (expectedDir.getPath() + "/" + outputFiles[0]);
@@ -1010,12 +989,12 @@ public abstract class AutomatedTestBase
 				}
 			}
 		}
-		
+
 		try {
 			long t0 = System.nanoTime();
 			System.out.println("starting R script");
-			System.out.println("cmd: " + cmd);           
-			Process child = Runtime.getRuntime().exec(cmd);     
+			System.out.println("cmd: " + cmd);
+			Process child = Runtime.getRuntime().exec(cmd);
 
 			String outputR = IOUtils.toString(child.getInputStream());
 			System.out.println("Standard Output from R:" + outputR);
@@ -1075,7 +1054,7 @@ public abstract class AutomatedTestBase
 	 * Runs a test for which no exception is expected. If SystemML executes more
 	 * MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
-	 * 
+	 *
 	 * @param maxMRJobs
 	 *            specifies a maximum limit for the number of MR jobs. If set to
 	 *            -1 there is no limit.
@@ -1088,7 +1067,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified.
 	 * </p>
-	 * 
+	 *
 	 * @param exceptionExpected
 	 *            exception expected
 	 */
@@ -1110,7 +1089,7 @@ public abstract class AutomatedTestBase
 	protected void runTest(boolean exceptionExpected, Class<?> expectedException) {
 		runTest(exceptionExpected, expectedException, -1);
 	}
-	
+
 	/**
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified as well
@@ -1129,7 +1108,7 @@ public abstract class AutomatedTestBase
 	protected void runTest(boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
 		runTest(false, exceptionExpected, expectedException, maxMRJobs);
 	}
-		
+
 	/**
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified as well
@@ -1147,24 +1126,24 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
-		
+
 		String executionFile = sourceDirectory + selectedTest + ".dml";
-		
+
 		if( !newWay ) {
 			executionFile = executionFile + "t";
 			ParameterBuilder.setVariablesInScript(sourceDirectory, selectedTest + ".dml", testVariables);
 		}
-		
+
 		//cleanup scratch folder (prevent side effect between tests)
 		cleanupScratchSpace();
-		
+
 		ArrayList<String> args = new ArrayList<String>();
 		// setup arguments to SystemML
-		
+
 		if (DEBUG) {
 			args.add("-Dsystemml.logging=trace");
 		}
-		
+
 		if (scriptType != null) { // DML/PYDML tests have newWay==true and a non-null scriptType
 			switch (scriptType) {
 			case DML:
@@ -1175,7 +1154,7 @@ public abstract class AutomatedTestBase
 				}
 				break;
 			case PYDML:
-				if (null != fullDMLScriptName) { 
+				if (null != fullDMLScriptName) {
 					args.add("-f");
 					args.add(fullDMLScriptName);
 				}
@@ -1213,16 +1192,16 @@ public abstract class AutomatedTestBase
 		//use optional config file since default under SystemML/DML
 		args.add("-config");
 		args.add(getCurConfigFile().getPath());
-		
+
 		if(TEST_GPU)
 			args.add("-gpu");
-		
+
 		// program-specific parameters
 		if ( newWay ) {
 			for (int i=0; i < programArgs.length; i++)
 				args.add(programArgs[i]);
 		}
-		
+
 
 		if (DEBUG) {
 			if ( !newWay )
@@ -1237,12 +1216,12 @@ public abstract class AutomatedTestBase
 				}
 			}
 		}
-		
+
 		try {
 			String [] dmlScriptArgs = args.toArray(new String[args.size()]);
 			System.out.println("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
 			DMLScript.main(dmlScriptArgs);
-		
+
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
 				fail("Limit of MR jobs is exceeded: expected: " + maxMRJobs + ", occurred: "
@@ -1265,20 +1244,20 @@ public abstract class AutomatedTestBase
 			}
 		}
 	}
-	
+
 	public void cleanupScratchSpace()
 	{
-		try 
+		try
 		{
 			//parse config file
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 
 			// delete the scratch_space and all contents
 			// (prevent side effect between tests)
-			String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);  
+			String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
 			MapReduceTool.deleteFileIfExistOnHDFS(dir);
-		} 
-		catch (Exception ex) 
+		}
+		catch (Exception ex)
 		{
 			//ex.printStackTrace();
 			return; //no effect on tests
@@ -1325,7 +1304,7 @@ public abstract class AutomatedTestBase
 	 * Compares the results of the computation with the expected ones with a
 	 * specified tolerance.
 	 * </p>
-	 * 
+	 *
 	 * @param epsilon
 	 *            tolerance
 	 */
@@ -1352,7 +1331,7 @@ public abstract class AutomatedTestBase
 	 * Compares the results of the computation with the expected ones with a
 	 * specified tolerance.
 	 * </p>
-	 * 
+	 *
 	 * @param epsilon
 	 *            tolerance
 	 */
@@ -1369,8 +1348,8 @@ public abstract class AutomatedTestBase
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Compare results of the computation with the expected results where rows may be permuted.
 	 * @param epsilon
@@ -1389,23 +1368,23 @@ public abstract class AutomatedTestBase
 			}
 		}
 	}
-	
+
 	/**
 	 * Checks that the number of map-reduce jobs that the current test case has
 	 * compiled is equal to the expected number. Generates a JUnit error message
 	 * if the number is out of line.
-	 * 
+	 *
 	 * @param expectedNumCompiled
 	 *            number of map-reduce jobs that the current test case is
 	 *            expected to compile
 	 */
 	protected void checkNumCompiledMRJobs(int expectedNumCompiled) {
-		
+
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			// Skip MapReduce-related checks when running in Spark mode.
 			return;
 		}
-		
+
 		assertEquals("Unexpected number of compiled MR jobs.",
 				expectedNumCompiled, Statistics.getNoOfCompiledMRJobs());
 	}
@@ -1415,27 +1394,56 @@ public abstract class AutomatedTestBase
 	 * executed (as opposed to compiling into the execution plan) is equal to
 	 * the expected number. Generates a JUnit error message if the number is out
 	 * of line.
-	 * 
+	 *
 	 * @param expectedNumExecuted
 	 *            number of map-reduce jobs that the current test case is
 	 *            expected to run
 	 */
 	protected void checkNumExecutedMRJobs(int expectedNumExecuted) {
-		
+
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			// Skip MapReduce-related checks when running in Spark mode.
 			return;
 		}
-		
+
 		assertEquals("Unexpected number of executed MR jobs.",
 				expectedNumExecuted, Statistics.getNoOfExecutedMRJobs());
+	}
+
+	/**
+	 * Checks that the number of Spark instructions that the current test case has
+	 * compiled is equal to the expected number. Generates a JUnit error message
+	 * if the number is out of line.
+	 *
+	 * @param expectedNumCompiled
+	 *            number of Spark instructions that the current test case is
+	 *            expected to compile
+	 */
+	protected void checkNumCompiledSparkInst(int expectedNumCompiled) {
+		assertEquals("Unexpected number of compiled Spark instructions.",
+				expectedNumCompiled, Statistics.getNoOfCompiledSPInst());
+	}
+
+	/**
+	 * Checks that the number of Spark instructions that the current test case has
+	 * executed (as opposed to compiling into the execution plan) is equal to
+	 * the expected number. Generates a JUnit error message if the number is out
+	 * of line.
+	 *
+	 * @param expectedNumExecuted
+	 *            number of Spark instructions that the current test case is
+	 *            expected to run
+	 */
+	protected void checkNumExecutedSparkInst(int expectedNumExecuted) {
+		assertEquals("Unexpected number of executed Spark instructions.",
+				expectedNumExecuted, Statistics.getNoOfExecutedSPInst());
 	}
 
 	/**
 	 * <p>
 	 * Checks the results of a computation against a number of characteristics.
 	 * </p>
-	 * 
+	 *
 	 * @param rows
 	 *            number of rows
 	 * @param cols
@@ -1466,7 +1474,7 @@ public abstract class AutomatedTestBase
 	public void tearDown() {
 		System.out.println("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
-		
+
 		assertTrue("expected String did not occur: " + expectedStdOut, iExpectedStdOutState == 0
 				|| iExpectedStdOutState == 2);
 		assertTrue("expected String did not occur (stderr): " + expectedStdErr, iExpectedStdErrState == 0
@@ -1476,9 +1484,9 @@ public abstract class AutomatedTestBase
 
 
 		if (!isOutAndExpectedDeletionDisabled()) {
-			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
+			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));
 			TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
-			
+
 			// The following cleanup code is disabled (see [SYSML-256]) until we can figure out
 			// what test cases are creating temporary directories at the root of the project.
 			//TestUtils.removeTemporaryFiles();
@@ -1503,7 +1511,7 @@ public abstract class AutomatedTestBase
 
 	/**
 	 * Enables detection of expected output of a line in standard output stream.
-	 * 
+	 *
 	 * @param expectedLine
 	 */
 	public void setExpectedStdOut(String expectedLine) {
@@ -1516,7 +1524,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * This class is used to compare the standard output stream against an
 	 * expected string.
-	 * 
+	 *
 	 */
 	class ExpectedOutputStream extends OutputStream {
 		private String line = "";
@@ -1548,7 +1556,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * This class is used to compare the standard error stream against an
 	 * expected string.
-	 * 
+	 *
 	 */
 	class ExpectedErrorStream extends OutputStream {
 		private String line = "";
@@ -1607,7 +1615,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Generates a matrix containing easy to debug values in its cells.
 	 * </p>
-	 * 
+	 *
 	 * @param rows
 	 * @param cols
 	 * @param bContainsZeros
@@ -1624,7 +1632,7 @@ public abstract class AutomatedTestBase
 	 * Generates a matrix containing easy to debug values in its cells. The
 	 * generated matrix contains zero values
 	 * </p>
-	 * 
+	 *
 	 * @param rows
 	 * @param cols
 	 * @return
@@ -1650,39 +1658,39 @@ public abstract class AutomatedTestBase
 			boolean isOutAndExpectedDeletionDisabled) {
 		this.isOutAndExpectedDeletionDisabled = isOutAndExpectedDeletionDisabled;
 	}
-	
+
 	protected String input(String input) {
 		return baseDirectory + INPUT_DIR + input;
 	}
-	
+
 	protected String inputDir() {
 		return baseDirectory + INPUT_DIR;
 	}
-	
+
 	protected String output(String output) {
 		return baseDirectory + OUTPUT_DIR + output;
 	}
-	
+
 	protected String outputDir() {
 		return baseDirectory + OUTPUT_DIR;
 	}
-	
+
 	protected String expected(String expected) {
 		return baseDirectory + EXPECTED_DIR + cacheDir + expected;
 	}
-	
+
 	protected String expectedDir() {
 		return baseDirectory + EXPECTED_DIR + cacheDir;
 	}
-	
+
 	protected String getScript() {
 		return sourceDirectory + selectedTest + "." + scriptType.lowerCase();
 	}
-	
+
 	protected String getRScript() {
 		return sourceDirectory + selectedTest + ".R";
 	}
-	
+
 	protected String getRCmd(String ... args) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Rscript ");
@@ -1693,21 +1701,21 @@ public abstract class AutomatedTestBase
 		}
 		return sb.toString();
 	}
-	
+
 	private boolean isTargetTestDirectory(String path) {
 		return (path != null && path.contains(getClass().getSimpleName()));
 	}
-	
+
 	private void setCacheDirectory(String directory) {
 		cacheDir = (directory != null) ? directory : "";
 		if (cacheDir.length() > 0 && !cacheDir.endsWith("/")) {
 			cacheDir += "/";
 		}
 	}
-	
+
 	private String getSourceDirectory(String testDirectory) {
 		String sourceDirectory = "";
-		
+
 		if (null != testDirectory)
 		{
 			if (testDirectory.endsWith("/"))
@@ -1716,37 +1724,37 @@ public abstract class AutomatedTestBase
 			}
 			sourceDirectory = testDirectory.substring(0, testDirectory.lastIndexOf("/") + "/".length());
 		}
-		
+
 		return sourceDirectory;
 	}
-	
+
 	/**
 	 * <p>
 	 * Adds a frame to the input path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param data
 	 *            two dimensional frame data
 	 * @param bIncludeR
 	 *            generates also the corresponding R frame data
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
+	 * @throws IOException
+	 * @throws DMLRuntimeException
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
-			throws DMLRuntimeException, IOException 
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi)
+			throws DMLRuntimeException, IOException
 	{
 		String completePath = baseDirectory + INPUT_DIR + name;
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
-		
+
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
+
 		TestUtils.writeTestFrame(completePath, data, schema, oi);
 		if (bIncludeR) {
 			TestUtils.writeTestFrame(completeRPath, data, schema, OutputInfo.CSVOutputInfo, true);
@@ -1759,18 +1767,18 @@ public abstract class AutomatedTestBase
 		return data;
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
-			throws DMLRuntimeException, IOException 
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi)
+			throws DMLRuntimeException, IOException
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
 	}
-	
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi) 
-			throws DMLRuntimeException, IOException 
+
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi)
+			throws DMLRuntimeException, IOException
 	{
 		writeInputFrame(name, data, bIncludeR, schema, oi);
-		
+
 		// write metadata file
 		try
 		{
@@ -1782,41 +1790,48 @@ public abstract class AutomatedTestBase
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-	
+
 		return data;
 	}
-	
+
 	/**
 	 * <p>
 	 * Adds a frame to the input path and writes it to a file.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            directory name
 	 * @param matrix
 	 *            two dimensional frame data
 	 * @param schema
 	 * @param oi
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
+	 * @throws IOException
+	 * @throws DMLRuntimeException
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi) 
-			throws DMLRuntimeException, IOException 
+	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi)
+			throws DMLRuntimeException, IOException
 	{
 		return writeInputFrame(name, data, false, schema, oi);
 	}
-	
+
 	protected boolean heavyHittersContainsSubString(String... str) {
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for( String s : str )
 				if(opcode.contains(s))
-				return true;
-		return false;		
+					return true;
+		return false;
+	}
+	
+	protected boolean heavyHittersContainsSubString(String str, int minCount) {
+		int count = 0;
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			count += opcode.contains(str) ? 1 : 0;
+		return (count >= minCount);
 	}
 
 	/**
 	 * Create a SystemML-preferred Spark Session.
-	 * 
+	 *
 	 * @param appName the application name
 	 * @param master the master value (ie, "local", etc)
 	 * @return Spark Session

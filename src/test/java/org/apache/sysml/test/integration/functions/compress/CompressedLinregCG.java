@@ -62,32 +62,26 @@ public class CompressedLinregCG extends AutomatedTestBase
 	}
 
 	@Test
-	public void testGDFOLinregCGDenseCP() {
-		runGDFOTest(TEST_NAME1, false, ExecType.CP);
+	public void testLinregCGDenseCP() {
+		runLinregCGTest(TEST_NAME1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testGDFOLinregCGSparseCP() {
-		runGDFOTest(TEST_NAME1, true, ExecType.CP);
+	public void testLinregCGSparseCP() {
+		runLinregCGTest(TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testGDFOLinregCGDenseSP() {
-		runGDFOTest(TEST_NAME1, false, ExecType.SPARK);
+	public void testLinregCGDenseSP() {
+		runLinregCGTest(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGDFOLinregCGSparseSP() {
-		runGDFOTest(TEST_NAME1, true, ExecType.SPARK);
+	public void testLinregCGSparseSP() {
+		runLinregCGTest(TEST_NAME1, true, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
-	private void runGDFOTest( String testname,boolean sparse, ExecType instType)
+	private void runLinregCGTest( String testname,boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;

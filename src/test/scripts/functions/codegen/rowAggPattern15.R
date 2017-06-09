@@ -30,6 +30,7 @@ X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
 Y1 = X - rowMaxs(X) 
 Y2 = exp(Y1)
 Y3 = Y2 / rowSums(Y2)
-R = Y3 * rowSums(Y3)
+Y4 = Y3 * rowSums(Y3)
+R = Y4 - Y3 * rowSums(Y4)
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

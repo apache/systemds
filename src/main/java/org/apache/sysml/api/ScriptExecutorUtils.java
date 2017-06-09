@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api;
 
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -41,14 +40,16 @@ public class ScriptExecutorUtils {
 	 * 
 	 * @param se
 	 *            script executor
+	 * @param statisticsMaxHeavyHitters
+	 *            maximum number of statistics to print
 	 * @throws DMLRuntimeException
 	 *             if exception occurs
 	 */
-	public static void executeRuntimeProgram(ScriptExecutor se) throws DMLRuntimeException {
+	public static void executeRuntimeProgram(ScriptExecutor se, int statisticsMaxHeavyHitters) throws DMLRuntimeException {
 		Program prog = se.getRuntimeProgram();
 		ExecutionContext ec = se.getExecutionContext();
 		DMLConfig config = se.getConfig();
-		executeRuntimeProgram(prog, ec, config);
+		executeRuntimeProgram(prog, ec, config, statisticsMaxHeavyHitters);
 	}
 
 	/**
@@ -62,10 +63,12 @@ public class ScriptExecutorUtils {
 	 *            execution context
 	 * @param dmlconf
 	 *            dml configuration
+	 * @param statisticsMaxHeavyHitters
+	 *            maximum number of statistics to print
 	 * @throws DMLRuntimeException
 	 *             if error occurs
 	 */
-	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf)
+	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters)
 			throws DMLRuntimeException {
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
@@ -91,6 +94,7 @@ public class ScriptExecutorUtils {
 			rtprog.execute(ec);
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
+				ec.getGPUContext().clearTemporaryMemory();
 				GPUContextPool.returnToPool(ec.getGPUContext());
 			}
 			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
@@ -99,11 +103,10 @@ public class ScriptExecutorUtils {
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 
-			MLContext ml = MLContext.getActiveMLContext();
-			if ((ml != null) && (ml.isStatistics())) {
-				int statisticsMaxHeavyHitters = ml.getStatisticsMaxHeavyHitters();
+			if(statisticsMaxHeavyHitters > 0)
 				System.out.println(Statistics.display(statisticsMaxHeavyHitters));
-			}
+			else
+				System.out.println(Statistics.display());
 		}
 	}
 

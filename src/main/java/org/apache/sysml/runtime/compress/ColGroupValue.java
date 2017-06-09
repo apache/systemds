@@ -128,6 +128,10 @@ public abstract class ColGroupValue extends ColGroup
 		return _values;
 	}
 	
+	public double getValue(int k, int col) {
+		return _values[k*getNumCols()+col];
+	}
+	
 	public MatrixBlock getValuesAsBlock() {
 		boolean containsZeros = (this instanceof ColGroupOffset) ?
 			((ColGroupOffset)this)._zeros : false;

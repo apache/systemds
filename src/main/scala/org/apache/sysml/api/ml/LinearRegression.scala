@@ -48,6 +48,7 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   def setRegParam(value: Double) = set(regParam, value)
   def setTol(value: Double) = set(tol, value)
   
+
   override def copy(extra: ParamMap): Estimator[LinearRegressionModel] = {
     val that = new LinearRegression(uid, sc, solver)
     copyValues(that, extra)
@@ -72,26 +73,38 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
     (script, "X", "y")
   }
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(baseFit(X_mb, y_mb, sc), sc)
+  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel =  {
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new LinearRegressionModel(this)
+  }
     
-  def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(baseFit(df, sc), sc)
+  def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = { 
+    mloutput = baseFit(df, sc)
+    new LinearRegressionModel(this)
+  }
   
 }
 
-class LinearRegressionModel(override val uid: String)(val mloutput: MLResults, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
+class LinearRegressionModel(override val uid: String)(estimator:LinearRegression, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with BaseSystemMLRegressorModel {
   override def copy(extra: ParamMap): LinearRegressionModel = {
-    val that = new LinearRegressionModel(uid)(mloutput, sc)
+    val that = new LinearRegressionModel(uid)(estimator, sc)
     copyValues(that, extra)
   }
   
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
-    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
+  def baseEstimator():BaseSystemMLEstimator = estimator
   
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "means")
+  def this(estimator:LinearRegression) =  {
+  	this("model")(estimator, estimator.sc)
+  }
   
-  def transform(X: MatrixBlock): MatrixBlock =  baseTransform(X, mloutput, sc, "means")
+  def getPredictionScript(isSingleNode:Boolean): (Script, String) =
+    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getMatrix("beta_out"), isSingleNode)
+  
+  def modelVariables():List[String] = List[String]("beta_out")
+  
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "means")
+  
+  def transform(X: MatrixBlock): MatrixBlock =  baseTransform(X, sc, "means")
   
 }

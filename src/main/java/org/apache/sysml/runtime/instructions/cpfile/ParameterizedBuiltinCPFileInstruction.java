@@ -267,7 +267,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			FileInputFormat.addInputPath(job, path); 
@@ -321,7 +321,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			
@@ -379,7 +379,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			
@@ -631,7 +631,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 
 			//prepare output
@@ -732,7 +732,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 	
 			//prepare output
@@ -883,7 +883,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 	
 			//prepare output

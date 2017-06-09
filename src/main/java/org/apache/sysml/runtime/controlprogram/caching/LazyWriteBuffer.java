@@ -60,9 +60,10 @@ public class LazyWriteBuffer
 		throws IOException
 	{	
 		//obtain basic meta data of cache block
-		long lSize = cb.getExactSerializedSize();  
-		boolean requiresWrite = (   lSize > _limit  //global buffer limit
-			|| !ByteBuffer.isValidCapacity(lSize, cb) ); //local buffer limit
+		long lSize = cb.isShallowSerialize() ?
+			cb.getInMemorySize() : cb.getExactSerializedSize();
+		boolean requiresWrite = (lSize > _limit        //global buffer limit
+			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
 	
 		//handle caching/eviction if it fits in writebuffer
 		if( !requiresWrite ) 

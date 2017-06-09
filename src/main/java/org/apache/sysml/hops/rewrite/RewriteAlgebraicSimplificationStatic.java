@@ -148,6 +148,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
+ 			hi = removeUnnecessaryAggregates(hi);                //e.g., sum(rowSums(X)) -> sum(X)
  			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
  			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
  			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
@@ -811,6 +812,35 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(hi, input);
 				
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
+			}
+		}
+		
+		return hi;
+	}
+	
+	private Hop removeUnnecessaryAggregates(Hop hi)
+	{
+		//sum(rowSums(X)) -> sum(X), sum(colSums(X)) -> sum(X)
+		//min(rowMins(X)) -> min(X), min(colMins(X)) -> min(X)
+		//max(rowMaxs(X)) -> max(X), max(colMaxs(X)) -> max(X)
+		//sum(rowSums(X^2)) -> sum(X), sum(colSums(X^2)) -> sum(X)
+		if( hi instanceof AggUnaryOp && hi.getInput().get(0) instanceof AggUnaryOp
+			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+			&& hi.getInput().get(0).getParent().size()==1 )
+		{
+			AggUnaryOp au1 = (AggUnaryOp) hi;
+			AggUnaryOp au2 = (AggUnaryOp) hi.getInput().get(0);
+			if( (au1.getOp()==AggOp.SUM && (au2.getOp()==AggOp.SUM || au2.getOp()==AggOp.SUM_SQ)) 
+				|| (au1.getOp()==AggOp.MIN && au2.getOp()==AggOp.MIN)
+				|| (au1.getOp()==AggOp.MAX && au2.getOp()==AggOp.MAX) )
+			{
+				Hop input = au2.getInput().get(0);
+				HopRewriteUtils.removeAllChildReferences(au2);
+				HopRewriteUtils.replaceChildReference(au1, au2, input);
+				if( au2.getOp() == AggOp.SUM_SQ )
+					au1.setOp(AggOp.SUM_SQ);
+				
+				LOG.debug("Applied removeUnnecessaryAggregates (line "+hi.getBeginLine()+").");
 			}
 		}
 		

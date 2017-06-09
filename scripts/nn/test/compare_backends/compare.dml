@@ -22,7 +22,10 @@
 X = read($1)
 Y = read($2)
 msg = ifdef($3, " ")
-eps = 1e-3
+eps = 1e-6
+# Normalize X and Y
+X = X / max(X)
+Y = Y / max(Y)
 num_mismatch = sum(abs(X - Y) > eps)
 if(num_mismatch > 0) {
 	print("---------------------------------------------------\nERROR: >>>>>>>>> The results don't match(num_mismatch:" + num_mismatch + "): " + msg + "\n---------------------------------------------------")

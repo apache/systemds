@@ -19,18 +19,20 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,6 +44,7 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -52,6 +55,29 @@ public class IOUtilFunctions
 
 	private static final char CSV_QUOTE_CHAR = '"';
 
+	public static FileSystem getFileSystem(String fname) throws IOException {
+		return getFileSystem(new Path(fname),
+			ConfigurationManager.getCachedJobConf());
+	}
+	
+	public static FileSystem getFileSystem(Path fname) throws IOException {
+		return getFileSystem(fname, 
+			ConfigurationManager.getCachedJobConf());
+	}
+	
+	public static FileSystem getFileSystem(Path fname, Configuration conf) throws IOException {
+		return FileSystem.get(fname.toUri(), conf);
+	}
+	
+	public static boolean isSameFileScheme(Path path1, Path path2) {
+		if( path1 == null || path2 == null || path1.toUri() == null || path2.toUri() == null)
+			return false;
+		String scheme1 = path1.toUri().getScheme();
+		String scheme2 = path2.toUri().getScheme();
+		return (scheme1 == null && scheme2 == null)
+			|| scheme1.equals(scheme2);
+	}
+	
 	public static void closeSilently( Closeable io ) {
 		try {
 			if( io != null )
@@ -315,7 +341,7 @@ public class IOUtilFunctions
 	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
 	 * 
 	 * @param value string value
-	 * @return string size for modified UTF-8 specifiecation
+	 * @return string size for modified UTF-8 specification
 	 */
 	public static int getUTFSize(String value) {
 		if( value == null )
@@ -333,7 +359,7 @@ public class IOUtilFunctions
 	public static InputStream toInputStream(String input) throws IOException {
 		if( input == null ) 
 			return null;
-		return new ByteArrayInputStream(input.getBytes("UTF-8"));
+		return new ReaderInputStream(new StringReader(input), "UTF-8");
 	}
 
 	public static String toString(InputStream input) throws IOException {

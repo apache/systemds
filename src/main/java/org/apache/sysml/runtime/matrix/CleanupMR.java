@@ -40,7 +40,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -110,21 +109,13 @@ public class CleanupMR
 	private static void writeCleanupTasksToFile(Path path, int numTasks)
 		throws DMLRuntimeException, IOException
 	{
-		BufferedWriter br = null;
-		try
-		{
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
-	        
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
 			for( int i=1; i<=numTasks; i++ )
 				br.write( String.valueOf("CLEANUP TASK "+i)+"\n" );
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException("Error writing cleanup tasks to taskfile "+path.toString(), ex);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(br);
 		}
 	}
 	

@@ -47,9 +47,9 @@ public class WriterTextCell extends MatrixWriter
 				
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 			
@@ -64,15 +64,9 @@ public class WriterTextCell extends MatrixWriter
 		throws IOException, DMLRuntimeException 
 	{
 		Path path = new Path( fname );
-		FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-		
-		FSDataOutputStream writer = null;
-		try{
-			writer = fs.create(path);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		try( FSDataOutputStream writer = fs.create(path) ){
 			writer.writeBytes("1 1 0");
-		}
-		finally{
-			IOUtilFunctions.closeSilently(writer);
 		}
 		
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
@@ -90,10 +84,8 @@ public class WriterTextCell extends MatrixWriter
 	{
 		boolean sparse = src.isInSparseFormat();
 		int clen = src.getNumColumns();
-		
-		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 
-		try
+		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) )
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
@@ -143,9 +135,6 @@ public class WriterTextCell extends MatrixWriter
 			if ( src.isEmptyBlock(false) && rl==0 ) {
 				br.write("1 1 0\n");
 			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(br);
 		}
 	}
 }

@@ -32,21 +32,19 @@ public class DoubleIdentifier extends ConstIdentifier
 	public DoubleIdentifier(double val, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = val;
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.DOUBLE);
-        this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setDimensions(0,0);
+        computeDataType();
+        setValueType(ValueType.DOUBLE);
+        setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
 	public DoubleIdentifier(DoubleIdentifier d, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = d.getValue();
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.DOUBLE);
-        this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setDimensions(0,0);
+        computeDataType();
+        setValueType(ValueType.DOUBLE);
+        setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

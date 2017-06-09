@@ -54,7 +54,7 @@ trait BaseDMLGenerator {
   def isNumber(x: String):Boolean = x forall Character.isDigit
   def transpose(x:String):String = "t(" + x + ")"
   def write(varName:String, fileName:String, format:String):String = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"
-  def read(varName:String, fileName:String, sep:String="/"):String =  varName + " = read(weights + \"" + sep + fileName + "\")\n"
+  def readWeight(varName:String, fileName:String, sep:String="/"):String =  varName + " = read(weights + \"" + sep + fileName + "\")\n"
   def asDMLString(str:String):String = "\"" + str + "\""
   def assign(dmlScript:StringBuilder, lhsVar:String, rhsVar:String):Unit = {
     dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("\n")
@@ -74,6 +74,9 @@ trait BaseDMLGenerator {
     dmlScript.append("\n")
   }
   def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:List[String]):Unit = {
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments, true)
+  }
+  def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:List[String], appendNewLine:Boolean):Unit = {
     if(returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
     if(returnVariables.length > 1) dmlScript.append("[")
     dmlScript.append(returnVariables(0))
@@ -96,10 +99,15 @@ trait BaseDMLGenerator {
   	    }
       }
     }
-    dmlScript.append(")\n")
+    dmlScript.append(")")
+    if(appendNewLine) 
+      dmlScript.append("\n")
+  }
+  def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, appendNewLine:Boolean, arguments:String*):Unit = {
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
   }
   def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:String*):Unit = {
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList)
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
   }
   def rightIndexing(dmlScript:StringBuilder, varName:String, rl:String, ru:String, cl:String, cu:String):StringBuilder = {
     dmlScript.append(varName).append("[")
@@ -124,6 +132,11 @@ trait BaseDMLGenerator {
   def nrow(m:String):String = "nrow(" + m + ")"
   def ncol(m:String):String = "ncol(" + m + ")"
   def customAssert(cond:Boolean, msg:String) = if(!cond) throw new DMLRuntimeException(msg)
+  def multiply(v1:String, v2:String):String = v1 + "*" + v2
+  def colSums(m:String):String = "colSums(" + m + ")"
+  def ifdef(cmdLineVar:String, defaultVal:String):String = "ifdef(" + cmdLineVar + ", " + defaultVal + ")"
+  def ifdef(cmdLineVar:String):String = ifdef(cmdLineVar, "\" \"")
+  def read(filePathVar:String, format:String):String = "read(" + filePathVar + ", format=\""+ format + "\")"
 }
 
 trait TabbedDMLGenerator extends BaseDMLGenerator {
@@ -221,14 +234,6 @@ trait VisualizeDMLGenerator extends TabbedDMLGenerator {
         + ");\n")
     dmlScript.append("viz_counter = viz_counter + viz_counter1\n")
   }
-  def appendVisualizationHeaders(dmlScript:StringBuilder, numTabs:Int): Unit = {
-    if(doVisualize) {
-	    tabDMLScript(dmlScript, numTabs).append("visualize = externalFunction(String layerName, String varType, String aggFn, Double x, Double y, String logDir) return (Double B) " +
-	        "implemented in (classname=\"org.apache.sysml.udf.lib.Caffe2DMLVisualizeWrapper\",exectype=\"mem\"); \n")
-	    tabDMLScript(dmlScript, numTabs).append("viz_counter = 0\n")
-	    System.out.println("Please use the following command for visualizing: tensorboard --logdir=" + tensorboardLogDir)
-	  }
-  }
   def visualizeLayer(net:CaffeNetwork, layerName:String, varType:String, aggFn:String): Unit = {
 	  // 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
 	  // 'sum', 'mean', 'var' or 'sd'
@@ -244,7 +249,7 @@ trait VisualizeDMLGenerator extends TabbedDMLGenerator {
 	      case "dweight" => l.dWeight
 	      case "dbias" => l.dBias
 	      case "output" => l.out
-	      case "doutput" => l.dX
+	      // case "doutput" => l.dX
 	      case _ => throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
 	    }
 	   }
@@ -308,4 +313,101 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
 	  tabDMLScript.append("}\n")
 	}
 	
+	def printClassificationReport():Unit = {
+    ifBlock("debug"){
+      assign(tabDMLScript, "num_rows_error_measures", min("10", ncol("yb")))
+      assign(tabDMLScript, "error_measures", matrix("0", "num_rows_error_measures", "5"))
+      forBlock("class_i", "1", "num_rows_error_measures") {
+        assign(tabDMLScript, "tp", "sum( (true_yb == predicted_yb) * (true_yb == class_i) )")
+        assign(tabDMLScript, "tp_plus_fp", "sum( (predicted_yb == class_i) )")
+        assign(tabDMLScript, "tp_plus_fn", "sum( (true_yb == class_i) )")
+        assign(tabDMLScript, "precision", "tp / tp_plus_fp")
+        assign(tabDMLScript, "recall", "tp / tp_plus_fn")
+        assign(tabDMLScript, "f1Score", "2*precision*recall / (precision+recall)")
+        assign(tabDMLScript, "error_measures[class_i,1]", "class_i")
+        assign(tabDMLScript, "error_measures[class_i,2]", "precision")
+        assign(tabDMLScript, "error_measures[class_i,3]", "recall")
+        assign(tabDMLScript, "error_measures[class_i,4]", "f1Score")
+        assign(tabDMLScript, "error_measures[class_i,5]", "tp_plus_fn")
+      }
+      val dmlTab = "\\t"
+      val header = "class    " + dmlTab + "precision" + dmlTab + "recall  " + dmlTab + "f1-score" + dmlTab + "num_true_labels\\n"
+      val errorMeasures = "toString(error_measures, decimal=7, sep=" + asDMLString(dmlTab) + ")"
+      tabDMLScript.append(print(dmlConcat(asDMLString(header), errorMeasures)))
+    }
+  }
+	
+	// Appends DML corresponding to source and externalFunction statements. 
+  def appendHeaders(net:CaffeNetwork, solver:CaffeSolver, isTraining:Boolean):Unit = {
+    // Append source statements for layers as well as solver
+	  source(net, solver, if(isTraining) Array[String]("l2_reg") else null)
+	  
+	  if(isTraining) {
+  	  // Append external built-in function headers:
+  	  // 1. visualize external built-in function header
+      if(doVisualize) {
+  	    tabDMLScript.append("visualize = externalFunction(String layerName, String varType, String aggFn, Double x, Double y, String logDir) return (Double B) " +
+  	        "implemented in (classname=\"org.apache.sysml.udf.lib.Caffe2DMLVisualizeWrapper\",exectype=\"mem\"); \n")
+  	    tabDMLScript.append("viz_counter = 0\n")
+  	    System.out.println("Please use the following command for visualizing: tensorboard --logdir=" + tensorboardLogDir)
+  	  }
+  	  // 2. update_nesterov external built-in function header
+  	  if(Caffe2DML.USE_NESTEROV_UDF) {
+  	    tabDMLScript.append("update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v, double lambda) return (matrix[double] X, matrix[double] v) implemented in (classname=\"org.apache.sysml.udf.lib.SGDNesterovUpdate\",exectype=\"mem\");  \n")
+  	  }
+	  }
+  }
+  
+  def readMatrix(varName:String, cmdLineVar:String):Unit = {
+    val pathVar = varName + "_path"
+    assign(tabDMLScript, pathVar, ifdef(cmdLineVar))
+    // Uncomment the following lines if we want to the user to pass the format
+    // val formatVar = varName + "_fmt"
+    // assign(tabDMLScript, formatVar, ifdef(cmdLineVar + "_fmt", "\"csv\""))
+    // assign(tabDMLScript, varName, "read(" + pathVar + ", format=" + formatVar + ")")
+    assign(tabDMLScript, varName, "read(" + pathVar + ")")
+  }
+  
+  def readInputData(net:CaffeNetwork, isTraining:Boolean):Unit = {
+    // Read and convert to one-hot encoding
+    readMatrix("X_full", "$X")
+	  if(isTraining) {
+	    readMatrix("y_full", "$y")
+  	  tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(y_full)\n")
+  	  tabDMLScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
+	    tabDMLScript.append("y_full = table(seq(1," + Caffe2DML.numImages + ",1), y_full, " + Caffe2DML.numImages + ", " + Utils.numClasses(net) + ")\n")
+	  }
+	  else {
+	    tabDMLScript.append(Caffe2DML.numImages + " = nrow(X_full)\n")
+	  }
+  }
+  
+  def initWeights(net:CaffeNetwork, solver:CaffeSolver, readWeights:Boolean): Unit = {
+    initWeights(net, solver, readWeights, new HashSet[String]())
+  }
+  
+  def initWeights(net:CaffeNetwork, solver:CaffeSolver, readWeights:Boolean, layersToIgnore:HashSet[String]): Unit = {
+    tabDMLScript.append("weights = ifdef($weights, \" \")\n")
+	  // Initialize the layers and solvers
+	  tabDMLScript.append("# Initialize the layers and solvers\n")
+	  net.getLayers.map(layer => net.getCaffeLayer(layer).init(tabDMLScript))
+	  if(readWeights) {
+		  // Loading existing weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias
+		  tabDMLScript.append("# Load the weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias\n")
+		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(readWeight(l.weight, l.param.getName + "_weight.mtx")))
+		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(readWeight(l.bias, l.param.getName + "_bias.mtx")))
+	  }
+	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
+  }
+  
+  def getLossLayers(net:CaffeNetwork):List[IsLossLayer] = {
+    val lossLayers = net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[IsLossLayer]).map(layer => net.getCaffeLayer(layer).asInstanceOf[IsLossLayer])
+	  if(lossLayers.length != 1) 
+	    throw new DMLRuntimeException("Expected exactly one loss layer, but found " + lossLayers.length + ":" + net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[IsLossLayer]))
+	  lossLayers
+  }
+  
+  def updateMeanVarianceForBatchNorm(net:CaffeNetwork, value:Boolean):Unit = {
+    net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(net.getCaffeLayer(_).asInstanceOf[BatchNorm].update_mean_var = value)
+  }
 }

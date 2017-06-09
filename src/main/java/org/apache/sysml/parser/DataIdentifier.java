@@ -22,17 +22,13 @@ package org.apache.sysml.parser;
 
 public class DataIdentifier extends Identifier 
 {
-	
-	protected String 	_name;
-	protected String 	_valueTypeString;	
-	protected String 	_defaultValue;
+	protected String _name;
+	protected String _valueTypeString;	
 	
 	public DataIdentifier(DataIdentifier passed){
 		setProperties(passed);
-		_kind = Kind.Data;
 		_name = passed.getName();
 		_valueTypeString = passed.getValueType().toString();	
-		_defaultValue = passed.getDefaultValue();
 		
 		// set location information
 		setFilename(passed.getFilename());
@@ -44,7 +40,7 @@ public class DataIdentifier extends Identifier
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		DataIdentifier newId = new DataIdentifier(this);
-		String newIdName = prefix + this._name;
+		String newIdName = prefix + _name;
 		newId.setName(newIdName);
 				
 		return newId;
@@ -53,23 +49,10 @@ public class DataIdentifier extends Identifier
 	public DataIdentifier(String name){
 		super();
 		_name = name;
-		_kind = Kind.Data;
-		_defaultValue = null;
-
 	}
 	
-	/*
-	public DataIdentifier(String name, int line, int col){
-		super();
-		_name = name;
-		_kind = Kind.Data;
-		_defaultValue = null;	
-	}
-	*/
 	public DataIdentifier(){
 		_name = null;
-		_kind = null;
-		_defaultValue = null;
 	}
 
 	public String getName(){
@@ -77,12 +60,6 @@ public class DataIdentifier extends Identifier
 	}
 	public void setName(String name){
 		_name = name;
-	}
-	public String getDefaultValue(){
-		return _defaultValue;
-	}
-	public void setDefaultValue(String val){
-		_defaultValue = val;
 	}
 	
 	@Override

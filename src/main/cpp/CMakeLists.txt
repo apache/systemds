@@ -23,26 +23,20 @@ project (systemml)
 # All custom find modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
-# OpenMP is required
-find_package(OpenMP REQUIRED)
-
 # Options to Use OpenBLAS or Intel MKL
 option(USE_OPEN_BLAS "Whether to use OpenBLAS (Defaults to compiling with Intel MKL, if both set, MKL has priority)" OFF)
 option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel MKL)" ON)
 
 # Build a shared libraray
 add_library(systemml SHARED libmatrixdnn.cpp  libmatrixmult.cpp  systemml.cpp)
-add_library(preload SHARED preload/preload_systemml.cpp)
 
 set(MATH_LIBRARIES "")
 
 # sets the installation path to src/main/cpp/lib
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
-install(TARGETS systemml preload LIBRARY DESTINATION lib)
+install(TARGETS systemml LIBRARY DESTINATION lib)
 
 set(CMAKE_BUILD_TYPE Release)
-
-set_target_properties(preload PROPERTIES OUTPUT_NAME "preload_systemml-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
 if (USE_OPEN_BLAS)
   find_package(OpenBLAS REQUIRED)
@@ -73,4 +67,10 @@ include_directories(${CMAKE_BINARY_DIR})
 
 
 # Setting CXX compiler flags
-set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
+if (USE_OPEN_BLAS)
+  # OpenMP is required
+  find_package(OpenMP REQUIRED)
+  set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
+elseif(USE_INTEL_MKL)
+  set_target_properties(systemml PROPERTIES LINK_FLAGS ${MATH_LIBRARIES}")
+endif()

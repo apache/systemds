@@ -38,7 +38,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -73,7 +72,6 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
-import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
@@ -173,7 +171,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			else if(   opcode.equalsIgnoreCase("rexpand") 
 					|| opcode.equalsIgnoreCase("replace")
-					|| opcode.equalsIgnoreCase("transform")
 					|| opcode.equalsIgnoreCase("transformapply")
 					|| opcode.equalsIgnoreCase("transformdecode")) 
 			{
@@ -431,17 +428,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//update output statistics (required for correctness)
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)brlen, (int)bclen, -1);
-		}
-		else if ( opcode.equalsIgnoreCase("transform") ) 
-		{
-			// perform data transform on Spark
-			try {
-				DataTransform.spDataTransform( this, 
-						new FrameObject[] { sec.getFrameObject(params.get("target")) }, 
-						new MatrixObject[] { sec.getMatrixObject(output.getName()) }, ec);
-			} catch (Exception e) {
-				throw new DMLRuntimeException(e);
-			}
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") ) 
 		{

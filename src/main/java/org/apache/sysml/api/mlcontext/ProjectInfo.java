@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,7 +40,7 @@ public class ProjectInfo {
 
 	/**
 	 * Return a ProjectInfo singleton instance.
-	 * 
+	 *
 	 * @return the ProjectInfo singleton instance
 	 */
 	public static ProjectInfo getProjectInfo() {
@@ -87,7 +87,7 @@ public class ProjectInfo {
 
 	/**
 	 * Obtain a manifest property value based on the key.
-	 * 
+	 *
 	 * @param key
 	 *            the property key
 	 * @return the property value
@@ -98,7 +98,7 @@ public class ProjectInfo {
 
 	/**
 	 * Obtain the project version from the manifest.
-	 * 
+	 *
 	 * @return the project version
 	 */
 	public String version() {
@@ -107,7 +107,7 @@ public class ProjectInfo {
 
 	/**
 	 * Object the artifact build time from the manifest.
-	 * 
+	 *
 	 * @return the artifact build time
 	 */
 	public String buildTime() {
@@ -116,7 +116,7 @@ public class ProjectInfo {
 
 	/**
 	 * Obtain the minimum recommended Spark version from the manifest.
-	 * 
+	 *
 	 * @return the minimum recommended Spark version
 	 */
 	public String minimumRecommendedSparkVersion() {
@@ -125,7 +125,7 @@ public class ProjectInfo {
 
 	/**
 	 * Obtain all the properties from the manifest as a sorted map.
-	 * 
+	 *
 	 * @return the manifest properties as a sorted map
 	 */
 	public SortedMap<String, String> properties() {

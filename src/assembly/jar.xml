@@ -41,14 +41,6 @@
 			</includes>
 			<outputDirectory>./META-INF</outputDirectory>
 		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>DISCLAIMER</include>
-			</includes>
-			<outputDirectory>./META-INF</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<dependencySets>

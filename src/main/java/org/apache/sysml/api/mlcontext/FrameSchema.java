@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,7 +39,7 @@ public class FrameSchema {
 	/**
 	 * Constructor that specifies the schema as a list of {@code ValueType}
 	 * values.
-	 * 
+	 *
 	 * @param schema
 	 *            the frame schema
 	 */
@@ -49,7 +49,7 @@ public class FrameSchema {
 
 	/**
 	 * Constructor that specifies the schema as a comma-separated string.
-	 * 
+	 *
 	 * @param schema
 	 *            the frame schema as a string
 	 */
@@ -59,7 +59,7 @@ public class FrameSchema {
 
 	/**
 	 * Obtain the frame schema
-	 * 
+	 *
 	 * @return the frame schema as a list of {@code ValueType} values
 	 */
 	public List<ValueType> getSchema() {
@@ -68,7 +68,7 @@ public class FrameSchema {
 
 	/**
 	 * Set the frame schema
-	 * 
+	 *
 	 * @param schema
 	 *            the frame schema
 	 */
@@ -79,7 +79,7 @@ public class FrameSchema {
 	/**
 	 * Set the frame schema, specifying the frame schema as a comma-separated
 	 * string
-	 * 
+	 *
 	 * @param schema
 	 *            the frame schema as a string
 	 */
@@ -89,7 +89,7 @@ public class FrameSchema {
 
 	/**
 	 * Convert a schema string to a list of {@code ValueType} values
-	 * 
+	 *
 	 * @param schemaString
 	 *            the frame schema as a string
 	 * @return the frame schema as a list of {@code ValueType} values
@@ -108,7 +108,7 @@ public class FrameSchema {
 
 	/**
 	 * Obtain the schema as a comma-separated string
-	 * 
+	 *
 	 * @return the frame schema as a string
 	 */
 	public String getSchemaAsString() {

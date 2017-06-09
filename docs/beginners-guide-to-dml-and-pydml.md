@@ -884,5 +884,5 @@ for (i in 0:numRowsToPrint-1):
 
 The [Language Reference](dml-language-reference.html) contains highly detailed information regarding DML.
 
-In addition, many excellent examples can be found in the [`scripts`](https://github.com/apache/incubator-systemml/tree/master/scripts) directory.
+In addition, many excellent examples can be found in the [`scripts`](https://github.com/apache/systemml/tree/master/scripts) directory.
 

@@ -271,6 +271,9 @@ public class ExecutionContext {
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject(getGPUContext()) == null ) {
 			GPUObject newGObj = getGPUContext().createGPUObject(mo);
+			// The lock is added here for an output block
+			// so that any block currently in use is not deallocated by eviction on the GPU
+			newGObj.addLock();
 			mo.setGPUObject(getGPUContext(), newGObj);
 		}
 		return mo;

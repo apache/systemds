@@ -38,6 +38,11 @@ public class BitmapEncoder
 	/** Size of the blocks used in a blocked bitmap representation. */
 	public static final int BITMAP_BLOCK_SZ = 65536;
 	
+	public static int getAlignedBlocksize(int blklen) {
+		return blklen + ((blklen%BITMAP_BLOCK_SZ != 0) ? 
+			BITMAP_BLOCK_SZ-blklen%BITMAP_BLOCK_SZ : 0);
+	}
+	
 	/**
 	 * Generate uncompressed bitmaps for a set of columns in an uncompressed
 	 * matrix block.
@@ -90,9 +95,6 @@ public class BitmapEncoder
 
 	/**
 	 * Encodes the bitmap as a series of run lengths and offsets.
-	 * <p>
-	 * <b>NOTE: This method must be kept in sync with {@link BitmapDecoderRLE}
-	 * !</b>
 	 * 
 	 * @param offsets  uncompressed offset list
 	 * @param len  logical length of the given offset list

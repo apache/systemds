@@ -54,14 +54,12 @@ import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.OutputParameters;
 import org.apache.sysml.lops.OutputParameters.Format;
 import org.apache.sysml.lops.PMMJ;
-import org.apache.sysml.lops.ParameterizedBuiltin;
 import org.apache.sysml.lops.PickByCount;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Unary;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -2374,50 +2372,6 @@ public class Dag<N extends Lop>
 				
 				out.addLastInstruction(currInstr);
 			}
-			else if(node instanceof ParameterizedBuiltin 
-					&& ((ParameterizedBuiltin)node).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM) {
-				
-				ParameterizedBuiltin pbi = (ParameterizedBuiltin)node;
-				Lop input = pbi.getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
-				if(input.getDataType()== DataType.FRAME) {
-					
-					// Output of transform is in CSV format, which gets subsequently reblocked 
-					// TODO: change it to output binaryblock
-					
-					Data dataInput = (Data) input;
-					oparams.setFile_name(getNextUniqueFilename());
-					oparams.setLabel(getNextUniqueVarname(DataType.MATRIX));
-
-					// generate an instruction that creates a symbol table entry for the new variable in CSV format
-					Data delimLop = (Data) dataInput.getNamedInputLop(
-							DataExpression.DELIM_DELIMITER, DataExpression.DEFAULT_DELIM_DELIMITER);
-					
-					Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-					        oparams.getLabel(), oparams.getFile_name(), true, 
-					        DataType.MATRIX, OutputInfo.outputInfoToString(OutputInfo.CSVOutputInfo),
-							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz()), oparams.getUpdateType(), 
-							false, delimLop.getStringValue(), true
-						);
-					
-					createvarInst.setLocation(node);
-					
-					out.addPreInstruction(createvarInst);
-
-					// temp file as well as the variable has to be deleted at the end
-					Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
-					
-					currInstr.setLocation(node);
-					
-					out.addLastInstruction(currInstr);
-
-					// finally, add the generated filename and variable name to the list of outputs
-					out.setFileName(oparams.getFile_name());
-					out.setVarName(oparams.getLabel());
-				}
-				else {
-					throw new LopsException("Input to transform() has an invalid type: " + input.getDataType() + ", it must be FRAME.");
-				}
-			}
 			else if(!(node instanceof FunctionCallCP)) //general case
 			{
 				// generate temporary filename and a variable name to hold the
@@ -2913,7 +2867,7 @@ public class Dag<N extends Lop>
 		 */
 		
 		// 
-		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN && jt != JobType.TRANSFORM) {
+		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN ) {
 			for (int i=0; i < inputInfos.size(); i++)
 				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
 					cellModeOverride = true;
@@ -3129,9 +3083,7 @@ public class Dag<N extends Lop>
 		}
 
 		if (node.getExecLocation() == ExecLocation.Data ) {
-			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV 
-					&& !(node.getInputs().get(0) instanceof ParameterizedBuiltin 
-							&& ((ParameterizedBuiltin)node.getInputs().get(0)).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM)) {
+			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV ) {
 				// Generate write instruction, which goes into CSV_WRITE Job
 				int output_index = start_index[0];
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
@@ -3171,12 +3123,6 @@ public class Dag<N extends Lop>
 				break;
 				
 			case ParameterizedBuiltin:
-				if( ((ParameterizedBuiltin)node).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
-					shuffleInstructions.add(node.getInstructions(output_index));
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						MRJobLineNumbers.add(node._beginLine);
-					}
-				}
 				break;
 				
 			/* Lop types that take two inputs */

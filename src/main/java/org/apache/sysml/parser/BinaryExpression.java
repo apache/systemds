@@ -24,15 +24,11 @@ import java.util.HashMap;
 
 public class BinaryExpression extends Expression 
 {
-	
 	private Expression _left;
 	private Expression _right;
 	private BinaryOp _opcode;
-
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{
-		
-		
 		BinaryExpression newExpr = new BinaryExpression(this._opcode,
 				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
@@ -41,7 +37,6 @@ public class BinaryExpression extends Expression
 	}
 	
 	public BinaryExpression(BinaryOp bop) {
-		_kind = Kind.BinaryOp;
 		_opcode = bop;
 		
 		setFilename("MAIN SCRIPT");
@@ -52,7 +47,6 @@ public class BinaryExpression extends Expression
 	}
 	
 	public BinaryExpression(BinaryOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn) {
-		_kind = Kind.BinaryOp;
 		_opcode = bop;
 		
 		setFilename(filename);

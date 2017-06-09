@@ -67,6 +67,15 @@ public class CPlanMemoTable
 			.filter(p -> p.type==type).findAny().isPresent();
 	}
 	
+	public int countEntries(long hopID) {
+		return get(hopID).size();
+	}
+	
+	public int countEntries(long hopID, TemplateType type) {
+		return (int) get(hopID).stream()
+			.filter(p -> p.type==type).count();
+	} 
+	
 	public boolean containsTopLevel(long hopID) {
 		return !_plansBlacklist.contains(hopID)
 			&& getBest(hopID) != null;
@@ -104,7 +113,7 @@ public class CPlanMemoTable
 	
 	public void remove(Hop hop, HashSet<MemoTableEntry> blackList) {
 		_plans.put(hop.getHopID(), _plans.get(hop.getHopID()).stream()
-			.filter(p -> !blackList.contains(p)).collect(Collectors.toList()));	
+			.filter(p -> !blackList.contains(p)).collect(Collectors.toList()));
 	}
 	
 	public void setDistinct(long hopID, List<MemoTableEntry> plans) {
@@ -185,6 +194,11 @@ public class CPlanMemoTable
 	
 	public List<MemoTableEntry> get(long hopID) {
 		return _plans.get(hopID);
+	}
+	
+	public List<MemoTableEntry> get(long hopID, TemplateType type) {
+		return _plans.get(hopID).stream()
+			.filter(p -> p.type==type).collect(Collectors.toList());
 	}
 	
 	public List<MemoTableEntry> getDistinct(long hopID) {
@@ -280,6 +294,10 @@ public class CPlanMemoTable
 			return ((input1 >= 0) ? 1 : 0)
 				+  ((input2 >= 0) ? 1 : 0)
 				+  ((input3 >= 0) ? 1 : 0);
+		}
+		public int getPlanRefIndex() {
+			return (input1>=0) ? 0 : (input2>=0) ? 
+				1 : (input3>=0) ? 2 : -1;
 		}
 		public long input(int index) {
 			return (index==0) ? input1 : (index==1) ? input2 : input3;

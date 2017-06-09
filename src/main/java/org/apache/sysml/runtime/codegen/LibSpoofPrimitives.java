@@ -48,10 +48,14 @@ public class LibSpoofPrimitives
 	// forwarded calls to LibMatrixMult
 	
 	public static double dotProduct(double[] a, double[] b, int ai, int bi, int len) {
+		if( a == null || b == null )
+			return 0;
 		return LibMatrixMult.dotProduct(a, b, ai, bi, len);
 	}
 	
 	public static double dotProduct(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		if( a == null || b == null )
+			return 0;
 		return LibMatrixMult.dotProduct(a, b, aix, ai, bi, len);
 	}
 	
@@ -63,15 +67,33 @@ public class LibSpoofPrimitives
 		LibMatrixMult.vectMultiplyAdd(bval, a, c, bix, bi, ci, len);
 	}
 	
+	public static void vectMultAdd(double[] a, double[] b, double[] c, int bi, int ci, int len) {
+		double[] tmp = vectMultWrite(a, b, 0, bi, len);
+		LibMatrixMult.vectAdd(tmp, c, 0, ci, len);
+	}
+	
 	public static double[] vectMultWrite(double[] a, double bval, int bi, int len) {
 		double[] c = allocVector(len, false);
 		LibMatrixMult.vectMultiplyWrite(bval, a, c, bi, 0, len);
 		return c;
 	}
 	
+	public static double[] vectMultWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		LibMatrixMult.vectMultiplyWrite(a, b, c, ai, bi, 0, len);
+		return c;
+	}
+	
 	public static double[] vectMultWrite(double[] a, double bval, int[] bix, int bi, int len) {
 		double[] c = allocVector(len, true);
 		LibMatrixMult.vectMultiplyAdd(bval, a, c, bix, bi, 0, len);
+		return c;
+	}
+	
+	public static double[] vectMultWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = a[j] * b[bi+aix[j]];
 		return c;
 	}
 	
@@ -168,11 +190,25 @@ public class LibSpoofPrimitives
 			c[j] = a[ai] / bval;
 		return c;
 	}
+	
+	public static double[] vectDivWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = a[ai] / b[bi];
+		return c;
+	}
 
 	public static double[] vectDivWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = a[j] / bval;
+		return c;
+	}
+	
+	public static double[] vectDivWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = a[j] / b[bi+aix[j]];
 		return c;
 	}
 	
@@ -195,10 +231,24 @@ public class LibSpoofPrimitives
 		return c;
 	}
 	
+	public static double[] vectMinusWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = a[ai] - b[bi];
+		return c;
+	}
+	
 	public static double[] vectMinusWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = a[j] - bval;
+		return c;
+	}
+	
+	public static double[] vectMinusWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = a[j] - b[bi+aix[j]];
 		return c;
 	}
 	
@@ -220,11 +270,25 @@ public class LibSpoofPrimitives
 			c[j] = a[ai] + bval;
 		return c;
 	}
+	
+	public static double[] vectPlusWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = a[ai] + b[bi];
+		return c;
+	}
 
 	public static double[] vectPlusWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = a[j] + bval;
+		return c;
+	}
+	
+	public static double[] vectPlusWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = a[j] + b[bi+aix[j]];
 		return c;
 	}
 	
@@ -244,6 +308,13 @@ public class LibSpoofPrimitives
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
 			c[j] = Math.pow(a[ai], bval);
+		return c;
+	}
+	
+	public static double[] vectPowWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = Math.pow(a[ai], b[bi]);
 		return c;
 	}
 
@@ -272,11 +343,25 @@ public class LibSpoofPrimitives
 			c[j] = Math.min(a[ai], bval);
 		return c;
 	}
+	
+	public static double[] vectMinWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = Math.min(a[ai], b[bi]);
+		return c;
+	}
 
 	public static double[] vectMinWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = Math.min(a[j], bval);
+		return c;
+	}
+	
+	public static double[] vectMinWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = Math.min(a[j], b[bi+aix[j]]);
 		return c;
 	}
 	
@@ -298,11 +383,25 @@ public class LibSpoofPrimitives
 			c[j] = Math.max(a[ai], bval);
 		return c;
 	}
+	
+	public static double[] vectMaxWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = Math.max(a[ai], b[bi]);
+		return c;
+	}
 
 	public static double[] vectMaxWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = Math.max(a[j], bval);
+		return c;
+	}
+	
+	public static double[] vectMaxWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = Math.max(a[j], b[bi+aix[j]]);
 		return c;
 	}
 
@@ -584,13 +683,27 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] == bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectEqualWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] == b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectEqualWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] == bval) ? 1 : 0;
 		return c;
-	}	
+	}
+	
+	public static double[] vectEqualWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] == b[bi+aix[j]]) ? 1 : 0;
+		return c;
+	}
 	
 	//custom vector not equal
 	
@@ -610,11 +723,25 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] != bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectNotequalWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] != b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectNotequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] != bval) ? 1 : 0;
+		return c;
+	}
+	
+	public static double[] vectNotequalWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] != b[bi+aix[j]]) ? 1 : 0;
 		return c;
 	}
 	
@@ -636,11 +763,25 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] < bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectLessWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] < b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectLessWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] < bval) ? 1 : 0;
+		return c;
+	}
+	
+	public static double[] vectLessWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] < b[bi+aix[j]]) ? 1 : 0;
 		return c;
 	}
 	
@@ -662,11 +803,25 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] <= bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectLessequalWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] <= b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectLessequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] <= bval) ? 1 : 0;
+		return c;
+	}
+	
+	public static double[] vectLessequalWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] <= b[bi+aix[j]]) ? 1 : 0;
 		return c;
 	}
 
@@ -688,13 +843,27 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] > bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectGreaterWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] > b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectGreaterWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] > bval) ? 1 : 0;
 		return c;
-	}	
+	}
+	
+	public static double[] vectGreaterWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] > b[bi+aix[j]]) ? 1 : 0;
+		return c;
+	}
 	
 	//custom vector greater equal
 	
@@ -714,11 +883,25 @@ public class LibSpoofPrimitives
 			c[j] = (a[ai] >= bval) ? 1 : 0;
 		return c;
 	}
+	
+	public static double[] vectGreaterequalWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++, bi++)
+			c[j] = (a[ai] >= b[bi]) ? 1 : 0;
+		return c;
+	}
 
 	public static double[] vectGreaterequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = (a[j] >= bval) ? 1 : 0;
+		return c;
+	}
+	
+	public static double[] vectGreaterequalWrite(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = (a[j] >= b[bi+aix[j]]) ? 1 : 0;
 		return c;
 	}
 	

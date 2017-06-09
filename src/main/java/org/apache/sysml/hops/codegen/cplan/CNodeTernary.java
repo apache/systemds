@@ -55,8 +55,8 @@ public class CNodeTernary extends CNode
 					
 				case LOOKUP_RC1:
 					return sparse ?
-							"    double %TMP% = getValue(%IN1v%, rowIndex*%IN2%+%IN3%-1);\n" :	
-							"    double %TMP% = getValue(%IN1%, rowIndex*%IN2%+%IN3%-1);\n";	
+							"    double %TMP% = getValue(%IN1v%, %IN2%, rowIndex, %IN3%-1);\n" :	
+							"    double %TMP% = getValue(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";	
 					
 				default: 
 					throw new RuntimeException("Invalid ternary type: "+this.toString());

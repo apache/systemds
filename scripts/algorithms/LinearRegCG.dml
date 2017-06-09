@@ -59,11 +59,11 @@
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 # STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
 # DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
-# PLAIN_R2              Plain R^2 of residual with bias included vs. total average
+# R2                    R^2 of residual with bias included vs. total average
 # ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
-# PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
+# R2_NOBIAS             R^2 of residual with bias subtracted vs. total average
 # ADJUSTED_R2_NOBIAS    Adjusted R^2 of residual with bias subtracted vs. total average
-# PLAIN_R2_VS_0         * Plain R^2 of residual with bias included vs. zero constant
+# R2_VS_0               * R^2 of residual with bias included vs. zero constant
 # ADJUSTED_R2_VS_0      * Adjusted R^2 of residual with bias included vs. zero constant
 # -------------------------------------------------------------------------------------
 # * The last two statistics are only printed if there is no intercept (icpt=0)
@@ -223,7 +223,7 @@ avg_res = sum (y_residual) / n;
 ss_res = sum (y_residual ^ 2);
 ss_avg_res = ss_res - n * avg_res ^ 2;
 
-plain_R2 = 1 - ss_res / ss_avg_tot;
+R2 = 1 - ss_res / ss_avg_tot;
 if (n > m_ext) {
     dispersion  = ss_res / (n - m_ext);
     adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
@@ -232,7 +232,7 @@ if (n > m_ext) {
     adjusted_R2 = 0.0 / 0.0;
 }
 
-plain_R2_nobias = 1 - ss_avg_res / ss_avg_tot;
+R2_nobias = 1 - ss_avg_res / ss_avg_tot;
 deg_freedom = n - m - 1;
 if (deg_freedom > 0) {
     var_res = ss_avg_res / deg_freedom;
@@ -243,7 +243,7 @@ if (deg_freedom > 0) {
     print ("Warning: zero or negative number of degrees of freedom.");
 }
 
-plain_R2_vs_0 = 1 - ss_res / ss_tot;
+R2_vs_0 = 1 - ss_res / ss_tot;
 if (n > m) {
     adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
 } else {
@@ -255,12 +255,12 @@ str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Dev
 str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
 str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
 str = append (str, "DISPERSION," + dispersion);                  #  GLM-style dispersion, i.e. residual sum of squares / # d.f.
-str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
+str = append (str, "R2," + R2);                                  #  R^2 of residual with bias included vs. total average
 str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
-str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average
+str = append (str, "R2_NOBIAS," + R2_nobias);                    #  R^2 of residual with bias subtracted vs. total average
 str = append (str, "ADJUSTED_R2_NOBIAS," + adjusted_R2_nobias);  #  Adjusted R^2 of residual with bias subtracted vs. total average
 if (intercept_status == 0) {
-    str = append (str, "PLAIN_R2_VS_0," + plain_R2_vs_0);        #  Plain R^2 of residual with bias included vs. zero constant
+    str = append (str, "R2_VS_0," + R2_vs_0);                    #  R^2 of residual with bias included vs. zero constant
     str = append (str, "ADJUSTED_R2_VS_0," + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
 }
 

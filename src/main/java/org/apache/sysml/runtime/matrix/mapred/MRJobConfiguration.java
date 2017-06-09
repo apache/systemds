@@ -70,6 +70,7 @@ import org.apache.sysml.runtime.instructions.mr.ReblockInstruction;
 import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.io.BinaryBlockSerialization;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.AddDummyWeightConverter;
 import org.apache.sysml.runtime.matrix.data.BinaryBlockToBinaryCellConverter;
@@ -230,33 +231,6 @@ public class MRJobConfiguration
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
 
-	public static final String TF_NUM_COLS 		= "transform.num.columns";
-	public static final String TF_HAS_HEADER 	= "transform.has.header";
-	public static final String TF_DELIM 		= "transform.field.delimiter";
-	public static final String TF_NA_STRINGS 	= "transform.na.strings";
-	public static final String TF_HEADER		= "transform.header.line";
-	public static final String TF_SPEC 	        = "transform.specification";
-	public static final String TF_TMP_LOC    	= "transform.temp.location";
-	public static final String TF_TRANSFORM     = "transform.omit.na.rows";
-	
-	public static final String TF_SMALLEST_FILE= "transform.smallest.file";
-	public static final String TF_OFFSETS_FILE = "transform.offsets.file";
-	public static final String TF_TXMTD_PATH   = "transform.txmtd.path";
-	
-	/*public static enum DataTransformJobProperty 
-	{
-		RCD_NUM_COLS("recode.num.columns");
-		
-		private final String name;
-		private DataTransformJobProperty(String n) {
-			name = n;
-		}
-	}*/
-	
-	public static enum DataTransformCounters { 
-		TRANSFORMED_NUM_ROWS
-	};
-	
 	public static final int getMiscMemRequired(JobConf job)
 	{
 		return job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096);
@@ -748,10 +722,9 @@ public class MRJobConfiguration
 		for(int i=0; i<matrices.length; i++)
 			matrices[i]=new Path(matrices[i]).toString();
 		
-		FileSystem fs=FileSystem.get(job);
-		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
-		
-		//Path p=new Path(thisFileName);
+		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+		FileSystem fs = IOUtilFunctions.getFileSystem(thisFile, job);
+		thisFile = thisFile.makeQualified(fs);
 		
 		Path thisDir=thisFile.getParent().makeQualified(fs);
 		ArrayList<Byte> representativeMatrixes=new ArrayList<Byte>();

@@ -182,7 +182,7 @@ public class SpoofCompiler
 	
 	public static void generateCodeFromStatementBlock(StatementBlock current)
 		throws HopsException, DMLRuntimeException
-	{		
+	{
 		if (current instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
@@ -197,7 +197,7 @@ public class SpoofCompiler
 			wsb.setPredicateHops(optimize(wsb.getPredicateHops(), false));
 			for (StatementBlock sb : wstmt.getBody())
 				generateCodeFromStatementBlock(sb);
-		}	
+		}
 		else if (current instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) current;
@@ -227,7 +227,7 @@ public class SpoofCompiler
 	
 	public static void generateCodeFromProgramBlock(ProgramBlock current)
 		throws HopsException, DMLRuntimeException, LopsException, IOException
-	{		
+	{
 		if (current instanceof FunctionProgramBlock)
 		{
 			FunctionProgramBlock fsb = (FunctionProgramBlock)current;
@@ -411,6 +411,8 @@ public class SpoofCompiler
 			}
 		}
 		catch( Exception ex ) {
+			LOG.error("Codegen failed to optimize the following HOP DAG: \n" + 
+				Explain.explainHops(roots));
 			throw new DMLRuntimeException(ex);
 		}
 		
@@ -481,7 +483,7 @@ public class SpoofCompiler
 	
 	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 		throws DMLException
-	{		
+	{
 		//top-down memoization of processed dag nodes
 		if( memo.contains(hop.getHopID()) || memo.containsHop(hop) )
 			return;
@@ -549,7 +551,7 @@ public class SpoofCompiler
 	
 	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) 
 		throws DMLException
-	{		
+	{
 		//top-down memoization of processed dag nodes
 		if( hop == null || visited.contains(hop.getHopID()) )
 			return;

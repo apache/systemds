@@ -33,12 +33,10 @@ public class StringIdentifier extends ConstIdentifier
 	public StringIdentifier(String val, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = val;
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.STRING);
-        this.setAllPositions(filename, blp, bcp, elp, ecp);
-		
+		setDimensions(0,0);
+        computeDataType();
+        setValueType(ValueType.STRING);
+        setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 
 	public String getValue(){

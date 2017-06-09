@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.rdd.RDD
 import java.io.File
 import org.apache.spark.SparkContext
@@ -35,6 +36,41 @@ import org.apache.spark.sql._
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
 import java.util.HashMap
 import scala.collection.JavaConversions._
+
+
+/****************************************************
+DESIGN DOCUMENT for MLLEARN API:
+The mllearn API supports LogisticRegression, LinearRegression, SVM, NaiveBayes 
+and Caffe2DML. Every algorithm in this API has a python wrapper (implemented in the mllearn python package)
+and a Scala class where the actual logic is implementation. 
+Both wrapper and scala class follow the below hierarchy to reuse code and simplify the implementation.
+
+
+                  BaseSystemMLEstimator
+                          |
+      --------------------------------------------
+      |                                          |
+BaseSystemMLClassifier                  BaseSystemMLRegressor
+      ^                                          ^
+      |                                          |
+SVM, Caffe2DML, ...                          LinearRegression
+
+
+To conform with MLLib API, for every algorithm, we support two classes for every algorithm:
+1. Estimator for training: For example: SVM extends Estimator[SVMModel].
+2. Model for prediction: For example: SVMModel extends Model[SVMModel]
+
+Both BaseSystemMLRegressor and BaseSystemMLClassifier implements following methods for training:
+1. For compatibility with scikit-learn: baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults
+2. For compatibility with MLLib: baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults
+
+In the above methods, we execute the DML script for the given algorithm using MLContext.
+The missing piece of the puzzle is how does BaseSystemMLRegressor and BaseSystemMLClassifier interfaces
+get the DML script. To enable this, each wrapper class has to implement following methods:
+1. getTrainingScript(isSingleNode:Boolean):(Script object of mlcontext, variable name of X in the script:String, variable name of y in the script:String)
+2. getPredictionScript(isSingleNode:Boolean): (Script object of mlcontext, variable name of X in the script:String)
+
+****************************************************/
 
 trait HasLaplace extends Params {
   final val laplace: Param[Double] = new Param[Double](this, "laplace", "Laplace smoothing specified by the user to avoid creation of 0 probabilities.")
@@ -95,7 +131,7 @@ trait BaseSystemMLEstimatorOrModel {
 
 trait BaseSystemMLEstimator extends BaseSystemMLEstimatorOrModel {
   def transformSchema(schema: StructType): StructType = schema
-  
+  var mloutput:MLResults = null
   // Returns the script and variables for X and y
   def getTrainingScript(isSingleNode:Boolean):(Script, String, String)
   
@@ -120,7 +156,37 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def transformSchema(schema: StructType): StructType = schema
   
   // Returns the script and variable for X
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)
+  def getPredictionScript(isSingleNode:Boolean): (Script, String)
+  def baseEstimator():BaseSystemMLEstimator
+  def modelVariables():List[String]
+  // self.model.load(self.sc._jsc, weights, format, sep)
+  def load(sc:JavaSparkContext, outputDir:String, sep:String):Unit = {
+  	val dmlScript = new StringBuilder
+  	dmlScript.append("print(\"Loading the model from " + outputDir + "...\")\n")
+		for(varName <- modelVariables) {
+			dmlScript.append(varName + " = read(\"" + outputDir + sep + varName + ".mtx\")\n")
+		}
+  	val script = dml(dmlScript.toString)
+		for(varName <- modelVariables) {
+			script.out(varName)
+		}
+	  val ml = new MLContext(sc)
+	  baseEstimator.mloutput = ml.execute(script)
+  }
+  def save(sc:JavaSparkContext, outputDir:String, format:String="binary", sep:String="/"):Unit = {
+	  if(baseEstimator.mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
+	  val dmlScript = new StringBuilder
+	  dmlScript.append("print(\"Saving the model to " + outputDir + "...\")\n")
+	  for(varName <- modelVariables) {
+	  	dmlScript.append("write(" + varName + ", \"" + outputDir + sep + varName + ".mtx\", format=\"" + format + "\")\n")
+	  }
+	  val script = dml(dmlScript.toString)
+		for(varName <- modelVariables) {
+			script.in(varName, baseEstimator.mloutput.getMatrix(varName))
+		}
+	  val ml = new MLContext(sc)
+	  ml.execute(script)
+	}
 }
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
@@ -142,7 +208,8 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val revLabelMapping = new java.util.HashMap[Int, String]
     val yin = df.select("label")
     val ret = getTrainingScript(isSingleNode)
-    val Xbin = new BinaryBlockMatrix(Xin, mcXin)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xbin = new Matrix(Xin, mmXin)
     val script = ret._1.in(ret._2, Xbin).in(ret._3, yin)
     ml.execute(script)
   }
@@ -150,16 +217,16 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
 
-  def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, probVar:String): MatrixBlock = {
+  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     updateML(ml)
-    val script = getPredictionScript(mloutput, isSingleNode)
+    val script = getPredictionScript(isSingleNode)
     // Uncomment for debugging
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
     val ret = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
-              .getBinaryBlockMatrix("Prediction").getMatrixBlock
+              .getMatrix("Prediction").toMatrixBlock
               
     if(ret.getNumColumns != 1) {
       throw new RuntimeException("Expected predicted label to be a column vector")
@@ -167,15 +234,16 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     return ret
   }
 
-  def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, 
+  def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
     updateML(ml)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
-    val script = getPredictionScript(mloutput, isSingleNode)
-    val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
+    val script = getPredictionScript(isSingleNode)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xin_bin = new Matrix(Xin, mmXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
     val predictedDF = predLabelOut.getDataFrame("Prediction").select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")

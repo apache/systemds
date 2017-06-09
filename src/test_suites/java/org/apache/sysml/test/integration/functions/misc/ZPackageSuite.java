@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	IfTest.class,
 	InvalidFunctionAssignmentTest.class,
 	InvalidFunctionSignatureTest.class,
+	IPAConstantFoldingScalarVariablePropagationTest.class,
 	IPALiteralReplacementTest.class,
 	IPAScalarRecursionTest.class,
 	IPAScalarVariablePropagationTest.class,
@@ -48,14 +49,16 @@ import org.junit.runners.Suite;
 	ReadAfterWriteTest.class,
 	RewriteCSETransposeScalarTest.class,
 	RewriteCTableToRExpandTest.class,
+	RewriteEliminateAggregatesTest.class,
+	RewriteFuseBinaryOpChainTest.class,
 	RewriteFusedRandTest.class,
 	RewriteLoopVectorization.class,
+	RewriteMatrixMultChainOptTest.class,
 	RewritePushdownSumBinaryMult.class,
 	RewritePushdownSumOnBinaryTest.class,
 	RewritePushdownUaggTest.class,
 	RewriteSimplifyRowColSumMVMultTest.class,
 	RewriteSlicedMatrixMultTest.class,
-	RewriteFuseBinaryOpChainTest.class,
 	ScalarAssignmentTest.class,
 	ScalarFunctionTest.class,
 	ScalarMatrixUnaryBinaryTermTest.class,
@@ -63,7 +66,8 @@ import org.junit.runners.Suite;
 	SetWorkingDirTest.class,
 	ToStringTest.class,
 	ValueTypeAutoCastingTest.class,
-	ValueTypeCastingTest.class
+	ValueTypeCastingTest.class,
+	ValueTypeMatrixScalarBuiltinTest.class,
 })
 
 

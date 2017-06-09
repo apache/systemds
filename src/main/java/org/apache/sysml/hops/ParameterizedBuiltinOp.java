@@ -35,7 +35,6 @@ import org.apache.sysml.lops.GroupedAggregateM;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.OutputParameters.Format;
 import org.apache.sysml.lops.PMMJ;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.ParameterizedBuiltin;
@@ -201,20 +200,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				constructLopsRExpand(inputlops, et);
 				break;
 			} 
-			case TRANSFORM: {
-				ExecType et = optFindExecType();
-				
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
-				setOutputDimensions(pbilop);
-				setLineNumbers(pbilop);
-				// output of transform is always in CSV format
-				// to produce a blocked output, this lop must be 
-				// fed into CSV Reblock lop.
-				pbilop.getOutputParameters().setFormat(Format.CSV);
-				setLops(pbilop);
-				break;
-			}
 			case CDF:
 			case INVCDF: 
 			case REPLACE:
@@ -1084,11 +1069,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		}
 		else 
 		{
-			if( _op == ParamBuiltinOp.TRANSFORM ) {
-				// force remote, at runtime cp transform triggered for small files.
-				return (_etype = REMOTE);
-			}
-			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}

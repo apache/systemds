@@ -432,10 +432,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					_data = readBlobFromRDD( getRDDHandle(), writeStatus );
 					
 					//mark for initial local write (prevent repeated execution of rdd operations)
-					if( writeStatus.booleanValue() )
-						_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
-					else
-						_requiresLocalWrite = true;
+					_requiresLocalWrite = writeStatus.booleanValue() ? 
+						CACHING_WRITE_CACHE_ON_READ : true;
 				}
 				
 				setDirty(false);

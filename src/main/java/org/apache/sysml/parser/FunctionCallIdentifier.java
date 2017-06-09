@@ -68,24 +68,17 @@ public class FunctionCallIdentifier extends DataIdentifier
 			
 		fci._name = this._name;
 		fci._namespace = this._namespace;
-		fci._opcode = this._opcode;
-		fci._kind = Kind.FunctionCallOp;	 
+		fci._opcode = this._opcode;	 
 		
 		return fci;
 	}
 	
-	
-	
 	public FunctionCallIdentifier(){}
 	
 	public FunctionCallIdentifier(ArrayList<ParameterExpression> paramExpressions) {
-		
 		_paramExprs = paramExpressions;
 		_opcode = null;
-		_kind = Kind.FunctionCallOp;	 
 	}
-	
-	
 	
 	public FunctCallOp getOpCode() {
 		return _opcode;

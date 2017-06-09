@@ -1013,19 +1013,19 @@ public class LibMatrixMult
 					for( int k=rl, bix=rl*n; k<rl+kn; k++, bix+=n )
 						if( a[aix+k] != 0 )
 							vectMultiplyAdd(a[aix+k], b, c, bix, cix, n);
-
-				final int blocksizeK = 48;  
-				final int blocksizeJ = 1024; 
+				
+				final int blocksizeK = 48;
+				final int blocksizeJ = 1024;
 				
 				//blocked execution
 				for( int bk = rl+kn; bk < ru; bk+=blocksizeK ) 
-					for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
+					for( int bj = 0, bkmin = Math.min(ru, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
 					{
 						//compute blocks of 4 rows in rhs w/ IKJ
 						int bjlen = Math.min(n, bj+blocksizeJ)-bj;
 						for( int i=0, aix=0, cix=bj; i<m; i++, aix+=cd, cix+=n )
-							for( int k=bk, bix=bk*n; k<bkmin; k+=4, bix+=4*n ) {
-								vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3], 
+							for( int k=bk, bix=bk*n+bj; k<bkmin; k+=4, bix+=4*n ) {
+								vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3],
 										b, c, bix, bix+n, bix+2*n, bix+3*n, cix, bjlen);
 							}
 					}
@@ -3146,8 +3146,8 @@ public class LibMatrixMult
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		

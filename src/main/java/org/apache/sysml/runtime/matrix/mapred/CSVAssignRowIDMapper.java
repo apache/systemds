@@ -33,9 +33,9 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
-import org.apache.sysml.runtime.transform.TfUtils;
 
 public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWritable, Text, ByteWritable, OffsetCount>
 {	
@@ -49,9 +49,6 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 	private boolean realFirstLine = false;
 	private String filename = "";
 	private boolean headerFile = false;
-	
-	// members relevant to transform
-	private TfUtils _agents = null;
 	
 	@Override
 	public void map(LongWritable key, Text value,
@@ -68,7 +65,7 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 		if(key.get()==0 && headerFile) {
 			if(!ignoreFirstLine) {
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
-				num += omit(value.toString()) ? 0 : 1;
+				num++;
 			}
 			else
 				realFirstLine = true;
@@ -78,7 +75,7 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
 				realFirstLine = false;
 			}
-			num += omit(value.toString()) ? 0 : 1;
+			num++;
 		}
 	}
 	
@@ -91,8 +88,9 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 			//it doesn't make sense to have repeated file names in the input, since this is for reblock
 			thisIndex = MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
 			outKey.set(thisIndex);
-			FileSystem fs = FileSystem.get(job);
-			Path thisPath = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
+			Path thisPath = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+			FileSystem fs = IOUtilFunctions.getFileSystem(thisPath, job);
+			thisPath = thisPath.makeQualified(fs);
 			filename = thisPath.toString();
 			String[] strs = job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT);
 			Path headerPath = new Path(strs[thisIndex]).makeQualified(fs);
@@ -105,21 +103,10 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 					ignoreFirstLine = ins.hasHeader;
 					break;
 				}
-		
-			// load properties relevant to transform
-			boolean omit = job.getBoolean(MRJobConfiguration.TF_TRANSFORM, false);
-			if ( omit ) 
-				_agents = new TfUtils(job, true);
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-	
-	private boolean omit(String line) {
-		if(_agents == null)
-			return false;		
-		return _agents.omit( line.split(delim, -1) );
 	}
 	
 	@Override

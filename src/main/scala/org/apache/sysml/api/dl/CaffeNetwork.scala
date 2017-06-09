@@ -44,22 +44,50 @@ object CaffeNetwork {
 }
 
 class CaffeNetwork(netFilePath:String, val currentPhase:Phase, 
-     val numChannels:String, val height:String, val width:String
+     var numChannels:String, var height:String, var width:String
     ) extends Network {
   private def isIncludedInCurrentPhase(l:LayerParameter): Boolean = {
-    if(l.getIncludeCount == 0) true else l.getIncludeList.filter(r => r.hasPhase() && r.getPhase != currentPhase).length == 0
+    if(currentPhase == null) return true // while deployment
+    else if(l.getIncludeCount == 0) true 
+    else l.getIncludeList.filter(r => r.hasPhase() && r.getPhase != currentPhase).length == 0
   }
   private var id = 1
-  
+  def this(deployFilePath:String) {
+    this(deployFilePath, null, null, null, null)
+  }
   // --------------------------------------------------------------------------------
-  private var _caffeLayerParams:List[LayerParameter] = Utils.readCaffeNet(netFilePath).getLayerList.filter(l => isIncludedInCurrentPhase(l)).toList
+  private var _net:NetParameter = Utils.readCaffeNet(netFilePath)
+  private var _caffeLayerParams:List[LayerParameter] = _net.getLayerList.filter(l => isIncludedInCurrentPhase(l)).toList
+  // This method is used if the user doesnot provide number of channels, height and width
+  private def setCHW(inputShapes:java.util.List[caffe.Caffe.BlobShape]):Unit = {
+    if(inputShapes.size != 1)
+        throw new DMLRuntimeException("Expected only one input shape")
+    val inputShape = inputShapes.get(0)
+    if(inputShape.getDimCount != 4)
+      throw new DMLRuntimeException("Expected the input shape of dimension 4")
+    numChannels = inputShape.getDim(1).toString
+    height = inputShape.getDim(2).toString
+    width = inputShape.getDim(3).toString
+  }
+  if(numChannels == null && height == null && width == null) {
+    val inputLayer:List[LayerParameter] = _caffeLayerParams.filter(_.getType.toLowerCase.equals("input"))
+    if(inputLayer.size == 1) {
+      setCHW(inputLayer(0).getInputParam.getShapeList)
+    }
+    else if(inputLayer.size == 0) {
+      throw new DMLRuntimeException("Input shape (number of channels, height, width) is unknown. Hint: If you are using deprecated input/input_shape API, we recommend you use Input layer.")
+    }
+    else {
+      throw new DMLRuntimeException("Multiple Input layer is not supported")
+    }
+  }
   // --------------------------------------------------------------------------------
   
   private var _layerNames: List[String] = _caffeLayerParams.map(l => l.getName).toList
   CaffeNetwork.LOG.debug("Layers in current phase:" + _layerNames)
   
   // Condition 1: assert that each name is unique
-  private val _duplicateLayerNames =_layerNames.diff(_layerNames.distinct)
+  private val _duplicateLayerNames = _layerNames.diff(_layerNames.distinct)
   if(_duplicateLayerNames.size != 0) throw new LanguageException("Duplicate layer names is not supported:" + _duplicateLayerNames)
   
   // Condition 2: only 1 top name, except Data layer
@@ -125,6 +153,22 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
     }
     else l
   })
+  
+  // Used while reading caffemodel
+  val replacedLayerNames = new HashMap[String, String]();
+  
+  // Condition 5: Deal with incorrect naming
+  // Example: layer { name: foo, bottom: arbitrary, top: bar } ... Rename the layer to bar
+  private def isIncorrectNamingLayer(l:LayerParameter): Boolean = l.getTopCount == 1 && !l.getTop(0).equalsIgnoreCase(l.getName)
+  _caffeLayerParams = _caffeLayerParams.map(l => {
+    if(isIncorrectNamingLayer(l)) {
+      val builder = l.toBuilder();
+      replacedLayerNames.put(l.getName, l.getTop(0))
+      builder.setName(l.getTop(0))
+      builder.build()
+    }
+    else l
+  })
 
   // --------------------------------------------------------------------------------
   
@@ -149,7 +193,15 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   
   private def throwException(layerName:String) = throw new LanguageException("Layer with name " + layerName + " not found")                              
   def getLayers(): List[String] =  _layerNames
-  def getCaffeLayer(layerName:String):CaffeLayer = if(checkKey(_layers, layerName)) _layers.get(layerName).get else throwException(layerName)
+  def getCaffeLayer(layerName:String):CaffeLayer = {
+    if(checkKey(_layers, layerName)) _layers.get(layerName).get
+    else {
+      if(replacedLayerNames.contains(layerName) && checkKey(_layers, replacedLayerNames.get(layerName))) {
+        _layers.get(replacedLayerNames.get(layerName)).get
+      }
+      else throwException(layerName)
+    }
+  }
   def getBottomLayers(layerName:String): Set[String] =  if(checkKey(_bottomLayers, layerName)) _bottomLayers.get(layerName).get else throwException(layerName)
   def getTopLayers(layerName:String): Set[String] = if(checkKey(_topLayers, layerName)) _topLayers.get(layerName).get else throwException(layerName)
   def getLayerID(layerName:String): Int = if(checkKey(_layerIDs, layerName))  _layerIDs.get(layerName).get else throwException(layerName)
@@ -171,9 +223,14 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
       case "softmaxwithloss" => new SoftmaxWithLoss(param, id, this)
       case "dropout" => new Dropout(param, id, this)
       case "data" => new Data(param, id, this, numChannels, height, width)
+      case "input" => new Data(param, id, this, numChannels, height, width)
       case "batchnorm" => new BatchNorm(param, id, this)
       case "scale" => new Scale(param, id, this)
       case "eltwise" => new Elementwise(param, id, this)
+      case "concat" => new Concat(param, id, this)
+      case "deconvolution" => new DeConvolution(param, id, this)
+      case "threshold" => new Threshold(param, id, this)
+      case "softmax" => new Softmax(param, id, this)
       case _ => throw new LanguageException("Layer of type " + param.getType + " is not supported")
     }
   }

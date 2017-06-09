@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.codegen;
 import java.io.Serializable;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
@@ -38,6 +40,7 @@ import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -88,14 +91,16 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		setInitialOutputValues(c);
 		
 		//input preparation
-		double[][] b = prepInputMatrices(inputs);
+		SideInput[] b = prepInputMatricesAbstract(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
 		
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( !inputs.get(0).isInSparseFormat() )
+			if( inputs.get(0) instanceof CompressedMatrixBlock )
+				executeCompressed((CompressedMatrixBlock)inputs.get(0), b, scalars, c, m, n, 0, m);
+			else if( !inputs.get(0).isInSparseFormat() )
 				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, 0, m);
 			else	
 				executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, m, n, 0, m);
@@ -129,7 +134,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		out.examSparsity();	
 	}
 	
-	private void executeDense(double[] a, double[][] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
+	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
 	{
 		//core dense aggregation operation
 		for( int i=rl, ix=rl*n; i<ru; i++ ) { 
@@ -140,7 +145,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		}
 	}
 	
-	private void executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int m, int n, int rl, int ru) 
+	private void executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//core dense aggregation operation
@@ -151,8 +156,17 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			}
 	}
 
+	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
+	{
+		//core compressed aggregation operation
+		Iterator<IJV> iter = a.getIterator(rl, ru, true);
+		while( iter.hasNext() ) {
+			IJV cell = iter.next();
+			genexec(cell.getV(), b, scalars, c, m, n, cell.getI(), cell.getJ());
+		}
+	}
 	
-	protected abstract void genexec( double a, double[][] b, double[] scalars, double[] c, int m, int n, int rowIndex, int colIndex);
+	protected abstract void genexec( double a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rowIndex, int colIndex);
 	
 	
 	private void setInitialOutputValues(double[] c) {
@@ -229,14 +243,14 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	private class ParAggTask implements Callable<double[]> 
 	{
 		private final MatrixBlock _a;
-		private final double[][] _b;
+		private final SideInput[] _b;
 		private final double[] _scalars;
 		private final int _rlen;
 		private final int _clen;
 		private final int _rl;
 		private final int _ru;
 
-		protected ParAggTask( MatrixBlock a, double[][] b, double[] scalars, 
+		protected ParAggTask( MatrixBlock a, SideInput[] b, double[] scalars, 
 				int rlen, int clen, int rl, int ru ) {
 			_a = a;
 			_b = b;
@@ -251,7 +265,9 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		public double[] call() throws DMLRuntimeException {
 			double[] c = new double[_aggOps.length];
 			setInitialOutputValues(c);
-			if( !_a.isInSparseFormat() )
+			if( _a instanceof CompressedMatrixBlock )
+				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _rlen, _clen, _rl, _ru);
+			else if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, c, _rlen, _clen, _rl, _ru);
 			else	
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _rlen, _clen, _rl, _ru);

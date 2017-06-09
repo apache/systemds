@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
@@ -68,6 +69,7 @@ import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -75,6 +77,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -166,6 +170,10 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 */
 	public ArrayList<ColGroup> getColGroups() {
 		return _colGroups;
+	}
+	
+	public int getNumColGroups() {
+		return _colGroups.size();
 	}
 
 	/**
@@ -588,9 +596,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			int rlen = getNumRows();
-			int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-			int blklen = (int)(Math.ceil((double)rlen/k));
-			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+			int blklen = BitmapEncoder.getAlignedBlocksize(
+				(int)(Math.ceil((double)rlen/k)));
 			ArrayList<DecompressTask> tasks = new ArrayList<DecompressTask>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new DecompressTask(_colGroups, ret, i*blklen, Math.min((i+1)*blklen,rlen)));
@@ -799,6 +806,28 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		write(os);	
 	}
 	
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
+		return getIterator(rl, ru, 0, getNumColGroups(), inclZeros);
+	}
+	
+	public Iterator<IJV> getIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
+		return new ColumnGroupIterator(rl, ru, cgl, cgu, inclZeros);
+	}
+	
+	public Iterator<double[]> getDenseRowIterator(int rl, int ru) {
+		return new DenseRowIterator(rl, ru);
+	}
+	
+	public Iterator<SparseRow> getSparseRowIterator(int rl, int ru) {
+		return new SparseRowIterator(rl, ru);
+	}
+	
+	public int[] countNonZerosPerRow(int rl, int ru) {
+		int[] rnnz = new int[ru-rl];
+		for (ColGroup grp : _colGroups)
+			grp.countNonZerosPerRow(rnnz, rl, ru);
+		return rnnz;
+	}
 	
 	//////////////////////////////////////////
 	// Operations (overwrite existing ops for seamless integration)
@@ -1083,9 +1112,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<UnaryAggregateTask>();
 				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
-					int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-					int blklen = (int)(Math.ceil((double)rlen/op.getNumThreads()));
-					blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+					int blklen = BitmapEncoder.getAlignedBlocksize(
+						(int)(Math.ceil((double)rlen/op.getNumThreads())));
 					for( int i=0; i<op.getNumThreads() & i*blklen<rlen; i++ )
 						tasks.add(new UnaryAggregateTask(grpParts[0], ret, i*blklen, Math.min((i+1)*blklen,rlen), op));
 				}
@@ -1338,9 +1366,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			//compute remaining compressed column groups in parallel
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			int rlen = getNumRows();
-			int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-			int blklen = (int)(Math.ceil((double)rlen/k));
-			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+			int blklen = BitmapEncoder.getAlignedBlocksize(
+				(int)(Math.ceil((double)rlen/k)));
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<RightMatrixMultTask>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new RightMatrixMultTask(_colGroups, vector, result, i*blklen, Math.min((i+1)*blklen,rlen)));
@@ -2217,5 +2244,162 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		for (int i = from; i <= to; i+=incr)
 			ret.add(i);
 		return ret;
+	}
+	
+	private class ColumnGroupIterator implements Iterator<IJV>
+	{
+		//iterator configuration 
+		private final int _rl;
+		private final int _ru;
+		private final int _cgu;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private int _posColGroup = -1;
+		private Iterator<IJV> _iterColGroup = null;
+		private boolean _noNext = false;
+		
+		public ColumnGroupIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
+			_rl = rl;
+			_ru = ru;
+			_cgu = cgu;
+			_inclZeros = inclZeros;
+			_posColGroup = cgl-1;
+			getNextIterator();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !_noNext;
+		}
+
+		@Override
+		public IJV next() {
+			if( _noNext )
+				throw new RuntimeException("No more entries.");
+			IJV ret = _iterColGroup.next();
+			if( !_iterColGroup.hasNext() )
+				getNextIterator();
+			return ret;
+		}
+		
+		private void getNextIterator() {
+			while( _posColGroup+1 < _cgu ) {
+				_posColGroup++;
+				_iterColGroup = _colGroups.get(_posColGroup)
+					.getIterator(_rl, _ru, _inclZeros, false);
+				if( _iterColGroup.hasNext() )
+					return;
+			}
+			_noNext = true;
+		}
+	}
+	
+	private abstract class RowIterator<T> implements Iterator<T>
+	{
+		//iterator configuration 
+		protected final int _rl;
+		protected final int _ru;
+		
+		//iterator state
+		private Iterator<IJV>[] _iters = null;
+		protected final int[] _ixbuff = new int[clen];
+		protected final double[] _vbuff = new double[clen];
+		protected int _rpos;
+		
+		@SuppressWarnings("unchecked")
+		public RowIterator(int rl, int ru) {
+			_rl = rl;
+			_ru = ru;
+			
+			//initialize array of column group iterators
+			_iters = new Iterator[_colGroups.size()];
+			for( int i=0; i<_colGroups.size(); i++ )
+				_iters[i] = _colGroups.get(i).getIterator(
+					_rl, _ru, true, true);
+			Arrays.fill(_ixbuff, -1);
+			
+			//get initial row
+			_rpos = rl-1;
+			getNextRow();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public abstract T next();
+		
+		protected void getNextRow() {
+			_rpos++;
+			//read iterators if necessary
+			for(int j=0; j<_iters.length; j++) {
+				ColGroup grp = _colGroups.get(j);
+				if( _ixbuff[grp.getColIndex(0)] < _rpos ) {
+					if( _iters[j].hasNext() ) {
+						for( int k=0; k<grp.getNumCols(); k++ ) {
+							IJV cell = _iters[j].next();
+							_ixbuff[cell.getJ()] = cell.getI();
+							_vbuff[cell.getJ()] = cell.getV();
+						}
+					}
+					else {
+						for( int k=0; k<grp.getNumCols(); k++ )
+							_ixbuff[grp.getColIndex(k)] = _ru;
+					}
+				}
+			}
+		}
+	}
+	
+	private class DenseRowIterator extends RowIterator<double[]>
+	{
+		private final double[] _ret = new double[clen];
+		
+		public DenseRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+		
+		@Override
+		public double[] next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more rows in row partition ["+_rl+","+_ru+")");
+			//copy currently buffered row entries
+			for( int j=0; j<clen; j++ )
+				_ret[j] = (_ixbuff[j] == _rpos) ? _vbuff[j] : 0;
+			//advance to next row and return buffer
+			getNextRow();
+			return _ret;
+		}
+	}
+	
+	private class SparseRowIterator extends RowIterator<SparseRow>
+	{
+		private final SparseRowVector _ret = new SparseRowVector(clen);
+		
+		public SparseRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public SparseRow next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more rows in row partition ["+_rl+","+_ru+")");
+			//copy currently buffered row entries
+			_ret.setSize(0);
+			for( int j=0; j<clen; j++ )
+				if( _ixbuff[j] == _rpos )
+					_ret.append(j, _vbuff[j]);
+			//advance to next row and return buffer
+			getNextRow();
+			return _ret;
+		}
 	}
 }

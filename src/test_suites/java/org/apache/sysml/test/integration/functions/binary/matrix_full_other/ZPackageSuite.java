@@ -26,18 +26,18 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	
-	FullMatrixMultiplicationUltraSparseTest.class,
+	FullDistributedMatrixMultiplicationTest.class,
 	FullIntegerDivisionTest.class,
 	FullMatrixMultiplicationTest.class,
-	FullMatrixMultiplicationTransposeSelfTest.class,
 	FullMatrixMultiplicationTransposeSelf2Test.class,
+	FullMatrixMultiplicationTransposeSelfTest.class,
+	FullMatrixMultiplicationUltraSparseTest.class,
 	FullMinMaxComparisonTest.class,
 	FullPowerTest.class,
 	FullPPredMatrixTest.class,
 	FullPPredScalarLeftTest.class,
 	FullPPredScalarRightTest.class,
-	FullDistributedMatrixMultiplicationTest.class
+	MatrixMultShortLhsTest.class,
 })
 
 

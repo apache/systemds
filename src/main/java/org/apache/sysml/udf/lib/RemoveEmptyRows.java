@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
@@ -77,7 +78,7 @@ public class RemoveEmptyRows extends PackageFunction
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			FileInputFormat.addInputPath(job, path); 

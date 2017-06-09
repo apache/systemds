@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.api.DMLScript;
@@ -794,6 +795,24 @@ public class HopRewriteUtils
 			&& hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1;
 	}
 	
+	public static boolean isBinaryMatrixMatrixOperationWithSharedInput(Hop hop) {
+		boolean ret = isBinaryMatrixMatrixOperation(hop);
+		ret = ret && (rContainsInput(hop.getInput().get(0), hop.getInput().get(1), new HashSet<Long>())
+				|| rContainsInput(hop.getInput().get(1), hop.getInput().get(0), new HashSet<Long>()));
+		return ret;
+	}
+	
+	private static boolean rContainsInput(Hop current, Hop probe, HashSet<Long> memo) {
+		if( memo.contains(current.getHopID()) )
+			return false;
+		boolean ret = false;
+		for( int i=0; i<current.getInput().size() && !ret; i++ )
+			ret |= rContainsInput(current.getInput().get(i), probe, memo);
+		ret |= (current == probe);
+		memo.add(current.getHopID());
+		return ret;
+	}
+	
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
 		return hop instanceof BinaryOp 
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
@@ -957,23 +976,6 @@ public class HopRewriteUtils
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
 			else if(inclPersistent)
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
-		}
-			
-				
-		return ret;
-	}
-	
-	public static boolean hasTransformParents( Hop hop )
-	{
-		boolean ret = false;
-		
-		ArrayList<Hop> parents = hop.getParent();
-		for( Hop p : parents )
-		{
-			if(    p instanceof ParameterizedBuiltinOp 
-				&& ((ParameterizedBuiltinOp)p).getOp()==ParamBuiltinOp.TRANSFORM) {
-				ret = true;
-			}
 		}
 			
 				

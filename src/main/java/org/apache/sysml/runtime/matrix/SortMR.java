@@ -139,17 +139,16 @@ public class SortMR
 		return parts;
     }
 
-    public void configure(JobConf job) {
-      try {
-    	  FileSystem fs = FileSystem.get(job);
-          Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job)); 
-          splitPoints = readPartitions(fs, partFile, job);
-        
-      } 
-      catch (IOException ie) {
-        throw new IllegalArgumentException("can't read paritions file", ie);
-      }
-    }
+	public void configure(JobConf job) {
+		try {
+			Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job));
+			FileSystem fs = IOUtilFunctions.getFileSystem(partFile, job);
+			splitPoints = readPartitions(fs, partFile, job);
+		}
+		catch (IOException ie) {
+			throw new IllegalArgumentException("can't read paritions file", ie);
+		}
+	}
 
     public int getPartition(K key, V value, int numPartitions) {
       return findPartition(key)%numPartitions;

@@ -844,7 +844,7 @@ public class BinaryOp extends Hop
 			if( ldim1 > 0 || ldim2 > 0 || lnnz >= 0 )
 				return new long[]{ldim1, ldim2, lnnz};
 		}
-		else if( op== OpOp2.CBIND ) {
+		else if( op == OpOp2.RBIND ) {
 			long ldim1 = -1, ldim2 = -1, lnnz = -1;
 			
 			if( mc[0].colsKnown() || mc[1].colsKnown() )

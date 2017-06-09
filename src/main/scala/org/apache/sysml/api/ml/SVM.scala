@@ -67,13 +67,13 @@ class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Bool
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new SVMModel("svm")(ret, sc, isMultiClass)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new SVMModel(this, isMultiClass)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): SVMModel = {
-    val ret = baseFit(df, sc)
-    new SVMModel("svm")(ret, sc, isMultiClass)
+    mloutput = baseFit(df, sc)
+    new SVMModel(this, isMultiClass)
   }
   
 }
@@ -83,24 +83,31 @@ object SVMModel {
   final val predictionScriptPathMulticlass = "scripts" + File.separator + "algorithms" + File.separator + "m-svm-predict.dml"
 }
 
-class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: SparkContext, val isMultiClass:Boolean) 
+class SVMModel (override val uid: String)(estimator:SVM, val sc: SparkContext, val isMultiClass:Boolean) 
   extends Model[SVMModel] with BaseSystemMLClassifierModel {
   override def copy(extra: ParamMap): SVMModel = {
-    val that = new SVMModel(uid)(mloutput, sc, isMultiClass)
+    val that = new SVMModel(uid)(estimator, sc, isMultiClass)
     copyValues(that, extra)
   }
   
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+  def this(estimator:SVM, isMultiClass:Boolean) =  {
+  	this("model")(estimator, estimator.sc, isMultiClass)
+  }
+  
+  def baseEstimator():BaseSystemMLEstimator = estimator
+  def modelVariables():List[String] = List[String]("w")
+  
+  def getPredictionScript(isSingleNode:Boolean): (Script, String)  = {
     val script = dml(ScriptsUtils.getDMLScript(if(isMultiClass) SVMModel.predictionScriptPathMulticlass else SVMModel.predictionScriptPathBinary))
       .in("$X", " ")
       .in("$model", " ")
       .out("scores")
     
-    val w = mloutput.getBinaryBlockMatrix("w")
+    val w = estimator.mloutput.getMatrix("w")
     val wVar = if(isMultiClass) "W" else "w"
       
     val ret = if(isSingleNode) {
-      script.in(wVar, w.getMatrixBlock, w.getMatrixMetadata)
+      script.in(wVar, w.toMatrixBlock, w.getMatrixMetadata)
     }
     else {
       script.in(wVar, w)
@@ -108,6 +115,6 @@ class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: Spark
     (ret, "X")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, sc, "scores")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "scores")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "scores")
 }

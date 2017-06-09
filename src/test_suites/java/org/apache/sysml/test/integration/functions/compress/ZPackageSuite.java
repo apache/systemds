@@ -39,6 +39,7 @@ import org.junit.runners.Suite;
 	BasicTransposeSelfLeftMatrixMultTest.class,
 	BasicUnaryAggregateTest.class,
 	BasicVectorMatrixMultTest.class,
+	CompressedL2SVM.class,
 	CompressedLinregCG.class,
 	CompressedSerializationTest.class,
 	LargeCompressionTest.class,

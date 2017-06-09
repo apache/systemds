@@ -112,11 +112,6 @@ public class ColGroupOLE extends ColGroupOffset
 	public CompressionType getCompType() {
 		return CompressionType.OLE_BITMAP;
 	}
-
-	@Override
-	public Iterator<Integer> getDecodeIterator(int k) {
-		return new BitmapDecoderOLE(_data, _ptr[k], len(k));
-	}
 	
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) 
@@ -643,10 +638,9 @@ public class ColGroupOLE extends ColGroupOffset
 	 * Utility function of sparse-unsafe operations.
 	 * 
 	 * @return zero indicator vector
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private boolean[] computeZeroIndicatorVector()
-		throws DMLRuntimeException 
+	@Override
+	protected boolean[] computeZeroIndicatorVector()
 	{
 		boolean[] ret = new boolean[_numRows];
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
@@ -761,5 +755,83 @@ public class ColGroupOLE extends ColGroupOffset
 		}
 		
 		return 0;
+	}
+
+	@Override
+	public Iterator<Integer> getIterator(int k) {
+		return new OLEValueIterator(k, 0, getNumRows());
+	}
+	
+	@Override
+	public Iterator<Integer> getIterator(int k, int rl, int ru) {
+		return new OLEValueIterator(k, rl, ru);
+	}
+
+	private class OLEValueIterator implements Iterator<Integer>
+	{
+		private final int _ru;
+		private final int _boff;
+		private final int _blen;
+		private int _bix;
+		private int _start;
+		private int _slen;
+		private int _spos;
+		private int _rpos;
+		
+		public OLEValueIterator(int k, int rl, int ru) {
+			_ru = ru;
+			_boff = _ptr[k];
+			_blen = len(k);
+			
+			//initialize position via segment-aligned skip-scan
+			int lrl = rl - rl%BitmapEncoder.BITMAP_BLOCK_SZ;
+			_bix = skipScanVal(k, lrl);
+			_start = lrl; 
+			
+			//move position to actual rl boundary
+			if( _bix < _blen ) {
+				_slen = _data[_boff + _bix];
+				_spos = 0;
+				_rpos = _data[_boff + _bix + 1];
+				while( _rpos < rl )
+					nextRowOffset();
+			}
+			else {
+				_rpos = _ru;
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public Integer next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more OLE entries.");
+			int ret = _rpos;
+			nextRowOffset();
+			return ret;
+		}
+		
+		private void nextRowOffset() {
+			if( _spos+1 < _slen ) {
+				_spos++;
+				_rpos = _start + _data[_boff + _bix + _spos + 1];
+			}
+			else {
+				_start += BitmapEncoder.BITMAP_BLOCK_SZ;
+				_bix += _slen+1;
+				if( _bix < _blen ) {
+					_slen = _data[_boff + _bix];
+					_spos = 0;
+					_rpos = _start + _data[_boff + _bix + 1];
+				}
+				else {
+					_rpos = _ru;
+				}
+			}
+		}
 	}
 }

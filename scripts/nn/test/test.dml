@@ -26,6 +26,7 @@ source("nn/layers/batch_norm1d.dml") as batch_norm1d
 source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
 source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
+source("nn/layers/conv2d_transpose.dml") as conv2d_transpose
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
@@ -105,6 +106,42 @@ conv2d = function() {
                                            as.scalar(out_simple[1,i]), 1e-10, 1e-12)
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                            as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+}
+
+conv2d_transpose = function() {
+  /*
+   * Test for the 2D convolution transpose function.
+   */
+  print("Testing the 2D convolution transpose function.")
+
+  N = 1  
+  C = 1
+  Hin = 2
+  Win = 2
+  F = 1
+  Hf = 3
+  Wf = 3
+  stride = 1
+  pad = 0
+  out_pad = 0
+  
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win)
+  W = matrix(seq(1,F*C*Hf*Wf), rows=F, cols=C*Hf*Wf)
+  b = matrix(0, rows=F, cols=1)
+
+  # Forward
+  [out, Hout, Wout] = 
+  	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+
+  # Equivalency check
+  target = matrix("1 4 7 6 7 23 33 24 19 53 63 42 21 52 59 36", rows=N, cols=C*Hout*Wout)
+  
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                             as.scalar(target[1,i]), 1e-3, 1e-4)
+    }
   }
 }
 

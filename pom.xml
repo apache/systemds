@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemml</groupId>
-	<version>1.0.0-incubating-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<artifactId>systemml</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemML</name>
@@ -38,9 +38,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
-		<url>https://git-wip-us.apache.org/repos/asf?p=incubator-systemml.git</url>
+		<connection>scm:git:git@github.com:apache/systemml</connection>
+		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/systemml</developerConnection>
+		<url>https://git-wip-us.apache.org/repos/asf?p=systemml.git</url>
 		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>
@@ -50,15 +50,15 @@
 	<mailingLists>
 		<mailingList>
 			<name>Dev Mailing List</name>
-			<post>dev@systemml.incubator.apache.org</post>
-			<subscribe>dev-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>dev-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>dev@systemml.apache.org</post>
+			<subscribe>dev-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>dev-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 		<mailingList>
 			<name>Commits Mailing List</name>
-			<post>commits@systemml.incubator.apache.org</post>
-			<subscribe>commits-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>commits-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>commits@systemml.apache.org</post>
+			<subscribe>commits-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>commits-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 	</mailingLists>
 
@@ -101,6 +101,8 @@
 				<exclude>staging/**/*</exclude>
 				<exclude>staging</exclude>
 				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/examples/caffe2dml/**/*</exclude>
 				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 			</excludes>
 			<targetPath>scripts</targetPath>
@@ -434,6 +436,7 @@
 						<exclude>**/slowtest/**</exclude>
 						<exclude>**/integration/**</exclude>
 						<exclude>**/test/unit/**</exclude>
+						<exclude>**/test/gpu/**</exclude>
 					</excludes>
 
 				</configuration>
@@ -476,6 +479,7 @@
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
+						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
 						<include>**/integration/applications/**/*Suite.java</include>
 						<include>**/integration/conversion/*Suite.java</include>
 						<include>**/integration/functions/data/*Suite.java</include>
@@ -874,6 +878,7 @@
 								<exclude>src/main/proto/caffe/caffe.proto</exclude>
 								<exclude>src/main/proto/tensorflow/event.proto</exclude>
 								<exclude>src/main/proto/tensorflow/summary.proto</exclude>
+								<exclude>scripts/nn/examples/caffe2dml/models/**/*</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
@@ -891,6 +896,14 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!-- profile to enable running tests on the GPU -->
+		<profile>
+			<id>gpuTests</id>
+			<properties>
+				<gpuTestsPath>**/integration/gpu/**/*Suite.java</gpuTestsPath>
+			</properties>
 		</profile>
 
 		<profile>
@@ -926,20 +939,6 @@
 									<descriptors>
 										<descriptor>src/assembly/source.xml</descriptor>
 									</descriptors>
-								</configuration>
-							</execution>
-
-							<execution>
-								<id>create-binary-distribution-without-libs</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/distrib.xml</descriptor>
-									</descriptors>
-									<appendAssemblyId>false</appendAssemblyId>
 								</configuration>
 							</execution>
 
@@ -998,8 +997,6 @@
 									<resourceBundles>
 										<!-- Will generate META-INF/DEPENDENCIES META-INF/LICENSE META-INF/NOTICE -->
 										<resourceBundle>org.apache:apache-jar-resource-bundle:1.4</resourceBundle>
-										<!-- Will generate META-INF/DISCLAIMER -->
-										<resourceBundle>org.apache:apache-incubator-disclaimer-resource-bundle:1.1</resourceBundle>
 									</resourceBundles>
 								</configuration>
 							</execution>
@@ -1103,34 +1100,6 @@
 									<arguments>
 										<argument>post_setup.py</argument>
 									</arguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-		<profile>
-			<id>inmemory</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<configuration>
-							<tarLongFileMode>gnu</tarLongFileMode>
-						</configuration>
-						<executions>
-							<execution>
-								<id>create-inmemory-jar</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/inmemory.xml</descriptor>
-									</descriptors>
 								</configuration>
 							</execution>
 						</executions>

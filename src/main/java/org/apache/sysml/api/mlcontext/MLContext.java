@@ -21,9 +21,6 @@ package org.apache.sysml.api.mlcontext;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -32,7 +29,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -50,6 +46,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.MLContextProxy;
 
 /**
  * The MLContext API offers programmatic access to SystemML on Spark from
@@ -68,9 +65,9 @@ public class MLContext {
 	private SparkSession spark = null;
 
 	/**
-	 * Reference to the currently executing script.
+	 * Reference to the current script.
 	 */
-	private Script executingScript = null;
+	private Script executionScript = null;
 
 	/**
 	 * The currently active MLContext.
@@ -98,7 +95,7 @@ public class MLContext {
 	 * Whether or not GPU mode should be enabled
 	 */
 	private boolean gpu = false;
-	
+
 	/**
 	 * Whether or not GPU mode should be force
 	 */
@@ -117,13 +114,16 @@ public class MLContext {
 	private ExplainLevel explainLevel = null;
 
 	/**
-	 * Whether or not all values should be maintained in the symbol table
-	 * after execution.
+	 * Whether or not all values should be maintained in the symbol table after
+	 * execution.
 	 */
 	private boolean maintainSymbolTable = false;
 
-	private List<String> scriptHistoryStrings = new ArrayList<String>();
-	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
+	/**
+	 * Whether or not the default ScriptExecutor should be initialized before
+	 * execution. See {@link ScriptExecutor#init(boolean)}.
+	 */
+	private boolean initBeforeExecution = true;
 
 	/**
 	 * The different explain levels supported by SystemML.
@@ -172,8 +172,9 @@ public class MLContext {
 	/**
 	 * Create an MLContext based on a SparkSession for interaction with SystemML
 	 * on Spark.
-	 * 
-	 * @param spark SparkSession
+	 *
+	 * @param spark
+	 *            SparkSession
 	 */
 	public MLContext(SparkSession spark) {
 		initMLContext(spark);
@@ -215,13 +216,16 @@ public class MLContext {
 			MLContextUtil.verifySparkVersionSupported(spark);
 		} catch (MLContextException e) {
 			if (info() != null) {
-				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion() + " or above is recommended for SystemML " + this.info().version());
+				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion()
+						+ " or above is recommended for SystemML " + this.info().version());
 			} else {
 				try {
 					String minSparkVersion = MLContextUtil.getMinimumRecommendedSparkVersionFromPom();
-					log.warn("Apache Spark " + minSparkVersion + " or above is recommended for this version of SystemML.");
+					log.warn("Apache Spark " + minSparkVersion
+							+ " or above is recommended for this version of SystemML.");
 				} catch (MLContextException e1) {
-					log.error("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+					log.error(
+							"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
 				}
 			}
 		}
@@ -265,7 +269,7 @@ public class MLContext {
 			throw new MLContextException(e);
 		}
 	}
-	
+
 	/**
 	 * Execute a DML or PYDML Script.
 	 *
@@ -281,7 +285,10 @@ public class MLContext {
 		scriptExecutor.setForceGPU(forceGPU);
 		scriptExecutor.setStatistics(statistics);
 		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
-		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
+		scriptExecutor.setInit(initBeforeExecution);
+		if (initBeforeExecution) {
+			initBeforeExecution = false;
+		}
 		scriptExecutor.setMaintainSymbolTable(maintainSymbolTable);
 		return execute(script, scriptExecutor);
 	}
@@ -299,7 +306,7 @@ public class MLContext {
 	 */
 	public MLResults execute(Script script, ScriptExecutor scriptExecutor) {
 		try {
-			executingScript = script;
+			executionScript = script;
 
 			Long time = new Long((new Date()).getTime());
 			if ((script.getName() == null) || (script.getName().equals(""))) {
@@ -307,10 +314,6 @@ public class MLContext {
 			}
 
 			MLResults results = scriptExecutor.execute(script);
-
-			String history = MLContextUtil.createHistoryForScript(script, time);
-			scriptHistoryStrings.add(history);
-			scripts.put(script.getName(), script);
 
 			return results;
 		} catch (RuntimeException e) {
@@ -360,11 +363,10 @@ public class MLContext {
 		this.explain = explain;
 	}
 
-
 	/**
 	 * Obtain whether or not all values should be maintained in the symbol table
 	 * after execution.
-	 * 
+	 *
 	 * @return {@code true} if all values should be maintained in the symbol
 	 *         table, {@code false} otherwise
 	 */
@@ -375,7 +377,7 @@ public class MLContext {
 	/**
 	 * Set whether or not all values should be maintained in the symbol table
 	 * after execution.
-	 * 
+	 *
 	 * @param maintainSymbolTable
 	 *            {@code true} if all values should be maintained in the symbol
 	 *            table, {@code false} otherwise
@@ -417,20 +419,24 @@ public class MLContext {
 	}
 
 	/**
-	 * Whether or not to use (an available) GPU on the driver node.
-	 * If a GPU is not available, and the GPU mode is set, SystemML will crash when the program is run.
+	 * Whether or not to use (an available) GPU on the driver node. If a GPU is
+	 * not available, and the GPU mode is set, SystemML will crash when the
+	 * program is run.
+	 *
 	 * @param enable
-	 * 					true if needs to be enabled, false otherwise
+	 *            true if needs to be enabled, false otherwise
 	 */
 	public void setGPU(boolean enable) {
 		this.gpu = enable;
 	}
-	
+
 	/**
-	 * Whether or not to explicitly "force" the usage of GPU.
-	 * If a GPU is not available, and the GPU mode is set or if available memory on GPU is less, SystemML will crash when the program is run.
+	 * Whether or not to explicitly "force" the usage of GPU. If a GPU is not
+	 * available, and the GPU mode is set or if available memory on GPU is less,
+	 * SystemML will crash when the program is run.
+	 *
 	 * @param enable
-	 * 					true if needs to be enabled, false otherwise
+	 *            true if needs to be enabled, false otherwise
 	 */
 	public void setForceGPU(boolean enable) {
 		this.forceGPU = enable;
@@ -438,12 +444,12 @@ public class MLContext {
 
 	/**
 	 * Whether or not the GPU mode is enabled.
+	 *
 	 * @return true if enabled, false otherwise
 	 */
 	public boolean isGPU() {
 		return this.gpu;
 	}
-
 
 	/**
 	 * Used internally by MLContextProxy.
@@ -513,8 +519,8 @@ public class MLContext {
 		}
 
 		private boolean isRegisteredAsInput(String parameterName) {
-			if (executingScript != null) {
-				Set<String> inputVariableNames = executingScript.getInputVariables();
+			if (executionScript != null) {
+				Set<String> inputVariableNames = executionScript.getInputVariables();
 				if (inputVariableNames != null) {
 					return inputVariableNames.contains(parameterName);
 				}
@@ -523,8 +529,8 @@ public class MLContext {
 		}
 
 		private MatrixObject getMatrixObject(String parameterName) {
-			if (executingScript != null) {
-				LocalVariableMap symbolTable = executingScript.getSymbolTable();
+			if (executionScript != null) {
+				LocalVariableMap symbolTable = executionScript.getSymbolTable();
 				if (symbolTable != null) {
 					Data data = symbolTable.get(parameterName);
 					if (data instanceof MatrixObject) {
@@ -540,10 +546,10 @@ public class MLContext {
 		}
 
 		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
-			if (executingScript == null || executingScript.getOutputVariables() == null)
+			if (executionScript == null || executionScript.getOutputVariables() == null)
 				return instructions;
 
-			Set<String> outputVariableNames = executingScript.getOutputVariables();
+			Set<String> outputVariableNames = executionScript.getOutputVariables();
 			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
 	}
@@ -594,39 +600,6 @@ public class MLContext {
 	}
 
 	/**
-	 * Obtain a map of the scripts that have executed.
-	 *
-	 * @return a map of the scripts that have executed
-	 */
-	public Map<String, Script> getScripts() {
-		return scripts;
-	}
-
-	/**
-	 * Obtain a script that has executed by name.
-	 *
-	 * @param name
-	 *            the name of the script
-	 * @return the script corresponding to the name
-	 */
-	public Script getScriptByName(String name) {
-		Script script = scripts.get(name);
-		if (script == null) {
-			throw new MLContextException("Script with name '" + name + "' not found.");
-		}
-		return script;
-	}
-
-	/**
-	 * Display the history of scripts that have executed.
-	 *
-	 * @return the history of scripts that have executed
-	 */
-	public String history() {
-		return MLContextUtil.displayScriptHistory(scriptHistoryStrings);
-	}
-
-	/**
 	 * Closes the mlcontext, which includes the cleanup of static and local
 	 * state as well as scratch space and buffer pool cleanup. Note that the
 	 * spark context is not explicitly closed to allow external reuse.
@@ -646,10 +619,7 @@ public class MLContext {
 
 		// clear local status, but do not stop sc as it
 		// may be used or stopped externally
-		for (Script script : scripts.values())
-			script.clearAll();
-		scripts.clear();
-		scriptHistoryStrings.clear();
+		executionScript.clearAll();
 		resetConfig();
 		spark = null;
 	}
@@ -657,7 +627,7 @@ public class MLContext {
 	/**
 	 * Obtain information about the project such as version and build time from
 	 * the manifest in the SystemML jar file.
-	 * 
+	 *
 	 * @return information about the project
 	 */
 	public ProjectInfo info() {
@@ -672,7 +642,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SystemML version number.
-	 * 
+	 *
 	 * @return the SystemML version number
 	 */
 	public String version() {
@@ -684,7 +654,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SystemML jar file build time.
-	 * 
+	 *
 	 * @return the SystemML jar file build time
 	 */
 	public String buildTime() {
@@ -697,10 +667,34 @@ public class MLContext {
 	/**
 	 * Obtain the maximum number of heavy hitters that are printed out as part
 	 * of the statistics.
-	 * 
+	 *
 	 * @return maximum number of heavy hitters to print
 	 */
 	public int getStatisticsMaxHeavyHitters() {
 		return statisticsMaxHeavyHitters;
 	}
+
+	/**
+	 * Whether or not the default ScriptExecutor should be initialized before
+	 * execution.
+	 *
+	 * @return {@code true} if ScriptExecutor should be initialized before
+	 *         execution, {@code false} otherwise
+	 */
+	public boolean isInitBeforeExecution() {
+		return initBeforeExecution;
+	}
+
+	/**
+	 * Whether or not the default ScriptExecutor should be initialized before
+	 * execution.
+	 *
+	 * @param initBeforeExecution
+	 *            {@code true} if ScriptExecutor should be initialized before
+	 *            execution, {@code false} otherwise
+	 */
+	public void setInitBeforeExecution(boolean initBeforeExecution) {
+		this.initBeforeExecution = initBeforeExecution;
+	}
+
 }

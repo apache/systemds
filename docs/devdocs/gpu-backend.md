@@ -57,5 +57,5 @@ To use SystemML's GPU backend when using the jar or uber-jar
 
 For example: to use GPU backend in standalone mode:
 ```bash
-java -classpath $JAR_PATH:systemml-0.14.0-incubating-SNAPSHOT-standalone.jar org.apache.sysml.api.DMLScript -f MyDML.dml -gpu -exec singlenode ... 
+java -classpath $JAR_PATH:systemml-1.0.0-SNAPSHOT-standalone.jar org.apache.sysml.api.DMLScript -f MyDML.dml -gpu -exec singlenode ... 
 ```

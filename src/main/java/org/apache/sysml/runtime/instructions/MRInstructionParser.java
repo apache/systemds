@@ -288,7 +288,6 @@ public class MRInstructionParser extends InstructionParser
 		//dummy (pseudo instructions)
 		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
 		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
-		String2MRInstructionType.put( "transform", MRINSTRUCTION_TYPE.Transform);
 		
 		//parameterized builtins
 		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);

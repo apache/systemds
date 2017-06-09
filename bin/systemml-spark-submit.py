@@ -41,25 +41,7 @@ def print_usage_and_exit():
     print('Usage: ./systemml-spark-submit.py -f <dml-filename> [arguments]')
     sys.exit(1)
 
-# find the systemML root path which contains the bin folder, the script folder and the target folder
-# tolerate path with spaces
-script_dir = os.path.dirname(os.path.realpath(__file__))
-project_root_dir = os.path.dirname(script_dir)
-user_dir = os.getcwd()
-
-scripts_dir = join(project_root_dir, 'scripts')
-build_dir = join(project_root_dir, 'target')
-target_jars = join(build_dir, '*.jar')
-log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.template')
-
-default_conf = 'spark.driver.extraJavaOptions=-Dlog4j.configuration=file:{}'.format(log4j_properties_path)
-
-# Backslash problem in windows.
-if platform.system() == 'Windows':
-    default_conf = default_conf.replace('\\', '//')
-
-cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False)
-cparser.add_argument('--help', action='help', help='Print this usage message and exit')
+cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script')
 
 # SPARK-SUBMIT Options
 cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
@@ -67,18 +49,18 @@ cparser.add_argument('--driver-memory', default='5G', help='Memory for driver (e
 cparser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='')
 cparser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='')
 cparser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='')
-cparser.add_argument('--conf', default=default_conf, help='Spark configuration file', nargs='+', metavar='')
+cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
 
 # SYSTEM-ML Options
-cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+')
+cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+', metavar='')
 cparser.add_argument('-args', help='List of positional argument values', metavar='', nargs='+')
 cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
 cparser.add_argument('-explain', help='explains plan levels can be hops, runtime, '
-                                      'recompile_hops, recompile_runtime', nargs='?', const='runtime')
+                                      'recompile_hops, recompile_runtime', nargs='?', const='runtime', metavar='')
 cparser.add_argument('-debug', help='runs in debug mode', action='store_true')
 cparser.add_argument('-stats', help='Monitor and report caching/recompilation statistics, '
-                                    'heavy hitter <count> is 10 unless overridden', nargs='?', const='10')
+                                    'heavy hitter <count> is 10 unless overridden', nargs='?', const='10', metavar='')
 cparser.add_argument('-gpu', help='uses CUDA instructions when reasonable, '
                                   'set <force> option to skip conservative memory estimates '
                                   'and use GPU wherever possible', action='store_true')
@@ -105,11 +87,20 @@ if args.gpu is not False:
 if args.stats is not None:
     ml_options.append('-stats')
     ml_options.append(args.stats)
-if type(args.conf).__name__ == 'list':
-    default_conf = ' --conf '.join([default_conf] + args.conf)
 
 # Assign script file to name received from argparse module
 script_file = args.f
+
+# find the systemML root path which contains the bin folder, the script folder and the target folder
+# tolerate path with spaces
+script_dir = os.path.dirname(os.path.realpath(__file__))
+project_root_dir = os.path.dirname(script_dir)
+user_dir = os.getcwd()
+
+scripts_dir = join(project_root_dir, 'scripts')
+build_dir = join(project_root_dir, 'target')
+target_jars = join(build_dir, '*.jar')
+log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.template')
 
 build_err_msg = 'You must build the project before running this script.'
 build_dir_err_msg = 'Could not find target directory ' + build_dir + '. ' + build_err_msg
@@ -158,9 +149,18 @@ if not (exists(script_file)):
         script_file = script_file_found
         print('DML Script:' + script_file)
 
+default_conf = 'spark.driver.extraJavaOptions=-Dlog4j.configuration=file:{}'.format(log4j_properties_path)
+
+# Backslash problem in windows.
+if platform.system() == 'Windows':
+    default_conf = default_conf.replace('\\', '//')
+
+if args.conf is not None:
+    conf = ' --conf '.join(args.conf + [default_conf])
+
 cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
-             '--executor-cores', args.executor_cores, '--conf', default_conf]
+             '--executor-cores', args.executor_cores, '--conf', conf]
 
 cmd_system_ml = ['--jars', target_jars, '-config', systemml_config_path_arg,
                  '-exec', vars(args)['exec'], '-f', script_file, ' '.join(ml_options)]

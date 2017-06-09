@@ -50,7 +50,6 @@ public class RewriteEMult extends HopRewriteRule {
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) throws HopsException {
 		if( roots == null )
 			return null;
-
 		for( int i=0; i<roots.size(); i++ ) {
 			Hop h = roots.get(i);
 			roots.set(i, rule_RewriteEMult(h));
@@ -83,6 +82,7 @@ public class RewriteEMult extends HopRewriteRule {
 			final Set<BinaryOp> emults = new HashSet<>();
 			final Multiset<Hop> leaves = HashMultiset.create();
 			findEMultsAndLeaves(r, emults, leaves);
+
 			// 2. Ensure it is profitable to do a rewrite.
 			if (isOptimizable(leaves)) {
 				// 3. Check for foreign parents.
@@ -93,8 +93,12 @@ public class RewriteEMult extends HopRewriteRule {
 				if (okay) {
 					// 4. Construct replacement EMults for the leaves
 					final Hop replacement = constructReplacement(leaves);
-
 					// 5. Replace root with replacement
+					if (LOG.isDebugEnabled())
+						LOG.debug(String.format(
+								"Element-wise multiply chain rewrite of %d e-mults at sub-dag %d to new sub-dag %d",
+								emults.size(), root.getHopID(), replacement.getHopID()));
+					replacement.setVisited();
 					return HopRewriteUtils.replaceHop(root, replacement);
 				}
 			}
@@ -141,7 +145,7 @@ public class RewriteEMult extends HopRewriteRule {
 		return HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
 	}
 
-	private static Comparator<Hop> compareByDataType = Comparator.comparing(Hop::getDataType);
+	private static Comparator<Hop> compareByDataType = Comparator.comparing(Hop::getDataType).thenComparing(Object::hashCode);
 
 	private static boolean checkForeignParent(final Set<BinaryOp> emults, final BinaryOp child) {
 		final ArrayList<Hop> parents = child.getParent();

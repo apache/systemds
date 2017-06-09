@@ -43,7 +43,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	
 	private final static double eps = 1e-5;
 	
-	private final static int rows = 1468;
+	private final static int rows = 3468;
 	private final static int cols1 = 1007;
 	private final static int cols2 = 987;
 	

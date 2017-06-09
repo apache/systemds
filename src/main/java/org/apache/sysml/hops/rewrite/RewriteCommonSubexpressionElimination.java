@@ -131,6 +131,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 					Hop tmp = dataops.get(hi.getName());
 					if( tmp != hi ) { //if required
 						tmp.getParent().add(hop);
+						tmp.setVisited();
 						hop.getInput().set(i, tmp);
 						ret++;
 					}
@@ -142,6 +143,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 					//replace child node ref
 					if( tmp != hi ){ //if required
 						tmp.getParent().add(hop);
+						tmp.setVisited();
 						hop.getInput().set(i, tmp);
 						ret++;
 					}
@@ -200,6 +202,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 								{
 									p.getInput().set(k, h1);
 									h1.getParent().add(p);
+									h1.setVisited();
 								}
 						
 						//replace h2 w/ h1 in h2-input parents

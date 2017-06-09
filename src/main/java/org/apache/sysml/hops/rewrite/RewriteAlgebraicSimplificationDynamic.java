@@ -94,13 +94,13 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//one pass rewrite-descend (rewrite created pattern)
 		for( Hop h : roots )
 			rule_AlgebraicSimplification( h, false );
+		Hop.resetVisitStatus(roots, true);
 
-		Hop.resetVisitStatus(roots);
-		
 		//one pass descend-rewrite (for rollup) 
 		for( Hop h : roots )
 			rule_AlgebraicSimplification( h, true );
-
+		Hop.resetVisitStatus(roots, true);
+		
 		return roots;
 	}
 

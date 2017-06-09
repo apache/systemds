@@ -81,12 +81,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//one pass rewrite-descend (rewrite created pattern)
 		for( Hop h : roots )
 			rule_AlgebraicSimplification( h, false );
-
-		Hop.resetVisitStatus(roots);
+		Hop.resetVisitStatus(roots, true);
 		
 		//one pass descend-rewrite (for rollup) 
 		for( Hop h : roots )
 			rule_AlgebraicSimplification( h, true );
+		Hop.resetVisitStatus(roots, true);
 		
 		return roots;
 	}
@@ -498,22 +498,16 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( bop.getOp()==OpOp2.PLUS ) //X+X -> X*2
 				{
 					bop.setOp(OpOp2.MULT);
-					LiteralOp tmp = new LiteralOp(2);
-					bop.getInput().remove(1);
-					right.getParent().remove(bop);
-					HopRewriteUtils.addChildReference(hi, tmp, 1);
-
-					LOG.debug("Applied simplifyBinaryToUnaryOperation1");
+					HopRewriteUtils.replaceChildReference(hi, right, new LiteralOp(2), 1);
+					
+					LOG.debug("Applied simplifyBinaryToUnaryOperation1 (line "+hi.getBeginLine()+").");
 				}
 				else if ( bop.getOp()==OpOp2.MULT ) //X*X -> X^2
 				{
 					bop.setOp(OpOp2.POW);
-					LiteralOp tmp = new LiteralOp(2);
-					bop.getInput().remove(1);
-					right.getParent().remove(bop);
-					HopRewriteUtils.addChildReference(hi, tmp, 1);
+					HopRewriteUtils.replaceChildReference(hi, right, new LiteralOp(2), 1);
 					
-					LOG.debug("Applied simplifyBinaryToUnaryOperation2");
+					LOG.debug("Applied simplifyBinaryToUnaryOperation2 (line "+hi.getBeginLine()+").");
 				}
 			}
 			//patterns: (X>0)-(X<0) -> sign(X)
@@ -531,7 +525,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.cleanupUnreferenced(hi, left, right);
 				hi = uop;
 				
-				LOG.debug("Applied simplifyBinaryToUnaryOperation3");
+				LOG.debug("Applied simplifyBinaryToUnaryOperation3 (line "+hi.getBeginLine()+").");
 			}
 		}
 		

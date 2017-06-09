@@ -50,7 +50,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	{
 		if( roots == null )
 			return roots;
-
+		
 		for( Hop h : roots )
 			rule_IndexingVectorization( h );
 		
@@ -84,9 +84,9 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			//MB: disabled right indexing rewrite because (1) piggybacked in MR anyway, (2) usually
 			//not too much overhead, and (3) makes literal replacement more difficult
 			//vectorizeRightIndexing( hi ); //e.g., multiple rightindexing X[i,1], X[i,3] -> X[i,];
-			vectorizeLeftIndexing( hi );  //e.g., multiple left indexing X[i,1], X[i,3] -> X[i,]; 
+			hi = vectorizeLeftIndexing( hi );  //e.g., multiple left indexing X[i,1], X[i,3] -> X[i,]; 
 			
-			//process childs recursively after rewrites 
+			//process childs recursively after rewrites
 			rule_IndexingVectorization( hi );
 		}
 
@@ -189,9 +189,11 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void vectorizeLeftIndexing( Hop hop )
+	private Hop vectorizeLeftIndexing( Hop hop )
 		throws HopsException
-	{		
+	{
+		Hop ret = hop;
+		
 		if( hop instanceof LeftIndexingOp ) //left indexing
 		{
 			LeftIndexingOp ihop0 = (LeftIndexingOp) hop;
@@ -224,11 +226,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop rowExpr = ihop0.getInput().get(2); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
-							            rowExpr, rowExpr, new LiteralOp(1), 
-							            HopRewriteUtils.createValueHop(input, false), true, false); 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), 
+						input, rowExpr, rowExpr, new LiteralOp(1), 
+						HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newRix.refreshSizeInformation();
+					//reset visit status of copied hops (otherwise hidden by left indexing)
+					for( Hop c : newRix.getInput() )
+						c.resetVisitStatus();
 					
 					//rewrite bottom left indexing operator
 					HopRewriteUtils.removeChildReference(current, input); //input data
@@ -253,11 +258,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
-													rowExpr, rowExpr, new LiteralOp(1), 
-													HopRewriteUtils.createValueHop(input, false), true, false); 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), 
+						input, ihop0, rowExpr, rowExpr, new LiteralOp(1), 
+						HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
+					//reset visit status of copied hops (otherwise hidden by left indexing)
+					for( Hop c : newLix.getInput() )
+						c.resetVisitStatus();
 					
 					for( int i=0; i<ihop0parentsPos.size(); i++ ) {
 						Hop parent = ihop0parents.get(i);
@@ -266,7 +274,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					}
 					
 					appliedRow = true;
-					LOG.debug("Applied vectorizeLeftIndexingRow");
+					ret = newLix;
+					LOG.debug("Applied vectorizeLeftIndexingRow for hop "+hop.getHopID());
 				}
 			}
 			
@@ -296,11 +305,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop colExpr = ihop0.getInput().get(4); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
-							        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),            
-									colExpr, colExpr, false, true); 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), 
+						input, new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),            
+						colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newRix.refreshSizeInformation();
+					//reset visit status of copied hops (otherwise hidden by left indexing)
+					for( Hop c : newRix.getInput() )
+						c.resetVisitStatus();
 					
 					//rewrite bottom left indexing operator
 					HopRewriteUtils.removeChildReference(current, input); //input data
@@ -325,11 +337,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
-							                        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true), 
-													colExpr, colExpr, false, true); 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), 
+						input, ihop0, new LiteralOp(1), HopRewriteUtils.createValueHop(input, true), 
+						colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
+					//reset visit status of copied hops (otherwise hidden by left indexing)
+					for( Hop c : newLix.getInput() )
+						c.resetVisitStatus();
 					
 					for( int i=0; i<ihop0parentsPos.size(); i++ ) {
 						Hop parent = ihop0parents.get(i);
@@ -337,10 +352,12 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						HopRewriteUtils.addChildReference(parent, newLix, posp);
 					}
 					
-					appliedRow = true;
-					LOG.debug("Applied vectorizeLeftIndexingCol");
+					ret = newLix;
+					LOG.debug("Applied vectorizeLeftIndexingCol for hop "+hop.getHopID());
 				}
 			}
 		}
+		
+		return ret;
 	}
 }

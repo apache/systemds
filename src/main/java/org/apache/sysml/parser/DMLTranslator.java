@@ -1547,7 +1547,7 @@ public class DMLTranslator
 		if( sourceOp.getDataType() == DataType.MATRIX && source.getOutput().getDataType() == DataType.SCALAR )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.DOUBLE, 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
 				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		

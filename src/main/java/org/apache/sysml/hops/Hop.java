@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -865,12 +866,32 @@ public abstract class Hop
 				hopRoot.resetVisitStatus();
 	}
 	
+	public static void resetVisitStatus( ArrayList<Hop> hops, boolean force ) {
+		if( !force )
+			resetVisitStatus(hops);
+		else {
+			HashSet<Long> memo = new HashSet<Long>();
+			if( hops != null )
+				for( Hop hopRoot : hops )
+					hopRoot.resetVisitStatusForced(memo);
+		}
+	}
+	
 	public void resetVisitStatus()  {
 		if( !isVisited() )
 			return;
-		for( Hop h : this.getInput() )
+		for( Hop h : getInput() )
 			h.resetVisitStatus();		
 		setVisited(false);
+	}
+	
+	public void resetVisitStatusForced(HashSet<Long> memo) {
+		if( memo.contains(getHopID()) )
+			return;
+		for( Hop h : getInput() )
+			h.resetVisitStatusForced(memo);
+		setVisited(false);
+		memo.add(getHopID());
 	}
 
 	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )

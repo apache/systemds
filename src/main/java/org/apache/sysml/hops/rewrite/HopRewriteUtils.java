@@ -246,6 +246,8 @@ public class HopRewriteUtils
 	 * Replace an old Hop with a replacement Hop.
 	 * If the old Hop has no parents, then return the replacement.
 	 * Otherwise rewire each of the Hop's parents into the replacement and return the replacement.
+	 * @param old To be replaced
+	 * @param replacement The replacement
 	 * @return replacement
 	 */
 	public static Hop replaceHop(final Hop old, final Hop replacement) {

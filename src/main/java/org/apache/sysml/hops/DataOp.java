@@ -195,15 +195,15 @@ public class DataOp extends Hop
 		case PERSISTENTREAD:
 		case TRANSIENTREAD:
 			HopsException.check(sz == pz, this,
-					"in %s mode has %d inputs and %d parameters",
-					_dataop, sz, pz);
+					"in %s operator type has %d inputs and %d parameters",
+					_dataop.name(), sz, pz);
 			break;
 		case PERSISTENTWRITE:
 		case TRANSIENTWRITE:
 		case FUNCTIONOUTPUT:
 			HopsException.check(sz == pz + 1, this,
-					"in %s mode has %d inputs and %d parameters (expect 1 more input for write mode)",
-					_dataop, sz, pz);
+					"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
+					_dataop.name(), sz, pz);
 			break;
 		}
 	}

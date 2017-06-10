@@ -78,8 +78,8 @@ public abstract class Hop
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
-	protected ArrayList<Hop> _parent = new ArrayList<>(5);
-	protected ArrayList<Hop> _input = new ArrayList<>(5);
+	protected ArrayList<Hop> _parent = new ArrayList<>();
+	protected ArrayList<Hop> _input = new ArrayList<>();
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer

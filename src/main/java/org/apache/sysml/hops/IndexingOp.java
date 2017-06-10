@@ -77,8 +77,7 @@ public class IndexingOp extends Hop
 
 	@Override
 	public void checkArity() throws HopsException {
-		int sz = _input.size();
-		HopsException.check(sz == 5, this, "should have 5 inputs but has %d inputs", sz);
+		HopsException.check(_input.size() == 5, this, "should have 5 inputs but has %d inputs", _input.size());
 	}
 
 	public boolean isRowLowerEqualsUpper(){

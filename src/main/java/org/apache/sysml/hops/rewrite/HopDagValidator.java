@@ -87,7 +87,7 @@ public class HopDagValidator {
 
 		final boolean seen = !state.seen.add(id);
 		check(seen == hop.isVisited(), hop,
-				"seen previously is %b but hop visited previously is %b", seen, !seen);
+				"seen previously is %b but does not match hop visit status", seen);
 		if (seen) return; // we saw the Hop previously, no need to re-validate
 		
 		//check parent linking

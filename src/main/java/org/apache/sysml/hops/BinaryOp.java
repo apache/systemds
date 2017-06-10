@@ -113,8 +113,7 @@ public class BinaryOp extends Hop
 
 	@Override
 	public void checkArity() throws HopsException {
-		int sz = _input.size();
-		HopsException.check(sz == 2, this, "should have arity 2 but has arity %d", sz);
+		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
 	}
 
 	public OpOp2 getOp() {

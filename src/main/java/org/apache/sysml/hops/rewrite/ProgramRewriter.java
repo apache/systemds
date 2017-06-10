@@ -55,7 +55,7 @@ public class ProgramRewriter
 	
 	//internal local debug level
 	private static final boolean LDEBUG = false; 
-	private static final boolean CHECK = true;
+	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
@@ -260,22 +260,20 @@ public class ProgramRewriter
 	
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
-	{	
+	{
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
 		
-			if( CHECK ) {
+			if( CHECK )
 				try {
 					HopDagValidator.validateHopDag(roots);
 				} catch (HopsException e) {
-					LOG.error("Invalid hop after rewriting by "+r.getClass().getName(), e);
+					LOG.error("Invalid hop after rewriting by " + r.getClass().getName(), e);
 					throw e;
 				}
-			}
 		}
-		
 		return roots;
 	}
 	
@@ -283,23 +281,21 @@ public class ProgramRewriter
 		throws HopsException
 	{	
 		if( root == null )
-			return root;
+			return null;
 		
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			root.resetVisitStatus(); //reset for each rule
 			root = r.rewriteHopDAG(root, state);
 
-			if( CHECK ) {
+			if( CHECK )
 				try {
 					HopDagValidator.validateHopDag(root);
 				} catch (HopsException e) {
-					LOG.error("Invalid hop after rewriting by "+r.getClass().getName(), e);
+					LOG.error("Invalid hop after rewriting by " + r.getClass().getName(), e);
 					throw e;
 				}
-			}
 		}
-		
 		return root;
 	}
 	

@@ -75,8 +75,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 
 	@Override
 	public void checkArity() throws HopsException {
-		int sz = _input.size();
-		HopsException.check(sz == 1, this, "should have arity 1 but has arity %d", sz);
+		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
 	}
 
 	public AggOp getOp()

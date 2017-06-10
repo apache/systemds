@@ -118,8 +118,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 
 	@Override
 	public void checkArity() throws HopsException {
-		int sz = _input.size();
-		HopsException.check(sz == 2, this, "should have arity 2 but has arity %d", sz);
+		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
 	}
 
 	public void setHasLeftPMInput(boolean flag) {

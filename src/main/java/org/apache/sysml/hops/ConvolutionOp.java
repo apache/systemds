@@ -61,8 +61,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 
 	@Override
 	public void checkArity() throws HopsException {
-		int sz = _input.size();
-		HopsException.check(sz >= 1, this, "should have at least one input but has %d inputs", sz);
+		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
 	}
 
 	public ConvOp getOp()

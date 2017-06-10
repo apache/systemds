@@ -59,6 +59,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
+	}
+
 	public ConvOp getOp()
 	{
 		return op;

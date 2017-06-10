@@ -2050,7 +2050,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			else if( HopRewriteUtils.isBinary(hi2, OpOp2.MULT, 1) //no other consumer than sum
 					&& hi2.getInput().get(0).getDim2()==1 && hi2.getInput().get(1).getDim2()==1
 					&& !HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.MULT)
-					&& !HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.MULT) )
+					&& !HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.MULT)
+					&& !(HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.POW)      // do not rewrite (A^2)*B
+						&& hi2.getInput().get(0).getInput().get(1) instanceof LiteralOp  // let tak+* handle it
+						&& ((LiteralOp)hi2.getInput().get(0).getInput().get(1)).getLongValue() == 2)
+					&& !(HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.POW)      // do not rewrite B*(A^2)
+						&& hi2.getInput().get(1).getInput().get(1) instanceof LiteralOp  // let tak+* handle it
+						&& ((LiteralOp)hi2.getInput().get(1).getInput().get(1)).getLongValue() == 2)
+					)
 			{
 				baLeft = hi2.getInput().get(0);
 				baRight = hi2.getInput().get(1);

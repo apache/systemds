@@ -510,7 +510,8 @@ public class MapReduceTool
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, rlen*clen);
+		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, estnnz);
 		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
@@ -518,7 +519,8 @@ public class MapReduceTool
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, rlen*clen);
+		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, estnnz);
 		return DataConverter.convertToDoubleVector(mb);
 	}
 	

@@ -55,7 +55,7 @@ public class ReaderTextCSV extends MatrixReader
 	{
 		//allocate output matrix block
 		MatrixBlock ret = null;
-		if( rlen>0 && clen>0 ) //otherwise CSV reblock based on file size for matrix w/ unknown dimensions
+		if( rlen>0 && clen>0 ) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
 		//prepare file access
@@ -98,7 +98,7 @@ public class ReaderTextCSV extends MatrixReader
 	@SuppressWarnings("unchecked")
 	private MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
 			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
-		throws IOException
+		throws IOException, DMLRuntimeException
 	{
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files=new ArrayList<Path>();
@@ -222,7 +222,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 
 	private MatrixBlock computeCSVSize( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws IOException 
+		throws IOException, DMLRuntimeException 
 	{		
 		int nrow = -1;
 		int ncol = -1;
@@ -255,7 +255,8 @@ public class ReaderTextCSV extends MatrixReader
 			}
 		}
 		
-		//create new matrix block (assume sparse for consistency w/ compiler)
-		return new MatrixBlock(nrow, ncol, true);
+		// allocate target matrix block based on given size; 
+		return createOutputMatrixBlock(nrow, ncol, 
+			nrow, ncol, (long)nrow*ncol, true, false);
 	}
 }

@@ -123,8 +123,8 @@ public class Recompiler
 	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	//note that we scale this threshold up by the degree of available parallelism
-	private static final long CP_REBLOCK_THRESHOLD_SIZE = (long)1024*1024*1024; 
-	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
+	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1L*1024*1024*1024; 
+	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = CP_REBLOCK_THRESHOLD_SIZE;
 	
 	/** Local reused rewriter for dynamic rewrites during recompile */
 
@@ -1817,7 +1817,15 @@ public class Recompiler
 		
 		//robustness unknown dimensions, e.g., for csv reblock
 		if( rows <= 0 || cols <= 0 ) {
-			return false;
+			try {
+				long size = MapReduceTool.getFilesizeOnHDFS(new Path(obj.getFileName()));
+				return (size < OptimizerUtils.getLocalMemBudget() &&
+					size < CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE * 
+					OptimizerUtils.getParallelTextReadParallelism());
+			} 
+			catch(IllegalArgumentException | IOException ex) {
+				throw new DMLRuntimeException(ex);
+			}
 		}
 		
 		//check valid dimensions and memory requirements

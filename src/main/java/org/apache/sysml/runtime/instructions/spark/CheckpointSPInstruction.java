@@ -77,7 +77,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		// Step 1: early abort on non-existing inputs 
+		// Step 1: early abort on non-existing or in-memory (cached) inputs
 		// -------
 		// (checkpoints are generated for all read only variables in loops; due to unbounded scoping and 
 		// conditional control flow they to not necessarily exist in the symbol table during runtime - 
@@ -86,6 +86,14 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
 			sec.setVariable( output.getName(), new BooleanObject(false));
+			return;
+		}
+		//-------
+		//(for csv input files with unknown dimensions, we might have generated a checkpoint after
+		//csvreblock although not necessary because the csvreblock was subject to in-memory reblock)
+		CacheableData<?> obj = sec.getCacheableData(input1.getName());
+		if( obj.isCached(true) ) { //available in memory
+			sec.setVariable(output.getName(), obj);
 			return;
 		}
 		

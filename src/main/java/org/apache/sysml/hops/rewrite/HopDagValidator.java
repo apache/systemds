@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
@@ -85,6 +86,7 @@ public class HopDagValidator {
 	private static void rValidateHop(final Hop hop, final ValidatorState state) throws HopsException {
 		final long id = hop.getHopID();
 
+		//check visit status
 		final boolean seen = !state.seen.add(id);
 		check(seen == hop.isVisited(), hop,
 				"seen previously is %b but does not match hop visit status", seen);
@@ -107,8 +109,8 @@ public class HopDagValidator {
 
 		//check empty children (other variable-length Hops must have at least one child)
 		if( input.isEmpty() )
-			check(hop instanceof DataOp || hop instanceof LiteralOp, hop,
-					"is not a dataop/literal but has no children");
+			check(hop instanceof DataOp || hop instanceof FunctionOp || hop instanceof LiteralOp, hop,
+					"is not a dataop/functionop/literal but has no children");
 
 		// check Hop has a legal arity (number of children)
 		hop.checkArity();

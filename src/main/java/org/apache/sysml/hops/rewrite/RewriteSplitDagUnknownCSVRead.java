@@ -20,12 +20,16 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
@@ -45,6 +49,10 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
+		//DAG splits not required for forced single node
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return new ArrayList<StatementBlock>(Arrays.asList(sb));
+		
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 		
 		//collect all unknown csv reads hops
@@ -66,16 +74,22 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 				//move csv reads incl reblock to new statement block
 				//(and replace original persistent read with transient read)
 				ArrayList<Hop> sb1hops = new ArrayList<Hop>();			
-				for( Hop c : cand )
+				for( Hop reblock : cand )
 				{
-					Hop reblock = c;
 					long rlen = reblock.getDim1();
 					long clen = reblock.getDim2();
 					long nnz = reblock.getNnz();
-					UpdateType update = c.getUpdateType();
+					UpdateType update = reblock.getUpdateType();
 					long brlen = reblock.getRowsInBlock();
 					long bclen = reblock.getColsInBlock();
-	
+					
+					//replace reblock inputs to avoid dangling references across dags
+					//(otherwise, for instance, literal ops are shared across dags)
+					for( int i=0; i<reblock.getInput().size(); i++ )
+						if( reblock.getInput().get(i) instanceof LiteralOp )
+							HopRewriteUtils.replaceChildReference(reblock, reblock.getInput().get(i), 
+								new LiteralOp((LiteralOp)reblock.getInput().get(i)));
+					
 					//create new transient read
 					DataOp tread = new DataOp(reblock.getName(), reblock.getDataType(), reblock.getValueType(),
 		                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
@@ -83,8 +97,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					
 					//replace reblock with transient read
 					ArrayList<Hop> parents = new ArrayList<Hop>(reblock.getParent());
-					for( int i=0; i<parents.size(); i++ )
-					{
+					for( int i=0; i<parents.size(); i++ ) {
 						Hop parent = parents.get(i);
 						HopRewriteUtils.replaceChildReference(parent, reblock, tread);
 					}

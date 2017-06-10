@@ -592,11 +592,10 @@ public class DataOp extends Hop
 	 * @param inputName The name of the input to remove
 	 */
 	public void removeInput(String inputName) {
-
 		int inputIndex = getParameterIndex(inputName);
-		_input.remove(inputIndex);
+		Hop tmp = _input.remove(inputIndex);
+		tmp._parent.remove(this);
 		_paramIndexMap.remove(inputName);
-
 		for (Entry<String, Integer> entry : _paramIndexMap.entrySet()) {
 			if (entry.getValue() > inputIndex) {
 				_paramIndexMap.put(entry.getKey(), (entry.getValue() - 1));

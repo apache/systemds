@@ -153,9 +153,7 @@ public class ScriptExecutor {
 	protected void constructHops() {
 		try {
 			dmlTranslator.constructHops(dmlProgram);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while constructing HOPS (high-level operators)", e);
-		} catch (ParseException e) {
+		} catch (LanguageException | ParseException e) {
 			throw new MLContextException("Exception occurred while constructing HOPS (high-level operators)", e);
 		}
 	}
@@ -168,11 +166,7 @@ public class ScriptExecutor {
 	protected void rewriteHops() {
 		try {
 			dmlTranslator.rewriteHopsDAG(dmlProgram);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
-		} catch (HopsException e) {
-			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
-		} catch (ParseException e) {
+		} catch (LanguageException | HopsException | ParseException e) {
 			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
 		}
 	}
@@ -199,13 +193,7 @@ public class ScriptExecutor {
 	protected void constructLops() {
 		try {
 			dmlTranslator.constructLops(dmlProgram);
-		} catch (ParseException e) {
-			throw new MLContextException("Exception occurred while constructing LOPS (low-level operators)", e);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while constructing LOPS (low-level operators)", e);
-		} catch (HopsException e) {
-			throw new MLContextException("Exception occurred while constructing LOPS (low-level operators)", e);
-		} catch (LopsException e) {
+		} catch (ParseException | LanguageException | HopsException | LopsException e) {
 			throw new MLContextException("Exception occurred while constructing LOPS (low-level operators)", e);
 		}
 	}
@@ -218,13 +206,7 @@ public class ScriptExecutor {
 	protected void generateRuntimeProgram() {
 		try {
 			runtimeProgram = dmlProgram.getRuntimeProgram(config);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while generating runtime program", e);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred while generating runtime program", e);
-		} catch (LopsException e) {
-			throw new MLContextException("Exception occurred while generating runtime program", e);
-		} catch (IOException e) {
+		} catch (LanguageException | DMLRuntimeException | LopsException | IOException e) {
 			throw new MLContextException("Exception occurred while generating runtime program", e);
 		}
 	}
@@ -480,9 +462,7 @@ public class ScriptExecutor {
 			ProgramRewriter programRewriter = new ProgramRewriter(rewrite);
 			try {
 				programRewriter.rewriteProgramHopDAGs(dmlProgram);
-			} catch (LanguageException e) {
-				throw new MLContextException("Exception occurred while rewriting persistent reads and writes", e);
-			} catch (HopsException e) {
+			} catch (LanguageException | HopsException e) {
 				throw new MLContextException("Exception occurred while rewriting persistent reads and writes", e);
 			}
 		}

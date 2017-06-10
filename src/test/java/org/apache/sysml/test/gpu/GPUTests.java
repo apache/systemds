@@ -176,6 +176,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 								"Relative error(%f) is more than threshold (%f). Expected = %f, Actual = %f, differed at [%d, %d]",
 								relativeError, getTHRESHOLD(), expectedDouble, actualDouble, i, j);
 						Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						format.close();
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
 					}

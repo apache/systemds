@@ -20,7 +20,9 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,7 +68,10 @@ public class ExecutionContext {
 	//debugging (optional)
 	protected DebugState _dbState = null;
 
-    protected GPUContext _gpuContext = null;
+	/**
+	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
+	 */
+    protected List<GPUContext> _gpuContexts = new ArrayList<>();
 
 	protected ExecutionContext()
 	{
@@ -99,13 +104,42 @@ public class ExecutionContext {
 		_variables = vars;
 	}
 
-    public GPUContext getGPUContext() {
-        return _gpuContext;
+	/**
+	 * Get the i-th GPUContext
+	 * @param index index of the GPUContext
+	 * @return a valid GPUContext or null if the indexed GPUContext does not exist.
+	 */
+    public GPUContext getGPUContext(int index) {
+    	try {
+			return _gpuContexts.get(index);
+		} catch (IndexOutOfBoundsException e){
+    		return null;
+		}
     }
 
-    public void setGPUContext(GPUContext _gpuContext) {
-        this._gpuContext = _gpuContext;
-    }
+	/**
+	 * Sets the list of GPUContexts
+	 * @param gpuContexts a collection of GPUContexts
+	 */
+	public void setGPUContexts(List<GPUContext> gpuContexts){
+		_gpuContexts = gpuContexts;
+	}
+
+	/**
+	 * Gets the list of GPUContexts
+	 * @return a list of GPUContexts
+	 */
+	public List<GPUContext> getGPUContexts() {
+		return _gpuContexts;
+	}
+
+	/**
+	 * Gets the number of GPUContexts
+	 * @return number of GPUContexts
+	 */
+	public int getNumGPUContexts() {
+    	return _gpuContexts.size();
+	}
 
 	/* -------------------------------------------------------
 	 * Methods to handle variables and associated data objects
@@ -238,7 +272,7 @@ public class ExecutionContext {
 		throws DMLRuntimeException 
 	{	
 		MatrixObject mo = allocateGPUMatrixObject(varName);
-		boolean allocated = mo.getGPUObject(getGPUContext()).acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return new Pair<MatrixObject, Boolean>(mo, allocated);
 	}
@@ -257,7 +291,7 @@ public class ExecutionContext {
     {
         MatrixObject mo = allocateGPUMatrixObject(varName);
         mo.getMatrixCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext()).acquireDeviceModifySparse();
+				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
         return new Pair<MatrixObject, Boolean>(mo, allocated);
     } 
 
@@ -269,12 +303,12 @@ public class ExecutionContext {
 	 */
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
-		if( mo.getGPUObject(getGPUContext()) == null ) {
-			GPUObject newGObj = getGPUContext().createGPUObject(mo);
+		if( mo.getGPUObject(getGPUContext(0)) == null ) {
+			GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
 			// The lock is added here for an output block
 			// so that any block currently in use is not deallocated by eviction on the GPU
 			newGObj.addLock();
-			mo.setGPUObject(getGPUContext(), newGObj);
+			mo.setGPUObject(getGPUContext(0), newGObj);
 		}
 		return mo;
 	}
@@ -282,7 +316,7 @@ public class ExecutionContext {
 	public Pair<MatrixObject, Boolean> getMatrixInputForGPUInstruction(String varName)
 			throws DMLRuntimeException 
 	{
-		GPUContext gCtx = getGPUContext();
+		GPUContext gCtx = getGPUContext(0);
 		boolean copied = false;
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo == null) {
@@ -322,7 +356,7 @@ public class ExecutionContext {
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = getMatrixObject(varName);
-		mo.getGPUObject(getGPUContext()).releaseInput();
+		mo.getGPUObject(getGPUContext(0)).releaseInput();
 	}
 	
 	/**
@@ -374,10 +408,10 @@ public class ExecutionContext {
 	
 	public void releaseMatrixOutputForGPUInstruction(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getGPUObject(getGPUContext()) == null || !mo.getGPUObject(getGPUContext()).isAllocated()) {
+		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
-		mo.getGPUObject(getGPUContext()).releaseOutput();
+		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 

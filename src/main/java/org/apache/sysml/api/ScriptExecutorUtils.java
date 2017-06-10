@@ -19,6 +19,8 @@
 
 package org.apache.sysml.api;
 
+import java.util.List;
+
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -79,23 +81,22 @@ public class ScriptExecutorUtils {
 		// GPUs
 		GPUContextPool.PER_PROCESS_MAX_GPUS = dmlconf.getIntValue(DMLConfig.MAX_GPUS_PER_PROCESS);
 		Statistics.startRunTimer();
-		GPUContext gCtx = null;
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
 			if (DMLScript.USE_ACCELERATOR && ec != null) {
-				gCtx = GPUContextPool.getFromPool();
-				if (gCtx == null) {
+				List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
+				if (gCtxs == null) {
 					throw new DMLRuntimeException(
 							"GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
 				}
-				gCtx.initializeThread();
-				ec.setGPUContext(gCtx);
+				gCtxs.get(0).initializeThread();
+				ec.setGPUContexts(gCtxs);
 			}
 			rtprog.execute(ec);
 		} finally { // ensure cleanup/shutdown
-			if (DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
-				ec.getGPUContext().clearTemporaryMemory();
-				GPUContextPool.returnToPool(ec.getGPUContext());
+			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
+				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
+				GPUContextPool.freeAllGPUContexts();
 			}
 			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
 				SpoofCompiler.cleanupCodeGenerator();

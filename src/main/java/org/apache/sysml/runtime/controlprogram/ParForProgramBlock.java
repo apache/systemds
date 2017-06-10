@@ -632,9 +632,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				case LOCAL: //create parworkers as local threads
 					if (DMLScript.USE_ACCELERATOR) {
-						GPUContextPool.returnToPool(ec.getGPUContext());
-						ec.setGPUContext(null);
-						setDegreeOfParallelism(GPUContextPool.getDeviceCount());
+						setDegreeOfParallelism(ec.getNumGPUContexts());
 					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
@@ -757,7 +755,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				//create parallel workers as (lazy) deep copies
 				//including preparation of update-in-place variables
-				workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
+				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY); 
 			}
@@ -833,11 +831,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			// the main thread to use the GPUContext
 			if (DMLScript.USE_ACCELERATOR) {
 				for (int i = 0; i < _numThreads; i++) {
-					GPUContext gCtx = workers[i].getExecutionContext().getGPUContext();
-					GPUContextPool.returnToPool(gCtx);
+					workers[i].getExecutionContext().setGPUContexts(null);
 				}
-				ec.setGPUContext(GPUContextPool.getFromPool());
-				ec.getGPUContext().initializeThread();
+				ec.getGPUContext(0).initializeThread();
 			}
 		}
 		finally 
@@ -1386,10 +1382,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param pwID parworker id
 	 * @param queue task queue
 	 * @param ec execution context
+	 * @param index the index of the worker
 	 * @return local parworker
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec) 
+	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec, int index)
 		throws DMLRuntimeException
 	{
 		LocalParWorker pw = null; 
@@ -1420,9 +1417,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
 
 			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
-			// and sets it in the ExecutionContext
+			// and sets it in the ExecutionContext of the parfor
 			if (DMLScript.USE_ACCELERATOR){
-				cpEc.setGPUContext(GPUContextPool.getFromPool());
+				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(index)));
 			}
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)

@@ -37,7 +37,7 @@ import org.junit.Test;
  */
 public class RewriteEMultChainTest extends AutomatedTestBase
 {
-	private static final String TEST_NAME1 = "RewriteEMultChainOp";
+	private static final String TEST_NAME1 = "RewriteEMultChainOpXYX";
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteEMultChainTest.class.getSimpleName() + "/";
 	
@@ -94,8 +94,7 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-explain", "hops", "-stats", 
-				"-args", input("X"), input("Y"), output("R") };
+			programArgs = new String[] { "-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R") };
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
 
@@ -104,7 +103,7 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 			double[][] Y = getRandomMatrix(rows, cols, -1, 1, Ysparsity, 3);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
-			
+
 			//execute tests
 			runTest(true, false, null, -1); 
 			runRScript(true); 

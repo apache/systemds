@@ -490,29 +490,35 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			(_direction == Direction.RowCol || _direction == Direction.Col)  ) 
 		{
 			Hop input1 = getInput().get(0);
-			if( input1.getParent().size() == 1 && //sum single consumer
-				input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT
-				// As unary agg instruction is not implemented in MR and since MR is in maintenance mode, postponed it.
-				&& input1.optFindExecType() != ExecType.MR) 
-			{
-				Hop input11 = input1.getInput().get(0);
-				Hop input12 = input1.getInput().get(1);
-				
-				if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT ) {
-					//ternary, arbitrary matrices but no mv/outer operations.
-					ret = HopRewriteUtils.isEqualSize(input11.getInput().get(0), input1)
-						&& HopRewriteUtils.isEqualSize(input11.getInput().get(1), input1)	
-						&& HopRewriteUtils.isEqualSize(input12, input1);
+			if (input1.getParent().size() == 1
+					&& input1 instanceof BinaryOp) { //sum single consumer
+				BinaryOp binput1 = (BinaryOp)input1;
+
+				if (binput1.getOp() == OpOp2.POW
+						&& binput1.getInput().get(1) instanceof LiteralOp) {
+					LiteralOp lit = (LiteralOp)binput1.getInput().get(1);
+					ret = lit.getLongValue() == 3;
 				}
-				else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT ) {
-					//ternary, arbitrary matrices but no mv/outer operations.
-					ret = HopRewriteUtils.isEqualSize(input12.getInput().get(0), input1)
-							&& HopRewriteUtils.isEqualSize(input12.getInput().get(1), input1)	
-							&& HopRewriteUtils.isEqualSize(input11, input1);
-				}
-				else {
-					//binary, arbitrary matrices but no mv/outer operations.
-					ret = HopRewriteUtils.isEqualSize(input11, input12);
+				else if (binput1.getOp() == OpOp2.MULT
+						// As unary agg instruction is not implemented in MR and since MR is in maintenance mode, postponed it.
+						&& input1.optFindExecType() != ExecType.MR) {
+					Hop input11 = input1.getInput().get(0);
+					Hop input12 = input1.getInput().get(1);
+
+					if (input11 instanceof BinaryOp && ((BinaryOp) input11).getOp() == OpOp2.MULT) {
+						//ternary, arbitrary matrices but no mv/outer operations.
+						ret = HopRewriteUtils.isEqualSize(input11.getInput().get(0), input1) && HopRewriteUtils
+								.isEqualSize(input11.getInput().get(1), input1) && HopRewriteUtils
+								.isEqualSize(input12, input1);
+					} else if (input12 instanceof BinaryOp && ((BinaryOp) input12).getOp() == OpOp2.MULT) {
+						//ternary, arbitrary matrices but no mv/outer operations.
+						ret = HopRewriteUtils.isEqualSize(input12.getInput().get(0), input1) && HopRewriteUtils
+								.isEqualSize(input12.getInput().get(1), input1) && HopRewriteUtils
+								.isEqualSize(input11, input1);
+					} else {
+						//binary, arbitrary matrices but no mv/outer operations.
+						ret = HopRewriteUtils.isEqualSize(input11, input12);
+					}
 				}
 			}
 		}
@@ -626,14 +632,25 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
 		throws HopsException, LopsException
 	{
-		Hop input1 = getInput().get(0);
+		BinaryOp input1 = (BinaryOp)getInput().get(0);
 		Hop input11 = input1.getInput().get(0);
 		Hop input12 = input1.getInput().get(1);
 		
 		Lop in1 = null, in2 = null, in3 = null;
 		boolean handled = false;
-		
-		if( input11 instanceof BinaryOp ) {
+
+		if (input1.getOp() == OpOp2.POW) {
+			switch ((int)((LiteralOp)input12).getLongValue()) {
+			case 3:
+				in1 = input11.constructLops();
+				in2 = in1;
+				in3 = in1;
+				break;
+			default:
+				throw new AssertionError("unreachable; only applies to power 3");
+			}
+			handled = true;
+		} else if (input11 instanceof BinaryOp ) {
 			BinaryOp b11 = (BinaryOp)input11;
 			switch (b11.getOp()) {
 			case MULT: // A*B*C case

@@ -42,13 +42,15 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "ABATernaryAggregateRC";
 	private final static String TEST_NAME2 = "ABATernaryAggregateC";
+	private final static String TEST_NAME3 = "AAATernaryAggregateRC";
+	private final static String TEST_NAME4 = "AAATernaryAggregateC";
 	
 	private final static String TEST_DIR = "functions/ternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ABATernaryAggregateTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
-	private final static int rows = 1111;
-	private final static int cols = 1011;
+	private final static int rows = 111;
+	private final static int cols = 101;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.3;
@@ -57,7 +59,9 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) ); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) ); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 
 	@Test
@@ -201,6 +205,151 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 	public void testTernaryAggregateCSparseMatrixCPNoRewrite() {
 		runTernaryAggregateTest(TEST_NAME2, true, false, false, ExecType.CP);
 	}
+
+
+	// another set of tests for the case of sum(A*A*A)
+
+	@Test
+	public void testTernaryAggregateRCDenseVectorCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseVectorCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseMatrixCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseMatrixCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseVectorSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseVectorSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseMatrixSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, false, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseMatrixSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, false, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseVectorMR_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, true, ExecType.MR);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseVectorMR_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, true, ExecType.MR);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseMatrixMR_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, false, true, ExecType.MR);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseMatrixMR_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, false, true, ExecType.MR);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseVectorCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseVectorCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseMatrixCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseMatrixCP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseVectorSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseVectorSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseMatrixSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, false, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseMatrixSP_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, false, true, ExecType.SPARK);
+	}
+
+	//additional tests to check default without rewrites
+
+	@Test
+	public void testTernaryAggregateRCDenseVectorCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseVectorCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCDenseMatrixCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, false, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRCSparseMatrixCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME3, true, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseVectorCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseVectorCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCDenseMatrixCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, false, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateCSparseMatrixCPNoRewrite_AAA() {
+		runTernaryAggregateTest(TEST_NAME4, true, false, false, ExecType.CP);
+	}
 	
 	
 	
@@ -230,7 +379,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","hops","-stats","-args", input("A"), output("R")};
+			programArgs = new String[]{"-explain","-stats","-args", input("A"), output("R")};
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
@@ -254,7 +403,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			//check for rewritten patterns in statistics output
 			if( rewrites && et != ExecType.MR ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
-					(((testname.equals(TEST_NAME1) || vectors ) ? "tak+*" : "tack+*"));
+					(((testname.equals(TEST_NAME1) || testname.equals(TEST_NAME3) || vectors ) ? "tak+*" : "tack+*"));
 				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}

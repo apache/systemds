@@ -19,11 +19,14 @@
 #
 #-------------------------------------------------------------
 
-A = read($1);
-B = A * 2;
+args <- commandArgs(TRUE)
+options(digits=22)
 
-if(1==1){}
+library("Matrix")
 
-R = colSums(A * B * A);
+A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 
-write(R, $2);
+s = sum(A * A * A);
+R = as.matrix(s);
+
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 

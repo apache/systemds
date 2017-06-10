@@ -74,8 +74,12 @@ public class IndexingOp extends Hop
 		setRowLowerEqualsUpper(passedRowsLEU);
 		setColLowerEqualsUpper(passedColsLEU);
 	}
-	
-	
+
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() == 5, this, "should have 5 inputs but has %d inputs", _input.size());
+	}
+
 	public boolean isRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}

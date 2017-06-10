@@ -115,7 +115,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
-	
+
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
+	}
+
 	public void setHasLeftPMInput(boolean flag) {
 		_hasLeftPMInput = flag;
 	}

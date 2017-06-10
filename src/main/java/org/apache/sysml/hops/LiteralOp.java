@@ -62,7 +62,11 @@ public class LiteralOp extends Hop
 		this.value_boolean = value;
 	}
 
-	
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.isEmpty(), this, "should have 0 inputs but has %d inputs", _input.size());
+	}
+
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException  

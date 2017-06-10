@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  *  Reorg (cell) operation: aij
  * 		Properties: 
  * 			Symbol: ', rdiag, rshape, rsort
- * 			1 Operand
+ * 			1 Operand (except sort and reshape take additional arguments)
  * 	
  * 		Semantic: change indices (in mapper or reducer)
  * 
@@ -88,6 +88,24 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
+	}
+
+	@Override
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		switch( op ) {
+		case TRANSPOSE:
+		case DIAG:
+		case REV:
+			HopsException.check(sz == 1, this, "should have arity 1 for op %s but has arity %d", op, sz);
+			break;
+		case RESHAPE:
+		case SORT:
+			HopsException.check(sz == 4, this, "should have arity 4 for op %s but has arity %d", op, sz);
+			break;
+		default:
+			throw new HopsException("Unsupported lops construction for operation type '" + op + "'.");
+		}
 	}
 
 	@Override

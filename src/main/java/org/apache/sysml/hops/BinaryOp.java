@@ -111,6 +111,11 @@ public class BinaryOp extends Hop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
+	}
+
 	public OpOp2 getOp() {
 		return op;
 	}

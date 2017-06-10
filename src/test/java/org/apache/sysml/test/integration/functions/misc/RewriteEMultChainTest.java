@@ -99,8 +99,9 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
 
-			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.97d, 7);
-			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.9d, 3);
+			double Xsparsity = 0.8, Ysparsity = 0.6;
+			double[][] X = getRandomMatrix(rows, cols, -1, 1, Xsparsity, 7);
+			double[][] Y = getRandomMatrix(rows, cols, -1, 1, Ysparsity, 3);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
 			
@@ -123,5 +124,5 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}	
+	}
 }

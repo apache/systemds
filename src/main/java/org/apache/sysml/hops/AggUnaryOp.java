@@ -497,7 +497,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				if (binput1.getOp() == OpOp2.POW
 						&& binput1.getInput().get(1) instanceof LiteralOp) {
 					LiteralOp lit = (LiteralOp)binput1.getInput().get(1);
-					ret = lit.getLongValue() == 3;
+					ret = HopRewriteUtils.getIntValueSafe(lit) == 3;
 				}
 				else if (binput1.getOp() == OpOp2.MULT
 						// As unary agg instruction is not implemented in MR and since MR is in maintenance mode, postponed it.
@@ -640,15 +640,10 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		boolean handled = false;
 
 		if (input1.getOp() == OpOp2.POW) {
-			switch ((int)((LiteralOp)input12).getLongValue()) {
-			case 3:
-				in1 = input11.constructLops();
-				in2 = in1;
-				in3 = in1;
-				break;
-			default:
-				throw new AssertionError("unreachable; only applies to power 3");
-			}
+			assert(HopRewriteUtils.isLiteralOfValue(input12, 3)) : "this case can only occur with a power of 3";
+			in1 = input11.constructLops();
+			in2 = in1;
+			in3 = in1;
 			handled = true;
 		} else if (input11 instanceof BinaryOp ) {
 			BinaryOp b11 = (BinaryOp)input11;
@@ -662,8 +657,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			case POW: // A*A*B case
 				Hop b112 = b11.getInput().get(1);
 				if ( !(input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT)
-						&& b112 instanceof LiteralOp
-						&& ((LiteralOp)b112).getLongValue() == 2) {
+						&& HopRewriteUtils.isLiteralOfValue(b112, 2) ) {
 					in1 = b11.getInput().get(0).constructLops();
 					in2 = in1;
 					in3 = input12.constructLops();
@@ -682,8 +676,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				break;
 			case POW: // A*B*B case
 				Hop b112 = b12.getInput().get(1);
-				if ( b112 instanceof LiteralOp
-						&& ((LiteralOp)b112).getLongValue() == 2) {
+				if ( HopRewriteUtils.isLiteralOfValue(b112, 2) ) {
 					in1 = b12.getInput().get(0).constructLops();
 					in2 = in1;
 					in3 = input11.constructLops();

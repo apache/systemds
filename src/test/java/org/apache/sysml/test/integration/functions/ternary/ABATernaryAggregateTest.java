@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.rewrite.RewriteElementwiseMultChainOptimization;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -36,7 +37,7 @@ import org.junit.Test;
 
 /**
  * Similar to {@link TernaryAggregateTest} except that it tests `sum(A*B*A)`.
- * Checks compatibility with {@link org.apache.sysml.hops.rewrite.RewriteEMult}.
+ * Checks compatibility with {@link RewriteElementwiseMultChainOptimization}.
  */
 public class ABATernaryAggregateTest extends AutomatedTestBase
 {
@@ -368,14 +369,14 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES,
-				rewritesOldEmult = OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE;
+				rewritesOldEmult = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
-			OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE = rewrites;
+			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
@@ -411,7 +412,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
-			OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE = rewritesOldEmult;
+			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOldEmult;
 		}
 	}
 }

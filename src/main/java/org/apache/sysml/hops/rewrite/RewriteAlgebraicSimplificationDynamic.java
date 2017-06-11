@@ -53,6 +53,8 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
+import static org.apache.sysml.hops.OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions
  * in terms of two major purposes: (1) rewrite binary operations
@@ -2051,12 +2053,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					&& hi2.getInput().get(0).getDim2()==1 && hi2.getInput().get(1).getDim2()==1
 					&& !HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.MULT)
 					&& !HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.MULT)
-					&& !(HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.POW)      // do not rewrite (A^2)*B
-						&& hi2.getInput().get(0).getInput().get(1) instanceof LiteralOp  // let tak+* handle it
-						&& ((LiteralOp)hi2.getInput().get(0).getInput().get(1)).getLongValue() == 2)
-					&& !(HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.POW)      // do not rewrite B*(A^2)
-						&& hi2.getInput().get(1).getInput().get(1) instanceof LiteralOp  // let tak+* handle it
-						&& ((LiteralOp)hi2.getInput().get(1).getInput().get(1)).getLongValue() == 2)
+					&& ( !ALLOW_SUM_PRODUCT_REWRITES
+						|| !(  HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.POW)     // do not rewrite (A^2)*B
+							&& hi2.getInput().get(0).getInput().get(1) instanceof LiteralOp   // let tak+* handle it
+							&& ((LiteralOp)hi2.getInput().get(0).getInput().get(1)).getLongValue() == 2 ))
+					&& ( !ALLOW_SUM_PRODUCT_REWRITES
+						|| !( HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.POW)      // do not rewrite B*(A^2)
+							&& hi2.getInput().get(1).getInput().get(1) instanceof LiteralOp   // let tak+* handle it
+							&& ((LiteralOp)hi2.getInput().get(1).getInput().get(1)).getLongValue() == 2 ))
 					)
 			{
 				baLeft = hi2.getInput().get(0);

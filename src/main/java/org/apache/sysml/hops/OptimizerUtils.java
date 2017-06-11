@@ -111,11 +111,6 @@ public class OptimizerUtils
 	public static boolean ALLOW_CONSTANT_FOLDING = true;
 	
 	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
-	/**
-	 * Enables rewriting chains of element-wise multiplies that contain the same multiplicand more than once, as in
-	 * `A*B*A ==> (A^2)*B`.
-	 */
-	public static boolean ALLOW_EMULT_CHAIN_REWRITE = true;
 	public static boolean ALLOW_OPERATOR_FUSION = true;
 	
 	/**

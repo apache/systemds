@@ -251,8 +251,7 @@ public class HopRewriteUtils
 	 * @return replacement
 	 */
 	public static Hop replaceHop(final Hop old, final Hop replacement) {
-		final ArrayList<Hop> rootParents = old.getParent();
-		if (rootParents.isEmpty())
+		if (old.getParent().isEmpty())
 			return replacement; // new old!
 		HopRewriteUtils.rewireAllParentChildReferences(old, replacement);
 		return replacement;

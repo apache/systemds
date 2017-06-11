@@ -47,7 +47,7 @@ import com.google.common.collect.Multiset;
  * Does not rewrite in the presence of foreign parents in the middle of the e-wise multiply chain,
  * since foreign parents may rely on the individual results.
  */
-public class RewriteEMult extends HopRewriteRule {
+public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) throws HopsException {
 		if( roots == null )
@@ -173,7 +173,6 @@ public class RewriteEMult extends HopRewriteRule {
 
 			// o1 and o2 have the same data type
 			switch (o1.getDataType()) {
-			case SCALAR: return Long.compare(o1.getHopID(), o2.getHopID());
 			case MATRIX:
 				// two matrices; check for vectors
 				if (o1.getDim1() == 1) { // row vector
@@ -235,7 +234,7 @@ public class RewriteEMult extends HopRewriteRule {
 		final ArrayList<Hop> parents = child.getParent();
 		if (parents.size() > 1)
 			for (final Hop parent : parents)
-				//noinspection SuspiciousMethodCalls
+				//noinspection SuspiciousMethodCalls (for Intellij, which checks when
 				if (!emults.contains(parent))
 					return false;
 		// child does not have foreign parents
@@ -259,26 +258,24 @@ public class RewriteEMult extends HopRewriteRule {
 		final ArrayList<Hop> inputs = root.getInput();
 		final Hop left = inputs.get(0), right = inputs.get(1);
 
-		if (isBinaryMult(left)) findEMultsAndLeaves((BinaryOp) left, emults, leaves);
-		else leaves.add(left);
+		if (isBinaryMult(left))
+			findEMultsAndLeaves((BinaryOp) left, emults, leaves);
+		else
+			leaves.add(left);
 
-		if (isBinaryMult(right)) findEMultsAndLeaves((BinaryOp) right, emults, leaves);
-		else leaves.add(right);
+		if (isBinaryMult(right))
+			findEMultsAndLeaves((BinaryOp) right, emults, leaves);
+		else
+			leaves.add(right);
 	}
 
 	/**
-	 * Only optimize a subtree of emults if there are at least two emults.
+	 * Only optimize a subtree of emults if there are at least two emults (meaning, at least 3 multiplicands).
 	 * @param emults The set of BinaryOp element-wise multiply hops in the emult chain.
 	 * @param leaves The multiset of multiplicands in the emult chain.
 	 * @return If the multiset is worth optimizing.
 	 */
 	private static boolean isOptimizable(Set<BinaryOp> emults, final Multiset<Hop> leaves) {
-		// Old criterion: there should be at least one repeated leaf
-//		for (Multiset.Entry<Hop> hopEntry : leaves.entrySet()) {
-//			if (hopEntry.getCount() > 1)
-//				return true;
-//		}
-//		return false;
 		return emults.size() >= 2;
 	}
 }

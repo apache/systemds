@@ -35,11 +35,11 @@ import org.junit.Test;
 /**
  * Test whether `A*B*A` successfully rewrites to `(A^2)*B`.
  */
-public class RewriteEMultChainTest extends AutomatedTestBase
+public class RewriteElementwiseMultChainOptimizationChainTest extends AutomatedTestBase
 {
 	private static final String TEST_NAME1 = "RewriteEMultChainOpXYX";
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteEMultChainTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteElementwiseMultChainOptimizationChainTest.class.getSimpleName() + "/";
 	
 	private static final int rows = 123;
 	private static final int cols = 321;
@@ -84,8 +84,8 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
-		boolean rewritesOld = OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE;
-		OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE = rewrites;
+		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 		
 		try
 		{
@@ -119,7 +119,7 @@ public class RewriteEMultChainTest extends AutomatedTestBase
 			}
 		}
 		finally {
-			OptimizerUtils.ALLOW_EMULT_CHAIN_REWRITE = rewritesOld;
+			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

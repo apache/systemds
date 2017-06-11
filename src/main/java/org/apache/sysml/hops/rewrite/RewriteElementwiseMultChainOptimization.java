@@ -91,7 +91,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 						(!isBinaryMult(right) || checkForeignParent(emults, (BinaryOp)right));
 				if (okay) {
 					// 4. Construct replacement EMults for the leaves
-					final Hop replacement = constructReplacement(leaves);
+					final Hop replacement = constructReplacement(emults, leaves);
 					if (LOG.isDebugEnabled())
 						LOG.debug(String.format(
 								"Element-wise multiply chain rewrite of %d e-mults at sub-dag %d to new sub-dag %d",
@@ -123,13 +123,14 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		}
 	}
 
-	private static Hop constructReplacement(final Multiset<Hop> leaves) {
+	private static Hop constructReplacement(final Set<BinaryOp> emults, final Multiset<Hop> leaves) {
 		// Sort by data type
 		final SortedMap<Hop,Integer> sorted = new TreeMap<>(compareByDataType);
 		for (final Multiset.Entry<Hop> entry : leaves.entrySet()) {
 			final Hop h = entry.getElement();
-			// unlink parents (the EMults, which we are throwing away)
-			h.getParent().clear();
+			// unlink parents that are in the emult set(we are throwing them away)
+			// keep other parents
+			h.getParent().removeIf(parent -> parent instanceof BinaryOp && emults.contains(parent));
 			sorted.put(h, entry.getCount());
 		}
 		// sorted contains all leaves, sorted by data type, stripped from their parents
@@ -146,12 +147,13 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		return first;
 	}
 
-	private static Hop constructPower(Map.Entry<Hop, Integer> entry) {
+	private static Hop constructPower(final Map.Entry<Hop, Integer> entry) {
 		final Hop hop = entry.getKey();
 		final int cnt = entry.getValue();
 		assert(cnt >= 1);
+		hop.setVisited(); // we will visit the leaves' children next
 		if (cnt == 1)
-			return hop; // don't set this visited... we will visit this next
+			return hop;
 		Hop pow = HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
 		pow.setVisited();
 		return pow;
@@ -222,8 +224,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		final ArrayList<Hop> parents = child.getParent();
 		if (parents.size() > 1)
 			for (final Hop parent : parents)
-				//noinspection SuspiciousMethodCalls (for Intellij, which checks when
-				if (!emults.contains(parent))
+				if (parent instanceof BinaryOp && !emults.contains(parent))
 					return false;
 		// child does not have foreign parents
 

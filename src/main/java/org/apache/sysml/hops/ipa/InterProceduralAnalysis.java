@@ -75,8 +75,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
-import org.apache.sysml.udf.lib.DeNaNWrapper;
-import org.apache.sysml.udf.lib.DeNegInfinityWrapper;
 import org.apache.sysml.udf.lib.DynamicReadMatrixCP;
 import org.apache.sysml.udf.lib.DynamicReadMatrixRcCP;
 import org.apache.sysml.udf.lib.OrderWrapper;
@@ -908,27 +906,12 @@ public class InterProceduralAnalysis
 	{
 		String className = fstmt.getOtherParams().get(ExternalFunctionStatement.CLASS_NAME);
 
-		if(    className.equals(OrderWrapper.class.getName()) 
-			|| className.equals(DeNaNWrapper.class.getCanonicalName())
-			|| className.equals(DeNegInfinityWrapper.class.getCanonicalName()) )
+		if( className.equals(OrderWrapper.class.getName()) )
 		{			
 			Hop input = fop.getInput().get(0);
 			long lnnz = className.equals(OrderWrapper.class.getName()) ? input.getNnz() : -1;
 			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
-		}
-		else if( className.equals("org.apache.sysml.udf.lib.EigenWrapper") ) 
-		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
-		{
-			Hop input = fop.getInput().get(0);
-			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.getDim1(), 1, -1));
-			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.getDim1(), input.getDim1(),-1));			
-		}
-		else if( className.equals("org.apache.sysml.udf.lib.LinearSolverWrapperCP") ) 
-		//else if( className.equals(LinearSolverWrapperCP.class.getName()) ) //string ref for build flexibility
-		{
-			Hop input = fop.getInput().get(1);
-			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.getDim1(), 1, -1));
 		}
 		else if(   className.equals(DynamicReadMatrixCP.class.getName())
 				|| className.equals(DynamicReadMatrixRcCP.class.getName()) ) 

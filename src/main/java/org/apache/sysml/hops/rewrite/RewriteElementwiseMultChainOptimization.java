@@ -222,7 +222,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 				}
 			}
 		}
-	};
+	}.reversed();
 
 	/**
 	 * Check if a node has a parent that is not in the set of emults. Recursively check children who are also emults.

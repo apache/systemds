@@ -28,6 +28,6 @@ library("matrixStats")
 X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
 Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
 
-R = X * Y * X;
+R = 2 * X * 3 * Y * 4 * X;
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));

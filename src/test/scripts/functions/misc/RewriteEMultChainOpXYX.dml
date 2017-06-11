@@ -23,6 +23,6 @@
 X = read($1);
 Y = read($2);
 
-R = X * Y * X;
+R = 2 * X * 3 * Y * 4 * X;
 
 write(R, $3);

@@ -33,7 +33,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test whether `A*B*A` successfully rewrites to `(A^2)*B`.
+ * Test whether `2*X*3*Y*4*X` successfully rewrites to `Y*(X^2)*24`.
  */
 public class RewriteElementwiseMultChainOptimizationChainTest extends AutomatedTestBase
 {
@@ -96,7 +96,7 @@ public class RewriteElementwiseMultChainOptimizationChainTest extends AutomatedT
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[] { "-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R") };
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			double Xsparsity = 0.8, Ysparsity = 0.6;
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, Xsparsity, 7);

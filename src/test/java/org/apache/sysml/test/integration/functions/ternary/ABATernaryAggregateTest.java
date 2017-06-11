@@ -368,14 +368,12 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
-		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES,
-				rewritesOldEmult = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
-			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -412,7 +410,6 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
-			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOldEmult;
 		}
 	}
 }

@@ -98,7 +98,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 								emults.size(), root.getHopID(), replacement.getHopID()));
 
 					// 5. Replace root with replacement
-					final Hop newRoot = HopRewriteUtils.replaceHop(root, replacement);
+					final Hop newRoot = HopRewriteUtils.rewireAllParentChildReferences(root, replacement);
 
 					// 6. Recurse at leaves (no need to repeat the interior emults)
 					for (final Hop leaf : leaves.elementSet()) {
@@ -166,6 +166,18 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	 * Disambiguate by Hop ID.
 	 */
 	private static final Comparator<Hop> compareByDataType = new Comparator<Hop>() {
+		private final int[] orderDataType = new int[Expression.DataType.values().length];
+		{
+			for (int i = 0, valuesLength = Expression.DataType.values().length; i < valuesLength; i++)
+				switch(Expression.DataType.values()[i]) {
+				case SCALAR: orderDataType[i] = 4; break;
+				case MATRIX: orderDataType[i] = 3; break;
+				case FRAME:  orderDataType[i] = 2; break;
+				case OBJECT: orderDataType[i] = 1; break;
+				case UNKNOWN:orderDataType[i] = 0; break;
+				}
+		}
+
 		@Override
 		public final int compare(Hop o1, Hop o2) {
 			int c = Integer.compare(orderDataType[o1.getDataType().ordinal()], orderDataType[o2.getDataType().ordinal()]);
@@ -197,30 +209,6 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			int c = Long.compare(o1.getNnz(), o2.getNnz());
 			if (c != 0) return c;
 			return Long.compare(o1.getHopID(), o2.getHopID());
-		}
-		private final int[] orderDataType;
-		{
-			Expression.DataType[] dtValues = Expression.DataType.values();
-			orderDataType = new int[dtValues.length];
-			for (int i = 0, valuesLength = dtValues.length; i < valuesLength; i++) {
-				switch(dtValues[i]) {
-				case SCALAR:
-					orderDataType[i] = 4;
-					break;
-				case MATRIX:
-					orderDataType[i] = 3;
-					break;
-				case FRAME:
-					orderDataType[i] = 2;
-					break;
-				case OBJECT:
-					orderDataType[i] = 1;
-					break;
-				case UNKNOWN:
-					orderDataType[i] = 0;
-					break;
-				}
-			}
 		}
 	}.reversed();
 

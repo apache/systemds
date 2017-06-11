@@ -246,22 +246,15 @@ public class HopRewriteUtils
 	 * Replace an old Hop with a replacement Hop.
 	 * If the old Hop has no parents, then return the replacement.
 	 * Otherwise rewire each of the Hop's parents into the replacement and return the replacement.
-	 * @param old To be replaced
-	 * @param replacement The replacement
-	 * @return replacement
+	 * @param hold To be replaced
+	 * @param hnew The replacement
+	 * @return hnew
 	 */
-	public static Hop replaceHop(final Hop old, final Hop replacement) {
-		if (old.getParent().isEmpty())
-			return replacement; // new old!
-		HopRewriteUtils.rewireAllParentChildReferences(old, replacement);
-		return replacement;
-	}
-
-
-	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
-		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
-		for( Hop lparent : parents )
-			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);
+	public static Hop rewireAllParentChildReferences( Hop hold, Hop hnew ) {
+		ArrayList<Hop> parents = hold.getParent();
+		while (!parents.isEmpty())
+			HopRewriteUtils.replaceChildReference(parents.get(0), hold, hnew);
+		return hnew;
 	}
 	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew ) {

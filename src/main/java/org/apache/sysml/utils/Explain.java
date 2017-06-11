@@ -76,7 +76,7 @@ public class Explain
 	//internal configuration parameters
 	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;	
 	private static final boolean SHOW_MEM_ABOVE_BUDGET      = true;
-	private static final boolean SHOW_LITERAL_HOPS          = true;
+	private static final boolean SHOW_LITERAL_HOPS          = false;
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
 

@@ -337,6 +337,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * @return high-level operator
 	 * @throws HopsException if HopsException occurs
 	 */
+	@SuppressWarnings("incomplete-switch")
 	private Hop fuseDatagenAndBinaryOperation( Hop hi ) 
 		throws HopsException
 	{
@@ -360,19 +361,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop max = left.getInput().get(params.get(DataExpression.RAND_MAX));
 				double sval = ((LiteralOp)right).getDoubleValue();
 				
-				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS || bop.getOp() == OpOp2.MINUS)
+				if( HopRewriteUtils.isBinary(bop, OpOp2.MULT, OpOp2.PLUS, OpOp2.MINUS, OpOp2.DIV)
 					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
 					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
-					if( bop.getOp()==OpOp2.MULT )
-						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
-					else { //OpOp2.PLUS | OpOp2.MINUS		
-						sval *= (bop.getOp()==OpOp2.MINUS) ? -1 : 1;
-						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
+					switch( bop.getOp() ) { //fuse via scale and shift
+						case MULT:  gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0); break;
+						case PLUS:
+						case MINUS: gen = HopRewriteUtils.copyDataGenOp(inputGen, 
+							1, sval * ((bop.getOp()==OpOp2.MINUS)?-1:1)); break;
+						case DIV:   gen = HopRewriteUtils.copyDataGenOp(inputGen, 1/sval, 0); break;
 					}
-						
+					
 					//rewire all parents (avoid anomalies with replicated datagen)
 					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
 					for( Hop p : parents )

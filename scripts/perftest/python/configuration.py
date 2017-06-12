@@ -26,20 +26,15 @@ from utils import split_rowcol, config_writer
 import sys
 import logging
 
+# This directory contains all the configuration parameters required for all algorithms
+# defined in our performance test suit, our test suite contains three types of configurations
+# datagen, train and predict configurations
+
+
 mat_type = {'dense': 0.9,
             'sparse': 0.01}
 format = 'csv'
 has_predict = ['GLM', 'Kmeans', 'l2-svm', 'm-svm', 'naive-bayes']
-
-
-def naive_bayes_datagen(matrix_type, mat_shapes, conf_dir):
-    for index, dim in enumerate(mat_shapes):
-        file_name = '_'.join(['naive_bayes_datagen', matrix_type, str(index) + '.json'])
-
-        config = [dim[0], dim[1], mat_type[matrix_type], 150, 0,
-                  'X.data', 'Y.data', format]
-        config_writer(conf_dir, config, file_name)
-    return None
 
 
 def naive_bayes_datagen(matrix_type, mat_shapes, conf_dir):
@@ -58,7 +53,7 @@ def kmeans_datagen(matrix_type, mat_shapes, conf_dir):
         config = dict(nr=dim[0], nf=dim[1], nc='5', dc='10.0', dr='1.0',
                       fbf='100.0', cbf='100.0', X='X.data', C='C.data', Y='Y.data',
                       YbyC='YbyC.data', fmt=format)
-        config_writer(conf_dir, config, file_name)
+        config_writer(conf_dir, config, matrix_type + '_' + file_name)
     return None
 
 

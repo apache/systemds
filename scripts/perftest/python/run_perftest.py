@@ -32,6 +32,9 @@ from utils import get_algo
 from configuration import init_conf
 import logging
 import time
+import json
+import subprocess
+from subprocess import Popen, PIPE, STDOUT
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
@@ -39,13 +42,74 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
            'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
 
+datagen_dict = {'kmeans': 'genRandData4Kmeans.dml'}
 
-def main(family, algo, exec_type, mat_type, mat_shape, temp_dir, generate_data, train, predict):
+
+def exec_conf(exec_type, temp_dir, mat_shape):
+    # train
+    # predict
+
+    conf_dir = join(temp_dir, 'conf')
+    data_gen_dir = join(temp_dir, 'data_gen')
+
+    config_files = os.listdir(conf_dir)
+    config_data_gen = list(filter(lambda x: 'datagen' in x, config_files))
+    config_train = list(filter(lambda x: 'train' in x, config_files))
+    config_predict = list(filter(lambda x: 'predict' in x, config_files))
+
+    if exec_type == 'singlenode':
+        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
+    if exec_type == 'hybrid_spark':
+        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
+
+    for data_gen in config_data_gen:
+        mat_type = data_gen.split('_')[0]
+        gen_algo = data_gen.split('_')[1]
+        gen_dirname = data_gen.split('.')[0]
+        shape_index = int(data_gen.split('_')[3][0])
+
+        exists_dir = join(data_gen_dir, gen_dirname)
+        if os.path.exists(exists_dir):
+            print('{} already exist continue...'.format(gen_dirname))
+            continue
+
+        file_path = join(conf_dir, data_gen)
+
+        with open(file_path, 'r') as f:
+            current_config = json.load(f)
+
+        arg = []
+        for key, val in current_config.items():
+            if key == 'X':
+                val = join(data_gen_dir, gen_dirname, val)
+            if key == 'Y':
+                val = join(data_gen_dir, gen_dirname, val)
+            if key == 'YbyC':
+                val = join(data_gen_dir, gen_dirname, val)
+            arg.append('{}={}'.format(key, val))
+
+        args = ' '.join(arg)
+        cmd = [exec_script, datagen_dict[gen_algo], '-nvargs', args]
+        cmd_string = ' '.join(cmd)
+        run_time = time.time()
+        return_code = subprocess.call(cmd_string, shell=True)
+        total_time = time.time() - run_time
+
+        log_info = [gen_algo, 'data_gen', mat_type, mat_shape[shape_index],
+                    '{0:.3f}'.format(total_time), str(return_code)]
+        logging.critical(','.join(log_info))
+
+    pass
+
+
+def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, generate_data, train, predict):
     if algo is None:
         algo = get_algo(family, ml_algo)
 
     job = list(map(lambda x: int(x), [generate_data, train, predict]))
     init_conf(algo, temp_dir, mat_type, mat_shape, job)
+
+    exec_conf(exec_type, temp_dir, mat_shape)
 
     return None
 
@@ -56,9 +120,9 @@ if __name__ == '__main__':
     group = cparser.add_mutually_exclusive_group(required=True)
     group.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)', metavar='',
                        choices=ml_algo.keys(), nargs='+')
-
     group.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
                        choices=algo_flat, nargs='+')
+
     cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend (e.g singlenode, '
                                                                   'spark, spark-hybrid)', metavar='',
                          choices=['hybrid_spark', 'singlenode'])
@@ -97,8 +161,10 @@ if __name__ == '__main__':
     logging.basicConfig(filename=join(args.temp_dir, 'perftest.out'), level=logging.INFO)
     logging.info('New experiment state time {}'.format(start_time))
     logging.info(args)
+    log_header = ['algorithm', 'run_type', 'mat_typ', 'mat_shape', 'time', 'return_code']
+    logging.critical(','.join(log_header))
 
     if not os.path.exists(args.temp_dir):
         os.makedirs(args.temp_dir)
 
-    main(**arg_dict)
+    perf_test_entry(**arg_dict)

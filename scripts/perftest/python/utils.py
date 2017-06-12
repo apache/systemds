@@ -26,6 +26,14 @@ import json
 
 
 def get_algo(family, ml_algo):
+    '''
+    This function return all algorithms defined in the current run given family.
+
+    :param family: List of algorithms specified for a run
+    :param ml_algo: Dictionary with family and all algorithms within it
+    :return: List of algorithms
+    '''
+
     algo = []
     for fam in family:
         algo.append(ml_algo[fam])
@@ -34,6 +42,13 @@ def get_algo(family, ml_algo):
 
 
 def split_rowcol(matrix_dim):
+    '''
+    This function returns input matrix dimensions in integer format.
+
+    :param matrix_dim: String that contains matrix dim (e.g 10k_1k)
+    :return: List of tuple (e.g [(10000, 1000)])
+    '''
+
     mat_shapes = []
     for dims in matrix_dim:
         k = str(0) * 3
@@ -47,6 +62,15 @@ def split_rowcol(matrix_dim):
 
 
 def config_writer(path, config_dict, file_name):
+    '''
+    This function writes the configuration parameters to a file
+
+    :param path: String which specifies output directory to write file
+    :param config_dict: Dictionary that contains configuration parameters
+    :param file_name: String file name to be written
+    :return:
+    '''
+
     if not os.path.exists(path):
         os.makedirs(path)
 

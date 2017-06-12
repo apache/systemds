@@ -89,6 +89,9 @@ public class TemplateRow extends TemplateBase
 				&& (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
 					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
 					|| HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) ) 
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().indexOf(input)==0
+				&& input.getDim2()==1 && hop.getInput().get(1).getDim2()==1
+				&& HopRewriteUtils.isEmpty(hop.getInput().get(1)))
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 					&& TemplateCell.isValidOperation(hop))		
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
@@ -111,8 +114,9 @@ public class TemplateRow extends TemplateBase
 	@Override
 	public CloseType close(Hop hop) {
 		//close on column aggregate (e.g., colSums, t(X)%*%y)
-		if( hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.Col
-			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))) )
+		if(    (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.Col)
+			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)))
+			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND) )
 			return CloseType.CLOSED_VALID;
 		else
 			return CloseType.OPEN;
@@ -144,6 +148,7 @@ public class TemplateRow extends TemplateBase
 			.countVectorIntermediates(output, new HashSet<Long>()));
 		tpl.getOutput().resetVisitStatus();
 		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops.get(0).getHopID());
+		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
@@ -240,6 +245,12 @@ public class TemplateRow extends TemplateBase
 				String primitiveOpName = ((UnaryOp)hop).getOp().toString();
 				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 			}
+		}
+		else if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) 
+		{
+			//special case for cbind with zeros
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			out = new CNodeUnary(cdata1, UnaryType.CBIND0);
 		}
 		else if(hop instanceof BinaryOp)
 		{

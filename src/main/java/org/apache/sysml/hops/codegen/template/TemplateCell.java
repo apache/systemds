@@ -76,7 +76,8 @@ public class TemplateCell extends TemplateBase
 	@Override
 	public boolean open(Hop hop) {
 		return isValidOperation(hop)
-			|| (hop instanceof IndexingOp && ((IndexingOp)hop).isColLowerEqualsUpper());
+			|| (hop instanceof IndexingOp && (((IndexingOp)hop)
+				.isColLowerEqualsUpper() || hop.getDim2()==1));
 	}
 
 	@Override
@@ -135,6 +136,7 @@ public class TemplateCell extends TemplateBase
 		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.get(0)))
 				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.get(0)));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
+		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);

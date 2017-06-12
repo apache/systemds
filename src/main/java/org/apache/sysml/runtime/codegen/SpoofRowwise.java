@@ -54,15 +54,21 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	protected final RowType _type;
+	protected final boolean _cbind0;
 	protected final int _reqVectMem;
 	
-	public SpoofRowwise(RowType type, int reqVectMem) {
+	public SpoofRowwise(RowType type, boolean cbind0, int reqVectMem) {
 		_type = type;
+		_cbind0 = cbind0;
 		_reqVectMem = reqVectMem;
 	}
 	
 	public RowType getRowType() {
 		return _type;
+	}
+	
+	public boolean isCBind0() {
+		return _cbind0;
 	}
 	
 	public int getNumIntermediates() {
@@ -183,7 +189,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	private void allocateOutputMatrix(int m, int n, MatrixBlock out) {
 		switch( _type ) {
 			case NO_AGG: out.reset(m, n, false); break;
-			case ROW_AGG: out.reset(m, 1, false); break;
+			case ROW_AGG: out.reset(m, 1+(_cbind0?1:0), false); break;
 			case COL_AGG: out.reset(1, n, false); break;
 			case COL_AGG_T: out.reset(n, 1, false); break;
 		}

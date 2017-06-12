@@ -35,6 +35,7 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
@@ -239,7 +240,8 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop input) {
 		if( HopRewriteUtils.isEqualSize(output, input) )
 			return RowType.NO_AGG;
-		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 
+		else if( output.getDim1()==input.getDim1() && (output.getDim2()==1 
+				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND)) 
 			&& !(output instanceof AggBinaryOp && HopRewriteUtils
 				.isTransposeOfItself(output.getInput().get(0),input)))
 			return RowType.ROW_AGG;

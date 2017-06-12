@@ -32,6 +32,8 @@ import org.apache.sysml.parser.Expression.DataType;
 
 public abstract class CNodeTpl extends CNode implements Cloneable
 {
+	private int _beginLine = -1;
+	
 	public CNodeTpl(ArrayList<CNode> inputs, CNode output ) {
 		if(inputs.size() < 1)
 			throw new RuntimeException("Cannot pass empty inputs to the CNodeTpl");
@@ -241,6 +243,14 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		}
 		
 		return false;
+	}
+	
+	public void setBeginLine(int line) {
+		_beginLine = line;
+	}
+	
+	public int getBeginLine() {
+		return _beginLine;
 	}
 	
 	@Override

@@ -38,6 +38,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	public enum SpoofOutputDimsType {
 		INPUT_DIMS,
 		ROW_DIMS,
+		ROW_DIMS2,
 		COLUMN_DIMS_ROWS,
 		COLUMN_DIMS_COLS,
 		SCALAR,
@@ -148,6 +149,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				setDim1(getInput().get(0).getDim1());
 				setDim2(1);
 				break;
+			case ROW_DIMS2:
+				setDim1(getInput().get(0).getDim1());
+				setDim2(2);
+				break;
 			case COLUMN_DIMS_ROWS:
 				setDim1(getInput().get(0).getDim2());
 				setDim2(1);
@@ -185,7 +190,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		SpoofFusedOp ret = new SpoofFusedOp();	
+		SpoofFusedOp ret = new SpoofFusedOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);

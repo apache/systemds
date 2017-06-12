@@ -110,6 +110,7 @@ public class TemplateMultiAgg extends TemplateCell
 		CNodeMultiAgg tpl = new CNodeMultiAgg(inputs, outputs);
 		tpl.setAggOps(aggOps);
 		tpl.setRootNodes(roots);
+		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);

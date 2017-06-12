@@ -28,7 +28,7 @@ import org.apache.sysml.parser.Expression.DataType;
 public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
-		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, //codegen specific
+		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, CBIND0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
@@ -79,6 +79,8 @@ public class CNodeUnary extends CNode
 			    	return "    double %TMP% = getValue(%IN1%, n, rowIndex, colIndex);\n";	
 				case LOOKUP0:
 					return "    double %TMP% = %IN1%[0];\n" ;
+				case CBIND0:
+					return "    double %TMP% = %IN1%; rowIndex *= 2;\n" ;
 				case POW2:
 					return "    double %TMP% = %IN1% * %IN1%;\n" ;
 				case MULT2:
@@ -208,10 +210,11 @@ public class CNodeUnary extends CNode
 			case VECT_CEIL:
 			case VECT_FLOOR:
 			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
-			case LOOKUP_R:	return "u(ixr)";
-			case LOOKUP_C:	return "u(ixc)";
+			case LOOKUP_R:  return "u(ixr)";
+			case LOOKUP_C:  return "u(ixc)";
 			case LOOKUP_RC:	return "u(ixrc)";
-			case LOOKUP0:	return "u(ix0)";
+			case LOOKUP0:   return "u(ix0)";
+			case CBIND0:    return "u(cbind0)";
 			case POW2:      return "^2";
 			default:		return "u("+_type.name().toLowerCase()+")";
 		}
@@ -243,6 +246,7 @@ public class CNodeUnary extends CNode
 			case LOOKUP_C:
 			case LOOKUP_RC:
 			case LOOKUP0:	
+			case CBIND0:
 			case POW2:
 			case MULT2:	
 			case ABS:  

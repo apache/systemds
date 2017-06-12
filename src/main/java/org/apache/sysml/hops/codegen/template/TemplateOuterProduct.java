@@ -127,7 +127,9 @@ public class TemplateOuterProduct extends TemplateBase {
 		CNodeOuterProduct tpl = new CNodeOuterProduct(inputs, output);
 		tpl.setOutProdType(TemplateUtils.getOuterProductType(X, U, V, hop));
 		tpl.setTransposeOutput(!HopRewriteUtils.isTransposeOperation(hop)
-			&& tpl.getOutProdType()==OutProdType.LEFT_OUTER_PRODUCT); 
+			&& tpl.getOutProdType()==OutProdType.LEFT_OUTER_PRODUCT);
+		tpl.setBeginLine(hop.getBeginLine());
+		
 		
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
 	}

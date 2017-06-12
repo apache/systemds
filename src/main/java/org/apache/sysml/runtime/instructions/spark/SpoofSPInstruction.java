@@ -267,7 +267,8 @@ public class SpoofSPInstruction extends SPInstruction
 			if( type == RowType.NO_AGG )
 				mcOut.set(mcIn);
 			else if( type == RowType.ROW_AGG )
-				mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				mcOut.set(mcIn.getRows(), ((SpoofRowwise)op).isCBind0()? 2:1, 
+					mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( type == RowType.COL_AGG )
 				mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( type == RowType.COL_AGG_T )

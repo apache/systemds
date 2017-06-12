@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 
 public class CNodeRow extends CNodeTpl
@@ -36,7 +38,7 @@ public class CNodeRow extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowwise { \n"
 			+ "  public %TMP%() {\n"
-			+ "    super(RowType.%TYPE%, %VECT_MEM%);\n"
+			+ "    super(RowType.%TYPE%, %CBIND0%, %VECT_MEM%);\n"
 			+ "  }\n"
 			+ "  protected void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_dense%"
@@ -101,6 +103,8 @@ public class CNodeRow extends CNodeTpl
 		
 		//replace colvector information and number of vector intermediates
 		tmp = tmp.replaceAll("%TYPE%", _type.name());
+		tmp = tmp.replaceAll("%CBIND0%", String.valueOf(
+			TemplateUtils.isUnary(_output, UnaryType.CBIND0)));
 		tmp = tmp.replaceAll("%VECT_MEM%", String.valueOf(_numVectors));
 		
 		return tmp;
@@ -125,7 +129,8 @@ public class CNodeRow extends CNodeTpl
 	public SpoofOutputDimsType getOutputDimType() {
 		switch( _type ) {
 			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
-			case ROW_AGG: return SpoofOutputDimsType.ROW_DIMS;
+			case ROW_AGG: return TemplateUtils.isUnary(_output, UnaryType.CBIND0) ?
+				SpoofOutputDimsType.ROW_DIMS2 : SpoofOutputDimsType.ROW_DIMS;
 			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
 			case COL_AGG_T: return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
 			default:

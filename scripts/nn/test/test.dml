@@ -111,9 +111,9 @@ conv2d = function() {
 
 conv2d_transpose = function() {
   /*
-   * Test for the 2D convolution transpose function.
+   * Test for the 2D transpose convolution function.
    */
-  print("Testing the 2D convolution transpose function.")
+  print("Testing the 2D transpose convolution function.")
 
   # Generate data
   N = 2
@@ -160,8 +160,8 @@ conv2d_transpose = function() {
 
   for (i in 1:nrow(out)) {
     for(j in 1:ncol(out)) {
-      rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                             as.scalar(target[1,i]), 1e-3, 1e-4)
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
     }
   }
 }

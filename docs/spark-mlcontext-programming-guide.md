@@ -122,6 +122,121 @@ None
 </div>
 
 
+## LeNet on MNIST Example
+
+SystemML features the DML-based [`nn` library for deep learning](https://github.com/apache/incubator-systemml/tree/master/scripts/nn).
+
+At project build time, SystemML automatically generates wrapper classes for DML scripts
+to enable convenient access to scripts and execution of functions.
+In the example below, we obtain a reference (`clf`) to the LeNet on MNIST example.
+We generate dummy data, train a convolutional net using the LeNet architecture,
+compute the class probability predictions, and then evaluate the convolutional net.
+
+Note that these automatic script wrappers are currently not available in Python but will be made available in the near future.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val clf = ml.nn.examples.Mnist_lenet
+val dummy = clf.generate_dummy_data
+val dummyVal = clf.generate_dummy_data
+val params = clf.train(dummy.X, dummy.Y, dummyVal.X, dummyVal.Y, dummy.C, dummy.Hin, dummy.Win, 1)
+val probs = clf.predict(dummy.X, dummy.C, dummy.Hin, dummy.Win, params.W1, params.b1, params.W2, params.b2, params.W3, params.b3, params.W4, params.b4)
+val perf = clf.eval(probs, dummy.Y)
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> val clf = ml.nn.examples.Mnist_lenet
+clf: org.apache.sysml.scripts.nn.examples.Mnist_lenet =
+Inputs:
+None
+
+Outputs:
+None
+
+scala> val dummy = clf.generate_dummy_data
+SystemML Statistics:
+Total execution time:		0.144 sec.
+Number of executed Spark inst:	0.
+
+dummy: org.apache.sysml.scripts.nn.examples.mnist_lenet.Generate_dummy_data_output =
+X (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp0_0, [1024 x 784, nnz=802816, blocks (1000 x 1000)], binaryblock, dirty
+Y (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp4_4, [1024 x 10, nnz=1024, blocks (1000 x 1000)], binaryblock, dirty
+C (long): 1
+Hin (long): 28
+Win (long): 28
+
+scala> val dummyVal = clf.generate_dummy_data
+SystemML Statistics:
+Total execution time:		0.147 sec.
+Number of executed Spark inst:	0.
+
+dummyVal: org.apache.sysml.scripts.nn.examples.mnist_lenet.Generate_dummy_data_output =
+X (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp5_5, [1024 x 784, nnz=802816, blocks (1000 x 1000)], binaryblock, dirty
+Y (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp9_9, [1024 x 10, nnz=1024, blocks (1000 x 1000)], binaryblock, dirty
+C (long): 1
+Hin (long): 28
+Win (long): 28
+
+scala> val params = clf.train(dummy.X, dummy.Y, dummyVal.X, dummyVal.Y, dummy.C, dummy.Hin, dummy.Win, 1)
+17/06/05 15:52:09 WARN SparkExecutionContext: Configuration parameter spark.driver.maxResultSize set to 1 GB. You can set it through Spark default configuration setting either to 0 (unlimited) or to available memory budget of size 2 GB.
+Starting optimization
+17/06/05 15:52:10 WARN TaskSetManager: Stage 0 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:11 WARN TaskSetManager: Stage 1 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:11 WARN TaskSetManager: Stage 2 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:11 WARN TaskSetManager: Stage 3 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:13 WARN TaskSetManager: Stage 4 contains a task of very large size (296 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:13 WARN TaskSetManager: Stage 5 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:14 WARN TaskSetManager: Stage 6 contains a task of very large size (118 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:14 WARN TaskSetManager: Stage 7 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:14 WARN TaskSetManager: Stage 8 contains a task of very large size (115 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:14 WARN TaskSetManager: Stage 9 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:15 WARN TaskSetManager: Stage 11 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:15 WARN TaskSetManager: Stage 13 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:16 WARN TaskSetManager: Stage 15 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:16 WARN TaskSetManager: Stage 17 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:17 WARN TaskSetManager: Stage 19 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:17 WARN TaskSetManager: Stage 21 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:18 WARN TaskSetManager: Stage 23 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:18 WARN TaskSetManager: Stage 25 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:19 WARN TaskSetManager: Stage 27 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:19 WARN TaskSetManager: Stage 29 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+17/06/05 15:52:20 WARN TaskSetManager: Stage 31 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
+SystemML Statistics:
+Total execution time:		11.261 sec.
+Number of executed Spark inst:	32.
+
+params: org.apache.sysml.scripts.nn.examples.mnist_lenet.Train_output =
+W1 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2203_1606, [32 x 25, nnz=800, blocks (1000 x 1000)], binaryblock, dirty
+b1 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2205_1608, [32 x 1, nnz=32, blocks (1000 x 1000)], binaryblock, dirty
+W2 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2196_1599, [64 x 800, nnz=51200, blocks (1000 x 1000)], binaryblock, dirty
+b2 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2200_1603, [64 x 1, nnz=64, blocks (1000 x 1000)], binaryblock, dirty
+W3 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2186_1589, [3136 x 512, nnz=1605632, blocks (1000 x 1000)], binaryblock, ...
+scala> val probs = clf.predict(dummy.X, dummy.C, dummy.Hin, dummy.Win, params.W1, params.b1, params.W2, params.b2, params.W3, params.b3, params.W4, params.b4)
+SystemML Statistics:
+Total execution time:		2.148 sec.
+Number of executed Spark inst:	48.
+
+probs: org.apache.sysml.api.mlcontext.Matrix = MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2505_1865, [1024 x 10, nnz=10240, blocks (1000 x 1000)], binaryblock, dirty
+
+scala> val perf = clf.eval(probs, dummy.Y)
+SystemML Statistics:
+Total execution time:		0.007 sec.
+Number of executed Spark inst:	48.
+
+perf: org.apache.sysml.scripts.nn.examples.mnist_lenet.Eval_output =
+loss (double): 2.2681513307168797
+accuracy (double): 0.1435546875
+
+{% endhighlight %}
+</div>
+
+</div>
+
+
 ## DataFrame Example
 
 For demonstration purposes, we'll use Spark to create a `DataFrame` called `df` of random `double`s from 0 to 1 consisting of 10,000 rows and 100 columns.
@@ -758,6 +873,99 @@ None
 
 </div>
 
+
+As another example, we can also conveniently obtain a Univariate Statistics DML Script object
+via `ml.scripts.algorithms.Univar_Stats`, as shown below.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
+val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+ml.scripts.algorithms.Univar_Stats.in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true).execute
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+habermanUrl: String = http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+
+scala> val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
+typesRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[21] at parallelize at <console>:30
+
+scala> val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+scriptUrl: String = https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml
+
+scala> ml.scripts.algorithms.Univar_Stats.in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true).execute
+17/06/05 17:23:37 WARN RewriteRemovePersistentReadWrite: Non-registered persistent write of variable 'baseStats' (line 186).
+-------------------------------------------------
+ (01) Minimum             | 30.0
+ (02) Maximum             | 83.0
+ (03) Range               | 53.0
+ (04) Mean                | 52.45751633986928
+ (05) Variance            | 116.71458266366658
+ (06) Std deviation       | 10.803452349303281
+ (07) Std err of mean     | 0.6175922641866753
+ (08) Coeff of variation  | 0.20594669940735139
+ (09) Skewness            | 0.1450718616532357
+ (10) Kurtosis            | -0.6150152487211726
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 52.0
+ (14) Interquartile mean  | 52.16013071895425
+Feature [1]: Scale
+-------------------------------------------------
+ (01) Minimum             | 58.0
+ (02) Maximum             | 69.0
+ (03) Range               | 11.0
+ (04) Mean                | 62.85294117647059
+ (05) Variance            | 10.558630665380907
+ (06) Std deviation       | 3.2494046632238507
+ (07) Std err of mean     | 0.18575610076612029
+ (08) Coeff of variation  | 0.051698529971741194
+ (09) Skewness            | 0.07798443581479181
+ (10) Kurtosis            | -1.1324380182967442
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 63.0
+ (14) Interquartile mean  | 62.80392156862745
+Feature [2]: Scale
+-------------------------------------------------
+ (01) Minimum             | 0.0
+ (02) Maximum             | 52.0
+ (03) Range               | 52.0
+ (04) Mean                | 4.026143790849673
+ (05) Variance            | 51.691117539912135
+ (06) Std deviation       | 7.189653506248555
+ (07) Std err of mean     | 0.41100513466216837
+ (08) Coeff of variation  | 1.7857418611299172
+ (09) Skewness            | 2.954633471088322
+ (10) Kurtosis            | 11.425776549251449
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 1.0
+ (14) Interquartile mean  | 1.2483660130718954
+Feature [3]: Scale
+-------------------------------------------------
+Feature [4]: Categorical (Nominal)
+ (15) Num of categories   | 2
+ (16) Mode                | 1
+ (17) Num of modes        | 1
+SystemML Statistics:
+Total execution time:		0.211 sec.
+Number of executed Spark inst:	8.
+
+res1: org.apache.sysml.api.mlcontext.MLResults =
+None
+
+
+{% endhighlight %}
+</div>
+
+</div>
 
 ### Input Variables vs Input Parameters
 

@@ -268,6 +268,9 @@ public class Dag<N extends Lop>
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst = doGreedyGrouping(sb, node_v);
 		
+		// cleanup instruction (e.g., create packed rmvar instructions)
+		inst = cleanupInstructions(inst);
+		
 		return inst;
 
 	}
@@ -3914,5 +3917,35 @@ public class Dag<N extends Lop>
 				return true;
 		}
 		return false;
+	}
+	
+	private static ArrayList<Instruction> cleanupInstructions(ArrayList<Instruction> insts) 
+		throws DMLRuntimeException 
+	{
+		ArrayList<Instruction> ret = new ArrayList<Instruction>();
+		ArrayList<String> currRmVar = new ArrayList<String>();
+		for( Instruction inst : insts ) {
+			if( inst instanceof VariableCPInstruction 
+				&& ((VariableCPInstruction)inst).isRemoveVariableNoFile() ) {
+				//collect all subsequent rmvar instructions
+				currRmVar.add(((VariableCPInstruction)inst).getInput1().getName());
+			}
+			else {
+				//construct packed rmvar instruction
+				if( !currRmVar.isEmpty() ) {
+					ret.add(VariableCPInstruction.prepareRemoveInstruction(
+						currRmVar.toArray(new String[0])));
+					currRmVar.clear();
+				}
+				//add other instruction
+				ret.add(inst);
+			}
+		}
+		//construct last packed rmvar instruction
+		if( !currRmVar.isEmpty() ) {
+			ret.add(VariableCPInstruction.prepareRemoveInstruction(
+				currRmVar.toArray(new String[0])));
+		}
+		return ret;
 	}
 }

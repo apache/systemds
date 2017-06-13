@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -383,6 +384,10 @@ public class ExecutionContext {
 	{
 		FrameObject fo = getFrameObject(varName);
 		fo.release();
+	}
+	
+	public ScalarObject getScalarInput(CPOperand input) throws DMLRuntimeException {
+		return getScalarInput(input.getName(), input.getValueType(), input.isLiteral());
 	}
 	
 	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral)

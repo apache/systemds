@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 
 
 public class DMLProgram 
@@ -694,16 +695,10 @@ public class DMLProgram
 		else 
 		{
 			for( Instruction inst : pb.getInstructions() )
-			{
-				String instStr = inst.toString();
-				if(   instStr.contains("rmfilevar"+Lop.OPERAND_DELIMITOR+varName)
-				   || instStr.contains("rmvar"+Lop.OPERAND_DELIMITOR+varName)  )
-				{
+				if( inst instanceof VariableCPInstruction 
+					&& ((VariableCPInstruction) inst).isRemoveVariable(varName) )
 					return true;
-				}
-			}	
 		}
-		
 		
 		return false;
 	}

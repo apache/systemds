@@ -277,28 +277,6 @@
 		              </excludes>
 		            </configuration>
 		          </execution>
-		          <execution>
-		            <id>extra</id>
-		            <goals><goal>jar</goal></goals>
-		            <phase>package</phase>
-		            <configuration>
-		              <archive>
-						<index>true</index>
-						<manifestEntries>
-							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
-						</manifestEntries>
-					  </archive>
-		              <classifier>extra</classifier>
-		              <includes>
-		              	<include>**/META-INF/*</include>
-		                <include>**/caffe/*</include>
-		                <include>**/org/tensorflow/framework/*</include>
-		                <include>**/org/tensorflow/util/*</include>
-		                <include>**/org/apache/sysml/api/dl/*</include>
-		              </includes>
-		            </configuration>
-		          </execution>
 		        </executions>
 			</plugin>
 
@@ -950,6 +928,26 @@
 									<descriptors>
 										<descriptor>src/assembly/bin.xml</descriptor>
 									</descriptors>
+								</configuration>
+							</execution>
+							<execution>
+								<id>create-extra-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/extra.xml</descriptor>
+									</descriptors>
+									<archive>
+										<manifestEntries>
+											<Build-Time>${maven.build.timestamp}</Build-Time>
+											<Artifact-Id>${project.artifactId}-extra</Artifact-Id>
+											<Version>${project.version}</Version>
+										</manifestEntries>
+									</archive>
+									<classifier>extra</classifier>
 								</configuration>
 							</execution>
 						</executions>

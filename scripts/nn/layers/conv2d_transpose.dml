@@ -24,7 +24,7 @@
  *
  * Utilizes built-in convolution operators for higher performance.
  */
- 
+
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw,
@@ -37,7 +37,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
@@ -48,7 +48,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - stridew: Stride over width.
    *  - padh: Padding for top and bottom sides.
    *  - padw: Padding for left and right sides.
-   *  - out_padh: extra padding for top side. This should 
+   *  - out_padh: extra padding for top side. This should
    *      lie in [0, strideh-1].
    *  - out_padw: extra padding for right side. This should
    *      lie in [0, stridew-1].
@@ -59,7 +59,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - Wout: Output width.
    */
   N = nrow(X)
-  F = nrow(W)
+  F = nrow(b)
   Hout = strideh * (Hin-1) - 2*padh + Hf + out_padh
   Wout = stridew * (Win-1) - 2*padw + Wf + out_padw
 
@@ -80,7 +80,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    * convolution.
    */
   out = conv2d_backward_data(W, X, stride=[strideh,stridew], padding=[padh,padw],
-                             input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf])
+                             input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf])
 
   out = bias_add(out, b)
 }
@@ -100,7 +100,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    *  - Hout: Output height.
    *  - Wout: Output width.
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
@@ -114,15 +114,15 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    *
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
-   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - dW: Gradient wrt `W`, of shape (C, F*Hf*Wf).
    *  - db: Gradient wrt `b`, of shape (F, 1).
    */
   N = nrow(X)
-  F = nrow(W)
+  F = nrow(b)
 
   /*
    * conv2d_backward_filter takes the input and delta map as first and
-   * second args, respectively. Given that, we need to compute the
+   * second args, respectively. Given that we need to compute the
    * grad (wrt to filter) for transpose convolution where the roles of
    * the input and output are reversed, we reverse the order of the
    * args (along with setting input_shape to the delta map shape).
@@ -134,7 +134,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    * applying it.
    */
   dW = conv2d_backward_filter(dout, X, stride=[strideh,stridew], padding=[padh,padw],
-                              input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf])
+                              input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf])
 
   /*
    * Since the forward for transpose convolution makes a call to
@@ -147,7 +147,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    * and the filter, keep in mind that the forward function rotates the
    * filter by 180 degrees before applying it.
    */
-  dX = conv2d(dout, W, input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf],
+  dX = conv2d(dout, W, input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf],
               stride=[strideh,stridew], padding=[padh,padw])
 
   db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))
@@ -171,10 +171,10 @@ init = function(int F, int C, int Hf, int Wf)
    *  - Wf: Filter width.
    *
    * Outputs:
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2/(C*Hf*Wf))
+  W = rand(rows=C, cols=F*Hf*Wf, pdf="normal") * sqrt(2/(C*Hf*Wf))
   b = matrix(0, rows=F, cols=1)
 }
 
@@ -187,7 +187,7 @@ init_bilinear = function(int C, int K)
    * channel-wise independent kernels of size K = 2f - f%2,
    * stride = f and pad = ceil((f-1)/2). The weights are set
    * via bilinear interpolation, bias is set to 0.
-   * 
+   *
    * Inputs:
    *  - C: Number of input channels (dimensionality of depth).
    *  - K: Kernel size (upsampling requires a square filter
@@ -202,7 +202,7 @@ init_bilinear = function(int C, int K)
   vect = 1 - abs(seq(0, K-1) / factor_up - center)
   weights = matrix(vect %*% t(vect), rows=1, cols=K*K)
 
-  /* 
+  /*
    * To create a multi-channel channel-independent upsampling filter,
    * we need to intersperse the filter weights with 0s. For instance,
    * consider the case of 2X upsampling. In this case, K=4 and we have
@@ -232,7 +232,7 @@ init_bilinear = function(int C, int K)
      * resulting row C times
      */
     repl_weights = matrix(1, rows=C, cols=1) %*% cbind(weights, matrix(0, rows=1, cols=C*K*K))
-    
+
     /*
      * The above operation added extra C*K*K trailing 0s in the last row
      * that we do not need. Thus, we need to:

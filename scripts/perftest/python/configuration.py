@@ -22,7 +22,7 @@
 
 import os
 from os.path import join
-from utils import split_rowcol, config_writer
+from utils import split_rowcol, config_writer, create_dir
 import sys
 import logging
 
@@ -30,76 +30,65 @@ import logging
 # defined in our performance test suit, our test suite contains three types of configurations
 # datagen, train and predict configurations
 
+# Kmeans,30K_1K
 
-mat_type = {'dense': 0.9,
-            'sparse': 0.01}
 format = 'csv'
-has_predict = ['GLM', 'Kmeans', 'l2-svm', 'm-svm', 'naive-bayes']
+data_gen = {'Kmeans': 'clustering_dg'}
 
 
-def naive_bayes_datagen(matrix_type, mat_shapes, conf_dir):
-    for index, dim in enumerate(mat_shapes):
-        file_name = '_'.join(['naive_bayes_datagen', matrix_type, str(index) + '.json'])
+def clustering_dg(datagen_dir, matrix_config):
+    row, col = split_rowcol(matrix_config)
 
-        config = [dim[0], dim[1], mat_type[matrix_type], 150, 0,
-                  'X.data', 'Y.data', format]
-        config_writer(conf_dir, config, file_name)
-    return None
+    config = dict(nr=row, nf=col, nc='5', dc='10.0', dr='1.0',
+                  fbf='100.0', cbf='100.0', X='X.data', C='C.data', Y='Y.data',
+                  YbyC='YbyC.data', fmt=format)
 
+    file_name = '_'.join(['clustering', str(matrix_config) + '.json'])
+    write_path = join(datagen_dir, file_name)
+    config_writer(write_path, config)
 
-def kmeans_datagen(matrix_type, mat_shapes, conf_dir):
-    for index, dim in enumerate(mat_shapes):
-        file_name = '_'.join(['kmeans_datagen', str(index) + '.json'])
-        config = dict(nr=dim[0], nf=dim[1], nc='5', dc='10.0', dr='1.0',
-                      fbf='100.0', cbf='100.0', X='X.data', C='C.data', Y='Y.data',
-                      YbyC='YbyC.data', fmt=format)
-        config_writer(conf_dir, config, matrix_type + '_' + file_name)
-    return None
+    return write_path
 
 
-def kmeans_train(conf_dir):
-    file_name = ''.join(['kmeans_train', '.json'])
-    config = dict(X='X.data', k=5, maxi=10, runs=10, tol=0.00000001, samp=20,
-                  C='C.data', isY='TRUE', Y='Y.data', verb='TRUE')
-    config_writer(conf_dir, config, file_name)
-    return None
+def init_conf(algorithm, datagen_dir, matrix_config):
+
+    algo_dg = data_gen[algorithm]
+    conf_path = globals()[algo_dg](datagen_dir, matrix_config)
+    return conf_path
 
 
-def kmeans_predict(conf_dir):
-    file_name = ''.join(['kmeans_predict', '.json'])
-    config = dict(X='X.data', C='C.data', prY='prY.data')
-    config_writer(conf_dir, config, file_name)
-    return None
+def config_bundle(algorithm, matrix_type, matrix_shape):
+    config_packet = {}
+
+    for algo in algorithm:
+        if algo == 'Kmeans':
+            config_packet[algo] = matrix_shape
+        else:
+            config = list(itertools.product(matrix_shape, matrix_type))
+            config_packet[algo] = config
+
+    return config_packet
 
 
-def init_conf(algo, temp_dir, matrix_type, matrix_shape, job):
-    # Create directories
-    conf_dir = join(temp_dir, 'conf')
-    gen_dir = join(temp_dir, 'data_gen')
-    train_dir = join(temp_dir, 'train')
-    pred_dir = join(temp_dir, 'pred')
+def gen_data_config(algorithm, matrix_type, matrix_shape, temp_dir):
 
-    for dirs in [conf_dir, gen_dir, train_dir, pred_dir]:
-        if not os.path.exists(dirs):
-            os.makedirs(dirs)
+    conf_files = {}
 
-    mat_shapes = split_rowcol(matrix_shape)
+    # Create data-gen dir
+    data_gen_dir = join(temp_dir, 'data-gen')
+    create_dir(data_gen_dir)
 
-    if job[0] == 1:
-        for current_algo in algo:
-            algo_dg = current_algo.lower().replace('-', '_') + '_datagen'
-            globals()[algo_dg](matrix_type, mat_shapes, conf_dir)
-            logging.info('Completed writing {} datagen file'.format(current_algo))
+    conf_dict = config_bundle(algorithm, matrix_type, matrix_shape)
 
-    if job[1] == 1:
-        for current_algo in algo:
-            algo_dg = current_algo.lower() + '_train'
-            globals()[algo_dg](conf_dir)
-            logging.info('Completed writing {} training file'.format(current_algo))
+    for algo, matrix_config in conf_dict.items():
+        conf_files[algo] = []
+        for mat_conf in matrix_config:
+            conf_path = init_conf(algo, data_gen_dir, mat_conf)
+            conf_files[algo].append(conf_path)
+            #conf_files.append(conf_path)
 
-    if job[2] == 1:
-        for current_algo in algo:
-            if current_algo in has_predict:
-                algo_dg = current_algo.lower() + '_predict'
-                globals()[algo_dg](conf_dir)
-                logging.info('Completed writing {} training file'.format(current_algo))
+    # Return the list of config files to execute
+    return conf_files
+
+
+

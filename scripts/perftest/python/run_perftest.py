@@ -20,21 +20,20 @@
 #
 # -------------------------------------------------------------
 
-# TODO:
-# Handel Intercept
-
 import sys
 import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_algo
-from configuration import init_conf
+from utils import get_algo, config_reader
+from configuration import init_conf, gen_data_config
 import logging
 import time
 import json
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
+import itertools
+
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
@@ -42,103 +41,113 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
            'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
 
-datagen_dict = {'kmeans': 'genRandData4Kmeans.dml'}
+datagen_dict = {'Kmeans': 'genRandData4Kmeans.dml'}
 
-
-def exec_conf(exec_type, temp_dir, mat_shape):
-    # train
-    # predict
-
-    conf_dir = join(temp_dir, 'conf')
-    data_gen_dir = join(temp_dir, 'data_gen')
-
-    config_files = os.listdir(conf_dir)
-    config_data_gen = list(filter(lambda x: 'datagen' in x, config_files))
-    config_train = list(filter(lambda x: 'train' in x, config_files))
-    config_predict = list(filter(lambda x: 'predict' in x, config_files))
+def exec_func(exec_type, algorithm, conf_path):
 
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
 
-    for data_gen in config_data_gen:
-        mat_type = data_gen.split('_')[0]
-        gen_algo = data_gen.split('_')[1]
-        gen_dirname = data_gen.split('.')[0]
-        shape_index = int(data_gen.split('_')[3][0])
+    conf_dict = config_reader(conf_path)
 
-        exists_dir = join(data_gen_dir, gen_dirname)
-        if os.path.exists(exists_dir):
-            print('{} already exist continue...'.format(gen_dirname))
-            continue
+    arg = []
+    for key, val in conf_dict.items():
+        if key == 'X':
+            val = join(conf_path, val)
+        if key == 'Y':
+            val = join(conf_path, val)
+        if key == 'YbyC':
+            val = join(conf_path, val)
+        arg.append('{}={}'.format(key, val))
 
-        file_path = join(conf_dir, data_gen)
-
-        with open(file_path, 'r') as f:
-            current_config = json.load(f)
-
-        arg = []
-        for key, val in current_config.items():
-            if key == 'X':
-                val = join(data_gen_dir, gen_dirname, val)
-            if key == 'Y':
-                val = join(data_gen_dir, gen_dirname, val)
-            if key == 'YbyC':
-                val = join(data_gen_dir, gen_dirname, val)
-            arg.append('{}={}'.format(key, val))
-
-        args = ' '.join(arg)
-        cmd = [exec_script, datagen_dict[gen_algo], '-nvargs', args]
-        cmd_string = ' '.join(cmd)
-        run_time = time.time()
-        return_code = subprocess.call(cmd_string, shell=True)
-        total_time = time.time() - run_time
-
-        log_info = [gen_algo, 'data_gen', mat_type, mat_shape[shape_index],
-                    '{0:.3f}'.format(total_time), str(return_code)]
-        logging.critical(','.join(log_info))
-
-    pass
+    args = ' '.join(arg)
+    print(algorithm)
+    sys.exit()
+    cmd = [exec_script, datagen_dict[algorithm], '-nvargs', args]
+    cmd_string = ' '.join(cmd)
 
 
-def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, generate_data, train, predict):
+    return None
+
+
+def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
     if algo is None:
         algo = get_algo(family, ml_algo)
 
-    job = list(map(lambda x: int(x), [generate_data, train, predict]))
-    init_conf(algo, temp_dir, mat_type, mat_shape, job)
+    if 'data-gen' in mode:
+        gen_config = gen_data_config(algo, mat_type, mat_shape, temp_dir)
+        #for conf in gen_config:
+        #    metrics = exec_func(exec_type, algo, conf)
 
-    exec_conf(exec_type, temp_dir, mat_shape)
+        pass
+
+    if 'train' in mode:
+        # Create train dir
+        # Create ini Files
+        # train algo based on data generated
+        # return metrics
+        pass
+
+    if 'predict' in mode:
+        # Create predict dir
+        # Create ini Files
+        # train algo based on train data generated
+        # return metrics
+        pass
+
+    report_path = join(temp_dir, filename)
+    with open(report_path, "a") as pertest_report:
+        pertest_report.write("appended text")
 
     return None
 
 
 if __name__ == '__main__':
+    systemml_home = os.environ.get('SYSTEMML_HOME')
+
+    # Default Arguments
+    default_mat_type = ['dense', 'sparse']
+    default_workload = ['data-gen', 'train', 'predict']
+    default_mat_shape = ['10k_1k']
+    default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
+
+    # Initialize Logging
+    start_time = time.time()
+    logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
+    logging.info('New performance test')
+
     algo_flat = reduce(lambda x, y: x + y, ml_algo.values())
+
+    # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
     group = cparser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)', metavar='',
-                       choices=ml_algo.keys(), nargs='+')
+    group.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
+                       metavar='', choices=ml_algo.keys(), nargs='+')
     group.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
                        choices=algo_flat, nargs='+')
 
     cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend (e.g singlenode, '
-                                                                  'spark, spark-hybrid)', metavar='',
-                         choices=['hybrid_spark', 'singlenode'])
-    cparser.add_argument('--mat-type', default='dense', help='Type of matrix to generate (e.g dense '
-                                                             'or sparse)', metavar='', choices=['sparse', 'dense'])
-    cparser.add_argument('--mat-shape', help='Shape of matrix to generate (e.g '
-                                             '10k_1k)', metavar='', nargs='+')
+                         'spark, spark-hybrid)', metavar='', choices=['hybrid_spark', 'singlenode'])
+    cparser.add_argument('--mat-type', default=default_mat_type, help='Type of matrix to generate '
+                         '(e.g dense or sparse)', metavar='', choices=default_mat_type,  nargs='+')
+    cparser.add_argument('--mat-shape', default=default_mat_shape, help='Shape of matrix to generate '
+                         '(e.g 10k_1k)', metavar='', nargs='+')
 
-    # Optional Arguments
-    cparser.add_argument('-temp-dir', help='specify temporary directory', metavar='')
-    cparser.add_argument('--generate-data', help='generate data', action='store_true')
-    cparser.add_argument('--train', help='train algorithms', action='store_true')
-    cparser.add_argument('--predict', help='predict (if available)', action='store_true')
+    cparser.add_argument('-temp-dir', default=default_temp_dir, help='specify temporary directory',
+                         metavar='')
+    cparser.add_argument('--filename', default='pertest.out', help='specify output file',
+                         metavar='')
+    cparser.add_argument('--mode', default=default_workload,
+                         help='specify type of workload to run (e.g data-gen, train, predict)',
+                         metavar='', choices=default_workload, nargs='+')
 
     args = cparser.parse_args()
     arg_dict = vars(args)
+
+    # Debug arguments
+    # print(arg_dict)
 
     # Check for validity of input arguments
     if args.family is not None:
@@ -153,18 +162,11 @@ if __name__ == '__main__':
                 print('{} algorithm not present in the performance test suit'.format(args.algo))
                 sys.exit()
 
-    if args.temp_dir is None:
-        systemml_home = os.environ.get('SYSTEMML_HOME')
-        args.temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
-
-    start_time = time.time()
-    logging.basicConfig(filename=join(args.temp_dir, 'perftest.out'), level=logging.INFO)
-    logging.info('New experiment state time {}'.format(start_time))
-    logging.info(args)
-    log_header = ['algorithm', 'run_type', 'mat_typ', 'mat_shape', 'time', 'return_code']
-    logging.critical(','.join(log_header))
-
     if not os.path.exists(args.temp_dir):
         os.makedirs(args.temp_dir)
 
     perf_test_entry(**arg_dict)
+    sys.exit()
+
+    total_time = (time.time() - start_time)
+    logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))

@@ -46,22 +46,17 @@ def split_rowcol(matrix_dim):
     This function returns input matrix dimensions in integer format.
 
     :param matrix_dim: String that contains matrix dim (e.g 10k_1k)
-    :return: List of tuple (e.g [(10000, 1000)])
+    :return: List with row and column
     '''
-
-    mat_shapes = []
-    for dims in matrix_dim:
-        k = str(0) * 3
-        M = str(0) * 6
-        replace_M = dims.replace('M', str(M))
-        replace_k = replace_M.replace('k', str(k))
-        row, col = replace_k.split('_')
-        mat_shapes.append((row, col))
-
-    return mat_shapes
+    k = str(0) * 3
+    M = str(0) * 6
+    replace_M = matrix_dim.replace('M', str(M))
+    replace_k = replace_M.replace('k', str(k))
+    row, col = replace_k.split('_')
+    return row, col
 
 
-def config_writer(path, config_dict, file_name):
+def config_writer(write_path, config_dict):
     '''
     This function writes the configuration parameters to a file
 
@@ -71,8 +66,20 @@ def config_writer(path, config_dict, file_name):
     :return:
     '''
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    with open(write_path, 'w') as fp:
+        json.dump(config_dict, fp, indent=4)
 
-    with open(path + '/' + file_name, 'w') as json_file:
-        json.dump(config_dict, json_file)
+    return None
+
+
+def config_reader(read_path):
+
+    with open(read_path, 'r') as f:
+        conf_file = json.load(f)
+
+    return conf_file
+
+
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)

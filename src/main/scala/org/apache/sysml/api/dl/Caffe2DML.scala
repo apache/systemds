@@ -487,11 +487,35 @@ class Caffe2DMLModel(val mloutput: MLResults,
         assign(tabDMLScript, "Prob", lossLayers(0).out)
       }
       case "allreduce" => {
-        ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
-        parForBlock("i", "1", "num_iters") {
-          getTestBatch(tabDMLScript)
-          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
-          assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
+        if(estimator.inputs.containsKey("$parallel_batches")) {
+          // The user specifies the number of parallel_batches
+          // This ensures that the user of generated script remembers to provide the commandline parameter $parallel_batches
+          assign(tabDMLScript, "parallel_batches", "$parallel_batches") 
+          assign(tabDMLScript, "group_batch_size", "parallel_batches*" + Caffe2DML.batchSize)
+          assign(tabDMLScript, "N", Caffe2DML.numImages)
+          assign(tabDMLScript, "groups", "as.integer(ceil(" + Caffe2DML.numImages + "/group_batch_size))")
+          // Grab groups of mini-batches
+          forBlock("g", "1", "groups") {
+            assign(tabDMLScript, "group_beg", "((g-1) * group_batch_size) %% " + Caffe2DML.numImages + " + 1")
+            assign(tabDMLScript, "group_end", "min(" + Caffe2DML.numImages + ", group_beg + group_batch_size - 1)")
+            assign(tabDMLScript, "X_group_batch", "X_full[group_beg:group_end,]")
+            //  Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
+            parForBlock("j", "1", "parallel_batches") {
+              assign(tabDMLScript, "beg", "((j-1) * " + Caffe2DML.batchSize + ") %% nrow(X_group_batch) + 1")
+              assign(tabDMLScript, "end", "min(nrow(X_group_batch), beg + " + Caffe2DML.batchSize + " - 1)")
+              assign(tabDMLScript, "Xb", "X_group_batch[beg:end,]")
+              net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+              assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
+            }
+          }
+        }
+        else {
+          // Default behaviour:
+          parForBlock("i", "1", Caffe2DML.numImages) {
+            assign(tabDMLScript, "Xb", "X_full[i,]")
+            net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+            assign(tabDMLScript, "Prob[i,]", lossLayers(0).out)
+          }
         }
       }
       case _ => throw new DMLRuntimeException("Unsupported test algo:" + estimator.solverParam.getTestAlgo)

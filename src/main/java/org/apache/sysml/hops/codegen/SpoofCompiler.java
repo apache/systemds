@@ -100,7 +100,7 @@ public class SpoofCompiler
 	//internal configuration flags
 	public static boolean LDEBUG                      = false;
 	public static CompilerType JAVA_COMPILER          = CompilerType.JANINO; 
-	public static IntegrationType INTEGRATION         = IntegrationType.HOPS;
+	public static IntegrationType INTEGRATION         = IntegrationType.RUNTIME;
 	public static final boolean RECOMPILE_CODEGEN     = true;
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
@@ -293,7 +293,7 @@ public class SpoofCompiler
 	{
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(sb, roots, 
-			new LocalVariableMap(), new RecompileStatus(), false, false, 0);
+			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
 	}
 	
 	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) 
@@ -301,7 +301,7 @@ public class SpoofCompiler
 	{
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(root, 
-			new LocalVariableMap(), new RecompileStatus(), false, false, 0);
+			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
 	}
 	
 	

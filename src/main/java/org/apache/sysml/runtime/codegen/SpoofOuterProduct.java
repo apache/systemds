@@ -152,11 +152,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//check empty result
-		if(   (_outerProductType == OutProdType.LEFT_OUTER_PRODUCT && inputs.get(1).isEmptyBlock(false)) //U is empty
-				   || (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
-				   || (_outerProductType == OutProdType.CELLWISE_OUTER_PRODUCT && inputs.get(0).isEmptyBlock(false))) {  //X is empty
-					out.examSparsity(); //turn empty dense into sparse
-					return; 
+		if( (_outerProductType == OutProdType.LEFT_OUTER_PRODUCT && inputs.get(1).isEmptyBlock(false)) //U is empty
+			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
+			|| inputs.get(0).isEmptyBlock(false) ) {  //X is empty
+			out.examSparsity(); //turn empty dense into sparse
+			return; 
 		}
 		
 		//input preparation and result allocation (Allocate the output that is set by Sigma2CPInstruction) 
@@ -232,8 +232,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		//check empty result
 		if( (_outerProductType == OutProdType.LEFT_OUTER_PRODUCT && inputs.get(1).isEmptyBlock(false)) //U is empty
-			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
-			|| (_outerProductType == OutProdType.CELLWISE_OUTER_PRODUCT && inputs.get(0).isEmptyBlock(false))) {  //X is empty
+			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT && inputs.get(2).isEmptyBlock(false)) //V is empty
+			|| inputs.get(0).isEmptyBlock(false) ) {  //X is empty
 			out.examSparsity(); //turn empty dense into sparse
 			return; 
 		}

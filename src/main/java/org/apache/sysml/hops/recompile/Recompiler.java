@@ -222,7 +222,8 @@ public class Recompiler
 			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
 					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				Hop.resetVisitStatus(hops);
-				hops = SpoofCompiler.optimize(hops, true);
+				hops = SpoofCompiler.optimize(hops, 
+					(status==null || !status.isInitialCodegen()));
 			}
 			
 			// construct lops			
@@ -330,7 +331,8 @@ public class Recompiler
 			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
 					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				hops.resetVisitStatus();
-				hops = SpoofCompiler.optimize(hops, false);
+				hops = SpoofCompiler.optimize(hops,
+					(status==null || !status.isInitialCodegen()));
 			}
 			
 			// construct lops			

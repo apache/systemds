@@ -21,6 +21,7 @@ package org.apache.sysml.hops.ipa;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -49,6 +50,10 @@ public class FunctionCallGraph
 	//(mapping from function keys to called function keys)
 	private final HashMap<String, HashSet<String>> _fGraph;
 	
+	//program-wide function call operators per target function
+	//(mapping from function keys to set of its function calls)
+	private final HashMap<String, ArrayList<FunctionOp>> _fCalls;
+	
 	//subset of direct or indirect recursive functions	
 	private final HashSet<String> _fRecursive;
 	
@@ -60,9 +65,24 @@ public class FunctionCallGraph
 	 */
 	public FunctionCallGraph(DMLProgram prog) {
 		_fGraph = new HashMap<String, HashSet<String>>();
+		_fCalls = new HashMap<String, ArrayList<FunctionOp>>();
 		_fRecursive = new HashSet<String>();
 		
 		constructFunctionCallGraph(prog);
+	}
+	
+	/**
+	 * Constructs the function call graph for all functions
+	 * reachable from the given statement block. 
+	 * 
+	 * @param sb statement block (potentially hierarchical)
+	 */
+	public FunctionCallGraph(StatementBlock sb) {
+		_fGraph = new HashMap<String, HashSet<String>>();
+		_fCalls = new HashMap<String, ArrayList<FunctionOp>>();
+		_fRecursive = new HashSet<String>();
+		
+		constructFunctionCallGraph(sb);
 	}
 
 	/**
@@ -86,6 +106,20 @@ public class FunctionCallGraph
 	public Collection<String> getCalledFunctions(String fkey) {
 		String lfkey = (fkey == null) ? MAIN_FUNCTION_KEY : fkey;
 		return _fGraph.get(lfkey);
+	}
+	
+	/**
+	 * Returns all function operators calling the given function.
+	 * 
+	 * @param fkey function key of called function,
+	 *      null indicates the main program and returns an empty list
+	 * @return list of function call hops 
+	 */
+	public Collection<FunctionOp> getFunctionCalls(String fkey) {
+		//main program cannot have function calls
+		if( fkey == null )
+			return Collections.emptyList();
+		return _fCalls.get(fkey);
 	}
 	
 	/**
@@ -113,6 +147,16 @@ public class FunctionCallGraph
 	public boolean isRecursiveFunction(String fkey) {
 		String lfkey = (fkey == null) ? MAIN_FUNCTION_KEY : fkey;
 		return _fRecursive.contains(lfkey);
+	}
+	
+	/**
+	 * Returns all functions that are reachable either directly or indirectly
+	 * form the main program, except the main program itself.
+	 * 
+	 * @return list of function keys (namespace and name)
+	 */
+	public Collection<String> getReachableFunctions() {
+		return getReachableFunctions(Collections.emptyList());
 	}
 	
 	/**
@@ -159,13 +203,28 @@ public class FunctionCallGraph
 	private void constructFunctionCallGraph(DMLProgram prog) {
 		if( !prog.hasFunctionStatementBlocks() )
 			return; //early abort if prog without functions
-			
+		
 		try {
 			Stack<String> fstack = new Stack<String>();
 			HashSet<String> lfset = new HashSet<String>();
 			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
 			for( StatementBlock sblk : prog.getStatementBlocks() )
 				rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sblk, fstack, lfset);
+		}
+		catch(HopsException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+	
+	private void constructFunctionCallGraph(StatementBlock sb) {
+		if( !sb.getDMLProg().hasFunctionStatementBlocks() )
+			return; //early abort if prog without functions
+		
+		try {
+			Stack<String> fstack = new Stack<String>();
+			HashSet<String> lfset = new HashSet<String>();
+			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
+			rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sb, fstack, lfset);
 		}
 		catch(HopsException ex) {
 			throw new RuntimeException(ex);
@@ -208,10 +267,15 @@ public class FunctionCallGraph
 				if( h instanceof FunctionOp ){
 					FunctionOp fop = (FunctionOp) h;
 					String lfkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+					//keep all function operators
+					if( !_fCalls.containsKey(lfkey) )
+						_fCalls.put(lfkey, new ArrayList<FunctionOp>());
+					_fCalls.get(lfkey).add(fop);
+					
 					//prevent redundant call edges
 					if( lfset.contains(lfkey) || fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
 						continue;
-						
+					
 					if( !_fGraph.containsKey(lfkey) )
 						_fGraph.put(lfkey, new HashSet<String>());
 						

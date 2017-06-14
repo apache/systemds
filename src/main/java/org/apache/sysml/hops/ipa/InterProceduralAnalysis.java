@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -34,21 +32,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.hops.AggUnaryOp;
-import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.DataGenMethod;
-import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
@@ -89,28 +79,10 @@ import org.apache.sysml.udf.lib.OrderWrapper;
  *      changing sparsity etc (that requires the rewritten hops dag as input). This 
  *      also includes control-flow aware propagation of size and sparsity. Furthermore,
  *      it also serves as a second constant propagation pass.
- * 
- * In general, the basic concepts of IPA are as follows and all places that deal with
- * statistic propagation should adhere to that:
- *   * Rule 1: Exact size propagation: Since the dimension information are sometimes used
- *     for specific lops construction (e.g., in append) and rewrites, we cannot propagate worst-case 
- *     estimates but only exact information; otherwise size must be unknown.
- *   * Rule 2: Dimension information and sparsity are handled separately, i.e., if an updated 
- *     variable has changing sparsity but constant dimensions, its dimensions are known but
- *     sparsity unknown.
- * 
- * More specifically, those two rules are currently realized as follows:
- *   * Statistics propagation is applied for DML-bodied functions that are invoked exactly once.
- *     This ensures that we can savely propagate exact information into this function.
- *     If ALLOW_MULTIPLE_FUNCTION_CALLS is enabled we treat multiple calls with the same sizes
- *     as one call and hence, propagate those statistics into the function as well.
- *   * Output size inference happens for DML-bodied functions that are invoked exactly once
- *     and for external functions that are known in advance (see UDFs in org.apache.sysml.udf).
- *   * Size propagation across DAGs requires control flow awareness:
- *     - Generic statement blocks: updated variables &rarr; old stats in; new stats out
- *     - While/for statement blocks: updated variables &rarr; old stats in/out if loop insensitive; otherwise unknown
- *     - If statement blocks: updated variables &rarr; old stats in; new stats out if branch-insensitive            
- *     
+ *   
+ *  Additionally, IPA also covers the removal of unused functions, the decision on
+ *  recompile once functions, the removal of unnecessary checkpoints, and the 
+ *  global removal of constant binary operations such as X * ones.
  *         
  */
 @SuppressWarnings("deprecation")
@@ -120,14 +92,14 @@ public class InterProceduralAnalysis
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
     
 	//internal configuration parameters
-	private static final boolean INTRA_PROCEDURAL_ANALYSIS      = true; //propagate statistics across statement blocks (main/functions)	
-	private static final boolean PROPAGATE_KNOWN_UDF_STATISTICS = true; //propagate statistics for known external functions 
-	private static final boolean ALLOW_MULTIPLE_FUNCTION_CALLS  = true; //propagate consistent statistics from multiple calls 
-	private static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //remove unused functions (inlined or never called)
-	private static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
-	private static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
-	private static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
-	private static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
+	protected static final boolean INTRA_PROCEDURAL_ANALYSIS      = true; //propagate statistics across statement blocks (main/functions)	
+	protected static final boolean PROPAGATE_KNOWN_UDF_STATISTICS = true; //propagate statistics for known external functions 
+	protected static final boolean ALLOW_MULTIPLE_FUNCTION_CALLS  = true; //propagate consistent statistics from multiple calls 
+	protected static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //remove unused functions (inlined or never called)
+	protected static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
+	protected static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
+	protected static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
+	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	public static boolean UNARY_DIMS_PRESERVING_FUNS = true; //determine and exploit unary dimension preserving functions 
 	
 	static {
@@ -138,8 +110,46 @@ public class InterProceduralAnalysis
 		}
 	}
 	
-	public InterProceduralAnalysis() {
-		//do nothing
+	private final DMLProgram _prog;
+	private final StatementBlock _sb;
+	
+	//function call graph for functions reachable from main
+	private final FunctionCallGraph _fgraph;
+	
+	//set IPA passes to apply in order 
+	private final ArrayList<IPAPass> _passes;
+	
+	/**
+	 * Creates a handle for performing inter-procedural analysis
+	 * for a given DML program and its associated HOP DAGs. This
+	 * call initializes various internal information such as the
+	 * function call graph and auxiliary function call information
+	 * which can be reused across multiple IPA calls (e.g., for 
+	 * second chance analysis).
+	 * 
+	 */
+	public InterProceduralAnalysis(DMLProgram dmlp) {
+		//analyzes the function call graph 
+		_prog = dmlp;
+		_sb = null;
+		_fgraph = new FunctionCallGraph(dmlp);
+		
+		//create order list of IPA passes
+		_passes = new ArrayList<IPAPass>();
+		_passes.add(new IPAPassRemoveUnusedFunctions());
+		_passes.add(new IPAPassFlagFunctionsRecompileOnce());
+		_passes.add(new IPAPassRemoveUnnecessaryCheckpoints());
+		_passes.add(new IPAPassRemoveConstantBinaryOps());
+	}
+	
+	public InterProceduralAnalysis(StatementBlock sb) {
+		//analyzes the function call graph 
+		_prog = sb.getDMLProg();
+		_sb = sb;
+		_fgraph = new FunctionCallGraph(sb);
+		
+		//create order list of IPA passes
+		_passes = new ArrayList<IPAPass>();
 	}
 	
 	/**
@@ -150,29 +160,30 @@ public class InterProceduralAnalysis
 	 * @throws ParseException if ParseException occurs
 	 * @throws LanguageException if LanguageException occurs
 	 */
-	public void analyzeProgram( DMLProgram dmlp ) 
+	public void analyzeProgram() 
 		throws HopsException, ParseException, LanguageException
 	{
-		FunctionCallGraph fgraph = new FunctionCallGraph(dmlp);
+		//TODO move main IPA into separate IPA pass for size propagation
+		//together with rework of candidate selection
 		
 		//step 1: get candidates for statistics propagation into functions (if required)
 		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
 		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
 		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
-		if( !dmlp.getFunctionStatementBlocks().isEmpty() ) {
-			for ( StatementBlock sb : dmlp.getStatementBlocks() ) //get candidates (over entire program)
+		if( !_prog.getFunctionStatementBlocks().isEmpty() ) {
+			for ( StatementBlock sb : _prog.getStatementBlocks() ) //get candidates (over entire program)
 				getFunctionCandidatesForStatisticPropagation( sb, fcandCounts, fcandHops );
 			pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
 			determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
-			DMLTranslator.resetHopsDAGVisitStatus( dmlp );
+			DMLTranslator.resetHopsDAGVisitStatus( _prog );
 		}
 		
 		//step 2: get unary dimension-preserving non-candidate functions
-		Collection<String> unaryFcandTmp = fgraph.getReachableFunctions(fcandCounts.keySet());
+		Collection<String> unaryFcandTmp = _fgraph.getReachableFunctions(fcandCounts.keySet());
 		HashSet<String> unaryFcands = new HashSet<String>();
 		if( !unaryFcandTmp.isEmpty() && UNARY_DIMS_PRESERVING_FUNS ) {
 			for( String tmp : unaryFcandTmp )
-				if( isUnarySizePreservingFunction(dmlp.getFunctionStatementBlock(tmp)) )
+				if( isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
 					unaryFcands.add(tmp);
 		}
 		
@@ -180,61 +191,37 @@ public class InterProceduralAnalysis
 		if( !fcandCounts.isEmpty() || INTRA_PROCEDURAL_ANALYSIS ) {
 			//(callVars used to chain outputs/inputs of multiple functions calls) 
 			LocalVariableMap callVars = new LocalVariableMap();
-			for ( StatementBlock sb : dmlp.getStatementBlocks() ) //propagate stats into candidates
+			for ( StatementBlock sb : _prog.getStatementBlocks() ) //propagate stats into candidates
 				propagateStatisticsAcrossBlock( sb, fcandCounts, callVars, fcandSafeNNZ, unaryFcands, new HashSet<String>() );
 		}
 		
-		//step 4: remove unused functions (e.g., inlined or never called)
-		if( REMOVE_UNUSED_FUNCTIONS ) {
-			removeUnusedFunctions( dmlp, fgraph );
-		}
-		
-		//step 5: flag functions with loops for 'recompile-on-entry'
-		if( FLAG_FUNCTION_RECOMPILE_ONCE ) {
-			flagFunctionsForRecompileOnce( dmlp, fgraph );
-		}
-		
-		//step 6: set global data flow properties
-		if( REMOVE_UNNECESSARY_CHECKPOINTS 
-			&& OptimizerUtils.isSparkExecutionMode() )
-		{
-			//remove unnecessary checkpoint before update 
-			removeCheckpointBeforeUpdate(dmlp);
-			
-			//move necessary checkpoint after update
-			moveCheckpointAfterUpdate(dmlp);
-			
-			//remove unnecessary checkpoint read-{write|uagg}
-			removeCheckpointReadWrite(dmlp);
-		}
-		
-		//step 7: remove constant binary ops
-		if( REMOVE_CONSTANT_BINARY_OPS ) {
-			removeConstantBinaryOps(dmlp);
-		}
+		//step 4: apply additional IPA passes
+		for( IPAPass pass : _passes )
+			if( pass.isApplicable() )
+				pass.rewriteProgram(_prog, _fgraph);
 	}
 	
-	public Set<String> analyzeSubProgram( StatementBlock sb ) 
+	public Set<String> analyzeSubProgram() 
 		throws HopsException, ParseException
 	{
-		DMLTranslator.resetHopsDAGVisitStatus(sb);
+		DMLTranslator.resetHopsDAGVisitStatus(_sb);
 		
 		//step 1: get candidates for statistics propagation into functions (if required)
 		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
 		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
 		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
 		Set<String> allFCandKeys = new HashSet<String>();
-		getFunctionCandidatesForStatisticPropagation( sb, fcandCounts, fcandHops );
+		getFunctionCandidatesForStatisticPropagation( _sb, fcandCounts, fcandHops );
 		allFCandKeys.addAll(fcandCounts.keySet()); //cp before pruning
 		pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
 		determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
-		DMLTranslator.resetHopsDAGVisitStatus( sb );
+		DMLTranslator.resetHopsDAGVisitStatus( _sb );
 		
 		if( !fcandCounts.isEmpty() ) {
 			//step 2: propagate statistics into functions and across DAGs
 			//(callVars used to chain outputs/inputs of multiple functions calls) 
 			LocalVariableMap callVars = new LocalVariableMap();
-			propagateStatisticsAcrossBlock( sb, fcandCounts, callVars, fcandSafeNNZ, new HashSet<String>(), new HashSet<String>() );
+			propagateStatisticsAcrossBlock( _sb, fcandCounts, callVars, fcandSafeNNZ, new HashSet<String>(), new HashSet<String>() );
 		}
 		
 		return fcandCounts.keySet();
@@ -936,457 +923,5 @@ public class InterProceduralAnalysis
 		moOut.setMetaData(meta);
 		
 		return moOut;
-	}
-	
-	/////////////////////////////
-	// REMOVE UNUSED FUNCTIONS
-	//////
-
-	public void removeUnusedFunctions( DMLProgram dmlp, FunctionCallGraph fgraph )
-		throws LanguageException
-	{
-		Set<String> fnamespaces = dmlp.getNamespaces().keySet();
-		for( String fnspace : fnamespaces  ) {
-			HashMap<String, FunctionStatementBlock> fsbs = dmlp.getFunctionStatementBlocks(fnspace);
-			Iterator<Entry<String, FunctionStatementBlock>> iter = fsbs.entrySet().iterator();
-			while( iter.hasNext() ) {
-				Entry<String, FunctionStatementBlock> e = iter.next();
-				if( !fgraph.isReachableFunction(fnspace, e.getKey()) ) {
-					iter.remove();
-					if( LOG.isDebugEnabled() )
-						LOG.debug("IPA: Removed unused function: " + 
-							DMLProgram.constructFunctionKey(fnspace, e.getKey()));
-				}
-			}
-		}
-	}
-	
-	
-	/////////////////////////////
-	// FLAG FUNCTIONS FOR RECOMPILE_ONCE
-	//////
-	
-	/**
-	 * TODO call it after construct lops
-	 * 
-	 * @param dmlp the DML program
-	 * @param fgraph the function call graph
-	 * @throws LanguageException if LanguageException occurs
-	 */
-	public void flagFunctionsForRecompileOnce( DMLProgram dmlp, FunctionCallGraph fgraph ) 
-		throws LanguageException
-	{
-		for (String namespaceKey : dmlp.getNamespaces().keySet())
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
-			{
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				if( !fgraph.isRecursiveFunction(namespaceKey, fname) &&
-					rFlagFunctionForRecompileOnce( fsblock, false ) ) 
-				{
-					fsblock.setRecompileOnce( true ); 
-					if( LOG.isDebugEnabled() )
-						LOG.debug("IPA: FUNC flagged for recompile-once: " + 
-							DMLProgram.constructFunctionKey(namespaceKey, fname));
-				}
-			}
-	}
-	
-	/**
-	 * Returns true if this statementblock requires recompilation inside a 
-	 * loop statement block.
-	 * 
-	 * @param sb statement block
-	 * @param inLoop true if in loop
-	 * @return true if statement block requires recompilation inside a loop statement block
-	 */
-	public boolean rFlagFunctionForRecompileOnce( StatementBlock sb, boolean inLoop )
-	{
-		boolean ret = false;
-		
-		if (sb instanceof FunctionStatementBlock)
-		{
-			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
-			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			for( StatementBlock c : fstmt.getBody() )
-				ret |= rFlagFunctionForRecompileOnce( c, inLoop );			
-		}
-		else if (sb instanceof WhileStatementBlock)
-		{
-			//recompilation information not available at this point
-			ret = true;
-			
-			/*
-			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			ret |= (inLoop && wsb.requiresPredicateRecompilation() );
-			for( StatementBlock c : wstmt.getBody() )
-				ret |= rFlagFunctionForRecompileOnce( c, true );
-			*/
-		}
-		else if (sb instanceof IfStatementBlock)
-		{
-			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			ret |= (inLoop && isb.requiresPredicateRecompilation() );
-			for( StatementBlock c : istmt.getIfBody() )
-				ret |= rFlagFunctionForRecompileOnce( c, inLoop );
-			for( StatementBlock c : istmt.getElseBody() )
-				ret |= rFlagFunctionForRecompileOnce( c, inLoop );
-		}
-		else if (sb instanceof ForStatementBlock)
-		{
-			//recompilation information not available at this point
-			ret = true;
-			
-			/* 
-			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			for( StatementBlock c : fstmt.getBody() )
-				ret |= rFlagFunctionForRecompileOnce( c, true );
-			*/
-		}
-		else
-		{
-			ret |= ( inLoop && sb.requiresRecompilation() );
-		}
-		
-		return ret;
-	}
-	
-	/////////////////////////////
-	// REMOVE UNNECESSARY CHECKPOINTS
-	//////
-
-	private void removeCheckpointBeforeUpdate(DMLProgram dmlp) 
-		throws HopsException
-	{
-		//approach: scan over top-level program (guaranteed to be unconditional),
-		//collect checkpoints; determine if used before update; remove first checkpoint
-		//on second checkpoint if update in between and not used before update
-		
-		HashMap<String, Hop> chkpointCand = new HashMap<String, Hop>();
-		
-		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
-		{
-			//prune candidates (used before updated)
-			Set<String> cands = new HashSet<String>(chkpointCand.keySet());
-			for( String cand : cands )
-				if( sb.variablesRead().containsVariable(cand) 
-					&& !sb.variablesUpdated().containsVariable(cand) ) 
-				{	
-					//note: variableRead might include false positives due to meta 
-					//data operations like nrow(X) or operations removed by rewrites 
-					//double check hops on basic blocks; otherwise worst-case
-					boolean skipRemove = false;
-					if( sb.get_hops() !=null ) {
-						Hop.resetVisitStatus(sb.get_hops());
-						skipRemove = true;
-						for( Hop root : sb.get_hops() )
-							skipRemove &= !HopRewriteUtils.rContainsRead(root, cand, false);
-					}					
-					if( !skipRemove )
-						chkpointCand.remove(cand);
-				}
-			
-			//prune candidates (updated in conditional control flow)
-			Set<String> cands2 = new HashSet<String>(chkpointCand.keySet());
-			if( sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
-				|| sb instanceof ForStatementBlock )
-			{
-				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) ) {
-						chkpointCand.remove(cand);
-					}
-			}
-			//prune candidates (updated w/ multiple reads) 
-			else
-			{
-				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) 
-					{
-						Hop.resetVisitStatus(sb.get_hops());
-						for( Hop root : sb.get_hops() )
-							if( root.getName().equals(cand) &&
-								!HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
-								chkpointCand.remove(cand);
-							}
-					}	
-			}
-		
-			//collect checkpoints and remove unnecessary checkpoints
-			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
-			for( Hop chkpoint : tmp ) {
-				if( chkpointCand.containsKey(chkpoint.getName()) ) {
-					chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);		
-				}
-				chkpointCand.put(chkpoint.getName(), chkpoint);
-			}
-			
-		}
-	}
-
-	private void moveCheckpointAfterUpdate(DMLProgram dmlp) 
-		throws HopsException
-	{
-		//approach: scan over top-level program (guaranteed to be unconditional),
-		//collect checkpoints; determine if used before update; move first checkpoint
-		//after update if not used before update (best effort move which often avoids
-		//the second checkpoint on loops even though used in between)
-		
-		HashMap<String, Hop> chkpointCand = new HashMap<String, Hop>();
-		
-		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
-		{
-			//prune candidates (used before updated)
-			Set<String> cands = new HashSet<String>(chkpointCand.keySet());
-			for( String cand : cands )
-				if( sb.variablesRead().containsVariable(cand) 
-					&& !sb.variablesUpdated().containsVariable(cand) ) 
-				{	
-					//note: variableRead might include false positives due to meta 
-					//data operations like nrow(X) or operations removed by rewrites 
-					//double check hops on basic blocks; otherwise worst-case
-					boolean skipRemove = false;
-					if( sb.get_hops() !=null ) {
-						Hop.resetVisitStatus(sb.get_hops());
-						skipRemove = true;
-						for( Hop root : sb.get_hops() )
-							skipRemove &= !HopRewriteUtils.rContainsRead(root, cand, false);
-					}					
-					if( !skipRemove )
-						chkpointCand.remove(cand);
-				}
-			
-			//prune candidates (updated in conditional control flow)
-			Set<String> cands2 = new HashSet<String>(chkpointCand.keySet());
-			if( sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
-				|| sb instanceof ForStatementBlock )
-			{
-				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) ) {
-						chkpointCand.remove(cand);
-					}
-			}
-			//move checkpoint after update with simple read chain 
-			//(note: right now this only applies if the checkpoints comes from a previous
-			//statement block, within-dag checkpoints should be handled during injection)
-			else
-			{
-				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) {
-						Hop.resetVisitStatus(sb.get_hops());
-						for( Hop root : sb.get_hops() )
-							if( root.getName().equals(cand) ) {
-								if( HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
-									chkpointCand.get(cand).setRequiresCheckpoint(false);
-									root.getInput().get(0).setRequiresCheckpoint(true);
-									chkpointCand.put(cand, root.getInput().get(0));
-								}
-								else
-									chkpointCand.remove(cand);		
-							}
-					}	
-			}
-		
-			//collect checkpoints
-			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
-			for( Hop chkpoint : tmp ) {
-				chkpointCand.put(chkpoint.getName(), chkpoint);
-			}
-		}
-	}
-	
-	private void removeCheckpointReadWrite(DMLProgram dmlp) 
-		throws HopsException
-	{
-		List<StatementBlock> sbs = dmlp.getStatementBlocks();
-		
-		if( sbs.size()==1 & !(sbs.get(0) instanceof IfStatementBlock 
-			|| sbs.get(0) instanceof WhileStatementBlock 
-			|| sbs.get(0) instanceof ForStatementBlock) ) 
-		{
-			//recursively process all dag roots
-			if( sbs.get(0).get_hops()!=null ) {
-				Hop.resetVisitStatus(sbs.get(0).get_hops());
-				for( Hop root : sbs.get(0).get_hops() )
-					rRemoveCheckpointReadWrite(root);
-			}
-		}
-	}
-	
-	private ArrayList<Hop> collectCheckpoints(ArrayList<Hop> roots)
-	{
-		ArrayList<Hop> ret = new ArrayList<Hop>();	
-		if( roots != null ) {
-			Hop.resetVisitStatus(roots);
-			for( Hop root : roots )
-				rCollectCheckpoints(root, ret);
-		}
-		
-		return ret;
-	}
-	
-	private void rCollectCheckpoints(Hop hop, ArrayList<Hop> checkpoints)
-	{
-		if( hop.isVisited() )
-			return;
-
-		//handle leaf node for variable (checkpoint directly bound
-		//to logical variable name and not used)
-		if( hop.requiresCheckpoint() && hop.getParent().size()==1 
-			&& hop.getParent().get(0) instanceof DataOp
-			&& ((DataOp)hop.getParent().get(0)).getDataOpType()==DataOpTypes.TRANSIENTWRITE)
-		{
-			checkpoints.add(hop);
-		}
-		
-		//recursively process child nodes
-		for( Hop c : hop.getInput() )
-			rCollectCheckpoints(c, checkpoints);
-	
-		hop.setVisited();
-	}
-	
-	public static void rRemoveCheckpointReadWrite(Hop hop)
-	{
-		if( hop.isVisited() )
-			return;
-
-		//remove checkpoint on pread if only consumed by pwrite or uagg
-		if( (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTWRITE)
-			|| hop instanceof AggUnaryOp )	
-		{
-			//(pwrite|uagg) - pread
-			Hop c0 = hop.getInput().get(0);
-			if( c0.requiresCheckpoint() && c0.getParent().size() == 1
-				&& c0 instanceof DataOp && ((DataOp)c0).getDataOpType()==DataOpTypes.PERSISTENTREAD )
-			{
-				c0.setRequiresCheckpoint(false);
-			}
-			
-			//(pwrite|uagg) - frame/matri cast - pread
-			if( c0 instanceof UnaryOp && c0.getParent().size() == 1 
-				&& (((UnaryOp)c0).getOp()==OpOp1.CAST_AS_FRAME || ((UnaryOp)c0).getOp()==OpOp1.CAST_AS_MATRIX ) 
-				&& c0.getInput().get(0).requiresCheckpoint() && c0.getInput().get(0).getParent().size() == 1
-				&& c0.getInput().get(0) instanceof DataOp 
-				&& ((DataOp)c0.getInput().get(0)).getDataOpType()==DataOpTypes.PERSISTENTREAD )
-			{
-				c0.getInput().get(0).setRequiresCheckpoint(false);
-			}
-		}
-		
-		//recursively process children
-		for( Hop c : hop.getInput() )
-			rRemoveCheckpointReadWrite(c);
-		
-		hop.setVisited();
-	}
-	
-	/////////////////////////////
-	// REMOVE CONSTANT BINARY OPS
-	//////
-
-	private void removeConstantBinaryOps(DMLProgram dmlp) 
-		throws HopsException
-	{
-		//approach: scan over top-level program (guaranteed to be unconditional),
-		//collect ones=matrix(1,...); remove b(*)ones if not outer operation		
-		HashMap<String, Hop> mOnes = new HashMap<String, Hop>();
-		
-		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
-		{
-			//pruning updated variables
-			for( String var : sb.variablesUpdated().getVariableNames() )
-				if( mOnes.containsKey( var ) )
-					mOnes.remove( var );
-			
-			//replace constant binary ops
-			if( !mOnes.isEmpty() )
-				rRemoveConstantBinaryOp(sb, mOnes);
-			
-			//collect matrices of ones from last-level statement blocks
-			if( !(sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
-				  || sb instanceof ForStatementBlock) )
-			{
-				collectMatrixOfOnes(sb.get_hops(), mOnes);
-			}
-		}
-	}
-	
-	private void collectMatrixOfOnes(ArrayList<Hop> roots, HashMap<String,Hop> mOnes)
-	{
-		if( roots == null )
-			return;
-		
-		for( Hop root : roots )
-			if( root instanceof DataOp && ((DataOp)root).getDataOpType()==DataOpTypes.TRANSIENTWRITE
-			   && root.getInput().get(0) instanceof DataGenOp
-			   && ((DataGenOp)root.getInput().get(0)).getOp()==DataGenMethod.RAND
-			   && ((DataGenOp)root.getInput().get(0)).hasConstantValue(1.0)) 
-			{
-				mOnes.put(root.getName(),root.getInput().get(0));
-			}
-	}
-	
-	private void rRemoveConstantBinaryOp(StatementBlock sb, HashMap<String,Hop> mOnes) 
-		throws HopsException
-	{
-		if( sb instanceof IfStatementBlock )
-		{
-			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			for( StatementBlock c : istmt.getIfBody() )
-				rRemoveConstantBinaryOp(c, mOnes);
-			if( istmt.getElseBody() != null )
-				for( StatementBlock c : istmt.getElseBody() )
-					rRemoveConstantBinaryOp(c, mOnes);	
-		}
-		else if( sb instanceof WhileStatementBlock )
-		{
-			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			for( StatementBlock c : wstmt.getBody() )
-				rRemoveConstantBinaryOp(c, mOnes);
-		}
-		else if( sb instanceof ForStatementBlock )
-		{
-			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			for( StatementBlock c : fstmt.getBody() )
-				rRemoveConstantBinaryOp(c, mOnes);	
-		}
-		else
-		{
-			if( sb.get_hops() != null ){
-				Hop.resetVisitStatus(sb.get_hops());
-				for( Hop hop : sb.get_hops() )
-					rRemoveConstantBinaryOp(hop, mOnes);
-			}
-		}
-	}
-	
-	private void rRemoveConstantBinaryOp(Hop hop, HashMap<String,Hop> mOnes)
-	{
-		if( hop.isVisited() )
-			return;
-
-		if( hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==OpOp2.MULT
-			&& !((BinaryOp) hop).isOuterVectorOperator()
-			&& hop.getInput().get(0).getDataType()==DataType.MATRIX
-			&& hop.getInput().get(1) instanceof DataOp
-			&& mOnes.containsKey(hop.getInput().get(1).getName()) )
-		{
-			//replace matrix of ones with literal 1 (later on removed by
-			//algebraic simplification rewrites; otherwise more complex
-			//recursive processing of childs and rewiring required)
-			HopRewriteUtils.removeChildReferenceByPos(hop, hop.getInput().get(1), 1);
-			HopRewriteUtils.addChildReference(hop, new LiteralOp(1), 1);
-		}
-		
-		//recursively process child nodes
-		for( Hop c : hop.getInput() )
-			rRemoveConstantBinaryOp(c, mOnes);
-	
-		hop.setVisited();		
 	}
 }

@@ -52,6 +52,7 @@ limitations under the License.
     * [Linear Algebra Built-In Functions](dml-language-reference.html#linear-algebra-built-in-functions)
     * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
     * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
+    * [Deep Learning Built-In Functions](dml-language-reference.html#deep-learning-built-in-functions)
     * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
   * [Frames](dml-language-reference.html#frames)
     * [Creating Frames](dml-language-reference.html#creating-frames)

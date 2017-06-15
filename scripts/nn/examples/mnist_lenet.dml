@@ -114,8 +114,8 @@ train = function(matrix[double] X, matrix[double] Y,
 
       # Compute forward pass
       ## layer 1: conv1 -> relu1 -> pool1
-      [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, W1, b1, C, Hin, Win, Hf, Wf, stride, stride,
-                                                pad, pad)
+      [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, W1, b1, C, Hin, Win, Hf, Wf,
+                                                stride, stride, pad, pad)
       outr1 = relu::forward(outc1)
       [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
                                                     strideh=2, stridew=2, pad=0, pad=0)

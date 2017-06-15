@@ -182,6 +182,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   // Method called by Python mllearn to visualize variable of certain layer
   def visualizeLayer(layerName:String, varType:String, aggFn:String): Unit = visualizeLayer(net, layerName, varType, aggFn)
   
+  def getTrainAlgo():String = if(inputs.containsKey("$train_algo")) inputs.get("$train_algo") else "minibatch"
+  def getTestAlgo():String = if(inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
+    
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
 	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
@@ -209,7 +212,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	  // ----------------------------------------------------------------------------
 	  // Main logic
 	  forBlock("e", "1", "max_epochs") {
-	    solverParam.getTrainAlgo.toLowerCase match {
+	    getTrainAlgo.toLowerCase match {
 	      case "minibatch" => 
 	        forBlock("i", "1", "num_iters_per_epoch") {
 	          getTrainingBatch(tabDMLScript)
@@ -294,7 +297,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             performSnapshot
 	        }
 	      }
-	      case _ => throw new DMLRuntimeException("Unsupported train algo:" + solverParam.getTrainAlgo)
+	      case _ => throw new DMLRuntimeException("Unsupported train algo:" + getTrainAlgo)
 	    }
 	    // After every epoch, update the learning rate
 	    tabDMLScript.append("# Learning rate\n")
@@ -369,16 +372,16 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
         printClassificationReport
       }
       if(shouldValidate) {
-        if(  solverParam.getTrainAlgo.toLowerCase.startsWith("allreduce") &&
-            solverParam.getTestAlgo.toLowerCase.startsWith("allreduce")) {
-          Caffe2DML.LOG.warn("The setting: train_algo=" + solverParam.getTrainAlgo + " and test_algo=" + solverParam.getTestAlgo + " is not recommended. Consider changing test_algo=minibatch")
+        if(  getTrainAlgo.toLowerCase.startsWith("allreduce") &&
+            getTestAlgo.toLowerCase.startsWith("allreduce")) {
+          Caffe2DML.LOG.warn("The setting: train_algo=" + getTrainAlgo + " and test_algo=" + getTestAlgo + " is not recommended. Consider changing test_algo=minibatch")
         }
         // Append the DML to compute validation loss
         val numValidationBatches = if(solverParam.getTestIterCount > 0) solverParam.getTestIter(0) else 0
         tabDMLScript.append("# Compute validation loss & accuracy\n")
         ifBlock("iter  %% " + solverParam.getTestInterval + " == 0") {
           assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
-          solverParam.getTestAlgo.toLowerCase match {
+          getTestAlgo.toLowerCase match {
             case "minibatch" => {
               assign(tabDMLScript, "validation_loss", "0")
               assign(tabDMLScript, "validation_accuracy", "0")
@@ -451,7 +454,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
               assign(tabDMLScript, "validation_accuracy", "mean(group_validation_accuracy)")
             }
             
-            case _ => throw new DMLRuntimeException("Unsupported test algo:" + solverParam.getTestAlgo)
+            case _ => throw new DMLRuntimeException("Unsupported test algo:" + getTestAlgo)
           }
           tabDMLScript.append(print( dmlConcat( asDMLString("Iter:"), "iter", 
               asDMLString(", validation loss:"), "validation_loss", asDMLString(", validation accuracy:"), "validation_accuracy" )))
@@ -510,7 +513,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   }
   // Set iteration-related variables such as max_epochs, num_iters_per_epoch, lr, etc.
   def setIterationVariables():Unit = {
-    solverParam.getTrainAlgo.toLowerCase match {
+    getTrainAlgo.toLowerCase match {
 	    case "batch" => 
 	      assign(tabDMLScript, "max_epochs", solverParam.getMaxIter.toString)
 	    case _ => {
@@ -578,7 +581,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
 	  val lossLayers = getLossLayers(net)
 	  
 	  assign(tabDMLScript, "Prob", matrix("0", Caffe2DML.numImages, numClasses))
-	  estimator.solverParam.getTestAlgo.toLowerCase match {
+	  estimator.getTestAlgo.toLowerCase match {
       case "minibatch" => {
         ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
         forBlock("i", "1", "num_iters") {
@@ -626,7 +629,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
           assign(tabDMLScript, "Prob[i,]", lossLayers(0).out)
         }
       }
-      case _ => throw new DMLRuntimeException("Unsupported test algo:" + estimator.solverParam.getTestAlgo)
+      case _ => throw new DMLRuntimeException("Unsupported test algo:" + estimator.getTestAlgo)
     }
 		
 		val predictionScript = dmlScript.toString()

@@ -260,6 +260,8 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             aggregateAggGradients    
 	          update
 	          // -------------------------------------------------------
+	          assign(tabDMLScript, "Xb", "X_group_batch")
+            assign(tabDMLScript, "yb", "y_group_batch")
             displayLoss(lossLayers(0), shouldValidate)
             performSnapshot
           }
@@ -286,6 +288,8 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          aggregateAggGradients    
 	          update
 	          // -------------------------------------------------------
+	          assign(tabDMLScript, "Xb", "X_group_batch")
+            assign(tabDMLScript, "yb", "y_group_batch")
             displayLoss(lossLayers(0), shouldValidate)
             performSnapshot
 	        }

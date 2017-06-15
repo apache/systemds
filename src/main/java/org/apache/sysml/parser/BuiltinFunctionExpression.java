@@ -1113,7 +1113,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//
 			// Similarly,
 			// conv2d_backward_filter and conv2d_backward_data
-			Expression input = _args[0];			// For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
+			Expression input = _args[0]; // For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
 			
 			Expression filter = null;
 			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
@@ -1125,10 +1125,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			// stride1, stride2, padding1, padding2, numImg, numChannels, imgSize, imgSize, 
  			// filter_shape1=1, filter_shape2=1, filterSize/poolSize1, filterSize/poolSize1
- 			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD ||
- 					this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+ 			if( getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD ) {
  				output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
  			}
+			else if( getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA ) {
+				//args[0] .. filter, args[1] .. input
+				output.setDimensions(_args[1].getOutput().getDim1(), -1);
+			}
  			else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
  				output.setDimensions(filter.getOutput().getDim1(), filter.getOutput().getDim2());
  			}

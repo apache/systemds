@@ -254,7 +254,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
               assign(tabDMLScript, "end", "min(nrow(X_group_batch), beg + " + Caffe2DML.batchSize + " - 1)")
               assign(tabDMLScript, "Xb", "X_group_batch[beg:end,]")
               assign(tabDMLScript, "yb", "y_group_batch[beg:end,]")
-              forward; backward("_agg")
+              forward; backward
               flattenGradients
             }
             aggregateAggGradients    
@@ -278,7 +278,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          parForBlock("j", "1", localBatchSize) {
 	            assign(tabDMLScript, "Xb", "X_group_batch[j,]")
 	            assign(tabDMLScript, "yb", "y_group_batch[j,]")
-	            forward; backward("_agg")
+	            forward; backward
               flattenGradients
 	          }
 	          aggregateAggGradients    
@@ -469,10 +469,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
     tabDMLScript.append("# Perform forward pass\n")
 	  net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
   }
-  private def backward():Unit = backward("")
-  private def backward(suffix:String):Unit = {
+  private def backward():Unit = {
     tabDMLScript.append("# Perform backward pass\n")
-    net.getLayers.reverse.map(layer => net.getCaffeLayer(layer).backward(tabDMLScript, suffix))
+    net.getLayers.reverse.map(layer => net.getCaffeLayer(layer).backward(tabDMLScript, ""))
   }
   private def update():Unit = {
     tabDMLScript.append("# Update the parameters\n")

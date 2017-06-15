@@ -20,11 +20,13 @@
 package org.apache.sysml.hops.ipa;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
@@ -90,9 +92,9 @@ public class FunctionCallGraph
 	 * 
 	 * @param fnamespace function namespace
 	 * @param fname function name
-	 * @return list of function keys (namespace and name)
+	 * @return set of function keys (namespace and name)
 	 */
-	public Collection<String> getCalledFunctions(String fnamespace, String fname) {
+	public Set<String> getCalledFunctions(String fnamespace, String fname) {
 		return getCalledFunctions(
 			DMLProgram.constructFunctionKey(fnamespace, fname));				
 	}
@@ -101,9 +103,9 @@ public class FunctionCallGraph
 	 * Returns all functions called from the given function. 
 	 * 
 	 * @param fkey function key of calling function, null indicates the main program
-	 * @return list of function keys (namespace and name)
+	 * @return set of function keys (namespace and name)
 	 */
-	public Collection<String> getCalledFunctions(String fkey) {
+	public Set<String> getCalledFunctions(String fkey) {
 		String lfkey = (fkey == null) ? MAIN_FUNCTION_KEY : fkey;
 		return _fGraph.get(lfkey);
 	}
@@ -115,7 +117,7 @@ public class FunctionCallGraph
 	 *      null indicates the main program and returns an empty list
 	 * @return list of function call hops 
 	 */
-	public Collection<FunctionOp> getFunctionCalls(String fkey) {
+	public List<FunctionOp> getFunctionCalls(String fkey) {
 		//main program cannot have function calls
 		if( fkey == null )
 			return Collections.emptyList();
@@ -153,10 +155,10 @@ public class FunctionCallGraph
 	 * Returns all functions that are reachable either directly or indirectly
 	 * form the main program, except the main program itself.
 	 * 
-	 * @return list of function keys (namespace and name)
+	 * @return set of function keys (namespace and name)
 	 */
-	public Collection<String> getReachableFunctions() {
-		return getReachableFunctions(Collections.emptyList());
+	public Set<String> getReachableFunctions() {
+		return getReachableFunctions(Collections.emptySet());
 	}
 	
 	/**
@@ -165,14 +167,12 @@ public class FunctionCallGraph
 	 * blacklist of function names.
 	 * 
 	 * @param blacklist list of function keys to exclude
-	 * @return list of function keys (namespace and name)
+	 * @return set of function keys (namespace and name)
 	 */
-	public Collection<String> getReachableFunctions(Collection<String> blacklist) {
-		HashSet<String> ret = new HashSet<String>();
-		for( String tmp : _fGraph.keySet() )
-			if( !blacklist.contains(tmp) && !MAIN_FUNCTION_KEY.equals(tmp) )
-				ret.add(tmp);
-		return ret;
+	public Set<String> getReachableFunctions(Set<String> blacklist) {
+		return _fGraph.keySet().stream()
+			.filter(p -> !blacklist.contains(p) && !MAIN_FUNCTION_KEY.equals(p))
+			.collect(Collectors.toSet());
 	}
 	
 	/**

@@ -20,11 +20,7 @@
 package org.apache.sysml.hops.ipa;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -39,7 +35,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
@@ -53,7 +48,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
@@ -100,7 +94,6 @@ public class InterProceduralAnalysis
 	protected static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
 	protected static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
-	public static boolean UNARY_DIMS_PRESERVING_FUNS = true; //determine and exploit unary dimension preserving functions 
 	
 	static {
 		// for internal debugging only
@@ -123,9 +116,8 @@ public class InterProceduralAnalysis
 	 * Creates a handle for performing inter-procedural analysis
 	 * for a given DML program and its associated HOP DAGs. This
 	 * call initializes various internal information such as the
-	 * function call graph and auxiliary function call information
-	 * which can be reused across multiple IPA calls (e.g., for 
-	 * second chance analysis).
+	 * function call graph  which can be reused across multiple IPA 
+	 * calls (e.g., for second chance analysis).
 	 * 
 	 */
 	public InterProceduralAnalysis(DMLProgram dmlp) {
@@ -157,45 +149,32 @@ public class InterProceduralAnalysis
 	 * 
 	 * @param dmlp the dml program
 	 * @throws HopsException if HopsException occurs
-	 * @throws ParseException if ParseException occurs
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void analyzeProgram() 
-		throws HopsException, ParseException, LanguageException
+		throws HopsException
 	{
-		//TODO move main IPA into separate IPA pass for size propagation
-		//together with rework of candidate selection
-		
-		//step 1: get candidates for statistics propagation into functions (if required)
-		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
-		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
-		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
-		if( !_prog.getFunctionStatementBlocks().isEmpty() ) {
-			for ( StatementBlock sb : _prog.getStatementBlocks() ) //get candidates (over entire program)
-				getFunctionCandidatesForStatisticPropagation( sb, fcandCounts, fcandHops );
-			pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
-			determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
-			DMLTranslator.resetHopsDAGVisitStatus( _prog );
-		}
-		
-		//step 2: get unary dimension-preserving non-candidate functions
-		Collection<String> unaryFcandTmp = _fgraph.getReachableFunctions(fcandCounts.keySet());
-		HashSet<String> unaryFcands = new HashSet<String>();
-		if( !unaryFcandTmp.isEmpty() && UNARY_DIMS_PRESERVING_FUNS ) {
-			for( String tmp : unaryFcandTmp )
+		//step 1: intra- and inter-procedural 
+		if( INTRA_PROCEDURAL_ANALYSIS ) {
+			//get function call size infos to obtain candidates for statistics propagation
+			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph);
+			if( LOG.isDebugEnabled() )
+				LOG.debug("IPA: Initial FunctionCallSummary: \n" + fcallSizes);
+			
+			//get unary dimension-preserving non-candidate functions
+			for( String tmp : fcallSizes.getInvalidFunctions() )
 				if( isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
-					unaryFcands.add(tmp);
-		}
-		
-		//step 3: propagate statistics and scalars into functions and across DAGs
-		if( !fcandCounts.isEmpty() || INTRA_PROCEDURAL_ANALYSIS ) {
-			//(callVars used to chain outputs/inputs of multiple functions calls) 
+					fcallSizes.addDimsPreservingFunction(tmp);
+			if( LOG.isDebugEnabled() )
+				LOG.debug("IPA: Extended FunctionCallSummary: \n" + fcallSizes);
+			
+			//propagate statistics and scalars into functions and across DAGs
+			//(callVars used to chain outputs/inputs of multiple functions calls)
 			LocalVariableMap callVars = new LocalVariableMap();
 			for ( StatementBlock sb : _prog.getStatementBlocks() ) //propagate stats into candidates
-				propagateStatisticsAcrossBlock( sb, fcandCounts, callVars, fcandSafeNNZ, unaryFcands, new HashSet<String>() );
+				propagateStatisticsAcrossBlock( sb, callVars, fcallSizes, new HashSet<String>() );
 		}
 		
-		//step 4: apply additional IPA passes
+		//step 2: apply additional IPA passes
 		for( IPAPass pass : _passes )
 			if( pass.isApplicable() )
 				pass.rewriteProgram(_prog, _fgraph);
@@ -206,183 +185,34 @@ public class InterProceduralAnalysis
 	{
 		DMLTranslator.resetHopsDAGVisitStatus(_sb);
 		
-		//step 1: get candidates for statistics propagation into functions (if required)
-		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
-		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
-		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
-		Set<String> allFCandKeys = new HashSet<String>();
-		getFunctionCandidatesForStatisticPropagation( _sb, fcandCounts, fcandHops );
-		allFCandKeys.addAll(fcandCounts.keySet()); //cp before pruning
-		pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
-		determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
-		DMLTranslator.resetHopsDAGVisitStatus( _sb );
+		//get function call size infos to obtain candidates for statistics propagation
+		FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph);
 		
-		if( !fcandCounts.isEmpty() ) {
-			//step 2: propagate statistics into functions and across DAGs
-			//(callVars used to chain outputs/inputs of multiple functions calls) 
+		//propagate statistics and scalars into functions and across DAGs
+		//(callVars used to chain outputs/inputs of multiple functions calls) 
+		if( !fcallSizes.getValidFunctions().isEmpty() ) {
 			LocalVariableMap callVars = new LocalVariableMap();
-			propagateStatisticsAcrossBlock( _sb, fcandCounts, callVars, fcandSafeNNZ, new HashSet<String>(), new HashSet<String>() );
+			propagateStatisticsAcrossBlock( _sb, callVars, fcallSizes, new HashSet<String>() );
 		}
 		
-		return fcandCounts.keySet();
-	}
-	
-	
-	/////////////////////////////
-	// GET FUNCTION CANDIDATES
-	//////
-	
-	private void getFunctionCandidatesForStatisticPropagation( StatementBlock sb, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
-		throws HopsException, ParseException
-	{
-		if (sb instanceof FunctionStatementBlock)
-		{
-			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
-			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			for (StatementBlock sbi : fstmt.getBody())
-				getFunctionCandidatesForStatisticPropagation(sbi, fcandCounts, fcandHops);
-		}
-		else if (sb instanceof WhileStatementBlock)
-		{
-			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			for (StatementBlock sbi : wstmt.getBody())
-				getFunctionCandidatesForStatisticPropagation(sbi, fcandCounts, fcandHops);
-		}	
-		else if (sb instanceof IfStatementBlock)
-		{
-			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			for (StatementBlock sbi : istmt.getIfBody())
-				getFunctionCandidatesForStatisticPropagation(sbi, fcandCounts, fcandHops);
-			for (StatementBlock sbi : istmt.getElseBody())
-				getFunctionCandidatesForStatisticPropagation(sbi, fcandCounts, fcandHops);
-		}
-		else if (sb instanceof ForStatementBlock) //incl parfor
-		{
-			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			for (StatementBlock sbi : fstmt.getBody())
-				getFunctionCandidatesForStatisticPropagation(sbi, fcandCounts, fcandHops);
-		}
-		else //generic (last-level)
-		{
-			ArrayList<Hop> roots = sb.get_hops();
-			if( roots != null ) //empty statement blocks
-				for( Hop root : roots )
-					getFunctionCandidatesForStatisticPropagation(sb.getDMLProg(), root, fcandCounts, fcandHops);
-		}
-	}
-	
-	private void getFunctionCandidatesForStatisticPropagation(DMLProgram prog, Hop hop, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
-		throws HopsException, ParseException
-	{
-		if( hop.isVisited() )
-			return;
-		
-		if( hop instanceof FunctionOp && !((FunctionOp)hop).getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
-		{
-			//maintain counters and investigate functions if not seen so far
-			FunctionOp fop = (FunctionOp) hop;
-			String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
-			
-			if( fcandCounts.containsKey(fkey) ) {
-				if( ALLOW_MULTIPLE_FUNCTION_CALLS )
-				{
-					//compare input matrix characteristics for both function calls
-					//(if unknown or difference: maintain counter - this function is no candidate)
-					boolean consistent = true;
-					FunctionOp efop = fcandHops.get(fkey);
-					int numInputs = efop.getInput().size();
-					for( int i=0; i<numInputs; i++ )
-					{
-						Hop h1 = efop.getInput().get(i);
-						Hop h2 = fop.getInput().get(i);
-						//check matrix and scalar sizes (if known dims, nnz known/unknown, 
-						// safeness of nnz propagation, determined later per input)
-						consistent &= (h1.dimsKnown() && h2.dimsKnown()
-								   &&  h1.getDim1()==h2.getDim1() 
-								   &&  h1.getDim2()==h2.getDim2()
-								   &&  h1.getNnz()==h2.getNnz() );
-						//check literal values (equi value)
-						if( h1 instanceof LiteralOp ){
-							consistent &= (h2 instanceof LiteralOp 
-									      && HopRewriteUtils.isEqualValue((LiteralOp)h1, (LiteralOp)h2));
-						}
-						
-						
-					}
-					
-					if( !consistent ) //if differences, do not propagate
-						fcandCounts.put(fkey, fcandCounts.get(fkey)+1);
-				}
-				else
-				{
-					//maintain counter (this function is no candidate)
-					fcandCounts.put(fkey, fcandCounts.get(fkey)+1);
-				}
-			}
-			else { //first appearance
-				fcandCounts.put(fkey, 1); //create a new count entry
-				fcandHops.put(fkey, fop); //keep the function call hop
-				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-				getFunctionCandidatesForStatisticPropagation(fsb, fcandCounts, fcandHops);
-			}
-		}
-			
-		for( Hop c : hop.getInput() )
-			getFunctionCandidatesForStatisticPropagation(prog, c, fcandCounts, fcandHops);
-		
-		hop.setVisited();
-	}
-	
-	private void pruneFunctionCandidatesForStatisticPropagation(Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops)
-	{
-		//debug input
-		if( LOG.isDebugEnabled() )
-			for( Entry<String,Integer> e : fcandCounts.entrySet() )
-			{
-				String key = e.getKey();
-				Integer count = e.getValue();
-				LOG.debug("IPA: FUNC statistic propagation candidate: "+key+", callCount="+count);
-			}
-		
-		//materialize key set
-		Set<String> tmp = new HashSet<String>(fcandCounts.keySet());
-		
-		//check and prune candidate list
-		for( String key : tmp )
-		{
-			Integer cnt = fcandCounts.get(key);
-			if( cnt != null && cnt > 1 ) //if multiple refs
-				fcandCounts.remove(key);
-		}
-		
-		//debug output
-		if( LOG.isDebugEnabled() )
-			for( String key : fcandCounts.keySet() )
-			{
-				LOG.debug("IPA: FUNC statistic propagation candidate (after pruning): "+key);
-			}
+		return fcallSizes.getValidFunctions();
 	}
 	
 	private boolean isUnarySizePreservingFunction(FunctionStatementBlock fsb) 
-		throws HopsException, ParseException 
+		throws HopsException 
 	{
 		FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 		
 		//check unary functions over matrices
 		boolean ret = (fstmt.getInputParams().size() == 1 
-				&& fstmt.getInputParams().get(0).getDataType()==DataType.MATRIX
-				&& fstmt.getOutputParams().size() == 1
-				&& fstmt.getOutputParams().get(0).getDataType()==DataType.MATRIX);
+			&& fstmt.getInputParams().get(0).getDataType()==DataType.MATRIX
+			&& fstmt.getOutputParams().size() == 1
+			&& fstmt.getOutputParams().get(0).getDataType()==DataType.MATRIX);
 		
 		//check size-preserving characteristic
 		if( ret ) {
-			HashMap<String, Integer> tmp1 = new HashMap<String,Integer>();
-			HashMap<String, Set<Long>> tmp2 = new HashMap<String, Set<Long>>();
-			HashSet<String> tmp3 = new HashSet<String>();
-			HashSet<String> tmp4 = new HashSet<String>();
+			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph, false);
+			HashSet<String> fnStack = new HashSet<String>();
 			LocalVariableMap callVars = new LocalVariableMap();
 			
 			//populate input
@@ -391,7 +221,7 @@ public class InterProceduralAnalysis
 			
 			//propagate statistics
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi,  tmp1, callVars, tmp2, tmp3, tmp4);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 		
 			//compare output
 			MatrixObject mo2 = (MatrixObject)callVars.get(fstmt.getOutputParams().get(0).getName());
@@ -400,43 +230,10 @@ public class InterProceduralAnalysis
 			//reset function
 			mo.getMatrixCharacteristics().setDimension(-1, -1);
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi,  tmp1, callVars, tmp2, tmp3, tmp4);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 		}
 		
 		return ret;
-	}
-
-	/////////////////////////////
-	// DETERMINE NNZ PROPAGATE SAFENESS
-	//////
-
-	/**
-	 * Populates fcandSafeNNZ with all <functionKey,hopID> pairs where it is safe to
-	 * propagate nnz into the function.
-	 *  
-	 * @param fcandHops function candidate HOPs
-	 * @param fcandSafeNNZ function candidate safe non-zeros
-	 */
-	private void determineFunctionCandidatesNNZPropagation(Map<String, FunctionOp> fcandHops, Map<String, Set<Long>> fcandSafeNNZ)
-	{
-		//for all function candidates
-		for( Entry<String, FunctionOp> e : fcandHops.entrySet() )
-		{
-			String fKey = e.getKey();
-			FunctionOp fop = e.getValue();
-			HashSet<Long> tmp = new HashSet<Long>();
-			
-			//for all inputs of this function call
-			for( Hop input : fop.getInput() )
-			{
-				//if nnz known it is safe to propagate those nnz because for multiple calls 
-				//we checked of equivalence and hence all calls have the same nnz
-				if( input.getNnz()>=0 ) 
-					tmp.add(input.getHopID());
-			}
-			
-			fcandSafeNNZ.put(fKey, tmp);
-		}
 	}
 	
 	/////////////////////////////
@@ -456,15 +253,15 @@ public class InterProceduralAnalysis
 	 * @throws HopsException  If a HopsException occurs.
 	 * @throws ParseException  If a ParseException occurs.
 	 */
-	private void propagateStatisticsAcrossBlock( StatementBlock sb, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
-		throws HopsException, ParseException
+	private void propagateStatisticsAcrossBlock( StatementBlock sb, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
+		throws HopsException
 	{
 		if (sb instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
@@ -477,11 +274,11 @@ public class InterProceduralAnalysis
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : wstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ){ //second pass if required
 				propagateStatisticsAcrossPredicateDAG(wsb.getPredicateHops(), callVars);
 				for (StatementBlock sbi : wstmt.getBody())
-					propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 			}
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
@@ -496,9 +293,9 @@ public class InterProceduralAnalysis
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			LocalVariableMap callVarsElse = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : istmt.getIfBody())
-				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 			for (StatementBlock sbi : istmt.getElseBody())
-				propagateStatisticsAcrossBlock(sbi, fcand, callVarsElse, fcandSafeNNZ, unaryFcands, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVarsElse, fcallSizes, fnStack);
 			callVars = Recompiler.reconcileUpdatedCallVarsIf(oldCallVars, callVars, callVarsElse, isb);
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
@@ -516,10 +313,10 @@ public class InterProceduralAnalysis
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, fsb) )
 				for (StatementBlock sbi : fstmt.getBody())
-					propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 		}
@@ -538,7 +335,7 @@ public class InterProceduralAnalysis
 			propagateStatisticsAcrossDAG(roots, callVars);
 			//propagate stats into function calls
 			Hop.resetVisitStatus(roots);
-			propagateStatisticsIntoFunctions(prog, roots, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+			propagateStatisticsIntoFunctions(prog, roots, callVars, fcallSizes, fnStack);
 		}
 	}
 
@@ -578,15 +375,11 @@ public class InterProceduralAnalysis
 		//reset visit status because potentially called multiple times
 		root.resetVisitStatus();
 		
-		try
-		{
-			Recompiler.rUpdateStatistics( root, vars );
-			
+		try {
 			//note: for predicates no output statistics
-			//Recompiler.extractDAGOutputStatistics(root, vars);
+			Recompiler.rUpdateStatistics( root, vars );
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new HopsException("Failed to update Hop DAG statistics.", ex);
 		}
 	}
@@ -604,8 +397,7 @@ public class InterProceduralAnalysis
 		if( roots == null )
 			return;
 		
-		try
-		{
+		try {
 			//update DAG statistics from leafs to roots
 			for( Hop hop : roots )
 				Recompiler.rUpdateStatistics( hop, vars );
@@ -613,8 +405,7 @@ public class InterProceduralAnalysis
 			//extract statistics from roots
 			Recompiler.extractDAGOutputStatistics(roots, vars, true);
 		}
-		catch( Exception ex )
-		{
+		catch( Exception ex ) {
 			throw new HopsException("Failed to update Hop DAG statistics.", ex);
 		}
 	}
@@ -639,11 +430,11 @@ public class InterProceduralAnalysis
 	 * @throws HopsException  If a HopsException occurs.
 	 * @throws ParseException  If a ParseException occurs.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
-			throws HopsException, ParseException
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
+			throws HopsException
 	{
 		for( Hop root : roots )
-			propagateStatisticsIntoFunctions(prog, root, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+			propagateStatisticsIntoFunctions(prog, root, callVars, fcallSizes, fnStack);
 	}
 
 	/**
@@ -661,14 +452,14 @@ public class InterProceduralAnalysis
 	 * @throws HopsException  If a HopsException occurs.
 	 * @throws ParseException  If a ParseException occurs.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
-		throws HopsException, ParseException
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack ) 
+		throws HopsException
 	{
 		if( hop.isVisited() )
 			return;
 		
 		for( Hop c : hop.getInput() )
-			propagateStatisticsIntoFunctions(prog, c, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
+			propagateStatisticsIntoFunctions(prog, c, callVars, fcallSizes, fnStack);
 		
 		if( hop instanceof FunctionOp )
 		{
@@ -681,7 +472,7 @@ public class InterProceduralAnalysis
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 				
-				if(  fcand.containsKey(fkey) && 
+				if(  fcallSizes.isValidFunction(fkey) && 
 				    !fnStack.contains(fkey)  ) //prevent recursion	
 				{
 					//maintain function call stack
@@ -689,11 +480,10 @@ public class InterProceduralAnalysis
 					
 					//create mapping and populate symbol table for refresh
 					LocalVariableMap tmpVars = new LocalVariableMap();
-					populateLocalVariableMapForFunctionCall( fstmt, fop, 
-							callVars, tmpVars, fcandSafeNNZ.get(fkey), fcand.get(fkey) );
+					populateLocalVariableMapForFunctionCall( fstmt, fop, callVars, tmpVars, fcallSizes);
 	
 					//recursively propagate statistics
-					propagateStatisticsAcrossBlock(fsb, fcand, tmpVars, fcandSafeNNZ, unaryFcands, fnStack);
+					propagateStatisticsAcrossBlock(fsb, tmpVars, fcallSizes, fnStack);
 					
 					//extract vars from symbol table, re-map and refresh main program
 					extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);		
@@ -701,7 +491,7 @@ public class InterProceduralAnalysis
 					//maintain function call stack
 					fnStack.remove(fkey);
 				}
-				else if( unaryFcands.contains(fkey) ) {
+				else if( fcallSizes.isDimsPreservingFunction(fkey) ) {
 					extractFunctionCallEquivalentReturnStatistics(fstmt, fop, callVars);
 				}
 				else {
@@ -724,11 +514,12 @@ public class InterProceduralAnalysis
 		hop.setVisited();
 	}
 	
-	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, Set<Long> inputSafeNNZ, Integer numCalls ) 
+	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, FunctionCallSizeInfo fcallSizes ) 
 		throws HopsException
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
 		ArrayList<Hop> inputOps = fop.getInput();
+		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 		
 		for( int i=0; i<inputVars.size(); i++ )
 		{
@@ -740,10 +531,9 @@ public class InterProceduralAnalysis
 			{
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
-				MatrixCharacteristics mc = new MatrixCharacteristics( 
-											input.getDim1(), input.getDim2(), 
-											ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
-											inputSafeNNZ.contains(input.getHopID())?input.getNnz():-1 );
+				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(), 
+					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
+					fcallSizes.isSafeNnz(fkey, input.getHopID())?input.getNnz():-1 );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	
@@ -759,7 +549,7 @@ public class InterProceduralAnalysis
 				//propagate scalar variables into functions if called once
 				//and input scalar is existing variable in symbol table
 				else if( PROPAGATE_SCALAR_VARS_INTO_FUN 
-					&& numCalls != null && numCalls == 1
+					&& fcallSizes.getFunctionCallCount(fkey) == 1
 					&& input instanceof DataOp  ) 
 				{
 					Data scalar = callvars.get(input.getName()); 

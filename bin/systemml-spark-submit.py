@@ -24,6 +24,7 @@ import os
 import sys
 from os.path import join, exists, abspath
 from os import environ
+import glob
 import argparse
 import shutil
 import platform
@@ -63,7 +64,7 @@ cparser.add_argument('-stats', help='Monitor and report caching/recompilation st
                                     'heavy hitter <count> is 10 unless overridden', nargs='?', const='10', metavar='')
 cparser.add_argument('-gpu', help='uses CUDA instructions when reasonable, '
                                   'set <force> option to skip conservative memory estimates '
-                                  'and use GPU wherever possible', action='store_true')
+                                  'and use GPU wherever possible', nargs='?')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; '
                                                'path can be local/hdfs/gpfs', metavar='')
 
@@ -82,8 +83,9 @@ if args.debug is not False:
 if args.explain is not None:
     ml_options.append('-explain')
     ml_options.append(args.explain)
-if args.gpu is not False:
+if args.gpu is not None:
     ml_options.append('-gpu')
+    ml_options.append(args.gpu)
 if args.stats is not None:
     ml_options.append('-stats')
     ml_options.append(args.stats)
@@ -99,7 +101,12 @@ user_dir = os.getcwd()
 
 scripts_dir = join(project_root_dir, 'scripts')
 build_dir = join(project_root_dir, 'target')
-target_jars = join(build_dir, '*.jar')
+lib_dir = join(build_dir, 'lib')
+
+systemml_jar = build_dir + os.sep + "SystemML.jar"
+jcuda_jars = glob.glob(lib_dir + os.sep + "jcu*.jar")
+target_jars = ','.join(jcuda_jars) # Include all JCuda Jars
+
 log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.template')
 
 build_err_msg = 'You must build the project before running this script.'
@@ -160,11 +167,13 @@ if args.conf is not None:
 else:
     conf = default_conf
 
-cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
+cmd_spark = [ spark_path, '--class', 'org.apache.sysml.api.DMLScript',
+             '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
-             '--executor-cores', args.executor_cores, '--conf', conf]
+             '--executor-cores', args.executor_cores, '--conf', conf, '--jars', target_jars,
+             systemml_jar]
 
-cmd_system_ml = ['--jars', target_jars, '-config', systemml_config_path_arg,
+cmd_system_ml = ['-config', systemml_config_path_arg,
                  '-exec', vars(args)['exec'], '-f', script_file, ' '.join(ml_options)]
 
 cmd = cmd_spark + cmd_system_ml

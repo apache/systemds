@@ -478,7 +478,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
     net.getLayers.map(layer => solver.update(tabDMLScript, net.getCaffeLayer(layer)))
   }
   private def initializeGradients(parallel_batches:String):Unit = {
-    tabDMLScript.append("# Data structure to store gradients computed in parallel")
+    tabDMLScript.append("# Data structure to store gradients computed in parallel\n")
     net.getLayers.map(layer => net.getCaffeLayer(layer)).map(l => {
       if(l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.weight), ncol(l.weight))))
       if(l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias)))) 

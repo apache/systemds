@@ -22,9 +22,7 @@ package org.apache.sysml.runtime.io;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -85,28 +83,6 @@ public abstract class FrameReader
 	{
 		return (clen < 0) ? new String[0] : 
 			FrameBlock.createColNames((int)clen);
-	}
-
-	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
-		throws IOException
-	{
-		Path[] ret = null;
-		
-		if( fs.isDirectory(file) )
-		{
-			LinkedList<Path> tmp = new LinkedList<Path>();
-			FileStatus[] dStatus = fs.listStatus(file);
-			for( FileStatus fdStatus : dStatus )
-				if( !fdStatus.getPath().getName().startsWith("_") ) //skip internal files
-					tmp.add(fdStatus.getPath());
-			ret = tmp.toArray(new Path[0]);
-		}
-		else
-		{
-			ret = new Path[]{ file };
-		}
-		
-		return ret;
 	}
 	
 	/**

@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
@@ -264,7 +263,7 @@ public class RemoteParForMR
 		Text value = new Text();               //serialized var header (incl filename)
 		
 		int countAll = 0;
-		for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try

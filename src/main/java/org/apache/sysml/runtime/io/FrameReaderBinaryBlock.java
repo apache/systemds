@@ -73,7 +73,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 		throws IOException, DMLRuntimeException
 	{
 		//sequential read from sequence files
-		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 			readBinaryBlockFrameFromSequenceFile(lpath, job, fs, dest);
 	}
 
@@ -135,7 +135,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 		FrameBlock value = new FrameBlock();
 		
 		//read first block from first file
-		Path lpath = getSequenceFilePaths(fs, path)[0];  
+		Path lpath = IOUtilFunctions.getSequenceFilePaths(fs, path)[0];  
 		SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);		
 		try {
 			reader.next(key, value);

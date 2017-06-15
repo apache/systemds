@@ -52,7 +52,7 @@ public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 			//create read tasks for all files
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
-			for( Path lpath : getSequenceFilePaths(fs, path) )
+			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 				tasks.add(new ReadFileTask(lpath, job, fs, dest));
 
 			//wait until all tasks have been executed

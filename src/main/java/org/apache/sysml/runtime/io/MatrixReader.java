@@ -23,14 +23,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -57,28 +55,6 @@ public abstract class MatrixReader
 
 	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz )
 			throws IOException, DMLRuntimeException;
-	
-	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
-		throws IOException
-	{
-		Path[] ret = null;
-		
-		if( fs.isDirectory(file) )
-		{
-			LinkedList<Path> tmp = new LinkedList<Path>();
-			FileStatus[] dStatus = fs.listStatus(file);
-			for( FileStatus fdStatus : dStatus )
-				if( !fdStatus.getPath().getName().startsWith("_") ) //skip internal files
-					tmp.add(fdStatus.getPath());
-			ret = tmp.toArray(new Path[0]);
-		}
-		else
-		{
-			ret = new Path[]{ file };
-		}
-		
-		return ret;
-	}
 	
 	/**
 	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant

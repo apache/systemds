@@ -27,12 +27,14 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
 
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -76,6 +78,14 @@ public class IOUtilFunctions
 		String scheme2 = path2.toUri().getScheme();
 		return (scheme1 == null && scheme2 == null)
 			|| scheme1.equals(scheme2);
+	}
+	
+	public static boolean isObjectStoreFileScheme(Path path) {
+		if( path == null || path.toUri() == null || path.toUri().getScheme() == null )
+			return false;
+		String scheme = path.toUri().getScheme();
+		//capture multiple alternatives s3, s3n, s3a, swift, swift2d
+		return scheme.startsWith("s3") || scheme.startsWith("swift");
 	}
 	
 	public static void closeSilently( Closeable io ) {
@@ -436,6 +446,35 @@ public class IOUtilFunctions
 		return ncol;
 	}
 
+	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
+		throws IOException
+	{
+		Path[] ret = null;
+		
+		//Note on object stores: Since the object store file system implementations 
+		//only emulate a file system, the directory of a multi-part file does not
+		//exist physically and hence the isDirectory call returns false. Furthermore,
+		//listStatus call returns all files with the given directory as prefix, which
+		//includes the mtd file which needs to be ignored accordingly.
+		
+		if( fs.isDirectory(file) 
+			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
+		{
+			LinkedList<Path> tmp = new LinkedList<Path>();
+			FileStatus[] dStatus = fs.listStatus(file);
+			for( FileStatus fdStatus : dStatus )
+				if( !fdStatus.getPath().getName().startsWith("_") //skip internal files
+					&& !fdStatus.getPath().equals(file.toString()+".mtd") )  //mtd file
+					tmp.add(fdStatus.getPath());
+			ret = tmp.toArray(new Path[0]);
+		}
+		else {
+			ret = new Path[]{ file };
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Delete the CRC files from the local file system associated with a
 	 * particular file and its metadata file.

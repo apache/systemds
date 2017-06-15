@@ -52,7 +52,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -253,7 +252,7 @@ public class RemoteDPParForMR
 		Text value = new Text();               //serialized var header (incl filename)
 		
 		int countAll = 0;
-		for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try

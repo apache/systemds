@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.IJV;
@@ -340,7 +339,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
 					
-					for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath) )
+					for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, tmpPath) )
 					{
 						SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 						try
@@ -477,7 +476,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path tmpPath = new Path(mo.getFileName());
 		FileSystem fs = IOUtilFunctions.getFileSystem(tmpPath, tmpJob);
 		
-		for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath))
+		for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, tmpPath))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 			try
@@ -576,7 +575,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		
-		for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
+		for(Path lpath: IOUtilFunctions.getSequenceFilePaths(fs, path))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try

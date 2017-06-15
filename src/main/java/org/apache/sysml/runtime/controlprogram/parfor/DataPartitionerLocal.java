@@ -48,7 +48,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -246,7 +245,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 	
-			for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -333,7 +332,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
-			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -408,7 +407,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
 			
-			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try

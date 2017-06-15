@@ -138,7 +138,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
-		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
@@ -207,7 +207,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
-		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);

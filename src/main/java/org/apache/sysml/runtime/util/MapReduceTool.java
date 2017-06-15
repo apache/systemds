@@ -186,7 +186,9 @@ public class MapReduceTool
 	public static boolean isFileEmpty(FileSystem fs, Path dir) throws IOException {
 		FileStatus fstat = fs.getFileStatus(dir);
 
-		if (fstat.isDirectory()) {
+		if( fstat.isDirectory() 
+			|| IOUtilFunctions.isObjectStoreFileScheme(dir) )
+		{
 			// it is a directory
 			FileStatus[] stats = fs.listStatus(dir);
 			if (stats != null) {

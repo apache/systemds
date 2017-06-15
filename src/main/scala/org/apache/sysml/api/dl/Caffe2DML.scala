@@ -267,13 +267,15 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	      case "allreduce" => {
 	        // This is distributed synchronous gradient descent
 	        forBlock("i", "1", "num_iters_per_epoch") {
-	          getTrainingBatch(tabDMLScript)
-	          tabDMLScript.append("iter = start_iter + i\n")
 	          // -------------------------------------------------------
             // Perform forward, backward and update on minibatch in parallel
-	          assign(tabDMLScript, "X_group_batch", "Xb")
-	          assign(tabDMLScript, "y_group_batch", "yb")
-	          val localBatchSize = "nrow(y_group_batch)"
+	          assign(tabDMLScript, "beg", "((i-1) * " + Caffe2DML.batchSize + ") %% " + Caffe2DML.numImages + " + 1")
+	          assign(tabDMLScript, "end", " min(beg +  " + Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
+	          assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[beg:end,]")
+            assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[beg:end,]")
+	          tabDMLScript.append("iter = start_iter + i\n")
+	          tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
+	          val localBatchSize = "local_batch_size"
 	          initializeGradients(localBatchSize)
 	          parForBlock("j", "1", localBatchSize) {
 	            assign(tabDMLScript, "Xb", "X_group_batch[j,]")

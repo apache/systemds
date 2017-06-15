@@ -123,7 +123,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   # Partial derivatives for convolution - built-in implementation
   dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
                               input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
-  dX = conv2d_backward_data(W, dout, stride=[strideh, stridew], padding=[padh,padw],
+  dX = conv2d_backward_data(W, dout, stride=[strideh,stridew], padding=[padh,padw],
                             input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
 
   # Partial derivatives for bias vector

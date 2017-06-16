@@ -118,7 +118,7 @@ Common settings for `train_algo` and `test_algo` parameters:
 | Single-node single-GPU execution                                         | `caffe2dml.set(train_algo="minibatch", test_algo="minibatch").setGPU(True).setForceGPU(True)`                                            | Ensure that `batch_size` is set to appropriate value (for example: 64) |
 | Single-node multi-GPU execution (similar to Caffe with solver_mode: GPU) | `caffe2dml.set(train_algo="allreduce_parallel_batches", test_algo="minibatch", parallel_batches=num_gpu).setGPU(True).setForceGPU(True)` | Ensure that `batch_size` is set to appropriate value (for example: 64) |
 | Distributed prediction                                                   | `caffe2dml.set(test_algo="allreduce")`                                                                                                   |                                                                        |
-| Distributed synchronous training (similar to Intel BigDL)                | `caffe2dml.set(train_algo="allreduce_parallel_batches", parallel_batches=num_cluster_cores)`                                             | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Distributed synchronous training                                         | `caffe2dml.set(train_algo="allreduce_parallel_batches", parallel_batches=num_cluster_cores)`                                             | Ensure that `batch_size` is set to appropriate value (for example: 64) |
 
 ## Frequently asked questions
 

@@ -572,11 +572,9 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
     assign(tabDMLScript, "X", "X_full")
     
     // Initialize the layers and solvers. Reads weights and bias if readWeights is true.
-    val readWeights = {
-	    if(estimator.inputs.containsKey("$weights")) true
-	    else if(estimator.mloutput == null) throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")
-	    else false
-	  }
+    if(!estimator.inputs.containsKey("$weights") && estimator.mloutput == null) 
+      throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")
+    val readWeights = estimator.inputs.containsKey("$weights") || estimator.mloutput != null
     initWeights(net, solver, readWeights)
 	  
 	  // Donot update mean and variance in batchnorm

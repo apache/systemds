@@ -216,7 +216,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	      case "minibatch" => 
 	        forBlock("i", "1", "num_iters_per_epoch") {
 	          getTrainingBatch(tabDMLScript)
-	          tabDMLScript.append("iter = start_iter + i\n")
+	          tabDMLScript.append("iter = iter + 1\n")
 	          // -------------------------------------------------------
 	          // Perform forward, backward and update on minibatch
 	          forward; backward; update
@@ -225,7 +225,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             performSnapshot
 	        }
 	      case "batch" => {
-          tabDMLScript.append("iter = start_iter + i\n")
+          tabDMLScript.append("iter = iter + 1\n")
           // -------------------------------------------------------
           // Perform forward, backward and update on entire dataset
           forward; backward; update
@@ -245,6 +245,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
           assign(tabDMLScript, "groups", "as.integer(ceil(" + Caffe2DML.numImages + "/group_batch_size))")
           // Grab groups of mini-batches
           forBlock("g", "1", "groups") {
+            tabDMLScript.append("iter = iter + 1\n")
             // Get next group of mini-batches
             assign(tabDMLScript, "group_beg", "((g-1) * group_batch_size) %% " + Caffe2DML.numImages + " + 1")
             assign(tabDMLScript, "group_end", "min(" + Caffe2DML.numImages + ", group_beg + group_batch_size - 1)")
@@ -272,6 +273,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	      case "allreduce" => {
 	        // This is distributed synchronous gradient descent
 	        forBlock("i", "1", "num_iters_per_epoch") {
+	          tabDMLScript.append("iter = iter + 1\n")
 	          // -------------------------------------------------------
             // Perform forward, backward and update on minibatch in parallel
 	          assign(tabDMLScript, "beg", "((i-1) * " + Caffe2DML.batchSize + ") %% " + Caffe2DML.numImages + " + 1")
@@ -302,7 +304,6 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	    // After every epoch, update the learning rate
 	    tabDMLScript.append("# Learning rate\n")
 	    lrPolicy.updateLearningRate(tabDMLScript)
-	    tabDMLScript.append("start_iter = start_iter + num_iters_per_epoch\n")
 	  }
 	  // ----------------------------------------------------------------------------
 	  
@@ -521,7 +522,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	      ceilDivide(tabDMLScript, "max_epochs", solverParam.getMaxIter.toString, "num_iters_per_epoch")
 	    }
 	  }
-	  assign(tabDMLScript, "start_iter", "0")
+	  assign(tabDMLScript, "iter", "0")
 	  assign(tabDMLScript, "lr", solverParam.getBaseLr.toString)
   }
   // -------------------------------------------------------------------------------------------

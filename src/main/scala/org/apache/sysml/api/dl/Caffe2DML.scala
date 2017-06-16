@@ -532,8 +532,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   // -------------------------------------------------------------------------------------------
 }
 
-class Caffe2DMLModel(val mloutput: MLResults,  
-    val numClasses:String, val sc: SparkContext, val solver:CaffeSolver,
+class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:CaffeSolver,
     val net:CaffeNetwork, val lrPolicy:LearningRatePolicy,
     val estimator:Caffe2DML) 
   extends Model[Caffe2DMLModel] with HasMaxOuterIter with BaseSystemMLClassifierModel with DMLGenerator {
@@ -541,14 +540,14 @@ class Caffe2DMLModel(val mloutput: MLResults,
   // Invoked by Python, MLPipeline
   val uid:String = "caffe_model_" + (new Random).nextLong 
   def this(estimator:Caffe2DML) =  {
-    this(null, Utils.numClasses(estimator.net), estimator.sc, estimator.solver,
+    this(Utils.numClasses(estimator.net), estimator.sc, estimator.solver,
         estimator.net,
         // new CaffeNetwork(estimator.solverParam.getNet, caffe.Caffe.Phase.TEST, estimator.numChannels, estimator.height, estimator.width), 
         estimator.lrPolicy, estimator) 
   }
       
   override def copy(extra: org.apache.spark.ml.param.ParamMap): Caffe2DMLModel = {
-    val that = new Caffe2DMLModel(mloutput, numClasses, sc, solver, net, lrPolicy, estimator)
+    val that = new Caffe2DMLModel(numClasses, sc, solver, net, lrPolicy, estimator)
     copyValues(that, extra)
   }
   // --------------------------------------------------------------
@@ -574,8 +573,8 @@ class Caffe2DMLModel(val mloutput: MLResults,
     
     // Initialize the layers and solvers. Reads weights and bias if readWeights is true.
     val readWeights = {
-	    if(mloutput == null && estimator.inputs.containsKey("$weights")) true
-	    else if(mloutput == null) throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")
+	    if(estimator.inputs.containsKey("$weights")) true
+	    else if(estimator.mloutput == null) throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")
 	    else false
 	  }
     initWeights(net, solver, readWeights)
@@ -645,10 +644,10 @@ class Caffe2DMLModel(val mloutput: MLResults,
 		updateMeanVarianceForBatchNorm(net, true)
 		
 	  val script = dml(predictionScript).out("Prob").in(estimator.inputs)
-	  if(mloutput != null) {
+	  if(estimator.mloutput != null) {
 	    // fit was called
-  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getMatrix(l.weight)))
-  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getMatrix(l.bias)))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, estimator.mloutput.getMatrix(l.weight)))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, estimator.mloutput.getMatrix(l.bias)))
 	  }
 	  (script, "X_full")
   }

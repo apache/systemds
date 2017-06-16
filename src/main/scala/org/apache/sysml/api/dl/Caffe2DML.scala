@@ -280,7 +280,6 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          assign(tabDMLScript, "end", " min(beg +  " + Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
 	          assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[beg:end,]")
             assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[beg:end,]")
-	          tabDMLScript.append("iter = start_iter + i\n")
 	          tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
 	          val localBatchSize = "local_batch_size"
 	          initializeGradients(localBatchSize)
@@ -388,7 +387,6 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
               assign(tabDMLScript, "validation_accuracy", "0")
               forBlock("iVal", "1", "num_iters_per_epoch") {
     	          getValidationBatch(tabDMLScript)
-    	          tabDMLScript.append("iter = start_iter + i\n")
     	          forward;  lossLayer.computeLoss(dmlScript, numTabs)
                 tabDMLScript.append("validation_loss = validation_loss + loss\n")
                 tabDMLScript.append("validation_accuracy = validation_accuracy + accuracy\n")

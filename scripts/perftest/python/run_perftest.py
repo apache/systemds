@@ -25,14 +25,15 @@ import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_algo, config_reader
-from configuration import init_conf, gen_data_config
+from utils import get_algo, get_family, config_reader, create_dir, exec_func, get_config
 import logging
 import time
 import json
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 import itertools
+from datagen import config_packets_datagen
+from train import config_packets_train
 
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
@@ -41,65 +42,65 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
            'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
 
-datagen_dict = {'Kmeans': 'genRandData4Kmeans.dml'}
-
-def exec_func(exec_type, algorithm, conf_path):
-
-    if exec_type == 'singlenode':
-        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
-    if exec_type == 'hybrid_spark':
-        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
-
-    conf_dict = config_reader(conf_path)
-
-    arg = []
-    for key, val in conf_dict.items():
-        if key == 'X':
-            val = join(conf_path, val)
-        if key == 'Y':
-            val = join(conf_path, val)
-        if key == 'YbyC':
-            val = join(conf_path, val)
-        arg.append('{}={}'.format(key, val))
-
-    args = ' '.join(arg)
-    print(algorithm)
-    sys.exit()
-    cmd = [exec_script, datagen_dict[algorithm], '-nvargs', args]
-    cmd_string = ' '.join(cmd)
-
-
-    return None
+ml_gendata ={'Kmeans': 'genRandData4Kmeans'}
 
 
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
+
     if algo is None:
         algo = get_algo(family, ml_algo)
 
     if 'data-gen' in mode:
-        gen_config = gen_data_config(algo, mat_type, mat_shape, temp_dir)
-        #for conf in gen_config:
-        #    metrics = exec_func(exec_type, algo, conf)
+        # TODO
+        # Check if data already exists and stop
+        # Fix Time
 
-        pass
+        # Create directory if not exist
+        data_gen_dir = join(temp_dir, 'data-gen')
+        create_dir(data_gen_dir)
+
+        # Generate configuration packets and create ini files
+        conf_packet = config_packets_datagen(algo, mat_type, mat_shape, data_gen_dir)
+
+        # execute algorithm
+        for current_algo, ini_files in conf_packet.items():
+            for ini_file in ini_files:
+                ini_dict = config_reader(ini_file + '.json')
+                args = ' '.join([str(key)+'='+str(val) for key, val in ini_dict.items()])
+                m_type, m_dim = get_config(ini_file)
+                time = exec_func(exec_type, ml_gendata[current_algo], args)
+                current_metrics = [current_algo, 'data-gen', m_type, m_dim, str(time)]
+                logging.info(','.join(current_metrics))
 
     if 'train' in mode:
-        # Create train dir
-        # Create ini Files
-        # train algo based on data generated
-        # return metrics
-        pass
+        # TODO
+        # Error : If dir / algo not present
+        # Quit if necessary training folders are not present
 
-    if 'predict' in mode:
-        # Create predict dir
-        # Create ini Files
-        # train algo based on train data generated
-        # return metrics
-        pass
+        data_gen_dir = join(temp_dir, 'data-gen')
 
-    report_path = join(temp_dir, filename)
-    with open(report_path, "a") as pertest_report:
-        pertest_report.write("appended text")
+        # Create directory if not exist
+        train_dir = join(temp_dir, 'train')
+        create_dir(train_dir)
+
+        # Check if the corresponding data is in training dir
+        conf_packet = config_packets_train(algo, data_gen_dir, train_dir)
+
+        for current_algo, ini_files in conf_packet.items():
+            for ini_file in ini_files:
+                ini_dict = config_reader(ini_file + '.json')
+                args = ' '.join([str(key) + '=' + str(val) for key, val in ini_dict.items()])
+                time = exec_func(exec_type, current_algo, args)
+                m_type, m_dim = get_config(ini_file)
+                current_metrics = [current_algo, 'train', m_type, m_dim, str(time)]
+                logging.info(','.join(current_metrics))
+
+
+
+
+
+
+
 
     return None
 
@@ -142,7 +143,6 @@ if __name__ == '__main__':
     cparser.add_argument('--mode', default=default_workload,
                          help='specify type of workload to run (e.g data-gen, train, predict)',
                          metavar='', choices=default_workload, nargs='+')
-
     args = cparser.parse_args()
     arg_dict = vars(args)
 

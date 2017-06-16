@@ -605,3 +605,27 @@ tanh = function() {
   }
 }
 
+threshold = function() {
+    /*
+     * Test for threshold function.
+    */
+    print("Testing the threshold function.")
+
+    # Generate data
+    X = matrix("0.31 0.24 0.87
+
+                0.45 0.66 0.65
+
+                0.24 0.91 0.13", rows=3, cols=3)
+    thresh = 0.5
+    target_matrix = matrix("0.0 0.0 1.0
+
+                            0.0 1.0 1.0
+
+                            0.0 1.0 0.0", rows=3, cols=3)
+
+    # Get the indicator matrix
+    indicator_matrix = util::threshold(X, thresh)
+
+    out = test_util::check_all_equal(indicator_matrix, target_matrix)
+}

@@ -361,9 +361,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   private def displayLoss(lossLayer:IsLossLayer, shouldValidate:Boolean):Unit = {
     if(solverParam.getDisplay > 0) {
       // Append the DML to compute training loss
-      tabDMLScript.append("# Compute training loss & accuracy\n")
       if(!getTrainAlgo.toLowerCase.startsWith("allreduce")) {
-        // TODO: compute training loss for allreduce
+        // Compute training loss for allreduce
+        tabDMLScript.append("# Compute training loss & accuracy\n")
         ifBlock("iter  %% " + solverParam.getDisplay + " == 0") {
           assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
           lossLayer.computeLoss(dmlScript, numTabs)
@@ -373,6 +373,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
           appendTrainingVisualizationBody(dmlScript, numTabs)
           printClassificationReport
         }
+      }
+      else {
+        Caffe2DML.LOG.info("Training loss is not printed for train_algo=" + getTrainAlgo)
       }
       if(shouldValidate) {
         if(  getTrainAlgo.toLowerCase.startsWith("allreduce") &&

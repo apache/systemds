@@ -252,6 +252,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[group_beg:group_end,]")
             assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[group_beg:group_end,]")
             initializeGradients("parallel_batches")
+            if(solverParam.getDisplay > 0) { 
+              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=parallel_batches, cols=ncol(lossLayers(0).out))")
+            }
             parForBlock("j", "1", "parallel_batches") {
               // Get a mini-batch in this group
               assign(tabDMLScript, "beg", "((j-1) * " + Caffe2DML.batchSize + ") %% nrow(X_group_batch) + 1")
@@ -260,12 +263,20 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
               assign(tabDMLScript, "yb", "y_group_batch[beg:end,]")
               forward; backward
               flattenGradients
+              if(solverParam.getDisplay > 0) {
+                ifBlock("iter  %% " + solverParam.getDisplay + " == 0") {
+                  assign(tabDMLScript, "tmp_loss_output[j,]", lossLayers(0).out)
+                }
+              }
             }
             aggregateAggGradients    
 	          update
 	          // -------------------------------------------------------
 	          assign(tabDMLScript, "Xb", "X_group_batch")
             assign(tabDMLScript, "yb", "y_group_batch")
+            if(solverParam.getDisplay > 0) {
+              assign(tabDMLScript, lossLayers(0).out, "tmp_loss_output")
+            }
             displayLoss(lossLayers(0), shouldValidate)
             performSnapshot
           }
@@ -283,17 +294,28 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
 	          val localBatchSize = "local_batch_size"
 	          initializeGradients(localBatchSize)
+	          if(solverParam.getDisplay > 0) { 
+              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=" + localBatchSize + ", cols=ncol(lossLayers(0).out))")
+            }
 	          parForBlock("j", "1", localBatchSize) {
 	            assign(tabDMLScript, "Xb", "X_group_batch[j,]")
 	            assign(tabDMLScript, "yb", "y_group_batch[j,]")
 	            forward; backward
               flattenGradients
+              if(solverParam.getDisplay > 0) {
+                ifBlock("iter  %% " + solverParam.getDisplay + " == 0") {
+                  assign(tabDMLScript, "tmp_loss_output[j,]", lossLayers(0).out)
+                }
+              }
 	          }
 	          aggregateAggGradients    
 	          update
 	          // -------------------------------------------------------
 	          assign(tabDMLScript, "Xb", "X_group_batch")
             assign(tabDMLScript, "yb", "y_group_batch")
+            if(solverParam.getDisplay > 0) {
+              assign(tabDMLScript, lossLayers(0).out, "tmp_loss_output")
+            }
             displayLoss(lossLayers(0), shouldValidate)
             performSnapshot
 	        }

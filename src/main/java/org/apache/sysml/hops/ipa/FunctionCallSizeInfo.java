@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.sysml.hops.FunctionOp;
@@ -52,9 +53,15 @@ public class FunctionCallSizeInfo
 	//to subsequent statement blocks and functions)
 	private final Set<String> _fcandUnary;
 	
-	//indicators for which function arguments it is safe to propagate nnz
+	//indicators for which function arguments of valid functions it 
+	//is safe to propagate the number of non-zeros 
 	//(mapping from function keys to set of function input HopIDs)
 	private final Map<String, Set<Long>> _fcandSafeNNZ;
+	
+	//indicators which literal function arguments can be safely 
+	//propagated into and replaced in the respective functions 
+	//(mapping from function keys to set of function input positions)
+	private final Map<String, Set<Integer>> _fSafeLiterals;
 	
 	/**
 	 * Constructs the function call summary for all functions
@@ -84,6 +91,7 @@ public class FunctionCallSizeInfo
 		_fcand = new HashSet<String>();
 		_fcandUnary = new HashSet<String>();
 		_fcandSafeNNZ =  new HashMap<String, Set<Long>>();
+		_fSafeLiterals = new HashMap<String, Set<Integer>>();
 		
 		constructFunctionCallSizeInfo();
 	}
@@ -169,17 +177,44 @@ public class FunctionCallSizeInfo
 	 * 
 	 * @param fkey function key
 	 * @param inputHopID hop ID of the input
-	 * @return true if nnz can safely be propageted
+	 * @return true if nnz can safely be propagated
 	 */
 	public boolean isSafeNnz(String fkey, long inputHopID) {
 		return _fcandSafeNNZ.containsKey(fkey)
 			&& _fcandSafeNNZ.get(fkey).contains(inputHopID);
 	}
 	
+	/**
+	 * Indicates if the given function has at least one input
+	 * that allows for safe literal propagation and replacement,
+	 * i.e., all function calls have consistent literal inputs.
+	 * 
+	 * @param fkey function key
+	 * @return true if a literal can be safely propagated
+	 */
+	public boolean hasSafeLiterals(String fkey) {
+		return _fSafeLiterals.containsKey(fkey)
+			&& !_fSafeLiterals.get(fkey).isEmpty();
+	}
+	
+	/**
+	 * Indicates if the given function input allows for safe
+	 * literal propagation and replacement, i.e., all function calls
+	 * have consistent literal inputs.
+	 * 
+	 * @param fkey function key
+	 * @param pos function input position
+	 * @return true if literal that can be safely propagated
+	 */
+	public boolean isSafeLiteral(String fkey, int pos) {
+		return _fSafeLiterals.containsKey(fkey)
+			&& _fSafeLiterals.get(fkey).contains(pos);
+	}
+	
 	private void constructFunctionCallSizeInfo() 
 		throws HopsException 
 	{
-		//determine function candidates by evaluating all function calls
+		//step 1: determine function candidates by evaluating all function calls
 		for( String fkey : _fgraph.getReachableFunctions() ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
 		
@@ -215,7 +250,8 @@ public class FunctionCallSizeInfo
 			}
 		}
 		
-		//determine safe nnz propagation per input
+		//step 2: determine safe nnz propagation per input
+		//(considered for valid functions only)
 		for( String fkey : _fcand ) {
 			FunctionOp first = _fgraph.getFunctionCalls(fkey).get(0);
 			HashSet<Long> tmp = new HashSet<Long>();
@@ -227,13 +263,38 @@ public class FunctionCallSizeInfo
 			}
 			_fcandSafeNNZ.put(fkey, tmp);
 		}
+		
+		//step 3: determine safe literal replacement per function input
+		//(considered for all functions)
+		for( String fkey : _fgraph.getReachableFunctions() ) {
+			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
+			FunctionOp first = flist.get(0);
+			//initialize w/ all literals of first call
+			HashSet<Integer> tmp = new HashSet<Integer>();
+			for( int j=0; j<first.getInput().size(); j++ )
+				if( first.getInput().get(j) instanceof LiteralOp )
+					tmp.add(j);
+			//check consistency across all function calls
+			for( int i=1; i<flist.size(); i++ ) {
+				FunctionOp other = flist.get(i);
+				for( int j=0; j<first.getInput().size(); j++ ) 
+					if( tmp.contains(j) ) {
+						Hop h1 = first.getInput().get(j);
+						Hop h2 = other.getInput().get(j);
+						if( !(h2 instanceof LiteralOp && HopRewriteUtils
+							.isEqualValue((LiteralOp)h1, (LiteralOp)h2)) )
+							tmp.remove(j);
+					}
+			}
+			_fSafeLiterals.put(fkey, tmp);
+		}
 	}
 	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("Valid Functions for Propagation: \n");
+		sb.append("Valid functions for propagation: \n");
 		for( String fkey : getValidFunctions() ) {
 			sb.append("--");
 			sb.append(fkey);
@@ -247,7 +308,7 @@ public class FunctionCallSizeInfo
 		}
 		
 		if( !getInvalidFunctions().isEmpty() ) {
-			sb.append("Invaid Functions for Propagation: \n");
+			sb.append("Invaid functions for propagation: \n");
 			for( String fkey : getInvalidFunctions() ) {
 				sb.append("--");
 				sb.append(fkey);
@@ -258,7 +319,7 @@ public class FunctionCallSizeInfo
 		}
 		
 		if( !getDimsPreservingFunctions().isEmpty() ) {
-			sb.append("Dims-Preserving Functions: \n");
+			sb.append("Dimensions-preserving functions: \n");
 			for( String fkey : getDimsPreservingFunctions() ) {
 				sb.append("--");
 				sb.append(fkey);
@@ -266,6 +327,21 @@ public class FunctionCallSizeInfo
 				sb.append(getFunctionCallCount(fkey));
 				sb.append("\n");
 			}
+		}
+		
+		sb.append("Valid scalars for propagation: \n");
+		for( Entry<String, Set<Integer>> e : _fSafeLiterals.entrySet() ) {
+			sb.append("--");
+			sb.append(e.getKey());
+			sb.append(": ");
+			for( Integer pos : e.getValue() ) {
+				sb.append(pos);
+				sb.append(":");
+				sb.append(_fgraph.getFunctionCalls(e.getKey())
+					.get(0).getInput().get(pos).getName());
+				sb.append(" ");
+			}
+			sb.append("\n");
 		}
 		
 		return sb.toString();

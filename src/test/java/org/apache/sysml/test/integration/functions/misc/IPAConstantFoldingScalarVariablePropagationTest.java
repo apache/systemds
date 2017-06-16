@@ -110,20 +110,9 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			runTest(true, false, null, -1);
 
 			// Check for correct number of compiled & executed Spark jobs
-			if (IPA_SECOND_CHANCE) {
-				// No distributed instructions compiled/executed with second chance enabled
-				checkNumCompiledSparkInst(0);
-				checkNumExecutedSparkInst(0);
-			} else {
-				// without second chance enabled, distributed jobs will be compiled/executed
-				if (testname == TEST_NAME1) {
-					checkNumCompiledSparkInst(2);
-					checkNumExecutedSparkInst(1);
-				} else {  //if (testname == TEST_NAME2) {
-					checkNumCompiledSparkInst(1);
-					checkNumExecutedSparkInst(0);
-				}
-			}
+			// (MB: originally, this required a second chance, but not anymore)
+			checkNumCompiledSparkInst(0);
+			checkNumExecutedSparkInst(0);
 		}
 		finally {
 			// Reset

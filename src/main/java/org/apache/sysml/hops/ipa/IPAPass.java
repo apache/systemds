@@ -46,8 +46,9 @@ public abstract class IPAPass
 	 * 
 	 * @param prog dml program
 	 * @param fgraph function call graph
+	 * @param fcallSizes function call size infos
 	 * @throws HopsException
 	 */
-	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph ) 
+	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 		throws HopsException;
 }

@@ -229,11 +229,12 @@ public class Explain
 				for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
 					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
 					FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+					String fkey = DMLProgram.constructFunctionKey(namespace, fname);
 					
 					if (fstmt instanceof ExternalFunctionStatement)
-						sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
+						sb.append("----EXTERNAL FUNCTION " + fkey + "\n");
 					else {
-						sb.append("----FUNCTION " + namespace + "::" + fname + " [recompile="+fsb.isRecompileOnce()+"]\n");
+						sb.append("----FUNCTION " + fkey + " [recompile="+fsb.isRecompileOnce()+"]\n");
 						for (StatementBlock current : fstmt.getBody())
 							sb.append(explainStatementBlock(current, 3));
 					}

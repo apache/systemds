@@ -19,27 +19,23 @@
 
 package org.apache.sysml.hops.ipa;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.LanguageException;
 
 /**
- * This rewrite identifies and removes unused functions in order
- * to reduce compilation overhead and other overheads such as 
- * parfor worker creation, where we construct function copies.
+ * This rewrite applies static hop dag and statement block
+ * rewrites such as constant folding and branch removal
+ * in order to simplify statistic propagation.
  * 
  */
-public class IPAPassRemoveUnusedFunctions extends IPAPass
+public class IPAPassApplyStaticHopRewrites extends IPAPass
 {
 	@Override
 	public boolean isApplicable() {
-		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS;
+		return InterProceduralAnalysis.APPLY_STATIC_REWRITES;
 	}
 	
 	@Override
@@ -47,22 +43,10 @@ public class IPAPassRemoveUnusedFunctions extends IPAPass
 		throws HopsException
 	{
 		try {
-			Set<String> fnamespaces = prog.getNamespaces().keySet();
-			for( String fnspace : fnamespaces  ) {
-				HashMap<String, FunctionStatementBlock> fsbs = prog.getFunctionStatementBlocks(fnspace);
-				Iterator<Entry<String, FunctionStatementBlock>> iter = fsbs.entrySet().iterator();
-				while( iter.hasNext() ) {
-					Entry<String, FunctionStatementBlock> e = iter.next();
-					if( !fgraph.isReachableFunction(fnspace, e.getKey()) ) {
-						iter.remove();
-						if( LOG.isDebugEnabled() )
-							LOG.debug("IPA: Removed unused function: " + 
-								DMLProgram.constructFunctionKey(fnspace, e.getKey()));
-					}
-				}
-			}
-		}
-		catch(LanguageException ex) {
+			ProgramRewriter rewriter = new ProgramRewriter(true, false);
+			rewriter.rewriteProgramHopDAGs(prog);
+		} 
+		catch (LanguageException ex) {
 			throw new HopsException(ex);
 		}
 	}

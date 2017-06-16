@@ -57,7 +57,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph ) 
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 		throws HopsException
 	{
 		//approach: scan over top-level program (guaranteed to be unconditional),

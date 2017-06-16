@@ -94,6 +94,8 @@ public class InterProceduralAnalysis
 	protected static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
 	protected static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
+	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
+	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
 	
 	static {
 		// for internal debugging only
@@ -132,6 +134,8 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassFlagFunctionsRecompileOnce());
 		_passes.add(new IPAPassRemoveUnnecessaryCheckpoints());
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
+		_passes.add(new IPAPassPropagateReplaceLiterals());
+		_passes.add(new IPAPassApplyStaticHopRewrites());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {
@@ -145,39 +149,64 @@ public class InterProceduralAnalysis
 	}
 	
 	/**
-	 * Public interface to perform IPA over a given DML program.
+	 * Main interface to perform IPA over a given DML program.
 	 * 
-	 * @param dmlp the dml program
-	 * @throws HopsException if HopsException occurs
+	 * @throws HopsException in case of compilation errors
 	 */
-	public void analyzeProgram() 
-		throws HopsException
+	public void analyzeProgram() throws HopsException {
+		analyzeProgram(1); //single run
+	}
+	
+	/**
+	 * Main interface to perform IPA over a given DML program.
+	 * 
+	 * @param repetitions number of IPA rounds 
+	 * @throws HopsException in case of compilation errors
+	 */
+	public void analyzeProgram(int repetitions) 
+		throws HopsException	
 	{
-		//step 1: intra- and inter-procedural 
-		if( INTRA_PROCEDURAL_ANALYSIS ) {
+		//sanity check for valid number of repetitions
+		if( repetitions <= 0 )
+			throw new HopsException("Invalid number of IPA repetitions: " + repetitions);
+		
+		//perform number of requested IPA iterations
+		for( int i=0; i<repetitions; i++ ) {
+			if( LOG.isDebugEnabled() )
+				LOG.debug("IPA: start IPA iteration " + (i+1) + "/" + repetitions +".");
+			
 			//get function call size infos to obtain candidates for statistics propagation
 			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph);
 			if( LOG.isDebugEnabled() )
 				LOG.debug("IPA: Initial FunctionCallSummary: \n" + fcallSizes);
 			
-			//get unary dimension-preserving non-candidate functions
-			for( String tmp : fcallSizes.getInvalidFunctions() )
-				if( isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
-					fcallSizes.addDimsPreservingFunction(tmp);
-			if( LOG.isDebugEnabled() )
-				LOG.debug("IPA: Extended FunctionCallSummary: \n" + fcallSizes);
+			//step 1: intra- and inter-procedural 
+			if( INTRA_PROCEDURAL_ANALYSIS ) {
+				//get unary dimension-preserving non-candidate functions
+				for( String tmp : fcallSizes.getInvalidFunctions() )
+					if( isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
+						fcallSizes.addDimsPreservingFunction(tmp);
+				if( LOG.isDebugEnabled() )
+					LOG.debug("IPA: Extended FunctionCallSummary: \n" + fcallSizes);
+				
+				//propagate statistics and scalars into functions and across DAGs
+				//(callVars used to chain outputs/inputs of multiple functions calls)
+				LocalVariableMap callVars = new LocalVariableMap();
+				for ( StatementBlock sb : _prog.getStatementBlocks() ) //propagate stats into candidates
+					propagateStatisticsAcrossBlock( sb, callVars, fcallSizes, new HashSet<String>() );
+			}
 			
-			//propagate statistics and scalars into functions and across DAGs
-			//(callVars used to chain outputs/inputs of multiple functions calls)
-			LocalVariableMap callVars = new LocalVariableMap();
-			for ( StatementBlock sb : _prog.getStatementBlocks() ) //propagate stats into candidates
-				propagateStatisticsAcrossBlock( sb, callVars, fcallSizes, new HashSet<String>() );
+			//step 2: apply additional IPA passes
+			for( IPAPass pass : _passes )
+				if( pass.isApplicable() )
+					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
 		}
 		
-		//step 2: apply additional IPA passes
-		for( IPAPass pass : _passes )
-			if( pass.isApplicable() )
-				pass.rewriteProgram(_prog, _fgraph);
+		//cleanup pass: remove unused functions
+		FunctionCallGraph graph2 = new FunctionCallGraph(_prog);
+		IPAPass rmFuns = new IPAPassRemoveUnusedFunctions();
+		if( rmFuns.isApplicable() )
+			rmFuns.rewriteProgram(_prog, graph2, null);
 	}
 	
 	public Set<String> analyzeSubProgram() 
@@ -240,19 +269,6 @@ public class InterProceduralAnalysis
 	// INTRA-PROCEDURE ANALYSIS
 	//////	
 
-	/**
-	 * Perform intra-procedural analysis (IPA) by propagating statistics
-	 * across statement blocks.
-	 *
-	 * @param sb  DML statement blocks.
-	 * @param fcand  Function candidates.
-	 * @param callVars  Map of variables eligible for propagation.
-	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
-	 * @param unaryFcands  Unary function candidates.
-	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException  If a HopsException occurs.
-	 * @throws ParseException  If a ParseException occurs.
-	 */
 	private void propagateStatisticsAcrossBlock( StatementBlock sb, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
 		throws HopsException
 	{
@@ -421,16 +437,12 @@ public class InterProceduralAnalysis
 	 *
 	 * @param prog  The DML program.
 	 * @param roots List of HOP DAG root notes for propagation.
-	 * @param fcand  Function candidates.
-	 * @param callVars  Calling program's map of variables eligible for
-	 *                     propagation.
-	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
-	 * @param unaryFcands  Unary function candidates.
+	 * @param callVars  Calling program's map of variables eligible for propagation.
+	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
 	 * @throws HopsException  If a HopsException occurs.
-	 * @throws ParseException  If a ParseException occurs.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack)
 			throws HopsException
 	{
 		for( Hop root : roots )
@@ -443,14 +455,10 @@ public class InterProceduralAnalysis
 	 *
 	 * @param prog  The DML program.
 	 * @param hop HOP to propagate statistics into.
-	 * @param fcand  Function candidates.
-	 * @param callVars  Calling program's map of variables eligible for
-	 *                     propagation.
-	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
-	 * @param unaryFcands  Unary function candidates.
+	 * @param callVars  Calling program's map of variables eligible for propagation.
+	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
 	 * @throws HopsException  If a HopsException occurs.
-	 * @throws ParseException  If a ParseException occurs.
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack ) 
 		throws HopsException

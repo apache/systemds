@@ -253,7 +253,11 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[group_beg:group_end,]")
             initializeGradients("parallel_batches")
             if(solverParam.getDisplay > 0) { 
-              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=parallel_batches, cols=ncol(" + lossLayers(0).out + "))")
+              val ncolLastLayer = {
+                val tmpOutShape = lossLayers(0).outputShape
+                tmpOutShape._1.toInt * tmpOutShape._2.toInt * tmpOutShape._3.toInt 
+              }
+              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=parallel_batches, cols=" + ncolLastLayer + ")")
             }
             parForBlock("j", "1", "parallel_batches") {
               // Get a mini-batch in this group
@@ -295,7 +299,11 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          val localBatchSize = "local_batch_size"
 	          initializeGradients(localBatchSize)
 	          if(solverParam.getDisplay > 0) { 
-              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=" + localBatchSize + ", cols=ncol(" + lossLayers(0).out + "))")
+              val ncolLastLayer = {
+                val tmpOutShape = lossLayers(0).outputShape
+                tmpOutShape._1.toInt * tmpOutShape._2.toInt * tmpOutShape._3.toInt 
+              }
+              assign(tabDMLScript, "tmp_loss_output", "matrix(0, rows=parallel_batches, cols=" + ncolLastLayer + ")")
             }
 	          parForBlock("j", "1", localBatchSize) {
 	            assign(tabDMLScript, "Xb", "X_group_batch[j,]")

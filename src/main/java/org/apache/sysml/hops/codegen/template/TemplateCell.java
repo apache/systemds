@@ -75,7 +75,7 @@ public class TemplateCell extends TemplateBase
 
 	@Override
 	public boolean open(Hop hop) {
-		return isValidOperation(hop)
+		return hop.dimsKnown() && isValidOperation(hop)
 			|| (hop instanceof IndexingOp && (((IndexingOp)hop)
 				.isColLowerEqualsUpper() || hop.getDim2()==1));
 	}

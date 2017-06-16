@@ -65,6 +65,11 @@ public class TemplateUtils
 			  || hop.getDim1() == 1 && hop.getDim2() != 1 ) );
 	}
 	
+	public static boolean isColVector(Hop hop) {
+		return (hop.getDataType() == DataType.MATRIX 
+			&& hop.getDim1() != 1 && hop.getDim2() == 1 );
+	}
+	
 	public static boolean isColVector(CNode hop) {
 		return (hop.getDataType() == DataType.MATRIX 
 			&& hop.getNumRows() != 1 && hop.getNumCols() == 1);

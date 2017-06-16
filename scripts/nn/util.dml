@@ -200,3 +200,19 @@ unpad_image = function(matrix[double] img_padded, int Hin, int Win, int padh, in
   }
 }
 
+threshold = function(matrix[double] X, double thresh)
+    return (matrix[double] out) {
+  /*
+   * Computes an indicator matrix with values in {0, 1} depending on
+   * whether or not the values in X are above the input threshold
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *  - thresh: Input threshold.
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as X.
+   */
+  out = X > thresh
+}
+

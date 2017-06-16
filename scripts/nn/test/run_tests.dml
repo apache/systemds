@@ -92,6 +92,7 @@ test::im2col()
 test::max_pool2d()
 test::padding()
 test::tanh()
+test::threshold()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

@@ -96,7 +96,11 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
                 logging.info(','.join(current_metrics))
 
 
+    if 'test' in mode:
 
+        # Create directory if not exists
+        test_dir = join(temp_dir, 'test')
+        create_dir(train_dir)
 
 
 

@@ -21,10 +21,9 @@
 #-------------------------------------------------------------
 
 import itertools
-from configuration import kmeans_datagen
 import os
 from os.path import join
-from utils import split_rowcol, config_writer, create_dir
+from utils import split_rowcol, config_writer
 import sys
 import logging
 

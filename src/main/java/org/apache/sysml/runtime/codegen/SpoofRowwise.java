@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -211,7 +212,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 	{
 		if( sblock == null )
 			return;
-			
+		
+		SparseRow empty = new SparseRowVector(1);
 		for( int i=rl; i<ru; i++ ) {
 			if( !sblock.isEmpty(i) ) {
 				double[] avals = sblock.values(i);
@@ -222,6 +224,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 				//call generated method
 				genexecRowSparse(avals, aix, apos, b, scalars, c, alen, i);
 			}
+			else
+				genexecRowSparse(empty.values(), 
+					empty.indexes(), 0, b, scalars, c, 0, i);	
 		}
 	}
 	
@@ -238,12 +243,15 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		else { //SPARSE
 			Iterator<SparseRow> iter = a.getSparseRowIterator(rl, ru);
+			SparseRow empty = new SparseRowVector(1);
 			for( int i=rl; iter.hasNext(); i++ ) {
 				SparseRow row = iter.next();
-				if( !row.isEmpty() ) {
-					genexecRowSparse(row.values(), row.indexes(), 
-						0, b, scalars, c, row.size(), i);
-				}
+				if( !row.isEmpty() )
+					genexecRowSparse(row.values(), 
+						row.indexes(), 0, b, scalars, c, row.size(), i);
+				else
+					genexecRowSparse(empty.values(), 
+						empty.indexes(), 0, b, scalars, c, 0, i);
 			}
 		}
 	}

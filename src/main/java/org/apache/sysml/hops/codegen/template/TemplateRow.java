@@ -184,7 +184,8 @@ public class TemplateRow extends TemplateBase
 				else {
 					String opcode = "ROW_"+((AggUnaryOp)hop).getOp().name().toUpperCase()+"S";
 					out = new CNodeUnary(cdata1, UnaryType.valueOf(opcode));
-					inHops2.put("X", hop.getInput().get(0));
+					if( cdata1 instanceof CNodeData && inHops2.isEmpty() )
+						inHops2.put("X", hop.getInput().get(0));
 				}
 			}
 			else  if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
@@ -233,6 +234,8 @@ public class TemplateRow extends TemplateBase
 				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
 					String opname = "VECT_"+((UnaryOp)hop).getOp().name();
 					out = new CNodeUnary(cdata1, UnaryType.valueOf(opname));
+					if( cdata1 instanceof CNodeData && inHops2.isEmpty() )
+						inHops2.put("X", hop.getInput().get(0));
 				}
 				else 
 					throw new RuntimeException("Unsupported unary matrix "
@@ -273,6 +276,10 @@ public class TemplateRow extends TemplateBase
 						if( TemplateUtils.isColVector(cdata2) )
 							cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
 						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
+					}
+					if( cdata1 instanceof CNodeData && inHops2.isEmpty() 
+						&& !(cdata1.getDataType()==DataType.SCALAR) ) {
+						inHops2.put("X", hop.getInput().get(0));
 					}
 				}
 				else 

@@ -237,7 +237,8 @@ public class CNodeBinary extends CNode
 		
 		//generate binary operation (use sparse template, if data input)
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData 
-			&& !_inputs.get(0).getVarname().startsWith("b"));
+			&& !_inputs.get(0).getVarname().startsWith("b")
+			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);

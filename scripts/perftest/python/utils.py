@@ -28,8 +28,13 @@ import time
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 
+# This file contains all the utility functions required for performance test module
 
 def get_algo(family, ml_algo):
+    """
+    Return a list of algorithms given family
+
+    """
 
     algo = []
     for fam in family:
@@ -39,6 +44,10 @@ def get_algo(family, ml_algo):
 
 
 def get_family(algos, ml_algo):
+    """
+    Return family given algorithm
+
+    """
 
     for algo in algos:
         for key, value in ml_algo.items():
@@ -48,6 +57,10 @@ def get_family(algos, ml_algo):
 
 
 def split_rowcol(matrix_dim):
+    """
+    Return matrix row, column on input string (e.g. 10k_1k)
+
+    """
 
     k = str(0) * 3
     M = str(0) * 6
@@ -58,6 +71,10 @@ def split_rowcol(matrix_dim):
 
 
 def config_writer(write_path, config_dict):
+    """
+    Writes the dictionary as an configuration json file to the give path
+
+    """
 
     with open(write_path, 'w') as fp:
         json.dump(config_dict, fp, indent=4)
@@ -66,6 +83,10 @@ def config_writer(write_path, config_dict):
 
 
 def config_reader(read_path):
+    """
+    Return configuration dictionary on reading the json file
+
+    """
 
     with open(read_path, 'r') as f:
         conf_file = json.load(f)
@@ -74,6 +95,11 @@ def config_reader(read_path):
 
 
 def create_dir(directory):
+    """
+    Create directory given path if the directory does not exist already
+
+    """
+
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -108,6 +134,10 @@ def exec_func(exec_type, file_name, args):
 
 
 def get_config(file_path):
+    """
+    Returns matrix type and matrix dim based.
+
+    """
 
     path_split = file_path.split('/')[-1]
     algo_prop = path_split.split('-')

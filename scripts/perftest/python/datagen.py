@@ -27,6 +27,7 @@ from utils import split_rowcol, config_writer
 import sys
 import logging
 
+# This file contains configuration settings for data generation
 format = 'csv'
 
 

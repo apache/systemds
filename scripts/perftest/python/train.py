@@ -26,11 +26,14 @@ import os
 from os.path import join
 from utils import split_rowcol, config_writer, create_dir
 
+# Contains configuration setting for training
+
 
 def kmeans_train(file_name, datagen_dir, train_dir):
 
     full_path_datagen = join(datagen_dir, file_name)
     X = join(full_path_datagen, 'X.data')
+
     full_path_train = join(train_dir, file_name)
     C = join(full_path_train, 'C.data')
 

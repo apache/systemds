@@ -34,6 +34,7 @@ from subprocess import Popen, PIPE, STDOUT
 import itertools
 from datagen import config_packets_datagen
 from train import config_packets_train
+from predict import config_packets_predict
 
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
@@ -42,7 +43,9 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
            'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
 
-ml_gendata ={'Kmeans': 'genRandData4Kmeans'}
+ml_gendata = {'Kmeans': 'genRandData4Kmeans'}
+
+ml_preduct = {'Kmeans': 'Kmeans-predict'}
 
 
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
@@ -63,10 +66,10 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
         conf_packet = config_packets_datagen(algo, mat_type, mat_shape, data_gen_dir)
 
         # execute algorithm
-        for current_algo, ini_files in conf_packet.items():
-            for ini_file in ini_files:
-                ini_dict = config_reader(ini_file + '.json')
-                args = ' '.join([str(key)+'='+str(val) for key, val in ini_dict.items()])
+        for current_algo, config_files in conf_packet.items():
+            for ini_file in config_files:
+                config_dict = config_reader(ini_file + '.json')
+                args = ' '.join([str(key)+'='+str(val) for key, val in config_dict.items()])
                 m_type, m_dim = get_config(ini_file)
                 time = exec_func(exec_type, ml_gendata[current_algo], args)
                 current_metrics = [current_algo, 'data-gen', m_type, m_dim, str(time)]
@@ -82,28 +85,33 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
         # Create directory if not exist
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-
-        # Check if the corresponding data is in training dir
         conf_packet = config_packets_train(algo, data_gen_dir, train_dir)
 
-        for current_algo, ini_files in conf_packet.items():
-            for ini_file in ini_files:
-                ini_dict = config_reader(ini_file + '.json')
-                args = ' '.join([str(key) + '=' + str(val) for key, val in ini_dict.items()])
+        for current_algo, config_files in conf_packet.items():
+            for current_file in config_files:
+                config_dict = config_reader(current_file + '.json')
+                args = ' '.join([str(key) + '=' + str(val) for key, val in config_dict.items()])
                 time = exec_func(exec_type, current_algo, args)
-                m_type, m_dim = get_config(ini_file)
+                m_type, m_dim = get_config(current_file)
                 current_metrics = [current_algo, 'train', m_type, m_dim, str(time)]
                 logging.info(','.join(current_metrics))
 
-
-    if 'test' in mode:
+    if 'predict' in mode:
+        data_gen_dir = join(temp_dir, 'data-gen')
 
         # Create directory if not exists
-        test_dir = join(temp_dir, 'test')
-        create_dir(train_dir)
+        predict_dir = join(temp_dir, 'predict')
+        create_dir(predict_dir)
 
-
-
+        conf_packet = config_packets_predict(algo, data_gen_dir, predict_dir)
+        for current_algo, config_files in conf_packet.items():
+            for current_file in config_files:
+                config_dict = config_reader(current_file + '.json')
+                args = ' '.join([str(key) + '=' + str(val) for key, val in config_dict.items()])
+                time = exec_func(exec_type, ml_preduct[current_algo], args)
+                m_type, m_dim = get_config(current_file)
+                current_metrics = [current_algo, 'predict', m_type, m_dim, str(time)]
+                logging.info(','.join(current_metrics))
 
 
     return None
@@ -118,11 +126,8 @@ if __name__ == '__main__':
     default_mat_shape = ['10k_1k']
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
 
-    # Initialize Logging
+    # Initialize time
     start_time = time.time()
-    logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
-    logging.info('New performance test')
-
     algo_flat = reduce(lambda x, y: x + y, ml_algo.values())
 
     # Argparse Module
@@ -168,6 +173,9 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.temp_dir):
         os.makedirs(args.temp_dir)
+
+    logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
+    logging.info('New performance test')
 
     perf_test_entry(**arg_dict)
     sys.exit()

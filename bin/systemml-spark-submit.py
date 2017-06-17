@@ -167,7 +167,7 @@ if args.conf is not None:
 else:
     conf = default_conf
 
-cmd_spark = [ spark_path, '--class', 'org.apache.sysml.api.DMLScript',
+cmd_spark = [spark_path, '--class', 'org.apache.sysml.api.DMLScript',
              '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
              '--executor-cores', args.executor_cores, '--conf', conf, '--jars', target_jars,

@@ -116,7 +116,7 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * NEW FUNCTIONALITIES (not for BI 2.0 release)
+ * NEW FUNCTIONALITIES
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository =&gt; modules OK, but second-order functions required
  *

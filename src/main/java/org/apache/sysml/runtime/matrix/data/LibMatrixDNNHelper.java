@@ -302,10 +302,8 @@ public class LibMatrixDNNHelper {
 	static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
 			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
 		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
-			if(recomputeNNZM1)
-				m1.recomputeNonZeros();
-			if(recomputeNNZM2)
-				m2.recomputeNonZeros();
+			prepNonZerosForMatrixMult(m1, recomputeNNZM1);
+			prepNonZerosForMatrixMult(m2, recomputeNNZM2);
 			LibMatrixMult.matrixMult(m1, m2, ret, false);
 		}
 		else {
@@ -538,5 +536,16 @@ public class LibMatrixDNNHelper {
 				}
 			}
 		}
+	}
+	
+	private static void prepNonZerosForMatrixMult(MatrixBlock mb, boolean update) {
+		if( !update )
+			return;
+		//non-zeros are not evaluated for dense matrix multiplies
+		//so we simply need to ensure the block is not marked empty 
+		if( !mb.isInSparseFormat() )
+			mb.setNonZeros(mb.getNumRows() * mb.getNumColumns());
+		else
+			mb.recomputeNonZeros();	
 	}
 }

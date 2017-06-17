@@ -55,8 +55,8 @@ public class FunctionCallSizeInfo
 	
 	//indicators for which function arguments of valid functions it 
 	//is safe to propagate the number of non-zeros 
-	//(mapping from function keys to set of function input HopIDs)
-	private final Map<String, Set<Long>> _fcandSafeNNZ;
+	//(mapping from function keys to set of function input positions)
+	private final Map<String, Set<Integer>> _fcandSafeNNZ;
 	
 	//indicators which literal function arguments can be safely 
 	//propagated into and replaced in the respective functions 
@@ -90,7 +90,7 @@ public class FunctionCallSizeInfo
 		_fgraph = fgraph;
 		_fcand = new HashSet<String>();
 		_fcandUnary = new HashSet<String>();
-		_fcandSafeNNZ =  new HashMap<String, Set<Long>>();
+		_fcandSafeNNZ =  new HashMap<String, Set<Integer>>();
 		_fSafeLiterals = new HashMap<String, Set<Integer>>();
 		
 		constructFunctionCallSizeInfo();
@@ -176,12 +176,12 @@ public class FunctionCallSizeInfo
 	 * number of non-zeros.  
 	 * 
 	 * @param fkey function key
-	 * @param inputHopID hop ID of the input
+	 * @param pos function input position
 	 * @return true if nnz can safely be propagated
 	 */
-	public boolean isSafeNnz(String fkey, long inputHopID) {
+	public boolean isSafeNnz(String fkey, int pos) {
 		return _fcandSafeNNZ.containsKey(fkey)
-			&& _fcandSafeNNZ.get(fkey).contains(inputHopID);
+			&& _fcandSafeNNZ.get(fkey).contains(pos);
 	}
 	
 	/**
@@ -254,12 +254,13 @@ public class FunctionCallSizeInfo
 		//(considered for valid functions only)
 		for( String fkey : _fcand ) {
 			FunctionOp first = _fgraph.getFunctionCalls(fkey).get(0);
-			HashSet<Long> tmp = new HashSet<Long>();
-			for( Hop input : first.getInput() ) {
+			HashSet<Integer> tmp = new HashSet<Integer>();
+			for( int j=0; j<first.getInput().size(); j++ ) {
 				//if nnz known it is safe to propagate those nnz because for multiple calls 
 				//we checked of equivalence and hence all calls have the same nnz
+				Hop input = first.getInput().get(0);
 				if( input.getNnz()>=0 ) 
-					tmp.add(input.getHopID());
+					tmp.add(j);
 			}
 			_fcandSafeNNZ.put(fkey, tmp);
 		}

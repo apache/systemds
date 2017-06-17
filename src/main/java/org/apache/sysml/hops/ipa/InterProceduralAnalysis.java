@@ -541,7 +541,7 @@ public class InterProceduralAnalysis
 				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
 				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(), 
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
-					fcallSizes.isSafeNnz(fkey, input.getHopID())?input.getNnz():-1 );
+					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	

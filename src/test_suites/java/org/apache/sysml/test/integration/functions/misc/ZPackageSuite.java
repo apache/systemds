@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
 	InvalidFunctionSignatureTest.class,
 	IPAConstantFoldingScalarVariablePropagationTest.class,
 	IPALiteralReplacementTest.class,
+	IPANnzPropagationTest.class,
 	IPAScalarRecursionTest.class,
 	IPAScalarVariablePropagationTest.class,
 	IPAUnknownRecursionTest.class,

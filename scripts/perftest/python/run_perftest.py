@@ -43,9 +43,12 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
            'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
 
-ml_gendata = {'Kmeans': 'genRandData4Kmeans'}
+ml_gendata = {'Kmeans': 'genRandData4Kmeans',
+              'Univar-Stats': 'genRandData4DescriptiveStats',
+              'bivar-stats': 'genRandData4DescriptiveStats',
+              'stratstats': 'genRandData4StratStats'}
 
-ml_preduct = {'Kmeans': 'Kmeans-predict'}
+ml_predict = {'Kmeans': 'Kmeans-predict'}
 
 
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
@@ -57,7 +60,6 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
         # TODO
         # Check if data already exists and stop
         # Fix Time
-
         # Create directory if not exist
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
@@ -108,11 +110,10 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
             for current_file in config_files:
                 config_dict = config_reader(current_file + '.json')
                 args = ' '.join([str(key) + '=' + str(val) for key, val in config_dict.items()])
-                time = exec_func(exec_type, ml_preduct[current_algo], args)
+                time = exec_func(exec_type, ml_predict[current_algo], args)
                 m_type, m_dim = get_config(current_file)
                 current_metrics = [current_algo, 'predict', m_type, m_dim, str(time)]
                 logging.info(','.join(current_metrics))
-
 
     return None
 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     # Default Arguments
     default_mat_type = ['dense', 'sparse']
     default_workload = ['data-gen', 'train', 'predict']
-    default_mat_shape = ['10k_1k']
+    default_mat_shape = ['10k_50']
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
 
     # Initialize time
@@ -176,9 +177,9 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
     logging.info('New performance test')
+    logging.info('algorithm, run_type, matrix_type, data_shape, time_sec')
 
     perf_test_entry(**arg_dict)
-    sys.exit()
 
     total_time = (time.time() - start_time)
     logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))

@@ -30,6 +30,8 @@ import logging
 # This file contains configuration settings for data generation
 format = 'csv'
 
+no_matrix_type = ['Kmeans', 'Univar-Stats', 'bivar-stats', 'stratstats']
+
 
 def kmeans_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
@@ -50,12 +52,71 @@ def kmeans_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
+def bivar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+    row, col = split_rowcol(matrix_dim)
+    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    DATA = join(full_path, 'X.data')
+    TYPES = join(full_path, 'types')
+    TYPES1 = join(full_path, 'set1.types')
+    TYPES2 = join(full_path, 'set2.types')
+    INDEX1 = join(full_path, 'set1.indices')
+    INDEX2 = join(full_path, 'set2.indices')
+
+    config = dict(R=row,  C=col, NC=100, MAXDOMAIN=1100, DATA=DATA, TYPES=TYPES, SETSIZE=20,
+                  LABELSETSIZE=10, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
+                  fmt=format)
+
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
+def stratstats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+
+    row, col = split_rowcol(matrix_dim)
+    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    D = join(full_path, 'X.data')
+    Xcid = join(full_path, 'Xcid.data')
+    Ycid = join(full_path, 'Ycid.data')
+    A = join(full_path, 'A.data')
+
+    config = dict(nr=row, nf=col, D=D, Xcid=Xcid, Ycid=Ycid,
+                  A=A, fmt=format)
+
+    config_writer(full_path + '.json', config)
+    return full_path
+
+
+def univar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+    row, col = split_rowcol(matrix_dim)
+    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    DATA = join(full_path, 'X.data')
+    TYPES = join(full_path, 'types')
+    TYPES1 = join(full_path, 'set1.types')
+    TYPES2 = join(full_path, 'set2.types')
+    INDEX1 = join(full_path, 'set1.indices')
+    INDEX2 = join(full_path, 'set2.indices')
+
+    config = dict(R=row,  C=col, NC=100, MAXDOMAIN=1100, DATA=DATA, TYPES=TYPES, SETSIZE=20,
+                  LABELSETSIZE=10, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
+                  fmt=format)
+
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
 def config_packets_datagen(algos, matrix_type, matrix_shape, datagen_dir):
 
     config_bundle = {}
 
     for algo in algos:
-        if algo == 'Kmeans':
+        if algo in no_matrix_type:
             config = list(itertools.product(matrix_shape, ['none']))
             config_bundle[algo] = config
         else:
@@ -65,7 +126,7 @@ def config_packets_datagen(algos, matrix_type, matrix_shape, datagen_dir):
     for current_algo, configs in config_bundle.items():
         config_bundle[current_algo] = []
         for conf in configs:
-            algo_func = current_algo.lower() + '_datagen'
+            algo_func = current_algo.lower().replace('-', '_') + '_datagen'
             conf_path = globals()[algo_func](current_algo, conf[0], conf[1], datagen_dir)
             config_bundle[current_algo].append(conf_path)
 

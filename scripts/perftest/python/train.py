@@ -37,9 +37,54 @@ def kmeans_train(file_name, datagen_dir, train_dir):
     full_path_train = join(train_dir, file_name)
     C = join(full_path_train, 'C.data')
 
-    config = dict(X=X, k='50', maxi='50', tol='0.0001',
-                  C=C)
+    config = dict(X=X, k='50', maxi='50', tol='0.0001', C=C)
+    config_writer(full_path_train + '.json', config)
 
+    return full_path_train
+
+
+def univar_stats_train(file_name, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, file_name)
+    X = join(full_path_datagen, 'X.data')
+    TYPES = join(full_path_datagen, 'types')
+
+    full_path_train = join(train_dir, file_name)
+    STATS = join(full_path_train, 'STATS.data')
+
+    config = dict(X=X, TYPES=TYPES, STATS=STATS)
+    config_writer(full_path_train + '.json', config)
+
+    return full_path_train
+
+
+def bivar_stats_train(file_name, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, file_name)
+    X = join(full_path_datagen, 'X.data')
+    index1 = join(full_path_datagen, 'set1.indices')
+    index2 = join(full_path_datagen, 'set2.indices')
+    types1 = join(full_path_datagen, 'set1.types')
+    types2 = join(full_path_datagen, 'set2.types')
+
+    full_path_train = join(train_dir, file_name)
+    OUTDIR = join(full_path_train, 'OUTDIR.data')
+
+    config = dict(X=X, index1=index1, index2=index2, types1=types1, types2=types2, OUTDIR=OUTDIR)
+    config_writer(full_path_train + '.json', config)
+    return full_path_train
+
+
+def stratstats_train(file_name, datagen_dir, train_dir):
+    full_path_datagen = join(datagen_dir, file_name)
+    X = join(full_path_datagen, 'X.data')
+    Xcid = join(full_path_datagen, 'Xcid.data')
+    Ycid = join(full_path_datagen, 'Ycid.data')
+
+    full_path_train = join(train_dir, file_name)
+    O = join(full_path_train, 'O.data')
+
+    config = dict(X=X, Xcid=Xcid, Ycid=Ycid, O=O, fmt='csv')
     config_writer(full_path_train + '.json', config)
 
     return full_path_train
@@ -57,7 +102,7 @@ def config_packets_train(algos, datagen_dir, train_dir):
         config_bundle[current_algo] = []
 
         for folder in datagen_folders:
-            algo_func = current_algo.lower() + '_train'
+            algo_func = current_algo.lower().replace('-', '_') + '_train'
             file_name = folder.split('/')[-1]
             create_dir(train_dir + os.sep + file_name)
             conf_path = globals()[algo_func](file_name, datagen_dir, train_dir)

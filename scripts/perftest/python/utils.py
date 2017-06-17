@@ -30,6 +30,7 @@ from subprocess import Popen, PIPE, STDOUT
 
 # This file contains all the utility functions required for performance test module
 
+
 def get_algo(family, ml_algo):
     """
     Return a list of algorithms given family
@@ -113,6 +114,9 @@ def exec_func(exec_type, file_name, args):
     :param args: String containing key value arguments
     :return: Array with metrics required for logging
     """
+
+    # TODO
+    # If code fails return failure
 
     algorithm = file_name + '.dml'
     if exec_type == 'singlenode':

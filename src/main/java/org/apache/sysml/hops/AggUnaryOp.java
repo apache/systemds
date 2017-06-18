@@ -647,7 +647,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			handled = true;
 		} else if (input11 instanceof BinaryOp ) {
 			BinaryOp b11 = (BinaryOp)input11;
-			switch (b11.getOp()) {
+			switch( b11.getOp() ) {
 			case MULT: // A*B*C case
 				in1 = input11.getInput().get(0).constructLops();
 				in2 = input11.getInput().get(1).constructLops();
@@ -664,6 +664,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					handled = true;
 				}
 				break;
+			default: break;
 			}
 		} else if( input12 instanceof BinaryOp ) {
 			BinaryOp b12 = (BinaryOp)input12;
@@ -683,6 +684,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					handled = true;
 				}
 				break;
+			default: break;
 			}
 		}
 

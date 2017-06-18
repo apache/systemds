@@ -35,11 +35,11 @@ import org.junit.Test;
 /**
  * Test whether `2*X*3*Y*4*X` successfully rewrites to `Y*(X^2)*24`.
  */
-public class RewriteElementwiseMultChainOptimizationChainTest extends AutomatedTestBase
+public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBase
 {
 	private static final String TEST_NAME1 = "RewriteEMultChainOpXYX";
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteElementwiseMultChainOptimizationChainTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteElementwiseMultChainOptimizationTest.class.getSimpleName() + "/";
 	
 	private static final int rows = 123;
 	private static final int cols = 321;

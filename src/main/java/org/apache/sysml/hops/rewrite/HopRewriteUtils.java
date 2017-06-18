@@ -532,13 +532,18 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
+		Hop ix = createMatrixIndexing(input, rix, cix);
+		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
+	}
+	
+	public static Hop createMatrixIndexing(Hop input, long rix, long cix) {
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
 		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
 		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, ix);
 		ix.refreshSizeInformation();
-		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
+		return ix;
 	}
 	
 	public static Hop createValueHop( Hop hop, boolean row ) 

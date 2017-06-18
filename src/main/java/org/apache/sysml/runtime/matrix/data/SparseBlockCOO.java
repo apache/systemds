@@ -218,7 +218,7 @@ public class SparseBlockCOO extends SparseBlock
 	@Override
 	public int size(int r) {
 		int pos = pos(r);
-		if( _rindexes[pos]!=r )
+		if( pos>=_size || _rindexes[pos]!=r )
 			return 0;
 		
 		//count number of equal row indexes

@@ -56,6 +56,7 @@ import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.recompile.RecompileStatus;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
@@ -631,7 +632,9 @@ public class SpoofCompiler
 					inHops[0].getRowsInBlock(), inHops[0].getColsInBlock(), -1);
 				//inject artificial right indexing operations for all parents of all nodes
 				for( int i=0; i<roots.size(); i++ ) {
-					Hop hnewi = HopRewriteUtils.createScalarIndexing(hnew, 1, i+1);
+					Hop hnewi = (roots.get(i) instanceof AggUnaryOp) ? 
+						HopRewriteUtils.createScalarIndexing(hnew, 1, i+1) :
+						HopRewriteUtils.createMatrixIndexing(hnew, 1, i+1);
 					HopRewriteUtils.rewireAllParentChildReferences(roots.get(i), hnewi);
 				}
 			}

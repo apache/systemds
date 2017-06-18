@@ -245,8 +245,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		ArrayList<Long> fullAggs = new ArrayList<Long>();
 		for( Long hopID : R ) {
 			Hop root = memo._hopRefs.get(hopID);
-			if( !refHops.contains(hopID) && root instanceof AggUnaryOp 
-				&& ((AggUnaryOp)root).getDirection()==Direction.RowCol)
+			if( !refHops.contains(hopID) && isMultiAggregateRoot(root) )
 				fullAggs.add(hopID);
 		}
 		if( LOG.isTraceEnabled() ) {
@@ -306,10 +305,19 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		for( Long hopID : fullAggs ) {
 			Hop aggHop = memo._hopRefs.get(hopID);
 			AggregateInfo tmp = new AggregateInfo(aggHop);
-			for( Hop c : aggHop.getInput() )
+			for( int i=0; i<aggHop.getInput().size(); i++ ) {
+				Hop c = HopRewriteUtils.isMatrixMultiply(aggHop) && i==0 ? 
+					aggHop.getInput().get(0).getInput().get(0) : aggHop.getInput().get(i);
 				rExtractAggregateInfo(memo, c, tmp, TemplateType.CellTpl);
-			if( tmp._fusedInputs.isEmpty() )
-				tmp.addFusedInput(aggHop.getInput().get(0).getHopID());
+			}
+			if( tmp._fusedInputs.isEmpty() ) {
+				if( HopRewriteUtils.isMatrixMultiply(aggHop) ) {
+					tmp.addFusedInput(aggHop.getInput().get(0).getInput().get(0).getHopID());
+					tmp.addFusedInput(aggHop.getInput().get(1).getHopID());
+				}
+				else	
+					tmp.addFusedInput(aggHop.getInput().get(0).getHopID());
+			}
 			aggInfos.add(tmp);	
 		}
 		
@@ -319,10 +327,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				LOG.trace(info);
 		}
 		
-		//filter aggregations w/ matmults to ensure consistent dims
 		//sort aggregations by num dependencies to simplify merging
 		//clusters of aggregations with parallel dependencies
-		aggInfos = aggInfos.stream().filter(a -> !a.containsMatMult)
+		aggInfos = aggInfos.stream()
 			.sorted(Comparator.comparing(a -> a._inputAggs.size()))
 			.collect(Collectors.toList());
 		
@@ -366,6 +373,13 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 	}
 	
+	private static boolean isMultiAggregateRoot(Hop root) {
+		return (HopRewriteUtils.isAggUnaryOp(root, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX) 
+				&& ((AggUnaryOp)root).getDirection()==Direction.RowCol)
+			|| (root instanceof AggBinaryOp && root.getDim1()==1 && root.getDim2()==1
+				&& HopRewriteUtils.isTransposeOperation(root.getInput().get(0)));
+	}
+	
 	private static boolean isValidMultiAggregate(CPlanMemoTable memo, MemoTableEntry me) {
 		//ensure input consistent sizes (otherwise potential for incorrect results)
 		boolean ret = true;
@@ -402,11 +416,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			return;
 		
 		//collect all applicable full aggregations per read
-		if( HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX)
-			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol )
-		{
+		if( isMultiAggregateRoot(current) )
 			aggs.add(current.getHopID());
-		}
 		
 		//recursively process children
 		for( Hop c : current.getInput() )
@@ -417,19 +428,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	
 	private static void rExtractAggregateInfo(CPlanMemoTable memo, Hop current, AggregateInfo aggInfo, TemplateType type) {
 		//collect input aggregates (dependents)
-		if( HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX)
-			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol )
-		{
+		if( isMultiAggregateRoot(current) )
 			aggInfo.addInputAggregate(current.getHopID());
-		}
-		
-		//collect included matrix multiplications
-		if( type != null && HopRewriteUtils.isMatrixMultiply(current) )
-			aggInfo.setContainsMatMult();
 		
 		//recursively process children
 		MemoTableEntry me = (type!=null) ? memo.getBest(current.getHopID()) : null;
-		for( int i=0; i< current.getInput().size(); i++ ) {
+		for( int i=0; i<current.getInput().size(); i++ ) {
 			Hop c = current.getInput().get(i);
 			if( me != null && me.isPlanRef(i) )
 				rExtractAggregateInfo(memo, c, aggInfo, type);
@@ -960,7 +964,6 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		public final HashMap<Long,Hop> _aggregates;
 		public final HashSet<Long> _inputAggs = new HashSet<Long>();
 		public final HashSet<Long> _fusedInputs = new HashSet<Long>();
-		public boolean containsMatMult = false;
 		public AggregateInfo(Hop aggregate) {
 			_aggregates = new HashMap<Long, Hop>();
 			_aggregates.put(aggregate.getHopID(), aggregate);
@@ -970,9 +973,6 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 		public void addFusedInput(long hopID) {
 			_fusedInputs.add(hopID);
-		}
-		public void setContainsMatMult() {
-			containsMatMult = true;
 		}
 		public boolean isMergable(AggregateInfo that) {
 			//check independence
@@ -986,9 +986,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			ret &= !CollectionUtils.intersection(
 				_fusedInputs, that._fusedInputs).isEmpty();
 			//check consistent sizes (result correctness)
+			Hop in1 = _aggregates.values().iterator().next();
+			Hop in2 = that._aggregates.values().iterator().next();
 			return ret && HopRewriteUtils.isEqualSize(
-				_aggregates.values().iterator().next().getInput().get(0),
-				that._aggregates.values().iterator().next().getInput().get(0));
+				in1.getInput().get(HopRewriteUtils.isMatrixMultiply(in1)?1:0),
+				in2.getInput().get(HopRewriteUtils.isMatrixMultiply(in2)?1:0));
 		}
 		public AggregateInfo merge(AggregateInfo that) {
 			_aggregates.putAll(that._aggregates);

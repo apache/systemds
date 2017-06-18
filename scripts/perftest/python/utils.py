@@ -26,7 +26,8 @@ import json
 from os.path import join
 import time
 import subprocess
-from subprocess import Popen, PIPE, STDOUT
+import shlex
+import re
 
 # This file contains all the utility functions required for performance test module
 
@@ -115,9 +116,6 @@ def exec_func(exec_type, file_name, args):
     :return: Array with metrics required for logging
     """
 
-    # TODO
-    # If code fails return failure
-
     algorithm = file_name + '.dml'
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
@@ -130,9 +128,22 @@ def exec_func(exec_type, file_name, args):
         cmd = [exec_script, '-f', algorithm, '-nvargs', args]
         cmd_string = ' '.join(cmd)
 
-    time_start = time.time()
-    return_code = subprocess.call(cmd_string, shell=True)
-    total_time = time.time() - time_start - 3
+    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE)
+    proc2 = subprocess.Popen(shlex.split('grep "Total execution time"'), stdin=proc1.stdout,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    proc1.stdout.close()
+    out, err = proc2.communicate()
+
+    # Convert byte sysout to string
+    out_str, err_str = [str(out), str(err)]
+
+    extract_time = re.findall(r'\d+', out_str)
+    total_time = '.'.join(extract_time)
+
+    if not err_str:
+        total_time = 'failure'
+        # print(err)
 
     return total_time
 

@@ -77,7 +77,7 @@ public class IOUtilFunctions
 		String scheme1 = path1.toUri().getScheme();
 		String scheme2 = path2.toUri().getScheme();
 		return (scheme1 == null && scheme2 == null)
-			|| scheme1.equals(scheme2);
+			|| (scheme1 != null && scheme1.equals(scheme2));
 	}
 	
 	public static boolean isObjectStoreFileScheme(Path path) {

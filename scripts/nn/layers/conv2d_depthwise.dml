@@ -127,30 +127,30 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   N = nrow(X)
   C = nrow(W)
 
-  # Create gradient volumes
+  # create gradient volumes
   dX = matrix(0, rows=N, cols=C*Hin*Win)
   dW = matrix(0, rows=C, cols=M*Hf*Wf)
   db = matrix(0, rows=C*M, cols=1)
 
-  # Partial derivatives for depthwise convolution
+  # partial derivatives for depthwise convolution
   for (c in 1:C) {  # all examples
-    # Extract channel c
+    # extract channel c
     doutc = dout[,((c-1)*M*Hout*Wout + 1):c*M*Hout*Wout]  # (N,M*Hout*Wout)
     Xc = X[,((c-1)*Hin*Win + 1):c*Hin*Win]  # shape (N, 1*Hin*Win)
     Wc = matrix(W[c,], rows=M, cols=Hf*Wf)  # shape (M, 1*Hf*Wf)
 
-    # Compute gradients for channel c
+    # compute gradients for channel c
     dWc = conv2d_backward_filter(Xc, doutc, stride=[strideh,stridew], padding=[padh,padw],
                                  input_shape=[N,1,Hin,Win], filter_shape=[M,1,Hf,Wf])
     dXc = conv2d_backward_data(Wc, doutc, stride=[strideh,stridew], padding=[padh,padw],
                                input_shape=[N,1,Hin,Win], filter_shape=[M,1,Hf,Wf])
 
-    # Store
+    # store
     dX[,((c-1)*Hin*Win + 1):c*Hin*Win] = dXc
     dW[c,] = matrix(dWc, rows=1, cols=M*Hf*Wf)
   }
 
-  # Partial derivatives for bias vector
+  # partial derivatives for bias vector
   db = util::channel_sums(dout, C*M, Hout, Wout)
 }
 

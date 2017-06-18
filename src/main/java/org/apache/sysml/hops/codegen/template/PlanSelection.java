@@ -109,7 +109,7 @@ public abstract class PlanSelection
 		}
 		@Override
 		public int hashCode() {
-			return UtilFunctions.longlongHashCode(
+			return UtilFunctions.longHashCode(
 				_hopID, (_type!=null)?_type.hashCode():0);
 		}
 		@Override 

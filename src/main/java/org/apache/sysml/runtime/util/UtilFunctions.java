@@ -43,8 +43,8 @@ public class UtilFunctions
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
 	
-	public static int longHashCode(long v) {
-		return (int)(v^(v>>>32));
+	public static int longHashCode(long key1) {
+		return (int)(key1^(key1>>>32));
 	}
 
 	/**
@@ -55,11 +55,28 @@ public class UtilFunctions
 	 * @param key2 second long key
 	 * @return hash code
 	 */
-	public static int longlongHashCode(long key1, long key2) {
+	public static int longHashCode(long key1, long key2) {
 		//basic hash mixing of two longs hashes (similar to
 		//Arrays.hashCode(long[]) but w/o array creation/copy)
-		int h = (int)(key1 ^ (key1 >>> 32));
+		int h = 31 + (int)(key1 ^ (key1 >>> 32));
 		return h*31 + (int)(key2 ^ (key2 >>> 32));
+	}
+	
+	/**
+	 * Returns the hash code for a long-long-long triple. This is the default
+	 * hash function for the keys of a distributed matrix in MR/Spark.
+	 * 
+	 * @param key1 first long key
+	 * @param key2 second long key
+	 * @param key3 third long key
+	 * @return hash code
+	 */
+	public static int longHashCode(long key1, long key2, long key3) {
+		//basic hash mixing of three longs hashes (similar to
+		//Arrays.hashCode(long[]) but w/o array creation/copy)
+		int h1 = 31 + (int)(key1 ^ (key1 >>> 32));
+		int h2 = h1*31 + (int)(key2 ^ (key2 >>> 32));
+		return h2*31 + (int)(key3 ^ (key3 >>> 32));
 	}
 	
 	public static int nextIntPow2( int in ) {

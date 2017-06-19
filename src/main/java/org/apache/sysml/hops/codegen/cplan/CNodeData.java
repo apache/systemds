@@ -28,6 +28,7 @@ public class CNodeData extends CNode
 {
 	protected final String _name;
 	protected final long _hopID;
+	private boolean _strictEquals;
 	
 	public CNodeData(Hop hop) {
 		this(hop, hop.getDim1(), hop.getDim2(), hop.getDataType());
@@ -36,6 +37,7 @@ public class CNodeData extends CNode
 	public CNodeData(Hop hop, long rows, long cols, DataType dt) {
 		//note: previous rewrites might have created hops with equal name
 		//hence, we also keep the hopID to uniquely identify inputs
+		super();
 		_name = hop.getName();
 		_hopID = hop.getHopID();
 		_rows = rows;
@@ -65,6 +67,11 @@ public class CNodeData extends CNode
 	
 	public long getHopID() {
 		return _hopID;
+	}
+	
+	public void setStrictEquals(boolean flag) {
+		_strictEquals = flag;
+		_hash = 0;
 	}
 	
 	@Override
@@ -97,6 +104,7 @@ public class CNodeData extends CNode
 		return (o instanceof CNodeData 
 			&& super.equals(o)
 			&& isLiteral() == ((CNodeData)o).isLiteral()
-			&& (isLiteral() ? _name.equals(((CNodeData)o)._name) : true));
+			&& (isLiteral() ? _name.equals(((CNodeData)o)._name) : 
+			_strictEquals ? _hopID == ((CNodeData)o)._hopID : true));
 	}
 }

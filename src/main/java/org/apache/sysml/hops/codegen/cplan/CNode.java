@@ -83,6 +83,10 @@ public abstract class CNode
 		_generated = false;
 	}
 	
+	public void resetHash() {
+		_hash = 0;
+	}
+	
 	public void setNumRows(long rows) {
 		_rows = rows;
 	}

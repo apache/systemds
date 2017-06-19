@@ -51,18 +51,18 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		_inputs.add(in);
 	}
 	
-	public void cleanupInputs(HashSet<Long> filter) {
-		ArrayList<CNode> tmp = new ArrayList<CNode>();
-		for( CNode in : _inputs )
-			if( in instanceof CNodeData && filter.contains(((CNodeData) in).getHopID()) )
-				tmp.add(in);
-		_inputs = tmp;
-	}
-	
 	public String[] getInputNames() {
 		String[] ret = new String[_inputs.size()];
 		for( int i=0; i<_inputs.size(); i++ )
 			ret[i] = _inputs.get(i).getVarname();
+		return ret;
+	}
+	
+	public HashSet<Long> getInputHopIDs(boolean inclLiterals) {
+		HashSet<Long> ret = new HashSet<Long>();
+		for( CNode input : _inputs )
+			if( !input.isLiteral() || inclLiterals )
+				ret.add(((CNodeData)input).getHopID());
 		return ret;
 	}
 	

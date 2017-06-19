@@ -163,7 +163,8 @@ public class TemplateCell extends TemplateBase
 			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp)
 				&& (me.type!=TemplateType.MultiAggTpl || memo.contains(c.getHopID(), TemplateType.CellTpl)))
 				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
-			else if( me!=null && me.type==TemplateType.MultiAggTpl && HopRewriteUtils.isMatrixMultiply(hop) && i==0 )
+			else if( me!=null && (me.type==TemplateType.MultiAggTpl || me.type==TemplateType.CellTpl) 
+					&& HopRewriteUtils.isMatrixMultiply(hop) && i==0 ) //skip transpose
 				rConstructCplan(c.getInput().get(0), memo, tmp, inHops, compileLiterals);
 			else {
 				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	

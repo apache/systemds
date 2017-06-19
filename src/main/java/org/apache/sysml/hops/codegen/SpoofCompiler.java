@@ -46,6 +46,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysml.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.PlanSelection;
 import org.apache.sysml.hops.codegen.template.PlanSelectionFuseCostBased;
@@ -347,7 +348,8 @@ public class SpoofCompiler
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
 			
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
-			//remove empty templates with single cnodedata input, remove spurious lookups)
+			//remove empty templates with single cnodedata input, remove spurious lookups,
+			//perform common subexpression elimination)
 			cplans = cleanupCPlans(cplans);
 			
 			//explain before modification
@@ -663,33 +665,26 @@ public class SpoofCompiler
 	 * 
 	 * @param cplans set of cplans
 	 */
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) {
+	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
+	{
 		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<Long, Pair<Hop[],CNodeTpl>>();
+		CPlanCSERewriter cse = new CPlanCSERewriter();
+		
 		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) {
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
-			//collect cplan leaf node names
-			HashSet<Long> leafs = new HashSet<Long>();
-			if( tpl instanceof CNodeMultiAgg )
-				for( CNode out : ((CNodeMultiAgg)tpl).getOutputs() )
-					rCollectLeafIDs(out, leafs);
-			else
-				rCollectLeafIDs(tpl.getOutput(), leafs);
+			//perform common subexpression elimination
+			tpl = cse.eliminateCommonSubexpressions(tpl);
 			
-			//create clean cplan w/ minimal inputs
-			if( inHops.length == leafs.size() )
-				cplans2.put(e.getKey(), e.getValue());
-			else {
-				tpl.cleanupInputs(leafs);
-				ArrayList<Hop> tmp = new ArrayList<Hop>();
-				for( Hop hop : inHops ) {
-					if( hop!= null && leafs.contains(hop.getHopID()) )
-						tmp.add(hop);
-				}
-				cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(
-						tmp.toArray(new Hop[0]),tpl));
-			}
+			//update input hops (order-preserving)
+			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
+			ArrayList<Hop> tmp = new ArrayList<Hop>();
+			for( Hop input : inHops )
+				if( inputHopIDs.contains(input.getHopID()) )
+					tmp.add(input);
+			inHops = tmp.toArray(new Hop[0]);
+			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
 			
 			//remove invalid plans with column indexing on main input
 			if( tpl instanceof CNodeCell ) {
@@ -732,16 +727,6 @@ public class SpoofCompiler
 		}
 		
 		return cplans2;
-	}
-	
-	private static void rCollectLeafIDs(CNode node, HashSet<Long> leafs) {
-		//collect leaf variable names
-		if( node instanceof CNodeData && !((CNodeData)node).isLiteral() )
-			leafs.add(((CNodeData) node).getHopID());
-		
-		//recursively process cplan
-		for( CNode c : node.getInput() )
-			rCollectLeafIDs(c, leafs);
 	}
 	
 	private static void rFindAndRemoveLookupMultiAgg(CNodeMultiAgg node, CNodeData mainInput) {

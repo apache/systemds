@@ -566,7 +566,7 @@ public class Explain
 			childs.append(" (");
 			boolean childAdded = false;
 			for( Hop input : hop.getInput() )
-				if( !(input instanceof LiteralOp) ){
+				if( SHOW_LITERAL_HOPS || !(input instanceof LiteralOp) ){
 					childs.append(childAdded?",":"");
 					childs.append(input.getHopID());
 					childAdded = true;

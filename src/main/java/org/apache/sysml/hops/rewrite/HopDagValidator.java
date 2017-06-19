@@ -35,6 +35,8 @@ import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.Explain;
 
+import com.google.common.collect.Lists;
+
 import static org.apache.sysml.hops.HopsException.check;
 
 /**
@@ -89,7 +91,8 @@ public class HopDagValidator {
 		//check visit status
 		final boolean seen = !state.seen.add(id);
 		check(seen == hop.isVisited(), hop,
-				"seen previously is %b but does not match hop visit status", seen);
+				"(parents: %s) seen previously is %b but does not match hop visit status",
+				Lists.transform(hop.getParent(), Hop::getHopID), seen);
 		if (seen) return; // we saw the Hop previously, no need to re-validate
 		
 		//check parent linking

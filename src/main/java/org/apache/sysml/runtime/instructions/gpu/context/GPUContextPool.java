@@ -46,6 +46,9 @@ public class GPUContextPool {
 	 */
 	public static int PER_PROCESS_MAX_GPUS = -1;
 
+
+	private static long INITIAL_GPU_MEMORY_BUDGET = -1;
+
 	/**
 	 * Whether cuda has been initialized
 	 */
@@ -80,6 +83,7 @@ public class GPUContextPool {
 	 * @throws DMLRuntimeException ?
 	 */
 	public synchronized static void initializeGPU() throws DMLRuntimeException {
+		initialized = true;
 		GPUContext.LOG.info("Initializing CUDA");
 		long start = System.nanoTime();
 		JCuda.setExceptionsEnabled(true);
@@ -110,7 +114,22 @@ public class GPUContextPool {
 			pool.add(gCtx);
 		}
 
+		// Initialize the initial memory budget
+		// If there are heterogeneous GPUs on the machine (different memory sizes)
+		// initially available memory is set to the GPU with the lowest memory
+		// This is because at runtime, we wouldn't know which GPU a certain
+		// operation gets scheduled on
+		long minAvailableMemory = Integer.MAX_VALUE;
+		for (GPUContext gCtx : pool) {
+			gCtx.initializeThread();
+			minAvailableMemory = Math.min(minAvailableMemory, gCtx.getAvailableMemory());
+		}
+		INITIAL_GPU_MEMORY_BUDGET = minAvailableMemory;
+
+
 		GPUContext.LOG.info("Total number of GPUs on the machine: " + deviceCount);
+		GPUContext.LOG.info("Initial GPU memory: " + initialGPUMemBudget());
+
 		//int[] device = {-1};
 		//cudaGetDevice(device);
 		//cudaDeviceProp prop = getGPUProperties(device[0]);
@@ -119,7 +138,6 @@ public class GPUContextPool {
 		//long sharedMemPerBlock = prop.sharedMemPerBlock;
 		//LOG.debug("Active CUDA device number : " + device[0]);
 		//LOG.debug("Max Blocks/Threads/SharedMem on active device: " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
-		initialized = true;
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
 	}
 
@@ -187,4 +205,19 @@ public class GPUContextPool {
 
 	}
 
+	/**
+	 * Gets the initial GPU memory budget. This is the minimum of the
+	 * available memories across all the GPUs on the machine(s)
+	 * @return minimum available memory
+	 * @throws RuntimeException if error initializing the GPUs
+	 */
+	public static synchronized long initialGPUMemBudget() throws RuntimeException {
+		try {
+			if (!initialized)
+				initializeGPU();
+			return INITIAL_GPU_MEMORY_BUDGET;
+		} catch (DMLRuntimeException e){
+			throw new RuntimeException(e);
+		}
+	}
 }

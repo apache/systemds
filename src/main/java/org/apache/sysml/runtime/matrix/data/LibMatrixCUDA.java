@@ -3261,7 +3261,7 @@ public class LibMatrixCUDA {
 
 			// step 4: compute QR factorization
             Pointer work = gCtx.allocate(instName, lwork[0] * Sizeof.DOUBLE);
-            Pointer tau = gCtx.allocate(instName, Math.max(m, m) * Sizeof.DOUBLE);
+            Pointer tau = gCtx.allocate(instName, m * Sizeof.DOUBLE);
             Pointer devInfo = gCtx.allocate(Sizeof.INT);
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			JCusolverDn.cusolverDnDgeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);

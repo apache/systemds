@@ -42,6 +42,7 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /** Primary use cases for now, are
@@ -649,7 +650,8 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = null;
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) )
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
+				.initialGPUMemBudget()) )
 			et = ExecType.GPU;
 		else
 			et = optFindExecType();

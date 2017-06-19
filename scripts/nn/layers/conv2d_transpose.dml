@@ -20,10 +20,11 @@
 #-------------------------------------------------------------
 
 /*
- * 2D Transpose convolutional layer.
+ * 2D Transpose Convolutional layer.
  *
  * Utilizes built-in convolution operators for higher performance.
  */
+source("nn/util.dml") as util
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
@@ -60,8 +61,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(b)
-  Hout = strideh * (Hin-1) - 2*padh + Hf + out_padh
-  Wout = stridew * (Win-1) - 2*padw + Wf + out_padw
+  Hout = strideh*(Hin-1) - 2*padh + Hf + out_padh
+  Wout = stridew*(Win-1) - 2*padw + Wf + out_padw
 
   # Transpose convolution aims to go in the other direction of
   # (direct) convolution, i.e., given input X, produce output O such
@@ -146,7 +147,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
               stride=[strideh,stridew], padding=[padh,padw])
 
   # Partial derivatives for bias vector
-  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))
+  db = util::channel_sums(dout, F, Hout, Wout)
 }
 
 init = function(int F, int C, int Hf, int Wf)
@@ -235,3 +236,4 @@ init_bilinear = function(int C, int K)
 
   b = matrix(0, rows=C, cols=1)
 }
+

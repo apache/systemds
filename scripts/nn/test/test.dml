@@ -26,7 +26,9 @@ source("nn/layers/batch_norm1d.dml") as batch_norm1d
 source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
 source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
+source("nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
 source("nn/layers/conv2d_transpose.dml") as conv2d_transpose
+source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
@@ -63,6 +65,97 @@ batch_norm1d = function() {
                     0.44720244  0.44720232  0.44720244  0.44720244
                     1.34160733  1.34160721  1.34160733  1.34160733", rows=1, cols=N*D)
   out = matrix(out, rows=1, cols=N*D)
+  for (i in 1:length(out)) {
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                           as.scalar(target[1,i]), 1e-3, 1e-4)
+  }
+}
+
+batch_norm2d = function() {
+  /*
+   * Test for the 2D (spatial) batch normalization function.
+   */
+  print("Testing the 2D (spatial) batch normalization function.")
+
+  # Generate data
+  N = 2  # Number of examples
+  C = 3  # num channels
+  Hin = 4  # input height
+  Win = 5  # input width
+  mode = 'train'  # execution mode
+  mu = 0.9  # momentum of moving averages
+  eps = 1e-5  # smoothing term
+  X = matrix("70  29 23 55 72
+              42  98 68 48 39
+              34  73 44  6 40
+              74  18 18 53 53
+
+              63  85 72 61 72
+              32  36 23 29 63
+               9  43 43 49 43
+              31  43 89 94 50
+
+              62  12 32 41 87
+              25  48 99 52 61
+              12  83 60 55 34
+              30  42 68 88 51
+
+
+              67  59 62 67 84
+               8  76 24 19 57
+              10  89 63 72  2
+              59  56 16 15 70
+
+              32  69 55 39 93
+              84  36  4 30 40
+              70 100 36 76 59
+              69  15 40 24 34
+
+              51  67 11 13 32
+              66  85 55 85 38
+              32  35 17 83 34
+              55  58 52  0 99", rows=N, cols=C*Hin*Win)
+
+  # Create layer
+  [gamma, beta, ema_mean, ema_var] = batch_norm2d::init(C)
+
+  # Forward
+  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+      batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+
+  # Equivalency check
+  target = matrix("0.86215019 -0.76679718 -1.00517964  0.26619387  0.94161105
+                  -0.25030172  1.97460198  0.78268933 -0.01191914 -0.36949289
+                  -0.56814504  0.98134136 -0.17084086 -1.68059683 -0.32976246
+                   1.02107191 -1.20383179 -1.20383179  0.18673301  0.18673301
+
+                   0.50426388  1.41921711  0.87856293  0.42108631  0.87856293
+                  -0.78498828 -0.61863315 -1.15928721 -0.90975463  0.50426388
+                  -1.74153018 -0.32751167 -0.32751167 -0.07797909 -0.32751167
+                  -0.82657707 -0.32751167  1.58557224  1.79351616 -0.0363903
+
+                   0.4607178  -1.49978399 -0.71558321 -0.36269283  1.44096887
+                  -0.99005347 -0.08822262  1.91148913  0.06861746  0.42150795
+                  -1.49978399  1.28412855  0.38229787  0.18624771 -0.63716316
+                  -0.79400325 -0.32348287  0.69597805  1.48017895  0.0294075
+
+
+                   0.74295878  0.42511559  0.54430676  0.74295878  1.41837597
+                  -1.60113597  1.10053277 -0.96544927 -1.16410136  0.34565473
+                  -1.52167511  1.61702824  0.5840373   0.94161105 -1.83951855
+                   0.42511559  0.30592418 -1.28329265 -1.32302308  0.86215019
+
+                  -0.78498828  0.75379658  0.17155361 -0.4938668   1.75192738
+                   1.37762833 -0.61863315 -1.9494741  -0.86816585 -0.45227802
+                   0.79538536  2.04304862 -0.61863315  1.04491806  0.33790874
+                   0.75379658 -1.49199748 -0.45227802 -1.11769855 -0.70181072
+
+                   0.0294075   0.65676796 -1.53899395 -1.46057391 -0.71558321
+                   0.61755812  1.36254871  0.18624771  1.36254871 -0.48032296
+                  -0.71558321 -0.59795308 -1.30373383  1.28412855 -0.63716316
+                   0.18624771  0.30387771  0.06861746 -1.97030437  1.91148913",
+                  rows=1, cols=N*C*Hin*Win)
+  out = matrix(out, rows=1, cols=N*C*Hin*Win)
   for (i in 1:length(out)) {
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                            as.scalar(target[1,i]), 1e-3, 1e-4)
@@ -106,6 +199,74 @@ conv2d = function() {
                                            as.scalar(out_simple[1,i]), 1e-10, 1e-12)
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                            as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+}
+
+conv2d_depthwise = function() {
+  /*
+   * Test for the 2D depthwise convolution function.
+   */
+  print("Testing the 2D depthwise convolution function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 2  # num channels
+  Hin = 3  # input height
+  Win = 3  # input width
+  M = 2  # num filters per input channel (i.e. depth multiplier)
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 1
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win) / (N*C*Hin*Win) * 2 - 1  # normalized
+
+  # Create layer
+  W = matrix(seq(1,C*M*Hf*Wf), rows=C, cols=M*Hf*Wf) / (C*M*Hf*Wf) * 2 - 1  # normalized
+  b = matrix(seq(1,C*M), rows=C*M, cols=1) / (C*M)^2  # non-zero & non-one
+
+  # Forward
+  [out, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                pad, pad)
+
+  # Equivalency check
+  target = matrix("2.13040113  3.20447516  2.16743827
+                   3.30324078  4.94212961  3.30324078
+                   2.16743827  3.20447516  2.13040113
+
+                   0.52623457  0.85030866  0.67438275
+                   1.11574078  1.75462961  1.2824074
+                   0.89660496  1.35030866  0.97067899
+
+                  -0.30015433 -0.42052469 -0.15200615
+                  -0.15509261 -0.1828704   0.01157404
+                   0.07021603  0.07947529  0.1442901
+
+                  -0.90432101 -1.27469134 -0.64506173
+                  -0.8425926  -1.12037039 -0.50925928
+                  -0.20061731 -0.2746914  -0.01543214
+
+
+                  -0.31404325 -0.62885809 -0.49922845
+                  -0.86342597 -1.55787039 -1.19675934
+                  -0.94367278 -1.62885797 -1.20293212
+
+                   0.0817901   0.01697529  0.00771603
+                  -0.05092596 -0.2453704  -0.21759261
+                  -0.21450615 -0.48302469 -0.36265433
+
+                   1.25540125  1.74614203  1.1813271
+                   1.67824078  2.31712961  1.51157403
+                   0.95910496  1.24614203  0.81095684
+
+                   2.65123463  3.8919754   2.68827152
+                   3.99074078  5.87962961  3.99074078
+                   2.68827152  3.8919754   2.65123463", rows=N, cols=C*M*Hout*Wout)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
+    }
   }
 }
 
@@ -157,6 +318,64 @@ conv2d_transpose = function() {
                    1.63888884  2.93518519  3.17592597  1.94444442
                    1.97222221  3.65740728  3.89814806  2.33333325
                    1.39814818  2.42592597  2.56481481  1.61111116", rows=N, cols=F*Hout*Wout)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
+    }
+  }
+}
+
+conv2d_transpose_depthwise = function() {
+  /*
+   * Test for the 2D depthwise transpose convolution function.
+   */
+  print("Testing the 2D depthwise transpose convolution function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 4  # num channels
+  Hin = 2  # input height
+  Win = 2  # input width
+  M = 2  # depth of each filter
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 0
+  out_pad = 0  # padding added to output
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win) / (N*C*Hin*Win) * 2 - 1  # normalized
+
+  # Create layer
+  W = matrix(seq(1,C/M*M*Hf*Wf), rows=C/M, cols=M*Hf*Wf) / (C/M*M*Hf*Wf) * 2 - 1  # normalized
+  b = matrix(seq(1,C/M), rows=C/M, cols=1) / (C/M)^2  # non-zero & non-one
+
+  # Forward
+  [out, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                          stride, stride, pad, pad,
+                                                          out_pad, out_pad)
+
+  # Equivalency check
+  target = matrix("1.44097221  2.45486116  2.28125     1.1875
+                   2.1875      3.80555558  3.48611116  1.72916663
+                   1.6875      2.84722233  2.52777767  1.27083325
+                   0.80902779  1.24652779  1.10069442  0.625
+
+                   0.37152776  0.24652773  0.18402778  0.35416669
+                   0.21527778 -0.02777781 -0.12500003  0.22916666
+                   0.04861115 -0.31944442 -0.41666669  0.10416666
+                   0.32291669  0.20486113  0.1701389   0.375
+
+
+                   0.05208334 -0.21180555 -0.16319445  0.02083334
+                  -0.25694442 -0.8611111  -0.7361111  -0.27083331
+                  -0.09027778 -0.4861111  -0.3611111  -0.0625
+                   0.08680556 -0.08680557 -0.01041669  0.125
+
+                   0.98263896  1.57986116  1.73958337  1.1875
+                   1.77083337  3.30555558  3.65277791  2.22916675
+                   2.27083325  4.34722233  4.69444466  2.77083349
+                   1.60069442  2.87152767  3.05902767  1.875     ", rows=N, cols=C/M*Hout*Wout)
 
   for (i in 1:nrow(out)) {
     for(j in 1:ncol(out)) {
@@ -489,97 +708,6 @@ max_pool2d = function() {
   tmp = test_util::check_all_equal(out, target)
   tmp = test_util::check_all_equal(out_simple, target)
   tmp = test_util::check_all_equal(out_builtin, target)
-}
-
-batch_norm2d = function() {
-  /*
-   * Test for the 2D (spatial) batch normalization function.
-   */
-  print("Testing the 2D (spatial) batch normalization function.")
-
-  # Generate data
-  N = 2  # Number of examples
-  C = 3  # num channels
-  Hin = 4  # input height
-  Win = 5  # input width
-  mode = 'train'  # execution mode
-  mu = 0.9  # momentum of moving averages
-  eps = 1e-5  # smoothing term
-  X = matrix("70  29 23 55 72
-              42  98 68 48 39
-              34  73 44  6 40
-              74  18 18 53 53
-
-              63  85 72 61 72
-              32  36 23 29 63
-               9  43 43 49 43
-              31  43 89 94 50
-
-              62  12 32 41 87
-              25  48 99 52 61
-              12  83 60 55 34
-              30  42 68 88 51
-
-
-              67  59 62 67 84
-               8  76 24 19 57
-              10  89 63 72  2
-              59  56 16 15 70
-
-              32  69 55 39 93
-              84  36  4 30 40
-              70 100 36 76 59
-              69  15 40 24 34
-
-              51  67 11 13 32
-              66  85 55 85 38
-              32  35 17 83 34
-              55  58 52  0 99", rows=N, cols=C*Hin*Win)
-
-  # Create layer
-  [gamma, beta, ema_mean, ema_var] = batch_norm2d::init(C)
-
-  # Forward
-  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-      batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-
-  # Equivalency check
-  target = matrix("0.86215019 -0.76679718 -1.00517964  0.26619387  0.94161105
-                  -0.25030172  1.97460198  0.78268933 -0.01191914 -0.36949289
-                  -0.56814504  0.98134136 -0.17084086 -1.68059683 -0.32976246
-                   1.02107191 -1.20383179 -1.20383179  0.18673301  0.18673301
-
-                   0.50426388  1.41921711  0.87856293  0.42108631  0.87856293
-                  -0.78498828 -0.61863315 -1.15928721 -0.90975463  0.50426388
-                  -1.74153018 -0.32751167 -0.32751167 -0.07797909 -0.32751167
-                  -0.82657707 -0.32751167  1.58557224  1.79351616 -0.0363903
-
-                   0.4607178  -1.49978399 -0.71558321 -0.36269283  1.44096887
-                  -0.99005347 -0.08822262  1.91148913  0.06861746  0.42150795
-                  -1.49978399  1.28412855  0.38229787  0.18624771 -0.63716316
-                  -0.79400325 -0.32348287  0.69597805  1.48017895  0.0294075
-
-
-                   0.74295878  0.42511559  0.54430676  0.74295878  1.41837597
-                  -1.60113597  1.10053277 -0.96544927 -1.16410136  0.34565473
-                  -1.52167511  1.61702824  0.5840373   0.94161105 -1.83951855
-                   0.42511559  0.30592418 -1.28329265 -1.32302308  0.86215019
-
-                  -0.78498828  0.75379658  0.17155361 -0.4938668   1.75192738
-                   1.37762833 -0.61863315 -1.9494741  -0.86816585 -0.45227802
-                   0.79538536  2.04304862 -0.61863315  1.04491806  0.33790874
-                   0.75379658 -1.49199748 -0.45227802 -1.11769855 -0.70181072
-
-                   0.0294075   0.65676796 -1.53899395 -1.46057391 -0.71558321
-                   0.61755812  1.36254871  0.18624771  1.36254871 -0.48032296
-                  -0.71558321 -0.59795308 -1.30373383  1.28412855 -0.63716316
-                   0.18624771  0.30387771  0.06861746 -1.97030437  1.91148913",
-                  rows=1, cols=N*C*Hin*Win)
-  out = matrix(out, rows=1, cols=N*C*Hin*Win)
-  for (i in 1:length(out)) {
-    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                           as.scalar(target[1,i]), 1e-3, 1e-4)
-  }
 }
 
 tanh = function() {

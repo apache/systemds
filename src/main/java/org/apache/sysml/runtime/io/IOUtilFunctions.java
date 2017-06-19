@@ -464,7 +464,7 @@ public class IOUtilFunctions
 			FileStatus[] dStatus = fs.listStatus(file);
 			for( FileStatus fdStatus : dStatus )
 				if( !fdStatus.getPath().getName().startsWith("_") //skip internal files
-					&& !fdStatus.getPath().equals(file.toString()+".mtd") )  //mtd file
+					&& !fdStatus.getPath().toString().equals(file.toString()+".mtd") ) //mtd file
 					tmp.add(fdStatus.getPath());
 			ret = tmp.toArray(new Path[0]);
 		}

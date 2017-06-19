@@ -25,7 +25,9 @@ import glob
 import os
 from os.path import join
 from utils import split_rowcol, config_writer, create_dir
+from functools import reduce
 
+format = 'csv'
 # Contains configuration setting for training
 
 
@@ -84,16 +86,90 @@ def stratstats_train(file_name, datagen_dir, train_dir):
     full_path_train = join(train_dir, file_name)
     O = join(full_path_train, 'O.data')
 
-    config = dict(X=X, Xcid=Xcid, Ycid=Ycid, O=O, fmt='csv')
+    config = dict(X=X, Xcid=Xcid, Ycid=Ycid, O=O, fmt=format)
     config_writer(full_path_train + '.json', config)
 
     return full_path_train
 
 
+def multilogreg_train(file_name, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, file_name)
+
+    data_folders = []
+    for i in [0, 1, 2]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        moi = 100
+        mii = 0
+        X = join(full_path_datagen, 'X.data')
+        Y = join(full_path_datagen, 'Y.data')
+        full_path_train = join(train_dir, file_name + '.' + str(i))
+        data_folders.append(full_path_train)
+        B = join(full_path_train, 'B.data')
+
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, reg=reg, tol=tol, moi=moi, mii=mii, fmt=format)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def l2_svm_train(file_name, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, file_name)
+
+    data_folders = []
+    for i in [0, 1]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxiter = 100
+        X = join(full_path_datagen, 'X.data')
+        Y = join(full_path_datagen, 'Y.data')
+
+        full_path_train = join(train_dir, file_name + '.' + str(i))
+        data_folders.append(full_path_train)
+
+        model = join(full_path_train, 'model.data')
+        Log = join(full_path_train, 'Log.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, reg=reg, tol=tol, maxiter=maxiter, model=model,
+                      Log=Log, fmt=format)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def m_svm_train(file_name, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, file_name)
+
+    data_folders = []
+    for i in [0, 1]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxiter = 100
+        X = join(full_path_datagen, 'X.data')
+        Y = join(full_path_datagen, 'Y.data')
+
+        full_path_train = join(train_dir, file_name + '.' + str(i))
+        data_folders.append(full_path_train)
+
+        model = join(full_path_train, 'model.data')
+        Log = join(full_path_train, 'Log.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter, model=model,
+                      Log=Log, fmt=format)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
 def config_packets_train(algos, datagen_dir, train_dir):
 
     config_bundle = {}
-
     # create ini in train dir
     for current_algo in algos:
         datagen_path = datagen_dir + os.sep + current_algo
@@ -104,8 +180,19 @@ def config_packets_train(algos, datagen_dir, train_dir):
         for folder in datagen_folders:
             algo_func = current_algo.lower().replace('-', '_') + '_train'
             file_name = folder.split('/')[-1]
-            create_dir(train_dir + os.sep + file_name)
             conf_path = globals()[algo_func](file_name, datagen_dir, train_dir)
             config_bundle[current_algo].append(conf_path)
 
-    return config_bundle
+    config_bundle_flat = {}
+
+    # This was required to handle intercepts.
+    # We have list of list the needs to be flattened
+    # Edge case when there is a single string and we cast it to a list
+
+    for k, v in config_bundle.items():
+        if len(v) > 1:
+            config_bundle_flat[k] = reduce(lambda x, y: x + y, v)
+        else:
+            config_bundle_flat[k] = reduce(lambda x, y: x + y, [v])
+
+    return config_bundle_flat

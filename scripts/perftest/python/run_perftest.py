@@ -29,8 +29,6 @@ from utils import get_algo, get_family, config_reader, create_dir, exec_func, ge
 import logging
 import time
 import json
-import subprocess
-from subprocess import Popen, PIPE, STDOUT
 import itertools
 from datagen import config_packets_datagen
 from train import config_packets_train
@@ -46,9 +44,31 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
 ml_gendata = {'Kmeans': 'genRandData4Kmeans',
               'Univar-Stats': 'genRandData4DescriptiveStats',
               'bivar-stats': 'genRandData4DescriptiveStats',
-              'stratstats': 'genRandData4StratStats'}
+              'stratstats': 'genRandData4StratStats',
+              'MultiLogReg': 'genRandData4LogisticRegression',
+              'l2-svm': 'genRandData4LogisticRegression',
+              'm-svm': 'genRandData4LogisticRegression'}
 
 ml_predict = {'Kmeans': 'Kmeans-predict'}
+
+
+def algorithm_workflow(algo, exec_type, ini_file, file_name, type):
+
+    config_data = config_reader(ini_file + '.json')
+
+    if isinstance(config_data, dict):
+        dict_args = ' '.join([str(key) + '=' + str(val) for key, val in config_data.items()])
+        args = {'-nvargs': dict_args}
+
+    if isinstance(config_data, list):
+        list_args = ' '.join(config_data)
+        args = {'-args': list_args}
+
+    m_type, m_dim, intercept = get_config(ini_file)
+    time = exec_func(exec_type, file_name, args)
+
+    current_metrics = [algo, type, intercept, m_type, m_dim, str(time)]
+    logging.info(','.join(current_metrics))
 
 
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
@@ -59,7 +79,6 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
     if 'data-gen' in mode:
         # TODO
         # Check if data already exists and stop
-        # Fix Time
         # Create directory if not exist
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
@@ -68,52 +87,41 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
         conf_packet = config_packets_datagen(algo, mat_type, mat_shape, data_gen_dir)
 
         # execute algorithm
-        for current_algo, config_files in conf_packet.items():
-            for ini_file in config_files:
-                config_dict = config_reader(ini_file + '.json')
-                args = ' '.join([str(key)+'='+str(val) for key, val in config_dict.items()])
-                m_type, m_dim = get_config(ini_file)
-                time = exec_func(exec_type, ml_gendata[current_algo], args)
-                current_metrics = [current_algo, 'data-gen', m_type, m_dim, str(time)]
-                logging.info(','.join(current_metrics))
+        for algo_name, config_files in conf_packet.items():
+            for config in config_files:
+                file_name = ml_gendata[algo_name]
+                algorithm_workflow(algo_name, exec_type, config, file_name, 'data-gen')
 
     if 'train' in mode:
         # TODO
         # Error : If dir / algo not present
         # Quit if necessary training folders are not present
-
         data_gen_dir = join(temp_dir, 'data-gen')
 
         # Create directory if not exist
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-        conf_packet = config_packets_train(algo, data_gen_dir, train_dir)
 
-        for current_algo, config_files in conf_packet.items():
-            for current_file in config_files:
-                config_dict = config_reader(current_file + '.json')
-                args = ' '.join([str(key) + '=' + str(val) for key, val in config_dict.items()])
-                time = exec_func(exec_type, current_algo, args)
-                m_type, m_dim = get_config(current_file)
-                current_metrics = [current_algo, 'train', m_type, m_dim, str(time)]
-                logging.info(','.join(current_metrics))
+        conf_packet = config_packets_train(algo, data_gen_dir, train_dir)
+        for algo_name, config_files in conf_packet.items():
+            for config in config_files:
+                file_name = algo_name
+                algorithm_workflow(algo_name, exec_type, config, file_name, 'train')
 
     if 'predict' in mode:
+
         data_gen_dir = join(temp_dir, 'data-gen')
+        train_dir = join(temp_dir, 'train')
 
         # Create directory if not exists
         predict_dir = join(temp_dir, 'predict')
         create_dir(predict_dir)
 
-        conf_packet = config_packets_predict(algo, data_gen_dir, predict_dir)
-        for current_algo, config_files in conf_packet.items():
-            for current_file in config_files:
-                config_dict = config_reader(current_file + '.json')
-                args = ' '.join([str(key) + '=' + str(val) for key, val in config_dict.items()])
-                time = exec_func(exec_type, ml_predict[current_algo], args)
-                m_type, m_dim = get_config(current_file)
-                current_metrics = [current_algo, 'predict', m_type, m_dim, str(time)]
-                logging.info(','.join(current_metrics))
+        conf_packet = config_packets_predict(algo, data_gen_dir, train_dir, predict_dir)
+        for algo_name, config_files in conf_packet.items():
+            for config in config_files:
+                file_name = ml_predict[algo_name]
+                algorithm_workflow(algo_name, exec_type, config, file_name, 'predict')
 
     return None
 
@@ -124,7 +132,7 @@ if __name__ == '__main__':
     # Default Arguments
     default_mat_type = ['dense', 'sparse']
     default_workload = ['data-gen', 'train', 'predict']
-    default_mat_shape = ['10k_50']
+    default_mat_shape = ['10k_1k']
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
 
     # Initialize time
@@ -177,9 +185,10 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
     logging.info('New performance test')
-    logging.info('algorithm, run_type, matrix_type, data_shape, time_sec')
+    logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
 
     perf_test_entry(**arg_dict)
 
     total_time = (time.time() - start_time)
     logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))
+

@@ -26,9 +26,13 @@ from os.path import join
 from utils import split_rowcol, config_writer
 import sys
 import logging
+from subprocess import Popen, PIPE
 
 # This file contains configuration settings for data generation
 format = 'csv'
+
+matrix_type_value = {'dense': '0.9',
+                     'sparse': '0.01'}
 
 no_matrix_type = ['Kmeans', 'Univar-Stats', 'bivar-stats', 'stratstats']
 
@@ -36,7 +40,7 @@ no_matrix_type = ['Kmeans', 'Univar-Stats', 'bivar-stats', 'stratstats']
 def kmeans_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
 
     full_path = join(datagen_dir, path_name)
     X = join(full_path, 'X.data')
@@ -54,7 +58,7 @@ def kmeans_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
 def bivar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     row, col = split_rowcol(matrix_dim)
-    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     DATA = join(full_path, 'X.data')
@@ -76,7 +80,7 @@ def bivar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 def stratstats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     D = join(full_path, 'X.data')
@@ -93,7 +97,7 @@ def stratstats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
 def univar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     row, col = split_rowcol(matrix_dim)
-    path_name = '-'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     DATA = join(full_path, 'X.data')
@@ -111,8 +115,83 @@ def univar_stats_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
 
     return full_path
 
-def config_packets_datagen(algos, matrix_type, matrix_shape, datagen_dir):
 
+def multilogreg_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+    row, col = split_rowcol(matrix_dim)
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    maxFeatureValue = '5'
+    maxWeight = '5'
+    loc_weights = join(full_path, 'weight.data')
+    loc_data = join(full_path, 'X.data')
+    loc_labels = join(full_path, 'Y.data')
+    noise = '1'
+    intercept = '0'
+    sparsity = matrix_type_value[matrix_type]
+    tranform_labels = '1'
+    fmt = format
+
+    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data, loc_labels,
+                  noise, intercept, sparsity, fmt, tranform_labels]
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
+def l2_svm_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+    row, col = split_rowcol(matrix_dim)
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    maxFeatureValue = '5'
+    maxWeight = '5'
+    loc_weights = join(full_path, 'weight.data')
+    loc_data = join(full_path, 'X.data')
+    loc_labels = join(full_path, 'Y.data')
+    noise = '1'
+    intercept = '0'
+    sparsity = matrix_type_value[matrix_type]
+    tranform_labels = '1'
+    fmt = format
+
+    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data, loc_labels,
+              noise, intercept, sparsity, fmt, tranform_labels]
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
+def m_svm_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+    row, col = split_rowcol(matrix_dim)
+    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    maxFeatureValue = '5'
+    maxWeight = '5'
+    loc_weights = join(full_path, 'weight.data')
+    loc_data = join(full_path, 'X.data')
+    loc_labels = join(full_path, 'Y.data')
+    noise = '1'
+    intercept = '0'
+    sparsity = matrix_type_value[matrix_type]
+    tranform_labels = '1'
+    fmt = format
+
+    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data, loc_labels,
+              noise, intercept, sparsity, fmt, tranform_labels]
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
+def config_packets_datagen(algos, matrix_type, matrix_shape, datagen_dir):
     config_bundle = {}
 
     for algo in algos:

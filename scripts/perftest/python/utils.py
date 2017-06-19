@@ -28,6 +28,7 @@ import time
 import subprocess
 import shlex
 import re
+import sys
 
 # This file contains all the utility functions required for performance test module
 
@@ -116,34 +117,36 @@ def exec_func(exec_type, file_name, args):
     :return: Array with metrics required for logging
     """
 
+    # TODO:
+    # Given an error write to a different log file
+
     algorithm = file_name + '.dml'
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
-        cmd = [exec_script, algorithm, '-nvargs', args]
+
+        args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
+        cmd = [exec_script, algorithm, args]
         cmd_string = ' '.join(cmd)
-        print(cmd_string)
 
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
         cmd = [exec_script, '-f', algorithm, '-nvargs', args]
         cmd_string = ' '.join(cmd)
 
-    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE)
+    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc2 = subprocess.Popen(shlex.split('grep "Total execution time"'), stdin=proc1.stdout,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    out1, err1 = proc1.communicate()
+    out2, err2 = proc2.communicate()
     proc1.stdout.close()
-    out, err = proc2.communicate()
 
-    # Convert byte sysout to string
-    out_str, err_str = [str(out), str(err)]
-
-    extract_time = re.findall(r'\d+', out_str)
+    extract_time = re.findall(r'\d+', str(out2))
     total_time = '.'.join(extract_time)
 
-    if not err_str:
+    if "Error" in str(err1):
+        print('Error Found in {}'.format(file_name))
         total_time = 'failure'
-        # print(err)
 
     return total_time
 
@@ -154,8 +157,14 @@ def get_config(file_path):
 
     """
 
-    path_split = file_path.split('/')[-1]
-    algo_prop = path_split.split('-')
+    folder_name = file_path.split('/')[-1]
+    algo_prop = folder_name.split('.')
     mat_type = algo_prop[1]
-    mat_dim = algo_prop[2].split('.')[0]
-    return mat_type, mat_dim
+    mat_dim = algo_prop[2]
+
+    try:
+        intercept = algo_prop[3]
+    except:
+        intercept = 'none'
+
+    return mat_type, mat_dim, intercept

@@ -45,7 +45,6 @@ import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataPartitionCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.FileCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMChainCPInstruction;
@@ -143,11 +142,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( ">"    , CPINSTRUCTION_TYPE.RelationalBinary);
 		String2CPInstructionType.put( "<="   , CPINSTRUCTION_TYPE.RelationalBinary);
 		String2CPInstructionType.put( ">="   , CPINSTRUCTION_TYPE.RelationalBinary);
-
-		// File Instruction Opcodes 
-		String2CPInstructionType.put( "rm"   , CPINSTRUCTION_TYPE.File);
-		String2CPInstructionType.put( "mv"   , CPINSTRUCTION_TYPE.File);
-
+		
 		// Builtin Instruction Opcodes 
 		String2CPInstructionType.put( "log"  , CPINSTRUCTION_TYPE.Builtin);
 		String2CPInstructionType.put( "log_nz"  , CPINSTRUCTION_TYPE.Builtin);
@@ -360,10 +355,7 @@ public class CPInstructionParser extends InstructionParser
 				
 			case RelationalBinary:
 				return RelationalBinaryCPInstruction.parseInstruction(str);
-				
-			case File:
-				return FileCPInstruction.parseInstruction(str);
-				
+			
 			case Variable:
 				return VariableCPInstruction.parseInstruction(str);
 				

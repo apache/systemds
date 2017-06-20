@@ -1357,9 +1357,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		try
 		{
+			//check for common file scheme (otherwise no copy/rename)
+			boolean eqScheme = IOUtilFunctions.isSameFileScheme(
+				new Path(_hdfsFileName), new Path(fName));
+			
 			//export or rename to target file on hdfs
-			if( (isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) ||
-				(getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)))
+			if( isDirty() || !eqScheme || (!isEqualOutputFormat(outputFormat) && isEmpty(true)) 
+				|| (getRDDHandle()!=null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)) )
 			{
 				exportData(fName, outputFormat);
 				ret = true;

@@ -48,8 +48,9 @@ public class CNodeRow extends CNodeTpl
 			+ "  }\n"			
 			+ "}\n";
 
-	private static final String TEMPLATE_ROWAGG_OUT = "    c[rowIndex] = %IN%;\n";
-	private static final String TEMPLATE_NOAGG_OUT = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*len, len);\n";
+	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rowIndex] = %IN%;\n";
+	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
+	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*len, len);\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
@@ -114,8 +115,8 @@ public class CNodeRow extends CNodeTpl
 	
 	private String getOutputStatement(String varName) {
 		if( !_type.isColumnAgg() ) {
-			String tmp = (_type==RowType.NO_AGG) ?
-				TEMPLATE_NOAGG_OUT : TEMPLATE_ROWAGG_OUT;
+			String tmp = (_type==RowType.NO_AGG) ? TEMPLATE_NOAGG_OUT : 
+				(_type==RowType.FULL_AGG) ? TEMPLATE_FULLAGG_OUT : TEMPLATE_ROWAGG_OUT;
 			return tmp.replace("%IN%", varName);
 		}
 		return "";
@@ -131,6 +132,7 @@ public class CNodeRow extends CNodeTpl
 	public SpoofOutputDimsType getOutputDimType() {
 		switch( _type ) {
 			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
+			case FULL_AGG: return SpoofOutputDimsType.SCALAR;
 			case ROW_AGG: return TemplateUtils.isUnary(_output, UnaryType.CBIND0) ?
 				SpoofOutputDimsType.ROW_DIMS2 : SpoofOutputDimsType.ROW_DIMS;
 			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector

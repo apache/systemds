@@ -854,10 +854,7 @@ public class HopRewriteUtils
 		if( !(hop instanceof AggUnaryOp) )
 			return false;
 		AggOp hopOp = ((AggUnaryOp)hop).getOp();
-		for( AggOp opi : op ) 
-			if( hopOp == opi )
-				return true;
-		return false; 
+		return ArrayUtils.contains(op, hopOp);
 	}
 	
 	public static boolean isSum(Hop hop) {

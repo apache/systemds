@@ -96,6 +96,8 @@ public class TemplateRow extends TemplateBase
 					&& TemplateCell.isValidOperation(hop))		
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
+			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection() == Direction.RowCol 
+				&& ((AggUnaryOp)hop).getOp() == AggOp.SUM )
 			|| (hop instanceof AggBinaryOp && hop.getDim1()>1 && hop.getDim2()==1
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
@@ -113,8 +115,8 @@ public class TemplateRow extends TemplateBase
 
 	@Override
 	public CloseType close(Hop hop) {
-		//close on column aggregate (e.g., colSums, t(X)%*%y)
-		if(    (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.Col)
+		//close on column or full aggregate (e.g., colSums, t(X)%*%y)
+		if(    (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.Row)
 			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)))
 			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND) )
 			return CloseType.CLOSED_VALID;
@@ -188,13 +190,17 @@ public class TemplateRow extends TemplateBase
 						inHops2.put("X", hop.getInput().get(0));
 				}
 			}
-			else  if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
+			else if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
 				//vector add without temporary copy
 				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
 					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1), 
 							((CNodeBinary)cdata1).getType().getVectorAddPrimitive());
 				else	
 					out = cdata1;
+			}
+			else if( ((AggUnaryOp)hop).getDirection() == Direction.RowCol && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
+				out = (cdata1.getDataType().isMatrix()) ?
+					new CNodeUnary(cdata1, UnaryType.ROW_SUMS) : cdata1;
 			}
 		}
 		else if(hop instanceof AggBinaryOp)

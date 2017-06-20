@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -45,6 +46,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	public enum RowType {
 		NO_AGG,    //no aggregation
+		FULL_AGG,  //full row/col aggregation
 		ROW_AGG,   //row aggregation (e.g., rowSums() or X %*% v)
 		COL_AGG,   //col aggregation (e.g., colSums() or t(y) %*% X)
 		COL_AGG_T; //transposed col aggregation (e.g., t(X) %*% y)
@@ -79,6 +81,18 @@ public abstract class SpoofRowwise extends SpoofOperator
 	@Override
 	public String getSpoofType() {
 		return "RA" +  getClass().getName().split("\\.")[1];
+	}
+	
+	@Override
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) 
+		throws DMLRuntimeException 
+	{
+		MatrixBlock out = new MatrixBlock(1, 1, false);
+		if( k > 1 )
+			execute(inputs, scalarObjects, out, k);
+		else
+			execute(inputs, scalarObjects, out);
+		return new DoubleObject(out.quickGetValue(0, 0));
 	}
 	
 	@Override
@@ -155,15 +169,16 @@ public abstract class SpoofRowwise extends SpoofOperator
 		int blklen = (int)(Math.ceil((double)m/nk));
 		try
 		{
-			if( _type.isColumnAgg() ) {
+			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<ParColAggTask>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParColAggTask(inputs.get(0), b, scalars, n, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 				//aggregate partial results
+				int len = _type.isColumnAgg() ? n : 1;
 				for( Future<double[]> task : taskret )
-					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, n);
+					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, len);
 				out.recomputeNonZeros();
 			}
 			else {
@@ -190,6 +205,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	private void allocateOutputMatrix(int m, int n, MatrixBlock out) {
 		switch( _type ) {
 			case NO_AGG: out.reset(m, n, false); break;
+			case FULL_AGG: out.reset(1, 1, false); break;
 			case ROW_AGG: out.reset(m, 1+(_cbind0?1:0), false); break;
 			case COL_AGG: out.reset(1, n, false); break;
 			case COL_AGG_T: out.reset(n, 1, false); break;

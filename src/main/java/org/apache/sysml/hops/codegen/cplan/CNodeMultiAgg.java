@@ -89,13 +89,15 @@ public class CNodeMultiAgg extends CNodeTpl
 	}
 	
 	@Override
+	public void renameInputs() {
+		rReplaceDataNode(_outputs, _inputs.get(0), "a"); // input matrix
+		renameInputs(_outputs, _inputs, 1);
+	}
+	
+	@Override
 	public String codegen(boolean sparse) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
-		
-		//rename inputs
-		rReplaceDataNode(_outputs, _inputs.get(0), "a"); // input matrix
-		renameInputs(_outputs, _inputs, 1);
 		
 		//generate dense/sparse bodies
 		StringBuilder sb = new StringBuilder();

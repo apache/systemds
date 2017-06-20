@@ -80,6 +80,8 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	
 	public abstract String getTemplateInfo();
 	
+	public abstract void renameInputs();
+	
 	protected void renameInputs(ArrayList<CNode> inputs, int startIndex) {
 		renameInputs(Collections.singletonList(_output), inputs, startIndex);
 	}

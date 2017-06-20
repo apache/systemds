@@ -93,7 +93,8 @@ public class CNodeData extends CNode
 	public int hashCode() {
 		if( _hash == 0 ) {
 			int h1 = super.hashCode();
-			int h2 = isLiteral() ? _name.hashCode() : 0;
+			int h2 = (isLiteral() || !_strictEquals) ? 
+				_name.hashCode() : Long.hashCode(_hopID);
 			_hash = Arrays.hashCode(new int[]{h1,h2});
 		}
 		return _hash;
@@ -104,7 +105,8 @@ public class CNodeData extends CNode
 		return (o instanceof CNodeData 
 			&& super.equals(o)
 			&& isLiteral() == ((CNodeData)o).isLiteral()
-			&& (isLiteral() ? _name.equals(((CNodeData)o)._name) : 
-			_strictEquals ? _hopID == ((CNodeData)o)._hopID : true));
+			&& (isLiteral() || !_strictEquals) ? 
+				_name.equals(((CNodeData)o)._name) : 
+				_hopID == ((CNodeData)o)._hopID);
 	}
 }

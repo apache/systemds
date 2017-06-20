@@ -724,6 +724,9 @@ public class SpoofCompiler
 			//remove cplan if empty
 			if( tpl.getOutput() instanceof CNodeData )
 				cplans2.remove(e.getKey());
+			
+			//rename inputs (for codegen and plan caching)
+			tpl.renameInputs();
 		}
 		
 		return cplans2;

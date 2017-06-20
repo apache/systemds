@@ -150,7 +150,7 @@ public abstract class CNode
 		setVisited(false);
 	}
 	
-	public abstract String codegen(boolean sparse) ;
+	public abstract String codegen(boolean sparse);
 	
 	public abstract void setOutputDims();
 	

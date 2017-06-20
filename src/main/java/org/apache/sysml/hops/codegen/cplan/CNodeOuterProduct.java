@@ -56,16 +56,18 @@ public class CNodeOuterProduct extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
-		// note: ignore sparse flag, generate both
-		String tmp = TEMPLATE;
-		
-		//rename inputs
+	public void renameInputs() {
 		rReplaceDataNode(_output, _inputs.get(0), "a");
 		rReplaceDataNode(_output, _inputs.get(1), "a1"); // u
 		rReplaceDataNode(_output, _inputs.get(2), "a2"); // v
 		renameInputs(_inputs, 3);
-
+	}
+	
+	@Override
+	public String codegen(boolean sparse) {
+		// note: ignore sparse flag, generate both
+		String tmp = TEMPLATE;
+		
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false);
 		_output.resetGenerated();

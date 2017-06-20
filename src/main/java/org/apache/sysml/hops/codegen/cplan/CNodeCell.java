@@ -101,12 +101,14 @@ public class CNodeCell extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
-		String tmp = TEMPLATE;
-		
-		//rename inputs
+	public void renameInputs() {
 		rReplaceDataNode(_output, _inputs.get(0), "a");
 		renameInputs(_inputs, 1);
+	}
+	
+	@Override
+	public String codegen(boolean sparse) {
+		String tmp = TEMPLATE;
 		
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false);

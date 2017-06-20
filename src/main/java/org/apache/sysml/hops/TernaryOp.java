@@ -650,11 +650,12 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = null;
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-				.initialGPUMemBudget()) )
+		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
 			et = ExecType.GPU;
-		else
+		} else {
 			et = optFindExecType();
+		}
 		PlusMult plusmult = null;
 		
 		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
@@ -727,9 +728,15 @@ public class TernaryOp extends Hop
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
-			case MINUS_MULT:
-				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz); 
+			case MINUS_MULT: {
+				if (DMLScript.USE_ACCELERATOR) {
+					// For the GPU, the input is converted to dense
+					sparsity = 1.0;
+				} else {
+					sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+				}
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+			}
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}

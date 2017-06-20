@@ -21,19 +21,19 @@ package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.MMCJ;
+import org.apache.sysml.lops.MMCJ.MMCJType;
 import org.apache.sysml.lops.MMRJ;
 import org.apache.sysml.lops.MMTSJ;
-import org.apache.sysml.lops.MMCJ.MMCJType;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.MMZip;
 import org.apache.sysml.lops.MapMult;
@@ -343,11 +343,48 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
 		double ret = 0;
-		
+
+		if (DMLScript.USE_ACCELERATOR) {
+			// In GPU Mode, intermediate memory is only needed in case of one of the matrix blocks is sparse
+			// When sparse block is converted to dense and a dense MM takes place, we need (dim1 * dim2)
+			// When dense block is converted to sparse and a sparse MM takes place, we need (dim1 * dim2 * 2)
+
+			Hop in1 = _input.get(0);
+			Hop in2 = _input.get(1);
+			double in1Sparsity = OptimizerUtils.getSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
+			double in2Sparsity = OptimizerUtils.getSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
+
+			boolean in1Sparse = in1Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
+			boolean in2Sparse = in2Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
+
+			boolean in1UltraSparse = in1Sparsity < MatrixBlock.ULTRA_SPARSITY_TURN_POINT;
+			boolean in2UltraSparse = in2Sparsity < MatrixBlock.ULTRA_SPARSITY_TURN_POINT;
+
+			// For Matmult X * Y, if X is sparse, Y is dense, X is converted to dense
+			// If X is ultrasparse, Y is converted to sparse
+			if (in1Sparse ^ in2Sparse) { // one sparse, one dense
+				if (in1Sparse) {
+					if (in1UltraSparse) {
+						ret += 2 * OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
+					} else {
+						ret += OptimizerUtils.estimateSizeExactSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
+					}
+				} else if (in2Sparse) {
+					if (in2UltraSparse) {
+						ret += 2 * OptimizerUtils.estimateSizeExactSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
+					} else {
+						ret += OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
+					}
+				}
+
+			}
+
+		}
+
 		//account for potential final dense-sparse transformation (worst-case sparse representation)
 		if( dim2 >= 2 ) //vectors always dense
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT);
-		
+			ret += OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT);
+
 		return ret;
 	}
 	
@@ -544,8 +581,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		
 		ExecType et = ExecType.CP;
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-				.initialGPUMemBudget())) {
+		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
 			et = ExecType.GPU;
 		}
 		
@@ -623,9 +660,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		throws HopsException, LopsException
 	{	
 		Lop matmultCP = null;
-		
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-				.initialGPUMemBudget())) {
+
+		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			Lop left; Lop right;

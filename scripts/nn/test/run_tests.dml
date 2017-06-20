@@ -98,6 +98,8 @@ test::padding()
 test::tanh()
 test::threshold()
 test::transpose_NCHW_to_CNHW()
+test::top_k_row()
+test::top_k()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

@@ -96,8 +96,8 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
-			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
-				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()   ); //dependency: cse
+			//if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
+			//	_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()   ); //dependency: cse
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
@@ -108,7 +108,7 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
-			//add statment block rewrite rules
+			//add statement block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )

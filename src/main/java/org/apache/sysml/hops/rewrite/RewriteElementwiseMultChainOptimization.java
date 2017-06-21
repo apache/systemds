@@ -42,7 +42,7 @@ import com.google.common.collect.Multiset;
  *
  * Rewrite a chain of element-wise multiply hops that contain identical elements.
  * For example `(B * A) * B` is rewritten to `A * (B^2)` (or `(B^2) * A`), where `^` is element-wise power.
- * The order of the multiplicands depends on their data types, dimentions (matrix or vector), and sparsity.
+ * The order of the multiplicands depends on their data types, dimensions (matrix or vector), and sparsity.
  *
  * Does not rewrite in the presence of foreign parents in the middle of the e-wise multiply chain,
  * since foreign parents may rely on the individual results.
@@ -136,6 +136,8 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		// sorted contains all leaves, sorted by data type, stripped from their parents
 
 		// Construct right-deep EMult tree
+		// TODO compile binary outer mult for transition from row and column vectors to matrices
+		// TODO compile subtree for column vectors to avoid blow-up of intermediates on row-col vector transition
 		final Iterator<Map.Entry<Hop, Integer>> iterator = sorted.entrySet().iterator();
 		Hop first = constructPower(iterator.next());
 
@@ -160,13 +162,15 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	}
 
 	/**
-	 * A Comparator that orders Hops by their data type, dimention, and sparsity.
+	 * A Comparator that orders Hops by their data type, dimension, and sparsity.
 	 * The order is as follows:
 	 * 		scalars > row vectors > col vectors >
 	 *      non-vector matrices ordered by sparsity (higher nnz first, unknown sparsity last) >
 	 *      other data types.
 	 * Disambiguate by Hop ID.
 	 */
+	//TODO replace by ComparableHop wrapper around hop that implements equals and compareTo
+	//in order to ensure comparisons that are 'consistent with equals'
 	private static final Comparator<Hop> compareByDataType = new Comparator<Hop>() {
 		private final int[] orderDataType = new int[Expression.DataType.values().length];
 		{
@@ -190,17 +194,17 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			case MATRIX:
 				// two matrices; check for vectors
 				if (o1.getDim1() == 1) { // row vector
-						if (o2.getDim1() != 1) return 1; // row vectors are greatest of matrices
-						return compareBySparsityThenId(o1, o2); // both row vectors
+					if (o2.getDim1() != 1) return 1; // row vectors are greatest of matrices
+					return compareBySparsityThenId(o1, o2); // both row vectors
 				} else if (o2.getDim1() == 1) { // 2 is row vector; 1 is not
-						return -1; // row vectors are the greatest matrices
+					return -1; // row vectors are the greatest matrices
 				} else if (o1.getDim2() == 1) { // col vector
-						if (o2.getDim2() != 1) return 1; // col vectors greater than non-vectors
-						return compareBySparsityThenId(o1, o2); // both col vectors
+					if (o2.getDim2() != 1) return 1; // col vectors greater than non-vectors
+					return compareBySparsityThenId(o1, o2); // both col vectors
 				} else if (o2.getDim2() == 1) { // 2 is col vector; 1 is not
-						return 1; // col vectors greater than non-vectors
+					return -1; // col vectors greater than non-vectors
 				} else { // both non-vectors
-						return compareBySparsityThenId(o1, o2);
+					return compareBySparsityThenId(o1, o2);
 				}
 			default:
 				return Long.compare(o1.getHopID(), o2.getHopID());
@@ -243,7 +247,10 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	private static void findEMultsAndLeaves(final BinaryOp root, final Set<BinaryOp> emults, final Multiset<Hop> leaves) {
 		// Because RewriteCommonSubexpressionElimination already ran, it is safe to compare by equality.
 		emults.add(root);
-
+		
+		// TODO proper handling of DAGs (avoid collecting the same leaf multiple times)
+		// TODO exclude hops with unknown dimensions and move rewrites to dynamic rewrites 
+		
 		final ArrayList<Hop> inputs = root.getInput();
 		final Hop left = inputs.get(0), right = inputs.get(1);
 

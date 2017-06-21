@@ -34,22 +34,44 @@ from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 
+# TODO:
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
            'multinomial': ['naive-bayes', 'MultiLogReg', 'm-svm'],
-           'regression': ['LinearRegDS', 'LinearRegCG', 'GLM'],
-           'stats': ['Univar-Stats', 'bivar-stats', 'stratstats']}
+           'regression1': ['LinearRegDS', 'LinearRegCG'],
+           'regression2': ['GLM_poisson', 'GLM_gamma', 'GLM_binomial'],
+           'stats1': ['Univar-Stats', 'bivar-stats'],
+           'stats2': ['stratstats']
+           }
 
-ml_gendata = {'Kmeans': 'genRandData4Kmeans',
+ml_gendata = {# Clustering
+              'Kmeans': 'genRandData4Kmeans',
+
+              # Stats1
               'Univar-Stats': 'genRandData4DescriptiveStats',
               'bivar-stats': 'genRandData4DescriptiveStats',
+
+              # Stats2
               'stratstats': 'genRandData4StratStats',
+
+              # Binomial
               'MultiLogReg': 'genRandData4LogisticRegression',
               'l2-svm': 'genRandData4LogisticRegression',
-              'm-svm': 'genRandData4LogisticRegression'}
+              'm-svm': 'genRandData4LogisticRegression',
+
+              # Regression
+              'LinearRegDS': 'genRandData4LogisticRegression',
+              'LinearRegCG': 'genRandData4LogisticRegression',
+
+              # Multinomial
+              'naive-bayes': 'genRandData4Multinomial',
+              'MultiLogReg': 'genRandData4Multinomial'}
 
 ml_predict = {'Kmeans': 'Kmeans-predict'}
+
+# Since m-svm appears in binomial and multinomial family
+has_dual = ['m-svm']
 
 
 def algorithm_workflow(algo, exec_type, ini_file, file_name, type):
@@ -161,6 +183,7 @@ if __name__ == '__main__':
     cparser.add_argument('--mode', default=default_workload,
                          help='specify type of workload to run (e.g data-gen, train, predict)',
                          metavar='', choices=default_workload, nargs='+')
+
     args = cparser.parse_args()
     arg_dict = vars(args)
 
@@ -179,6 +202,12 @@ if __name__ == '__main__':
             if algo not in algo_flat:
                 print('{} algorithm not present in the performance test suit'.format(args.algo))
                 sys.exit()
+
+    # Check dual condition
+    dual_algos = set(has_dual) & set(args.algo)
+    if len(dual_algos) > 0 and args.family is None:
+        print('cannot run {} without family type'.format(','.join(args.algo)))
+        sys.exit()
 
     if not os.path.exists(args.temp_dir):
         os.makedirs(args.temp_dir)

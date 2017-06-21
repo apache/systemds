@@ -327,3 +327,53 @@ top_k = function(matrix[double] X, integer k)
     indices[r, ] = index
   }
 }
+
+top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
+     return (matrix[double] values, matrix[double] indices) {
+  /*
+   * Computes the top k values (i.e. probabilities) and associated
+   * indices (i.e. classes) for the input matrix X.
+   *
+   * Inputs:
+   * - X: Inputs, of shape (N, C*Hin*Win).
+   * - k: Input number of top elements to look for.
+   * - C: Number of input channels (dimensionality of input depth).
+   * Hin: Input height.
+   *  - Win: Input width.
+   *
+   * Outputs:
+   * - values: The top k values along a certain dimension, of shape
+   *    (N, k*Hin*Win)
+   * - indices: The indices of classes, of shape (N, k*Hin*Win)
+   */
+  N = nrow(X)
+  values = matrix(0, rows=N, cols=k*Hin*Win)
+  indices = matrix(0, rows=N, cols=k*Hin*Win)
+
+  # Reshape the input matrix
+  X_reshape = matrix(0, rows=N*Hin*Win, cols=C)
+  for (n in 1:N) {
+    for (h in 1:Hin) {
+      for (w in 1:Win) {
+        for (c in 1:C) {
+          X_reshape[ (n-1)*Hin*Win + (h-1)*Win + w, c] = X[n, (c-1)*Hin*Win + (h-1)*Win + w]
+        }
+      }
+    }
+  }
+
+  # Compute the top k for the reshape matrix
+  [values_tmp, indices_tmp] = top_k(X_reshape, k)  # shape: (N*Hin*Win, k)
+
+  # Reshape the output values and indices
+  for (n in 1:N) {
+    for (h in 1:Hin) {
+      for (w in 1:Win) {
+        for (c in 1:k) {
+          values[n, (c-1)*Hin*Win + (h-1)*Win + w] = values_tmp[(n-1)*Hin*Win + (h-1)*Win + w, c]
+          indices[n, (c-1)*Hin*Win + (h-1)*Win + w] = indices_tmp[(n-1)*Hin*Win + (h-1)*Win + w, c]
+        }
+      }
+    }
+  }
+}

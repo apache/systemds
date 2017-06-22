@@ -22,10 +22,10 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
@@ -34,8 +34,6 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.Explain;
-
-import com.google.common.collect.Lists;
 
 import static org.apache.sysml.hops.HopsException.check;
 
@@ -90,9 +88,12 @@ public class HopDagValidator {
 
 		//check visit status
 		final boolean seen = !state.seen.add(id);
-		check(seen == hop.isVisited(), hop,
-				"(parents: %s) seen previously is %b but does not match hop visit status",
-				Lists.transform(hop.getParent(), Hop::getHopID), seen);
+		if (seen != hop.isVisited()) {
+			String parentIDs = hop.getParent().stream()
+					.map(h -> Long.toString(h.getHopID())).collect(Collectors.joining(", "));
+			//noinspection ConstantConditions
+			check(false, hop, parentIDs, seen);
+		}
 		if (seen) return; // we saw the Hop previously, no need to re-validate
 		
 		//check parent linking

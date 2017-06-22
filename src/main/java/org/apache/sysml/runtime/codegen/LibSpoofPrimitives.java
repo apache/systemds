@@ -228,7 +228,7 @@ public class LibSpoofPrimitives
 	public static double[] vectDivWrite(double bval, double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = bval / a[ai] / bval;
+			c[j] = bval / a[ai];
 		return c;
 	}
 	
@@ -327,12 +327,11 @@ public class LibSpoofPrimitives
 	//custom vector plus
 	
 	public static void vectPlusAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] +=  a[j] + bval;
+		LibMatrixMult.vectAdd(a, bval, c, ai, ci, len);
 	}
 	
 	public static void vectPlusAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		vectPlusAdd(a, bval, c, ai, ci, len);
+		LibMatrixMult.vectAdd(a, bval, c, ai, ci, len);
 	}
 
 	public static void vectPlusAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
@@ -610,20 +609,20 @@ public class LibSpoofPrimitives
 
 	public static void vectAbsAdd(double[] a, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] += Math.log(a[j]);
+			c[ci + aix[j]] += Math.abs(a[j]);
 	}
 	
 	public static double[] vectAbsWrite(double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = Math.log(a[ai]);
+			c[j] = Math.abs(a[ai]);
 		return c;
 	}
 
 	public static double[] vectAbsWrite(double[] a, int[] aix, int ai, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[aix[j]] = Math.log(a[j]);
+			c[aix[j]] = Math.abs(a[j]);
 		return c;
 	}
 	

@@ -16,7 +16,7 @@
 # under the License.
 
 NVCC=nvcc
-CUDAFLAGS= -ptx -c -arch=sm_30
+CUDAFLAGS= -ptx -c -arch=sm_30 
 
 SystemML.o: SystemML.cu
 	$(NVCC) $(CUDAFLAGS)  SystemML.cu

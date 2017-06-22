@@ -19,11 +19,10 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
-import java.util.Arrays;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CNodeBinary extends CNode
@@ -234,7 +233,7 @@ public class CNodeBinary extends CNode
 	
 	@Override
 	public String codegen(boolean sparse) {
-		if( _generated )
+		if( isGenerated() )
 			return "";
 		
 		StringBuilder sb = new StringBuilder();
@@ -251,19 +250,19 @@ public class CNodeBinary extends CNode
 			&& _inputs.get(1).getDataType().isMatrix());
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse, scalarVector);
-		tmp = tmp.replaceAll("%TMP%", var);
+		tmp = tmp.replace("%TMP%", var);
 		
 		//replace input references and start indexes
 		for( int j=1; j<=2; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
 			
 			//replace sparse and dense inputs
-			tmp = tmp.replaceAll("%IN"+j+"v%", varj+"vals");
-			tmp = tmp.replaceAll("%IN"+j+"i%", varj+"ix");
-			tmp = tmp.replaceAll("%IN"+j+"%", varj );
+			tmp = tmp.replace("%IN"+j+"v%", varj+"vals");
+			tmp = tmp.replace("%IN"+j+"i%", varj+"ix");
+			tmp = tmp.replace("%IN"+j+"%", varj );
 			
 			//replace start position of main input
-			tmp = tmp.replaceAll("%POS"+j+"%", (_inputs.get(j-1) instanceof CNodeData 
+			tmp = tmp.replace("%POS"+j+"%", (_inputs.get(j-1) instanceof CNodeData 
 				&& _inputs.get(j-1).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? 
 				varj+"i" : TemplateUtils.isMatrix(_inputs.get(j-1)) ? "rowIndex*len" : "0" : "0");
 		}
@@ -431,9 +430,8 @@ public class CNodeBinary extends CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = UtilFunctions.intHashCode(
+				super.hashCode(), _type.hashCode());
 		}
 		return _hash;
 	}

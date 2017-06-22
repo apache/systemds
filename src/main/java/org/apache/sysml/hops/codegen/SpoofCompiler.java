@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -319,7 +320,8 @@ public class SpoofCompiler
 		if( root == null )
 			return root;
 		
-		return optimize(new ArrayList<Hop>(Arrays.asList(root)), recompile).get(0);
+		return optimize(new ArrayList<Hop>(
+			Collections.singleton(root)), recompile).get(0);
 	}
 	
 	/**
@@ -679,11 +681,9 @@ public class SpoofCompiler
 			
 			//update input hops (order-preserving)
 			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
-			ArrayList<Hop> tmp = new ArrayList<Hop>();
-			for( Hop input : inHops )
-				if( inputHopIDs.contains(input.getHopID()) )
-					tmp.add(input);
-			inHops = tmp.toArray(new Hop[0]);
+			inHops = Arrays.stream(inHops)
+				.filter(p -> inputHopIDs.contains(p.getHopID()))
+				.toArray(Hop[]::new);
 			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
 			
 			//remove invalid plans with column indexing on main input

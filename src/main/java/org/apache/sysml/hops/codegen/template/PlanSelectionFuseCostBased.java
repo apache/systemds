@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen.template;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -191,16 +192,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 					visited, partition, ret);
 		
 		//remove special-case materialization points
-		Iterator<Long> iter = ret.iterator();
-		while(iter.hasNext()) {
-			Long hopID = iter.next();
-			//remove root nodes w/ multiple consumers
-			if( roots.contains(hopID) )
-				iter.remove();
-			//remove tsmm input if consumed in partition
-			else if( HopRewriteUtils.isTsmmInput(memo._hopRefs.get(hopID)))
-				iter.remove();
-		}
+		//(root nodes w/ multiple consumers, tsmm input if consumed in partition)
+		ret.removeIf(hopID -> roots.contains(hopID)
+			|| HopRewriteUtils.isTsmmInput(memo._hopRefs.get(hopID)));
 		
 		return ret;
 	}
@@ -284,11 +278,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		Hop.resetVisitStatus(roots);
 
 		//remove operators with assigned multi-agg plans
-		Iterator<Long> iter = fullAggs.iterator();
-		while( iter.hasNext() ) {
-			if( memo.contains(iter.next(), TemplateType.MultiAggTpl) )
-				iter.remove();
-		}
+		fullAggs.removeIf(p -> memo.contains(p, TemplateType.MultiAggTpl));
 	
 		//check applicability for further analysis
 		if( fullAggs.size() <= 1 )
@@ -471,7 +461,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				MemoTableEntry me2 = entries.get(1);
 				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
 				if( rmEntry != null ) {
-					memo.remove(memo._hopRefs.get(hopID), new HashSet<MemoTableEntry>(Arrays.asList(rmEntry)));
+					memo.remove(memo._hopRefs.get(hopID), Collections.singleton(rmEntry));
 					memo._plansBlacklist.remove(rmEntry.input(rmEntry.getPlanRefIndex()));
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);

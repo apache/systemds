@@ -42,7 +42,7 @@ public abstract class TemplateBase
 		OPEN,
 	}
 
-	protected TemplateType _type = null;
+	protected final TemplateType _type;
 	protected boolean _closed = false;
 	
 	protected TemplateBase(TemplateType type) {

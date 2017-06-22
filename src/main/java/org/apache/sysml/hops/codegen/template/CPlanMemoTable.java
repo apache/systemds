@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
@@ -63,8 +64,8 @@ public class CPlanMemoTable
 	}
 	
 	public boolean contains(long hopID, TemplateType type) {
-		return contains(hopID) && get(hopID).stream()
-			.filter(p -> p.type==type).findAny().isPresent();
+		return contains(hopID) && get(hopID)
+			.stream().anyMatch(p -> p.type==type);
 	}
 	
 	public int countEntries(long hopID) {
@@ -111,9 +112,9 @@ public class CPlanMemoTable
 		_plans.get(hop.getHopID()).addAll(P.plans);
 	}
 	
-	public void remove(Hop hop, HashSet<MemoTableEntry> blackList) {
-		_plans.put(hop.getHopID(), _plans.get(hop.getHopID()).stream()
-			.filter(p -> !blackList.contains(p)).collect(Collectors.toList()));
+	public void remove(Hop hop, Set<MemoTableEntry> blackList) {
+		_plans.get(hop.getHopID())
+			.removeIf(p -> blackList.contains(p));
 	}
 	
 	public void setDistinct(long hopID, List<MemoTableEntry> plans) {
@@ -167,8 +168,7 @@ public class CPlanMemoTable
 		while( iter.hasNext() ) {
 			Entry<Long, List<MemoTableEntry>> e = iter.next();
 			if( !ix.contains(e.getKey()) ) {
-				e.setValue(e.getValue().stream().filter(
-					p -> p.hasPlanRef()).collect(Collectors.toList()));
+				e.getValue().removeIf(p -> !p.hasPlanRef());
 				if( e.getValue().isEmpty() )
 					iter.remove();
 			}

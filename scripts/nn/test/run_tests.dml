@@ -97,6 +97,7 @@ test::max_pool2d()
 test::padding()
 test::tanh()
 test::threshold()
+test::transpose_NCHW_to_CNHW()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

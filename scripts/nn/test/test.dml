@@ -852,3 +852,76 @@ top_k = function() {
    check_values_topAll = test_util::check_all_equal(values_topAll, expected_values_topAll)
    check_indices_topAll = test_util::check_all_equal(indices_topAll, expected_indices_topAll)
 }
+
+top_k2d = function() {
+  /*
+   * Test for the top_k2d function.  
+  */
+  print("Testing the top_k2d function.")
+  # Generate data, of shape (2, 3, 3, 4)
+
+  k = 2
+  X = matrix("0.1  0.4  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.7  0.3  0.2
+
+              0.2  0.5  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.8  0.3  0.2
+
+              0.3  0.4  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.2  0.3  0.2
+
+              0.3  0.4  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.8  0.3  0.2
+
+              0.2  0.5  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.8  0.3  0.2
+
+              0.1  0.4  0.4  0.5
+              0.4  0.1  0.6  0.1
+              0.7  0.8  0.3  0.2", rows=2, cols=3*3*4)
+  
+
+
+  expected_values = matrix("0.3  0.5  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.8  0.3  0.2
+
+                            0.2  0.4  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.7  0.3  0.2
+
+                            0.3  0.5  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.8  0.3  0.2
+
+                            0.2  0.4  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.8  0.3  0.2", rows=2, cols=2*3*4)
+
+  expected_indices = matrix("3  2  1  1
+                             1  1  1  1
+                             1  2  1  1
+
+                             2  1  2  2
+                             2  2  2  2
+                             2  1  2  2
+
+                             1  2  1  1
+                             1  1  1  1
+                             1  1  1  1
+
+                             2  1  2  2
+                             2  2  2  2
+                             2  2  2  2", rows=2, cols=2*3*4)
+
+  [values, indices] = util::top_k2d(X, k, 3, 3, 4)
+
+  # Equivalency check
+  check_values = test_util::check_all_equal(values, expected_values)
+  check_indices = test_util::check_all_equal(indices, expected_indices)
+}

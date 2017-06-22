@@ -488,6 +488,39 @@ padding = function() {
   }
 }
 
+transpose_NCHW_to_CNHW = function() {
+  /*
+   * Test for `transpose_NCHW_to_CNHW` function.
+   */
+  print("Testing transpose_NCHW_to_CNHW function.")
+  
+  # Generate data
+  N = 2
+  C = 3
+  H = 4
+  W = 5
+  X = matrix(seq(1, N*C*H*W), rows=N, cols=C*H*W)
+  
+  out = util::transpose_NCHW_to_CNHW(X, C)
+  
+  target = 
+    matrix("1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20 
+			61  62  63  64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80 
+			21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40 
+			81  82  83  84  85  86  87  88  89  90  91  92  93  94  95  96  97  98  99 100 
+			41  42  43  44  45  46  47  48  49  50  51  52  53  54  55  56  57  58  59  60 
+			101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120",
+		   rows=C, cols=N*H*W)
+  
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-10, 1e-12)
+    }
+  }
+}
+
 max_pool2d = function() {
   /*
    * Test for the 2D max pooling functions.

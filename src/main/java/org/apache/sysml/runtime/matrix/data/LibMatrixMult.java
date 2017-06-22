@@ -3198,6 +3198,25 @@ public class LibMatrixMult
 	}
 
 	//note: public for use by codegen for consistency
+	public static void vectAdd( double[] a, double bval, double[] c, int ai, int ci, final int len ) {
+		final int bn = len%8;
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, ai++, ci++)
+			c[ ci ] += a[ ai ];
+		//unrolled 8-block  (for better ILP)
+		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) {
+			c[ ci+0 ] += a[ ai+0 ] + bval;
+			c[ ci+1 ] += a[ ai+1 ] + bval;
+			c[ ci+2 ] += a[ ai+2 ] + bval;
+			c[ ci+3 ] += a[ ai+3 ] + bval;
+			c[ ci+4 ] += a[ ai+4 ] + bval;
+			c[ ci+5 ] += a[ ai+5 ] + bval;
+			c[ ci+6 ] += a[ ai+6 ] + bval;
+			c[ ci+7 ] += a[ ai+7 ] + bval;
+		}
+	}
+	
+	//note: public for use by codegen for consistency
 	public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;

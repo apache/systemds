@@ -259,6 +259,18 @@ For examples, see the [Spark MLContext Programming Guide](http://apache.github.i
 Verify that the performance suite located at scripts/perftest/ executes on Spark and Hadoop. Testing should
 include 80MB, 800MB, 8GB, and 80GB data sizes.
 
+# Run NN Unit Tests for GPU
+
+<a href="#release-candidate-checklist">Up to Checklist</a>
+
+The unit tests for NN operators for GPU take a long time to run and are therefor not run as part of the Jenkins build.
+They must be run before a release. To run them, edit the 
+[NeuralNetworkOpTests.java|https://github.com/apache/systemml/blob/master/src/test/java/org/apache/sysml/test/gpu/NeuralNetworkOpTests.java]
+file and remove all the `@Ignore` annotations from all the tests. Then run the NN unit tests using mvn verify:
+```
+mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
+```
+
 
 # Voting
 

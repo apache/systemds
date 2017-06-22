@@ -183,6 +183,10 @@ public class CNodeBinary extends CNode
 					throw new RuntimeException("Invalid binary type: "+this.toString());
 			}
 		}
+		public boolean isVectorPrimitive() {
+			return isVectorScalarPrimitive() 
+				|| isVectorVectorPrimitive();
+		}
 		public boolean isVectorScalarPrimitive() {
 			return this == VECT_DIV_SCALAR || this == VECT_MULT_SCALAR 
 				|| this == VECT_MINUS_SCALAR || this == VECT_PLUS_SCALAR

@@ -350,19 +350,55 @@ public class TemplateUtils
 		return ret;
 	}
 	
-	public static int countVectorIntermediates(CNode node, HashSet<Long> memo) {
-		//memoization to prevent double counting
-		if( memo.contains(node.getID()) )
+	public static int determineMinVectorIntermediates(CNode node) {
+		node.resetVisitStatus();
+		boolean unaryPipe = isUnaryOperatorPipeline(node);
+		node.resetVisitStatus();
+		int count = unaryPipe ? getMaxVectorIntermediates(node) :
+			countVectorIntermediates(node);
+		node.resetVisitStatus();
+		return count;
+	}
+	
+	public static boolean isUnaryOperatorPipeline(CNode node) {
+		if( node.isVisited() ) {
+			//second reference to vector intermediate invalidates a unary pipeline
+			return !((node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive())
+				|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isVectorScalarPrimitive()));
+		}
+		boolean ret = true;
+		for( CNode input : node.getInput() )
+			ret &= isUnaryOperatorPipeline(input);
+		node.setVisited();
+		return ret;
+	}
+	
+	public static int getMaxVectorIntermediates(CNode node) {
+		if( node.isVisited() )
 			return 0;
-		memo.add(node.getID());
+		int max = 0;
+		for( CNode input : node.getInput() )
+			max = Math.max(max, getMaxVectorIntermediates(input));
+		max = Math.max(max, (node instanceof CNodeBinary)? 
+			((CNodeBinary)node).getType().isVectorVectorPrimitive() ? 3 :
+			((CNodeBinary)node).getType().isVectorScalarPrimitive() ? 2 : 0 : 0);
+		max = Math.max(max, (node instanceof CNodeUnary 
+			&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 2 : 0);
+		node.setVisited();
+		return max;
+	}
+	
+	public static int countVectorIntermediates(CNode node) {
+		if( node.isVisited() )
+			return 0;
+		node.setVisited();
 		//compute vector requirements over all inputs
 		int ret = 0;
 		for( CNode c : node.getInput() )
-			ret += countVectorIntermediates(c, memo);
+			ret += countVectorIntermediates(c);
 		//compute vector requirements of current node
 		int cntBin = (node instanceof CNodeBinary 
-			&& (((CNodeBinary)node).getType().isVectorScalarPrimitive() 
-			|| ((CNodeBinary)node).getType().isVectorVectorPrimitive())) ? 1 : 0;
+			&& ((CNodeBinary)node).getType().isVectorPrimitive()) ? 1 : 0;
 		int cntUn = (node instanceof CNodeUnary
 				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
 		return ret + cntBin + cntUn;

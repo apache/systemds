@@ -145,7 +145,7 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops[0]));
 		tpl.setNumVectorIntermediates(TemplateUtils
-			.countVectorIntermediates(output, new HashSet<Long>()));
+			.determineMinVectorIntermediates(output));
 		tpl.getOutput().resetVisitStatus();
 		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops[0].getHopID());
 		tpl.setBeginLine(hop.getBeginLine());

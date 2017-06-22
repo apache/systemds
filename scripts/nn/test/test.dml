@@ -790,7 +790,7 @@ threshold = function() {
 
 top_k_row = function() {
   /*
-   * Test for the top_k function.
+   * Test for the top_k_row function.
    */
   print("Testing the top_k_row function.")
 
@@ -806,7 +806,7 @@ top_k_row = function() {
                              4
                              8", rows=1, cols=3)
 
-  # Test the top 3 for the second row
+  # Test the top 3 for the second row.
   [values, indices] = util::top_k_row(X, 2, 3)
   check_values = test_util::check_all_equal(values, expected_values)
   check_indices = test_util::check_all_equal(indices, expected_indices)

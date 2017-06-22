@@ -204,7 +204,7 @@ threshold = function(matrix[double] X, double thresh)
     return (matrix[double] out) {
   /*
    * Computes an indicator matrix with values in {0, 1} depending on
-   * whether or not the values in X are above the input threshold
+   * whether or not the values in X are above the input threshold.
    *
    * Inputs:
    *  - X: Inputs, of shape (any, any).
@@ -275,17 +275,17 @@ top_k_row = function(matrix[double] X, integer r, integer k)
     return (matrix[double] values, matrix[double] indices) {
   /*
    * Computes the top k values (i.e. probabilities) and associated
-   * indices (i.e. classes) in the rth row of the input matrix X
+   * indices (i.e. classes) in the rth row of the input matrix X.
    *
    * Inputs:
-   * - X: Inputs, of shape (N D).
-   * - r: Input row number of X to look for
-   * - k: Input number of top elements to look for
+   * - X: Inputs, of shape (N, D).
+   * - r: Input row number of X to look for.
+   * - k: Input number of top elements to look for.
    *
    * Outputs:
    * - values: The top k values at the rth row, of shape
-   *    (1, k)
-   * - indices: The class indices, of shape (1, k)
+   *    (1, k).
+   * - indices: The class indices, of shape (1, k).
    */
 
   #TODO: do r & k need to be checked in the valid range
@@ -308,13 +308,13 @@ top_k = function(matrix[double] X, integer k)
    * indices (i.e. classes) for the input matrix X.
    *
    * Inputs:
-   * - X: Inputs, of shape (N D).
-   * - k: Input number of top elements to look for
+   * - X: Inputs, of shape (N, D).
+   * - k: Input number of top elements to look for.
    *
    * Outputs:
    * - values: The top k values along a certain dimension, of shape
-   *    (N, k)
-   * - indices: The indices of classes, of shape (N, K)
+   *    (N, k).
+   * - indices: The indices of classes, of shape (N, K).
    */
   N = nrow(X)
   D = ncol(X)
@@ -338,13 +338,13 @@ top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
    * - X: Inputs, of shape (N, C*Hin*Win).
    * - k: Input number of top elements to look for.
    * - C: Number of input channels (dimensionality of input depth).
-   * Hin: Input height.
-   *  - Win: Input width.
+   * - Hin: Input height.
+   * - Win: Input width.
    *
    * Outputs:
    * - values: The top k values along a certain dimension, of shape
-   *    (N, k*Hin*Win)
-   * - indices: The indices of classes, of shape (N, k*Hin*Win)
+   *    (N, k*Hin*Win).
+   * - indices: The indices of classes, of shape (N, k*Hin*Win).
    */
   N = nrow(X)
   values = matrix(0, rows=N, cols=k*Hin*Win)
@@ -362,10 +362,10 @@ top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
     }
   }
 
-  # Compute the top k for the reshape matrix
+  # Compute the top k for the reshape matrix.
   [values_tmp, indices_tmp] = top_k(X_reshape, k)  # shape: (N*Hin*Win, k)
 
-  # Reshape the output values and indices
+  # Reshape the output values and indices.
   for (n in 1:N) {
     for (h in 1:Hin) {
       for (w in 1:Win) {

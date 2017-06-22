@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -135,9 +133,9 @@ public class TemplateRow extends TemplateBase
 		hop.resetVisitStatus();
 		
 		//reorder inputs (ensure matrix is first input, and other inputs ordered by size)
-		List<Hop> sinHops = inHops.stream()
+		Hop[] sinHops = inHops.stream()
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
-			.sorted(new HopInputComparator(inHops2.get("X"))).collect(Collectors.toList());
+			.sorted(new HopInputComparator(inHops2.get("X"))).toArray(Hop[]::new);
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -145,15 +143,15 @@ public class TemplateRow extends TemplateBase
 			inputs.add(tmp.get(in.getHopID()));
 		CNode output = tmp.get(hop.getHopID());
 		CNodeRow tpl = new CNodeRow(inputs, output);
-		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops.get(0)));
+		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops[0]));
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.countVectorIntermediates(output, new HashSet<Long>()));
 		tpl.getOutput().resetVisitStatus();
-		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops.get(0).getHopID());
+		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops[0].getHopID());
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
+		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
 	}
 
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 

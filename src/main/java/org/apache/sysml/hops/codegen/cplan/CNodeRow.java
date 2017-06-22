@@ -20,12 +20,12 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeRow extends CNodeTpl
 {
@@ -78,7 +78,7 @@ public class CNodeRow extends CNodeTpl
 	
 	@Override
 	public void renameInputs() {
-		rReplaceDataNode(_output, _inputs.get(0), "a"); // input matrix
+		rRenameDataNode(_output, _inputs.get(0), "a"); // input matrix
 		renameInputs(_inputs, 1);
 	}
 	
@@ -93,22 +93,22 @@ public class CNodeRow extends CNodeTpl
 		_output.resetGenerated();
 		String tmpSparse = _output.codegen(true)
 			+ getOutputStatement(_output.getVarname());
-		tmp = tmp.replaceAll("%TMP%", createVarname());
-		tmp = tmp.replaceAll("%BODY_dense%", tmpDense);
-		tmp = tmp.replaceAll("%BODY_sparse%", tmpSparse);
+		tmp = tmp.replace("%TMP%", createVarname());
+		tmp = tmp.replace("%BODY_dense%", tmpDense);
+		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
-		tmp = tmp.replaceAll("%OUT%", "c");
-		tmp = tmp.replaceAll("%POSOUT%", "0");
+		tmp = tmp.replace("%OUT%", "c");
+		tmp = tmp.replace("%POSOUT%", "0");
 		
 		//replace size information
-		tmp = tmp.replaceAll("%LEN%", "len");
+		tmp = tmp.replace("%LEN%", "len");
 		
 		//replace colvector information and number of vector intermediates
-		tmp = tmp.replaceAll("%TYPE%", _type.name());
-		tmp = tmp.replaceAll("%CBIND0%", String.valueOf(
+		tmp = tmp.replace("%TYPE%", _type.name());
+		tmp = tmp.replace("%CBIND0%", String.valueOf(
 			TemplateUtils.isUnary(_output, UnaryType.CBIND0)));
-		tmp = tmp.replaceAll("%VECT_MEM%", String.valueOf(_numVectors));
+		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
 		
 		return tmp;
 	}
@@ -153,10 +153,8 @@ public class CNodeRow extends CNodeTpl
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			int h3 = _numVectors;
-			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
+			int h = UtilFunctions.intHashCode(super.hashCode(), _type.hashCode());
+			_hash = UtilFunctions.intHashCode(h, Integer.hashCode(_numVectors));
 		}
 		return _hash;
 	}

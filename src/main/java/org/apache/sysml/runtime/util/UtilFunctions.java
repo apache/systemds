@@ -43,6 +43,10 @@ public class UtilFunctions
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
 	
+	public static int intHashCode(int key1, int key2) {
+		return 31 * (31 + key1) + key2;
+	}
+	
 	public static int longHashCode(long key1) {
 		return (int)(key1^(key1>>>32));
 	}

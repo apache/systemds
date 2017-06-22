@@ -19,10 +19,9 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
-import java.util.Arrays;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CNodeUnary extends CNode
@@ -158,9 +157,9 @@ public class CNodeUnary extends CNode
 
 	@Override
 	public String codegen(boolean sparse) {
-		if( _generated )
+		if( isGenerated() )
 			return "";
-			
+		
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
@@ -170,21 +169,21 @@ public class CNodeUnary extends CNode
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse);
-		tmp = tmp.replaceAll("%TMP%", var);
+		tmp = tmp.replace("%TMP%", var);
 		
 		String varj = _inputs.get(0).getVarname();
 		
 		//replace sparse and dense inputs
-		tmp = tmp.replaceAll("%IN1v%", varj+"vals");
-		tmp = tmp.replaceAll("%IN1i%", varj+"ix");
-		tmp = tmp.replaceAll("%IN1%", varj );
+		tmp = tmp.replace("%IN1v%", varj+"vals");
+		tmp = tmp.replace("%IN1i%", varj+"ix");
+		tmp = tmp.replace("%IN1%", varj );
 		
 		//replace start position of main input
 		String spos = (!varj.startsWith("b") 
 			&& _inputs.get(0) instanceof CNodeData 
 			&& _inputs.get(0).getDataType().isMatrix()) ? varj+"i" : "0";
-		tmp = tmp.replaceAll("%POS1%", spos);
-		tmp = tmp.replaceAll("%POS2%", spos);
+		tmp = tmp.replace("%POS1%", spos);
+		tmp = tmp.replace("%POS2%", spos);
 		
 		sb.append(tmp);
 		
@@ -280,9 +279,8 @@ public class CNodeUnary extends CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = UtilFunctions.intHashCode(
+				super.hashCode(), _type.hashCode());
 		}
 		return _hash;
 	}

@@ -19,9 +19,8 @@
 
 package org.apache.sysml.hops.codegen.template;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -41,30 +40,31 @@ public class CPlanCSERewriter
 		
 		List<CNode> outputs = (tpl instanceof CNodeMultiAgg) ? 
 			((CNodeMultiAgg)tpl).getOutputs() : 
-			Arrays.asList(tpl.getOutput());
+			Collections.singletonList(tpl.getOutput());
 		
 		//step 1: set data nodes to strict comparison
-		HashSet<Long> memo = new HashSet<Long>();
+		tpl.resetVisitStatusOutputs();
 		for( CNode out : outputs )
-			rSetStrictDataNodeComparision(out, memo, true);
+			rSetStrictDataNodeComparision(out, true);
 		
 		//step 2: perform common subexpression elimination
 		HashMap<CNode,CNode> cseSet = new HashMap<CNode,CNode>();
-		memo.clear();
+		tpl.resetVisitStatusOutputs();
 		for( CNode out : outputs )
-			rEliminateCommonSubexpression(out, cseSet, memo);
+			rEliminateCommonSubexpression(out, cseSet);
 		
 		//step 3: reset data nodes to imprecise comparison
-		memo.clear();
+		tpl.resetVisitStatusOutputs();
 		for( CNode out : outputs )
-			rSetStrictDataNodeComparision(out, memo, true);
+			rSetStrictDataNodeComparision(out, true);
+		tpl.resetVisitStatusOutputs();
 		
 		return tpl;
 	}
 	
-	private void rEliminateCommonSubexpression(CNode current, HashMap<CNode,CNode> cseSet, HashSet<Long> memo) {
+	private void rEliminateCommonSubexpression(CNode current, HashMap<CNode,CNode> cseSet) {
 		//avoid redundant re-evaluation
-		if( memo.contains(current.getID()) )
+		if( current.isVisited() )
 			return;
 		
 		//replace input with existing common subexpression
@@ -76,25 +76,25 @@ public class CPlanCSERewriter
 		
 		//process inputs recursively
 		for( CNode input : current.getInput() )
-			rEliminateCommonSubexpression(input, cseSet, memo);
+			rEliminateCommonSubexpression(input, cseSet);
 		
 		//process node itself
 		cseSet.put(current, current);
-		memo.add(current.getID());
+		current.setVisited();
 	}
 	
-	private void rSetStrictDataNodeComparision(CNode current, HashSet<Long> memo, boolean flag) {
+	private void rSetStrictDataNodeComparision(CNode current, boolean flag) {
 		//avoid redundant re-evaluation
-		if( memo.contains(current.getID()) )
+		if( current.isVisited() )
 			return;
 		
 		//process inputs recursively and node itself
 		for( CNode input : current.getInput() ) {
-			rSetStrictDataNodeComparision(input, memo, flag);
+			rSetStrictDataNodeComparision(input, flag);
 			input.resetHash();
 		}
 		if( current instanceof CNodeData )
 			((CNodeData)current).setStrictEquals(flag);
-		memo.add(current.getID());	
+		current.setVisited();
 	}
 }

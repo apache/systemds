@@ -19,9 +19,8 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
-import java.util.Arrays;
-
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CNodeTernary extends CNode
@@ -80,7 +79,7 @@ public class CNodeTernary extends CNode
 	
 	@Override
 	public String codegen(boolean sparse) {
-		if( _generated )
+		if( isGenerated() )
 			return "";
 			
 		StringBuilder sb = new StringBuilder();
@@ -93,13 +92,13 @@ public class CNodeTernary extends CNode
 		//generate binary operation
 		String var = createVarname();
 		String tmp = _type.getTemplate(sparse);
-		tmp = tmp.replaceAll("%TMP%", var);
+		tmp = tmp.replace("%TMP%", var);
 		for( int j=1; j<=3; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
 			//replace sparse and dense inputs
-			tmp = tmp.replaceAll("%IN"+j+"v%", 
+			tmp = tmp.replace("%IN"+j+"v%", 
 				varj+(varj.startsWith("b")?"":"vals") );
-			tmp = tmp.replaceAll("%IN"+j+"%", varj );
+			tmp = tmp.replace("%IN"+j+"%", varj );
 		}
 		sb.append(tmp);
 		
@@ -140,9 +139,8 @@ public class CNodeTernary extends CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = UtilFunctions.intHashCode(
+				super.hashCode(), _type.hashCode());
 		}
 		return _hash;
 	}

@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -122,9 +120,9 @@ public class TemplateCell extends TemplateBase
 		//reorder inputs (ensure matrices/vectors come first) and prune literals
 		//note: we order by number of cells and subsequently sparsity to ensure
 		//that sparse inputs are used as the main input w/o unnecessary conversion
-		List<Hop> sinHops = inHops.stream()
+		Hop[] sinHops = inHops.stream()
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
-			.sorted(new HopInputComparator()).collect(Collectors.toList());
+			.sorted(new HopInputComparator()).toArray(Hop[]::new);
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -134,13 +132,13 @@ public class TemplateCell extends TemplateBase
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
 		tpl.setAggOp(TemplateUtils.getAggOp(hop));
-		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.get(0)))
-				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.get(0)));
+		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops[0]))
+				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops[0]));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
+		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
 	}
 	
 	protected void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 

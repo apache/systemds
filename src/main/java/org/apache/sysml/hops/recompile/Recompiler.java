@@ -101,6 +101,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.JSONHelper;
@@ -1569,11 +1570,11 @@ public class Recompiler
 				
 				//special case increment 
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) {
-					incr = ( from >= to && incr==1 ) ? -1.0 : 1.0;
+					incr *= ((from > to && incr > 0) || (from < to && incr < 0)) ? -1.0 : 1.0;
 				}
 				
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE && incr!=Double.MAX_VALUE ) {
-					d.setDim1( 1 + (long)Math.floor((to-from)/incr) );
+					d.setDim1( UtilFunctions.getSeqLength(from, to, incr) );
 					d.setDim2( 1 );
 					d.setIncrementValue( incr );
 				}

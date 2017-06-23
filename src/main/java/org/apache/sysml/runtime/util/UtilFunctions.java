@@ -284,25 +284,37 @@ public class UtilFunctions
 		return ret;
 	}
 	
-	public static int toInt( double val )
-	{
+	public static int toInt( double val ) {
 		return (int) Math.floor( val + DOUBLE_EPS );
 	}
 	
-	public static long toLong( double val )
-	{
+	public static long toLong( double val ) {
 		return (long) Math.floor( val + DOUBLE_EPS );
 	}
 	
-	public static int toInt(Object obj)
-	{
-		if( obj instanceof Long )
-			return ((Long)obj).intValue();
-		else
-			return ((Integer)obj).intValue();
+	public static int toInt(Object obj) {
+		return (obj instanceof Long) ?
+			((Long)obj).intValue() : ((Integer)obj).intValue();
 	}
 	
-	public static int roundToNext(int val, int factor) {
+	public static long getSeqLength(double from, double to, double incr) {
+		return getSeqLength(from, to, incr, true);
+	}
+	
+	public static long getSeqLength(double from, double to, double incr, boolean check) {
+		//Computing the length of a sequence with 1 + floor((to-from)/incr) 
+		//can lead to incorrect results due to round-off errors in case of 
+		//a very small increment. Hence, we use a different formulation 
+		//that exhibits better numerical stability by avoiding the subtraction
+		//of numbers of different magnitude.
+		if( check && (Double.isNaN(from) || Double.isNaN(to) || Double.isNaN(incr) 
+			|| (from > to && incr > 0) || (from < to && incr < 0)) ) {
+			throw new RuntimeException("Invalid seq parameters: ("+from+", "+to+", "+incr+")");
+		}
+		return 1L + (long) Math.floor(to/incr - from/incr);
+	}
+	
+ 	public static int roundToNext(int val, int factor) {
 		//round up to next non-zero multiple of factor
 		int pval = Math.max(val, factor);
 		return ((pval + factor-1) / factor) * factor;

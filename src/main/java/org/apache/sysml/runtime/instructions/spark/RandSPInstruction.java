@@ -451,7 +451,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		
 		//step 1: offset generation 
 		JavaRDD<Double> offsetsRDD = null;
-		long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
+		long nnz = UtilFunctions.getSeqLength(seq_from, seq_to, seq_incr);
 		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( nnz, 1, rowsInBlock, 
 				colsInBlock, nnz); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
@@ -806,32 +806,27 @@ public class RandSPInstruction extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = 5779681055705756965L;
 		
-		private int _brlen; 
-		private double _global_seq_start;
-		private double _global_seq_end; 
-		private double _seq_incr;
-		
+		private final double _global_seq_start;
+		private final double _global_seq_end;
+		private final double _seq_incr;
+		private final int _brlen;
 		
 		public GenerateSequenceBlock(int brlen, double global_seq_start, double global_seq_end, double seq_incr) {
-			_brlen = brlen;
 			_global_seq_start = global_seq_start;
 			_global_seq_end = global_seq_end;
 			_seq_incr = seq_incr;
+			_brlen = brlen;
 		}
 
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Double seq_from) 
 			throws Exception 
 		{
-			double seq_to;
-			if(_seq_incr > 0) {
-				seq_to = Math.min(_global_seq_end, seq_from + _seq_incr*(_brlen-1));
-			}
-			else {
-				seq_to = Math.max(_global_seq_end, seq_from + _seq_incr*(_brlen+1));
-			}
-			long globalRow = (long) ((seq_from-_global_seq_start)/_seq_incr + 1);
-			long rowIndex = (long) Math.ceil((double)globalRow/(double)_brlen);
+			double seq_to = (_seq_incr > 0) ?
+				Math.min(_global_seq_end, seq_from + _seq_incr*(_brlen-1)) :
+				Math.max(_global_seq_end, seq_from + _seq_incr*(_brlen+1));
+			long globalRow = (long)Math.round((seq_from-_global_seq_start)/_seq_incr)+1;			
+			long rowIndex = UtilFunctions.computeBlockIndex(globalRow, _brlen);
 			
 			MatrixIndexes indx = new MatrixIndexes(rowIndex, 1);
 			MatrixBlock blk = MatrixBlock.seqOperations(seq_from, seq_to, _seq_incr);

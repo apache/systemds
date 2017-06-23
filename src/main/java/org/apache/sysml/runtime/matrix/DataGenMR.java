@@ -61,6 +61,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -206,7 +207,7 @@ public class DataGenMR
 					throw new DMLRuntimeException("Wrong sign for the increment in a call to seq()");
 				
 				// Compute the number of rows in the sequence
-				long numrows = 1 + (long)Math.floor((to-from)/incr);
+				long numrows = UtilFunctions.getSeqLength(from, to, incr);
 				if ( rlens[i] > 0 ) {
 					if ( numrows != rlens[i] )
 						throw new DMLRuntimeException("Unexpected error while processing sequence instruction. Expected number of rows does not match given number: " + rlens[i] + " != " + numrows);

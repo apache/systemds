@@ -25,6 +25,7 @@ import java.util.HashSet;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
@@ -1002,8 +1003,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				
 				// Both end points of the range must included i.e., [from,to] both inclusive.
 				// Note that, "to" is included only if (to-from) is perfectly divisible by incr
-				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0) 
-				dim1 = 1 + (long)Math.floor((to-from)/incr); 
+				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0)
+				dim1 = UtilFunctions.getSeqLength(from, to, incr);
 			}
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);

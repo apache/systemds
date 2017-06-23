@@ -393,7 +393,7 @@ public class LibMatrixDatagen
 			throw new DMLRuntimeException("Wrong sequence increment: from="+from+", to="+to+ ", incr="+incr);
 		
 		//prepare output matrix
-		int rows = 1 + (int)Math.floor((to-from)/incr);
+		int rows = (int) UtilFunctions.getSeqLength(from, to, incr);
 		int cols = 1; // sequence vector always dense
 		out.reset(rows, cols, false);
 		out.allocateDenseBlock();

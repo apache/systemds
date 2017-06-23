@@ -36,14 +36,14 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
 
-public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
+public class MulticlassSVMScoreTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_NAME = "m-svm-score";
 	private final static String TEST_DIR = "functions/jmlc/";
 	private final static String MODEL_FILE = "sentiment_model.mtx";
 	private final static double eps = 1e-10;
-	private final static String TEST_CLASS_DIR = TEST_DIR + SystemTMulticlassSVMScoreTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MulticlassSVMScoreTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 107;
 	private final static int cols = 46; //fixed

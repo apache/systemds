@@ -36,7 +36,7 @@ import org.junit.runners.Suite;
 	JMLCInputOutputTest.class,
 	JMLCInputStreamReadTest.class,
 	ReuseModelVariablesTest.class,
-	SystemTMulticlassSVMScoreTest.class
+	MulticlassSVMScoreTest.class
 })
 
 

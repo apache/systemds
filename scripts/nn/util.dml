@@ -230,11 +230,8 @@ transpose_NCHW_to_CNHW = function(matrix[double] X, int C) return (matrix[double
    * Outputs:
    *  - out: Transposed output with C rows.
    */
-<<<<<<< HEAD
 
   if(1==1){}
-=======
->>>>>>> Merge the transpose_NCHW_to_CNHW function from SYSTEMML-1728
   N = nrow(X)
   D = ncol(X) / C
 
@@ -350,8 +347,6 @@ top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
    *  - indices: The indices of classes, of shape (N, k*Hin*Win).
    */
   N = nrow(X)
-  values = matrix(0, rows=N, cols=k*Hin*Win)
-  indices = matrix(0, rows=N, cols=k*Hin*Win)
 
   # Reshape the input matrix (N, C*Hin*Win) to (N*Hin*Win, C)
   X_CNHW = transpose_NCHW_to_CNHW(X, C)
@@ -359,8 +354,10 @@ top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
 
   # Compute the top k for the reshape matrix.
   [values_NHWK, indices_NHWK] = top_k(X_NHWC, k)  # shape: (N*Hin*Win, k)
+
   values_KNHW = t(values_NHWK)
   indices_KNHW = t(indices_NHWK)
-  values = transpose_NCHW_to_CNHW(values_KNHW, N)
+
+  values =  transpose_NCHW_to_CNHW(values_KNHW, N)
   indices = transpose_NCHW_to_CNHW(indices_KNHW, N)
 }

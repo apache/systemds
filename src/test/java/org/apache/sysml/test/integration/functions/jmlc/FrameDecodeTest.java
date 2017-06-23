@@ -35,10 +35,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-/**
- * 
- * 
- */
 public class FrameDecodeTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "transform2";
@@ -79,13 +75,6 @@ public class FrameDecodeTest extends AutomatedTestBase
 		runJMLCReuseTest(TEST_NAME1, true, true);
 	}
 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @throws IOException 
-	 */
 	private void runJMLCReuseTest( String testname, boolean sparse, boolean modelReuse ) 
 		throws IOException
 	{	
@@ -109,13 +98,6 @@ public class FrameDecodeTest extends AutomatedTestBase
 					Assert.assertEquals("Wrong result: "+data[i][j]+".", data[i][j], F1s[i][j]);
 	}
 
-	/**
-	 * 
-	 * @param X
-	 * @return
-	 * @throws DMLException
-	 * @throws IOException
-	 */
 	private ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, String[][] M, boolean modelReuse) 
 		throws IOException
 	{

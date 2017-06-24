@@ -49,7 +49,7 @@ public class CNodeUnary extends CNode
 				case ROW_MINS:
 				case ROW_MAXS: {
 					String vectName = StringUtils.capitalize(this.toString().substring(4,7).toLowerCase());
-					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
+					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n": 
 									"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n"; 
 				}
 			
@@ -64,7 +64,7 @@ public class CNodeUnary extends CNode
 				case VECT_FLOOR:
 				case VECT_SIGN: {
 					String vectName = getVectorPrimitiveName();
-					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, %LEN%);\n" : 
+					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" : 
 									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
 				}
 					

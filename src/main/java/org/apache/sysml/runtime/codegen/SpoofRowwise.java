@@ -132,7 +132,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			executeDense(a.getDenseBlock(), b, scalars, c, n, 0, m);
 		else
 			executeSparse(a.getSparseBlock(), b, scalars, c, n, 0, m);
-	
+		
 		//post-processing
 		if( allocTmp )
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
@@ -220,29 +220,26 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			//call generated method
-			genexecRowDense( a, aix, b, scalars, c, n, i );
+			genexec( a, aix, b, scalars, c, n, i );
 		}
 	}
 	
 	private void executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
-		if( sblock == null )
-			return;
-		
 		SparseRow empty = new SparseRowVector(1);
 		for( int i=rl; i<ru; i++ ) {
-			if( !sblock.isEmpty(i) ) {
+			if( sblock!=null && !sblock.isEmpty(i) ) {
 				double[] avals = sblock.values(i);
 				int[] aix = sblock.indexes(i);
 				int apos = sblock.pos(i);
 				int alen = sblock.size(i);
 				
 				//call generated method
-				genexecRowSparse(avals, aix, apos, b, scalars, c, alen, i);
+				genexec(avals, aix, apos, b, scalars, c, alen, n, i);
 			}
 			else
-				genexecRowSparse(empty.values(), 
-					empty.indexes(), 0, b, scalars, c, 0, i);	
+				genexec(empty.values(), 
+					empty.indexes(), 0, b, scalars, c, 0, n, i);	
 		}
 	}
 	
@@ -254,7 +251,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( !a.isInSparseFormat() ) { //DENSE
 			Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
 			for( int i=rl; iter.hasNext(); i++ ) {
-				genexecRowDense(iter.next(), 0, b, scalars, c, n, i);
+				genexec(iter.next(), 0, b, scalars, c, n, i);
 			}
 		}
 		else { //SPARSE
@@ -263,20 +260,22 @@ public abstract class SpoofRowwise extends SpoofOperator
 			for( int i=rl; iter.hasNext(); i++ ) {
 				SparseRow row = iter.next();
 				if( !row.isEmpty() )
-					genexecRowSparse(row.values(), 
-						row.indexes(), 0, b, scalars, c, row.size(), i);
+					genexec(row.values(), 
+						row.indexes(), 0, b, scalars, c, row.size(), n, i);
 				else
-					genexecRowSparse(empty.values(), 
-						empty.indexes(), 0, b, scalars, c, 0, i);
+					genexec(empty.values(), 
+						empty.indexes(), 0, b, scalars, c, 0, n, i);
 			}
 		}
 	}
 	
 	//methods to be implemented by generated operators of type SpoofRowAggrgate 
 	
-	protected abstract void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex );
+	protected abstract void genexec(double[] a, int ai, 
+		double[][] b, double[] scalars, double[] c, int len, int rowIndex);
 	
-	protected abstract void genexecRowSparse( double[] avals, int[] aix, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex );
+	protected abstract void genexec(double[] avals, int[] aix, int ai, 
+		double[][] b, double[] scalars, double[] c, int alen, int n, int rowIndex);
 
 	
 	/**

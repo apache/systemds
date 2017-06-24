@@ -137,7 +137,8 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 			if( newNames.containsKey(dnode.getHopID()) )
 				dnode.setName(newNames.get(dnode.getHopID()));
 		}
-			
+		
+		node.resetHash();
 		node.setVisited();
 	}
 	

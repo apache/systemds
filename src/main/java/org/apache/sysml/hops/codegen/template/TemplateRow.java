@@ -71,8 +71,8 @@ public class TemplateRow extends TemplateBase
 	
 	@Override
 	public boolean open(Hop hop) {
-		return (hop instanceof BinaryOp && hop.dimsKnown() && hop.getInput().get(0).getDim2()>1 
-				&& hop.getInput().get(1).getDim2()==1 && TemplateCell.isValidOperation(hop)) 
+		return (hop instanceof BinaryOp && hop.dimsKnown() && isValidBinaryOperation(hop)
+				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
@@ -83,10 +83,7 @@ public class TemplateRow extends TemplateBase
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && 
-			(  (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop) 
-				&& (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
-					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
-					|| HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) ) 
+			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop) ) 
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().indexOf(input)==0
 				&& input.getDim2()==1 && hop.getInput().get(1).getDim2()==1
 				&& HopRewriteUtils.isEmpty(hop.getInput().get(1)))
@@ -104,9 +101,7 @@ public class TemplateRow extends TemplateBase
 	public boolean merge(Hop hop, Hop input) {
 		//merge rowagg tpl with cell tpl if input is a vector
 		return !isClosed() &&
-			((hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
-				&& (input.getDim2()==1 //matrix-scalar/vector-vector ops )
-					|| HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)))
+			((hop instanceof BinaryOp && isValidBinaryOperation(hop))
 			 ||(hop instanceof AggBinaryOp && input.getDim2()==1
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
@@ -120,6 +115,14 @@ public class TemplateRow extends TemplateBase
 			return CloseType.CLOSED_VALID;
 		else
 			return CloseType.OPEN;
+	}
+	
+	private boolean isValidBinaryOperation(Hop hop) {
+		//exclude unsupported and matrix-rowvector ops
+		return TemplateUtils.isOperationSupported(hop)
+			&& (HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
+			|| HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
+			|| HopRewriteUtils.isBinaryMatrixMatrixOperation(hop));
 	}
 
 	@Override

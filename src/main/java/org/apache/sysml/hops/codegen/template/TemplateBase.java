@@ -28,8 +28,8 @@ public abstract class TemplateBase
 	public enum TemplateType {
 		//ordering specifies type preferences
 		MultiAggTpl,
-		RowTpl,
 		OuterProdTpl,
+		RowTpl,
 		CellTpl;
 		public int getRank() {
 			return this.ordinal();

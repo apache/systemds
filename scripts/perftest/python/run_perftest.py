@@ -25,7 +25,7 @@ import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_algo, get_family, config_reader, create_dir, exec_func, get_config
+from utils import get_family, config_reader, create_dir, exec_func, get_config
 import logging
 import time
 import json
@@ -34,7 +34,14 @@ from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 
-# TODO:
+
+ml_gendata = {'binomial': 'genRandData4LogisticRegression',
+              'clustering': 'genRandData4Kmeans',
+              'multinomial': 'genRandData4Multinomial',
+              'regression1': 'genRandData4LogisticRegression',
+              'regression2': 'genRandData4LogisticRegression',
+              'stats1': 'genRandData4DescriptiveStats',
+              'stats2': 'genRandData4StratStats'}
 
 ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
@@ -42,41 +49,18 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression1': ['LinearRegDS', 'LinearRegCG'],
            'regression2': ['GLM_poisson', 'GLM_gamma', 'GLM_binomial'],
            'stats1': ['Univar-Stats', 'bivar-stats'],
-           'stats2': ['stratstats']
-           }
-
-ml_gendata = {# Clustering
-              'Kmeans': 'genRandData4Kmeans',
-
-              # Stats1
-              'Univar-Stats': 'genRandData4DescriptiveStats',
-              'bivar-stats': 'genRandData4DescriptiveStats',
-
-              # Stats2
-              'stratstats': 'genRandData4StratStats',
-
-              # Binomial
-              'MultiLogReg': 'genRandData4LogisticRegression',
-              'l2-svm': 'genRandData4LogisticRegression',
-              'm-svm': 'genRandData4LogisticRegression',
-
-              # Regression
-              'LinearRegDS': 'genRandData4LogisticRegression',
-              'LinearRegCG': 'genRandData4LogisticRegression',
-
-              # Multinomial
-              'naive-bayes': 'genRandData4Multinomial',
-              'MultiLogReg': 'genRandData4Multinomial'}
+           'stats2': ['stratstats']}
 
 ml_predict = {'Kmeans': 'Kmeans-predict'}
 
+
 # Since m-svm appears in binomial and multinomial family
-has_dual = ['m-svm']
+has_dual = 'm-svm'
 
 
-def algorithm_workflow(algo, exec_type, ini_file, file_name, type):
+def algorithm_workflow(algo, exec_type, config_path, file_name, type):
 
-    config_data = config_reader(ini_file + '.json')
+    config_data = config_reader(config_path + '.json')
 
     if isinstance(config_data, dict):
         dict_args = ' '.join([str(key) + '=' + str(val) for key, val in config_data.items()])
@@ -86,60 +70,66 @@ def algorithm_workflow(algo, exec_type, ini_file, file_name, type):
         list_args = ' '.join(config_data)
         args = {'-args': list_args}
 
-    m_type, m_dim, intercept = get_config(ini_file)
-    time = exec_func(exec_type, file_name, args)
+    m_type, m_dim, intercept = get_config(config_path)
+
+    # If folder with Success files exists do not redo
+    time = exec_func(exec_type, file_name, args, config_path)
+    # Write Success File
 
     current_metrics = [algo, type, intercept, m_type, m_dim, str(time)]
     logging.info(','.join(current_metrics))
 
 
-def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, filename, mode):
+def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode):
 
-    if algo is None:
-        algo = get_algo(family, ml_algo)
+    algo_payload = {}
+
+    if family is not None and algo is not None:
+        for current_algo in algo:
+            if current_algo == has_dual:
+                algo_payload[current_algo] = family[0]
+                if len(family) > 1:
+                    print('While using {} we cannot have multiple families'.format(has_dual))
+                    sys.exit()
+            else:
+                algo_payload[current_algo] = get_family(current_algo, ml_algo)
+
+    elif algo is not None:
+        for current_algo in algo:
+            algo_payload[current_algo] = get_family(current_algo, ml_algo)
+
+    elif family is not None:
+        for current_family in family:
+            algos = ml_algo[current_family]
+            for current_algo in algos:
+                algo_payload[current_algo] = current_family
 
     if 'data-gen' in mode:
-        # TODO
-        # Check if data already exists and stop
-        # Create directory if not exist
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
 
-        # Generate configuration packets and create ini files
-        conf_packet = config_packets_datagen(algo, mat_type, mat_shape, data_gen_dir)
-
-        # execute algorithm
-        for algo_name, config_files in conf_packet.items():
+        conf_packet = config_packets_datagen(algo_payload, mat_type, mat_shape, data_gen_dir)
+        for family_name, config_files in conf_packet.items():
             for config in config_files:
-                file_name = ml_gendata[algo_name]
-                algorithm_workflow(algo_name, exec_type, config, file_name, 'data-gen')
+                algorithm_workflow(family_name, exec_type, config, ml_gendata[family_name], 'data-gen')
 
     if 'train' in mode:
-        # TODO
-        # Error : If dir / algo not present
-        # Quit if necessary training folders are not present
         data_gen_dir = join(temp_dir, 'data-gen')
-
-        # Create directory if not exist
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
 
-        conf_packet = config_packets_train(algo, data_gen_dir, train_dir)
+        conf_packet = config_packets_train(algo_payload, data_gen_dir, train_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
-                file_name = algo_name
-                algorithm_workflow(algo_name, exec_type, config, file_name, 'train')
+                algorithm_workflow(algo_name, exec_type, config, algo_name, 'train')
 
     if 'predict' in mode:
-
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
-
-        # Create directory if not exists
         predict_dir = join(temp_dir, 'predict')
         create_dir(predict_dir)
 
-        conf_packet = config_packets_predict(algo, data_gen_dir, train_dir, predict_dir)
+        conf_packet = config_packets_predict(algo_payload, data_gen_dir, train_dir, predict_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
                 file_name = ml_predict[algo_name]
@@ -150,6 +140,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, file
 
 if __name__ == '__main__':
     systemml_home = os.environ.get('SYSTEMML_HOME')
+
+    import shutil; shutil.rmtree('/Users/krishna/open-source/incubator-systemml/scripts/perftest/temp')
 
     # Default Arguments
     default_mat_type = ['dense', 'sparse']
@@ -163,10 +155,9 @@ if __name__ == '__main__':
 
     # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
-    group = cparser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
+    cparser.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
                        metavar='', choices=ml_algo.keys(), nargs='+')
-    group.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
+    cparser.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
                        choices=algo_flat, nargs='+')
 
     cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend (e.g singlenode, '
@@ -178,7 +169,7 @@ if __name__ == '__main__':
 
     cparser.add_argument('-temp-dir', default=default_temp_dir, help='specify temporary directory',
                          metavar='')
-    cparser.add_argument('--filename', default='pertest.out', help='specify output file',
+    cparser.add_argument('--filename', default='perf_test.out', help='specify output file',
                          metavar='')
     cparser.add_argument('--mode', default=default_workload,
                          help='specify type of workload to run (e.g data-gen, train, predict)',
@@ -204,20 +195,23 @@ if __name__ == '__main__':
                 sys.exit()
 
     # Check dual condition
-    dual_algos = set(has_dual) & set(args.algo)
-    if len(dual_algos) > 0 and args.family is None:
-        print('cannot run {} without family type'.format(','.join(args.algo)))
-        sys.exit()
+    if args.family is None:
+        if has_dual in args.algo:
+            print('cannot run {} without family type'.format(has_dual))
+            sys.exit()
 
     if not os.path.exists(args.temp_dir):
         os.makedirs(args.temp_dir)
 
-    logging.basicConfig(filename=join(default_temp_dir, 'perf_report.out'), level=logging.INFO)
+    # Set level to 0 ->  debug
+    # Set level to 20 -> metrics
+    logging.basicConfig(filename=join(default_temp_dir, args.filename), level=0)
     logging.info('New performance test')
     logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
 
+    # Remove filename item from dictionary
+    del arg_dict['filename']
     perf_test_entry(**arg_dict)
 
     total_time = (time.time() - start_time)
     logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))
-

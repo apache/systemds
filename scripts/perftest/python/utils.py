@@ -121,9 +121,9 @@ def exec_func(exec_type, file_name, args, path):
 
         if exec_type == 'hybrid_spark':
             exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
+            args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
             cmd = [exec_script, '-f', algorithm, '-nvargs', args]
             cmd_string = ' '.join(cmd)
-
 
         # Subrocess to execute input arguments
         # proc1_log contains the shell output which is used for time parsing

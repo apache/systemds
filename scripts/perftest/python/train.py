@@ -20,12 +20,10 @@
 #
 #-------------------------------------------------------------
 
-import sys
 import glob
 import os
 from os.path import join
-from utils import split_rowcol, config_writer, create_dir
-from functools import reduce
+from utils import config_writer
 
 # Contains configuration setting for training
 DATA_FORMAT = 'csv'
@@ -40,6 +38,55 @@ def kmeans_train(save_file_name, load_datagen, datagen_dir, train_dir):
     C = join(full_path_train, 'C.data')
 
     config = dict(X=X, k='50', maxi='50', tol='0.0001', C=C)
+
+    config_writer(full_path_train + '.json', config)
+
+    return full_path_train
+
+
+def univar_stats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, load_datagen)
+    X = join(full_path_datagen, 'X.data')
+    TYPES = join(full_path_datagen, 'types')
+
+    full_path_train = join(train_dir, save_file_name)
+    STATS = join(full_path_train, 'STATS.data')
+
+    config = dict(X=X, TYPES=TYPES, STATS=STATS)
+    config_writer(full_path_train + '.json', config)
+
+    return full_path_train
+
+
+def bivar_stats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, load_datagen)
+    X = join(full_path_datagen, 'X.data')
+    index1 = join(full_path_datagen, 'set1.indices')
+    index2 = join(full_path_datagen, 'set2.indices')
+    types1 = join(full_path_datagen, 'set1.types')
+    types2 = join(full_path_datagen, 'set2.types')
+
+    full_path_train = join(train_dir, save_file_name)
+    OUTDIR = full_path_train
+
+    config = dict(X=X, index1=index1, index2=index2, types1=types1, types2=types2, OUTDIR=OUTDIR)
+    config_writer(full_path_train + '.json', config)
+    return full_path_train
+
+
+def stratstats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+
+    full_path_datagen = join(datagen_dir, load_datagen)
+    X = join(full_path_datagen, 'X.data')
+    Xcid = join(full_path_datagen, 'Xcid.data')
+    Ycid = join(full_path_datagen, 'Ycid.data')
+
+    full_path_train = join(train_dir, save_file_name)
+    O = join(full_path_train, 'O.data')
+
+    config = dict(X=X, Xcid=Xcid, Ycid=Ycid, O=O, fmt=DATA_FORMAT)
 
     config_writer(full_path_train + '.json', config)
 

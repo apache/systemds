@@ -21,21 +21,19 @@
 # -------------------------------------------------------------
 
 import sys
+import time
 import argparse
 from functools import reduce
 import os
 from os.path import join
 from utils import get_family, config_reader, create_dir, exec_func, get_config
 import logging
-import time
-import json
-import itertools
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 
 
-ml_gendata = {'binomial': 'genRandData4LogisticRegression',
+ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
               'clustering': 'genRandData4Kmeans',
               'multinomial': 'genRandData4Multinomial',
               'regression1': 'genRandData4LogisticRegression',
@@ -43,7 +41,7 @@ ml_gendata = {'binomial': 'genRandData4LogisticRegression',
               'stats1': 'genRandData4DescriptiveStats',
               'stats2': 'genRandData4StratStats'}
 
-ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
+ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
            'multinomial': ['naive-bayes', 'MultiLogReg', 'm-svm'],
            'regression1': ['LinearRegDS', 'LinearRegCG'],
@@ -51,11 +49,11 @@ ml_algo = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'stats1': ['Univar-Stats', 'bivar-stats'],
            'stats2': ['stratstats']}
 
-ml_predict = {'Kmeans': 'Kmeans-predict'}
+ML_PREDICT = {'Kmeans': 'Kmeans-predict'}
 
 
 # Since m-svm appears in binomial and multinomial family
-has_dual = 'm-svm'
+HAS_DUAL = 'm-svm'
 
 
 def algorithm_workflow(algo, exec_type, config_path, file_name, type):
@@ -86,21 +84,21 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
 
     if family is not None and algo is not None:
         for current_algo in algo:
-            if current_algo == has_dual:
+            if current_algo == HAS_DUAL:
                 algo_payload[current_algo] = family[0]
                 if len(family) > 1:
-                    print('While using {} we cannot have multiple families'.format(has_dual))
+                    print('While using {} we cannot have multiple families'.format(HAS_DUAL))
                     sys.exit()
             else:
-                algo_payload[current_algo] = get_family(current_algo, ml_algo)
+                algo_payload[current_algo] = get_family(current_algo, ML_ALGO)
 
     elif algo is not None:
         for current_algo in algo:
-            algo_payload[current_algo] = get_family(current_algo, ml_algo)
+            algo_payload[current_algo] = get_family(current_algo, ML_ALGO)
 
     elif family is not None:
         for current_family in family:
-            algos = ml_algo[current_family]
+            algos = ML_ALGO[current_family]
             for current_algo in algos:
                 algo_payload[current_algo] = current_family
 
@@ -111,7 +109,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         conf_packet = config_packets_datagen(algo_payload, mat_type, mat_shape, data_gen_dir)
         for family_name, config_files in conf_packet.items():
             for config in config_files:
-                algorithm_workflow(family_name, exec_type, config, ml_gendata[family_name], 'data-gen')
+                algorithm_workflow(family_name, exec_type, config,
+                                   ML_GENDATA[family_name], 'data-gen')
 
     if 'train' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
@@ -132,16 +131,12 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         conf_packet = config_packets_predict(algo_payload, data_gen_dir, train_dir, predict_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
-                file_name = ml_predict[algo_name]
+                file_name = ML_PREDICT[algo_name]
                 algorithm_workflow(algo_name, exec_type, config, file_name, 'predict')
-
-    return None
 
 
 if __name__ == '__main__':
     systemml_home = os.environ.get('SYSTEMML_HOME')
-
-    import shutil; shutil.rmtree('/Users/krishna/open-source/incubator-systemml/scripts/perftest/temp')
 
     # Default Arguments
     default_mat_type = ['dense', 'sparse']
@@ -151,25 +146,26 @@ if __name__ == '__main__':
 
     # Initialize time
     start_time = time.time()
-    algo_flat = reduce(lambda x, y: x + y, ml_algo.values())
+    algo_flat = reduce(lambda x, y: x + y, ML_ALGO.values())
 
     # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
-                       metavar='', choices=ml_algo.keys(), nargs='+')
+                         metavar='', choices=ML_ALGO.keys(), nargs='+')
     cparser.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
-                       choices=algo_flat, nargs='+')
+                         choices=algo_flat, nargs='+')
 
-    cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend (e.g singlenode, '
-                         'spark, spark-hybrid)', metavar='', choices=['hybrid_spark', 'singlenode'])
+    cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend '
+                         '(e.g singlenode, spark, spark-hybrid)', metavar='',
+                         choices=['hybrid_spark', 'singlenode'])
     cparser.add_argument('--mat-type', default=default_mat_type, help='Type of matrix to generate '
-                         '(e.g dense or sparse)', metavar='', choices=default_mat_type,  nargs='+')
-    cparser.add_argument('--mat-shape', default=default_mat_shape, help='Shape of matrix to generate '
-                         '(e.g 10k_1k)', metavar='', nargs='+')
-
+                         '(e.g dense or sparse)', metavar='', choices=default_mat_type,
+                         nargs='+')
+    cparser.add_argument('--mat-shape', default=default_mat_shape, help='Shape of matrix '
+                         'to generate (e.g 10k_1k)', metavar='', nargs='+')
     cparser.add_argument('-temp-dir', default=default_temp_dir, help='specify temporary directory',
                          metavar='')
-    cparser.add_argument('--filename', default='perf_test.out', help='specify output file',
+    cparser.add_argument('--filename', default='perf_test', help='specify output file',
                          metavar='')
     cparser.add_argument('--mode', default=default_workload,
                          help='specify type of workload to run (e.g data-gen, train, predict)',
@@ -184,7 +180,7 @@ if __name__ == '__main__':
     # Check for validity of input arguments
     if args.family is not None:
         for fam in args.family:
-            if fam not in ml_algo.keys():
+            if fam not in ML_ALGO.keys():
                 print('{} family not present in the performance test suit'.format(fam))
                 sys.exit()
 
@@ -196,8 +192,8 @@ if __name__ == '__main__':
 
     # Check dual condition
     if args.family is None:
-        if has_dual in args.algo:
-            print('cannot run {} without family type'.format(has_dual))
+        if HAS_DUAL in args.algo:
+            print('cannot run {} without family type'.format(HAS_DUAL))
             sys.exit()
 
     if not os.path.exists(args.temp_dir):
@@ -205,7 +201,8 @@ if __name__ == '__main__':
 
     # Set level to 0 ->  debug
     # Set level to 20 -> metrics
-    logging.basicConfig(filename=join(default_temp_dir, args.filename), level=0)
+    log_filename = args.filename + '_' + args.exec_type
+    logging.basicConfig(filename=join(default_temp_dir, log_filename), level=0)
     logging.info('New performance test')
     logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
 

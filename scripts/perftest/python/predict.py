@@ -22,14 +22,13 @@
 
 import os
 from os.path import join
-import sys
 import glob
 from utils import create_dir, config_writer
 
 # Contains configuration setting for predicting
 
-has_predict = ['Kmeans']
-format = 'csv'
+HAS_PREDICT = ['Kmeans']
+DATA_FORMAT = 'csv'
 
 
 def kmeans_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
@@ -52,7 +51,7 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
 
     config_bundle = {}
     for current_algo, current_family in algo_payload.items():
-        if current_algo in has_predict:
+        if current_algo in HAS_PREDICT:
 
             # Find datagen folders
             data_gen_path = join(datagen_dir, current_family)

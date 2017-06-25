@@ -49,7 +49,9 @@ ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'stats1': ['Univar-Stats', 'bivar-stats'],
            'stats2': ['stratstats']}
 
-ML_PREDICT = {'Kmeans': 'Kmeans-predict'}
+ML_PREDICT = {'Kmeans': 'Kmeans-predict',
+              'LinearRegCG': 'GLM-predict',
+              'LinearRegDS': 'GLM-predict'}
 
 
 # Since m-svm appears in binomial and multinomial family

@@ -27,7 +27,7 @@ from utils import create_dir, config_writer
 
 # Contains configuration setting for predicting
 
-HAS_PREDICT = ['Kmeans']
+HAS_PREDICT = ['Kmeans', 'LinearRegDS', 'LinearRegCG']
 DATA_FORMAT = 'csv'
 
 
@@ -42,6 +42,52 @@ def kmeans_predict(save_file_name, load_datagen, load_train, datagen_dir, train_
     prY = join(full_path_predict, 'prY.data')
 
     config = dict(X=X, C=C, prY=prY)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def linearregcg_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
+
+    full_path_datagen = join(datagen_dir, load_datagen)
+    full_path_train = join(train_dir, load_train)
+    full_path_predict = join(predict_dir, save_file_name)
+
+    dfam = 1
+    link = 1
+    vpow = 0.0
+    lpow = 1.0
+
+    X = join(full_path_datagen, 'X.data')
+    B = join(full_path_train, 'B.data')
+    Y = join(full_path_datagen, 'Y.data')
+    M = join(full_path_predict, 'M.data')
+    O = join(full_path_predict, 'O.data')
+    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
+                  B=B, Y=Y, M=M, O=O)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def linearregds_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
+
+    full_path_datagen = join(datagen_dir, load_datagen)
+    full_path_train = join(train_dir, load_train)
+    full_path_predict = join(predict_dir, save_file_name)
+
+    dfam = 1
+    link = 1
+    vpow = 0.0
+    lpow = 1.0
+
+    X = join(full_path_datagen, 'X.data')
+    B = join(full_path_train, 'B.data')
+    Y = join(full_path_datagen, 'Y.data')
+    M = join(full_path_predict, 'M.data')
+    O = join(full_path_predict, 'O.data')
+    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
+                  B=B, Y=Y, M=M, O=O)
     config_writer(full_path_predict + '.json', config)
 
     return full_path_predict

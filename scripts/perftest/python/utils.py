@@ -124,6 +124,7 @@ def exec_func(exec_type, file_name, args, path):
             cmd = [exec_script, '-f', algorithm, '-nvargs', args]
             cmd_string = ' '.join(cmd)
 
+
         # Subrocess to execute input arguments
         # proc1_log contains the shell output which is used for time parsing
         proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
@@ -137,12 +138,12 @@ def exec_func(exec_type, file_name, args, path):
             logging.log(10, decode_raw)
 
         _, err1 = proc1.communicate()
-        total_time = get_time(proc1_log)
 
         if "Error" in str(err1):
             print('Error Found in {}'.format(file_name))
             total_time = 'failure'
         else:
+            total_time = get_time(proc1_log)
             full_path = join(path, '_SUCCESS')
             open(full_path, 'w').close()
 
@@ -158,10 +159,11 @@ def get_time(raw_logs):
     for line in raw_logs:
         if line.startswith('Total execution time'):
             raw_time = line
+            extract_time = re.findall(r'\d+', raw_time)
+            total_time = '.'.join(extract_time)
+            return total_time
 
-    extract_time = re.findall(r'\d+', raw_time)
-    total_time = '.'.join(extract_time)
-    return total_time
+    return 'not_found'
 
 
 def get_config(file_path):

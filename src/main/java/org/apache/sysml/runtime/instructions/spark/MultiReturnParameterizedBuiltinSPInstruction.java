@@ -56,12 +56,12 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.transform.MVImputeAgent;
-import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
-import org.apache.sysml.runtime.transform.RecodeAgent;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderComposite;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
+import org.apache.sysml.runtime.transform.encode.EncoderMVImpute;
+import org.apache.sysml.runtime.transform.encode.EncoderRecode;
+import org.apache.sysml.runtime.transform.encode.EncoderMVImpute.MVMethod;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
 
@@ -129,7 +129,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					.distinct().groupByKey()
 					.flatMap(new TransformEncodeGroupFunction(accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
-				MVImputeAgent mva = getMVImputeEncoder(encoderBuild);
+				EncoderMVImpute mva = getMVImputeEncoder(encoderBuild);
 				rcMaps = rcMaps.union(
 						in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
 						  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
@@ -149,7 +149,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				omap = new TfOffsetMap(SparkUtils.toIndexedLong(in.mapToPair(
 					new RDDTransformApplyOffsetFunction(spec, colnames)).collect()));
 			}
-				
+			
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(spec, colnames,
 					fo.getSchema(), (int)fo.getNumColumns(), meta);
@@ -176,16 +176,16 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	private boolean containsMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cencoder instanceof MVImputeAgent )
+				if( cencoder instanceof EncoderMVImpute )
 					return true;
 		return false;	
 	}
 
-	private MVImputeAgent getMVImputeEncoder(Encoder encoder) {
+	private EncoderMVImpute getMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cencoder instanceof MVImputeAgent )
-					return (MVImputeAgent) cencoder;
+				if( cencoder instanceof EncoderMVImpute )
+					return (EncoderMVImpute) cencoder;
 		return null;	
 	}
 	
@@ -248,12 +248,12 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private RecodeAgent _raEncoder = null;
+		private EncoderRecode _raEncoder = null;
 		
 		public TransformEncodeBuildFunction(Encoder encoder) {
 			for( Encoder cEncoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cEncoder instanceof RecodeAgent )
-					_raEncoder = (RecodeAgent)cEncoder;
+				if( cEncoder instanceof EncoderRecode )
+					_raEncoder = (EncoderRecode)cEncoder;
 		}
 		
 		@Override
@@ -310,7 +310,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				sb.append(' ');
 				sb.append(colID);
 				sb.append(' ');
-				sb.append(RecodeAgent.constructRecodeMapEntry(
+				sb.append(EncoderRecode.constructRecodeMapEntry(
 						iter.next().toString(), rowID));
 				ret.add(sb.toString());
 				sb.setLength(0); 
@@ -326,9 +326,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private MVImputeAgent _encoder = null;
+		private EncoderMVImpute _encoder = null;
 		
-		public TransformEncodeBuild2Function(MVImputeAgent encoder) {
+		public TransformEncodeBuild2Function(EncoderMVImpute encoder) {
 			_encoder = encoder;
 		}
 		
@@ -370,9 +370,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 702100641492347459L;
 		
-		private MVImputeAgent _encoder = null;
+		private EncoderMVImpute _encoder = null;
 		
-		public TransformEncodeGroup2Function(MVImputeAgent encoder) {	
+		public TransformEncodeGroup2Function(EncoderMVImpute encoder) {	
 			_encoder = encoder;
 		}
 

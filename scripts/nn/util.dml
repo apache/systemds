@@ -200,3 +200,71 @@ unpad_image = function(matrix[double] img_padded, int Hin, int Win, int padh, in
   }
 }
 
+threshold = function(matrix[double] X, double thresh)
+    return (matrix[double] out) {
+  /*
+   * Computes an indicator matrix with values in {0, 1} depending on
+   * whether or not the values in X are above the input threshold
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *  - thresh: Input threshold.
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as X.
+   */
+  out = X > thresh
+}
+
+/*
+ * Reshape util for tensors in NCHW format.
+ * Transposes the 1st and 2nd dimensions.
+ */
+transpose_NCHW_to_CNHW = function(matrix[double] X, int C) return (matrix[double] out){
+  /*
+   * Inputs:
+   *  - X: Input with N rows and channels flattened within each row in
+   *      channel-major format (NCHW).
+   *  - C: Number of channels (dimensionality of depth).
+   *
+   * Outputs:
+   *  - out: Transposed output with C rows.
+   */
+  N = nrow(X)
+  D = ncol(X) / C
+
+  /*
+   * This is an easy reshape because the channels remain intact. By
+   * reshaping X to a matrix with N*C rows, we can reduce our task to
+   * re-ordering rows (followed by the obvious reshape to achieve the
+   * required output shape with C rows).
+   *
+   * The difficult part is to obtain the permutation matrix required
+   * for re-ordering the rows. In this case, since we want to bring the
+   * ith channels from all rows together, we will need a column vector
+   * of the following form:
+   * [1, 1+C, 1+2C, ..., 1+(N-1)C,
+   *  2, 2+C, ..., 2+(N-1)C,
+   *  3, 3+C, ..., 3+(N-1)C,
+   *  .
+   *  .
+   *  .
+   *  C, 2C, ..., NC]'
+   * This vector can be produced via an outer call.
+   */
+  col_idx = outer(seq(1,C), C*t(seq(0,N-1)), "+")
+
+  /*
+   * Generate the permutation matrix by:
+   * - reshaping the result of outer into a col
+   * - invoking table
+   */
+  permut = table(seq(1, N*C), matrix(col_idx, rows=N*C, cols=1), N*C, N*C)
+
+  /*
+   * Generate the output by:
+   * - pre-multiplying the (reshaped) X with the permutation matrix
+   * - reshape to get the output shape with C rows
+   */
+  out = matrix(permut %*% matrix(X, rows=N*C, cols=D), rows=C, cols=N*D)
+}

@@ -140,15 +140,15 @@ Following this, I unpacked it.
 
 **Alternatively**, we could have built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
 
-	[hadoop@host1 ~]$ git clone https://github.com/apache/incubator-systemml.git
-	[hadoop@host1 ~]$ cd incubator-systemml
-	[hadoop@host1 incubator-systemml]$ mvn clean package -P distribution
-	[hadoop@host1 incubator-systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
+	[hadoop@host1 ~]$ git clone https://github.com/apache/systemml.git
+	[hadoop@host1 ~]$ cd systemml
+	[hadoop@host1 systemml]$ mvn clean package -P distribution
+	[hadoop@host1 systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
 	[hadoop@host1 ~]$ cd ..
 
 I downloaded the `genLinearRegressionData.dml` script that is used in the SystemML README example.
 
-	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/datagen/genLinearRegressionData.dml
+	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genLinearRegressionData.dml
 
 Next, I invoked the `genLinearRegressionData.dml` DML script in Hadoop Batch mode.
 Hadoop was executed with the `SystemML.jar` file specified by the hadoop `jar` option.
@@ -853,7 +853,7 @@ The `numreducers` property specifies the number of reduce tasks per MR job.
 
 To begin, I'll download the `genRandData4Kmeans.dml` script that I'll use to generate a set of data.
 
-	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/datagen/genRandData4Kmeans.dml
+	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genRandData4Kmeans.dml
 
 A description of the named arguments that can be passed in to this script can be found in the comment section at the top of the
 `genRandData4Kmeans.dml` file. For data, I'll generate a matrix `X.mtx` consisting of 1 million rows and 100 features. I'll explicitly reference my `SystemML-config.xml` file, since I'm

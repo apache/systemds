@@ -20,11 +20,11 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {	
@@ -101,27 +101,29 @@ public class CNodeCell extends CNodeTpl
 	}
 	
 	@Override
+	public void renameInputs() {
+		rRenameDataNode(_output, _inputs.get(0), "a");
+		renameInputs(_inputs, 1);
+	}
+	
+	@Override
 	public String codegen(boolean sparse) {
 		String tmp = TEMPLATE;
-		
-		//rename inputs
-		rReplaceDataNode(_output, _inputs.get(0), "a");
-		renameInputs(_inputs, 1);
 		
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false);
 		_output.resetGenerated();
 
-		tmp = tmp.replaceAll("%TMP%", createVarname());
-		tmp = tmp.replaceAll("%BODY_dense%", tmpDense);
+		tmp = tmp.replace("%TMP%", createVarname());
+		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP
-		tmp = tmp.replaceAll("%OUT%", getCurrentVarName());
+		tmp = tmp.replace("%OUT%", getCurrentVarName());
 		
 		//replace meta data information
-		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
-		tmp = tmp.replaceAll("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
-		tmp = tmp.replaceAll("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
+		tmp = tmp.replace("%TYPE%", getCellType().name());
+		tmp = tmp.replace("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
+		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		
 		return tmp;
 	}
@@ -155,13 +157,13 @@ public class CNodeCell extends CNodeTpl
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			int h3 = (_aggOp!=null) ? _aggOp.hashCode() : 0;
-			int h4 = Boolean.valueOf(_sparseSafe).hashCode();
-			int h5 = Boolean.valueOf(_requiresCastdtm).hashCode();
+			int h = super.hashCode();
+			h = UtilFunctions.intHashCode(h, _type.hashCode());
+			h = UtilFunctions.intHashCode(h, (_aggOp!=null) ? _aggOp.hashCode() : 0);
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(_sparseSafe));
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(_requiresCastdtm));
 			//note: _multipleConsumers irrelevant for plan comparison
-			_hash = Arrays.hashCode(new int[]{h1,h2,h3,h4,h5});
+			_hash = h;
 		}
 		return _hash;
 	}

@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,6 +44,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -77,8 +79,8 @@ public abstract class Hop
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
-	protected ArrayList<Hop> _parent = new ArrayList<Hop>();
-	protected ArrayList<Hop> _input = new ArrayList<Hop>();
+	protected ArrayList<Hop> _parent = new ArrayList<>();
+	protected ArrayList<Hop> _input = new ArrayList<>();
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
@@ -134,6 +136,18 @@ public abstract class Hop
 	public long getHopID() {
 		return _ID;
 	}
+
+	/**
+	 * Check whether this Hop has a correct number of inputs.
+	 *
+	 * (Some Hops can have a variable number of inputs, such as DataOp, DataGenOp, ParameterizedBuiltinOp,
+	 * ReorgOp, TernaryOp, QuaternaryOp, MultipleOp, ConvolutionOp, and SpoofFusedOp.)
+	 *
+	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
+	 *
+	 * @throws HopsException if this Hop has an illegal number of inputs (a kind of Illegal State)
+	 */
+	public abstract void checkArity() throws HopsException;
 	
 	public ExecType getExecType()
 	{
@@ -288,11 +302,9 @@ public abstract class Hop
 			
 			try
 			{
-				if(    (this instanceof DataOp  // CSV
-							&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
-							&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV ) 
-					|| (this instanceof ParameterizedBuiltinOp 
-							&& ((ParameterizedBuiltinOp)this).getOp() == ParamBuiltinOp.TRANSFORM) )
+				if( this instanceof DataOp  // CSV
+					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
+					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
 				{
 					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
 							getDataType(), getValueType(), et);
@@ -776,7 +788,8 @@ public abstract class Hop
 	}
 	
 	protected ExecType findGPUExecTypeByMemEstimate(ExecType et) {
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
+				.initialGPUMemBudget())) {
 			return ExecType.GPU;
 		}
 		return et;
@@ -867,12 +880,32 @@ public abstract class Hop
 				hopRoot.resetVisitStatus();
 	}
 	
+	public static void resetVisitStatus( ArrayList<Hop> hops, boolean force ) {
+		if( !force )
+			resetVisitStatus(hops);
+		else {
+			HashSet<Long> memo = new HashSet<Long>();
+			if( hops != null )
+				for( Hop hopRoot : hops )
+					hopRoot.resetVisitStatusForced(memo);
+		}
+	}
+	
 	public void resetVisitStatus()  {
 		if( !isVisited() )
 			return;
-		for( Hop h : this.getInput() )
+		for( Hop h : getInput() )
 			h.resetVisitStatus();		
 		setVisited(false);
+	}
+	
+	public void resetVisitStatusForced(HashSet<Long> memo) {
+		if( memo.contains(getHopID()) )
+			return;
+		for( Hop h : getInput() )
+			h.resetVisitStatusForced(memo);
+		setVisited(false);
+		memo.add(getHopID());
 	}
 
 	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
@@ -1038,7 +1071,7 @@ public abstract class Hop
 
 	public enum ParamBuiltinOp {
 		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND, 
-		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
 		TOSTRING
 	};
 
@@ -1298,7 +1331,6 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMAPPLY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMAPPLY);		
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMDECODE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMDECODE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMMETA, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMMETA);

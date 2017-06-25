@@ -83,7 +83,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 
 		// Initialize this GPUContext to this thread
 		if (DMLScript.USE_ACCELERATOR)
-			_ec.getGPUContext().initializeThread();
+			_ec.getGPUContext(0).initializeThread();
 		
 		//setup compiler config for worker thread
 		ConfigurationManager.setLocalConfig(_cconf);

@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
@@ -34,11 +31,9 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * 
- * 
- */
 public class FrameEncodeTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "transform7";
@@ -79,13 +74,6 @@ public class FrameEncodeTest extends AutomatedTestBase
 		runJMLCReuseTest(TEST_NAME1, true, true);
 	}
 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @throws IOException 
-	 */
 	private void runJMLCReuseTest( String testname, boolean sparse, boolean modelReuse ) 
 		throws IOException
 	{	
@@ -108,13 +96,6 @@ public class FrameEncodeTest extends AutomatedTestBase
 					Assert.assertEquals("Wrong result: "+data[i][j]+".", data[i][j], F1s[i][j]);
 	}
 
-	/**
-	 * 
-	 * @param X
-	 * @return
-	 * @throws DMLException
-	 * @throws IOException
-	 */
 	private ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, boolean modelReuse) 
 		throws IOException
 	{

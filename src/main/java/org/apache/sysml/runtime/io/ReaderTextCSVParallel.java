@@ -74,9 +74,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
@@ -210,10 +210,11 @@ public class ReaderTextCSVParallel extends MatrixReader
 		catch (Exception e) {
 			throw new IOException("Threadpool Error " + e.getMessage(), e);
 		}
-
+		
 		// allocate target matrix block based on given size; 
 		// need to allocate sparse as well since lock-free insert into target
-		return createOutputMatrixBlock(nrow, ncol, nrow, ncol, estnnz, true, true);
+		long estnnz2 = (estnnz < 0) ? (long)nrow * ncol : estnnz;
+		return createOutputMatrixBlock(nrow, ncol, nrow, ncol, estnnz2, true, true);
 	}
 
 	private static class SplitOffsetInfos {

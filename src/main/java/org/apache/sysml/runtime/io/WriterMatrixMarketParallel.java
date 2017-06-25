@@ -62,7 +62,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		}
 		
 		//create directory for concurrent tasks
-		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		MapReduceTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 
 		//create and execute tasks
 		try 

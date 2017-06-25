@@ -25,6 +25,7 @@ import java.util.HashSet;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
@@ -1002,8 +1003,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				
 				// Both end points of the range must included i.e., [from,to] both inclusive.
 				// Note that, "to" is included only if (to-from) is perfectly divisible by incr
-				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0) 
-				dim1 = 1 + (long)Math.floor((to-from)/incr); 
+				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0)
+				dim1 = UtilFunctions.getSeqLength(from, to, incr);
 			}
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
@@ -1113,7 +1114,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//
 			// Similarly,
 			// conv2d_backward_filter and conv2d_backward_data
-			Expression input = _args[0];			// For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
+			Expression input = _args[0]; // For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
 			
 			Expression filter = null;
 			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
@@ -1125,10 +1126,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			// stride1, stride2, padding1, padding2, numImg, numChannels, imgSize, imgSize, 
  			// filter_shape1=1, filter_shape2=1, filterSize/poolSize1, filterSize/poolSize1
- 			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD ||
- 					this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+ 			if( getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD ) {
  				output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
  			}
+			else if( getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA ) {
+				//args[0] .. filter, args[1] .. input
+				output.setDimensions(_args[1].getOutput().getDim1(), -1);
+			}
  			else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
  				output.setDimensions(filter.getOutput().getDim1(), filter.getOutput().getDim2());
  			}

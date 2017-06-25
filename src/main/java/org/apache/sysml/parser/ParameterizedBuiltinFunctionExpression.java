@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 
@@ -39,8 +38,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public static final String TF_FN_PARAM_MTD2 = "meta";
 	public static final String TF_FN_PARAM_SPEC = "spec";
 	public static final String TF_FN_PARAM_MTD = "transformPath"; //NOTE MB: for backwards compatibility
-	public static final String TF_FN_PARAM_APPLYMTD = "applyTransformPath";
-	public static final String TF_FN_PARAM_OUTNAMES = "outputNames";
 	
 	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
 	static {
@@ -67,7 +64,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("qexp",	Expression.ParameterizedBuiltinFunctionOp.QEXP);
 
 		// data transformation functions
-		opcodeMap.put("transform",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORM);
 		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
 		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
 		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
@@ -222,15 +218,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case ORDER:
 			validateOrder(output, conditional);
 			break;
-
-		case TRANSFORM:
-			validateTransform(output, conditional);
-			break;
 		
 		case TRANSFORMAPPLY:
 			validateTransformApply(output, conditional);
 			break;
-			
+		
 		case TRANSFORMDECODE:
 			validateTransformDecode(output, conditional);
 			break;	
@@ -287,64 +279,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 		
 		return;
-	}
-	
-	// example: A = transform(data=D, txmtd="", txspec="")
-	private void validateTransform(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
-	{
-		//validate data
-		checkDataType("transform", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
-		
-		Expression txmtd = getVarParam(TF_FN_PARAM_MTD);
-		if( txmtd==null ) {
-			raiseValidateError("Named parameter '" + TF_FN_PARAM_MTD + "' missing. Please specify the transformation metadata file path.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		else if( txmtd.getOutput().getDataType() != DataType.SCALAR || txmtd.getOutput().getValueType() != ValueType.STRING ){				
-			raiseValidateError("Transformation metadata file '" + TF_FN_PARAM_MTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		
-		Expression txspec = getVarParam(TF_FN_PARAM_SPEC);
-		Expression applyMTD = getVarParam(TF_FN_PARAM_APPLYMTD);
-		if( txspec==null ) {
-			if ( applyMTD == null )
-				raiseValidateError("Named parameter '" + TF_FN_PARAM_SPEC + "' missing. Please specify the transformation specification (JSON string).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		else if( txspec.getOutput().getDataType() != DataType.SCALAR  || txspec.getOutput().getValueType() != ValueType.STRING ){	
-			raiseValidateError("Transformation specification '" + TF_FN_PARAM_SPEC + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
-		
-		if ( applyMTD != null ) {
-			if( applyMTD.getOutput().getDataType() != DataType.SCALAR  || applyMTD.getOutput().getValueType() != ValueType.STRING ){	
-				raiseValidateError("Apply transformation metadata file'" + TF_FN_PARAM_APPLYMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			//NOTE: txspec can still be optionally specified; if specified it takes precedence over 
-			// specification persisted in txmtd during transform.
-		}
-		
-		Expression outNames = getVarParam(TF_FN_PARAM_OUTNAMES);
-		if ( outNames != null ) {
-			if( outNames.getOutput().getDataType() != DataType.SCALAR || outNames.getOutput().getValueType() != ValueType.STRING )				
-				raiseValidateError("The parameter specifying column names in the output file '" + TF_FN_PARAM_MTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			if ( applyMTD != null)
-				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_OUTNAMES + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		
-		// disable frame csv reblocks as transform operates directly over csv files
-		// (this is required to support both file-based transform and frame-based
-		// transform at the same time; hence, transform and frame-based transform
-		// functions over csv cannot be used in the same script; accordingly we
-		// give an appropriate warning)
-		OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = false;
-		raiseValidateError("Disable frame csv reblock to support file-based transform.", true);
-		
-		// Output is a matrix with same dims as input
-		output.setDataType(DataType.MATRIX);
-		output.setFormatType(FormatType.CSV);
-		output.setValueType(ValueType.DOUBLE);
-		// Output dimensions may not be known at compile time, for example when dummycoding.
-		output.setDimensions(-1, -1);
 	}
 	
 	// example: A = transformapply(target=X, meta=M, spec=s)

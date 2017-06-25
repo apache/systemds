@@ -20,6 +20,8 @@
 package org.apache.sysml.api.jmlc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -30,6 +32,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 
 /**
@@ -48,18 +51,20 @@ public class JMLCUtils
 	public static void cleanupRuntimeProgram( Program prog, String[] outputs)
 	{
 		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
+		HashSet<String> blacklist = new HashSet<String>(Arrays.asList(outputs));
+		
 		if( funcMap != null && !funcMap.isEmpty() )
 		{
 			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
 			{
 				FunctionProgramBlock fpb = e.getValue();
 				for( ProgramBlock pb : fpb.getChildBlocks() )
-					rCleanupRuntimeProgram(pb, outputs);
+					rCleanupRuntimeProgram(pb, blacklist);
 			}
 		}
 		
 		for( ProgramBlock pb : prog.getProgramBlocks() )
-			rCleanupRuntimeProgram(pb, outputs);
+			rCleanupRuntimeProgram(pb, blacklist);
 	}
 	
 	/**
@@ -68,7 +73,7 @@ public class JMLCUtils
 	 * @param pb program block
 	 * @param outputs registered output variables
 	 */
-	public static void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
+	public static void rCleanupRuntimeProgram( ProgramBlock pb, HashSet<String> outputs )
 	{
 		if( pb instanceof WhileProgramBlock )
 		{
@@ -90,10 +95,9 @@ public class JMLCUtils
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				rCleanupRuntimeProgram(pbc,outputs);
 		}
-		else
-		{
-			ArrayList<Instruction> tmp = pb.getInstructions();
-			cleanupRuntimeInstructions(tmp, outputs);
+		else {
+			pb.setInstructions(cleanupRuntimeInstructions(
+				pb.getInstructions(), outputs));
 		}
 	}
 	
@@ -105,24 +109,37 @@ public class JMLCUtils
 	 * @param outputs registered output variables
 	 * @return list of instructions
 	 */
-	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String[] outputs )
-	{		
-		for( int i=0; i<insts.size(); i++ )
-		{
-			Instruction linst = insts.get(i);
-			if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
-			{
-				VariableCPInstruction varinst = (VariableCPInstruction) linst;
-				for( String var : outputs )
-					if( varinst.isRemoveVariable(var) )
-					{
-						insts.remove(i);
-						i--;
-						break;
-					}
-			}
-		}
+	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String[] outputs ) {
+		return cleanupRuntimeInstructions(insts, new HashSet<String>(Arrays.asList(outputs)));
+	}
+	
+	/**
+	 * Cleanup runtime instructions, removing rmvar instructions for
+	 * any of the given output variable names.
+	 * 
+	 * @param insts list of instructions
+	 * @param outputs registered output variables
+	 * @return list of instructions
+	 */
+	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, HashSet<String> outputs )
+	{
+		ArrayList<Instruction> ret = new ArrayList<Instruction>();
 		
-		return insts;
+		for( Instruction inst : insts ) {
+			if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() )
+			{
+				ArrayList<String> currRmVar = new ArrayList<String>();
+				for( CPOperand input : ((VariableCPInstruction)inst).getInputs() )
+					if( !outputs.contains(input.getName()) )
+						currRmVar.add(input.getName());
+				if( !currRmVar.isEmpty() ) {
+					ret.add(VariableCPInstruction.prepareRemoveInstruction(
+						currRmVar.toArray(new String[0])));
+				}
+			}
+			else
+				ret.add(inst);
+		}
+		return ret;
 	}
 }

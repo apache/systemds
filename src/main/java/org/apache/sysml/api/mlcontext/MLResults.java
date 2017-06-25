@@ -297,7 +297,7 @@ public class MLResults {
 
 	/**
 	 * Is the output a MatrixObject?
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return {@code true} if the output is a MatrixObject, {@code false}
@@ -310,7 +310,7 @@ public class MLResults {
 
 	/**
 	 * Is the output a FrameObject?
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return {@code true} if the output is a FrameObject, {@code false}
@@ -489,18 +489,6 @@ public class MLResults {
 	}
 
 	/**
-	 * Obtain an output as a {@code BinaryBlockMatrix}.
-	 *
-	 * @param outputName
-	 *            the name of the output
-	 * @return the output as a {@code BinaryBlockMatrix}
-	 */
-	public BinaryBlockMatrix getBinaryBlockMatrix(String outputName) {
-		MatrixObject mo = getMatrixObject(outputName);
-		return MLContextConversionUtil.matrixObjectToBinaryBlockMatrix(mo, sparkExecutionContext);
-	}
-
-	/**
 	 * Obtain an output as a two-dimensional {@code String} array.
 	 *
 	 * @param outputName
@@ -608,7 +596,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T>
 	 *            the type of the first output
 	 * @param outputName1
@@ -622,7 +610,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -640,7 +628,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -663,7 +651,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -691,7 +679,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -723,7 +711,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -760,7 +748,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -802,7 +790,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -848,7 +836,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -899,7 +887,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -954,7 +942,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1015,7 +1003,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1080,7 +1068,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1149,7 +1137,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1223,7 +1211,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1301,7 +1289,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1385,7 +1373,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1473,7 +1461,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1565,7 +1553,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1662,7 +1650,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1763,7 +1751,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>
@@ -1869,7 +1857,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param <T1>
 	 *            the type of the first output
 	 * @param <T2>

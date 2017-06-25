@@ -187,7 +187,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		sec.addLineageRDD(output.getName(), rddVar);
 	}
 
-	protected void updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
+	protected MatrixCharacteristics updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
 		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
@@ -203,7 +203,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			else {
 				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
-		}	
+		}
+		return mcOut;
 	}
 
 	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec, boolean cbind) 

@@ -28,8 +28,8 @@ public abstract class TemplateBase
 	public enum TemplateType {
 		//ordering specifies type preferences
 		MultiAggTpl,
-		RowTpl,
 		OuterProdTpl,
+		RowTpl,
 		CellTpl;
 		public int getRank() {
 			return this.ordinal();
@@ -42,7 +42,7 @@ public abstract class TemplateBase
 		OPEN,
 	}
 
-	protected TemplateType _type = null;
+	protected final TemplateType _type;
 	protected boolean _closed = false;
 	
 	protected TemplateBase(TemplateType type) {

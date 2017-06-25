@@ -43,7 +43,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -385,12 +384,12 @@ public class RandSPInstruction extends UnarySPInstruction
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
 		else
 		{
-			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			Path path = new Path(LibMatrixDatagen.generateUniqueSeedPath(dir));
 			PrintWriter pw = null;
 			try
 			{
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				pw = new PrintWriter(fs.create(new Path(path)));
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				pw = new PrintWriter(fs.create(path));
 				StringBuilder sb = new StringBuilder();
 				for( long i=0; i<numBlocks; i++ ) {
 					sb.append(1 + i/numColBlocks);
@@ -416,7 +415,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext()
-					.textFile(path, numPartitions)
+					.textFile(path.toString(), numPartitions)
 					.mapToPair(new ExtractSeedTuple());
 		}
 		
@@ -452,7 +451,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		
 		//step 1: offset generation 
 		JavaRDD<Double> offsetsRDD = null;
-		long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
+		long nnz = UtilFunctions.getSeqLength(seq_from, seq_to, seq_incr);
 		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( nnz, 1, rowsInBlock, 
 				colsInBlock, nnz); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
@@ -476,13 +475,12 @@ public class RandSPInstruction extends UnarySPInstruction
 		//b) file-based offset rdd construction (for robustness wrt large number of blocks)
 		else
 		{
-			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			Path path = new Path(LibMatrixDatagen.generateUniqueSeedPath(dir));
 			
 			PrintWriter pw = null;
-			try
-			{
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				pw = new PrintWriter(fs.create(new Path(path)));
+			try {
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				pw = new PrintWriter(fs.create(path));
 				for( long i=0; i<numBlocks; i++ ) {
 					double off = seq_from + seq_incr*i*rowsInBlock;
 					pw.println(off);
@@ -500,7 +498,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			//create seeds rdd 
 			offsetsRDD = sec.getSparkContext()
-					.textFile(path, numPartitions)
+					.textFile(path.toString(), numPartitions)
 					.map(new ExtractOffsetTuple());
 		}
 		
@@ -808,32 +806,27 @@ public class RandSPInstruction extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = 5779681055705756965L;
 		
-		private int _brlen; 
-		private double _global_seq_start;
-		private double _global_seq_end; 
-		private double _seq_incr;
-		
+		private final double _global_seq_start;
+		private final double _global_seq_end;
+		private final double _seq_incr;
+		private final int _brlen;
 		
 		public GenerateSequenceBlock(int brlen, double global_seq_start, double global_seq_end, double seq_incr) {
-			_brlen = brlen;
 			_global_seq_start = global_seq_start;
 			_global_seq_end = global_seq_end;
 			_seq_incr = seq_incr;
+			_brlen = brlen;
 		}
 
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Double seq_from) 
 			throws Exception 
 		{
-			double seq_to;
-			if(_seq_incr > 0) {
-				seq_to = Math.min(_global_seq_end, seq_from + _seq_incr*(_brlen-1));
-			}
-			else {
-				seq_to = Math.max(_global_seq_end, seq_from + _seq_incr*(_brlen+1));
-			}
-			long globalRow = (long) ((seq_from-_global_seq_start)/_seq_incr + 1);
-			long rowIndex = (long) Math.ceil((double)globalRow/(double)_brlen);
+			double seq_to = (_seq_incr > 0) ?
+				Math.min(_global_seq_end, seq_from + _seq_incr*(_brlen-1)) :
+				Math.max(_global_seq_end, seq_from + _seq_incr*(_brlen+1));
+			long globalRow = (long)Math.round((seq_from-_global_seq_start)/_seq_incr)+1;			
+			long rowIndex = UtilFunctions.computeBlockIndex(globalRow, _brlen);
 			
 			MatrixIndexes indx = new MatrixIndexes(rowIndex, 1);
 			MatrixBlock blk = MatrixBlock.seqOperations(seq_from, seq_to, _seq_incr);

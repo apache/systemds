@@ -103,7 +103,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 					" and input2:" + rlen2 + " X " + clen2);
 		}
 		
-		LibMatrixCUDA.axpy(ec, ec.getGPUContext(), getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
+		LibMatrixCUDA.axpy(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());

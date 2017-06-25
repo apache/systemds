@@ -24,7 +24,6 @@ v = seq(1, ncol(X));
 w = seq(1, nrow(X));
 
 R1 = t(X) %*% (X %*% v);
-if(1==1) {}
 R2 = t(X) %*% (w * (X %*% v));
 R = (R1 + R2) / 1e4;
 

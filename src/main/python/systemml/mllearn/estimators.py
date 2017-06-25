@@ -737,15 +737,20 @@ class Caffe2DML(BaseSystemMLClassifier):
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
             
-    def set(self, num_classes=None, debug=None):
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None):
         """
         Set input to Caffe2DML
         
         Parameters
         ----------
         debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
+        train_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
+        test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
         """
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
+        if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
+        if test_algo is not None: self.estimator.setInput("$test_algo", str(test_algo).lower())
+        if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
         return self
     
     def visualize(self, layerName=None, varType='weight', aggFn='mean'):

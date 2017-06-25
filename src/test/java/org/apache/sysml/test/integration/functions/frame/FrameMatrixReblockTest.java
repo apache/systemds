@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -201,10 +200,6 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
-		boolean csvReblockOld = OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK;
-		if( ofmt.equals("csv") )
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
-		
 		try
 		{
 			int cols = multColBlks ? cols2 : cols1;
@@ -235,7 +230,6 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = csvReblockOld;
 		}
 	}
 	

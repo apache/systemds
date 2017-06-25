@@ -204,8 +204,8 @@ public class OptimizationWrapper
 				
 				//inter-procedural optimization (based on previous recompilation)
 				if( pb.hasFunctions() ) {
-					InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-					Set<String> fcand = ipa.analyzeSubProgram(sb);		
+					InterProceduralAnalysis ipa = new InterProceduralAnalysis(sb);
+					Set<String> fcand = ipa.analyzeSubProgram();
 					
 					if( !fcand.isEmpty() ) {
 						//regenerate runtime program of modified functions

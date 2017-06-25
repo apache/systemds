@@ -371,9 +371,9 @@ public class ProgramBlock
 			}
 	}
 
-	private boolean isRemoveVariableInstruction(Instruction inst)
-	{
-		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );
+	private boolean isRemoveVariableInstruction(Instruction inst) {
+		return ( inst instanceof VariableCPInstruction 
+			&& ((VariableCPInstruction)inst).isRemoveVariable() );
 	}
 
 	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )

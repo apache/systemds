@@ -123,7 +123,7 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>, Seriali
 	
 	@Override
 	public int hashCode() {
-		 return UtilFunctions.longHashCode((first<<32)+(second<<16)+third+UtilFunctions.ADD_PRIME1)%UtilFunctions.DIVIDE_PRIME;
+		return UtilFunctions.longHashCode(first, second, third);
 	}
 	
 	public static class Comparator implements RawComparator<TripleIndexes>

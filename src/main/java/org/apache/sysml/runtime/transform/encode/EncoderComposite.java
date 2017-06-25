@@ -19,20 +19,11 @@
 
 package org.apache.sysml.runtime.transform.encode;
 
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.transform.DistinctValue;
-import org.apache.sysml.runtime.transform.TfUtils;
 
 /**
  * Simple composite encoder that applies a list of encoders 
@@ -90,7 +81,6 @@ public class EncoderComposite extends Encoder
 			encoder.build(in);
 	}
 
-
 	@Override
 	public String[] apply(String[] in) {
 		for( Encoder encoder : _encoders )
@@ -118,20 +108,5 @@ public class EncoderComposite extends Encoder
 	public void initMetaData(FrameBlock out) {
 		for( Encoder encoder : _encoders )
 			encoder.initMetaData(out);
-	}
-
-	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");
-	}
-
-	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");	
-	}
-
-	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");
 	}
 }

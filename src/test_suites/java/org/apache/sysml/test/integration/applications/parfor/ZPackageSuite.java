@@ -27,12 +27,12 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
   ParForBivariateStatsTest.class,
-  ParForCVMulticlassSVMTest.class,
-  ParForUnivariateStatsTest.class,
-  
   ParForCorrelationTest.class,
   ParForCorrelationTestLarge.class,
-  ParForNaiveBayesTest.class
+  ParForCVMulticlassSVMTest.class,
+  ParForNaiveBayesTest.class,
+  ParForSampleTest.class,
+  ParForUnivariateStatsTest.class,
 })
 
 

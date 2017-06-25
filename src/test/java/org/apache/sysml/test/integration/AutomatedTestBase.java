@@ -1818,8 +1818,15 @@ public abstract class AutomatedTestBase
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for( String s : str )
 				if(opcode.contains(s))
-				return true;
+					return true;
 		return false;
+	}
+	
+	protected boolean heavyHittersContainsSubString(String str, int minCount) {
+		int count = 0;
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			count += opcode.contains(str) ? 1 : 0;
+		return (count >= minCount);
 	}
 
 	/**

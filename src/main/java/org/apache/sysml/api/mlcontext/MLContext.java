@@ -114,8 +114,8 @@ public class MLContext {
 	private ExplainLevel explainLevel = null;
 
 	/**
-	 * Whether or not all values should be maintained in the symbol table
-	 * after execution.
+	 * Whether or not all values should be maintained in the symbol table after
+	 * execution.
 	 */
 	private boolean maintainSymbolTable = false;
 
@@ -173,7 +173,8 @@ public class MLContext {
 	 * Create an MLContext based on a SparkSession for interaction with SystemML
 	 * on Spark.
 	 *
-	 * @param spark SparkSession
+	 * @param spark
+	 *            SparkSession
 	 */
 	public MLContext(SparkSession spark) {
 		initMLContext(spark);
@@ -215,13 +216,16 @@ public class MLContext {
 			MLContextUtil.verifySparkVersionSupported(spark);
 		} catch (MLContextException e) {
 			if (info() != null) {
-				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion() + " or above is recommended for SystemML " + this.info().version());
+				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion()
+						+ " or above is recommended for SystemML " + this.info().version());
 			} else {
 				try {
 					String minSparkVersion = MLContextUtil.getMinimumRecommendedSparkVersionFromPom();
-					log.warn("Apache Spark " + minSparkVersion + " or above is recommended for this version of SystemML.");
+					log.warn("Apache Spark " + minSparkVersion
+							+ " or above is recommended for this version of SystemML.");
 				} catch (MLContextException e1) {
-					log.error("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+					log.error(
+							"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
 				}
 			}
 		}
@@ -359,7 +363,6 @@ public class MLContext {
 		this.explain = explain;
 	}
 
-
 	/**
 	 * Obtain whether or not all values should be maintained in the symbol table
 	 * after execution.
@@ -416,20 +419,24 @@ public class MLContext {
 	}
 
 	/**
-	 * Whether or not to use (an available) GPU on the driver node.
-	 * If a GPU is not available, and the GPU mode is set, SystemML will crash when the program is run.
+	 * Whether or not to use (an available) GPU on the driver node. If a GPU is
+	 * not available, and the GPU mode is set, SystemML will crash when the
+	 * program is run.
+	 *
 	 * @param enable
-	 * 					true if needs to be enabled, false otherwise
+	 *            true if needs to be enabled, false otherwise
 	 */
 	public void setGPU(boolean enable) {
 		this.gpu = enable;
 	}
 
 	/**
-	 * Whether or not to explicitly "force" the usage of GPU.
-	 * If a GPU is not available, and the GPU mode is set or if available memory on GPU is less, SystemML will crash when the program is run.
+	 * Whether or not to explicitly "force" the usage of GPU. If a GPU is not
+	 * available, and the GPU mode is set or if available memory on GPU is less,
+	 * SystemML will crash when the program is run.
+	 *
 	 * @param enable
-	 * 					true if needs to be enabled, false otherwise
+	 *            true if needs to be enabled, false otherwise
 	 */
 	public void setForceGPU(boolean enable) {
 		this.forceGPU = enable;
@@ -437,12 +444,12 @@ public class MLContext {
 
 	/**
 	 * Whether or not the GPU mode is enabled.
+	 *
 	 * @return true if enabled, false otherwise
 	 */
 	public boolean isGPU() {
 		return this.gpu;
 	}
-
 
 	/**
 	 * Used internally by MLContextProxy.

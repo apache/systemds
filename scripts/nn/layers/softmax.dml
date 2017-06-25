@@ -26,10 +26,11 @@
 forward = function(matrix[double] scores)
     return (matrix[double] probs) {
   /*
-   * Computes the forward pass for a softmax classifier.  The inputs
-   * are interpreted as unnormalized, log-probabilities for each of
-   * N examples, and the softmax function transforms them to normalized
-   * probabilities.
+   * Computes the forward pass for a softmax classifier.  The input
+   * has N examples, each with D values that are interpreted as
+   * unnormalized, log-probabilities for each of D classes.  The softmax
+   * function transforms these values to normalized probabilities across
+   * the D classes, for every example.
    *
    * This can be interpreted as a generalization of the sigmoid
    * function to multiple classes.

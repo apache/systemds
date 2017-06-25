@@ -1894,7 +1894,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				ret = rParseBinaryExpression((BinaryExpression) l);		
 				Long cvalR = parseLongConstant(r);
-				if( cvalR != null )
+				if( ret != null && cvalR != null )
 					ret.addConstant(cvalR);
 				else 
 					return null;
@@ -1903,7 +1903,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				ret = rParseBinaryExpression((BinaryExpression) r);	
 				Long cvalL = parseLongConstant(l);
-				if( cvalL != null )
+				if( ret != null && cvalL != null )
 					ret.addConstant(cvalL);
 				else
 					return null;
@@ -1926,19 +1926,19 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( l instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) l);		
-				//change to plus
-				Long cvalR = parseLongConstant(r);
-				ret.addConstant(cvalR*(-1));
+				if( ret != null ) //change to plus
+					ret.addConstant(parseLongConstant(r)*(-1));
 			}
 			else if (r instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) r);
-				//change to plus
-				ret._a*=(-1);
-				for( int i=0; i<ret._b.length; i++ )
-					ret._b[i]*=(-1);
-				Long cvalL = parseLongConstant(l);
-				ret.addConstant(cvalL);
+				if( ret != null ) { //change to plus
+					ret._a*=(-1);
+					for( int i=0; i<ret._b.length; i++ )
+						ret._b[i]*=(-1);
+					Long cvalL = parseLongConstant(l);
+					ret.addConstant(cvalL);
+				}
 			}
 			else // atomic case
 			{

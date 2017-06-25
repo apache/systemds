@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -42,6 +43,7 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -761,18 +763,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                     getCache();
             }
         }
-				
-		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
-		if ( fName.equals(_hdfsFileName) ) {
+		
+        //check for persistent or transient writes
+		boolean pWrite = !fName.equals(_hdfsFileName);
+		if( !pWrite )
 			setHDFSFileExists(true);
-			pWrite = false;
-		}
-		else {
-			pWrite = true;  // i.e., export is called from "write" instruction
-		}
-
+		
+		//check for common file scheme (otherwise no copy/rename)
+		boolean eqScheme = IOUtilFunctions.isSameFileScheme(
+			new Path(_hdfsFileName), new Path(fName));
+		
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
-		if(  isDirty()  ||      //use dirty for skipping parallel exports
+		if(  isDirty() || !eqScheme ||
 		    (pWrite && !isEqualOutputFormat(outputFormat)) ) 
 		{		  
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
@@ -1355,9 +1357,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		try
 		{
+			//check for common file scheme (otherwise no copy/rename)
+			boolean eqScheme = IOUtilFunctions.isSameFileScheme(
+				new Path(_hdfsFileName), new Path(fName));
+			
 			//export or rename to target file on hdfs
-			if( (isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) ||
-				(getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)))
+			if( isDirty() || !eqScheme || (!isEqualOutputFormat(outputFormat) && isEmpty(true)) 
+				|| (getRDDHandle()!=null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)) )
 			{
 				exportData(fName, outputFormat);
 				ret = true;

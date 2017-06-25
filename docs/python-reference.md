@@ -35,7 +35,7 @@ one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
 Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
 No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
 based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
-To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/incubator-systemml/beginners-guide-to-dml-and-pydml.html).
+To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/systemml/beginners-guide-to-dml-and-pydml.html).
 
 For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
 and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections.
@@ -47,6 +47,9 @@ It allows the user to perform linear algebra operations in SystemML using a NumP
 It implements basic matrix operators, matrix functions as well as converters to common Python
 types (for example: Numpy arrays, PySpark DataFrame and Pandas
 DataFrame).
+
+The primary reason for supporting this API is to reduce the learning curve for an average Python user,
+who is more likely to know Numpy library, rather than the DML language.
 
 ### Operators
  
@@ -105,8 +108,66 @@ save(mVar4, " ")
 
 Since matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS),
 you may run into `RuntimeError: maximum recursion depth exceeded`. 
-Please see below [troubleshooting steps](http://apache.github.io/incubator-systemml/python-reference#maximum-recursion-depth-exceeded)
+Please see below [troubleshooting steps](http://apache.github.io/systemml/python-reference#maximum-recursion-depth-exceeded)
 
+### Dealing with the loops
+
+It is important to note that this API doesnot pushdown loop, which means the
+SystemML engine essentially gets an unrolled DML script.
+This can lead to two issues:
+
+1. Since matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS),
+you may run into `RuntimeError: maximum recursion depth exceeded`. 
+Please see below [troubleshooting steps](http://apache.github.io/systemml/python-reference#maximum-recursion-depth-exceeded)
+
+2. Significant parsing/compilation overhead of potentially large unrolled DML script.
+
+The unrolling of the for loop can be demonstrated by the below example:
+ 
+```python
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+
+Welcome to Apache SystemML!
+
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> m3 = m1
+>>> for i in range(5):
+...     m3 = m1 * m3 + m1
+...
+>>> m3
+# This matrix (mVar12) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 * mVar1
+mVar4 = mVar3 + mVar1
+mVar5 = mVar1 * mVar4
+mVar6 = mVar5 + mVar1
+mVar7 = mVar1 * mVar6
+mVar8 = mVar7 + mVar1
+mVar9 = mVar1 * mVar8
+mVar10 = mVar9 + mVar1
+mVar11 = mVar1 * mVar10
+mVar12 = mVar11 + mVar1
+save(mVar12, " ")
+```
+
+We can reduce the impact of this unrolling by eagerly evaluating the variables inside the loop:
+
+```python
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+
+Welcome to Apache SystemML!
+
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> m3 = m1
+>>> for i in range(5):
+...     m3 = m1 * m3 + m1
+...     sml.eval(m3)
+
+```
 
 ### Built-in functions
 
@@ -279,8 +340,8 @@ As a result, it offers a convenient way to interact with SystemML from the Spark
 
 ### Usage
 
-The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
-using Python [MLContext API](https://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide).
+The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
+using Python [MLContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets, neighbors
@@ -308,7 +369,7 @@ beta = ml.execute(script).get('B_out').toNumPy()
 
 mllearn API is designed to be compatible with scikit-learn and MLLib.
 The classes that are part of mllearn API are LogisticRegression, LinearRegression, SVM, NaiveBayes 
-and [Caffe2DML](http://apache.github.io/incubator-systemml/beginners-guide-caffe2dml).
+and [Caffe2DML](http://apache.github.io/systemml/beginners-guide-caffe2dml).
 
 The below code describes how to use mllearn API for training:
 
@@ -362,7 +423,7 @@ The table below describes the parameter available for mllearn algorithms:
 | is_multi_class | Specifies whether to use binary-class or multi-class classifier (default: False) | - | - | X | - |
 | laplace | Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0) | - | - | - | X |
 
-In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
+In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
 algorithm on digits datasets.
 
 ```python

@@ -20,6 +20,7 @@
 package org.apache.sysml.test.gpu;
 
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,16 +83,14 @@ public abstract class GPUTests extends AutomatedTestBase {
 			int count = GPUContextPool.getDeviceCount();
 			int freeCount = GPUContextPool.getAvailableCount();
 			Assert.assertTrue("All GPUContexts have not been returned to the GPUContextPool", count == freeCount);
-			ArrayList<GPUContext> gpuContexts = new ArrayList<>();
-			for (int i = 0; i < count; i++) {
-				GPUContext gCtx = GPUContextPool.getFromPool();
+
+			List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
+			for (GPUContext gCtx : gCtxs) {
 				gCtx.initializeThread();
 				gCtx.clearMemory();
-				gpuContexts.add(gCtx);
 			}
-			for (GPUContext gCtx : gpuContexts) {
-				GPUContextPool.returnToPool(gCtx);
-			}
+			GPUContextPool.freeAllGPUContexts();
+
 
 		} catch (DMLRuntimeException e) {
 			// Ignore
@@ -124,6 +123,33 @@ public abstract class GPUTests extends AutomatedTestBase {
 	}
 
 	/**
+	 * Generates a random input matrix with a given size and sparsity
+	 *
+	 * @param spark    valid instance of {@link SparkSession}
+	 * @param m        number of rows
+	 * @param n        number of columns
+	 * @param min      min for RNG
+	 * @param max      max for RNG
+	 * @param sparsity sparsity (1 = completely dense, 0 = completely sparse)
+	 * @return a random matrix with given size and sparsity
+	 */
+	protected Matrix generateInputMatrix(SparkSession spark, int m, int n, double min, double max, double sparsity, int seed) {
+		// Generate a random matrix of size m * n
+		MLContext genMLC = new MLContext(spark);
+		String scriptStr;
+		if (sparsity == 0.0) {
+			scriptStr = "in1 = matrix(0, rows=" + m + ", cols=" + n + ")";
+		} else {
+			scriptStr = "in1 = rand(rows=" + m + ", cols=" + n + ", sparsity = " + sparsity + ", seed= " + seed
+					+ ", min=" + min + ", max=" + max + ")";
+		}
+		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
+		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
+		genMLC.close();
+		return in1;
+	}
+
+	/**
 	 * Asserts that the values in two matrices are in {@link UnaryOpTests#THRESHOLD} of each other
 	 *
 	 * @param expected expected matrix
@@ -145,8 +171,12 @@ public abstract class GPUTests extends AutomatedTestBase {
 					double actualDouble = actualMB.quickGetValue(i, j);
 					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
 						double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
-						Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError
-								+ ") is more than threshold (" + getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
+						Formatter format = new Formatter();
+						format.format(
+								"Relative error(%f) is more than threshold (%f). Expected = %f, Actual = %f, differed at [%d, %d]",
+								relativeError, getTHRESHOLD(), expectedDouble, actualDouble, i, j);
+						Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						format.close();
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
 					}

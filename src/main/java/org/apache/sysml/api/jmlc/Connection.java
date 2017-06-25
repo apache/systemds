@@ -86,7 +86,7 @@ import org.apache.wink.json4j.JSONObject;
  * For examples, please see the following:
  * <ul>
  *   <li>JMLC JUnit test cases (org.apache.sysml.test.integration.functions.jmlc)</li>
- *   <li><a target="_blank" href="http://apache.github.io/incubator-systemml/jmlc.html">JMLC section
+ *   <li><a target="_blank" href="http://apache.github.io/systemml/jmlc.html">JMLC section
  *   of SystemML online documentation</a></li>
  * </ul>
  */
@@ -232,8 +232,8 @@ public class Connection implements Closeable
 			if(    fname.startsWith("hdfs:") 
 				|| fname.startsWith("gpfs:") ) 
 			{ 
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path scriptPath = new Path(fname);
+				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system

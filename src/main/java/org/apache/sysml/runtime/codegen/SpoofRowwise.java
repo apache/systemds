@@ -29,11 +29,13 @@ import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -44,6 +46,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	public enum RowType {
 		NO_AGG,    //no aggregation
+		FULL_AGG,  //full row/col aggregation
 		ROW_AGG,   //row aggregation (e.g., rowSums() or X %*% v)
 		COL_AGG,   //col aggregation (e.g., colSums() or t(y) %*% X)
 		COL_AGG_T; //transposed col aggregation (e.g., t(X) %*% y)
@@ -54,15 +57,21 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	protected final RowType _type;
+	protected final boolean _cbind0;
 	protected final int _reqVectMem;
 	
-	public SpoofRowwise(RowType type, int reqVectMem) {
+	public SpoofRowwise(RowType type, boolean cbind0, int reqVectMem) {
 		_type = type;
+		_cbind0 = cbind0;
 		_reqVectMem = reqVectMem;
 	}
 	
 	public RowType getRowType() {
 		return _type;
+	}
+	
+	public boolean isCBind0() {
+		return _cbind0;
 	}
 	
 	public int getNumIntermediates() {
@@ -72,6 +81,18 @@ public abstract class SpoofRowwise extends SpoofOperator
 	@Override
 	public String getSpoofType() {
 		return "RA" +  getClass().getName().split("\\.")[1];
+	}
+	
+	@Override
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) 
+		throws DMLRuntimeException 
+	{
+		MatrixBlock out = new MatrixBlock(1, 1, false);
+		if( k > 1 )
+			execute(inputs, scalarObjects, out, k);
+		else
+			execute(inputs, scalarObjects, out);
+		return new DoubleObject(out.quickGetValue(0, 0));
 	}
 	
 	@Override
@@ -111,7 +132,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			executeDense(a.getDenseBlock(), b, scalars, c, n, 0, m);
 		else
 			executeSparse(a.getSparseBlock(), b, scalars, c, n, 0, m);
-	
+		
 		//post-processing
 		if( allocTmp )
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
@@ -148,15 +169,16 @@ public abstract class SpoofRowwise extends SpoofOperator
 		int blklen = (int)(Math.ceil((double)m/nk));
 		try
 		{
-			if( _type.isColumnAgg() ) {
+			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<ParColAggTask>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParColAggTask(inputs.get(0), b, scalars, n, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 				//aggregate partial results
+				int len = _type.isColumnAgg() ? n : 1;
 				for( Future<double[]> task : taskret )
-					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, n);
+					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, len);
 				out.recomputeNonZeros();
 			}
 			else {
@@ -183,7 +205,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 	private void allocateOutputMatrix(int m, int n, MatrixBlock out) {
 		switch( _type ) {
 			case NO_AGG: out.reset(m, n, false); break;
-			case ROW_AGG: out.reset(m, 1, false); break;
+			case FULL_AGG: out.reset(1, 1, false); break;
+			case ROW_AGG: out.reset(m, 1+(_cbind0?1:0), false); break;
 			case COL_AGG: out.reset(1, n, false); break;
 			case COL_AGG_T: out.reset(n, 1, false); break;
 		}
@@ -197,25 +220,26 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			//call generated method
-			genexecRowDense( a, aix, b, scalars, c, n, i );
+			genexec( a, aix, b, scalars, c, n, i );
 		}
 	}
 	
 	private void executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
-		if( sblock == null )
-			return;
-			
+		SparseRow empty = new SparseRowVector(1);
 		for( int i=rl; i<ru; i++ ) {
-			if( !sblock.isEmpty(i) ) {
+			if( sblock!=null && !sblock.isEmpty(i) ) {
 				double[] avals = sblock.values(i);
 				int[] aix = sblock.indexes(i);
 				int apos = sblock.pos(i);
 				int alen = sblock.size(i);
 				
 				//call generated method
-				genexecRowSparse(avals, aix, apos, b, scalars, c, alen, i);
+				genexec(avals, aix, apos, b, scalars, c, alen, n, i);
 			}
+			else
+				genexec(empty.values(), 
+					empty.indexes(), 0, b, scalars, c, 0, n, i);	
 		}
 	}
 	
@@ -227,26 +251,31 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( !a.isInSparseFormat() ) { //DENSE
 			Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
 			for( int i=rl; iter.hasNext(); i++ ) {
-				genexecRowDense(iter.next(), 0, b, scalars, c, n, i);
+				genexec(iter.next(), 0, b, scalars, c, n, i);
 			}
 		}
 		else { //SPARSE
 			Iterator<SparseRow> iter = a.getSparseRowIterator(rl, ru);
+			SparseRow empty = new SparseRowVector(1);
 			for( int i=rl; iter.hasNext(); i++ ) {
 				SparseRow row = iter.next();
-				if( !row.isEmpty() ) {
-					genexecRowSparse(row.values(), row.indexes(), 
-						0, b, scalars, c, row.size(), i);
-				}
+				if( !row.isEmpty() )
+					genexec(row.values(), 
+						row.indexes(), 0, b, scalars, c, row.size(), n, i);
+				else
+					genexec(empty.values(), 
+						empty.indexes(), 0, b, scalars, c, 0, n, i);
 			}
 		}
 	}
 	
 	//methods to be implemented by generated operators of type SpoofRowAggrgate 
 	
-	protected abstract void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex );
+	protected abstract void genexec(double[] a, int ai, 
+		double[][] b, double[] scalars, double[] c, int len, int rowIndex);
 	
-	protected abstract void genexecRowSparse( double[] avals, int[] aix, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex );
+	protected abstract void genexec(double[] avals, int[] aix, int ai, 
+		double[][] b, double[] scalars, double[] c, int alen, int n, int rowIndex);
 
 	
 	/**

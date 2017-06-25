@@ -35,13 +35,14 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.Transform.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
  *  Reorg (cell) operation: aij
  * 		Properties: 
  * 			Symbol: ', rdiag, rshape, rsort
- * 			1 Operand
+ * 			1 Operand (except sort and reshape take additional arguments)
  * 	
  * 		Semantic: change indices (in mapper or reducer)
  * 
@@ -91,6 +92,24 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		switch( op ) {
+		case TRANSPOSE:
+		case DIAG:
+		case REV:
+			HopsException.check(sz == 1, this, "should have arity 1 for op %s but has arity %d", op, sz);
+			break;
+		case RESHAPE:
+		case SORT:
+			HopsException.check(sz == 4, this, "should have arity 4 for op %s but has arity %d", op, sz);
+			break;
+		default:
+			throw new HopsException("Unsupported lops construction for operation type '" + op + "'.");
+		}
+	}
+
+	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
 	}
@@ -133,7 +152,8 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
+					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
+							.initialGPUMemBudget())) {
 						et = ExecType.GPU;
 					}
 					Transform transform1 = new Transform( lin, 

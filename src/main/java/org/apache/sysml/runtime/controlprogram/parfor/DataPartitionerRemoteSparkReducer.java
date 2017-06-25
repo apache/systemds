@@ -66,8 +66,8 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 		{
 			//create sequence file writer
 			Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
-			FileSystem fs = FileSystem.get(job);
 			Path path = new Path(_fnameNew + File.separator + key);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, 
 					job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
                     (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	

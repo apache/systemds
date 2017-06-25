@@ -134,6 +134,6 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 
 		runTest();
 
-		compareResults();
+		compareResults(1e-10);
 	}
 }

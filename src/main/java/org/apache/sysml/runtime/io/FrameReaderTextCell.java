@@ -58,8 +58,8 @@ public class FrameReaderTextCell extends FrameReader
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 

@@ -26,6 +26,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeMultiAgg extends CNodeTpl
 {
@@ -89,13 +90,15 @@ public class CNodeMultiAgg extends CNodeTpl
 	}
 	
 	@Override
+	public void renameInputs() {
+		rRenameDataNode(_outputs, _inputs.get(0), "a"); // input matrix
+		renameInputs(_outputs, _inputs, 1);
+	}
+	
+	@Override
 	public String codegen(boolean sparse) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
-		
-		//rename inputs
-		rReplaceDataNode(_outputs, _inputs.get(0), "a"); // input matrix
-		renameInputs(_outputs, _inputs, 1);
 		
 		//generate dense/sparse bodies
 		StringBuilder sb = new StringBuilder();
@@ -117,8 +120,8 @@ public class CNodeMultiAgg extends CNodeTpl
 		}
 			
 		//replace class name and body
-		tmp = tmp.replaceAll("%TMP%", createVarname());
-		tmp = tmp.replaceAll("%BODY_dense%", sb.toString());
+		tmp = tmp.replace("%TMP%", createVarname());
+		tmp = tmp.replace("%BODY_dense%", sb.toString());
 	
 		//replace meta data information
 		String aggList = "";
@@ -126,7 +129,7 @@ public class CNodeMultiAgg extends CNodeTpl
 			aggList += !aggList.isEmpty() ? "," : "";
 			aggList += "AggOp."+aggOp.name();
 		}
-		tmp = tmp.replaceAll("%AGG_OP%", aggList);
+		tmp = tmp.replace("%AGG_OP%", aggList);
 
 		return tmp;
 	}
@@ -151,13 +154,12 @@ public class CNodeMultiAgg extends CNodeTpl
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int[] tmp = new int[2*_outputs.size()+1];
-			tmp[0] = super.hashCode();
+			int h = super.hashCode();
 			for( int i=0; i<_outputs.size(); i++ ) {
-				tmp[1+2*i] = _outputs.get(i).hashCode();
-				tmp[1+2*i+1] = _aggOps.get(i).hashCode();
+				h = UtilFunctions.intHashCode(h, UtilFunctions.intHashCode(
+					_outputs.get(i).hashCode(), _aggOps.get(i).hashCode()));
 			}
-			_hash = Arrays.hashCode(tmp);
+			_hash = h;
 		}
 		return _hash;
 	}

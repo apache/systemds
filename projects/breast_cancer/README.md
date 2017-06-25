@@ -41,7 +41,7 @@ References:
 [2] See [`Preprocessing.ipynb`](Preprocessing.ipynb), and [`breastcancer/preprocessing.py`](breastcancer/preprocessing.py).
 [3] See [`MachineLearning.ipynb`](MachineLearning.ipynb), [`softmax_clf.dml`](softmax_clf.dml), and [`convnet.dml`](convnet.dml).
 
-![Approach](https://apache.github.io/incubator-systemml/img/projects/breast_cancer/approach.svg)
+![Approach](https://apache.github.io/systemml/img/projects/breast_cancer/approach.svg)
 
 ---
 
@@ -61,8 +61,8 @@ References:
 * Python packages:
   * `pip3 install -U matplotlib numpy pandas scipy jupyter ipython scikit-learn scikit-image flask openslide-python`
 * SystemML (only driver):
-  * `git clone https://github.com/apache/incubator-systemml.git`
-  * `cd incubator-systemml`
+  * `git clone https://github.com/apache/systemml.git`
+  * `cd systemml`
   * `mvn clean package`
   * `pip3 install -e src/main/python`
 * Add the following to the `data` folder (same location on *all* nodes):
@@ -100,7 +100,7 @@ References:
     # Remove the max result size constraint.
     spark.driver.maxResultSize 0
     # Increase the message size.
-    spark.akka.frameSize 128
+    spark.rpc.message.maxSize 128
     # Extend the network timeout threshold.
     spark.network.timeout 1000s
     # Setup some extra Java options for performance.
@@ -136,3 +136,4 @@ References:
   - Host on server:
     - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py -Q 100 -l HOSTING_URL_HERE path/to/data/`
     - Open local browser to `HOSTING_URL_HERE:5000`.
+

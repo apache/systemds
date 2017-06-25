@@ -194,7 +194,8 @@ public class DataConverter
 	{	
 		//Timing time = new Timing(true);
 		
-		long estnnz = (long)(prop.expectedSparsity*prop.rlen*prop.clen);
+		long estnnz = (prop.expectedSparsity <= 0 || prop.rlen <= 0 || prop.clen <= 0) ? 
+			-1 : (long)(prop.expectedSparsity*prop.rlen*prop.clen);
 	
 		//core matrix reading 
 		MatrixBlock ret = null;

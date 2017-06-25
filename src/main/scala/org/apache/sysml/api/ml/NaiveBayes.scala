@@ -95,15 +95,15 @@ class NaiveBayesModel(override val uid: String)
       .in("$probabilities", " ")
       .out("probs")
     
-    val classPrior = estimator.mloutput.getBinaryBlockMatrix("classPrior")
-    val classConditionals = estimator.mloutput.getBinaryBlockMatrix("classConditionals")
+    val classPrior = estimator.mloutput.getMatrix("classPrior")
+    val classConditionals = estimator.mloutput.getMatrix("classConditionals")
     val ret = if(isSingleNode) {
-      script.in("prior", classPrior.getMatrixBlock, classPrior.getMatrixMetadata)
-            .in("conditionals", classConditionals.getMatrixBlock, classConditionals.getMatrixMetadata)
+      script.in("prior", classPrior.toMatrixBlock, classPrior.getMatrixMetadata)
+            .in("conditionals", classConditionals.toMatrixBlock, classConditionals.getMatrixMetadata)
     }
     else {
-      script.in("prior", classPrior.getBinaryBlocks, classPrior.getMatrixMetadata)
-            .in("conditionals", classConditionals.getBinaryBlocks, classConditionals.getMatrixMetadata)
+      script.in("prior", classPrior.toBinaryBlocks, classPrior.getMatrixMetadata)
+            .in("conditionals", classConditionals.toBinaryBlocks, classConditionals.getMatrixMetadata)
     }
     (ret, "D")
   }

@@ -100,7 +100,7 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	
 	@Override
 	public int hashCode() {
-		return UtilFunctions.longlongHashCode(_row, _col);
+		return UtilFunctions.longHashCode(_row, _col);
 	}
 	
 	@Override

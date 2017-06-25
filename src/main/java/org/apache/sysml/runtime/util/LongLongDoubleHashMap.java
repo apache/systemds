@@ -112,7 +112,7 @@ public class LongLongDoubleHashMap
 	}
 
 	private static int hash(long key1, long key2) {
-		int h = UtilFunctions.longlongHashCode(key1, key2);
+		int h = UtilFunctions.longHashCode(key1, key2);
 		
 		// This function ensures that hashCodes that differ only by
 		// constant multiples at each bit position have a bounded

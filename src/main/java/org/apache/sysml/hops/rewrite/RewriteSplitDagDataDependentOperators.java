@@ -20,8 +20,11 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.DataOp;
@@ -63,7 +66,6 @@ import org.apache.sysml.runtime.matrix.data.Pair;
  */
 public class RewriteSplitDagDataDependentOperators extends StatementBlockRewriteRule
 {
-
 	private static String _varnamePredix = "_sbcvar";
 	private static IDSequence _seq = new IDSequence();
 	
@@ -71,6 +73,10 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
+		//DAG splits not required for forced single node
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return new ArrayList<StatementBlock>(Arrays.asList(sb));
+		
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 	
 		//collect all unknown csv reads hops

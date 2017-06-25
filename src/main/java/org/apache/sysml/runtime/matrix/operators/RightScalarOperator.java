@@ -52,18 +52,12 @@ public class RightScalarOperator extends ScalarOperator
 			|| (fn instanceof GreaterThanEquals && _constant>0)
 			|| (fn instanceof LessThan && _constant<=0)
 			|| (fn instanceof LessThanEquals && _constant<0)
-			|| (fn instanceof Divide && _constant!=0));
+			|| (fn instanceof Divide && _constant!=0)
+			|| (fn instanceof Power && _constant!=0));
 	}
 	
 	@Override
 	public double executeScalar(double in) throws DMLRuntimeException {
 		return fn.execute(in, _constant);
-	}
-	
-	@Override
-	protected boolean isSparseSafeStatic() {
-		//add power as only rhs op sparse safe (1^0=1 but 0^1=0).
-		return (super.isSparseSafeStatic() 
-			|| fn instanceof Power);
 	}
 }

@@ -20,11 +20,12 @@
 #-------------------------------------------------------------
 
 /*
- * 2D Transpose convolutional layer.
+ * 2D Transpose Convolutional layer.
  *
  * Utilizes built-in convolution operators for higher performance.
  */
- 
+source("nn/util.dml") as util
+
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw,
@@ -37,7 +38,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
@@ -48,7 +49,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - stridew: Stride over width.
    *  - padh: Padding for top and bottom sides.
    *  - padw: Padding for left and right sides.
-   *  - out_padh: extra padding for top side. This should 
+   *  - out_padh: extra padding for top side. This should
    *      lie in [0, strideh-1].
    *  - out_padw: extra padding for right side. This should
    *      lie in [0, stridew-1].
@@ -59,29 +60,28 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - Wout: Output width.
    */
   N = nrow(X)
-  F = nrow(W)
-  Hout = strideh * (Hin-1) - 2*padh + Hf + out_padh
-  Wout = stridew * (Win-1) - 2*padw + Wf + out_padw
+  F = nrow(b)
+  Hout = strideh*(Hin-1) - 2*padh + Hf + out_padh
+  Wout = stridew*(Win-1) - 2*padw + Wf + out_padw
 
-  /*
-   * Transpose convolution aims to go in the other direction of
-   * (direct) convolution, i.e., given input X, produce output O such
-   * that running convolution on O recovers X. This is achieved by
-   * conv2d_backward_data (since the derivative wrt data must produce
-   * output of same size as the input to conv2d). By reusing a built-in
-   * operator we achieve efficiency and restrict the number of built-in
-   * operators to manageable levels. Plus, most other deep-learning
-   * packages make use of the same strategy which means this
-   * implementation of transpose convolution is 'in-sync' with them.
-   *
-   * One potential downside of reusing conv2d_backward_data is the fact
-   * that it rotates the filter by 180 degrees before applying it. This
-   * needs to be kept in mind when interpreting the output of transpose
-   * convolution.
-   */
+  # Transpose convolution aims to go in the other direction of
+  # (direct) convolution, i.e., given input X, produce output O such
+  # that running convolution on O recovers X. This is achieved by
+  # conv2d_backward_data (since the derivative wrt data must produce
+  # output of same size as the input to conv2d). By reusing a built-in
+  # operator we achieve efficiency and restrict the number of built-in
+  # operators to manageable levels. Plus, most other deep-learning
+  # packages make use of the same strategy which means this
+  # implementation of transpose convolution is 'in-sync' with them.
+  #
+  # One potential downside of reusing conv2d_backward_data is the fact
+  # that it rotates the filter by 180 degrees before applying it. This
+  # needs to be kept in mind when interpreting the output of transpose
+  # convolution.
   out = conv2d_backward_data(W, X, stride=[strideh,stridew], padding=[padh,padw],
-                             input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf])
+                             input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf])
 
+  # Add bias term to each output filter
   out = bias_add(out, b)
 }
 
@@ -100,7 +100,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    *  - Hout: Output height.
    *  - Wout: Output width.
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
@@ -114,43 +114,40 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    *
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
-   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - dW: Gradient wrt `W`, of shape (C, F*Hf*Wf).
    *  - db: Gradient wrt `b`, of shape (F, 1).
    */
   N = nrow(X)
-  F = nrow(W)
+  F = nrow(b)
 
-  /*
-   * conv2d_backward_filter takes the input and delta map as first and
-   * second args, respectively. Given that, we need to compute the
-   * grad (wrt to filter) for transpose convolution where the roles of
-   * the input and output are reversed, we reverse the order of the
-   * args (along with setting input_shape to the delta map shape).
-   * Effectively, we are running a direct convolution with X as the
-   * filter and the dout as the input. To convince oneself that the
-   * interconnections between the cells of the filter, input and delta
-   * map are preserved please keep in mind that the forward of
-   * convolution transpose rotates the filter by 180 degrees before
-   * applying it.
-   */
+  # conv2d_backward_filter takes the input and delta map as first and
+  # second args, respectively. Given that we need to compute the
+  # grad (wrt to filter) for transpose convolution where the roles of
+  # the input and output are reversed, we reverse the order of the
+  # args (along with setting input_shape to the delta map shape).
+  # Effectively, we are running a direct convolution with X as the
+  # filter and the dout as the input. To convince oneself that the
+  # interconnections between the cells of the filter, input and delta
+  # map are preserved please keep in mind that the forward of
+  # convolution transpose rotates the filter by 180 degrees before
+  # applying it.
   dW = conv2d_backward_filter(dout, X, stride=[strideh,stridew], padding=[padh,padw],
-                              input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf])
+                              input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf])
 
-  /*
-   * Since the forward for transpose convolution makes a call to
-   * conv2d_backward_data, to compute its derivative wrt to data
-   * we can run conv2d by applying the filter on the delta
-   * map (this makes sense because convolution transpose is the
-   * 'reverse' of convolution). Its easy to see that this will produce
-   * output of the required size. To convince oneself that conv2d will
-   * respect the interconnections between the cells in the delta map
-   * and the filter, keep in mind that the forward function rotates the
-   * filter by 180 degrees before applying it.
-   */
-  dX = conv2d(dout, W, input_shape=[N,C,Hout,Wout], filter_shape=[F,C,Hf,Wf],
+  # Since the forward for transpose convolution makes a call to
+  # conv2d_backward_data, to compute its derivative wrt to data
+  # we can run conv2d by applying the filter on the delta
+  # map (this makes sense because convolution transpose is the
+  # 'reverse' of convolution). Its easy to see that this will produce
+  # output of the required size. To convince oneself that conv2d will
+  # respect the interconnections between the cells in the delta map
+  # and the filter, keep in mind that the forward function rotates the
+  # filter by 180 degrees before applying it.
+  dX = conv2d(dout, W, input_shape=[N,F,Hout,Wout], filter_shape=[C,F,Hf,Wf],
               stride=[strideh,stridew], padding=[padh,padw])
 
-  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))
+  # Partial derivatives for bias vector
+  db = util::channel_sums(dout, F, Hout, Wout)
 }
 
 init = function(int F, int C, int Hf, int Wf)
@@ -171,10 +168,10 @@ init = function(int F, int C, int Hf, int Wf)
    *  - Wf: Filter width.
    *
    * Outputs:
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2/(C*Hf*Wf))
+  W = rand(rows=C, cols=F*Hf*Wf, pdf="normal") * sqrt(2/(C*Hf*Wf))
   b = matrix(0, rows=F, cols=1)
 }
 
@@ -187,7 +184,7 @@ init_bilinear = function(int C, int K)
    * channel-wise independent kernels of size K = 2f - f%2,
    * stride = f and pad = ceil((f-1)/2). The weights are set
    * via bilinear interpolation, bias is set to 0.
-   * 
+   *
    * Inputs:
    *  - C: Number of input channels (dimensionality of depth).
    *  - K: Kernel size (upsampling requires a square filter
@@ -202,47 +199,41 @@ init_bilinear = function(int C, int K)
   vect = 1 - abs(seq(0, K-1) / factor_up - center)
   weights = matrix(vect %*% t(vect), rows=1, cols=K*K)
 
-  /* 
-   * To create a multi-channel channel-independent upsampling filter,
-   * we need to intersperse the filter weights with 0s. For instance,
-   * consider the case of 2X upsampling. In this case, K=4 and we have
-   * K^2=16 weights to include into the 3D tensor representing the
-   * filter which should look like the following (assuming 3 channels):
-   *
-   *   <-16 weights-> <---------32 0s--------->
-   *   X X ...... X X 0 0 0 ............. 0 0 0
-   *   0 .......... 0 X X .... X X 0 ...... 0 0
-   *   0 0 0 ............... 0 0 0 X X .... X X
-   *
-   * To be clear, the second row should have 16 0s followed by 16
-   * weights followed by 16 0s.
-   *
-   * To create the above filter, we take advantage of the fact that
-   * between two sets of non-zero weights, there is always a sequence
-   * of C*K*K 0s. In the above example, C*K^2 = 48 (e.g., 32 trailing
-   * 0s in the first row and 16 leading 0s in the second row).
-   *
-   * Note that, in the special case of C=1 we do not need to
-   * intersperse with 0s (no question of being channel-wise independent
-   * since we have only 1 channel).
-   */
-  #if(C > 1){
-    /*
-     * Append C*K*K trailing 0s to the K*K kernel and replicate the
-     * resulting row C times
-     */
-    repl_weights = matrix(1, rows=C, cols=1) %*% cbind(weights, matrix(0, rows=1, cols=C*K*K))
-    
-    /*
-     * The above operation added extra C*K*K trailing 0s in the last row
-     * that we do not need. Thus, we need to:
-     *   1) reshape the resulting matrix into a row
-     *   2) 'Clip off' the last few 0s using indexing and reshape the
-     *      result into the expected filter shape ([C, C, K, K])
-     */
-    repl_weights_row = matrix(repl_weights, rows=1, cols=C*(C+1)*K^2)
-    W = matrix(repl_weights_row[1,1:(C*K)^2], rows=C, cols=C*K^2)
-  #}else W = weights
+  # To create a multi-channel channel-independent upsampling filter,
+  # we need to intersperse the filter weights with 0s. For instance,
+  # consider the case of 2X upsampling. In this case, K=4 and we have
+  # K^2=16 weights to include into the 3D tensor representing the
+  # filter which should look like the following (assuming 3 channels):
+  #
+  #   <-16 weights-> <---------32 0s--------->
+  #   X X ...... X X 0 0 0 ............. 0 0 0
+  #   0 .......... 0 X X .... X X 0 ...... 0 0
+  #   0 0 0 ............... 0 0 0 X X .... X X
+  #
+  # To be clear, the second row should have 16 0s followed by 16
+  # weights followed by 16 0s.
+  #
+  # To create the above filter, we take advantage of the fact that
+  # between two sets of non-zero weights, there is always a sequence
+  # of C*K*K 0s. In the above example, C*K^2 = 48 (e.g., 32 trailing
+  # 0s in the first row and 16 leading 0s in the second row).
+  #
+  # Note that, in the special case of C=1 we do not need to
+  # intersperse with 0s (no question of being channel-wise independent
+  # since we have only 1 channel).
+
+  # Append C*K*K trailing 0s to the K*K kernel and replicate the
+  # resulting row C times
+  repl_weights = matrix(1, rows=C, cols=1) %*% cbind(weights, matrix(0, rows=1, cols=C*K*K))
+
+  # The above operation added extra C*K*K trailing 0s in the last row
+  # that we do not need. Thus, we need to:
+  #   1) reshape the resulting matrix into a row
+  #   2) 'Clip off' the last few 0s using indexing and reshape the
+  #      result into the expected filter shape ([C, C, K, K])
+  repl_weights_row = matrix(repl_weights, rows=1, cols=C*(C+1)*K^2)
+  W = matrix(repl_weights_row[1,1:(C*K)^2], rows=C, cols=C*K^2)
 
   b = matrix(0, rows=C, cols=1)
 }
+

@@ -541,75 +541,6 @@ public class DMLScript
 		
 		return true;
 	}
-	
-	///////////////////////////////
-	// private internal utils (argument parsing)
-	////////
-
-	@Deprecated()
-	/**
-	 * Creates an argument map appropriate for consumption by the backend
-	 * The only method using this is the legacy {@link MLContext} api.
-	 * Once that is removed, this function should be removed as well.
-	 * This method uses a fragile position based argument for -args & -nvargs
-	 * @param hasNamedArgs true for named arguments, false for positional arguments
-	 * @param args in "k=v" format for named arguments and "v" for positional arguments
-	 * @return	a map containing either ($K,V) or ($1,V) for named and positional arguments respectively
-	 * @throws LanguageException when a named argument is an invalid identifier for DML/PyDML
-	 */
-	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
-		throws LanguageException
-	{			
-		Map<String, String> argMap = new HashMap<String,String>();
-		
-		if (args == null)
-			return argMap;
-		
-		for(int i=1; i<=args.length; i++)
-		{
-			String arg = args[i-1];
-			
-			if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
-				arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
-				arg.equalsIgnoreCase("-explain") || 
-				arg.equalsIgnoreCase("-debug") || 
-				arg.equalsIgnoreCase("-stats") || 
-				arg.equalsIgnoreCase("-exec") ||
-				arg.equalsIgnoreCase("-debug") ||
-				arg.startsWith("-config"))
-			{
-					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
-			}
-			
-			//parse arguments (named args / args by position)
-			if(hasNamedArgs)
-			{
-				// CASE: named argument argName=argValue -- must add <argName, argValue> pair to _argVals
-				String[] argPieces = arg.split("=");
-				if(argPieces.length < 2)
-					throw new LanguageException("for -nvargs option, elements in arg list must be named and have form argName=argValue");
-				String argName = argPieces[0];
-				StringBuilder sb = new StringBuilder();
-				for (int jj=1; jj < argPieces.length; jj++){
-					sb.append(argPieces[jj]); 
-				}
-				
-				String varNameRegex = "^[a-zA-Z]([a-zA-Z0-9_])*$";
-				if (!argName.matches(varNameRegex))
-					throw new LanguageException("argName " + argName + " must be a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
-					
-				argMap.put("$"+argName,sb.toString());
-			}
-			else 
-			{
-				// CASE: unnamed argument -- use position in arg list for name
-				argMap.put("$"+i ,arg);
-			}
-		}
-		
-		return argMap;
-	}
-
 
 	/**
 	 * Reads the DML/PyDML script into a String
@@ -639,17 +570,13 @@ public class DMLScript
 				if(    fileName.startsWith("hdfs:")
 					|| fileName.startsWith("gpfs:") )
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(fileName, true) )
-						throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
-					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 					Path scriptPath = new Path(fileName);
+					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
 				// from local file system
 				else 
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(fileName, false) )
-						throw new LanguageException("Invalid (non-trustworthy) local filename.");
 					in = new BufferedReader(new FileReader(fileName));
 				}
 				
@@ -969,14 +896,6 @@ public class DMLScript
 		{
 			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
 		}
-		
-		//validate external filenames working directories
-		String localtmpdir = config.getTextValue(DMLConfig.LOCAL_TMP_DIR);
-		String hdfstmpdir = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-		if( !LocalFileUtils.validateExternalFilename(localtmpdir, false) )
-			throw new DMLRuntimeException("Invalid (non-trustworthy) local working directory.");
-		if( !LocalFileUtils.validateExternalFilename(hdfstmpdir, true) )
-			throw new DMLRuntimeException("Invalid (non-trustworthy) hdfs working directory.");
 	}
 	
 	public static void cleanupHadoopExecution( DMLConfig config ) 

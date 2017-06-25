@@ -59,9 +59,13 @@ public abstract class SparseBlockFactory
 	}
 	
 	public static boolean isSparseBlockType(SparseBlock sblock, SparseBlock.Type type) {
-		return (sblock instanceof SparseBlockMCSR && type == SparseBlock.Type.MCSR)
-			||(sblock instanceof SparseBlockCSR && type == SparseBlock.Type.CSR)
-			||(sblock instanceof SparseBlockCOO && type == SparseBlock.Type.COO);
+		return (getSparseBlockType(sblock) == type);
+	}
+	
+	public static SparseBlock.Type getSparseBlockType(SparseBlock sblock) {
+		return (sblock instanceof SparseBlockMCSR) ? SparseBlock.Type.MCSR :
+			(sblock instanceof SparseBlockCSR) ? SparseBlock.Type.CSR : 
+			(sblock instanceof SparseBlockCOO) ? SparseBlock.Type.COO : null;
 	}
 
 	public static long estimateSizeSparseInMemory(SparseBlock.Type type, long nrows, long ncols, double sparsity) {

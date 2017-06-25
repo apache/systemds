@@ -24,6 +24,7 @@
  *
  * This implementation uses a built-in operator for higher performance.
  */
+source("nn/util.dml") as util
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
@@ -123,11 +124,11 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   # Partial derivatives for convolution - built-in implementation
   dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
                               input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
-  dX = conv2d_backward_data(W, dout, stride=[strideh, stridew], padding=[padh,padw],
+  dX = conv2d_backward_data(W, dout, stride=[strideh,stridew], padding=[padh,padw],
                             input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
 
   # Partial derivatives for bias vector
-  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))
+  db = util::channel_sums(dout, F, Hout, Wout)
 }
 
 init = function(int F, int C, int Hf, int Wf)

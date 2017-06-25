@@ -113,7 +113,7 @@ SystemML Language Reference for details.
                             -nvargs INPUT=/user/ml/input.mtx
                                     K=10
                                     CENTER=1
-                                    SCALE=1O
+                                    SCALE=1
                                     FMT=csv
                                     PROJDATA=1
                                     OUTPUT=/user/ml/pca_output/
@@ -129,7 +129,7 @@ SystemML Language Reference for details.
                                  -nvargs INPUT=/user/ml/input.mtx
                                          K=10
                                          CENTER=1
-                                         SCALE=1O
+                                         SCALE=1
                                          FMT=csv
                                          PROJDATA=1
                                          OUTPUT=/user/ml/pca_output/
@@ -142,7 +142,7 @@ SystemML Language Reference for details.
                             -nvargs INPUT=/user/ml/test_input.mtx
                                     K=10
                                     CENTER=1
-                                    SCALE=1O
+                                    SCALE=1
                                     FMT=csv
                                     PROJDATA=1
                                     MODEL=/user/ml/pca_output/
@@ -159,7 +159,7 @@ SystemML Language Reference for details.
                                  -nvargs INPUT=/user/ml/test_input.mtx
                                          K=10
                                          CENTER=1
-                                         SCALE=1O
+                                         SCALE=1
                                          FMT=csv
                                          PROJDATA=1
                                          MODEL=/user/ml/pca_output/

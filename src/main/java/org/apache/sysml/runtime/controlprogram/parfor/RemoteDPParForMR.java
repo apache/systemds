@@ -52,7 +52,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -247,20 +246,19 @@ public class RemoteDPParForMR
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
 
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		LongWritable key = new LongWritable(); //workerID
 		Text value = new Text();               //serialized var header (incl filename)
 		
 		int countAll = 0;
-		for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 		{
-			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(job),lpath,job);
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try
 			{
 				while( reader.next(key, value) )
 				{
-					//System.out.println("key="+key.get()+", value="+value.toString());
 					if( !tmp.containsKey( key.get() ) )
 		        		tmp.put(key.get(), new LocalVariableMap ());	   
 					Object[] dat = ProgramConverter.parseDataObject( value.toString() );

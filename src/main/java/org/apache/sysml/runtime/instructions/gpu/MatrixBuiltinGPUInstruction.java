@@ -44,35 +44,35 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 
 		switch(opcode) {
 			case "sel+":
-				LibMatrixCUDA.relu(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.relu(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "exp":
-				LibMatrixCUDA.exp(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.exp(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sqrt":
-				LibMatrixCUDA.sqrt(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.sqrt(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "log":
-				LibMatrixCUDA.log(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.log(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "round":
-				LibMatrixCUDA.round(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.round(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "floor":
-				LibMatrixCUDA.floor(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.floor(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "ceil":
-				LibMatrixCUDA.ceil(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.ceil(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "abs":
-				LibMatrixCUDA.abs(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.abs(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sin":
-				LibMatrixCUDA.sin(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.sin(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "cos":
-				LibMatrixCUDA.cos(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.cos(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "tan":
-				LibMatrixCUDA.tan(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.tan(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "asin":
-				LibMatrixCUDA.asin(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.asin(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "acos":
-				LibMatrixCUDA.acos(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.acos(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "atan":
-				LibMatrixCUDA.atan(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.atan(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sign":
-				LibMatrixCUDA.sign(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName()); break;
+				LibMatrixCUDA.sign(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			default:
 				throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
 		}

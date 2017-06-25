@@ -103,11 +103,11 @@ class SVMModel (override val uid: String)(estimator:SVM, val sc: SparkContext, v
       .in("$model", " ")
       .out("scores")
     
-    val w = estimator.mloutput.getBinaryBlockMatrix("w")
+    val w = estimator.mloutput.getMatrix("w")
     val wVar = if(isMultiClass) "W" else "w"
       
     val ret = if(isSingleNode) {
-      script.in(wVar, w.getMatrixBlock, w.getMatrixMetadata)
+      script.in(wVar, w.toMatrixBlock, w.getMatrixMetadata)
     }
     else {
       script.in(wVar, w)

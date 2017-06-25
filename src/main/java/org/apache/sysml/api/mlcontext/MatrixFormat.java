@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -58,24 +58,22 @@ public enum MatrixFormat {
 
 	/**
 	 * Is the matrix format vector-based?
-	 * 
+	 *
 	 * @return {@code true} if matrix is a vector-based DataFrame, {@code false}
 	 *         otherwise.
 	 */
 	public boolean isVectorBased() {
-		return (this == DF_VECTOR_WITH_INDEX
-			|| this == DF_VECTOR);
+		return (this == DF_VECTOR_WITH_INDEX || this == DF_VECTOR);
 	}
 
 	/**
 	 * Does the DataFrame have a row index?
-	 * 
+	 *
 	 * @return {@code true} if the DataFrame has a row index, {@code false}
 	 *         otherwise.
 	 */
 	public boolean hasIDColumn() {
-		return (this == DF_DOUBLES_WITH_INDEX 
-			|| this == DF_VECTOR_WITH_INDEX);
+		return (this == DF_DOUBLES_WITH_INDEX || this == DF_VECTOR_WITH_INDEX);
 	}
 
 }

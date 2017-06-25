@@ -60,8 +60,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 				
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
@@ -89,7 +89,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			//create read tasks for all files
 			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
-			for( Path lpath : getSequenceFilePaths(fs, path) ){
+			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
 				ReadFileTask t = new ReadFileTask(lpath, job, fs, dest, rlen, clen, brlen, bclen);
 				tasks.add(t);
 			}

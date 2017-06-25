@@ -38,9 +38,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
-		<url>https://git-wip-us.apache.org/repos/asf?p=incubator-systemml.git</url>
+		<connection>scm:git:git@github.com:apache/systemml</connection>
+		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/systemml</developerConnection>
+		<url>https://git-wip-us.apache.org/repos/asf?p=systemml.git</url>
 		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>
@@ -95,11 +95,9 @@
 			<directory>scripts</directory>
 			<excludes>
 				<exclude>algorithms/obsolete/*</exclude>
-				<exclude>algorithms/obsolete</exclude>
+				<exclude>datagen/obsolete/*</exclude>
 				<exclude>perftest/*</exclude>
-				<exclude>perftest</exclude>
 				<exclude>staging/**/*</exclude>
-				<exclude>staging</exclude>
 				<exclude>nn/test/compare_backends/*</exclude>
 				<exclude>nn/test/compare_backends/*</exclude>
 				<exclude>nn/examples/caffe2dml/**/*</exclude>
@@ -277,28 +275,6 @@
 		                <exclude>**/org/tensorflow/util/*</exclude>
 		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
 		              </excludes>
-		            </configuration>
-		          </execution>
-		          <execution>
-		            <id>extra</id>
-		            <goals><goal>jar</goal></goals>
-		            <phase>package</phase>
-		            <configuration>
-		              <archive>
-						<index>true</index>
-						<manifestEntries>
-							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
-						</manifestEntries>
-					  </archive>
-		              <classifier>extra</classifier>
-		              <includes>
-		              	<include>**/META-INF/*</include>
-		                <include>**/caffe/*</include>
-		                <include>**/org/tensorflow/framework/*</include>
-		                <include>**/org/tensorflow/util/*</include>
-		                <include>**/org/apache/sysml/api/dl/*</include>
-		              </includes>
 		            </configuration>
 		          </execution>
 		        </executions>
@@ -806,6 +782,20 @@
 										</pluginExecution>
 										<pluginExecution>
 											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-dependency-plugin</artifactId>
+												<versionRange>[2.10,)</versionRange>
+												<goals>
+													<goal>copy-dependencies</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
 												<groupId>net.alchim31.maven</groupId>
 												<artifactId>scala-maven-plugin</artifactId>
 												<versionRange>[3.2.2,)</versionRange>
@@ -813,6 +803,20 @@
 													<goal>add-source</goal>
 													<goal>compile</goal>
 													<goal>testCompile</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>org.codehaus.mojo</groupId>
+												<artifactId>build-helper-maven-plugin</artifactId>
+												<versionRange>[1.8,)</versionRange>
+												<goals>
+													<goal>add-test-source</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>
@@ -952,6 +956,26 @@
 									<descriptors>
 										<descriptor>src/assembly/bin.xml</descriptor>
 									</descriptors>
+								</configuration>
+							</execution>
+							<execution>
+								<id>create-extra-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/extra.xml</descriptor>
+									</descriptors>
+									<archive>
+										<manifestEntries>
+											<Build-Time>${maven.build.timestamp}</Build-Time>
+											<Artifact-Id>${project.artifactId}-extra</Artifact-Id>
+											<Version>${project.version}</Version>
+										</manifestEntries>
+									</archive>
+									<classifier>extra</classifier>
 								</configuration>
 							</execution>
 						</executions>

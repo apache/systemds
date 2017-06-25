@@ -110,8 +110,8 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_CONSTANT_FOLDING = true;
 	
-	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true; 
-	public static boolean ALLOW_OPERATOR_FUSION = true; 
+	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
+	public static boolean ALLOW_OPERATOR_FUSION = true;
 	
 	/**
 	 * Enables if-else branch removal for constant predicates (original literals or 
@@ -137,11 +137,6 @@ public class OptimizerUtils
 	public static boolean ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = true;
 
 	public static boolean ALLOW_RAND_JOB_RECOMPILE = true;
-	
-	/**
-	 * Enables CP-side data transformation for small files.
-	 */
-	public static boolean ALLOW_TRANSFORM_RECOMPILE = true;
 
 	/**
 	 * Enables parfor runtime piggybacking of MR jobs into the packed jobs for
@@ -204,15 +199,7 @@ public class OptimizerUtils
 	 * 
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
-	
-	/**
-	 * Enables automatic csv-binary block reblock.
-	 */
-	public static boolean ALLOW_FRAME_CSV_REBLOCK = true;
-	
-	
-	public static long GPU_MEMORY_BUDGET = -1;
-	
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

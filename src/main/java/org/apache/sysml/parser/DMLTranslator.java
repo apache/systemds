@@ -265,19 +265,9 @@ public class DMLTranslator
 		
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
-			InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-			ipa.analyzeProgram(dmlp);
+			InterProceduralAnalysis ipa = new InterProceduralAnalysis(dmlp);
+			ipa.analyzeProgram(OptimizerUtils.ALLOW_IPA_SECOND_CHANCE ? 2 : 1);
 			resetHopsDAGVisitStatus(dmlp);
-			if (OptimizerUtils.ALLOW_IPA_SECOND_CHANCE) {
-				// SECOND CHANCE:
-				// Rerun static rewrites + IPA to allow for further improvements, such as making use
-				// of constant folding (static rewrite) after scalar -> literal replacement (IPA),
-				// and then further scalar -> literal replacement (IPA).
-				rewriter.rewriteProgramHopDAGs(dmlp);
-				resetHopsDAGVisitStatus(dmlp);
-				ipa.analyzeProgram(dmlp);
-				resetHopsDAGVisitStatus(dmlp);
-			}
 		}
 
 		//apply hop rewrites (dynamic rewrites, after IPA)
@@ -1547,7 +1537,7 @@ public class DMLTranslator
 		if( sourceOp.getDataType() == DataType.MATRIX && source.getOutput().getDataType() == DataType.SCALAR )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.DOUBLE, 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
 				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
@@ -1920,13 +1910,6 @@ public class DMLTranslator
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
 			
 			break;
-			
-		case TRANSFORM:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
-									paramHops);
-			break;	
 		
 		case TRANSFORMAPPLY:
 			currBuiltinOp = new ParameterizedBuiltinOp(

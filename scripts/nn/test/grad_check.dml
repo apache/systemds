@@ -27,7 +27,9 @@ source("nn/layers/batch_norm1d.dml") as batch_norm1d
 source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
 source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
+source("nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
 source("nn/layers/conv2d_transpose.dml") as conv2d_transpose
+source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/dropout.dml") as dropout
 source("nn/layers/l1_loss.dml") as l1_loss
@@ -347,10 +349,10 @@ conv2d = function() {
 
   # Generate data
   N = 2  # num examples
-  C = 2  # num channels
+  C = 3  # num channels
   Hin = 5  # input height
   Win = 5  # input width
-  F = 2  # num filters
+  F = 4  # num filters
   Hf = 3  # filter height
   Wf = 3  # filter width
   stride = 1
@@ -436,10 +438,10 @@ conv2d_builtin = function() {
 
   # Generate data
   N = 2  # num examples
-  C = 2  # num channels
+  C = 3  # num channels
   Hin = 5  # input height
   Win = 5  # input width
-  F = 2  # num filters
+  F = 4  # num filters
   Hf = 3  # filter height
   Wf = 3  # filter width
   stride = 1
@@ -531,10 +533,10 @@ conv2d_simple = function() {
 
   # Generate data
   N = 2  # num examples
-  C = 2  # num channels
+  C = 3  # num channels
   Hin = 5  # input height
   Win = 5  # input width
-  F = 2  # num filters
+  F = 4  # num filters
   Hf = 3  # filter height
   Wf = 3  # filter width
   stride = 1
@@ -617,59 +619,54 @@ conv2d_simple = function() {
   }
 }
 
-conv2d_transpose = function() {
+conv2d_depthwise = function() {
   /*
-   * Gradient check for the 2D convolution transpose layer.
+   * Gradient check for the 2D depthwise convolutional layer.
    */
-  print("Grad checking the 2D convolution transpose layer with L2 loss.")
+  print("Grad checking the 2D depthwise convolutional layer with L2 loss.")
 
-  N = 2
-  C = 2
-  Hin = 3
-  Win = 3
-  F = 2
-  Hf = 3
-  Wf = 3
-  stride = 2
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  M = 4  # depth multiplier
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
   pad = 1
-  out_pad = 1
-
   X = rand(rows=N, cols=C*Hin*Win)
+  y = rand(rows=N, cols=C*M*Hin*Win)
 
-  [W,b] = conv2d_transpose::init(F, C, Hf, Wf)
-  
-  [out, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                pad, pad, out_pad, out_pad)
-  
-  y = rand(rows=N, cols=F*Hout*Wout)
-  
-  dout = l2_loss::backward(out,y)
-  
-  [dX, dW, db] = conv2d_transpose::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+  # Create layers
+  [W, b] = conv2d_depthwise::init(C, M, Hf, Wf)
+
+  # Compute analytical gradients of loss wrt parameters
+  [out, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                pad, pad)
+  dout = l2_loss::backward(out, y)
+  [dX, dW, db] = conv2d_depthwise::backward(dout, Hout, Wout, X, W, b, Hin, Win, M, Hf, Wf,
                                             stride, stride, pad, pad)
-  
+
+  # Grad check
   h = 1e-5
   print(" - Grad checking X.")
   for (i in 1:nrow(X)) {
     for (j in 1:ncol(X)) {
+      # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-
-      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                      pad, pad, out_pad, out_pad)
-
+      [outmh, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
       lossmh = l2_loss::forward(outmh, y)
-	
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                      pad, pad, out_pad, out_pad)
-
+      [outph, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
       lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
-      X[i,j] = old
-
-      dX_num = (lossph-lossmh) / (2*h)
-
+      # Check error
       rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
@@ -677,24 +674,20 @@ conv2d_transpose = function() {
   print(" - Grad checking W.")
   for (i in 1:nrow(W)) {
     for (j in 1:ncol(W)) {
+      # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-
-      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                      pad, pad, out_pad, out_pad)
-      
+      [outmh, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
       lossmh = l2_loss::forward(outmh, y)
-
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                      pad, pad, out_pad, out_pad)
-      
+      [outph, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
       lossph = l2_loss::forward(outph, y)
+      W[i,j] = old  # reset
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
-      W[i,j] = old
-
-      dW_num = (lossph-lossmh) / (2*h)
-
+      # Check error
       rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
@@ -702,24 +695,219 @@ conv2d_transpose = function() {
   print(" - Grad checking b.")
   for (i in 1:nrow(b)) {
     for (j in 1:ncol(b)) {
+      # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
+      lossmh = l2_loss::forward(outmh, y)
+      b[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                      pad, pad)
+      lossph = l2_loss::forward(outph, y)
+      b[i,j] = old  # reset
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+    }
+  }
+}
+
+conv2d_transpose = function() {
+  /*
+   * Gradient check for the 2D transpose convolutional layer.
+   */
+  print("Grad checking the 2D transpose convolutional layer with L2 loss.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 2  # num channels
+  Hin = 3  # input height
+  Win = 3  # input width
+  F = 2  # num filters
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 2
+  pad = 1
+  out_pad = 1
+  X = rand(rows=N, cols=C*Hin*Win)
+
+  # Create layers
+  [W, b] = conv2d_transpose::init(F, C, Hf, Wf)
+
+  # Compute analytical gradients of loss wrt parameters
+  [out, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                pad, pad, out_pad, out_pad)
+  y = rand(rows=N, cols=F*Hout*Wout)
+  dout = l2_loss::backward(out,y)
+  [dX, dW, db] = conv2d_transpose::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                            stride, stride, pad, pad)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking X.")
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
       [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
                                                       pad, pad, out_pad, out_pad)
-
       lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking W.")
+  for (i in 1:nrow(W)) {
+    for (j in 1:ncol(W)) {
+      # Compute numerical derivative
+      old = as.scalar(W[i,j])
+      W[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
+      lossmh = l2_loss::forward(outmh, y)
+      W[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
+      lossph = l2_loss::forward(outph, y)
+      W[i,j] = old  # reset
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking b.")
+  for (i in 1:nrow(b)) {
+    for (j in 1:ncol(b)) {
+      # Compute numerical derivative
+      old = as.scalar(b[i,j])
+      b[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
+      lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
       [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
                                                       pad, pad, out_pad, out_pad)
-	
       lossph = l2_loss::forward(outph, y)
+      b[i,j] = old  # reset
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
-      b[i,j] = old
-	
-      db_num = (lossph-lossmh) / (2*h)
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+    }
+  }
+}
 
+conv2d_transpose_depthwise = function() {
+  /*
+   * Gradient check for the 2D depthwise transpose convolutional layer.
+   */
+  print("Grad checking the 2D depthwise transpose convolutional layer with L2 loss.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 8  # num channels
+  Hin = 3  # input height
+  Win = 3  # input width
+  M = 4  # depth of filters
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 2
+  pad = 1
+  out_pad = 1
+  X = rand(rows=N, cols=C*Hin*Win)
+
+  # Create layers
+  [W, b] = conv2d_transpose_depthwise::init(C, M, Hf, Wf)
+
+  # Compute analytical gradients of loss wrt parameters
+  [out, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                          stride, stride, pad, pad,
+                                                          out_pad, out_pad)
+  y = rand(rows=N, cols=C/M*Hout*Wout)
+  dout = l2_loss::backward(out,y)
+  [dX, dW, db] = conv2d_transpose_depthwise::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, M,
+                                                      Hf, Wf, stride, stride, pad, pad)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking X.")
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking W.")
+  for (i in 1:nrow(W)) {
+    for (j in 1:ncol(W)) {
+      # Compute numerical derivative
+      old = as.scalar(W[i,j])
+      W[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossmh = l2_loss::forward(outmh, y)
+      W[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossph = l2_loss::forward(outph, y)
+      W[i,j] = old  # reset
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking b.")
+  for (i in 1:nrow(b)) {
+    for (j in 1:ncol(b)) {
+      # Compute numerical derivative
+      old = as.scalar(b[i,j])
+      b[i,j] = old - h
+      [outmh, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossmh = l2_loss::forward(outmh, y)
+      b[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                                stride, stride, pad, pad,
+                                                                out_pad, out_pad)
+      lossph = l2_loss::forward(outph, y)
+      b[i,j] = old  # reset
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
       rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }

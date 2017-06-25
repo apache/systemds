@@ -51,7 +51,7 @@ Lenet is a simple convolutional neural network, proposed by Yann LeCun in 1998. 
 Similar to Caffe, the network has been modified to add dropout. 
 For more detail, please see http://yann.lecun.com/exdb/lenet/
 
-The [solver specification](https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto)
+The [solver specification](https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto)
 specifies to Caffe2DML to use following configuration when generating the training DML script:  
 - `type: "SGD", momentum: 0.9`: Stochastic Gradient Descent with momentum optimizer with `momentum=0.9`.
 - `lr_policy: "exp", gamma: 0.95, base_lr: 0.01`: Use exponential decay learning rate policy (`base_lr * gamma ^ iter`).
@@ -79,8 +79,8 @@ X_test = X[int(.9 * n_samples):]
 y_test = y[int(.9 * n_samples):]
 
 # Download the Lenet network
-urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto', 'lenet.proto')
-urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto', 'lenet_solver.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto', 'lenet.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto', 'lenet_solver.proto')
 
 # Train Lenet On MNIST using scikit-learn like API
 # MNIST dataset contains 28 X 28 gray-scale (number of channel=1).
@@ -94,6 +94,8 @@ lenet.setStatistics(True).setExplain(True)
 
 # If you want to force GPU execution. Please make sure the required dependency are available.  
 # lenet.setGPU(True).setForceGPU(True)
+# Example usage of train_algo, test_algo. Assume 2 gpus on driver
+# lenet.set(train_algo="allreduce_parallel_batches", test_algo="minibatch", parallel_batches=2)
 
 # (Optional but recommended) Enable native BLAS. 
 lenet.setConfigProperty("native.blas", "auto")
@@ -106,15 +108,48 @@ lenet.fit(X_train, y_train)
 lenet.predict(X_test)
 ```
 
-For more detail on enabling native BLAS, please see the documentation for the [native backend](http://apache.github.io/incubator-systemml/native-backend).
+For more detail on enabling native BLAS, please see the documentation for the [native backend](http://apache.github.io/systemml/native-backend).
+
+Common settings for `train_algo` and `test_algo` parameters:
+
+|                                                                          | PySpark script                                                                                                                           | Changes to Network/Solver                                              |
+|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| Single-node CPU execution (similar to Caffe with solver_mode: CPU)       | `caffe2dml.set(train_algo="minibatch", test_algo="minibatch")`                                                                           | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Single-node single-GPU execution                                         | `caffe2dml.set(train_algo="minibatch", test_algo="minibatch").setGPU(True).setForceGPU(True)`                                            | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Single-node multi-GPU execution (similar to Caffe with solver_mode: GPU) | `caffe2dml.set(train_algo="allreduce_parallel_batches", test_algo="minibatch", parallel_batches=num_gpu).setGPU(True).setForceGPU(True)` | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Distributed prediction                                                   | `caffe2dml.set(test_algo="allreduce")`                                                                                                   |                                                                        |
+| Distributed synchronous training                                         | `caffe2dml.set(train_algo="allreduce_parallel_batches", parallel_batches=num_cluster_cores)`                                             | Ensure that `batch_size` is set to appropriate value (for example: 64) |
 
 ## Frequently asked questions
+
+#### What is the purpose of Caffe2DML API ?
+
+Most deep learning experts are more likely to be familiar with the Caffe's specification
+rather than DML language. For these users, the Caffe2DML API reduces the learning curve to using SystemML.
+Instead of requiring the users to write a DML script for training, fine-tuning and testing the model,
+Caffe2DML takes as an input a network and solver specified in the Caffe specification
+and automatically generates the corresponding DML.
+
+#### With Caffe2DML, does SystemML now require Caffe to be installed ?
+
+Absolutely not. We only support Caffe's API for convenience of the user as stated above.
+Since the Caffe's API is specified in the protobuf format, we are able to generate the java parser files
+and donot require Caffe to be installed. This is also true for Tensorboard feature of Caffe2DML. 
+
+```
+Dml.g4      ---> antlr  ---> DmlLexer.java, DmlListener.java, DmlParser.java ---> parse foo.dml
+caffe.proto ---> protoc ---> target/generated-sources/caffe/Caffe.java       ---> parse caffe_network.proto, caffe_solver.proto 
+```
+
+Again, the SystemML engine doesnot invoke (or depend on) Caffe and TensorFlow for any of its runtime operators.
+Since the grammar files for the respective APIs (i.e. `caffe.proto`) are used by SystemML, 
+we include their licenses in our jar files.
 
 #### How can I speedup the training with Caffe2DML ?
 
 - Enable native BLAS to improve the performance of CP convolution and matrix multiplication operators.
 If you are using OpenBLAS, please ensure that it was built with `USE_OPENMP` flag turned on.
-For more detail see http://apache.github.io/incubator-systemml/native-backend
+For more detail see http://apache.github.io/systemml/native-backend
 
 ```python
 caffe2dmlObject.setConfigProperty("native.blas", "auto")
@@ -260,3 +295,12 @@ train_df.write.parquet('kaggle-cats-dogs.parquet')
 
 Though we recommend using Caffe2DML via its Python interfaces, it is possible to use it by creating an object of the class
 `org.apache.sysml.api.dl.Caffe2DML`. It is important to note that Caffe2DML's scala API is packaged in `systemml-*-extra.jar`.
+
+
+#### How can I view the script generated by Caffe2DML ?
+
+To view the generated DML script (and additional debugging information), please set the `debug` parameter to True.
+
+```python
+caffe2dmlObject.set(debug=True)
+```

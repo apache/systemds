@@ -30,7 +30,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class LiteralOp extends Hop 
 {
-	
 	private double value_double = Double.NaN;
 	private long value_long = Long.MAX_VALUE;
 	private String value_string;
@@ -44,25 +43,37 @@ public class LiteralOp extends Hop
 	
 	public LiteralOp(double value) {
 		super(String.valueOf(value), DataType.SCALAR, ValueType.DOUBLE);
-		this.value_double = value;
+		value_double = value;
 	}
 
 	public LiteralOp(long value) {
 		super(String.valueOf(value), DataType.SCALAR, ValueType.INT);
-		this.value_long = value;
+		value_long = value;
 	}
 
 	public LiteralOp(String value) {
 		super(value, DataType.SCALAR, ValueType.STRING);
-		this.value_string = value;
+		value_string = value;
 	}
 
 	public LiteralOp(boolean value) {
 		super(String.valueOf(value), DataType.SCALAR, ValueType.BOOLEAN);
-		this.value_boolean = value;
+		value_boolean = value;
+	}
+	
+	public LiteralOp(LiteralOp that) {
+		super(that.getName(), that.getDataType(), that.getValueType());
+		value_double = that.value_double;
+		value_long = that.value_long;
+		value_string = that.value_string;
+		value_boolean = that.value_boolean;
 	}
 
-	
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.isEmpty(), this, "should have 0 inputs but has %d inputs", _input.size());
+	}
+
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException  

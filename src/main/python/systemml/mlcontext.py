@@ -174,7 +174,7 @@ class Matrix(object):
         NumPy Array
             A NumPy Array representing the Matrix object.
         """
-        np_array = convertToNumPyArr(self._sc, self._java_matrix.toBinaryBlockMatrix().getMatrixBlock())
+        np_array = convertToNumPyArr(self._sc, self._java_matrix.toMatrixBlock())
         return np_array
 
 

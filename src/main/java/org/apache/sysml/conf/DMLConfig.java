@@ -42,7 +42,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -175,16 +175,12 @@ public class DMLConfig
 		if (_fileName.startsWith("hdfs:") ||
 		    _fileName.startsWith("gpfs:") )  // config file from DFS
 		{
-			if( !LocalFileUtils.validateExternalFilename(_fileName, true) )
-				throw new IOException("Invalid (non-trustworthy) hdfs config filename.");
-			FileSystem DFS = FileSystem.get(ConfigurationManager.getCachedJobConf());
-            Path configFilePath = new Path(_fileName);
+			Path configFilePath = new Path(_fileName);
+			FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath);
             domTree = builder.parse(DFS.open(configFilePath));  
 		}
 		else  // config from local file system
 		{
-			if( !LocalFileUtils.validateExternalFilename(_fileName, false) )
-				throw new IOException("Invalid (non-trustworthy) local config filename.");
 			domTree = builder.parse(_fileName);
 		}
 		

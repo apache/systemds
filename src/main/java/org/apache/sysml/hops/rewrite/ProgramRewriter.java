@@ -96,6 +96,8 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
+			//if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
+			//	_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()   ); //dependency: cse
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
@@ -106,7 +108,7 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
-			//add statment block rewrite rules
+			//add statement block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
@@ -260,18 +262,20 @@ public class ProgramRewriter
 	
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
-	{	
+	{
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
 		
-			if( CHECK ) {		
-				LOG.info("Validation after: "+r.getClass().getName());
-				HopDagValidator.validateHopDag(roots);
-			}
+			if( CHECK )
+				try {
+					HopDagValidator.validateHopDag(roots);
+				} catch (HopsException e) {
+					LOG.error("Invalid hop after rewriting by " + r.getClass().getName(), e);
+					throw e;
+				}
 		}
-		
 		return roots;
 	}
 	
@@ -279,19 +283,21 @@ public class ProgramRewriter
 		throws HopsException
 	{	
 		if( root == null )
-			return root;
+			return null;
 		
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			root.resetVisitStatus(); //reset for each rule
 			root = r.rewriteHopDAG(root, state);
-		
-			if( CHECK ) {
-				LOG.info("Validation after: "+r.getClass().getName());
-				HopDagValidator.validateHopDag(root);
-			}
+
+			if( CHECK )
+				try {
+					HopDagValidator.validateHopDag(root);
+				} catch (HopsException e) {
+					LOG.error("Invalid hop after rewriting by " + r.getClass().getName(), e);
+					throw e;
+				}
 		}
-		
 		return root;
 	}
 	

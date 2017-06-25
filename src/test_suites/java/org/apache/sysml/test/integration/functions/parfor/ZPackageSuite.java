@@ -28,19 +28,19 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	ForLoopPredicateTest.class,
 	ParForAdversarialLiteralsTest.class,
+	ParForBlockwiseDataPartitioningTest.class,
 	ParForColwiseDataPartitioningTest.class,
 	ParForDataPartitionLeftIndexingTest.class,
 	ParForDependencyAnalysisTest.class,
 	ParForFunctionSerializationTest.class,
 	ParForMultipleDataPartitioningTest.class,
 	ParForNaNResultMergeTest.class,
+	ParForParallelRemoteResultMergeTest.class,
+	ParForRepeatedOptimizationTest.class,
 	ParForReplaceThreadIDRecompileTest.class,
 	ParForRowwiseDataPartitioningTest.class,
-	
-	ParForParallelRemoteResultMergeTest.class,
+	ParForRulebasedOptimizerTest.class,
 	ParForSerialRemoteResultMergeTest.class,
-	ParForRepeatedOptimizationTest.class,
-	ParForRulebasedOptimizerTest.class
 })
 
 

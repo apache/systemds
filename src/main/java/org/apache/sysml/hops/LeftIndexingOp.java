@@ -77,7 +77,11 @@ public class LeftIndexingOp  extends Hop
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
-	
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() == 6, this, "should have 6 inputs but has %d inputs", 6);
+	}
+
 	public boolean getRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}

@@ -99,7 +99,7 @@ class LinearRegressionModel(override val uid: String)(estimator:LinearRegression
   }
   
   def getPredictionScript(isSingleNode:Boolean): (Script, String) =
-    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
+    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getMatrix("beta_out"), isSingleNode)
   
   def modelVariables():List[String] = List[String]("beta_out")
   

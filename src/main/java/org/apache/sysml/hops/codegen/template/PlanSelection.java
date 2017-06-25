@@ -74,11 +74,11 @@ public abstract class PlanSelection
 		return _bestPlans;
 	}
 	
-	public boolean isVisited(long hopID, TemplateType type) {
+	protected boolean isVisited(long hopID, TemplateType type) {
 		return _visited.contains(new VisitMark(hopID, type));
 	}
 	
-	public void setVisited(long hopID, TemplateType type) {
+	protected void setVisited(long hopID, TemplateType type) {
 		_visited.add(new VisitMark(hopID, type));
 	}
 	
@@ -109,7 +109,7 @@ public abstract class PlanSelection
 		}
 		@Override
 		public int hashCode() {
-			return UtilFunctions.longlongHashCode(
+			return UtilFunctions.longHashCode(
 				_hopID, (_type!=null)?_type.hashCode():0);
 		}
 		@Override 

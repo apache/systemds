@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.transform;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -75,7 +74,6 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
-		boolean csvReblockOld = OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -94,7 +92,6 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain","-args", 
 				HOME + "input/" + DATASET, output("R") };
 	
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 
 			
 			//read input/output and compare
@@ -113,7 +110,6 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 		finally {
 			rtplatform = rtold;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = csvReblockOld;
 		}
 	}
 }

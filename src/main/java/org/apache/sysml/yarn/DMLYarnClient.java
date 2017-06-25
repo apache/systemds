@@ -57,6 +57,7 @@ import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
@@ -264,17 +265,17 @@ public class DMLYarnClient
 	private void copyResourcesToHdfsWorkingDir( YarnConfiguration yconf, String hdfsWD ) 
 		throws ParseException, IOException, DMLRuntimeException, InterruptedException 
 	{
-		FileSystem fs = FileSystem.get(yconf);
+		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
+		FileSystem fs = IOUtilFunctions.getFileSystem(confPath, yconf);
 		
 		//create working directory
-		MapReduceTool.createDirIfNotExistOnHDFS(hdfsWD, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		MapReduceTool.createDirIfNotExistOnHDFS(confPath, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
 		//serialize the dml config to HDFS file 
 		//NOTE: we do not modify and ship the absolute scratch space path of the current user
 		//because this might result in permission issues if the app master is run with a different user
 		//(runtime plan migration during resource reoptimizations now needs to use qualified names
 		//for shipping/reading intermediates) TODO modify resource reoptimizer on prototype integration.
-		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
 		try( FSDataOutputStream fout = fs.create(confPath, true) ) {
 			fout.writeBytes(_dmlConfig.serializeDMLConfig() + "\n");
 		}
@@ -451,7 +452,8 @@ public class DMLYarnClient
 		Path path = new Path(_hdfsJarFile); 
 		
 		LocalResource resource = Records.newRecord(LocalResource.class);
-		FileStatus jarStat = FileSystem.get(yconf).getFileStatus(path);
+		FileStatus jarStat = IOUtilFunctions
+			.getFileSystem(path, yconf).getFileStatus(path);
 		resource.setResource(ConverterUtils.getYarnUrlFromPath(path));
 		resource.setSize(jarStat.getLen());
 		resource.setTimestamp(jarStat.getModificationTime());
@@ -518,9 +520,8 @@ public class DMLYarnClient
 		
 		//write given message to hdfs
 		try {
-			FileSystem fs = FileSystem.get(yconf);
-			if( fs.exists(msgPath) )
-			{
+			FileSystem fs = IOUtilFunctions.getFileSystem(msgPath, yconf);
+			if( fs.exists(msgPath) ) {
 				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(msgPath))) ) {
 					ret = br.readLine();
 				}

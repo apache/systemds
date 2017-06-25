@@ -74,8 +74,8 @@ public class FrameWriterTextCSV extends FrameWriter
 	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties csvprops ) 
 		throws IOException
 	{
-		FileSystem fs = FileSystem.get(job);
-        
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		//sequential write to single text file
 		writeCSVFrameToFile(path, job, fs, src, 0, (int)rlen, csvprops);	
 	}

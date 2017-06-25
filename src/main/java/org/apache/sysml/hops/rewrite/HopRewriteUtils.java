@@ -241,11 +241,20 @@ public class HopRewriteUtils
 		parent.getInput().add( pos, child );
 		child.getParent().add( parent );
 	}
-	
-	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
-		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
-		for( Hop lparent : parents )
-			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);
+
+	/**
+	 * Replace an old Hop with a replacement Hop.
+	 * If the old Hop has no parents, then return the replacement.
+	 * Otherwise rewire each of the Hop's parents into the replacement and return the replacement.
+	 * @param hold To be replaced
+	 * @param hnew The replacement
+	 * @return hnew
+	 */
+	public static Hop rewireAllParentChildReferences( Hop hold, Hop hnew ) {
+		ArrayList<Hop> parents = hold.getParent();
+		while (!parents.isEmpty())
+			HopRewriteUtils.replaceChildReference(parents.get(0), hold, hnew);
+		return hnew;
 	}
 	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew ) {
@@ -532,13 +541,18 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
+		Hop ix = createMatrixIndexing(input, rix, cix);
+		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
+	}
+	
+	public static Hop createMatrixIndexing(Hop input, long rix, long cix) {
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
 		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
 		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, ix);
 		ix.refreshSizeInformation();
-		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
+		return ix;
 	}
 	
 	public static Hop createValueHop( Hop hop, boolean row ) 
@@ -840,10 +854,7 @@ public class HopRewriteUtils
 		if( !(hop instanceof AggUnaryOp) )
 			return false;
 		AggOp hopOp = ((AggUnaryOp)hop).getOp();
-		for( AggOp opi : op ) 
-			if( hopOp == opi )
-				return true;
-		return false; 
+		return ArrayUtils.contains(op, hopOp);
 	}
 	
 	public static boolean isSum(Hop hop) {
@@ -976,23 +987,6 @@ public class HopRewriteUtils
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
 			else if(inclPersistent)
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
-		}
-			
-				
-		return ret;
-	}
-	
-	public static boolean hasTransformParents( Hop hop )
-	{
-		boolean ret = false;
-		
-		ArrayList<Hop> parents = hop.getParent();
-		for( Hop p : parents )
-		{
-			if(    p instanceof ParameterizedBuiltinOp 
-				&& ((ParameterizedBuiltinOp)p).getOp()==ParamBuiltinOp.TRANSFORM) {
-				ret = true;
-			}
 		}
 			
 				

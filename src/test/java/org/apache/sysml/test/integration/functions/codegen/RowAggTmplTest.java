@@ -52,18 +52,24 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),1)))),7))
 	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward
 	private static final String TEST_NAME16 = TEST_NAME+"16"; //Y=X-rowIndexMax(X); R=Y/rowSums(Y)
+	private static final String TEST_NAME17 = TEST_NAME+"17"; //MLogreg - vector-matrix w/ indexing
+	private static final String TEST_NAME18 = TEST_NAME+"18"; //MLogreg - matrix-vector cbind 0s
+	private static final String TEST_NAME19 = TEST_NAME+"19"; //MLogreg - rowwise dag
+	private static final String TEST_NAME20 = TEST_NAME+"20"; //1 / (1 - (A / rowSums(A)))
+	private static final String TEST_NAME21 = TEST_NAME+"21"; //sum(X/rowSums(X))
+	private static final String TEST_NAME22 = TEST_NAME+"22"; //((7+X)+(X-7)+exp(X))/(rowMins(X)+0.5) 
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
-	
+
 	private static final double eps = Math.pow(10, -10);
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=16; i++)
+		for(int i=1; i<=22; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -307,6 +313,96 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME16, false, ExecType.SPARK );
 	}
 	
+	@Test	
+	public void testCodegenRowAggRewrite17CP() {
+		testCodegenIntegration( TEST_NAME17, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg17CP() {
+		testCodegenIntegration( TEST_NAME17, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg17SP() {
+		testCodegenIntegration( TEST_NAME17, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite18CP() {
+		testCodegenIntegration( TEST_NAME18, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg18CP() {
+		testCodegenIntegration( TEST_NAME18, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg18SP() {
+		testCodegenIntegration( TEST_NAME18, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite19CP() {
+		testCodegenIntegration( TEST_NAME19, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg19CP() {
+		testCodegenIntegration( TEST_NAME19, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg19SP() {
+		testCodegenIntegration( TEST_NAME19, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite20CP() {
+		testCodegenIntegration( TEST_NAME20, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg20CP() {
+		testCodegenIntegration( TEST_NAME20, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg20SP() {
+		testCodegenIntegration( TEST_NAME20, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite21CP() {
+		testCodegenIntegration( TEST_NAME21, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg21CP() {
+		testCodegenIntegration( TEST_NAME21, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg21SP() {
+		testCodegenIntegration( TEST_NAME21, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite22CP() {
+		testCodegenIntegration( TEST_NAME22, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg22CP() {
+		testCodegenIntegration( TEST_NAME22, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg22SP() {
+		testCodegenIntegration( TEST_NAME22, false, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -328,7 +424,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "recompile_hops", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
@@ -348,7 +444,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			//ensure full aggregates for certain patterns
 			if( testname.equals(TEST_NAME15) )
 				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
-				
+			if( testname.equals(TEST_NAME17) )
+				Assert.assertTrue(!heavyHittersContainsSubString("rangeReIndex"));
 		}
 		finally {
 			rtplatform = platformOld;

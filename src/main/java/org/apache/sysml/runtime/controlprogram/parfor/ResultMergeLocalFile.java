@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.IJV;
@@ -222,8 +221,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			//actual merge
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			FileSystem fs = FileSystem.get(job);
 			Path path = new Path( fnameNew );
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 			
 			String valueStr = null;
@@ -324,8 +323,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			//actual merge
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			FileSystem fs = FileSystem.get(job);
 			Path path = new Path( fnameNew );					
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			SequenceFile.Writer out = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
 			
 			MatrixIndexes key = new MatrixIndexes();
@@ -340,7 +339,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
 					
-					for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath) )
+					for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, tmpPath) )
 					{
 						SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 						try
@@ -474,10 +473,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixBlock value = new MatrixBlock();
 		
 		JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(tmpJob);
 		Path tmpPath = new Path(mo.getFileName());
+		FileSystem fs = IOUtilFunctions.getFileSystem(tmpPath, tmpJob);
 		
-		for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath))
+		for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, tmpPath))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 			try
@@ -566,7 +565,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	{		
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(mo.getFileName());
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		LinkedList<Cell> buffer = new LinkedList<Cell>();
 		MatrixIndexes key = new MatrixIndexes();
@@ -576,7 +575,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		
-		for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
+		for(Path lpath: IOUtilFunctions.getSequenceFilePaths(fs, path))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try
@@ -649,8 +648,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fnameNew );	
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
 		long rlen = mc.getRows();
@@ -745,8 +744,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fnameNew );	
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
 		long rlen = mc.getRows();
@@ -882,8 +881,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fnameNew );	
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
 		long rlen = mc.getRows();
@@ -1009,9 +1008,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws CacheException, IOException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fnameNew );
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		//create output dir
 		fs.mkdirs(path);
 		

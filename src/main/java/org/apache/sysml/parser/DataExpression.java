@@ -37,7 +37,6 @@ import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
@@ -540,13 +539,7 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public static String getMTDFileName(String inputFileName) throws LanguageException {
-		String mtdName = inputFileName + ".mtd";
-		
-		//validate read filename
-		if( !LocalFileUtils.validateExternalFilename(mtdName, true) )
-			throw new LanguageException("Invalid (non-trustworthy) hdfs read filename.");
-
-		return mtdName;
+		return inputFileName + ".mtd";
 	}
 	
 	/**
@@ -1065,11 +1058,6 @@ public class DataExpression extends DataIdentifier
 			}*/
 			
 			//validate read filename
-			String fnameWrite = getVarParam(IO_FILENAME).toString();
-			if( !LocalFileUtils.validateExternalFilename(fnameWrite, true) ) //always unconditional
-				raiseValidateError("Invalid (non-trustworthy) hdfs write filename.", false);
-	    	
-			
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
@@ -1923,7 +1911,7 @@ public class DataExpression extends DataIdentifier
 					continue;
 				BufferedReader br = null;
 				try {
-					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+					FileSystem fs = IOUtilFunctions.getFileSystem(childPath);
 					br = new BufferedReader(new InputStreamReader(fs.open(childPath)));
 					JSONObject childObj = JSONHelper.parse(br);
 					for( Object obj : childObj.entrySet() ){
@@ -1947,8 +1935,9 @@ public class DataExpression extends DataIdentifier
 		{
 			BufferedReader br = null;
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
+				Path path = new Path(filename);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				br = new BufferedReader(new InputStreamReader(fs.open(path)));
 				retVal = new JSONObject(br);
 			} 
 			catch (Exception e){
@@ -1972,19 +1961,16 @@ public class DataExpression extends DataIdentifier
 		
 		try 
 		{
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-			Path pt = new Path(filename);
-			if (fs.exists(pt)){
-				exists = true;
-			}
-			
-			boolean getFileStatusIsDir = fs.getFileStatus(pt).isDirectory();
+			Path path = new Path(filename);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
+			exists = fs.exists(path);
+			boolean getFileStatusIsDir = fs.getFileStatus(path).isDirectory();
 			
 			if (exists && getFileStatusIsDir){
 				raiseValidateError("MatrixMarket files as directories not supported", conditional);
 			}
 			else if (exists) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
+				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(path)));
 				try
 				{
 					retVal[0] = in.readLine();
@@ -2027,8 +2013,9 @@ public class DataExpression extends DataIdentifier
 		{
 			BufferedReader in = null;
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				in = new BufferedReader(new InputStreamReader(fs.open(new Path(inputFileName))));
+				Path path = new Path(inputFileName);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				in = new BufferedReader(new InputStreamReader(fs.open(path)));
 				String headerLine = new String("");			
 				if (in.ready())
 					headerLine = in.readLine();

@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -75,8 +73,10 @@ public class TemplateCell extends TemplateBase
 
 	@Override
 	public boolean open(Hop hop) {
-		return isValidOperation(hop)
-			|| (hop instanceof IndexingOp && ((IndexingOp)hop).isColLowerEqualsUpper());
+		return hop.dimsKnown() && isValidOperation(hop)
+				&& !(hop.getDim1()==1 && hop.getDim2()==1) 	
+			|| (hop instanceof IndexingOp && (((IndexingOp)hop)
+				.isColLowerEqualsUpper() || hop.getDim2()==1));
 	}
 
 	@Override
@@ -120,9 +120,9 @@ public class TemplateCell extends TemplateBase
 		//reorder inputs (ensure matrices/vectors come first) and prune literals
 		//note: we order by number of cells and subsequently sparsity to ensure
 		//that sparse inputs are used as the main input w/o unnecessary conversion
-		List<Hop> sinHops = inHops.stream()
+		Hop[] sinHops = inHops.stream()
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
-			.sorted(new HopInputComparator()).collect(Collectors.toList());
+			.sorted(new HopInputComparator()).toArray(Hop[]::new);
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -132,12 +132,13 @@ public class TemplateCell extends TemplateBase
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
 		tpl.setAggOp(TemplateUtils.getAggOp(hop));
-		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.get(0)))
-				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.get(0)));
+		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops[0]))
+				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops[0]));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
+		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
+		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
 	}
 	
 	protected void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
@@ -160,6 +161,9 @@ public class TemplateCell extends TemplateBase
 			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp)
 				&& (me.type!=TemplateType.MultiAggTpl || memo.contains(c.getHopID(), TemplateType.CellTpl)))
 				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
+			else if( me!=null && (me.type==TemplateType.MultiAggTpl || me.type==TemplateType.CellTpl) 
+					&& HopRewriteUtils.isMatrixMultiply(hop) && i==0 ) //skip transpose
+				rConstructCplan(c.getInput().get(0), memo, tmp, inHops, compileLiterals);
 			else {
 				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
 				tmp.put(c.getHopID(), cdata);
@@ -231,7 +235,10 @@ public class TemplateCell extends TemplateBase
 		}
 		else if( HopRewriteUtils.isTransposeOperation(hop) ) 
 		{
-			out = tmp.get(hop.getInput().get(0).getHopID());	
+			out = TemplateUtils.skipTranspose(tmp.get(hop.getHopID()), 
+				hop, tmp, compileLiterals);
+			if( out instanceof CNodeData && !inHops.contains(hop.getInput().get(0)) )
+				inHops.add(hop.getInput().get(0));
 		}
 		else if( hop instanceof AggUnaryOp )
 		{
@@ -244,11 +251,15 @@ public class TemplateCell extends TemplateBase
 			//(1) t(X)%*%X -> sum(X^2) and t(X) %*% Y -> sum(X*Y)
 			if( HopRewriteUtils.isTransposeOfItself(hop.getInput().get(0), hop.getInput().get(1)) ) {
 				CNode cdata1 = tmp.get(hop.getInput().get(1).getHopID());
+				if( TemplateUtils.isColVector(cdata1) )
+					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 				out = new CNodeUnary(cdata1, UnaryType.POW2);
 			}
 			else {
 				CNode cdata1 = TemplateUtils.skipTranspose(tmp.get(hop.getInput().get(0).getHopID()), 
 						hop.getInput().get(0), tmp, compileLiterals);
+				if( cdata1 instanceof CNodeData && !inHops.contains(hop.getInput().get(0).getInput().get(0)) )
+					inHops.add(hop.getInput().get(0).getInput().get(0));
 				if( TemplateUtils.isColVector(cdata1) )
 					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 				CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());

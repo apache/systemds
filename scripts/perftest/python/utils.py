@@ -20,48 +20,32 @@
 #
 #-------------------------------------------------------------
 
-from functools import reduce
+from os.path import join
 import os
 import json
-from os.path import join
-import time
 import subprocess
 import shlex
 import re
-import sys
+import logging
 
 # This file contains all the utility functions required for performance test module
 
 
-def get_algo(family, ml_algo):
+def get_family(current_algo, ml_algo):
     """
-    Return a list of algorithms given family
-
-    """
-
-    algo = []
-    for fam in family:
-        algo.append(ml_algo[fam])
-    algo_flat = reduce(lambda x, y: x + y, algo)
-    return algo_flat
-
-
-def get_family(algos, ml_algo):
-    """
-    Return family given algorithm
+    Return: Algorithm family given input algorithm
 
     """
 
-    for algo in algos:
-        for key, value in ml_algo.items():
-            if algo in value:
-                family = key
-    return family
+    for family, algos in ml_algo.items():
+        if current_algo in algos:
+            current_family = family
+    return current_family
 
 
 def split_rowcol(matrix_dim):
     """
-    Return matrix row, column on input string (e.g. 10k_1k)
+    Return: matrix row, column on input string (e.g. 10k_1k)
 
     """
 
@@ -79,20 +63,18 @@ def config_writer(write_path, config_dict):
 
     """
 
-    with open(write_path, 'w') as fp:
-        json.dump(config_dict, fp, indent=4)
-
-    return None
+    with open(write_path, 'w') as input_file:
+        json.dump(config_dict, input_file, indent=4)
 
 
 def config_reader(read_path):
     """
-    Return configuration dictionary on reading the json file
+    Return: configuration dictionary on reading the json file
 
     """
 
-    with open(read_path, 'r') as f:
-        conf_file = json.load(f)
+    with open(read_path, 'r') as input_file:
+        conf_file = json.load(input_file)
 
     return conf_file
 
@@ -107,53 +89,84 @@ def create_dir(directory):
         os.makedirs(directory)
 
 
-def exec_func(exec_type, file_name, args):
+def get_existence(path):
     """
-    This function is responsible of execution
+    Return: Boolean check if the file _SUCCESS exists
 
-    :param exec_type: String which can be either spark or singlenode
-    :param algorithm: String which has the current algorithm
-    :param args: String containing key value arguments
-    :return: Array with metrics required for logging
     """
 
-    # TODO:
-    # Given an error write to a different log file
+    full_path = join(path, '_SUCCESS')
+    exist = os.path.isfile(full_path)
+    return exist
 
-    algorithm = file_name + '.dml'
-    if exec_type == 'singlenode':
-        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
 
-        args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
-        cmd = [exec_script, algorithm, args]
-        cmd_string = ' '.join(cmd)
+def exec_func(exec_type, file_name, args, path):
+    """
+    This function is responsible of execution of input arguments
+    Return: Total execution time
 
-    if exec_type == 'hybrid_spark':
-        exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
-        cmd = [exec_script, '-f', algorithm, '-nvargs', args]
-        cmd_string = ' '.join(cmd)
+    """
 
-    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc2 = subprocess.Popen(shlex.split('grep "Total execution time"'), stdin=proc1.stdout,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    check_exist = get_existence(path)
+    if check_exist:
+        total_time = 'file_exists'
+    else:
+        algorithm = file_name + '.dml'
+        if exec_type == 'singlenode':
+            exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
 
-    out1, err1 = proc1.communicate()
-    out2, err2 = proc2.communicate()
-    proc1.stdout.close()
+            args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
+            cmd = [exec_script, algorithm, args]
+            cmd_string = ' '.join(cmd)
 
-    extract_time = re.findall(r'\d+', str(out2))
+        if exec_type == 'hybrid_spark':
+            exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
+            cmd = [exec_script, '-f', algorithm, '-nvargs', args]
+            cmd_string = ' '.join(cmd)
+
+        # Subrocess to execute input arguments
+        # proc1_log contains the shell output which is used for time parsing
+        proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+
+        proc1_log = []
+        while proc1.poll() is None:
+            raw_std_out = proc1.stdout.readline()
+            decode_raw = raw_std_out.decode('ascii').strip()
+            proc1_log.append(decode_raw)
+            logging.log(10, decode_raw)
+
+        _, err1 = proc1.communicate()
+        total_time = get_time(proc1_log)
+
+        if "Error" in str(err1):
+            print('Error Found in {}'.format(file_name))
+            total_time = 'failure'
+        else:
+            full_path = join(path, '_SUCCESS')
+            open(full_path, 'w').close()
+
+    return total_time
+
+
+def get_time(raw_logs):
+    """
+    Return: Time based on rawlogs received
+
+    """
+
+    for line in raw_logs:
+        if line.startswith('Total execution time'):
+            raw_time = line
+
+    extract_time = re.findall(r'\d+', raw_time)
     total_time = '.'.join(extract_time)
-
-    if "Error" in str(err1):
-        print('Error Found in {}'.format(file_name))
-        total_time = 'failure'
-
     return total_time
 
 
 def get_config(file_path):
     """
-    Returns matrix type and matrix dim based.
+    Return: matrix type and matrix dim based
 
     """
 
@@ -164,7 +177,7 @@ def get_config(file_path):
 
     try:
         intercept = algo_prop[3]
-    except:
+    except IndexError:
         intercept = 'none'
 
     return mat_type, mat_dim, intercept

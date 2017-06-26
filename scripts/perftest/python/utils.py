@@ -31,16 +31,17 @@ import logging
 # This file contains all the utility functions required for performance test module
 
 
-def get_family(current_algo, ml_algo):
+def get_families(current_algo, ml_algo):
     """
-    Return: Algorithm family given input algorithm
+    Return: List of families given input algorithm
 
     """
 
+    family_list = []
     for family, algos in ml_algo.items():
         if current_algo in algos:
-            current_family = family
-    return current_family
+            family_list.append(family)
+    return family_list
 
 
 def split_rowcol(matrix_dim):
@@ -100,7 +101,7 @@ def get_existence(path):
     return exist
 
 
-def exec_func(exec_type, file_name, args, path):
+def exec_dml_and_parse_time(exec_type, file_name, args, path):
     """
     This function is responsible of execution of input arguments
     Return: Total execution time
@@ -125,6 +126,9 @@ def exec_func(exec_type, file_name, args, path):
             cmd = [exec_script, '-f', algorithm, args]
             cmd_string = ' '.join(cmd)
 
+        # Debug
+        #print(cmd_string)
+
         # Subrocess to execute input arguments
         # proc1_log contains the shell output which is used for time parsing
         proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
@@ -143,14 +147,14 @@ def exec_func(exec_type, file_name, args, path):
             print('Error Found in {}'.format(file_name))
             total_time = 'failure'
         else:
-            total_time = get_time(proc1_log)
+            total_time = parse_time(proc1_log)
             full_path = join(path, '_SUCCESS')
             open(full_path, 'w').close()
 
     return total_time
 
 
-def get_time(raw_logs):
+def parse_time(raw_logs):
     """
     Return: Time based on rawlogs received
 

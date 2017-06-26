@@ -78,8 +78,53 @@ public class ScalarMatrixElementwiseOpTests extends GPUTests {
 	}
 
 	@Test
-	public void testDivide() {
+	public void testDivideRightScalar() {
 		runScalarMatrixElementWiseTests("O = X / scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_/");
+	}
+
+	@Test
+	public void testDivideLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar / X", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_/");
+	}
+
+	@Test
+	public void testIntegerDivideRightScalar() {
+		runScalarMatrixElementWiseTests("O = X %/% scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%/%");
+	}
+
+	@Test
+	public void testIntegerDivideLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar %/% X", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%/%");
+	}
+
+	@Test
+	public void testModulusLeftScalar() {
+		runScalarMatrixElementWiseTests("O = X %% scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%%");
+	}
+
+	@Test
+	public void testModulusRightScalar() {
+		runScalarMatrixElementWiseTests("O = scalar %% X", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%%");
+	}
+
+	@Test
+	public void testMinus1MultRightScalar() {
+		runScalarMatrixElementWiseTests("O = 1 - X * scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_1-*");
+	}
+
+	@Test
+	public void testMinus1MultLeftScalar() {
+		runScalarMatrixElementWiseTests("O = 1 - scalar * X", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_1-*");
+	}
+
+	@Test
+	public void testMinusNZLeftScalar() {
+		runScalarMatrixElementWiseTests("O = X - scalar * (X != 0)", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_1-*");
+	}
+
+	@Test
+	public void testMinusNZRightScalar() {
+		runScalarMatrixElementWiseTests("O = X - (X != 0) * scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_1-*");
 	}
 
 	// ****************************************************************

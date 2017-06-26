@@ -78,21 +78,24 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
         case 15 : return 1 - x * y;
         case 16 : return (x != 0.0 ? x - y : 0.0);
         case 17 : {
+            if (y == 0.0 || y == -0.0){
+                return nan("");
+            }
             double v = x / y;
-            // Chec for v being NaN (v != v) or if it is infinity
-            if (v != v || v == INFINITY || v == -INFINITY){
+            // Check for v being NaN (v != v) or if it is infinity
+            if (isnan(v) || isinf(v)){
                 return v;
             } else {
-                v = llrint(v); // round to integer
+                v = floor(v);
             }
             return x - v * y;
         }
         case 18:{
             double v = x / y;
-            if (v != v || v == INFINITY || v == -INFINITY){
+            if (isnan(v) || isinf(v)){
                 return v;
             } else {
-                return llrint(v); // round to integer
+                return floor(v);
             }
         }
         default : return DBL_MAX;

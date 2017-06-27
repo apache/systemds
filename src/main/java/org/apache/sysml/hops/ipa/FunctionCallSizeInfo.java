@@ -345,6 +345,21 @@ public class FunctionCallSizeInfo
 			sb.append("\n");
 		}
 		
+		sb.append("Valid #non-zeros for propagation: \n");
+		for( Entry<String, Set<Integer>> e : _fcandSafeNNZ.entrySet() ) {
+			sb.append("--");
+			sb.append(e.getKey());
+			sb.append(": ");
+			for( Integer pos : e.getValue() ) {
+				sb.append(pos);
+				sb.append(":");
+				sb.append(_fgraph.getFunctionCalls(e.getKey())
+					.get(0).getInput().get(pos).getName());
+				sb.append(" ");
+			}
+			sb.append("\n");
+		}
+		
 		return sb.toString();
 	}
 }

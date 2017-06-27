@@ -2131,7 +2131,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private Hop fuseAxpyBinaryOperationChain(Hop parent, Hop hi, int pos) 
 	{
 		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY		
-		if( hi instanceof BinaryOp 
+		if( hi instanceof BinaryOp && !((BinaryOp) hi).isOuterVectorOperator()
 			&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) )
 		{
 			BinaryOp bop = (BinaryOp) hi;

@@ -1,0 +1,100 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * L2 loss_2d function.
+ */
+
+ source("nn/util.dml") as util
+ source("nn/layers/l2_loss.dml") as l2_loss
+
+forward = function(matrix[double] pred, matrix[double] y, int C)
+    return (double loss) {
+  /*
+   * Computes the forward pass for an L2 loss2d function.  The inputs
+   * consist of N 2d-examples with the shape (Hin, Win), each point in
+   * the 2d-example has C values.
+   *
+   *   ```
+   *   L_i = (1/2) norm(pred_i - y_i)^2
+   *   L = (1/N) sum(L_i) for i=1 to N
+   *   ```
+   *
+   * In these equations, `L` is the total loss, `L_i` is the loss for
+   * example `i`, `y_i` is the scalar target, `pred_i` is the scalar
+   * prediction, and `N` is the number of examples.
+   *
+   * This can be interpreted as the negative log-likelihood assuming
+   * a Gaussian distribution.
+   *
+   * Inputs:
+   *  - pred: Predictions, of shape (N, C*Hin*Win).
+   *  - y: Targets, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - loss: Average loss.
+   */
+  N = nrow(y)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
+  y_NHW_C = t(y_C_NHW)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
+  pred_NHW_C = t(pred_C_NHW)
+
+  loss = l2_loss::forward(pred_NHW_C, y_NHW_C)
+}
+
+backward = function(matrix[double] pred, matrix[double] y, int C)
+    return (matrix[double] dpred) {
+  /*
+   * Computes the backward pass for an L2 loss2d function.  The inputs
+   * consist of N examples with the shape (Hin, Win), each point in the
+   * example has C values
+   *
+   * Inputs:
+   *  - pred: Predictions, of shape (N, M).
+   *  - y: Targets, of shape (N, M).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - dpred: Gradient wrt `pred`, of shape (N, M).
+   */
+  N = nrow(y)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
+  y_NHW_C = t(y_C_NHW)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
+  pred_NHW_C = t(pred_C_NHW)
+
+  dpred_NHW_C = l2_loss::backward(pred_NHW_C, y_NHW_C)
+
+  #Transpose the matrix from (N*H*W, C) to (N, C*H*W)
+  dpred_C_NHW = t(dpred_NHW_C)
+  dpred = util::transpose_NCHW_to_CNHW(dpred_C_NHW, N)
+}
+

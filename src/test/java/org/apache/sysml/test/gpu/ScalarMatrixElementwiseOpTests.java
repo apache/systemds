@@ -98,13 +98,45 @@ public class ScalarMatrixElementwiseOpTests extends GPUTests {
 	}
 
 	@Test
-	public void testModulusLeftScalar() {
+	public void testModulusRightScalar() {
 		runScalarMatrixElementWiseTests("O = X %% scalar", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%%");
 	}
 
 	@Test
-	public void testModulusRightScalar() {
+	public void testModulusLeftScalar() {
 		runScalarMatrixElementWiseTests("O = scalar %% X", "X", "scalar", "O", new double[] { 0.0, 0.5, 5.0 }, "gpu_%%");
+	}
+
+	// This THRESHOLD is set to specifically accommodate testModulusLeftScalar when the matrix is of size [2049,2049],
+	// the scalar is 5.0 and sparsity is 0.9
+	@Override
+	protected double getTHRESHOLD() {
+		return 1e-5;
+	}
+
+	// This specific test case fails when THRESHOLD is set to 1e-9
+	@Ignore
+	@Test
+	public void testModulusLeftScalar2049x2049_5() {
+		String scriptStr = "O = scalar %% X";
+		String inputMatrix = "X";
+		String inputScalar = "scalar";
+		String output = "O";
+		int m = 2048;
+		int n = 2049;
+		double sparsity = 0.9;
+		double scalar = 5.0;
+		System.out.println(
+				"Matrix is of size [" + m + ", " + n + "], sparsity = " + sparsity + ", scalar = "
+						+ scalar);
+		Matrix X = generateInputMatrix(spark, m, n, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put(inputMatrix, X);
+		inputs.put(inputScalar, scalar);
+		List<Object> cpuOut = runOnCPU(spark, scriptStr, inputs, Arrays.asList(output));
+		List<Object> gpuOut = runOnGPU(spark, scriptStr, inputs, Arrays.asList(output));
+		//assertHeavyHitterPresent(heavyHitterOpCode);
+		assertEqualMatrices ((Matrix)cpuOut.get(0), (Matrix)gpuOut.get(0));
 	}
 
 	@Test

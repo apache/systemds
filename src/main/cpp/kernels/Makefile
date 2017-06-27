@@ -18,6 +18,10 @@
 NVCC=nvcc
 CUDAFLAGS= -ptx -c -arch=sm_30 
 
+# Use these flags for precise math
+#CUDAFLAGS= -ptx -c -arch=sm_30 -ftz=false -prec-div=true -prec-sqrt=true
+
+
 SystemML.o: SystemML.cu
 	$(NVCC) $(CUDAFLAGS)  SystemML.cu
 

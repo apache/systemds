@@ -59,6 +59,7 @@ grad_check::scale_shift1d()
 grad_check::scale_shift2d()
 grad_check::sigmoid()
 grad_check::softmax()
+grad_check::softmax2d()
 grad_check::tanh()
 print("")
 

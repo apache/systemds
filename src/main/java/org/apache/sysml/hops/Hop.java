@@ -1354,7 +1354,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.LESS, "<");
 		HopsOpOp2String.put(OpOp2.GREATEREQUAL, ">=");
 		HopsOpOp2String.put(OpOp2.GREATER, ">");
-		HopsOpOp2String.put(OpOp2.EQUAL, "=");
+		HopsOpOp2String.put(OpOp2.EQUAL, "==");
 		HopsOpOp2String.put(OpOp2.NOTEQUAL, "!=");
 		HopsOpOp2String.put(OpOp2.OR, "|");
 		HopsOpOp2String.put(OpOp2.AND, "&");
@@ -1372,6 +1372,10 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
+	}
+	
+	public static String getBinaryOpCode(OpOp2 op) {
+		return HopsOpOp2String.get(op);
 	}
 
 	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;

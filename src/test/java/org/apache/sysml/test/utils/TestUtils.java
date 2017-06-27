@@ -633,7 +633,12 @@ public class TestUtils
 		}
 		return Math.abs(v1 - v2) <= t;
 	}
-
+	
+	public static void compareMatrices(double[] expectedMatrix, double[] actualMatrix, double epsilon) {
+		compareMatrices(new double[][]{expectedMatrix}, 
+			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon);
+	}
+	
 	/**
 	 * <p>
 	 * Compares two matrices in array format.

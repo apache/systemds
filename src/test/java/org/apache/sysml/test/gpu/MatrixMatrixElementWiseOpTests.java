@@ -126,6 +126,53 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 		runMatrixMatrixElementwiseTest("O = X ^ Y", "X", "Y", "O", "gpu_%");
 	}
 
+	@Test
+	public void testIntegerDivide() {
+		runMatrixMatrixElementwiseTest("O = X %/% Y", "X", "Y", "O", "gpu_%/%");
+	}
+
+	@Test
+	public void testMatrixColumnVectorIntegerDivide() {
+		runMatrixColumnVectorTest("O = X %/% Y", "X", "Y", "O", "gpu_%/%");
+	}
+
+	@Test
+	public void testMatrixRowVectorIntegerDivide() {
+		runMatrixRowVectorTest("O = X %/% Y", "X", "Y", "O", "gpu_%/%");
+	}
+
+	@Test
+	public void testModulus() {
+		runMatrixMatrixElementwiseTest("O = X %% Y", "X", "Y", "O", "gpu_%%");
+	}
+
+	@Test
+	public void testMatrixColumnVectorIntegerModulus() {
+		runMatrixColumnVectorTest("O = X %% Y", "X", "Y", "O", "gpu_%%");
+	}
+
+	@Test
+	public void testMatrixRowVectorIntegerModulus() {
+		runMatrixRowVectorTest("O = X %% Y", "X", "Y", "O", "gpu_%%");
+	}
+
+	@Test
+	public void testMinus1Mult() {
+		runMatrixMatrixElementwiseTest("O = 1 - X * Y", "X", "Y", "O", "gpu_1-*");
+	}
+
+	@Test
+	public void testMatrixColumnVectorMinus1Mult() {
+		runMatrixColumnVectorTest("O = 1 - X * Y", "X", "Y", "O", "gpu_1-*");
+	}
+
+	@Test
+	public void testMatrixRowVectorMinus1Mult() {
+		runMatrixRowVectorTest("O = 1 - X * Y", "X", "Y", "O", "gpu_1-*");
+	}
+
+
+
 	/**
 	 * Runs a simple matrix-matrix elementwise op test
 	 *
@@ -143,6 +190,8 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 					int m = rowSizes[i];
 					int n = columnSizes[j];
 					double sparsity = sparsities[k];
+					double sizeInMB = (m * n * 8.0) / (1024.0 * 1024.0);
+					System.out.format("Element Wise Matrix-Matrix : Matrix X[%d,%d](%.1fMB), Y[%d,%d](%.1fMB), sparsity=%f", m, n, sizeInMB, m, n, sizeInMB, sparsity);
 					Matrix X = generateInputMatrix(spark, m, n, sparsity, seed);
 					Matrix Y = generateInputMatrix(spark, m, n, sparsity, seed);
 					HashMap<String, Object> inputs = new HashMap<>();
@@ -252,13 +301,15 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 					int m = rows[i];
 					int n = cols[j];
 					double sparsity = sparsities[k];
+					double matrixSizeInMB = (m * n * 8.0) / (1024.0 * 1024.0);
+					double vectorSizeInMB = (n * 8.0) / (1024.0 * 1024.0);
+					System.out.format("Element Wise Matrix-Vector : Matrix X[%d,%d](%.1fMB), Y[1, %d](%.1fMB), sparsity=%f", m, n, matrixSizeInMB, n, vectorSizeInMB, sparsity);
+
 					Matrix X = generateInputMatrix(spark, m, n, sparsity, seed);
 					Matrix Y = generateInputMatrix(spark, 1, n, sparsity, seed);
 					HashMap<String, Object> inputs = new HashMap<>();
 					inputs.put(matrixInput, X);
 					inputs.put(vectorInput, Y);
-
-					System.out.println("Vector[" + m + ", 1] op Matrix[" + m + ", " + n + "], sparsity = " + sparsity);
 					List<Object> cpuOut = runOnCPU(spark, scriptStr, inputs, Arrays.asList(output));
 					List<Object> gpuOut = runOnGPU(spark, scriptStr, inputs, Arrays.asList(output));
 					//assertHeavyHitterPresent(heavyHitterOpcode);

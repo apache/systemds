@@ -24,6 +24,7 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 ***********************************/
 
 #include <cfloat>
+#include <cmath>
 
 
 /**
@@ -54,7 +55,8 @@ __forceinline__ __device__ double getBoolean(int val) {
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 // 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
-// 11=min, 12=max, 13=and, 14=or, 15=log}
+// 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
+// 17=modulus, 18=integer division}
 extern "C"
 __forceinline__ __device__ double binaryOp(double x, double y, int op) {
 	switch(op) {
@@ -71,6 +73,31 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
         case 10 : return getBoolean(x != y);
         case 11 : return min(x, y);
         case 12 : return max(x, y);
+        case 13 : return getBoolean((int)llrint(x) & (int)llrint(y));
+        case 14 : return getBoolean((int)llrint(x) | (int)llrint(y));
+        case 15 : return 1 - x * y;
+        case 16 : return (x != 0.0 ? x - y : 0.0);
+        case 17 : {
+            if (y == 0.0 || y == -0.0){
+                return nan("");
+            }
+            double v = x / y;
+            // Check for v being NaN (v != v) or if it is infinity
+            if (isnan(v) || isinf(v)){
+                return v;
+            } else {
+                v = floor(v);
+            }
+            return x - v * y;
+        }
+        case 18:{
+            double v = x / y;
+            if (isnan(v) || isinf(v)){
+                return v;
+            } else {
+                return floor(v);
+            }
+        }
         default : return DBL_MAX;
     }
 }

@@ -78,12 +78,16 @@ import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.IndexFunction;
+import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.Mean;
 import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.Minus1Multiply;
+import org.apache.sysml.runtime.functionobjects.MinusNz;
+import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
@@ -2514,8 +2518,10 @@ public class LibMatrixCUDA {
 			MatrixObject out = ec.getMatrixObject(outputName);
 			ec.allocateGPUMatrixObject(outputName);
 			// When both inputs are empty, the output is empty too (except in the case of division)
-			if (op.fn instanceof Divide) {
+			if (op.fn instanceof Divide || op.fn instanceof IntegerDivide || op.fn instanceof Modulus) {
 				out.getGPUObject(gCtx).allocateAndFillDense(Double.NaN);
+			} else if (op.fn instanceof Minus1Multiply) {
+				out.getGPUObject(gCtx).allocateAndFillDense(1.0);
 			} else {
 				out.getGPUObject(gCtx).allocateSparseAndEmpty();
 			}
@@ -2711,7 +2717,8 @@ public class LibMatrixCUDA {
 	 * and the appropriate binary operation is performed on the GPU.
 	 * op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 	 * 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
-	 * 11=min, 12=max, 13=and, 14=or, 15=log}
+	 * 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
+	 * 17=modulus, 18=integer division}
 	 */
 	private static int getBinaryOp(ValueFunction fn) throws DMLRuntimeException {
 		if(fn instanceof Plus) return 0;
@@ -2729,6 +2736,10 @@ public class LibMatrixCUDA {
 		else if(fn instanceof Or) return 14;
 		else if(fn instanceof Multiply2) return 2;
 		else if(fn instanceof Power2) return 4;
+		else if(fn instanceof Minus1Multiply) return 15;
+		else if(fn instanceof MinusNz) return 16;
+		else if(fn instanceof Modulus) return 17;
+		else if(fn instanceof IntegerDivide) return 18;
 
 		throw new DMLRuntimeException("The given value function is not supported:" + fn.getClass().getName());
 	}

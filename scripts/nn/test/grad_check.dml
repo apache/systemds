@@ -962,7 +962,7 @@ cross_entropy_loss2d = function() {
   N = 3  # num examples
   C = 10  # num targets
   Hin = 28  # example height
-  Win = 28  # example weight
+  Win = 28  # example width
   pred = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
 
   y = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")

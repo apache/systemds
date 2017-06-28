@@ -954,15 +954,15 @@ cross_entropy_loss = function() {
 
 cross_entropy_loss2d = function() {
   /*
-   * Gradient check for the cross-entropy loss function.
+   * Gradient check for the 2D cross-entropy loss function.
    */
-  print("Grad checking the cross-entropy loss2d function.")
+  print("Grad checking the 2D cross-entropy loss function.")
 
   # Generate data
   N = 3  # num examples
   C = 10  # num targets
-  Hin = 28 # 
-  Win = 28
+  Hin = 28  # example height
+  Win = 28  # example weight
   pred = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
 
   y = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
@@ -991,8 +991,6 @@ cross_entropy_loss2d = function() {
     }
   }
 }
-
-
 
 dropout = function() {
   /*

@@ -30,139 +30,225 @@ from functools import reduce
 DATA_FORMAT = 'csv'
 
 
-def kmeans_train(save_file_name, load_datagen, datagen_dir, train_dir):
+def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
-    X = join(full_path_datagen, 'X.data')
+    data_folders = []
+    for i in [0, 1]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxiter = 20
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
 
-    full_path_train = join(train_dir, save_file_name)
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+
+        model = join(full_path_train, 'model.data')
+        Log = join(full_path_train, 'Log.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter, model=model,
+                      Log=Log, fmt=DATA_FORMAT)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def binomial_l2_svm_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+    for i in [0, 1]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxiter = 100
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+
+        model = join(full_path_train, 'model.data')
+        Log = join(full_path_train, 'Log.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, reg=reg, tol=tol, maxiter=maxiter, model=model,
+                      Log=Log, fmt=DATA_FORMAT)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def binomial_multilogreg_train(save_folder_name, datagen_dir, train_dir):
+    data_folders = []
+
+    for i in [0, 1, 2]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        moi = 100
+        mii = 5
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+
+        B = join(full_path_train, 'B.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, reg=reg, tol=tol, moi=moi, mii=mii,
+                      B=B)
+        config_writer(full_path_train + '.json', config)
+    return data_folders
+
+
+def multinomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+    for i in [0, 1]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxiter = 20
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        model = join(full_path_train, 'model.data')
+        Log = join(full_path_train, 'Log.data')
+
+        config = dict(X=X, Y=Y, icpt=icpt, classes=150, reg=reg, tol=tol, maxiter=maxiter, model=model,
+                      Log=Log, fmt=DATA_FORMAT)
+        config_writer(full_path_train + '.json', config)
+        data_folders.append(full_path_train)
+
+    return data_folders
+
+
+def clustering_kmeans_train(save_folder_name, datagen_dir, train_dir):
+
+    X = join(datagen_dir, 'X.data')
+
+    full_path_train = join(train_dir, save_folder_name)
     C = join(full_path_train, 'C.data')
 
     config = dict(X=X, k='50', maxi='50', tol='0.0001', C=C)
 
     config_writer(full_path_train + '.json', config)
 
-    return full_path_train
+    return [full_path_train]
 
 
-def univar_stats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+def stats1_univar_stats_train(save_folder_name, datagen_dir, train_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
-    X = join(full_path_datagen, 'X.data')
-    TYPES = join(full_path_datagen, 'types')
+    X = join(datagen_dir, 'X.data')
+    TYPES = join(datagen_dir, 'types')
 
-    full_path_train = join(train_dir, save_file_name)
+    full_path_train = join(train_dir, save_folder_name)
     STATS = join(full_path_train, 'STATS.data')
 
     config = dict(X=X, TYPES=TYPES, STATS=STATS)
     config_writer(full_path_train + '.json', config)
 
-    return full_path_train
+    return [full_path_train]
 
 
-def bivar_stats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+def stats1_bivar_stats_train(save_folder_name, datagen_dir, train_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
-    X = join(full_path_datagen, 'X.data')
-    index1 = join(full_path_datagen, 'set1.indices')
-    index2 = join(full_path_datagen, 'set2.indices')
-    types1 = join(full_path_datagen, 'set1.types')
-    types2 = join(full_path_datagen, 'set2.types')
+    X = join(datagen_dir, 'X.data')
+    index1 = join(datagen_dir, 'set1.indices')
+    index2 = join(datagen_dir, 'set2.indices')
+    types1 = join(datagen_dir, 'set1.types')
+    types2 = join(datagen_dir, 'set2.types')
 
-    full_path_train = join(train_dir, save_file_name)
+    full_path_train = join(train_dir, save_folder_name)
     OUTDIR = full_path_train
 
     config = dict(X=X, index1=index1, index2=index2, types1=types1, types2=types2, OUTDIR=OUTDIR)
     config_writer(full_path_train + '.json', config)
-    return full_path_train
+    return [full_path_train]
 
 
-def stratstats_train(save_file_name, load_datagen, datagen_dir, train_dir):
+def stats2_stratstats_train(save_folder_name, datagen_dir, train_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
-    X = join(full_path_datagen, 'X.data')
-    Xcid = join(full_path_datagen, 'Xcid.data')
-    Ycid = join(full_path_datagen, 'Ycid.data')
+    X = join(datagen_dir, 'X.data')
+    Xcid = join(datagen_dir, 'Xcid.data')
+    Ycid = join(datagen_dir, 'Ycid.data')
 
-    full_path_train = join(train_dir, save_file_name)
+    full_path_train = join(train_dir, save_folder_name)
     O = join(full_path_train, 'O.data')
 
     config = dict(X=X, Xcid=Xcid, Ycid=Ycid, O=O, fmt=DATA_FORMAT)
 
     config_writer(full_path_train + '.json', config)
 
-    return full_path_train
+    return [full_path_train]
 
 
-def linearregds_train(save_file_name, load_datagen, datagen_dir, train_dir):
+def multinomial_naive_bayes_train(save_folder_name, datagen_dir, train_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
+    X = join(datagen_dir, 'X.data')
+    Y = join(datagen_dir, 'Y.data')
+    classes = '150'
 
-    data_folders = []
-    for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
-        X = join(full_path_datagen, 'X.data')
-        Y = join(full_path_datagen, 'Y.data')
+    full_path_train = join(train_dir, save_folder_name)
+    prior = join(full_path_train, 'prior')
+    conditionals = join(full_path_train, 'conditionals')
+    accuracy = join(full_path_train, 'accuracy')
+    fmt = DATA_FORMAT
+    probabilities = join(full_path_train, 'probabilities')
+    config = dict(X=X, Y=Y, classes=classes, prior=prior, conditionals=conditionals,
+                  accuracy=accuracy, fmt=fmt, probabilities=probabilities)
 
-        full_path_train = join(train_dir, save_file_name + '.' + str(i))
-        data_folders.append(full_path_train)
-        B = join(full_path_train, 'B.data')
+    config_writer(full_path_train + '.json', config)
 
-        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=DATA_FORMAT, reg=reg)
-        config_writer(full_path_train + '.json', config)
-
-    return data_folders
-
-
-def linearregcg_train(save_file_name, load_datagen, datagen_dir, train_dir):
-
-    full_path_datagen = join(datagen_dir, load_datagen)
-
-    data_folders = []
-    for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        maxi = 20
-        X = join(full_path_datagen, 'X.data')
-        Y = join(full_path_datagen, 'Y.data')
-
-        full_path_train = join(train_dir, save_file_name + '.' + str(i))
-        data_folders.append(full_path_train)
-        B = join(full_path_train, 'B.data')
-
-        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=DATA_FORMAT, maxi=maxi, tol=tol, reg=reg)
-        config_writer(full_path_train + '.json', config)
-
-    return data_folders
+    return [full_path_train]
 
 
 def config_packets_train(algo_payload, datagen_dir, train_dir):
+    """
+    This function has two responsibilities. Generate the configuration files for
+    input training algorithms and return a dictionary that will be used for execution.
+
+    algo_payload : List of tuples
+    The first tuple index contains algorithm name and the second index contains
+    family type.
+
+    datagen_dir: String
+    Path of the data generation directory
+
+    train_dir: String
+    Path of the training directory
+
+    return: {string: list}
+    This dictionary contains algorithms to be executed as keys and the path of configuration
+    json files to be executed list of values.
+
+    """
 
     config_bundle = {}
-    config_flat = {}
 
-    for current_algo, current_family in algo_payload.items():
+    for k, v in algo_payload:
+        config_bundle[k] = []
+
+    for current_algo, current_family in algo_payload:
         data_gen_path = join(datagen_dir, current_family)
         data_gen_subdir = glob.glob(data_gen_path + "*")
-        data_gen_folders = filter(lambda x: os.path.isdir(x), data_gen_subdir)
-        config_bundle[current_algo] = []
 
+        # Filter for specific data gen
+        data_gen_folders = filter(lambda x: os.path.isdir(x), data_gen_subdir)
         for current_folder in data_gen_folders:
-            algo_func = current_algo.lower().replace('-', '_') + '_train'
-            load_file_name = current_folder.split('/')[-1]
-            file_name_split = load_file_name.split('.')
-            save_file_name = '.'.join([current_algo] + file_name_split[1:])
-            conf_path = globals()[algo_func](save_file_name, load_file_name, datagen_dir, train_dir)
+
+            file_path_last = current_folder.split('/')[-1]
+            save_name = '.'.join([current_algo] + [file_path_last])
+
+            algo_func = '_'.join([current_family] + [current_algo.lower().replace('-', '_')]
+                                 + ['train'])
+            conf_path = globals()[algo_func](save_name, current_folder, train_dir)
             config_bundle[current_algo].append(conf_path)
 
-    # LinearRegDS and CG use intercepts and generate a list of lists
-    # We need to flatten
-    for algo_name, config_files in config_bundle.items():
-        if len(config_files) < 2:
-            config_flat[algo_name] = [reduce(lambda x, y: x + y, config_files)]
-        else:
-            config_flat[algo_name] = reduce(lambda x, y: x + y, config_files)
+    config_packets = {}
+    # Flatten
+    for current_algo, current_family in config_bundle.items():
+        config_packets[current_algo] = reduce(lambda x, y: x + y, current_family)
 
-    return config_flat
+    return config_packets

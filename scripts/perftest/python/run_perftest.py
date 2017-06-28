@@ -20,26 +20,34 @@
 #
 # -------------------------------------------------------------
 
+# TODO:
+
+# Handle error both family and algo is specified (Invalid)
+# If predict defined for clustering
+
+# Smarter way to handle train algo file name
+# Standardise variable constants with quotes
+
 import sys
 import time
 import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_family, config_reader, create_dir, exec_func, get_config
+from utils import get_families, config_reader, create_dir, \
+    exec_dml_and_parse_time, get_config, exec_test_data, check_predict
 import logging
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 
+# A packet is a dictionary
+# with key as the algorithm
+# value as the list with configuration json files
 
-ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
-              'clustering': 'genRandData4Kmeans',
-              'multinomial': 'genRandData4Multinomial',
-              'regression1': 'genRandData4LogisticRegression',
-              'regression2': 'genRandData4LogisticRegression',
-              'stats1': 'genRandData4DescriptiveStats',
-              'stats2': 'genRandData4StratStats'}
+# TODO:
+# Detailed design
+# Instructions to add a algo
 
 ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
@@ -49,16 +57,52 @@ ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'stats1': ['Univar-Stats', 'bivar-stats'],
            'stats2': ['stratstats']}
 
+ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
+              'clustering': 'genRandData4Kmeans',
+              'multinomial': 'genRandData4Multinomial',
+              'regression1': 'genRandData4LogisticRegression',
+              'regression2': 'genRandData4LogisticRegression',
+              'stats1': 'genRandData4DescriptiveStats',
+              'stats2': 'genRandData4StratStats'}
+
+ML_TRAIN = {'GLM_poisson': 'GLM',
+            'GLM_gamma': 'GLM',
+            'GLM_binomial': 'GLM',
+            'stratstats': 'stratstats',
+            'Univar-Stats': 'Univar-Stats',
+            'bivar-stats': 'bivar-stats',
+            'Kmeans': 'Kmeans',
+            'm-svm': 'm-svm',
+            'l2-svm': 'l2-svm',
+            'MultiLogReg': 'MultiLogReg',
+            'naive-bayes': 'naive-bayes'}
+
 ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'LinearRegCG': 'GLM-predict',
-              'LinearRegDS': 'GLM-predict'}
+              'LinearRegDS': 'GLM-predict',
+              'm-svm': 'm-svm-predict',
+              'l2-svm': 'l2-svm-predict',
+              'MultiLogReg': 'GLM-predict'}
 
 
-# Since m-svm appears in binomial and multinomial family
-HAS_DUAL = 'm-svm'
+EXCLUDE_TEST_SPLIT = ['stats1', 'stats2']
 
 
-def algorithm_workflow(algo, exec_type, config_path, file_name, type):
+# Responsible for execution and metric logging
+def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
+    """
+    This function is responsible for overall workflow. This does the following actions
+    a) Check if the input is key value argument or list of positional args
+    b) Execution and time
+    c) Logging Metrics
+
+
+    algo : String
+    exec_type : String
+    config_path : String
+    file_name : String
+    action_mode : String
+    """
 
     config_data = config_reader(config_path + '.json')
 
@@ -70,94 +114,127 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, type):
         list_args = ' '.join(config_data)
         args = {'-args': list_args}
 
-    m_type, m_dim, intercept = get_config(config_path)
+    #m_type, m_dim, intercept = get_config(config_path)
+    #current_metrics = [algo, action_mode, intercept, m_type, m_dim, str(time)]
 
-    # If folder with Success files exists do not redo
-    time = exec_func(exec_type, file_name, args, config_path)
-    # Write Success File
+    last_name = config_path.split('/')[-1]
 
-    current_metrics = [algo, type, intercept, m_type, m_dim, str(time)]
+    time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
+    current_metrics = [last_name, action_mode, exec_type, time]
+
     logging.info(','.join(current_metrics))
 
 
+# Perf test entry point
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode):
+    """
+    This function is the entry point for the algorithms
 
-    algo_payload = {}
+    """
+
+    # algos to run is a list of tuples with
+    # [(m-svm, binomial), (m-svm, multinomial)...]
+    # Basic block for execution of scripts
+    algos_to_run = []
+
+    # Sections below build algos_to_run in our performance test
+    # Handles algorithms like m-svm and MultiLogReg which have multiple
+    # data generation scripts (dual datagen)
+    # --family is taken into consideration only when there are multiple datagen
 
     if family is not None and algo is not None:
         for current_algo in algo:
-            if current_algo == HAS_DUAL:
-                algo_payload[current_algo] = family[0]
-                if len(family) > 1:
-                    print('While using {} we cannot have multiple families'.format(HAS_DUAL))
-                    sys.exit()
+            family_list = get_families(current_algo, ML_ALGO)
+            if len(family_list) == 1:
+                algos_to_run.append((current_algo, family_list[0]))
             else:
-                algo_payload[current_algo] = get_family(current_algo, ML_ALGO)
+                for valid_family in set(family).intersection(family_list[0]):
+                    algos_to_run.append((current_algo, valid_family))
 
+    # When the user inputs just algorithms to run
     elif algo is not None:
         for current_algo in algo:
-            algo_payload[current_algo] = get_family(current_algo, ML_ALGO)
+            family_list = get_families(current_algo, ML_ALGO)
+            for f in family_list:
+                algos_to_run.append((current_algo, f))
 
+    # When the user just specifies only families to run
     elif family is not None:
         for current_family in family:
             algos = ML_ALGO[current_family]
             for current_algo in algos:
-                algo_payload[current_algo] = current_family
+                algos_to_run.append((current_algo, current_family))
 
     if 'data-gen' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
-
-        conf_packet = config_packets_datagen(algo_payload, mat_type, mat_shape, data_gen_dir)
-        for family_name, config_files in conf_packet.items():
-            for config in config_files:
-                algorithm_workflow(family_name, exec_type, config,
-                                   ML_GENDATA[family_name], 'data-gen')
+        conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir)
+        for family_name, config_folders in conf_packet.items():
+            for config in config_folders:
+                file_name = ML_GENDATA[family_name]
+                algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen')
+                if family_name not in EXCLUDE_TEST_SPLIT:
+                    exec_test_data(exec_type, config)
 
     if 'train' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
 
-        conf_packet = config_packets_train(algo_payload, data_gen_dir, train_dir)
+        conf_packet = config_packets_train(algos_to_run, data_gen_dir, train_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
-                algorithm_workflow(algo_name, exec_type, config, algo_name, 'train')
+                file_name = ML_TRAIN[algo_name]
+                algorithm_workflow(algo_name, exec_type, config, file_name, 'train')
 
     if 'predict' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         predict_dir = join(temp_dir, 'predict')
         create_dir(predict_dir)
+        algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
 
-        conf_packet = config_packets_predict(algo_payload, data_gen_dir, train_dir, predict_dir)
+        if len(algos_to_run_perdict) < 0:
+            pass
+
+        conf_packet = config_packets_predict(algos_to_run_perdict, data_gen_dir, train_dir, predict_dir)
+
         for algo_name, config_files in conf_packet.items():
-            for config in config_files:
-                file_name = ML_PREDICT[algo_name]
-                algorithm_workflow(algo_name, exec_type, config, file_name, 'predict')
-
+                for config in config_files:
+                    file_name = ML_PREDICT[algo_name]
+                    algorithm_workflow(algo_name, exec_type, config, file_name, 'predict')
 
 if __name__ == '__main__':
+
+    # sys ml env set and error handling
     systemml_home = os.environ.get('SYSTEMML_HOME')
+    if systemml_home is None:
+        print('SYSTEMML_HOME not found')
+        sys.exit()
 
     # Default Arguments
     default_mat_type = ['dense', 'sparse']
     default_workload = ['data-gen', 'train', 'predict']
-    default_mat_shape = ['10k_1k']
+    default_mat_shape = ['10k_100']
+
+    # Default temp directory, contains everything generated in perftest
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
+    create_dir(default_temp_dir)
 
     # Initialize time
     start_time = time.time()
-    algo_flat = reduce(lambda x, y: x + y, ML_ALGO.values())
+
+    # Remove duplicates algorithms and used as default inputs
+    all_algos = set(reduce(lambda x, y: x + y, ML_ALGO.values()))
 
     # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
                          metavar='', choices=ML_ALGO.keys(), nargs='+')
-    cparser.add_argument('--algo', help='specify the type of algorithm to run', metavar='',
-                         choices=algo_flat, nargs='+')
+    cparser.add_argument('--algo', help='specify the type of algorithm to run (Overrides --family)', metavar='',
+                         choices=all_algos, nargs='+')
 
-    cparser.add_argument('-exec-type', default='singlenode', help='System-ML backend '
+    cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
                          '(e.g singlenode, spark, spark-hybrid)', metavar='',
                          choices=['hybrid_spark', 'singlenode'])
     cparser.add_argument('--mat-type', default=default_mat_type, help='Type of matrix to generate '
@@ -165,14 +242,15 @@ if __name__ == '__main__':
                          nargs='+')
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='Shape of matrix '
                          'to generate (e.g 10k_1k)', metavar='', nargs='+')
-    cparser.add_argument('-temp-dir', default=default_temp_dir, help='specify temporary directory',
+    cparser.add_argument('--temp-dir', default=default_temp_dir, help='specify temporary directory',
                          metavar='')
-    cparser.add_argument('--filename', default='perf_test', help='specify output file',
-                         metavar='')
+    cparser.add_argument('--filename', default='perf_test', help='specify output file for the perf'
+                         ' metics', metavar='')
     cparser.add_argument('--mode', default=default_workload,
                          help='specify type of workload to run (e.g data-gen, train, predict)',
                          metavar='', choices=default_workload, nargs='+')
 
+    # Args is a namespace
     args = cparser.parse_args()
     arg_dict = vars(args)
 
@@ -188,28 +266,38 @@ if __name__ == '__main__':
 
     if args.algo is not None:
         for algo in args.algo:
-            if algo not in algo_flat:
+            if algo not in all_algos:
                 print('{} algorithm not present in the performance test suit'.format(args.algo))
                 sys.exit()
 
-    # Check dual condition
-    if args.family is None:
-        if HAS_DUAL in args.algo:
-            print('cannot run {} without family type'.format(HAS_DUAL))
-            sys.exit()
+        # This section check the validity of dual datagen algorithms like m-svm
+        algo_families = {}
+        for current_algo in args.algo:
+            algo_families[current_algo] = get_families(current_algo, ML_ALGO)
 
-    if not os.path.exists(args.temp_dir):
-        os.makedirs(args.temp_dir)
+        if len(algo_families[current_algo]) > 1:
+            if args.family is None:
+                print('family should be present for {}'.format(current_algo))
+                sys.exit()
 
-    # Set level to 0 ->  debug
-    # Set level to 20 -> metrics
+            valid_families = set(algo_families[current_algo])
+            input_families = set(args.family)
+            common_families = input_families.intersection(valid_families)
+            if len(common_families) == 0:
+                print('Please specify a valid family for {} and the '
+                      'valid families are {}'.format(current_algo, ' '.join(valid_families)))
+                sys.exit()
+
+    # Set level to 0 -> debug mode
+    # Set level to 20 -> Plain metrics
     log_filename = args.filename + '_' + args.exec_type
-    logging.basicConfig(filename=join(default_temp_dir, log_filename), level=0)
+    logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
     logging.info('New performance test')
     logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
 
     # Remove filename item from dictionary
     del arg_dict['filename']
+
     perf_test_entry(**arg_dict)
 
     total_time = (time.time() - start_time)

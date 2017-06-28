@@ -33,29 +33,33 @@ MATRIX_TYPE_DICT = {'dense': '0.9',
 FAMILY_NO_MATRIX_TYPE = ['clustering', 'stats1', 'stats2']
 
 
-def clustering_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+def multinomial_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
-
+    path_name = '.'.join(['multinomial', matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    sparsity = MATRIX_TYPE_DICT[matrix_type]
+    num_categories = '150'
+    intercept = '0'
     X = join(full_path, 'X.data')
     Y = join(full_path, 'Y.data')
-    YbyC = join(full_path, 'YbyC.data')
-    C = join(full_path, 'C.data')
+    fmt = DATA_FORMAT
 
-    config = dict(nr=row, nf=col, nc='50', dc='10.0', dr='1.0',
-                  fbf='100.0', cbf='100.0', X=X, C=C, Y=Y,
-                  YbyC=YbyC, fmt=DATA_FORMAT)
+    config = [numSamples, numFeatures, sparsity, num_categories, intercept,
+              X, Y, fmt, '1']
 
     config_writer(full_path + '.json', config)
+
     return full_path
 
 
-def binomial_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+def binomial_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join(['binomial', matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     numSamples = row
@@ -78,62 +82,29 @@ def binomial_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
-def regression1_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join(['clustering', matrix_type, str(matrix_dim)])
+
     full_path = join(datagen_dir, path_name)
+    X = join(full_path, 'X.data')
+    Y = join(full_path, 'Y.data')
+    YbyC = join(full_path, 'YbyC.data')
+    C = join(full_path, 'C.data')
 
-    numSamples = row
-    numFeatures = col
-    maxFeatureValue = '5'
-    maxWeight = '5'
-    loc_weights = join(full_path, 'weight.data')
-    loc_data = join(full_path, 'X.data')
-    loc_labels = join(full_path, 'Y.data')
-    noise = '1'
-    intercept = '0'
-    sparsity = MATRIX_TYPE_DICT[matrix_type]
-    tranform_labels = '1'
-    fmt = DATA_FORMAT
+    config = dict(nr=row, nf=col, nc='50', dc='10.0', dr='1.0',
+                  fbf='100.0', cbf='100.0', X=X, C=C, Y=Y,
+                  YbyC=YbyC, fmt=DATA_FORMAT)
 
-    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights,
-              loc_data, loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
     config_writer(full_path + '.json', config)
-
     return full_path
 
 
-def regression2_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
-    full_path = join(datagen_dir, path_name)
-
-    numSamples = row
-    numFeatures = col
-    maxFeatureValue = '5'
-    maxWeight = '5'
-    loc_weights = join(full_path, 'weight.data')
-    loc_data = join(full_path, 'X.data')
-    loc_labels = join(full_path, 'Y.data')
-    noise = '1'
-    intercept = '0'
-    sparsity = MATRIX_TYPE_DICT[matrix_type]
-    tranform_labels = '1'
-    fmt = DATA_FORMAT
-
-    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights,
-              loc_data, loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
-    config_writer(full_path + '.json', config)
-
-    return full_path
-
-
-def stats1_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
-
-    row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join(['stats1', matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     DATA = join(full_path, 'X.data')
@@ -143,8 +114,8 @@ def stats1_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     INDEX1 = join(full_path, 'set1.indices')
     INDEX2 = join(full_path, 'set2.indices')
 
-    config = dict(R=row, C=col, NC=100, MAXDOMAIN=1100, DATA=DATA, TYPES=TYPES, SETSIZE=20,
-                  LABELSETSIZE=10, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
+    config = dict(R=row, C=col, NC="100", MAXDOMAIN="1100", DATA=DATA, TYPES=TYPES, SETSIZE=20,
+                  LABELSETSIZE="10", TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
                   fmt=DATA_FORMAT)
 
     config_writer(full_path + '.json', config)
@@ -152,10 +123,10 @@ def stats1_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
-def stats2_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
+def stats2_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
+    path_name = '.'.join(['stats2', matrix_type, str(matrix_dim)])
     full_path = join(datagen_dir, path_name)
 
     D = join(full_path, 'X.data')
@@ -170,51 +141,46 @@ def stats2_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
-def multinomial_datagen(algo_name, matrix_dim, matrix_type, datagen_dir):
-
-    row, col = split_rowcol(matrix_dim)
-    path_name = '.'.join([algo_name, matrix_type, str(matrix_dim)])
-    full_path = join(datagen_dir, path_name)
-
-    numSamples = row
-    numFeatures = col
-    sparsity = MATRIX_TYPE_DICT[matrix_type]
-    num_categories = '150'
-    intercept = '0'
-    X = join(full_path, 'X.data')
-    Y = join(full_path, 'Y.data')
-    fmt = DATA_FORMAT
-
-    config = [numSamples, numFeatures, sparsity, num_categories, intercept,
-              X, Y, fmt, '1']
-
-    config_writer(full_path + '.json', config)
-
-    return full_path
-
-
 def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir):
+    """
+    This function has two responsibilities. Generate the configuration files for
+    datagen algorithms and return a dictionary that will be used for execution.
 
-    # config bundle
-    # key <- family
-    # value <- matrix_type + matrix_shape
-    # We replace value to path later
+    algo_payload : List of tuples
+    The first tuple index contains algorithm name and the second index contains
+    family type.
+
+    matrix_type: String
+    Type of matrix to generate e.g dense or sparse
+
+    matrix_shape: String
+    Shape of matrix to generate e.g 100k_10
+
+    return: {string: list}
+    This dictionary contains algorithms to be executed as keys and the path of configuration
+    json files to be executed list of values.
+    """
+
     config_bundle = {}
 
-    distinct_family = set(algo_payload.values())
-    for current_family in distinct_family:
+    distinct_families = set(map(lambda x: x[1], algo_payload))
+
+    # Cross Product of all configurations
+    for current_family in distinct_families:
         if current_family in FAMILY_NO_MATRIX_TYPE:
             config = list(itertools.product(matrix_shape, ['dense']))
             config_bundle[current_family] = config
         else:
             config = list(itertools.product(matrix_shape, matrix_type))
+            # clustering : [[10k_1, dense], [10k_2, dense], ...]
             config_bundle[current_family] = config
 
-    for current_algo, configs in config_bundle.items():
-        config_bundle[current_algo] = []
-        for conf in configs:
-            algo_func = current_algo.lower().replace('-', '_') + '_datagen'
-            conf_path = globals()[algo_func](current_algo, conf[0], conf[1], datagen_dir)
-            config_bundle[current_algo].append(conf_path)
+    config_packets = {}
+    for current_family, configs in config_bundle.items():
+        config_packets[current_family] = []
+        for size, type in configs:
+            family_func = current_family.lower() + '_datagen'
+            conf_path = globals()[family_func](size, type, datagen_dir)
+            config_packets[current_family].append(conf_path)
 
-    return config_bundle
+    return config_packets

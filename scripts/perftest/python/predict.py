@@ -27,16 +27,62 @@ from utils import create_dir, config_writer
 
 # Contains configuration setting for predicting
 
-HAS_PREDICT = ['Kmeans', 'LinearRegDS', 'LinearRegCG']
 DATA_FORMAT = 'csv'
 
 
-def kmeans_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
+def m_svm_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    full_path_datagen = join(datagen_dir, load_datagen)
+    X = join(datagen_dir, 'X_test.data')
+    Y = join(datagen_dir, 'Y_test.data')
 
-    X = join(full_path_datagen, 'X.data')
-    C = join(full_path_datagen, 'C.data')
+    icpt = save_file_name.split('.')[-1]
+    model = join(train_dir, 'model.data')
+    fmt = DATA_FORMAT
+
+    config = dict(X=X, Y=Y, icpt=icpt, model=model, fmt=fmt)
+
+    full_path_predict = join(predict_dir, save_file_name)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def l2_svm_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+
+    X = join(datagen_dir, 'X_test.data')
+    Y = join(datagen_dir, 'Y_test.data')
+
+    icpt = save_file_name.split('.')[-1]
+    model = join(train_dir, 'model.data')
+    fmt = DATA_FORMAT
+
+    config = dict(X=X, Y=Y, icpt=icpt, model=model, fmt=fmt)
+
+    full_path_predict = join(predict_dir, save_file_name)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def multilogreg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+    X = join(datagen_dir, 'X_test.data')
+    Y = join(datagen_dir, 'Y_test.data')
+    B = join(train_dir, 'B.data')
+    M = join(train_dir, 'M.data')
+    fmt = DATA_FORMAT
+
+    config = dict(dfam=3, vpow=-1, link=2, fmt=fmt, X=X, B=B, Y=Y, M=M)
+
+    full_path_predict = join(predict_dir, save_file_name)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def kmeans_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+
+    X = join(datagen_dir, 'X_test.data')
+    C = join(datagen_dir, 'C.data')
 
     full_path_predict = join(predict_dir, save_file_name)
     prY = join(full_path_predict, 'prY.data')
@@ -47,77 +93,58 @@ def kmeans_predict(save_file_name, load_datagen, load_train, datagen_dir, train_
     return full_path_predict
 
 
-def linearregcg_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
-
-    full_path_datagen = join(datagen_dir, load_datagen)
-    full_path_train = join(train_dir, load_train)
-    full_path_predict = join(predict_dir, save_file_name)
-
-    dfam = 1
-    link = 1
-    vpow = 0.0
-    lpow = 1.0
-
-    X = join(full_path_datagen, 'X.data')
-    B = join(full_path_train, 'B.data')
-    Y = join(full_path_datagen, 'Y.data')
-    M = join(full_path_predict, 'M.data')
-    O = join(full_path_predict, 'O.data')
-    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
-                  B=B, Y=Y, M=M, O=O)
-    config_writer(full_path_predict + '.json', config)
-
-    return full_path_predict
-
-
-def linearregds_predict(save_file_name, load_datagen, load_train, datagen_dir, train_dir, predict_dir):
-
-    full_path_datagen = join(datagen_dir, load_datagen)
-    full_path_train = join(train_dir, load_train)
-    full_path_predict = join(predict_dir, save_file_name)
-
-    dfam = 1
-    link = 1
-    vpow = 0.0
-    lpow = 1.0
-
-    X = join(full_path_datagen, 'X.data')
-    B = join(full_path_train, 'B.data')
-    Y = join(full_path_datagen, 'Y.data')
-    M = join(full_path_predict, 'M.data')
-    O = join(full_path_predict, 'O.data')
-    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
-                  B=B, Y=Y, M=M, O=O)
-    config_writer(full_path_predict + '.json', config)
-
-    return full_path_predict
-
-
 def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
+    """
+    This function has two responsibilities. Generate the configuration files for
+    prediction algorithms and return a dictionary that will be used for execution.
+
+    algo_payload : List of tuples
+    The first tuple index contains algorithm name and the second index contains
+    family type.
+
+    datagen_dir: String
+    Path of the data generation directory
+
+    train_dir: String
+    Path of the training directory
+
+    predict_dir: String
+    Path of the prediction directory
+
+    return: {string: list}
+    This dictionary contains algorithms to be executed as keys and the path of configuration
+    json files to be executed list of values.
+
+    """
+
+    algo_payload_distinct = set(map(lambda x: x[0], algo_payload))
 
     config_bundle = {}
-    for current_algo, current_family in algo_payload.items():
-        if current_algo in HAS_PREDICT:
 
-            # Find datagen folders
-            data_gen_path = join(datagen_dir, current_family)
+    for k, v in algo_payload:
+        config_bundle[k] = []
+
+    for current_algo in algo_payload_distinct:
+        # Get all train folders related to the algorithm
+        train_path = join(train_dir, current_algo)
+        train_subdir = glob.glob(train_path + "*")
+        train_folders = filter(lambda x: os.path.isdir(x), train_subdir)
+
+        for current_train_folder in train_folders:
+
+            save_name = current_train_folder.split('/')[-1]
+
+            # Get data gen folders related to the algorithm
+            data_gen_folder_name = '.'.join(save_name.split('.')[1:-1])
+            data_gen_path = join(datagen_dir, data_gen_folder_name)
             data_gen_subdir = glob.glob(data_gen_path + "*")
-            data_gen_folders = filter(lambda x: os.path.isdir(x), data_gen_subdir)
+            data_gen_folder = filter(lambda x: os.path.isdir(x), data_gen_subdir)
+            current_data_gen_dir = list(data_gen_folder)[0]
 
-            # Find train folders
-            train_path = join(train_dir, current_algo)
-            train_subdir = glob.glob(train_path + "*")
-            train_folders = filter(lambda x: os.path.isdir(x), train_subdir)
-            config_bundle[current_algo] = []
+            algo_func = '_'.join([current_algo.lower().replace('-', '_')] + ['predict'])
+            conf_path = globals()[algo_func](save_name, current_data_gen_dir,
+                                             current_train_folder, predict_dir)
 
-            for data_gen, train in zip(data_gen_folders, train_folders):
-                algo_func = current_algo.lower() + '_predict'
-                load_datagen = data_gen.split('/')[-1]
-                load_train = train.split('/')[-1]
-                create_dir(predict_dir + os.sep + load_train)
-
-                conf_path = globals()[algo_func](load_train, load_datagen, load_train,
-                                                 datagen_dir, train_dir, predict_dir)
-                config_bundle[current_algo].append(conf_path)
+            config_bundle[current_algo].append(conf_path)
 
     return config_bundle

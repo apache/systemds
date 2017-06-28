@@ -493,17 +493,17 @@ transpose_NCHW_to_CNHW = function() {
    * Test for `transpose_NCHW_to_CNHW` function.
    */
   print("Testing transpose_NCHW_to_CNHW function.")
-  
+
   # Generate data
   N = 2
   C = 3
   H = 4
   W = 5
   X = matrix(seq(1, N*C*H*W), rows=N, cols=C*H*W)
-  
+
   out = util::transpose_NCHW_to_CNHW(X, C)
-  
-  target = 
+
+  target =
     matrix("1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20
             61  62  63  64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80
             21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40
@@ -511,7 +511,7 @@ transpose_NCHW_to_CNHW = function() {
             41  42  43  44  45  46  47  48  49  50  51  52  53  54  55  56  57  58  59  60
             101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120",
            rows=C, cols=N*H*W)
-  
+
   # Equivalency check
   for (i in 1:nrow(out)) {
     for(j in 1:ncol(out)) {
@@ -790,7 +790,7 @@ threshold = function() {
 
 top_k_row = function() {
   /*
-   * Test for the top_k function.
+   * Test for the top_k_row function.
    */
   print("Testing the top_k_row function.")
 
@@ -806,7 +806,7 @@ top_k_row = function() {
                              4
                              8", rows=1, cols=3)
 
-  # Test the top 3 for the second row
+  # Test the top 3 for the second row.
   [values, indices] = util::top_k_row(X, 2, 3)
   check_values = test_util::check_all_equal(values, expected_values)
   check_indices = test_util::check_all_equal(indices, expected_indices)
@@ -852,3 +852,74 @@ top_k = function() {
    check_values_topAll = test_util::check_all_equal(values_topAll, expected_values_topAll)
    check_indices_topAll = test_util::check_all_equal(indices_topAll, expected_indices_topAll)
 }
+
+top_k2d = function() {
+  /*
+   * Test for the top_k2d function.
+  */
+  print("Testing the top_k2d function.")
+  # Generate data, of shape (2, 3, 3, 4)
+  k = 2
+  X = matrix("0.1 0.4 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.7 0.3 0.2
+
+              0.2 0.5 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.8 0.3 0.2
+
+              0.3 0.4 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.2 0.3 0.2
+
+              0.1 0.4 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.7 0.3 0.2
+
+              0.2 0.5 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.8 0.3 0.2
+
+              0.3 0.4 0.4 0.5
+              0.4 0.1 0.6 0.1
+              0.7 0.2 0.3 0.2", rows=2, cols=3*3*4)
+
+  expected_values = matrix("0.3  0.5  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.8  0.3  0.2
+
+                            0.2  0.4  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.7  0.3  0.2
+
+                            0.3  0.5  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.8  0.3  0.2
+
+                            0.2  0.4  0.4  0.5
+                            0.4  0.1  0.6  0.1
+                            0.7  0.7  0.3  0.2", rows=2, cols=2*3*4)
+
+  expected_indices = matrix("3  2  1  1
+                             1  1  1  1
+                             1  2  1  1
+
+                             2  1  2  2
+                             2  2  2  2
+                             2  1  2  2
+
+                             3  2  1  1
+                             1  1  1  1
+                             1  2  1  1
+
+                             2  1  2  2
+                             2  2  2  2
+                             2  1  2  2", rows=2, cols=24)
+
+  [values, indices] = util::top_k2d(X, k, 3, 3, 4)
+
+  # Equivalency check
+  check_values = test_util::check_all_equal(values, expected_values)
+  check_indices = test_util::check_all_equal(indices, expected_indices)
+}
+

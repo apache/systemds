@@ -108,6 +108,32 @@ def regression1_datagen(matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
+def regression2_datagen(matrix_dim, matrix_type, datagen_dir):
+
+    row, col = split_rowcol(matrix_dim)
+    path_name = '.'.join(['regression2', matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    maxFeatureValue = '5'
+    maxWeight = '5'
+    loc_weights = join(full_path, 'weight.data')
+    loc_data = join(full_path, 'X.data')
+    loc_labels = join(full_path, 'Y.data')
+    noise = '1'
+    intercept = '0'
+    sparsity = MATRIX_TYPE_DICT[matrix_type]
+    tranform_labels = '1'
+    fmt = DATA_FORMAT
+
+    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data,
+              loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
 def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)

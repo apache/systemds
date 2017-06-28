@@ -103,8 +103,16 @@ def get_existence(path):
 
 def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
     """
-    This function is responsible of execution of input arguments and parese time
-    Return: Total execution time
+    This function is responsible of execution of input arguments
+    via python sub process. We also extract time obtained from the output of this subprocess.
+
+    exec_type: String
+
+    file_name: String
+
+    args: Dictionary
+
+    time: Boolean (default=True)
 
     """
 

@@ -85,7 +85,10 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'm-svm': 'm-svm-predict',
               'l2-svm': 'l2-svm-predict',
               'MultiLogReg': 'GLM-predict',
-              'naive-bayes': 'naive-bayes-predict'}
+              'naive-bayes': 'naive-bayes-predict',
+              'GLM_poisson': 'GLM-predict',
+              'GLM_gamma': 'GLM-predict',
+              'GLM_binomial': 'GLM-predict'}
 
 
 EXCLUDE_TEST_SPLIT = ['stats1', 'stats2']

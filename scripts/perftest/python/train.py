@@ -267,6 +267,94 @@ def regression1_linearregcg_train(save_folder_name, datagen_dir, train_dir):
     return data_folders
 
 
+def regression2_glm_gamma_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+
+    for i in [0, 1, 2]:
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name)
+        data_folders.append(full_path_train)
+
+        B = join(full_path_train, 'B.data')
+        icpt = str(i)
+        fmt = DATA_FORMAT
+        moi = '200'
+        mii = '5'
+        dfam = '1'
+        vpow = '2.0'
+        link = '1'
+        lpow = '0.0'
+        tol = '0.0001'
+        reg = '0.01'
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=fmt, moi=moi, mii=mii, dfam=dfam,
+                      vpov=vpow, link=link, lpow=lpow, tol=tol, reg=reg)
+
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def regression2_glm_binomial_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+
+    for i in [0, 1, 2]:
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name)
+        data_folders.append(full_path_train)
+
+        B = join(full_path_train, 'B.data')
+        icpt = str(i)
+        fmt = DATA_FORMAT
+        moi = '200'
+        mii = '5'
+        dfam = '2'
+        link = '3'
+        yneg = '2'
+        tol = '0.0001'
+        reg = '0.01'
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=fmt, moi=moi, mii=mii,
+                      dfam=dfam, link=link, yneg=yneg, tol=tol, reg=reg)
+
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+
+    for i in [0, 1, 2]:
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name)
+        data_folders.append(full_path_train)
+
+        B = join(full_path_train, 'B.data')
+        icpt = str(i)
+        fmt = DATA_FORMAT
+        moi = '200'
+        mii = '5'
+        dfam = '1'
+        vpov = '1'
+        link = '1'
+        lpow = '0'
+        tol = '0.0001'
+        reg = '0.01'
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=fmt, moi=moi, mii=mii,
+                      dfam=dfam, vpov=vpov, link=link, lpow=lpow, tol=tol, reg=reg)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
 def config_packets_train(algo_payload, datagen_dir, train_dir):
     """
     This function has two responsibilities. Generate the configuration files for

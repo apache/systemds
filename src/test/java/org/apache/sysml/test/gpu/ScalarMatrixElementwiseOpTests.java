@@ -136,7 +136,7 @@ public class ScalarMatrixElementwiseOpTests extends GPUTests {
 		List<Object> cpuOut = runOnCPU(spark, scriptStr, inputs, Arrays.asList(output));
 		List<Object> gpuOut = runOnGPU(spark, scriptStr, inputs, Arrays.asList(output));
 		//assertHeavyHitterPresent(heavyHitterOpCode);
-		assertEqualMatrices ((Matrix)cpuOut.get(0), (Matrix)gpuOut.get(0));
+		assertEqualObjects (cpuOut.get(0), gpuOut.get(0));
 	}
 
 	@Test

@@ -24,10 +24,10 @@
  */
 source("nn/test/grad_check.dml") as grad_check
 source("nn/test/test.dml") as test
-
 print("")
 print("Starting grad checks.")
 print("---")
+
 
 # Loss & loss-related functions
 grad_check::cross_entropy_loss()
@@ -98,9 +98,13 @@ test::padding()
 test::tanh()
 test::threshold()
 test::transpose_NCHW_to_CNHW()
+test::top_k_row()
+test::top_k()
+test::top_k2d()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")
 print("")
 print("")
+
 

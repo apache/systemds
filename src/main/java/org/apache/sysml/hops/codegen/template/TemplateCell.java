@@ -84,14 +84,19 @@ public class TemplateCell extends TemplateBase
 		return !isClosed() && (isValidOperation(hop) 
 			|| (HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG) 
 				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col)
-			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1)
-				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)));
+			|| (HopRewriteUtils.isMatrixMultiply(hop)
+				&& hop.getDim1()==1 && hop.getDim2()==1)
+				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
+			|| (HopRewriteUtils.isTransposeOperation(hop) 
+				&& hop.getDim1()==1 && hop.getDim2()>1));
 	}
 
 	@Override
 	public boolean merge(Hop hop, Hop input) {
 		//merge of other cell tpl possible
-		return (!isClosed() && isValidOperation(hop));
+		return (!isClosed() && (isValidOperation(hop) 
+			|| (hop instanceof AggBinaryOp && hop.getInput().indexOf(input)==0 
+				&& HopRewriteUtils.isTransposeOperation(input))));
 	}
 
 	@Override

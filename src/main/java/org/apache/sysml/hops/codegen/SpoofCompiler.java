@@ -717,7 +717,7 @@ public class SpoofCompiler
 			
 			//remove cplan w/ single op and w/o agg
 			if( (tpl instanceof CNodeCell && ((((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& TemplateUtils.hasSingleOperation(tpl))|| TemplateUtils.hasNoOperation(tpl)))
+				&& TemplateUtils.hasSingleOperation(tpl)) || TemplateUtils.hasNoOperation(tpl)))
 				|| tpl instanceof CNodeRow && TemplateUtils.hasSingleOperation(tpl)) 
 				cplans2.remove(e.getKey());
 				

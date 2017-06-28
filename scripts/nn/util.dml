@@ -230,6 +230,8 @@ transpose_NCHW_to_CNHW = function(matrix[double] X, int C) return (matrix[double
    * Outputs:
    *  - out: Transposed output with C rows.
    */
+
+  if(1==1){}
   N = nrow(X)
   D = ncol(X) / C
 
@@ -267,4 +269,61 @@ transpose_NCHW_to_CNHW = function(matrix[double] X, int C) return (matrix[double
    * - reshape to get the output shape with C rows
    */
   out = matrix(permut %*% matrix(X, rows=N*C, cols=D), rows=C, cols=N*D)
+}
+
+top_k_row = function(matrix[double] X, integer r, integer k)
+    return (matrix[double] values, matrix[double] indices) {
+  /*
+   * Computes the top k values (i.e. probabilities) and associated
+   * indices (i.e. classes) in the rth row of the input matrix X
+   *
+   * Inputs:
+   * - X: Inputs, of shape (N D).
+   * - r: Input row number of X to look for
+   * - k: Input number of top elements to look for
+   *
+   * Outputs:
+   * - values: The top k values at the rth row, of shape
+   *    (1, k)
+   * - indices: The class indices, of shape (1, k)
+   */
+
+  #TODO: do r & k need to be checked in the valid range
+  row = X[r, ]
+  row_t = t(row)
+  indices = order(target=row_t, by=1, decreasing=TRUE, index.return=TRUE)
+  indices = t(indices)
+  indices = indices[1, 1:k]
+
+  values = matrix(0, rows=1, cols=k)
+  for (i in 1:k) {
+    values[1, i] = row[1, as.scalar(indices[1, i])]
+  }
+}
+
+top_k = function(matrix[double] X, integer k)
+     return (matrix[double] values, matrix[double] indices) {
+  /*
+   * Computes the top k values (i.e. probabilities) and associated
+   * indices (i.e. classes) for the input matrix X.
+   *
+   * Inputs:
+   * - X: Inputs, of shape (N D).
+   * - k: Input number of top elements to look for
+   *
+   * Outputs:
+   * - values: The top k values along a certain dimension, of shape
+   *    (N, k)
+   * - indices: The indices of classes, of shape (N, K)
+   */
+  N = nrow(X)
+  D = ncol(X)
+  values = matrix(0, rows=N, cols=k)
+  indices = matrix(0, rows=N, cols=k)
+
+  parfor (r in 1:N) {
+    [value, index] = top_k_row(X, r, k)
+    values[r, ] = value
+    indices[r, ] = index
+  }
 }

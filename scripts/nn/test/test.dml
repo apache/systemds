@@ -768,7 +768,7 @@ tanh = function() {
 
 threshold = function() {
   /*
-   * Test for threshold function.
+   * Test for the threshold function.
    */
   print("Testing the threshold function.")
 
@@ -788,3 +788,67 @@ threshold = function() {
   out = test_util::check_all_equal(indicator_matrix, target_matrix)
 }
 
+top_k_row = function() {
+  /*
+   * Test for the top_k function.
+   */
+  print("Testing the top_k_row function.")
+
+  #Generate data
+  X = matrix("2 3 2 1 19 20 31 12 3 4 5 60 9 2
+              3 6 15 18 6 12 1 17 3 0 4 19 1 6", rows=2, cols=14)
+  r = 2
+  k = 3
+  expected_values = matrix("19
+                            18
+                            17", rows=1, cols=3)
+  expected_indices = matrix("12
+                             4
+                             8", rows=1, cols=3)
+
+  # Test the top 3 for the second row
+  [values, indices] = util::top_k_row(X, 2, 3)
+  check_values = test_util::check_all_equal(values, expected_values)
+  check_indices = test_util::check_all_equal(indices, expected_indices)
+}
+
+top_k = function() {
+   /*
+    * Test for the top_k function.
+   */
+   print("Testing the top_k function.")
+
+   # Generate data
+   X = matrix("0.1 0.3 0.2 0.4
+               0.1 0.3 0.3 0.2", rows=2, cols=4)
+   expected_values_top1 = matrix("0.4
+                                  0.3", rows=2, cols=1)
+   expected_indices_top1 = matrix("4
+                                   2", rows=2, cols=1)
+   expected_values_top2 = matrix("0.4 0.3
+                                  0.3 0.3", rows=2, cols=2)
+   expected_indices_top2 = matrix("4 2
+                                   2 3", rows=2, cols=2)
+   expected_values_topAll = matrix("0.4 0.3 0.2 0.1
+                                    0.3 0.3 0.2 0.1", rows=2, cols=4)
+   expected_indices_topAll = matrix("4 2 3 1
+                                     2 3 4 1", rows=2, cols=4)
+
+   # test top_1
+   print("Case 1: test top_1")
+   [values_top1, indices_top1] = util::top_k(X, 1)
+   check_values_top1 = test_util::check_all_equal(values_top1, expected_values_top1)
+   check_indices_top1 = test_util::check_all_equal(indices_top1, expected_indices_top1)
+
+   # test top_2
+   print("Case 2: test top_2")
+   [values_top2, indices_top2] = util::top_k(X, 2)
+   check_values_top2 = test_util::check_all_equal(values_top2, expected_values_top2)
+   check_indices_top2 = test_util::check_all_equal(indices_top2, expected_indices_top2)
+
+   # test top_All
+   print("Case 3: test top_All")
+   [values_topAll, indices_topAll] = util::top_k(X, 4)
+   check_values_topAll = test_util::check_all_equal(values_topAll, expected_values_topAll)
+   check_indices_topAll = test_util::check_all_equal(indices_topAll, expected_indices_topAll)
+}

@@ -35,8 +35,8 @@ public class ScalarMatrixElementwiseOpTests extends GPUTests {
 
 	private final static String TEST_NAME = "ScalarMatrixElementwiseOpTests";
 
-	private final int[] rowSizes = new int[] { 1, 64, 130, 2049 };
-	private final int[] columnSizes = new int[] { 1, 64, 130, 2049 };
+	private final int[] rowSizes = new int[] { 1, 64, 2049 };
+	private final int[] columnSizes = new int[] { 1, 64, 2049 };
 	private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
 	private final int seed = 42;
 
@@ -45,6 +45,66 @@ public class ScalarMatrixElementwiseOpTests extends GPUTests {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_DIR, TEST_NAME);
 		getAndLoadTestConfiguration(TEST_NAME);
+	}
+
+	@Test
+	public void testLessThanRightScalar() {
+		runScalarMatrixElementWiseTests("O = X < scalar", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_<");
+	}
+
+	@Test
+	public void testLessThanLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar < X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_<");
+	}
+
+	@Test
+	public void testLessThanEqualRightScalar() {
+		runScalarMatrixElementWiseTests("O = X <= scalar", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_<=");
+	}
+
+	@Test
+	public void testLessThanEqualLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar <= X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_<=");
+	}
+
+	@Test
+	public void testGreaterThanRightScalar() {
+		runScalarMatrixElementWiseTests("O = X > scalar", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_>");
+	}
+
+	@Test
+	public void testGreaterThanLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar > X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_>");
+	}
+
+	@Test
+	public void testGreaterThanEqualRightScalar() {
+		runScalarMatrixElementWiseTests("O = X >= scalar", "X", "scalar", "O", new double[] { 0.0,  20.0 }, "gpu_>=");
+	}
+
+	@Test
+	public void testGreaterThanEqualLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar >= X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_>=");
+	}
+
+	@Test
+	public void testEqualRightScalar() {
+		runScalarMatrixElementWiseTests("O = X == scalar", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_==");
+	}
+
+	@Test
+	public void testEqualLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar == X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_==");
+	}
+
+	@Test
+	public void testNotEqualRightScalar() {
+		runScalarMatrixElementWiseTests("O = X != scalar", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_!=");
+	}
+
+	@Test
+	public void testNotEqualEqualLeftScalar() {
+		runScalarMatrixElementWiseTests("O = scalar != X", "X", "scalar", "O", new double[] { 0.0, 20.0 }, "gpu_!=");
 	}
 
 	@Test

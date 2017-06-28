@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,30 +28,19 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction
-{
-	
-	public MatrixMatrixArithmeticGPUInstruction(Operator op, 
-											   CPOperand in1, 
-											   CPOperand in2, 
-											   CPOperand out, 
-											   String opcode,
-											   String istr){
+public class MatrixMatrixRelationalBinaryGPUInstruction extends RelationalBinaryGPUInstruction {
+
+	public MatrixMatrixRelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		
+
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject in2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
-		
-		//TODO: make hop level changes for this
-		boolean isLeftTransposed = false;
-		boolean isRightTransposed = false;
-		// int rlen = isLeftTransposed ? (int) in1.getNumColumns() : (int) in1.getNumRows();
-		// int clen = isLeftTransposed ? (int) in1.getNumRows() : (int) in1.getNumColumns();
 
 		long rlen1 = in1.getNumRows();
 		long clen1 = in1.getNumColumns();
@@ -69,10 +58,10 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		}
 
 		ec.setMetaData(_output.getName(), (int)rlen, (int)clen);
-		
+
 		BinaryOperator bop = (BinaryOperator) _optr;
-		LibMatrixCUDA.matrixMatrixArithmetic(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, bop);
-		
+		LibMatrixCUDA.matrixMatrixRelational(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, in2, _output.getName(), bop);
+
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());

@@ -32,7 +32,18 @@ import org.apache.sysml.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction
 {
-	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, BuiltinBinary, Builtin };
+	public enum GPUINSTRUCTION_TYPE {
+		AggregateUnary,
+		AggregateBinary,
+		RelationalBinary,
+		Convolution,
+		MMTSJ,
+		Reorg,
+		ArithmeticBinary,
+		BuiltinUnary,
+		BuiltinBinary,
+		Builtin
+	};
 
 	// Memory/conversions
 	public final static String MISC_TIMER_HOST_TO_DEVICE =          "H2D";	// time spent in bringing data to gpu (from host)
@@ -46,7 +57,8 @@ public abstract class GPUInstruction extends Instruction
 
 	public final static String MISC_TIMER_CUDA_FREE =               "f";		// time spent in calling cudaFree
 	public final static String MISC_TIMER_ALLOCATE =                "a";		// time spent to allocate memory on gpu
-	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT =   "ao";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
+	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT =   "ad";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
+	public final static String MISC_TIMER_ALLOCATE_SPARSE_OUTPUT =  "as";		// time spent to allocate sparse output (recorded differently than MISC_TIMER_ALLOCATE)
 	public final static String MISC_TIMER_SET_ZERO =                "az";		// time spent to allocate
 	public final static String MISC_TIMER_REUSE =                   "r";		// time spent in reusing already allocated memory on GPU (mainly for the count)
 
@@ -114,27 +126,27 @@ public abstract class GPUInstruction extends Instruction
 
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
-	
+
 	protected boolean _requiresLabelUpdate = false;
-	
+
 	public GPUInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.GPU;
 		instString = istr;
-		
+
 		//prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
+
 	public GPUInstruction(Operator op, String opcode, String istr) {
 		this(opcode, istr);
 		_optr = op;
 	}
-	
+
 	public GPUINSTRUCTION_TYPE getGPUInstructionType() {
 		return _gputype;
 	}
-	
+
 	@Override
 	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
@@ -147,11 +159,11 @@ public abstract class GPUInstruction extends Instruction
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
+		throws DMLRuntimeException
 	{
 		//default preprocess behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
-		
+
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
@@ -162,7 +174,7 @@ public abstract class GPUInstruction extends Instruction
 		return tmp;
 	}
 
-	@Override 
+	@Override
 	public abstract void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException;
 

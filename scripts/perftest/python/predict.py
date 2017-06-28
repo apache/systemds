@@ -79,6 +79,24 @@ def multilogreg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     return full_path_predict
 
 
+def naive_bayes_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+
+    X = join(datagen_dir, 'X_test.data')
+    Y = join(datagen_dir, 'Y_test.data')
+
+    prior = join(train_dir, 'prior')
+    conditionals = join(train_dir, 'conditionals')
+    fmt = DATA_FORMAT
+
+    config = dict(X=X, Y=Y, prior=prior, conditionals=conditionals, fmt=fmt,
+                  probabilities=probabilities)
+
+    full_path_predict = join(predict_dir, save_file_name)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
 def kmeans_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
     X = join(datagen_dir, 'X_test.data')
@@ -88,6 +106,50 @@ def kmeans_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     prY = join(full_path_predict, 'prY.data')
 
     config = dict(X=X, C=C, prY=prY)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def linearregcg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+
+    dfam = 1
+    link = 1
+    vpow = 0.0
+    lpow = 1.0
+
+    X = join(datagen_dir, 'X_test.data')
+    B = join(train_dir, 'B.data')
+    Y = join(datagen_dir, 'Y_test.data')
+
+    full_path_predict = join(predict_dir, save_file_name)
+    M = join(full_path_predict, 'M.data')
+    O = join(full_path_predict, 'O.data')
+
+    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
+                  B=B, Y=Y, M=M, O=O)
+    config_writer(full_path_predict + '.json', config)
+
+    return full_path_predict
+
+
+def linearregds_predict(save_file_name, datagen_dir, train_dir, predict_dir):
+
+    dfam = 1
+    link = 1
+    vpow = 0.0
+    lpow = 1.0
+
+    X = join(datagen_dir, 'X_test.data')
+    B = join(train_dir, 'B.data')
+    Y = join(datagen_dir, 'Y_test.data')
+
+    full_path_predict = join(predict_dir, save_file_name)
+    M = join(full_path_predict, 'M.data')
+    O = join(full_path_predict, 'O.data')
+
+    config = dict(dfam=dfam, link=link, vpow=vpow, lpow=lpow, fmt=DATA_FORMAT, X=X,
+                  B=B, Y=Y, M=M, O=O)
     config_writer(full_path_predict + '.json', config)
 
     return full_path_predict
@@ -146,5 +208,6 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
                                              current_train_folder, predict_dir)
 
             config_bundle[current_algo].append(conf_path)
+
 
     return config_bundle

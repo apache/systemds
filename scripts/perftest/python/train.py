@@ -196,12 +196,75 @@ def multinomial_naive_bayes_train(save_folder_name, datagen_dir, train_dir):
     accuracy = join(full_path_train, 'accuracy')
     fmt = DATA_FORMAT
     probabilities = join(full_path_train, 'probabilities')
+
     config = dict(X=X, Y=Y, classes=classes, prior=prior, conditionals=conditionals,
                   accuracy=accuracy, fmt=fmt, probabilities=probabilities)
 
     config_writer(full_path_train + '.json', config)
 
     return [full_path_train]
+
+
+def multinomial_multilogreg_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+    for i in [0, 1, 2]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        moi = 100
+        mii = 0
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+        B = join(full_path_train, 'B.data')
+
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, reg=reg, tol=tol, moi=moi, mii=mii, fmt=DATA_FORMAT)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def regression1_linearregds_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+    for i in [0, 1, 2]:
+        icpt = i
+        reg = 0.01
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+        B = join(full_path_train, 'B.data')
+
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=DATA_FORMAT, reg=reg)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
+
+
+def regression1_linearregcg_train(save_folder_name, datagen_dir, train_dir):
+
+    data_folders = []
+    for i in [0, 1, 2]:
+        icpt = i
+        reg = 0.01
+        tol = 0.0001
+        maxi = 20
+        X = join(datagen_dir, 'X.data')
+        Y = join(datagen_dir, 'Y.data')
+
+        full_path_train = join(train_dir, save_folder_name + '.' + str(i))
+        data_folders.append(full_path_train)
+        B = join(full_path_train, 'B.data')
+
+        config = dict(X=X, Y=Y, B=B, icpt=icpt, fmt=DATA_FORMAT, maxi=maxi, tol=tol, reg=reg)
+        config_writer(full_path_train + '.json', config)
+
+    return data_folders
 
 
 def config_packets_train(algo_payload, datagen_dir, train_dir):

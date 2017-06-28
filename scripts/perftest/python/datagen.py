@@ -82,6 +82,32 @@ def binomial_datagen(matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
+def regression1_datagen(matrix_dim, matrix_type, datagen_dir):
+
+    row, col = split_rowcol(matrix_dim)
+    path_name = '.'.join(['regression1', matrix_type, str(matrix_dim)])
+    full_path = join(datagen_dir, path_name)
+
+    numSamples = row
+    numFeatures = col
+    maxFeatureValue = '5'
+    maxWeight = '5'
+    loc_weights = join(full_path, 'weight.data')
+    loc_data = join(full_path, 'X.data')
+    loc_labels = join(full_path, 'Y.data')
+    noise = '1'
+    intercept = '0'
+    sparsity = MATRIX_TYPE_DICT[matrix_type]
+    tranform_labels = '1'
+    fmt = DATA_FORMAT
+
+    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data,
+              loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
+    config_writer(full_path + '.json', config)
+
+    return full_path
+
+
 def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
 
     row, col = split_rowcol(matrix_dim)
@@ -102,6 +128,8 @@ def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
 
 
 def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
+    #TODO
+    # Remove hard coding C
 
     row, col = split_rowcol(matrix_dim)
     path_name = '.'.join(['stats1', matrix_type, str(matrix_dim)])
@@ -114,7 +142,7 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
     INDEX1 = join(full_path, 'set1.indices')
     INDEX2 = join(full_path, 'set2.indices')
 
-    config = dict(R=row, C=col, NC="100", MAXDOMAIN="1100", DATA=DATA, TYPES=TYPES, SETSIZE=20,
+    config = dict(R=row, C=col, NC="10", MAXDOMAIN="1100", DATA=DATA, TYPES=TYPES, SETSIZE=20,
                   LABELSETSIZE="10", TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
                   fmt=DATA_FORMAT)
 

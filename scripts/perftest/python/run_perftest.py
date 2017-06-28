@@ -68,6 +68,8 @@ ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
 ML_TRAIN = {'GLM_poisson': 'GLM',
             'GLM_gamma': 'GLM',
             'GLM_binomial': 'GLM',
+            'LinearRegCG': 'LinearRegCG',
+            'LinearRegDS': 'LinearRegDS',
             'stratstats': 'stratstats',
             'Univar-Stats': 'Univar-Stats',
             'bivar-stats': 'bivar-stats',
@@ -82,7 +84,8 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'LinearRegDS': 'GLM-predict',
               'm-svm': 'm-svm-predict',
               'l2-svm': 'l2-svm-predict',
-              'MultiLogReg': 'GLM-predict'}
+              'MultiLogReg': 'GLM-predict',
+              'naive-bayes': 'naive-bayes-predict'}
 
 
 EXCLUDE_TEST_SPLIT = ['stats1', 'stats2']
@@ -92,9 +95,9 @@ EXCLUDE_TEST_SPLIT = ['stats1', 'stats2']
 def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     """
     This function is responsible for overall workflow. This does the following actions
-    a) Check if the input is key value argument or list of positional args
-    b) Execution and time
-    c) Logging Metrics
+    Check if the input is key value argument or list of positional args
+    Execution and time
+    Logging Metrics
 
 
     algo : String
@@ -120,7 +123,9 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     last_name = config_path.split('/')[-1]
 
     time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
-    current_metrics = [last_name, action_mode, exec_type, time]
+    current_metrics = [algo, action_mode, exec_type, time, last_name]
+
+    print('{},{},{} '.format(algo, action_mode, time))
 
     logging.info(','.join(current_metrics))
 
@@ -140,7 +145,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
     # Sections below build algos_to_run in our performance test
     # Handles algorithms like m-svm and MultiLogReg which have multiple
     # data generation scripts (dual datagen)
-    # --family is taken into consideration only when there are multiple datagen
+    # --family is taken into consideration only when there are multiple datagen for an algo
 
     if family is not None and algo is not None:
         for current_algo in algo:
@@ -148,7 +153,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
             if len(family_list) == 1:
                 algos_to_run.append((current_algo, family_list[0]))
             else:
-                for valid_family in set(family).intersection(family_list[0]):
+                intersection = set(family).intersection(family_list)
+                for valid_family in intersection:
                     algos_to_run.append((current_algo, valid_family))
 
     # When the user inputs just algorithms to run
@@ -193,7 +199,6 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         predict_dir = join(temp_dir, 'predict')
         create_dir(predict_dir)
         algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
-
         if len(algos_to_run_perdict) < 0:
             pass
 
@@ -290,7 +295,7 @@ if __name__ == '__main__':
 
     # Set level to 0 -> debug mode
     # Set level to 20 -> Plain metrics
-    log_filename = args.filename + '_' + args.exec_type
+    log_filename = args.filename + '_' + args.exec_type + '.out'
     logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
     logging.info('New performance test')
     logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')

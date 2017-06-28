@@ -31,6 +31,7 @@ print("---")
 
 # Loss & loss-related functions
 grad_check::cross_entropy_loss()
+grad_check::cross_entropy_loss2d()
 grad_check::l1_loss()
 grad_check::l1_reg()
 grad_check::l2_loss()

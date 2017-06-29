@@ -144,9 +144,13 @@ def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
     Y = join(full_path, 'Y.data')
     YbyC = join(full_path, 'YbyC.data')
     C = join(full_path, 'C.data')
+    nc = '50'
+    dc = '10.0'
+    dr = '1.0'
+    fbf = '100.0'
+    cbf = '100.0'
 
-    config = dict(nr=row, nf=col, nc='50', dc='10.0', dr='1.0',
-                  fbf='100.0', cbf='100.0', X=X, C=C, Y=Y,
+    config = dict(nr=row, nf=col, nc=nc, dc=dc, dr=dr, fbf=fbf, cbf=cbf, X=X, C=C, Y=Y,
                   YbyC=YbyC, fmt=DATA_FORMAT)
 
     config_writer(full_path + '.json', config)
@@ -167,9 +171,13 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
     TYPES2 = join(full_path, 'set2.types')
     INDEX1 = join(full_path, 'set1.indices')
     INDEX2 = join(full_path, 'set2.indices')
+    NC = '10'
+    MAXDOMAIN = '1100'
+    SETSIZE = '20'
+    LABELSETSIZE = '10'
 
-    config = dict(R=row, C=col, NC="10", MAXDOMAIN="1100", DATA=DATA, TYPES=TYPES, SETSIZE=20,
-                  LABELSETSIZE="10", TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
+    config = dict(R=row, C=col, NC=NC, MAXDOMAIN=MAXDOMAIN, DATA=DATA, TYPES=TYPES, SETSIZE=SETSIZE,
+                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
                   fmt=DATA_FORMAT)
 
     config_writer(full_path + '.json', config)
@@ -210,7 +218,7 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
     matrix_shape: String
     Shape of matrix to generate e.g 100k_10
 
-    return: {string: list}
+    return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
     """

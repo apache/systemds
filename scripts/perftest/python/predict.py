@@ -69,9 +69,12 @@ def multilogreg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     Y = join(datagen_dir, 'Y_test.data')
     B = join(train_dir, 'B.data')
     M = join(train_dir, 'M.data')
+    dfam = '3'
+    vpow = '-1'
+    link = '2'
     fmt = DATA_FORMAT
 
-    config = dict(dfam=3, vpow=-1, link=2, fmt=fmt, X=X, B=B, Y=Y, M=M)
+    config = dict(dfam=dfam, vpow=vpow, link=link, fmt=fmt, X=X, B=B, Y=Y, M=M)
 
     full_path_predict = join(predict_dir, save_file_name)
     config_writer(full_path_predict + '.json', config)
@@ -112,10 +115,10 @@ def kmeans_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
 def linearregcg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    dfam = 1
-    link = 1
-    vpow = 0.0
-    lpow = 1.0
+    dfam = '1'
+    link = '1'
+    vpow = '0.0'
+    lpow = '1.0'
 
     X = join(datagen_dir, 'X_test.data')
     B = join(train_dir, 'B.data')
@@ -134,10 +137,10 @@ def linearregcg_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
 def linearregds_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    dfam = 1
-    link = 1
-    vpow = 0.0
-    lpow = 1.0
+    dfam = '1'
+    link = '1'
+    vpow = '0.0'
+    lpow = '1.0'
 
     X = join(datagen_dir, 'X_test.data')
     B = join(train_dir, 'B.data')
@@ -156,10 +159,10 @@ def linearregds_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
 def glm_poisson_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    dfam = 1
-    link = 1
-    vpow = 1
-    lpow = 1.0
+    dfam = '1'
+    link = '1'
+    vpow = '1'
+    lpow = '1.0'
 
     X = join(datagen_dir, 'X_test.data')
     B = join(train_dir, 'B.data')
@@ -178,8 +181,8 @@ def glm_poisson_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
 def glm_binomial_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    dfam = 2
-    link = 3
+    dfam = '2'
+    link = '3'
 
     X = join(datagen_dir, 'X_test.data')
     B = join(train_dir, 'B.data')
@@ -198,10 +201,10 @@ def glm_binomial_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
 def glm_gamma_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
-    dfam = 1
-    link = 1
-    vpow = 2
-    lpow = 0
+    dfam = '1'
+    link = '1'
+    vpow = '2'
+    lpow = '0'
 
     X = join(datagen_dir, 'X_test.data')
     B = join(train_dir, 'B.data')
@@ -236,10 +239,9 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
     predict_dir: String
     Path of the prediction directory
 
-    return: {string: list}
+    return: Dictionary  {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
-
     """
 
     algo_payload_distinct = set(map(lambda x: x[0], algo_payload))
@@ -256,10 +258,8 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
         train_folders = filter(lambda x: os.path.isdir(x), train_subdir)
 
         for current_train_folder in train_folders:
-
             save_name = current_train_folder.split('/')[-1]
-
-            # Get data gen folders related to the algorithm
+            # Get all datagen folders
             data_gen_folder_name = '.'.join(save_name.split('.')[1:-1])
             data_gen_path = join(datagen_dir, data_gen_folder_name)
             data_gen_subdir = glob.glob(data_gen_path + "*")

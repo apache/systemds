@@ -34,10 +34,10 @@ def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        maxiter = 20
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        maxiter = '20'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -58,10 +58,10 @@ def binomial_l2_svm_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        maxiter = 100
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        maxiter = '100'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -82,11 +82,11 @@ def binomial_multilogreg_train(save_folder_name, datagen_dir, train_dir):
     data_folders = []
 
     for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        moi = 100
-        mii = 5
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        moi = '100'
+        mii = '5'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -105,10 +105,10 @@ def multinomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        maxiter = 20
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        maxiter = '20'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -130,8 +130,10 @@ def clustering_kmeans_train(save_folder_name, datagen_dir, train_dir):
 
     full_path_train = join(train_dir, save_folder_name)
     C = join(full_path_train, 'C.data')
-
-    config = dict(X=X, k='50', maxi='50', tol='0.0001', C=C)
+    k = '50'
+    maxi = '50'
+    tol = '0.0001'
+    config = dict(X=X, k=k, maxi=maxi, tol=tol, C=C)
 
     config_writer(full_path_train + '.json', config)
 
@@ -209,11 +211,11 @@ def multinomial_multilogreg_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        moi = 100
-        mii = 0
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        moi = '100'
+        mii = '0'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -231,8 +233,8 @@ def regression1_linearregds_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
+        icpt = str(i)
+        reg = '0.01'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -250,10 +252,10 @@ def regression1_linearregcg_train(save_folder_name, datagen_dir, train_dir):
 
     data_folders = []
     for i in [0, 1, 2]:
-        icpt = i
-        reg = 0.01
-        tol = 0.0001
-        maxi = 20
+        icpt = str(i)
+        reg = '0.01'
+        tol = '0.0001'
+        maxi = '20'
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -370,7 +372,7 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
     train_dir: String
     Path of the training directory
 
-    return: {string: list}
+    return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
 

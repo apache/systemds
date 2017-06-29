@@ -20,6 +20,7 @@
 #
 #-------------------------------------------------------------
 
+import sys
 import glob
 import os
 from os.path import join
@@ -37,7 +38,7 @@ def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
         icpt = str(i)
         reg = '0.01'
         tol = '0.0001'
-        maxiter = '20'
+        maxiter = 20
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
 
@@ -372,7 +373,7 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
     train_dir: String
     Path of the training directory
 
-    return: Dictionary {string: list}
+    return: {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
 
@@ -388,18 +389,21 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
         data_gen_subdir = glob.glob(data_gen_path + "*")
 
         # Filter for specific data gen
-        data_gen_folders = filter(lambda x: os.path.isdir(x), data_gen_subdir)
-        for current_folder in data_gen_folders:
+        data_gen_folders = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
+        if len(data_gen_folders) == 0:
+            print('datagen folders not present for {}'.format(current_family))
+            sys.exit()
 
+        for current_folder in data_gen_folders:
             file_path_last = current_folder.split('/')[-1]
             save_name = '.'.join([current_algo] + [file_path_last])
-
             algo_func = '_'.join([current_family] + [current_algo.lower().replace('-', '_')]
                                  + ['train'])
             conf_path = globals()[algo_func](save_name, current_folder, train_dir)
             config_bundle[current_algo].append(conf_path)
 
     config_packets = {}
+
     # Flatten
     for current_algo, current_family in config_bundle.items():
         config_packets[current_algo] = reduce(lambda x, y: x + y, current_family)

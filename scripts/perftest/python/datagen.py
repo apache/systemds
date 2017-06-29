@@ -158,8 +158,6 @@ def clustering_datagen(matrix_dim, matrix_type, datagen_dir):
 
 
 def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
-    #TODO
-    # Remove hard coding C
 
     row, col = split_rowcol(matrix_dim)
     path_name = '.'.join(['stats1', matrix_type, str(matrix_dim)])
@@ -171,10 +169,16 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
     TYPES2 = join(full_path, 'set2.types')
     INDEX1 = join(full_path, 'set1.indices')
     INDEX2 = join(full_path, 'set2.indices')
-    NC = '10'
     MAXDOMAIN = '1100'
     SETSIZE = '20'
     LABELSETSIZE = '10'
+
+    # NC should be less than C and more than num0
+    # NC = 10 (old value)
+    # num0 = NC/2
+    # num0 < NC < C
+    # NC = C/2
+    NC = int(int(col)/2)
 
     config = dict(R=row, C=col, NC=NC, MAXDOMAIN=MAXDOMAIN, DATA=DATA, TYPES=TYPES, SETSIZE=SETSIZE,
                   LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,

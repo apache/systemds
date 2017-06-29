@@ -272,3 +272,38 @@ def check_predict(current_algo, ML_PREDICT):
         return True
     else:
         return False
+
+
+def get_folder_metrics(folder_name, action_mode):
+    """
+    Gets metrics from folder name
+
+    folder_name: String
+    Folder from which we want to grab details
+
+    return: List(3)
+    A list with mat_type, mat_shape, intercept
+    """
+
+    if action_mode == 'data-gen':
+        split_name = folder_name.split('.')
+        mat_type = split_name[1]
+        mat_shape = split_name[2]
+        intercept = 'none'
+
+    try:
+        if action_mode == 'train':
+            split_name = folder_name.split('.')
+            mat_type = split_name[3]
+            mat_shape = split_name[2]
+            intercept = split_name[4]
+
+        if action_mode == 'predict':
+            split_name = folder_name.split('.')
+            mat_type = split_name[3]
+            mat_shape = split_name[2]
+            intercept = split_name[4]
+    except IndexError:
+        intercept = 'none'
+
+    return mat_type, mat_shape, intercept

@@ -20,13 +20,13 @@
 #
 #-------------------------------------------------------------
 
+import sys
 import os
 from os.path import join
 import glob
 from utils import create_dir, config_writer
 
 # Contains configuration setting for predicting
-
 DATA_FORMAT = 'csv'
 
 
@@ -255,7 +255,11 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
         # Get all train folders related to the algorithm
         train_path = join(train_dir, current_algo)
         train_subdir = glob.glob(train_path + "*")
-        train_folders = filter(lambda x: os.path.isdir(x), train_subdir)
+        train_folders = list(filter(lambda x: os.path.isdir(x), train_subdir))
+
+        if len(train_folders) == 0:
+            print('training folders not present for {}'.format(current_algo))
+            sys.exit()
 
         for current_train_folder in train_folders:
             save_name = current_train_folder.split('/')[-1]
@@ -263,7 +267,12 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
             data_gen_folder_name = '.'.join(save_name.split('.')[1:-1])
             data_gen_path = join(datagen_dir, data_gen_folder_name)
             data_gen_subdir = glob.glob(data_gen_path + "*")
-            data_gen_folder = filter(lambda x: os.path.isdir(x), data_gen_subdir)
+            data_gen_folder = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
+
+            if len(data_gen_folders) == 0:
+                print('data-gen folders not present for {}'.format(current_family))
+                sys.exit()
+
             current_data_gen_dir = list(data_gen_folder)[0]
 
             algo_func = '_'.join([current_algo.lower().replace('-', '_')] + ['predict'])

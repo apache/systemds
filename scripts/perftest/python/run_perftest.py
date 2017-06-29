@@ -21,9 +21,7 @@
 # -------------------------------------------------------------
 
 # TODO:
-
 # Handle error both family and algo is specified (Invalid)
-# If predict defined for clustering
 
 # Smarter way to handle train algo file name
 # Standardise variable constants with quotes
@@ -34,9 +32,10 @@ import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_families, config_reader, create_dir, \
-    exec_dml_and_parse_time, get_config, exec_test_data, check_predict
+from utils import get_families, config_reader, create_dir, get_config, \
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics
 import logging
+from datetime import datetime
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
@@ -45,9 +44,6 @@ from predict import config_packets_predict
 # with key as the algorithm
 # value as the list with configuration json files
 
-# TODO:
-# Detailed design
-# Instructions to add a algo
 
 ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'clustering': ['Kmeans'],
@@ -91,9 +87,6 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'GLM_binomial': 'GLM-predict'}
 
 
-EXCLUDE_TEST_SPLIT = ['stats1', 'stats2']
-
-
 # Responsible for execution and metric logging
 def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     """
@@ -120,15 +113,12 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
         list_args = ' '.join(config_data)
         args = {'-args': list_args}
 
-    #m_type, m_dim, intercept = get_config(config_path)
-    #current_metrics = [algo, action_mode, intercept, m_type, m_dim, str(time)]
-
-    last_name = config_path.split('/')[-1]
+    folder_name = config_path.split('/')[-1]
+    mat_type, mat_shape, intercept = get_folder_metrics(folder_name, action_mode)
 
     time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
-    current_metrics = [algo, action_mode, exec_type, time, last_name]
-
-    print('{},{},{} '.format(algo, action_mode, time))
+    print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
+    current_metrics = [algo, action_mode, intercept, mat_type, mat_shape, time]
 
     logging.info(','.join(current_metrics))
 
@@ -136,8 +126,28 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
 # Perf test entry point
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode):
     """
-    This function is the entry point for the algorithms
+    This function is the entry point for performance testing
 
+    family: List
+    A family may contain one or more algorithm based on data generation script used
+
+    algo: List
+    Input algorithms
+
+    exec_type: String
+    Contains the execution type singlenode / hybrid_spark
+
+    mat_type: List
+    Type of matrix to generate dense or sparse
+
+    mat_shape: List
+    Dimensions of the input matrix with rows and columns
+
+    temp_dir: String
+    Location to store all files created during perf test
+
+    mode: List
+    Type of workload to run. data-gen, train ...
     """
 
     # algos to run is a list of tuples with
@@ -182,14 +192,15 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
                 algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen')
-                if family_name not in EXCLUDE_TEST_SPLIT:
+
+                # Statistic family do not require to be split
+                if family_name not in ['stats1', 'stats2']:
                     exec_test_data(exec_type, config)
 
     if 'train' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-
         conf_packet = config_packets_train(algos_to_run, data_gen_dir, train_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
@@ -204,9 +215,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
         if len(algos_to_run_perdict) < 0:
             pass
-
         conf_packet = config_packets_predict(algos_to_run_perdict, data_gen_dir, train_dir, predict_dir)
-
         for algo_name, config_files in conf_packet.items():
                 for config in config_files:
                     file_name = ML_PREDICT[algo_name]
@@ -224,6 +233,7 @@ if __name__ == '__main__':
     default_mat_type = ['dense', 'sparse']
     default_workload = ['data-gen', 'train', 'predict']
     default_mat_shape = ['10k_100']
+    default_execution_mode = ['hybrid_spark', 'singlenode']
 
     # Default temp directory, contains everything generated in perftest
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
@@ -231,6 +241,9 @@ if __name__ == '__main__':
 
     # Initialize time
     start_time = time.time()
+
+    # Default Date Time
+    time_now = str(datetime.now())
 
     # Remove duplicates algorithms and used as default inputs
     all_algos = set(reduce(lambda x, y: x + y, ML_ALGO.values()))
@@ -243,12 +256,12 @@ if __name__ == '__main__':
                          choices=all_algos, nargs='+')
 
     cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
-                         '(e.g singlenode, spark, spark-hybrid)', metavar='',
-                         choices=['hybrid_spark', 'singlenode'])
-    cparser.add_argument('--mat-type', default=default_mat_type, help='Type of matrix to generate '
+                         '(e.g singlenode, spark-hybrid)', metavar='',
+                         choices=default_execution_mode)
+    cparser.add_argument('--mat-type', default=default_mat_type, help='type of matrix to generate '
                          '(e.g dense or sparse)', metavar='', choices=default_mat_type,
                          nargs='+')
-    cparser.add_argument('--mat-shape', default=default_mat_shape, help='Shape of matrix '
+    cparser.add_argument('--mat-shape', default=default_mat_shape, help='shape of matrix '
                          'to generate (e.g 10k_1k)', metavar='', nargs='+')
     cparser.add_argument('--temp-dir', default=default_temp_dir, help='specify temporary directory',
                          metavar='')
@@ -300,10 +313,10 @@ if __name__ == '__main__':
     # Set level to 20 -> Plain metrics
     log_filename = args.filename + '_' + args.exec_type + '.out'
     logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
-    logging.info('New performance test')
+    logging.info('New performance test started at {}'.format(time_now))
     logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
 
-    # Remove filename item from dictionary
+    # Remove filename item from dictionary as its already used to create the log above
     del arg_dict['filename']
 
     perf_test_entry(**arg_dict)

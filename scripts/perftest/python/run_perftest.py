@@ -32,7 +32,7 @@ import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_families, config_reader, create_dir, get_config, \
+from utils import get_families, config_reader, create_dir,  get_existence, \
     exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics
 import logging
 from datetime import datetime
@@ -97,10 +97,19 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
 
 
     algo : String
+    Input algorithm specified
+
     exec_type : String
+    Contains the execution type singlenode / hybrid_spark
+
     config_path : String
+    Path to read the json file from
+
     file_name : String
+    DML file name to be used while processing the arguments give
+
     action_mode : String
+    Type of action data-gen, train ...
     """
 
     config_data = config_reader(config_path + '.json')
@@ -116,10 +125,16 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     folder_name = config_path.split('/')[-1]
     mat_type, mat_shape, intercept = get_folder_metrics(folder_name, action_mode)
 
-    time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
+    exit_flag_success = get_existence(config_path)
+
+    if exit_flag_success:
+        print('data already exists {}'.format(config_path))
+        time = 'data_exists'
+    else:
+        time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
+
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
     current_metrics = [algo, action_mode, intercept, mat_type, mat_shape, time]
-
     logging.info(','.join(current_metrics))
 
 
@@ -314,7 +329,7 @@ if __name__ == '__main__':
     log_filename = args.filename + '_' + args.exec_type + '.out'
     logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
     logging.info('New performance test started at {}'.format(time_now))
-    logging.info('algorithm, run_type, intercept, matrix_type, data_shape, time_sec')
+    logging.info('algorithm,run_type,intercept,matrix_type,data_shape,time_sec')
 
     # Remove filename item from dictionary as its already used to create the log above
     del arg_dict['filename']

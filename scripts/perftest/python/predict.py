@@ -269,10 +269,11 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
             data_gen_subdir = glob.glob(data_gen_path + "*")
             data_gen_folder = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
 
-            if len(data_gen_folders) == 0:
+            if len(data_gen_folder) == 0:
                 print('data-gen folders not present for {}'.format(current_family))
                 sys.exit()
 
+            # Ideally we will have more than one datagen directory to be found
             current_data_gen_dir = list(data_gen_folder)[0]
 
             algo_func = '_'.join([current_algo.lower().replace('-', '_')] + ['predict'])

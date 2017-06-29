@@ -128,7 +128,7 @@ def get_existence(path):
     return exist
 
 
-def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
+def exec_dml_and_parse_time(exec_type, file_name, args, path, Time=True):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -168,7 +168,7 @@ def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
-    if time:
+    if Time:
         proc1_log = []
         while proc1.poll() is None:
             raw_std_out = proc1.stdout.readline()
@@ -182,14 +182,15 @@ def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
             print('Error Found in {}'.format(file_name))
             total_time = 'failure'
         else:
-            total_time = parse_time(proc1_log)
+            total_time = parse_time(proc1_log, path)
+
     else:
         total_time = 'not_specified'
 
     return total_time
 
 
-def parse_time(raw_logs):
+def parse_time(raw_logs, cpath):
     """
     Parses raw input list and extracts time
 
@@ -206,35 +207,13 @@ def parse_time(raw_logs):
         if line.startswith('Total execution time'):
             extract_time = re.findall(r'\d+', line)
             total_time = '.'.join(extract_time)
+
+            # Write Success file if time found
+            full_path = join(cpath, '_SUCCESS')
+            open(full_path, 'w').close()
             return total_time
 
     return 'time_not_found'
-
-
-def get_config(file_path):
-    # TODO:
-    # Change to folder and extract based on execution type
-
-    """
-    The purpose of this function is to extract useful information from the folder name
-
-    file_path : String
-    Input folder path
-
-    return: matrix type and matrix dim based
-    """
-
-    folder_name = file_path.split('/')[-1]
-    algo_prop = folder_name.split('.')
-    mat_type = algo_prop[1]
-    mat_dim = algo_prop[2]
-
-    try:
-        intercept = algo_prop[3]
-    except IndexError:
-        intercept = 'none'
-
-    return mat_type, mat_dim, intercept
 
 
 def exec_test_data(exec_type, path):
@@ -253,9 +232,10 @@ def exec_test_data(exec_type, path):
     Y = join(path, 'Y.data')
     X_test = join(path, 'X_test.data')
     Y_test = join(path, 'Y_test.data')
-
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
-    exec_dml_and_parse_time(exec_type, test_split_script, args, False)
+
+    # Call the exec script without time
+    exec_dml_and_parse_time(exec_type, test_split_script, args, path, False)
 
 
 def check_predict(current_algo, ML_PREDICT):

@@ -31,14 +31,22 @@ import logging
 # This file contains all the utility functions required for performance test module
 
 
-def get_families(current_algo, ml_algo):
+def get_families(current_algo, ML_ALGO):
     """
-    Return: List of families given input algorithm
+    Given current algorithm we get its families.
 
+    current_algo  : String
+    Input algorithm specified
+
+    ml_algo : Dictionary
+    key, value dictionary with family as key and algorithms as list of values
+
+    return: List
+    List of families returned
     """
 
     family_list = []
-    for family, algos in ml_algo.items():
+    for family, algos in ML_ALGO.items():
         if current_algo in algos:
             family_list.append(family)
     return family_list
@@ -46,8 +54,13 @@ def get_families(current_algo, ml_algo):
 
 def split_rowcol(matrix_dim):
     """
-    Return: matrix row, column on input string (e.g. 10k_1k)
+    Split the input matrix dimensions into row and columns
 
+    matrix_dim: String
+    Input concatenated string with row and column
+
+    return: Tuple
+    Row and column split based on suffix
     """
 
     k = str(0) * 3
@@ -58,20 +71,28 @@ def split_rowcol(matrix_dim):
     return row, col
 
 
-def config_writer(write_path, config_dict):
+def config_writer(write_path, config_obj):
     """
     Writes the dictionary as an configuration json file to the give path
 
+    write_path: String
+    Absolute path of file name to be written
+
+    config_obj: List or Dictionary
+    Can be a dictionary or a list based on the object passed
     """
 
     with open(write_path, 'w') as input_file:
-        json.dump(config_dict, input_file, indent=4)
+        json.dump(config_obj, input_file, indent=4)
 
 
 def config_reader(read_path):
     """
-    Return: configuration dictionary on reading the json file
+    Read json file given path
 
+    return: List or Dictionary
+    Reading the json file can give us a list if we have positional args or
+    key value for a dictionary
     """
 
     with open(read_path, 'r') as input_file:
@@ -84,6 +105,8 @@ def create_dir(directory):
     """
     Create directory given path if the directory does not exist already
 
+    directory: String
+    Input folder path
     """
 
     if not os.path.exists(directory):
@@ -92,8 +115,12 @@ def create_dir(directory):
 
 def get_existence(path):
     """
-    Return: Boolean check if the file _SUCCESS exists
+    Check SUCCESS file is present in the input path
 
+    path: String
+    Input folder path
+
+    return: Boolean check if the file _SUCCESS exists
     """
 
     full_path = join(path, '_SUCCESS')
@@ -103,17 +130,20 @@ def get_existence(path):
 
 def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
     """
-    This function is responsible of execution of input arguments
-    via python sub process. We also extract time obtained from the output of this subprocess.
+    This function is responsible of execution of input arguments via python sub process,
+    We also extract time obtained from the output of this subprocess
 
     exec_type: String
+    Contains the execution type singlenode / hybrid_spark
 
     file_name: String
+    DML file name to be used while processing the arguments give
 
     args: Dictionary
+    Key values pairs depending on the arg type
 
     time: Boolean (default=True)
-
+    Boolean argument used to extract time from raw output logs.
     """
 
     algorithm = file_name + '.dml'
@@ -161,8 +191,13 @@ def exec_dml_and_parse_time(exec_type, file_name, args, time=True):
 
 def parse_time(raw_logs):
     """
-    Return: Time based on rawlogs received
+    Parses raw input list and extracts time
 
+    raw_logs : List
+    Each line obtained from the standard output is in the list
+
+    return: String
+    Extracted time in seconds or time_not_found
     """
     # Debug
     # print(raw_logs)
@@ -177,14 +212,16 @@ def parse_time(raw_logs):
 
 
 def get_config(file_path):
+    # TODO:
+    # Change to folder and extract based on execution type
+
     """
-    The purpose of this function is to extract useful information from the folder name.
+    The purpose of this function is to extract useful information from the folder name
 
     file_path : String
-    Input file path
+    Input folder path
 
     return: matrix type and matrix dim based
-
     """
 
     folder_name = file_path.split('/')[-1]
@@ -205,11 +242,10 @@ def exec_test_data(exec_type, path):
     Creates the test data split from the given input path
 
     exec_type : String
-    This string contains the execution type singlenode/ hybrid_spark
+    Contains the execution type singlenode / hybrid_spark
 
     path : String
     Location of the input folder to pick X and Y
-
     """
     systemml_home = os.environ.get('SYSTEMML_HOME')
     test_split_script = join(systemml_home, 'scripts', 'perftest', 'extractTestData')
@@ -223,6 +259,15 @@ def exec_test_data(exec_type, path):
 
 
 def check_predict(current_algo, ML_PREDICT):
+    """
+    To check if the current algorithm requires to run the predict
+
+    current_algo: String
+    Algorithm being processed
+
+    ML_PREDICT: Dictionary
+    Key value pairs of algorithm and predict file to process
+    """
     if current_algo in ML_PREDICT.keys():
         return True
     else:

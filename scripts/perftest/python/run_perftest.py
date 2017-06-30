@@ -135,7 +135,6 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
 
     # Write a _SUCCESS file only if time is found and in data-gen action_mode
     if len(time.split('.')) == 2 and action_mode == 'data-gen':
-        # Write Success file if time found
         full_path = join(config_path, '_SUCCESS')
         open(full_path, 'w').close()
 

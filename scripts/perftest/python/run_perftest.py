@@ -20,12 +20,6 @@
 #
 # -------------------------------------------------------------
 
-# TODO:
-# Handle error both family and algo is specified (Invalid)
-
-# Smarter way to handle train algo file name
-# Standardise variable constants with quotes
-
 import sys
 import time
 import argparse

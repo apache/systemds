@@ -2337,14 +2337,8 @@ public class LibMatrixCUDA {
 		if (isSparseAndEmpty(gCtx, in)) {
 			setOutputToConstant(ec, gCtx, instName, op.executeScalar(0.0), outputName);
 			return;
-		} else if (isInSparseFormat(gCtx, in)) {
-			A = in.getGPUObject(gCtx).getJcudaSparseMatrixPtr().val;
-			long nnz = in.getGPUObject(gCtx).getJcudaSparseMatrixPtr().nnz;
-			MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, nnz, instName, outputName);	// Allocated the sparse output matrix
-			CSRPointer tmpC = getSparsePointer(gCtx, out, instName);
-			C = tmpC.val;
 		} else {
-			A = in.getGPUObject(gCtx).getJcudaDenseMatrixPtr();
+			A = getDensePointer(gCtx, in, instName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
 			C = getDensePointer(gCtx, out, instName);
 		}

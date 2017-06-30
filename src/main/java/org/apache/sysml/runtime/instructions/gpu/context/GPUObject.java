@@ -891,7 +891,7 @@ public class GPUObject {
 						"Block not in sparse format on host yet the device sparse matrix pointer is not null");
 
 			if (this.isSparseAndEmpty()) {
-				MatrixBlock tmp = new MatrixBlock();    // Empty Block
+				MatrixBlock tmp = new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l);    // Empty Block
 				mat.acquireModify(tmp);
 				mat.release();
 			} else {

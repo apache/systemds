@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 /*
- * Softmax2d classifier layer.
+ * 2D Softmax classifier layer.
  */
 
  source("nn/util.dml") as util
@@ -31,7 +31,7 @@
   /*
    * Computes the forward pass for a softmax2d classifier.  The input
    * has four dimensions (N, C, Hin, Win), that means it has N 
-   * 2d-examples with the shape (Hin, Win), each point in the 2d
+   * 2d-examples with a shape (Hin, Win), each pixel in the 2d
    * example has C values that are interpreted as unnormalized,
    * log-probabilities for each of C classes.  The softmax function
    * transforms these values to normalized probabilities across the C
@@ -40,7 +40,10 @@
    * This can be interpreted as a generalization of the sigmoid
    * function to multiple classes.
    *
-   *   `probs_ij = e^scores_ij / sum(e^scores_i)`
+   *   `probs_ijk = e^scores_ijk / sum(e^scores_ijk)`
+   *  
+   * In these equations, `probs_ijk` is the C-dimensional vector of the
+   * normalized probabilities for the pixel `j, k` in the example `i`
    *
    * Inputs:
    *  - scores: Inputs, of shape (N, C*Hin*Win).
@@ -49,12 +52,13 @@
    * Outputs:
    *  - probs: Outputs, of shape (N, C*Hin*Win).
    */
+
   # For numerical stability, we subtract the max score of an example from all scores for that
   # example.  This is equivalent to the original formulation:
-  # e^scores_i / sum(e^scores_i) == C*e^scores_i / C*sum(e^scores_i)
-  #                              == e^(scores_i+log(C)) / sum(e^(scores_i+log(C))
-  # set log(C) = -max(scores_i):
-  #                              == e^(scores_i-max(scores_i)) / sum(e^(scores_i-max(scores_i))
+  # e^scores_ijk / sum(e^scores_ijk) == C*e^scores_ijk / C*sum(e^scores_ijk)
+  #                              == e^(scores_ijk+log(C)) / sum(e^(scores_ijk+log(C))
+  # set log(C) = -max(scores_ijk):
+  #                              == e^(scores_ijk-max(scores_ijk)) / sum(e^(scores_ijk-max(scores_ijk))
  
   N = nrow(scores)
 
@@ -110,26 +114,3 @@ backward = function(matrix[double] dprobs, matrix[double] scores, int C)
   dscores_C_NHW = t(dscores_NHW_C)
   dscores = util::transpose_NCHW_to_CNHW(dscores_C_NHW, N)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

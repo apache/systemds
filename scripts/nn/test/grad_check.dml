@@ -35,7 +35,6 @@ source("nn/layers/dropout.dml") as dropout
 source("nn/layers/l1_loss.dml") as l1_loss
 source("nn/layers/l1_reg.dml") as l1_reg
 source("nn/layers/l2_loss.dml") as l2_loss
-source("nn/layers/l2_loss2d.dml") as l2_loss2d
 source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/log_loss.dml") as log_loss
 source("nn/layers/lstm.dml") as lstm
@@ -1849,27 +1848,34 @@ softmax = function() {
 
 softmax2d = function() {
   /*
-   * Gradient check for the softmax layer.
+   * Gradient check for the 2D softmax layer.
    */
-  print("Grad checking the softmax layer with L2 loss_2d.")
+  print("Grad checking the 2D softmax layer with L2 loss.")
 
   # Generate data
-  N = 3 # num examples
-  C = 10 # num classes
-  Hin = 28
-  Win = 28
+  N = 3  # num examples
+  C = 10  # num classes
+  Hin = 28  # example height
+  Win = 28  # example width
 
   X = rand(rows=N, cols=C*Hin*Win)
   y = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
   y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
   y_NHW_C = t(y_C_NHW)
   y_NHW_C = y_NHW_C / rowSums(y_NHW_C)
-  y_C_NHW = t(y_NHW_C)
-  y = util::transpose_NCHW_to_CNHW(y_C_NHW, N)
+  
+  #Transpose X from N_CHW to NHW_C
+  X_C_NHW = util::transpose_NCHW_to_CNHW(X, N)
+  X_NHW_C = t(X_C_NHW)
 
   # Compute analytical gradients of loss wrt parameters
   out = softmax2d::forward(X, C)
-  dout = l2_loss2d::backward(out, y, C)
+  out_C_NHW = util::transpose_NCHW_to_CNHW(out, C)
+  out_NHW_C = t(out_C_NHW)
+
+  dout_NHW_C = l2_loss::backward(out_NHW_C, y_NHW_C)
+  dout_C_NHW = t(dout_NHW_C)
+  dout = util::transpose_NCHW_to_CNHW(dout_C_NHW, N)
   dX = softmax2d::backward(dout, X, C)
 
   # Grad check
@@ -1880,10 +1886,15 @@ softmax2d = function() {
       old = as.scalar(X[i,j])
       X[i,j] = old - h
       outmh = softmax2d::forward(X, C)
-      lossmh = l2_loss2d::forward(outmh, y, C)
+      outmh_C_NHW = util::transpose_NCHW_to_CNHW(outmh, C)
+      outmh_NHW_C = t(outmh_C_NHW)
+      lossmh = l2_loss::forward(outmh_NHW_C, y_NHW_C)
+      
       X[i,j] = old + h
       outph = softmax2d::forward(X, C)
-      lossph = l2_loss2d::forward(outph, y, C)
+      outph_C_NHW = util::transpose_NCHW_to_CNHW(outph, C)
+      outph_NHW_C = t(outph_C_NHW)
+      lossph = l2_loss::forward(outph_NHW_C, y_NHW_C)
       X[i,j] = old  # reset
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 

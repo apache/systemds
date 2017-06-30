@@ -19,11 +19,7 @@
 
 package org.apache.sysml.hops.codegen.template;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -142,74 +138,7 @@ public class TemplateUtils
 			return TernaryType.contains(((ParameterizedBuiltinOp)h).getOp().name());
 		return false;
 	}
-
-	private static void rfindChildren(Hop hop, HashSet<Hop> children ) {		
-		if( hop instanceof UnaryOp || (hop instanceof BinaryOp && hop.getInput().get(0).getDataType() == DataType.MATRIX  &&  TemplateUtils.isVectorOrScalar( hop.getInput().get(1))) || (hop instanceof BinaryOp && TemplateUtils.isVectorOrScalar( hop.getInput().get(0))  &&  hop.getInput().get(1).getDataType() == DataType.MATRIX)    //unary operation or binary operaiton with one matrix and a scalar
-					&& 	hop.getDataType() == DataType.MATRIX )
-		{	
-			if(!children.contains(hop))
-				children.add(hop);
-			Hop matrix = TemplateUtils.isMatrix(hop.getInput().get(0)) ? hop.getInput().get(0) : hop.getInput().get(1);
-			rfindChildren(matrix,children);
-		}
-		else 
-			children.add(hop);
-	}
 	
-	private static Hop findCommonChild(Hop hop1, Hop hop2) {
-		//this method assumes that each two nodes have at most one common child 
-		LinkedHashSet<Hop> children1 = new LinkedHashSet<Hop>();
-		LinkedHashSet<Hop> children2 = new LinkedHashSet<Hop>();
-		
-		rfindChildren(hop1, children1 );
-		rfindChildren(hop2, children2 );
-		
-		//iterate on one set and find the first common child in the other set
-		Iterator<Hop> iter = children1.iterator();
-		while (iter.hasNext()) {
-			Hop candidate = iter.next();
-			if(children2.contains(candidate))
-				return candidate;
-		}
-		return null;
-	}
-	
-	public static Hop commonChild(ArrayList<Hop> _adddedMatrices, Hop input) {
-		Hop currentChild = null;
-		//loop on every added matrix and find its common child with the input, if all of them have the same common child then return it, otherwise null 
-		for(Hop addedMatrix : _adddedMatrices)
-		{
-			Hop child = findCommonChild(addedMatrix,input);
-			if(child == null)  // did not find a common child
-				return null;
-			if(currentChild == null) // first common child to be seen
-				currentChild = child;
-			else if(child.getHopID() != currentChild.getHopID())
-				return null;
-		}
-		return currentChild;
-	}
-
-	public static HashSet<Long> rGetInputHopIDs( CNode node, HashSet<Long> ids ) {
-		if( node instanceof CNodeData && !node.isLiteral() )
-			ids.add(((CNodeData)node).getHopID());
-		
-		for( CNode c : node.getInput() )
-			rGetInputHopIDs(c, ids);
-			
-		return ids;
-	}
-	
-	public static Hop[] mergeDistinct(HashSet<Long> ids, Hop[] input1, Hop[] input2) {
-		Hop[] ret = new Hop[ids.size()];
-		int pos = 0;
-		for( Hop[] input : new Hop[][]{input1, input2} )
-			for( Hop c : input )
-				if( ids.contains(c.getHopID()) )
-					ret[pos++] = c; 
-		return ret;
-	}
-
 	public static TemplateBase createTemplate(TemplateType type) {
 		return createTemplate(type, false);
 	}
@@ -242,21 +171,31 @@ public class TemplateUtils
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
 	}
 	
-	public static RowType getRowType(Hop output, Hop input) {
-		if( HopRewriteUtils.isEqualSize(output, input) )
+	public static RowType getRowType(Hop output, Hop... inputs) {
+		Hop X = inputs[0];
+		Hop B1 = (inputs.length>1) ? inputs[1] : null;
+		if( HopRewriteUtils.isEqualSize(output, X) )
 			return RowType.NO_AGG;
-		else if( output.getDim1()==input.getDim1() && (output.getDim2()==1 
+		else if( B1 != null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2() )
+			return RowType.NO_AGG_B1;
+		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1 
 				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND)) 
 			&& !(output instanceof AggBinaryOp && HopRewriteUtils
-				.isTransposeOfItself(output.getInput().get(0),input)))
+				.isTransposeOfItself(output.getInput().get(0),X)))
 			return RowType.ROW_AGG;
 		else if( output instanceof AggUnaryOp 
 			&& ((AggUnaryOp)output).getDirection()==Direction.RowCol )
 			return RowType.FULL_AGG;
-		else if( output.getDim1()==input.getDim2() && output.getDim2()==1 )
+		else if( output.getDim1()==X.getDim2() && output.getDim2()==1 )
 			return RowType.COL_AGG_T;
-		else
+		else if( output.getDim1()==1 && output.getDim2()==X.getDim2() )
 			return RowType.COL_AGG;
+		else if( B1 != null && output.getDim1()==X.getDim2() && output.getDim2()==B1.getDim2() )
+			return RowType.COL_AGG_B1_T;
+		else if( B1 != null && output.getDim1()==B1.getDim2() && output.getDim2()==X.getDim2())
+			return RowType.COL_AGG_B1;
+		else
+			throw new RuntimeException("Unknown row type.");
 	}
 	
 	public static AggOp getAggOp(Hop hop) {
@@ -291,6 +230,11 @@ public class TemplateUtils
 	public static boolean isUnary(CNode node, UnaryType...types) {
 		return node instanceof CNodeUnary
 			&& ArrayUtils.contains(types, ((CNodeUnary)node).getType());
+	}
+	
+	public static boolean isBinary(CNode node, BinType...types) {
+		return node instanceof CNodeBinary
+			&& ArrayUtils.contains(types, ((CNodeBinary)node).getType());
 	}
 	
 	public static boolean isTernary(CNode node, TernaryType...types) {
@@ -333,7 +277,8 @@ public class TemplateUtils
 		CNode output = tpl.getOutput();
 		return ((output instanceof CNodeUnary 
 				&& !TemplateUtils.isUnary(output, UnaryType.EXP, UnaryType.LOG)) 
-			|| output instanceof CNodeBinary) 
+			|| (output instanceof CNodeBinary
+				&& !TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD))) 
 			&& hasOnlyDataNodeOrLookupInputs(output);
 	}
 	
@@ -365,8 +310,7 @@ public class TemplateUtils
 	public static boolean isUnaryOperatorPipeline(CNode node) {
 		if( node.isVisited() ) {
 			//second reference to vector intermediate invalidates a unary pipeline
-			return !((node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive())
-				|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isVectorScalarPrimitive()));
+			return !(node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive());
 		}
 		boolean ret = true;
 		for( CNode input : node.getInput() )
@@ -382,8 +326,9 @@ public class TemplateUtils
 		for( CNode input : node.getInput() )
 			max = Math.max(max, getMaxVectorIntermediates(input));
 		max = Math.max(max, (node instanceof CNodeBinary)? 
-			((CNodeBinary)node).getType().isVectorVectorPrimitive() ? 3 :
-			((CNodeBinary)node).getType().isVectorScalarPrimitive() ? 2 : 0 : 0);
+			(((CNodeBinary)node).getType().isVectorVectorPrimitive() ? 3 :
+			((CNodeBinary)node).getType().isVectorScalarPrimitive() ? 2 :
+			((CNodeBinary)node).getType().isVectorMatrixPrimitive() ? 1 : 0) : 0);
 		max = Math.max(max, (node instanceof CNodeUnary 
 			&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 2 : 0);
 		node.setVisited();
@@ -430,6 +375,24 @@ public class TemplateUtils
 			else if( !me.isPlanRef(i) && isMatrix(input) )
 				ret = input.getHopID();
 		}
+		return ret;
+	}
+	
+	public static boolean containsBinary(CNode node, BinType type) {
+		node.resetVisitStatus();
+		boolean ret = rContainsBinary(node, type);
+		node.resetVisitStatus();
+		return ret;
+	}
+	
+	public static boolean rContainsBinary(CNode node, BinType type) {
+		if( node.isVisited() )
+			return false;
+		boolean ret = false;
+		for( CNode input : node.getInput() )
+			ret |= rContainsBinary(input, type);
+		ret |= isBinary(node, type);
+		node.setVisited();
 		return ret;
 	}
 }

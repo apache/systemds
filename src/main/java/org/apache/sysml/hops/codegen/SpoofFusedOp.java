@@ -44,8 +44,9 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		COLUMN_DIMS_COLS,
 		SCALAR,
 		MULTI_SCALAR,
-		ROW_RANK_DIMS, // right wdivmm 
-		COLUMN_RANK_DIMS  // left wdivmm
+		ROW_RANK_DIMS, // right wdivmm, row mm
+		COLUMN_RANK_DIMS,  // left wdivmm, row mm
+		COLUMN_RANK_DIMS_T;
 	}
 	
 	private Class<?> _class = null;
@@ -182,6 +183,12 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 						ret = new long[]{mc.getCols(), mc2.getCols(), -1};
 					break;
 				}
+				case COLUMN_RANK_DIMS_T: {
+					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
+					if( mc2.dimsKnown() )
+						ret = new long[]{mc2.getCols(), mc.getCols(), -1};
+					break;
+				}
 				default:
 					throw new RuntimeException("Failed to infer worst-case size information "
 							+ "for type: "+_dimsType.toString());
@@ -231,6 +238,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				setDim1(getInput().get(0).getDim2());
 				setDim2(getInput().get(1).getDim2());
 				break;
+			case COLUMN_RANK_DIMS_T:
+				setDim1(getInput().get(1).getDim2());
+				setDim2(getInput().get(0).getDim2());
+				break;	
 			default:
 				throw new RuntimeException("Failed to refresh size information "
 						+ "for type: "+_dimsType.toString());

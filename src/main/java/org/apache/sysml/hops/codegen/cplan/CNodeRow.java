@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
@@ -32,25 +33,26 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
 			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
+			+ "import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowwise { \n"
 			+ "  public %TMP%() {\n"
-			+ "    super(RowType.%TYPE%, %CBIND0%, %VECT_MEM%);\n"
+			+ "    super(RowType.%TYPE%, %CBIND0%, %TB1%, %VECT_MEM%);\n"
 			+ "  }\n"
-			+ "  protected void genexec(double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex) { \n"
+			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int len, int rowIndex) { \n"
 			+ "%BODY_dense%"
 			+ "  }\n"
-			+ "  protected void genexec(double[] avals, int[] aix, int ai, double[][] b, double[] scalars, double[] c, int alen, int len, int rowIndex) { \n"
+			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int alen, int len, int rowIndex) { \n"
 			+ "%BODY_sparse%"
 			+ "  }\n"			
 			+ "}\n";
 
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rowIndex] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
-	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*len, len);\n";
+	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*%LEN%, %LEN%);\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
@@ -59,14 +61,6 @@ public class CNodeRow extends CNodeTpl
 	private RowType _type = null; //access pattern 
 	private int _numVectors = -1; //number of intermediate vectors
 	
-	public void setNumVectorIntermediates(int num) {
-		_numVectors = num;
-	}
-	
-	public int getNumVectorIntermediates() {
-		return _numVectors;
-	}
-	
 	public void setRowType(RowType type) {
 		_type = type;
 		_hash = 0;
@@ -74,6 +68,15 @@ public class CNodeRow extends CNodeTpl
 	
 	public RowType getRowType() {
 		return _type;
+	}
+	
+	public void setNumVectorIntermediates(int num) {
+		_numVectors = num;
+		_hash = 0;
+	}
+	
+	public int getNumVectorIntermediates() {
+		return _numVectors;
 	}
 	
 	@Override
@@ -108,18 +111,26 @@ public class CNodeRow extends CNodeTpl
 		tmp = tmp.replace("%TYPE%", _type.name());
 		tmp = tmp.replace("%CBIND0%", String.valueOf(
 			TemplateUtils.isUnary(_output, UnaryType.CBIND0)));
+		tmp = tmp.replace("%TB1%", String.valueOf(
+			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
 		
 		return tmp;
 	}
 	
 	private String getOutputStatement(String varName) {
-		if( !_type.isColumnAgg() ) {
-			String tmp = (_type==RowType.NO_AGG) ? TEMPLATE_NOAGG_OUT : 
-				(_type==RowType.FULL_AGG) ? TEMPLATE_FULLAGG_OUT : TEMPLATE_ROWAGG_OUT;
-			return tmp.replace("%IN%", varName);
+		switch( _type ) {
+			case NO_AGG:
+			case NO_AGG_B1:
+				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName)
+					.replace("%LEN%", _output.getVarname()+".length");
+			case FULL_AGG:
+				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
+			case ROW_AGG:
+				return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);
+			default:
+				return ""; //_type.isColumnAgg()
 		}
-		return "";
 	}
 
 	@Override
@@ -131,12 +142,15 @@ public class CNodeRow extends CNodeTpl
 	@Override
 	public SpoofOutputDimsType getOutputDimType() {
 		switch( _type ) {
-			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
-			case FULL_AGG: return SpoofOutputDimsType.SCALAR;
-			case ROW_AGG: return TemplateUtils.isUnary(_output, UnaryType.CBIND0) ?
-				SpoofOutputDimsType.ROW_DIMS2 : SpoofOutputDimsType.ROW_DIMS;
-			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
+			case NO_AGG:    return SpoofOutputDimsType.INPUT_DIMS;
+			case NO_AGG_B1: return SpoofOutputDimsType.ROW_RANK_DIMS;
+			case FULL_AGG:  return SpoofOutputDimsType.SCALAR;
+			case ROW_AGG:   return TemplateUtils.isUnary(_output, UnaryType.CBIND0) ?
+						SpoofOutputDimsType.ROW_DIMS2 : SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG:   return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
 			case COL_AGG_T: return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
+			case COL_AGG_B1:   return SpoofOutputDimsType.COLUMN_RANK_DIMS; 
+			case COL_AGG_B1_T: return SpoofOutputDimsType.COLUMN_RANK_DIMS_T; 
 			default:
 				throw new RuntimeException("Unsupported row type: "+_type.toString());
 		}

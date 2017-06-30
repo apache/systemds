@@ -185,6 +185,10 @@ public class CNodeUnary extends CNode
 		tmp = tmp.replace("%POS1%", spos);
 		tmp = tmp.replace("%POS2%", spos);
 		
+		//replace length
+		if( _inputs.get(0).getDataType().isMatrix() )
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+		
 		sb.append(tmp);
 		
 		//mark as generated

@@ -313,7 +313,8 @@ public class SpoofSPInstruction extends SPInstruction
 			}
 			
 			//setup local memory for reuse
-			LibSpoofPrimitives.setupThreadLocalMemory(_op.getNumIntermediates(), _clen);
+			int clen2 = (int) (_op.getRowType().isRowTypeB1() ? _vectors.get(0).getNumCols() : -1);
+			LibSpoofPrimitives.setupThreadLocalMemory(_op.getNumIntermediates(), _clen, clen2);
 			
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 			boolean aggIncr = (_op.getRowType().isColumnAgg() //aggregate entire partition

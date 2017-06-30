@@ -59,6 +59,10 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME21 = TEST_NAME+"21"; //sum(X/rowSums(X))
 	private static final String TEST_NAME22 = TEST_NAME+"22"; //((7+X)+(X-7)+exp(X))/(rowMins(X)+0.5) 
 	private static final String TEST_NAME23 = TEST_NAME+"23"; //L2SVM outer loop 
+	private static final String TEST_NAME24 = TEST_NAME+"24"; //t(X)%*%(w*(X%*%v)), w/ mm 
+	private static final String TEST_NAME25 = TEST_NAME+"25"; //-2*(X%*%t(C))+t(rowSums(C^2)), w/ mm
+	private static final String TEST_NAME26 = TEST_NAME+"26"; //t(P)%*%X, w/ mm
+	private static final String TEST_NAME27 = TEST_NAME+"27"; //t(X)%*%(X%*%v), w/ mm 
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -70,7 +74,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=23; i++)
+		for(int i=1; i<=27; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -417,6 +421,66 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenRowAgg23SP() {
 		testCodegenIntegration( TEST_NAME23, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite24CP() {
+		testCodegenIntegration( TEST_NAME24, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg24CP() {
+		testCodegenIntegration( TEST_NAME24, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg24SP() {
+		testCodegenIntegration( TEST_NAME24, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite25CP() {
+		testCodegenIntegration( TEST_NAME25, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg25CP() {
+		testCodegenIntegration( TEST_NAME25, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg25SP() {
+		testCodegenIntegration( TEST_NAME25, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite26CP() {
+		testCodegenIntegration( TEST_NAME26, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg26CP() {
+		testCodegenIntegration( TEST_NAME26, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg26SP() {
+		testCodegenIntegration( TEST_NAME26, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite27CP() {
+		testCodegenIntegration( TEST_NAME27, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg27CP() {
+		testCodegenIntegration( TEST_NAME27, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg27SP() {
+		testCodegenIntegration( TEST_NAME27, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

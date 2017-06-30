@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -59,70 +60,60 @@ public abstract class SpoofOperator implements Serializable
 		return execute(inputs, scalars);
 	}
 	
-	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs) 
-		throws DMLRuntimeException 
-	{
-		return prepInputMatricesDense(inputs, 1, inputs.size()-1);
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs) throws DMLRuntimeException {
+		return prepInputMatrices(inputs, 1, inputs.size()-1, false, false);
 	}
 	
-	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs, int offset) 
-		throws DMLRuntimeException 
-	{
-		return prepInputMatricesDense(inputs, offset, inputs.size()-offset);
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly) throws DMLRuntimeException {
+		return prepInputMatrices(inputs, 1, inputs.size()-1, denseOnly, false);
 	}
 	
-	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs, int offset, int len) 
-		throws DMLRuntimeException 
-	{
-		double[][] b = new double[len][]; 
-		for(int i=offset; i<offset+len; i++) {
-			if( inputs.get(i) instanceof CompressedMatrixBlock ) 
-				inputs.set(i, ((CompressedMatrixBlock)inputs.get(i)).decompress());
-			
-			//convert empty or sparse to dense temporary block (note: we don't do
-			//this in place because this block might be used by multiple threads)
-			if( inputs.get(i).isInSparseFormat() && inputs.get(i).isAllocated() ) {
-				MatrixBlock tmp = inputs.get(i);
-				b[i-offset] = DataConverter.convertToDoubleVector(tmp);
-				LOG.warn(getClass().getName()+": Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns()+
-						", nnz="+tmp.getNonZeros()+" sideways input matrix from sparse to dense.");
-			}
-			//use existing dense block
-			else {
-				b[i-offset] = inputs.get(i).getDenseBlock();
-			}
-		}
-		
-		return b;
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, boolean denseOnly) throws DMLRuntimeException {
+		return prepInputMatrices(inputs, offset, inputs.size()-offset, denseOnly, false);
 	}
 	
-	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs) 
-		throws DMLRuntimeException 
-	{
-		return prepInputMatricesAbstract(inputs, 1, inputs.size()-1);
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly, boolean tB1) throws DMLRuntimeException {
+		return prepInputMatrices(inputs, 1, inputs.size()-1, denseOnly, tB1);
 	}
 	
-	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs, int offset) 
-		throws DMLRuntimeException 
-	{
-		return prepInputMatricesAbstract(inputs, offset, inputs.size()-offset);
-	}
-	
-	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs, int offset, int len) 
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len, boolean denseOnly, boolean tB1) 
 		throws DMLRuntimeException 
 	{
 		SideInput[] b = new SideInput[len]; 
 		for(int i=offset; i<offset+len; i++) {
+			//decompress if necessary
 			if( inputs.get(i) instanceof CompressedMatrixBlock ) 
 				inputs.set(i, ((CompressedMatrixBlock)inputs.get(i)).decompress());
+			//transpose if necessary
+			int clen = inputs.get(i).getNumColumns();
+			MatrixBlock in = (tB1 && i==1 ) ? LibMatrixReorg.transpose(inputs.get(i), 
+				new MatrixBlock(clen, inputs.get(i).getNumRows(), false)) : inputs.get(i);
 			
-			if( inputs.get(i).isInSparseFormat() && inputs.get(i).isAllocated() )
-				b[i-offset] = new SideInput(null, inputs.get(i));
-			else
-				b[i-offset] = new SideInput(inputs.get(i).getDenseBlock(), null);
+			//create side input
+			if( denseOnly && (in.isInSparseFormat() || !in.isAllocated()) ) {
+				//convert empty or sparse to dense temporary block (note: we don't do
+				//this in place because this block might be used by multiple threads)
+				b[i-offset] = new SideInput(DataConverter.convertToDoubleVector(in), null, clen);
+				LOG.warn(getClass().getName()+": Converted "+in.getNumRows()+"x"+in.getNumColumns()+
+					", nnz="+in.getNonZeros()+" sideways input matrix from sparse to dense.");	
+			}
+			else if( in.isInSparseFormat() && in.isAllocated() ) {
+				b[i-offset] = new SideInput(null, in, clen);
+			}
+			else {
+				b[i-offset] = new SideInput(
+					in.getDenseBlock(), null, clen);
+			}
 		}
 		
 		return b;
+	}
+	
+	public double[][] getDenseMatrices(SideInput[] inputs) {
+		double[][] ret = new double[inputs.length][];
+		for( int i=0; i<inputs.length; i++ )
+			ret[i] = inputs[i].ddat;
+		return ret;
 	}
 	
 	protected double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
@@ -161,8 +152,8 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(SideInput data, int rowIndex) {
 		//note: wrapper sideinput guaranteed to exist
-		return (data.dBlock!=null) ? data.dBlock[rowIndex] : 
-			(data.mBlock!=null) ? data.mBlock.quickGetValue(rowIndex, 0) : 0;
+		return (data.ddat!=null) ? data.ddat[rowIndex] : 
+			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, 0) : 0;
 	}
 	
 	protected static double getValue(SideInput data, int n, double rowIndex, double colIndex) {
@@ -173,17 +164,19 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(SideInput data, int n, int rowIndex, int colIndex) {
 		//note: wrapper sideinput guaranteed to exist
-		return (data.dBlock!=null) ? data.dBlock[rowIndex*n+colIndex] : 
-			(data.mBlock!=null) ? data.mBlock.quickGetValue(rowIndex, colIndex) : 0;
+		return (data.ddat!=null) ? data.ddat[rowIndex*n+colIndex] : 
+			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, colIndex) : 0;
 	}
 	
 	public static class SideInput {
-		private final double[] dBlock;
-		private final MatrixBlock mBlock;
+		public final double[] ddat;
+		public final MatrixBlock mdat;
+		public final int clen;
 	
-		public SideInput(double[] ddata, MatrixBlock mdata) {
-			dBlock = ddata;
-			mBlock = mdata;
+		public SideInput(double[] ddata, MatrixBlock mdata, int clength) {
+			ddat = ddata;
+			mdat = mdata;
+			clen = clength;
 		}
 	}
 }

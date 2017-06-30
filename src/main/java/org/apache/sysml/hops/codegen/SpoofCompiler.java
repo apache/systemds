@@ -96,7 +96,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 
-public class SpoofCompiler 
+public class SpoofCompiler
 {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	

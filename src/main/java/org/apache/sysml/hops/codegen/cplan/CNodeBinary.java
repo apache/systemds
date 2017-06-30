@@ -28,7 +28,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class CNodeBinary extends CNode
 {
 	public enum BinType {
-		DOT_PRODUCT,
+		//matrix multiplication operations
+		DOT_PRODUCT, VECT_MATRIXMULT, VECT_OUTERMULT_ADD,
 		//vector-scalar-add operations
 		VECT_MULT_ADD, VECT_DIV_ADD, VECT_MINUS_ADD, VECT_PLUS_ADD,
 		VECT_POW_ADD, VECT_MIN_ADD, VECT_MAX_ADD,
@@ -71,6 +72,12 @@ public class CNodeBinary extends CNode
 				case DOT_PRODUCT:   
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
 									"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+				case VECT_MATRIXMULT:   
+					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" :
+									"    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+				case VECT_OUTERMULT_ADD:   
+					return sparse ? "    LibSpoofPrimitives.vectOuterMultAdd(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POS2%, %POSOUT%, alen, %LEN1%, %LEN2%);\n" :
+									"    LibSpoofPrimitives.vectOuterMultAdd(%IN1%, %IN2%, %OUT%, %POS1%, %POS2%, %POSOUT%, %LEN1%, %LEN2%);\n";
 				
 				//vector-scalar-add operations
 				case VECT_MULT_ADD:
@@ -88,10 +95,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATEREQUAL_ADD: {
 					String vectName = getVectorPrimitiveName();
 					if( scalarVector )
-						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, len);\n" : 
+						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" : 
 										"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
 					else	
-						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, len);\n" : 
+						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : 
 										"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
 				
@@ -111,10 +118,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATEREQUAL_SCALAR: {
 					String vectName = getVectorPrimitiveName();
 					if( scalarVector )
-						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, len);\n" : 
+						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" : 
 										"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
 					else	
-						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, len);\n" : 
+						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
 										"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
 				
@@ -133,7 +140,7 @@ public class CNodeBinary extends CNode
 				case VECT_GREATEREQUAL: {
 					String vectName = getVectorPrimitiveName();
 					return sparse ? 
-						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" : 
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" : 
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 				}
 				
@@ -185,7 +192,8 @@ public class CNodeBinary extends CNode
 		}
 		public boolean isVectorPrimitive() {
 			return isVectorScalarPrimitive() 
-				|| isVectorVectorPrimitive();
+				|| isVectorVectorPrimitive()
+				|| isVectorMatrixPrimitive();
 		}
 		public boolean isVectorScalarPrimitive() {
 			return this == VECT_DIV_SCALAR || this == VECT_MULT_SCALAR 
@@ -203,6 +211,10 @@ public class CNodeBinary extends CNode
 				|| this == VECT_EQUAL || this == VECT_NOTEQUAL
 				|| this == VECT_LESS || this == VECT_LESSEQUAL
 				|| this == VECT_GREATER || this == VECT_GREATEREQUAL;
+		}
+		public boolean isVectorMatrixPrimitive() {
+			return this == VECT_MATRIXMULT
+				|| this == VECT_OUTERMULT_ADD;
 		}
 		public BinType getVectorAddPrimitive() {
 			return BinType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
@@ -257,19 +269,32 @@ public class CNodeBinary extends CNode
 		tmp = tmp.replace("%TMP%", var);
 		
 		//replace input references and start indexes
-		for( int j=1; j<=2; j++ ) {
-			String varj = _inputs.get(j-1).getVarname();
+		for( int j=0; j<2; j++ ) {
+			String varj = _inputs.get(j).getVarname();
 			
 			//replace sparse and dense inputs
-			tmp = tmp.replace("%IN"+j+"v%", varj+"vals");
-			tmp = tmp.replace("%IN"+j+"i%", varj+"ix");
-			tmp = tmp.replace("%IN"+j+"%", varj );
+			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
+			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
+			tmp = tmp.replace("%IN"+(j+1)+"%", 
+				varj.startsWith("b") ? varj + ".ddat" : varj );
 			
 			//replace start position of main input
-			tmp = tmp.replace("%POS"+j+"%", (_inputs.get(j-1) instanceof CNodeData 
-				&& _inputs.get(j-1).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? 
-				varj+"i" : TemplateUtils.isMatrix(_inputs.get(j-1)) ? "rowIndex*len" : "0" : "0");
+			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
+				&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
+				(TemplateUtils.isMatrix(_inputs.get(j)) && _type!=BinType.VECT_MATRIXMULT) ? 
+				"rowIndex*"+((_type==BinType.VECT_OUTERMULT_ADD)?"%LEN"+(j+1)+"%":"%LEN%") : "0" : "0");
 		}
+		//replace length information (e.g., after matrix mult)
+		if( _type == BinType.VECT_OUTERMULT_ADD ) {
+			for( int j=0; j<2; j++ )
+				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength());
+		}
+		else { //general case 
+			CNode mInput = getIntermediateInputVector();
+			if( mInput != null )
+				tmp = tmp.replace("%LEN%", mInput.getVectorLength());
+		}
+		
 		sb.append(tmp);
 		
 		//mark as generated
@@ -278,10 +303,19 @@ public class CNodeBinary extends CNode
 		return sb.toString();
 	}
 	
+	private CNode getIntermediateInputVector() {
+		for( int i=0; i<2; i++ )
+			if( getInput().get(i).getDataType().isMatrix() )
+				return getInput().get(i);
+		return null;
+	} 
+	
 	@Override
 	public String toString() {
 		switch(_type) {
 			case DOT_PRODUCT:              return "b(dot)";
+			case VECT_MATRIXMULT:          return "b(vmm)";
+			case VECT_OUTERMULT_ADD:       return "b(voma)";
 			case VECT_MULT_ADD:            return "b(vma)";
 			case VECT_DIV_ADD:             return "b(vda)";
 			case VECT_MINUS_ADD:           return "b(vmia)";
@@ -362,7 +396,13 @@ public class CNodeBinary extends CNode
 				boolean vectorScalar = _inputs.get(1).getDataType()==DataType.SCALAR;
 				_rows = _inputs.get(vectorScalar ? 0 : 1)._rows;
 				_cols = _inputs.get(vectorScalar ? 0 : 1)._cols;
-				_dataType= DataType.MATRIX;
+				_dataType = DataType.MATRIX;
+				break;
+			
+			case VECT_OUTERMULT_ADD:
+				_rows = _inputs.get(0)._cols;
+				_cols = _inputs.get(1)._cols;
+				_dataType = DataType.MATRIX;
 				break;
 				
 			case VECT_DIV_SCALAR: 	
@@ -396,8 +436,13 @@ public class CNodeBinary extends CNode
 				_cols = _inputs.get(scalarVector ? 1 : 0)._cols;
 				_dataType= DataType.MATRIX;
 				break;
+			
+			case VECT_MATRIXMULT:
+				_rows = _inputs.get(0)._rows;
+				_cols = _inputs.get(1)._cols;
+				_dataType = DataType.MATRIX;
+				break;
 				
-		
 			case DOT_PRODUCT: 
 			
 			//SCALAR Arithmetic

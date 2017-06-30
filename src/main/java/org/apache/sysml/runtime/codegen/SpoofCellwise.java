@@ -118,7 +118,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		
 		//input preparation
-		SideInput[] b = prepInputMatricesAbstract(inputs);
+		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
@@ -198,7 +198,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
-		SideInput[] b = prepInputMatricesAbstract(inputs);
+		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = a.getNumRows();
 		final int n = a.getNumColumns();

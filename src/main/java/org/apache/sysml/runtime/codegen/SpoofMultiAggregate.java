@@ -91,7 +91,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		setInitialOutputValues(c);
 		
 		//input preparation
-		SideInput[] b = prepInputMatricesAbstract(inputs);
+		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();

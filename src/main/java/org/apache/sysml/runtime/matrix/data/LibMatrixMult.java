@@ -42,27 +42,14 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
- * MB:
- * Library for matrix multiplications including MM, MV, VV for all
+ * MB: Library for matrix multiplications including MM, MV, VV for all
  * combinations of dense, sparse, ultrasparse representations and special
  * operations such as transpose-self matrix multiplication.
- * 
+ * <p>
  * In general all implementations use internally dense outputs
  * for direct access, but change the final result to sparse if necessary.
  * The only exceptions are ultra-sparse matrix mult, wsloss and wsigmoid.  
- * 
- * NOTES on BLAS:
- * * Experiments in 04/2013 showed that even on dense-dense this implementation 
- *   is 3x faster than f2j-BLAS-DGEMM, 2x faster than f2c-BLAS-DGEMM, and
- *   level (+10% after JIT) with a native C implementation. 
- * * Calling native BLAS would loose platform independence and would require 
- *   JNI calls incl data transfer. Furthermore, BLAS does not support sparse 
- *   matrices (except Sparse BLAS, with dedicated function calls and matrix formats) 
- *   and would be an external dependency. 
- * * Experiments in 02/2014 showed that on dense-dense this implementation now achieves
- *   almost 30% peak FP performance. Compared to Intel MKL 11.1 (dgemm, N=1000) it is
- *   just 3.2x (sparsity=1.0) and 1.9x (sparsity=0.5) slower, respectively.  
- *  
+ * <p> 
  */
 public class LibMatrixMult 
 {
@@ -3065,7 +3052,7 @@ public class LibMatrixMult
 			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ] + aval4 * b[ bi4+7 ];	
 		}
 	}
-
+	
 	@SuppressWarnings("unused")
 	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int ci, final int len )
 	{
@@ -3492,12 +3479,16 @@ public class LibMatrixMult
 		return ret;
 	}
 
-	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
-	{
+	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
 		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
-				&& m1.rlen > m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64
-				&& 8*m2.rlen*m2.clen < 256*1024 ); //rhs fits in L2 cache
+			&& isSkinnyRightHandSide(m1.rlen, m1.clen, m2.rlen, m2.clen));
+	}
+	
+	//note: public for use by codegen for consistency
+	public static boolean isSkinnyRightHandSide(long m1rlen, long m1clen, long m2rlen, long m2clen) {
+		return m1rlen > m2clen && m2rlen > m2clen && m2clen > 1 
+			&& m2clen < 64 && 8*m2rlen*m2clen < L2_CACHESIZE;
 	}
 
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {

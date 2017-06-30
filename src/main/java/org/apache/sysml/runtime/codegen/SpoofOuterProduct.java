@@ -79,8 +79,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			return new DoubleObject(0);
 		
 		//input preparation
-		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
-		double[][] b = prepInputMatricesDense(inputs, 3);
+		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		double[][] b = getDenseMatrices(prepInputMatrices(inputs, 3, true));
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute
@@ -112,8 +112,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			return new DoubleObject(0);
 		
 		//input preparation
-		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
-		double[][] b = prepInputMatricesDense(inputs, 3);
+		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		double[][] b = getDenseMatrices(prepInputMatrices(inputs, 3, true));
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute
@@ -179,8 +179,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		out.allocateDenseOrSparseBlock();
 		
 		//input preparation
-		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
-		double[][] b = prepInputMatricesDense(inputs, 3);
+		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		double[][] b = getDenseMatrices(prepInputMatrices(inputs, 3, true));
 		double[] scalars = prepInputScalars(scalarObjects);
 				
 		//core sequential execute
@@ -257,8 +257,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}	
 		
 		//input preparation
-		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
-		double[][] b = prepInputMatricesDense(inputs, 3);
+		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		double[][] b = getDenseMatrices(prepInputMatrices(inputs, 3, true));
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute

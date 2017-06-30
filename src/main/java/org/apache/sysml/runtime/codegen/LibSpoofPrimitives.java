@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.codegen;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.commons.math3.util.FastMath;
@@ -55,6 +56,50 @@ public class LibSpoofPrimitives
 	public static double dotProduct(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
 		if( a == null || b == null ) return 0;
 		return LibMatrixMult.dotProduct(a, b, aix, ai, bi, len);
+	}
+	
+	public static double[] vectMatrixMult(double[] a, double[] b, int ai, int bi, int len) {
+		//note: assumption b is already transposed for efficient dot products
+		int m2clen = b.length / len;
+		double[] c = allocVector(m2clen, false);
+		for( int j = 0, bix = bi; j < m2clen; j++, bix+=len )
+			c[j] = LibMatrixMult.dotProduct(a, b, ai, bix, len);
+		return c;
+	}
+	
+	public static double[] vectMatrixMult(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		//note: assumption b is already transposed for efficient dot products
+		int m2clen = b.length / len;
+		double[] c = allocVector(m2clen, false);
+		for( int j = 0, bix = bi; j < m2clen; j++, bix+=len )
+			c[j] = LibMatrixMult.dotProduct(a, b, aix, ai, bix, alen);
+		return c;
+	}
+	
+	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int ai, int bi, int ci, int len1, int len2) {
+		//rest, not aligned to 4-blocks
+		final int bn = len1%4;
+		for( int i=0, cix=ci; i < bn; i++, cix+=len2 )
+			if( a[ai+i] != 0 )
+				LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, cix, len2);
+		
+		//unrolled 4-block (for fewer L1-dcache loads)
+		for( int i=bn, cix=ci+bn*len2; i < len1; i+=4, cix+=4*len2 ) {
+			final int cix1=cix, cix2=cix+len2, cix3=cix+2*len2, cix4=cix+3*len2;
+			final double aval1=a[ai+i], aval2=a[ai+i+1], aval3=a[ai+i+2], aval4=a[ai+i+3];
+			for( int j=0; j<len2; j++ ) {
+				final double bval = b[bi+j];
+				c[cix1 + j] += aval1 * bval;
+				c[cix2 + j] += aval2 * bval;
+				c[cix3 + j] += aval3 * bval;
+				c[cix4 + j] += aval4 * bval;
+			}
+		}	
+	}
+	
+	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int[] aix, int ai, int bi, int ci, int alen, int len1, int len2) {
+		for( int i=0; i < alen; i++ )
+			LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, ci+aix[ai+i]*len2, len2);
 	}
 	
 	public static void vectMultAdd(double[] a, double bval, double[] c, int bi, int ci, int len) {
@@ -1227,7 +1272,14 @@ public class LibSpoofPrimitives
 	//dynamic memory management
 	
 	public static void setupThreadLocalMemory(int numVectors, int len) {
+		setupThreadLocalMemory(numVectors, len, -1);
+	}
+	
+	public static void setupThreadLocalMemory(int numVectors, int len, int len2) {
 		LinkedList<double[]> list = new LinkedList<double[]>();
+		if( len2 >= 0 ) 
+			for( int i=0; i<numVectors; i++ )
+				list.addLast(new double[len2]);
 		for( int i=0; i<numVectors; i++ )
 			list.addLast(new double[len]);
 		memPool.set(list);
@@ -1242,24 +1294,29 @@ public class LibSpoofPrimitives
 	}
 	
 	private static double[] allocVector(int len, boolean reset, double resetVal) {
-		LinkedList<double[]> list = memPool.get();
+		LinkedList<double[]> list = memPool.get(); 
 		
-		//sanity check for missing setup
-		if( list.isEmpty() ) {
-			double[] tmp = new double[len];
-			if( reset && resetVal != 0 )
-				Arrays.fill(tmp, resetVal);
-			return tmp;
+		//find and remove vector with matching len 
+		double[] vect = null;
+		Iterator<double[]> iter = list.iterator();
+		while( iter.hasNext() ) {
+			double[] tmp = iter.next();
+			if( tmp.length == len ) {
+				vect = tmp;
+				iter.remove();
+				break;
+			}
 		}
 		
-		//get and re-queue first entry
-		double[] tmp = list.removeFirst();
-		list.addLast(tmp);
+		//allocate new vector or re-queue if required
+		if( vect == null )
+			vect = new double[len];
+		else 
+			list.addLast(vect);
 		
 		//reset vector if required
 		if( reset )
-			Arrays.fill(tmp, resetVal);
-		return tmp;
+			Arrays.fill(vect, resetVal);
+		return vect;
 	}
 }
-

@@ -42,6 +42,10 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    * depth 1 that expand each input channel to M output channels, where
    * M is a "depth multiplier".
    *
+   * Although there are C*M filters of depth 1, instead of storing W as
+   * shape `(C*M, 1*Hf*Wf)`, we reshape it to `(C, M*Hf*Wf)` for
+   * performance reasons.
+   *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - W: Weights, of shape (C, M*Hf*Wf).

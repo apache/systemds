@@ -835,19 +835,19 @@ top_k = function() {
                                      2 3 4 1", rows=2, cols=4)
 
    # test top_1
-   print("Case 1: test top_1")
+   print(" - Testing top_1.")
    [values_top1, indices_top1] = util::top_k(X, 1)
    check_values_top1 = test_util::check_all_equal(values_top1, expected_values_top1)
    check_indices_top1 = test_util::check_all_equal(indices_top1, expected_indices_top1)
 
    # test top_2
-   print("Case 2: test top_2")
+   print(" - Testing top_2.")
    [values_top2, indices_top2] = util::top_k(X, 2)
    check_values_top2 = test_util::check_all_equal(values_top2, expected_values_top2)
    check_indices_top2 = test_util::check_all_equal(indices_top2, expected_indices_top2)
 
    # test top_All
-   print("Case 3: test top_All")
+   print(" - Testing top_All.")
    [values_topAll, indices_topAll] = util::top_k(X, 4)
    check_values_topAll = test_util::check_all_equal(values_topAll, expected_values_topAll)
    check_indices_topAll = test_util::check_all_equal(indices_topAll, expected_indices_topAll)

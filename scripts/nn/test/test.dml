@@ -30,6 +30,7 @@ source("nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
 source("nn/layers/conv2d_transpose.dml") as conv2d_transpose
 source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/cross_entropy_loss2d.dml") as cross_entropy_loss2d
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("nn/layers/tanh.dml") as tanh
@@ -408,6 +409,64 @@ cross_entropy_loss = function() {
   inf = 1/0
   if (loss == inf) {
     print("ERROR: The cross-entropy loss function ouptuts infinity for all-zero predictions.")
+  }
+}
+
+cross_entropy_loss2d = function() {
+  /*
+   * Test for the 2D cross-entropy loss function.
+   */
+  print("Testing the forward part of the 2D cross-entropy loss function")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num targets
+  Hin = 3  # example height
+  Win = 3  # example width
+  loss_expected = 0.0770996
+
+  # pred data after the softmax
+  pred = matrix("9.99909163e-01   4.99988675e-01   4.53958055e-05
+                 9.99909163e-01   4.53958055e-05   4.53958055e-05
+                 9.99909163e-01   4.53958055e-05   4.53958055e-05
+                 4.53958055e-05   4.99988675e-01   4.53958055e-05
+                 4.53958055e-05   9.99909163e-01   4.53958055e-05
+                 4.53958055e-05   9.99909163e-01   4.53958055e-05
+                 4.53958055e-05   2.26994507e-05   9.99909163e-01
+                 4.53958055e-05   4.53958055e-05   9.99909163e-01
+                 4.53958055e-05   4.53958055e-05   9.99909163e-01
+                 9.99909163e-01   4.99988675e-01   4.53958055e-05
+                 9.99909163e-01   4.53958055e-05   4.53958055e-05
+                 9.99909163e-01   4.53958055e-05   4.53958055e-05
+                 4.53958055e-05   4.99988675e-01   4.53958055e-05
+                 4.53958055e-05   9.99909163e-01   4.53958055e-05
+                 4.53958055e-05   9.99909163e-01   4.53958055e-05
+                 4.53958055e-05   2.26994507e-05   9.99909163e-01
+                 4.53958055e-05   4.53958055e-05   9.99909163e-01
+                 4.53958055e-05   4.53958055e-05   9.99909163e-01", rows=N, cols=C*Hin*Win)
+  y = matrix("1 0 0
+              1 0 0
+              1 0 0
+              0 1 0
+              0 1 0
+              0 1 0
+              0 0 1
+              0 0 1
+              0 0 1
+              1 0 0
+              1 0 0
+              1 0 0
+              0 1 0
+              0 1 0
+              0 1 0
+              0 0 1
+              0 0 1
+              0 0 1", rows=N, cols=C*Hin*Win)
+
+  loss = cross_entropy_loss2d::forward(pred, y, C)
+
+  if (abs(loss - loss_expected) > 1.0e-7) {
+    print("ERROR: The 2D cross-entropy loss function ouptut (" + loss + ") does not match the expected value " + loss_expected + ".")
   }
 }
 

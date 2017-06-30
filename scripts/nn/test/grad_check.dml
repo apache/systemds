@@ -923,7 +923,7 @@ cross_entropy_loss = function() {
   print("Grad checking the cross-entropy loss function.")
 
   # Generate data
-  N = 3 # num examples
+  N = 3  # num examples
   K = 10 # num targets
   pred = rand(rows=N, cols=K, min=0, max=1, pdf="uniform")
   pred = pred / rowSums(pred)  # normalized probs
@@ -964,6 +964,9 @@ cross_entropy_loss2d = function() {
   Hin = 28  # example height
   Win = 28  # example width
   pred = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
+  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
+  pred_C_NHW = pred_C_NHW/ colSums(pred_C_NHW)
+  pred = util::transpose_NCHW_to_CNHW(pred_C_NHW, N)
 
   y = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
   y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
@@ -974,7 +977,7 @@ cross_entropy_loss2d = function() {
   dpred = cross_entropy_loss2d::backward(pred, y, C)
 
   # Grad check
-  h = 1e-5
+  h = 1e-6
   for (i in 1:nrow(pred)) {
     for (j in 1:ncol(pred)) {
       # Compute numerical derivative

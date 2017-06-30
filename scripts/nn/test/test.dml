@@ -33,6 +33,7 @@ source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("nn/layers/tanh.dml") as tanh
+source("nn/layers/softmax2d.dml") as softmax2d
 source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
@@ -921,5 +922,63 @@ top_k2d = function() {
   # Equivalency check
   check_values = test_util::check_all_equal(values, expected_values)
   check_indices = test_util::check_all_equal(indices, expected_indices)
+}
+
+softmax2d = function() {
+  /*
+   * Test for 2D softmax function.
+   */
+  print("Testing the 2D softmax function.")  
+  
+  N = 2  # num example
+  C = 3  # num class
+  Hin = 3  # example height
+  Win = 3  # example width
+  X = matrix("10.0  10.0  0.0
+              10.0  0.0   0.0
+              10.0  0.0   0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              10.0  10.0  0.0
+              10.0  0.0   0.0
+              10.0  0.0   0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0", rows=N, cols=C*Hin*Win)
+
+  probs_expected = matrix("9.99909163e-01   4.99988675e-01   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          4.53958055e-05   4.99988675e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   2.26994507e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          9.99909163e-01   4.99988675e-01   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          4.53958055e-05   4.99988675e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   2.26994507e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01", rows=N, cols=C*Hin*Win)
+  probs = softmax2d::forward(X, C)
+
+  # Equivalency check
+  for (i in 1:nrow(probs)) {
+    for (j in 1:ncol(probs)) {
+      rel_error = test_util::check_rel_error(as.scalar(probs[i,j]), as.scalar(probs_expected[i,j]),
+                                             1e-5, 1e-6)
+    }
+  }
 }
 

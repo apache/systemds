@@ -102,6 +102,7 @@ test::transpose_NCHW_to_CNHW()
 test::top_k_row()
 test::top_k()
 test::top_k2d()
+test::softmax2d()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

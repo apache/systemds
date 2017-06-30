@@ -416,7 +416,7 @@ cross_entropy_loss2d = function() {
   /*
    * Test for the 2D cross-entropy loss function.
    */
-  print("Testing the forward part of the 2D cross-entropy loss function")
+  print("Testing the 2D cross-entropy loss function.")
 
   # Generate data
   N = 2  # num examples
@@ -465,9 +465,8 @@ cross_entropy_loss2d = function() {
 
   loss = cross_entropy_loss2d::forward(pred, y, C)
 
-  if (abs(loss - loss_expected) > 1.0e-7) {
-    print("ERROR: The 2D cross-entropy loss function ouptut (" + loss + ") does not match the expected value " + loss_expected + ".")
-  }
+  # Equivalency check
+  rel_error = test_util::check_rel_error(loss, loss_expected, 1e-3, 1e-4)
 }
 
 im2col = function() {

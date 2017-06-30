@@ -125,13 +125,19 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     folder_name = config_path.split('/')[-1]
     mat_type, mat_shape, intercept = get_folder_metrics(folder_name, action_mode)
 
-    exit_flag_success = get_existence(config_path)
+    exit_flag_success = get_existence(config_path, action_mode)
 
     if exit_flag_success:
         print('data already exists {}'.format(config_path))
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, file_name, args, config_path)
+        time = exec_dml_and_parse_time(exec_type, file_name, args)
+
+    # Write a _SUCCESS file only if time is found and in data-gen action_mode
+    if len(time.split('.')) == 2 and action_mode == 'data-gen':
+        # Write Success file if time found
+        full_path = join(config_path, '_SUCCESS')
+        open(full_path, 'w').close()
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
     current_metrics = [algo, action_mode, intercept, mat_type, mat_shape, time]

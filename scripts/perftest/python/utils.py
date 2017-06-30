@@ -113,22 +113,32 @@ def create_dir(directory):
         os.makedirs(directory)
 
 
-def get_existence(path):
+def get_existence(path, action_mode):
     """
     Check SUCCESS file is present in the input path
 
     path: String
     Input folder path
 
+    action_mode : String
+    Type of action data-gen, train ...
+
     return: Boolean check if the file _SUCCESS exists
     """
 
-    full_path = join(path, '_SUCCESS')
-    exist = os.path.isfile(full_path)
+    if action_mode == 'data-gen':
+        full_path = join(path, '_SUCCESS')
+        exist = os.path.isfile(full_path)
+    else:
+        # Files does not exist for other modes return False to continue
+        # For e.g some predict algorithms do not generate an output folder
+        # hence checking for SUCCESS would fail
+        exist = False
+
     return exist
 
 
-def exec_dml_and_parse_time(exec_type, file_name, args, path, Time=True):
+def exec_dml_and_parse_time(exec_type, file_name, args, Time=True):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -182,7 +192,7 @@ def exec_dml_and_parse_time(exec_type, file_name, args, path, Time=True):
             print('Error Found in {}'.format(file_name))
             total_time = 'failure'
         else:
-            total_time = parse_time(proc1_log, path)
+            total_time = parse_time(proc1_log)
 
     else:
         total_time = 'not_specified'
@@ -190,7 +200,7 @@ def exec_dml_and_parse_time(exec_type, file_name, args, path, Time=True):
     return total_time
 
 
-def parse_time(raw_logs, cpath):
+def parse_time(raw_logs):
     """
     Parses raw input list and extracts time
 
@@ -208,9 +218,6 @@ def parse_time(raw_logs, cpath):
             extract_time = re.findall(r'\d+', line)
             total_time = '.'.join(extract_time)
 
-            # Write Success file if time found
-            full_path = join(cpath, '_SUCCESS')
-            open(full_path, 'w').close()
             return total_time
 
     return 'time_not_found'
@@ -235,7 +242,7 @@ def exec_test_data(exec_type, path):
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
 
     # Call the exec script without time
-    exec_dml_and_parse_time(exec_type, test_split_script, args, path, False)
+    exec_dml_and_parse_time(exec_type, test_split_script, args, False)
 
 
 def check_predict(current_algo, ML_PREDICT):

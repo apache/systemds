@@ -37,7 +37,7 @@
 #                               1 = add intercept;
 # tol       Int     0.001       Tolerance (epsilon);
 # reg       int     1.0         Regularization parameter (lambda) for L2 regularization
-# maxiter   Int     100
+# maxiter   Int     100         Maximum number of conjugate gradient iterations, 0 = no maximum
 # model     Int     1           Location to write model
 # Log       String  ---         Location to write the log file
 # fmt       String  ---         The output format of the output, such as "text" or "csv"

@@ -741,12 +741,8 @@ public class DMLScript
 		Statistics.resetNoOfCompiledJobs( counts.numJobs );				
 		
 		//explain plan of program (hops or runtime)
-		if( EXPLAIN != ExplainType.NONE ) {
-			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget(counts)+"\n"
-					 + Explain.explainDegreeOfParallelism(counts)
-					 + Explain.explain(prog, rtprog, EXPLAIN));
-		}
+		if( EXPLAIN != ExplainType.NONE )
+			LOG.info(Explain.display(prog, rtprog, EXPLAIN, counts));
 		
 		Statistics.stopCompileTimer();
 		

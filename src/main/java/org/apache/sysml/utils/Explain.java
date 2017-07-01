@@ -105,6 +105,18 @@ public class Explain
 	//////////////
 	// public explain interface
 
+	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
+		throws HopsException, DMLRuntimeException, LanguageException {
+		if( counts == null )
+			counts = countDistributedOperations(rtprog);
+		
+		//explain plan of program (hops or runtime)
+		return "# EXPLAIN ("+type.name()+"):\n" 
+			+ Explain.explainMemoryBudget(counts)+"\n"
+			+ Explain.explainDegreeOfParallelism(counts)
+			+ Explain.explain(prog, rtprog, type, counts);
+	}
+	
 	public static String explainMemoryBudget() {
 		return explainMemoryBudget(new ExplainCounts());
 	}
@@ -187,6 +199,11 @@ public class Explain
 	}
 
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
+		throws HopsException, DMLRuntimeException, LanguageException {
+		return explain(prog, rtprog, type);
+	}	
+	
+	public static String explain(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
 		throws HopsException, DMLRuntimeException, LanguageException
 	{
 		//dispatch to individual explain utils
@@ -198,7 +215,7 @@ public class Explain
 			//explain runtime program	
 			case RUNTIME:  
 			case RECOMPILE_RUNTIME: 
-				return explain(rtprog);
+				return explain(rtprog, counts);
 			case NONE:
 				//do nothing
 		}
@@ -250,13 +267,19 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( Program rtprog ) 
+	public static String explain( Program rtprog ) throws HopsException {
+		return explain(rtprog, null);
+	}
+	
+	public static String explain( Program rtprog, ExplainCounts counts ) 
 		throws HopsException 
 	{
 		//counts number of instructions
 		boolean sparkExec = OptimizerUtils.isSparkExecutionMode();
-		ExplainCounts counts = new ExplainCounts();
-		countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
+		if( counts == null ) {
+			counts = new ExplainCounts();
+			countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
+		}
 	
 		StringBuilder sb = new StringBuilder();		
 		
@@ -426,8 +449,7 @@ public class Explain
 	 * @param rtprog runtime program
 	 * @return counts
 	 */
-	public static ExplainCounts countDistributedOperations( Program rtprog )
-	{		
+	public static ExplainCounts countDistributedOperations( Program rtprog ) {
 		ExplainCounts counts = new ExplainCounts();
 		if( OptimizerUtils.isSparkExecutionMode() ) 
 			Explain.countCompiledInstructions(rtprog, counts, false, true, true);

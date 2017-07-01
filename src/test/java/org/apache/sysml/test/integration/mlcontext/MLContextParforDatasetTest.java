@@ -32,6 +32,7 @@ import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -151,6 +152,10 @@ public class MLContextParforDatasetTest extends AutomatedTestBase
 					+ "}"
 					+ "r = sum(v);";
 			String s = multiInputs ? s2 : s1;
+			
+			ml.setExplain(true);
+			ml.setExplainLevel(ExplainLevel.RUNTIME);
+			ml.setStatistics(true);
 			
 			Script script = dml(s).in("X", df, mm).out("r");
 			MLResults results = ml.execute(script);

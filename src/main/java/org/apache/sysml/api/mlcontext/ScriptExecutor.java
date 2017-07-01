@@ -47,6 +47,7 @@ import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.utils.Explain;
@@ -179,8 +180,10 @@ public class ScriptExecutor {
 			return;
 
 		try {
-			ExplainType explainType = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
-			System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
+			ExplainType explainType = (explainLevel != null) ? 
+				explainLevel.getExplainType() : ExplainType.RUNTIME;
+			System.out.println(Explain.display(
+				dmlProgram, runtimeProgram, explainType, null));
 		} catch (Exception e) {
 			throw new MLContextException("Exception occurred while explaining dml program", e);
 		}
@@ -333,7 +336,10 @@ public class ScriptExecutor {
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
-		if (statistics) {
+		//reset all relevant summary statistics 
+		Statistics.resetNoOfExecutedJobs();
+		if( statistics ) {
+			CacheStatistics.reset();
 			Statistics.reset();
 		}
 	}

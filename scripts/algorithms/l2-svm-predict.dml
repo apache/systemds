@@ -30,7 +30,7 @@
 # NAME      TYPE        DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # X         String      ---         Location to read the test feature matrix X
-# Y	  	    String      ---	        Location to read the true label matrix Y
+# Y         String      ---	        Location to read the true label matrix Y
 # confusion String      "csv"       Location to write confusion matrix
 # accuracy  String      ---         Location to write accuracy matrix
 # scores    String      ---         Location to write scores

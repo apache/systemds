@@ -58,6 +58,7 @@
 				<include>org.jcuda:*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
+			<unpack>true</unpack>
 			<scope>compile</scope>
 		</dependencySet>
 	</dependencySets>

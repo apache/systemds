@@ -926,9 +926,9 @@ cross_entropy_loss = function() {
   N = 3  # num examples
   K = 10 # num targets
   pred = rand(rows=N, cols=K, min=0, max=1, pdf="uniform")
-  pred = pred / rowSums(pred)  # normalized probs
+  pred = softmax::forward(pred)  # normalized probs
   y = rand(rows=N, cols=K, min=0, max=1, pdf="uniform")
-  y = y / rowSums(y)  # normalized probs
+  y = softmax::forward(y)  # normalized probs
 
   # Compute analytical gradient
   dpred = cross_entropy_loss::backward(pred, y)
@@ -964,14 +964,10 @@ cross_entropy_loss2d = function() {
   Hin = 28  # example height
   Win = 28  # example width
   pred = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
-  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
-  pred_C_NHW = pred_C_NHW/ colSums(pred_C_NHW)
-  pred = util::transpose_NCHW_to_CNHW(pred_C_NHW, N)
+  pred = softmax2d::forward(pred, C)  # normalized probs
 
   y = rand(rows=N, cols=C*Hin*Win, min=0, max=1, pdf="uniform")
-  y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
-  y_C_NHW = y_C_NHW / colSums(y_C_NHW)  # normalized probs
-  y = util::transpose_NCHW_to_CNHW(y_C_NHW, N)
+  y = softmax2d::forward(y, C)  # normalized probs
   
   # Compute analytical gradient
   dpred = cross_entropy_loss2d::backward(pred, y, C)

@@ -264,9 +264,10 @@ if __name__ == '__main__':
 
     # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
-    cparser.add_argument('--family', help='specify class of algorithms (e.g regression, binomial)',
+    cparser.add_argument('--family', help='specify class of algorithms (available : ' + ', '.join(ML_ALGO.keys()) + ')',
                          metavar='', choices=ML_ALGO.keys(), nargs='+')
-    cparser.add_argument('--algo', help='specify the type of algorithm to run (Overrides --family)', metavar='',
+    cparser.add_argument('--algo', help='specify the type of algorithm to run '
+                         '(Overrides --family, available : ' + ', '.join(all_algos) + ')', metavar='',
                          choices=all_algos, nargs='+')
 
     cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '

@@ -34,8 +34,8 @@ import org.junit.Test;
 public class MatrixMatrixElementWiseOpTests extends GPUTests {
 	private final static String TEST_NAME = "MatrixMatrixElementWiseOpTests";
 
-	private final int[] rowSizes = new int[] { 1, 64, 130, 1024, 2049 };
-	private final int[] columnSizes = new int[] { 1, 64, 130, 1024, 2049 };
+	private final int[] rowSizes = new int[] { 1, 64, 1024, 2049 };
+	private final int[] columnSizes = new int[] { 1, 64, 1024, 2049 };
 	private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
 	private final double[] scalars = new double[] { 0.0, 0.5, 2.0 };
 	private final int seed = 42;
@@ -171,7 +171,35 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 		runMatrixRowVectorTest("O = 1 - X * Y", "X", "Y", "O", "gpu_1-*");
 	}
 
+	@Test
+	public void testLessThan() {
+		runMatrixMatrixElementwiseTest("O = X < Y", "X", "Y", "O", "gpu_<");
+	}
 
+	@Test
+	public void testLessThanEqual() {
+		runMatrixMatrixElementwiseTest("O = X <= Y", "X", "Y", "O", "gpu_<=");
+	}
+
+	@Test
+	public void testGreaterThan() {
+		runMatrixMatrixElementwiseTest("O = X > Y", "X", "Y", "O", "gpu_>");
+	}
+
+	@Test
+	public void testGreaterThanEqual() {
+		runMatrixMatrixElementwiseTest("O = X >= Y", "X", "Y", "O", "gpu_>=");
+	}
+
+	@Test
+	public void testEqual() {
+		runMatrixMatrixElementwiseTest("O = X == Y", "X", "Y", "O", "gpu_==");
+	}
+
+	@Test
+	public void NotEqual() {
+		runMatrixMatrixElementwiseTest("O = X != Y", "X", "Y", "O", "gpu_!=");
+	}
 
 	/**
 	 * Runs a simple matrix-matrix elementwise op test

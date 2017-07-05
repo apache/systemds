@@ -275,10 +275,8 @@ public class CSRPointer {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static CSRPointer allocateEmpty(GPUContext gCtx, long nnz2, long rows) throws DMLRuntimeException {
-		LOG.trace(
-				"GPU : allocateEmpty from CSRPointer with nnz=" + nnz2 + " and rows=" + rows + ", GPUContext=" + gCtx);
-		assert nnz2
-				> -1 : "Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU";
+		LOG.trace("GPU : allocateEmpty from CSRPointer with nnz=" + nnz2 + " and rows=" + rows + ", GPUContext=" + gCtx);
+		assert nnz2 > -1 : "Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU";
 		CSRPointer r = new CSRPointer(gCtx);
 		r.nnz = nnz2;
 		if (nnz2 == 0) {

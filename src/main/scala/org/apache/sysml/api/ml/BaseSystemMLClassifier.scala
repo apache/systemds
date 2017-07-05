@@ -153,6 +153,8 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
     double2Double(d)
   }
   
+  def transform_probability(X: MatrixBlock): MatrixBlock;
+  
   def transformSchema(schema: StructType): StructType = schema
   
   // Returns the script and variable for X
@@ -217,26 +219,48 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
 
-  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar:String): MatrixBlock = {
-    val isSingleNode = true
+	def baseTransform(X: MatrixBlock, sc: SparkContext, probVar:String): MatrixBlock = baseTransform(X, sc, probVar, -1, 1, 1)
+	
+	def baseTransform(X: MatrixBlock, sc: SparkContext, probVar:String, C:Int, H: Int, W:Int): MatrixBlock = {
+    val Prob = baseTransformHelper(X, sc, probVar, C, H, W)
+    val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W);")
+    							.out("Prediction").in("Prob", Prob.toMatrixBlock, Prob.getMatrixMetadata).in("C", C).in("H", H).in("W", W)
+    val ret = (new MLContext(sc)).execute(script1).getMatrix("Prediction").toMatrixBlock
+              
+    if(ret.getNumColumns != 1 && H == 1 && W == 1) {
+      throw new RuntimeException("Expected predicted label to be a column vector")
+    }
+    return ret
+  }
+	
+	def baseTransformHelper(X: MatrixBlock, sc: SparkContext, probVar:String, C:Int, H: Int, W:Int): Matrix = {
+	  val isSingleNode = true
     val ml = new MLContext(sc)
     updateML(ml)
     val script = getPredictionScript(isSingleNode)
     // Uncomment for debugging
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
-    val ret = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
-              .getMatrix("Prediction").toMatrixBlock
-              
-    if(ret.getNumColumns != 1) {
-      throw new RuntimeException("Expected predicted label to be a column vector")
-    }
-    return ret
-  }
-
-  def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
+    return modelPredict.getMatrix(probVar)
+	}
+	
+	def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar:String): MatrixBlock = {
+	  baseTransformProbability(X, sc, probVar, -1, 1, 1)
+	}
+	
+	def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar:String, C:Int, H: Int, W:Int): MatrixBlock = {
+	  return baseTransformHelper(X, sc, probVar, C, H, W).toMatrixBlock
+	}
+	
+	
+	def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
-    val isSingleNode = false
+		baseTransform(df, sc, probVar, outputProb, -1, 1, 1)
+	}
+	
+	def baseTransformHelper(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
+      probVar:String, outputProb:Boolean, C:Int, H: Int, W:Int): Matrix = {
+	  val isSingleNode = false
     val ml = new MLContext(sc)
     updateML(ml)
     val mcXin = new MatrixCharacteristics()
@@ -245,11 +269,19 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val mmXin = new MatrixMetadata(mcXin)
     val Xin_bin = new Matrix(Xin, mmXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
-    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
+    return modelPredict.getMatrix(probVar)
+	}
+
+  def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
+      probVar:String, outputProb:Boolean, C:Int, H: Int, W:Int): DataFrame = {
+    val Prob = baseTransformHelper(df, sc, probVar, outputProb, C, H, W)
+    val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W);")
+    							.out("Prediction").in("Prob", Prob).in("C", C).in("H", H).in("W", W)
+    val predLabelOut = (new MLContext(sc)).execute(script1)
     val predictedDF = predLabelOut.getDataFrame("Prediction").select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")
       
     if(outputProb) {
-      val prob = modelPredict.getDataFrame(probVar, true).withColumnRenamed("C1", "probability").select(RDDConverterUtils.DF_ID_COLUMN, "probability")
+      val prob = Prob.toDFVectorWithIDColumn().withColumnRenamed("C1", "probability").select(RDDConverterUtils.DF_ID_COLUMN, "probability")
       val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sparkSession, RDDConverterUtils.DF_ID_COLUMN)
       return PredictionUtils.joinUsingID(dataset, PredictionUtils.joinUsingID(prob, predictedDF))
     }

@@ -92,6 +92,8 @@ class LinearRegressionModel(override val uid: String)(estimator:LinearRegression
     copyValues(that, extra)
   }
   
+  def transform_probability(X: MatrixBlock): MatrixBlock = throw new DMLRuntimeException("Unsupported method")
+  
   def baseEstimator():BaseSystemMLEstimator = estimator
   
   def this(estimator:LinearRegression) =  {

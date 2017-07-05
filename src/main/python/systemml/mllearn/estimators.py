@@ -217,6 +217,76 @@ class BaseSystemMLEstimator(Estimator):
     def transform(self, X):
         return self.predict(X)
     
+    def _convertPythonXToJavaObject(self, X):
+        """
+        Converts the input python object X to a java-side object (either MatrixBlock or Java DataFrame)
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        """
+        if isinstance(X, SUPPORTED_TYPES) and self.transferUsingDF:
+            pdfX = convertToPandasDF(X)
+            df = assemble(self.sparkSession, pdfX, pdfX.columns, self.features_col).select(self.features_col)
+            return df._jdf
+        elif isinstance(X, SUPPORTED_TYPES):
+            return convertToMatrixBlock(self.sc, X)
+        elif hasattr(X, '_jdf') and self.features_col in X.columns:
+            # No need to assemble as input DF is likely coming via MLPipeline
+            return X._jdf
+        elif hasattr(X, '_jdf'):
+            assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
+            df = assembler.transform(X)
+            return df._jdf
+        else:
+            raise Exception('Unsupported input type')
+        
+    def _convertJavaOutputToPythonObject(self, X, output):
+        """
+        Converts the a java-side object output (either MatrixBlock or Java DataFrame) to a python object (based on the type of X).
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        output: a java-side object (either MatrixBlock or Java DataFrame)
+        """
+        if isinstance(X, SUPPORTED_TYPES) and self.transferUsingDF:
+            retDF = DataFrame(output, self.sparkSession)
+            retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
+            return retPDF.as_matrix().flatten() if isinstance(X, np.ndarray) else retPDF
+        elif isinstance(X, SUPPORTED_TYPES):
+            return convertToNumPyArr(self.sc, output)
+        elif hasattr(X, '_jdf'):
+            retDF = DataFrame(output, self.sparkSession)
+            # Return DF
+            return retDF.sort('__INDEX')
+        else:
+            raise Exception('Unsupported input type')
+        
+    def predict_proba(self, X):
+        """
+        Invokes the transform_probability method on Estimator object on JVM if X and y are on of the supported data types
+        Return predicted class probabilities for X.
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        """
+        if hasattr(X, '_jdf'):
+            return self.predict(X)
+        elif self.transferUsingDF:
+            raise ValueError('The parameter transferUsingDF is not valid for the method predict_proba')
+        try:
+            if self.estimator is not None and self.model is not None:
+                self.estimator.copyProperties(self.model)
+        except AttributeError:
+            pass
+        try:
+            jX = self._convertPythonXToJavaObject(X)
+            return self._convertJavaOutputToPythonObject(X, self.model.transform_probability(jX))
+        except Py4JError:
+            traceback.print_exc()
+    
     # Returns either a DataFrame or MatrixBlock after calling transform(X:MatrixBlock, y:MatrixBlock) on Model object on JVM
     def predict(self, X):
         """
@@ -231,40 +301,12 @@ class BaseSystemMLEstimator(Estimator):
                 self.estimator.copyProperties(self.model)
         except AttributeError:
             pass
-        if isinstance(X, SUPPORTED_TYPES):
-            if self.transferUsingDF:
-                pdfX = convertToPandasDF(X)
-                df = assemble(self.sparkSession, pdfX, pdfX.columns, self.features_col).select(self.features_col)
-                retjDF = self.model.transform(df._jdf)
-                retDF = DataFrame(retjDF, self.sparkSession)
-                retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
-                if isinstance(X, np.ndarray):
-                    return self.decode(retPDF.as_matrix().flatten())
-                else:
-                    return self.decode(retPDF)
-            else:
-                try:
-                    retNumPy = self.decode(convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X))))
-                except Py4JError:
-                    traceback.print_exc()
-                if isinstance(X, np.ndarray):
-                    return retNumPy
-                else:
-                    return retNumPy # TODO: Convert to Pandas
-        elif hasattr(X, '_jdf'):
-            if self.features_col in X.columns:
-                # No need to assemble as input DF is likely coming via MLPipeline
-                df = X
-            else:
-                assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
-                df = assembler.transform(X)
-            retjDF = self.model.transform(df._jdf)
-            retDF = DataFrame(retjDF, self.sparkSession)
-            # Return DF
-            return retDF.sort('__INDEX')
-        else:
-            raise Exception('Unsupported input type')
-
+        try:
+            jX = self._convertPythonXToJavaObject(X)
+            ret = self._convertJavaOutputToPythonObject(X, self.model.transform(jX))
+            return self.decode(ret) if isinstance(X, SUPPORTED_TYPES) else ret
+        except Py4JError:
+            traceback.print_exc()
 
 class BaseSystemMLClassifier(BaseSystemMLEstimator):
 
@@ -274,6 +316,10 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         return self.le.transform(y) + 1
         
     def decode(self, y):
+        if not hasattr(self, 'le'):
+            self.le = None
+        if not hasattr(self, 'labelMap'):
+            self.labelMap = None
         if self.le is not None:
             return self.le.inverse_transform(np.asarray(y - 1, dtype=int))
         elif self.labelMap is not None:
@@ -316,18 +362,17 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             keys = np.asarray(df._c0, dtype='int')
             values = np.asarray(df._c1, dtype='str')
             self.labelMap = {}
-            self.le = None
             for i in range(len(keys)):
                 self.labelMap[int(keys[i])] = values[i]
             # self.encode(classes) # Giving incorrect results
         
-    def load(self, weights=None, sep='/'):
+    def load(self, weights, sep='/'):
         """
         Load a pretrained model. 
 
         Parameters
         ----------
-        weights: directory whether learned weights are stored (default: None)
+        weights: directory whether learned weights are stored
         sep: seperator to use (default: '/')
         """
         self.weights = weights
@@ -737,7 +782,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
             
-    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None):
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None):
         """
         Set input to Caffe2DML
         
@@ -746,12 +791,25 @@ class Caffe2DML(BaseSystemMLClassifier):
         debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
         train_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
         test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
+        parallel_batches: number of parallel batches
+        output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         """
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
         if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
         if test_algo is not None: self.estimator.setInput("$test_algo", str(test_algo).lower())
         if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
+        if output_activations is not None: self.estimator.setInput("$output_activations", str(output_activations))
         return self
+    
+    def summary(self):
+        """
+        Print the summary of the network
+        """
+        import pyspark
+        if type(self.sparkSession) == pyspark.sql.session.SparkSession:
+            self.estimator.summary(self.sparkSession._jsparkSession)
+        else:
+            raise TypeError('Please use spark session of type pyspark.sql.session.SparkSession in the constructor')
     
     def visualize(self, layerName=None, varType='weight', aggFn='mean'):
         """

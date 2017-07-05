@@ -111,4 +111,3 @@ backward = function(matrix[double] dprobs, matrix[double] scores, int C)
   dscores_C_NHW = t(dscores_NHW_C)
   dscores = util::transpose_NCHW_to_CNHW(dscores_C_NHW, N)
 }
-

@@ -109,6 +109,7 @@ class LogisticRegressionModel(override val uid: String)(
   def modelVariables():List[String] = List[String]("B_out")
   
   def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "means")
+  def transform_probability(X: MatrixBlock): MatrixBlock = baseTransformProbability(X, sc, "means")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "means")
 }
 

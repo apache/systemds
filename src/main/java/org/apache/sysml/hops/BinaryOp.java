@@ -582,7 +582,9 @@ public class BinaryOp extends Hop
 			if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
 					.initialGPUMemBudget())
 					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
-					|| op == OpOp2.MINUS_NZ || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV) ) {
+					|| op == OpOp2.MINUS_NZ || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
+					|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
+					|| op == OpOp2.GREATER || op == OpOp2.GREATEREQUAL)) {
 				et = ExecType.GPU;
 			}
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
@@ -602,7 +604,9 @@ public class BinaryOp extends Hop
 				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
 						.initialGPUMemBudget())
 						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
-						|| op == OpOp2.SOLVE || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV)) {
+						|| op == OpOp2.SOLVE || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
+						|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
+						|| op == OpOp2.GREATER || op == OpOp2.GREATEREQUAL)) {
 					et = ExecType.GPU;
 				}
 				

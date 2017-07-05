@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.RelationalBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ReorgGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
 
@@ -115,6 +116,14 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uavar"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Variance
 		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Variance
 		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Variance
+
+		// Relational Binary
+		String2GPUInstructionType.put( "=="   , GPUINSTRUCTION_TYPE.RelationalBinary);
+		String2GPUInstructionType.put( "!="   , GPUINSTRUCTION_TYPE.RelationalBinary);
+		String2GPUInstructionType.put( "<"    , GPUINSTRUCTION_TYPE.RelationalBinary);
+		String2GPUInstructionType.put( ">"    , GPUINSTRUCTION_TYPE.RelationalBinary);
+		String2GPUInstructionType.put( "<="   , GPUINSTRUCTION_TYPE.RelationalBinary);
+		String2GPUInstructionType.put( ">="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 
@@ -168,7 +177,9 @@ public class GPUInstructionParser  extends InstructionParser
 					return MatrixMatrixAxpyGPUInstruction.parseInstruction(str);
 				else
 					return ArithmeticBinaryGPUInstruction.parseInstruction(str);
-				
+			case RelationalBinary:
+				return RelationalBinaryGPUInstruction.parseInstruction(str);
+
 			default: 
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );
 		}

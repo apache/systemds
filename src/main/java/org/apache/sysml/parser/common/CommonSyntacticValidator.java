@@ -152,7 +152,9 @@ public abstract class CommonSyntacticValidator {
 		if (!sources.containsKey(namespace)) {
 			sources.put(namespace, filePath);
 		}
-		else {
+		else if (!sources.get(namespace).equals(filePath)) {
+			// Only throw an exception if the filepath is different
+			// If the filepath is same, ignore the statement. This is useful for repeated definition of common dml files such as source("nn/util.dml") as util
 			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
 		}
 	}

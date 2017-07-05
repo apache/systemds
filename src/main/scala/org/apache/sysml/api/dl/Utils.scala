@@ -111,6 +111,30 @@ object Utils {
 	  }
 	}
 	
+	class CopyCaffeDeconvFloatToSystemMLDeconvDoubleArray(data:java.util.List[java.lang.Float], F:Int, C:Int, H:Int, W:Int, arr:Array[Double]) 
+	    extends CopyFloatToDoubleArray(data, C, F*H*W, false, arr) {
+	  override def run(): Unit = {
+	    var i = 0
+	    for(f <- 0 until F) {
+	      for(c <- 0 until C) {
+	        for(hw <- 0 until H*W) {
+	          arr(c*F*H*W + f*H*W + hw) = data.get(i).doubleValue()
+	          i = i+1
+	        }
+	      }
+	    }
+	  }
+	}
+	
+	def allocateDeconvolutionWeight(data:java.util.List[java.lang.Float], F:Int, C:Int, H:Int, W:Int):(MatrixBlock,CopyFloatToDoubleArray) = {
+	  val mb =  new MatrixBlock(C, F*H*W, false)
+    mb.allocateDenseBlock()
+    val arr = mb.getDenseBlock
+    val thread = new CopyCaffeDeconvFloatToSystemMLDeconvDoubleArray(data, F, C, H, W, arr)
+	  thread.start
+	  return (mb, thread)
+	}
+	
 	def allocateMatrixBlock(data:java.util.List[java.lang.Float], rows:Int, cols:Int, transpose:Boolean):(MatrixBlock,CopyFloatToDoubleArray) = {
 	  val mb =  new MatrixBlock(rows, cols, false)
     mb.allocateDenseBlock()
@@ -141,7 +165,7 @@ object Utils {
 	  if(inputVariables.keys.size == 0)
 	    throw new DMLRuntimeException("No weights found in the file " + caffeModelFilePath)
 	  for(input <- inputVariables.keys) {
-	    dmlScript.append("write(" + input + ", \"" + input + ".mtx\", format=\"" + format + "\");\n")
+	    dmlScript.append("write(" + input + ", \"" + outputDirectory + "/" + input + ".mtx\", format=\"" + format + "\");\n")
 	  }
 	  if(Caffe2DML.LOG.isDebugEnabled())
 	    Caffe2DML.LOG.debug("Executing the script:" + dmlScript.toString)
@@ -161,28 +185,43 @@ object Utils {
 	  val net1 = builder.build();
 	  
 	  val asyncThreads = new java.util.ArrayList[CopyFloatToDoubleArray]()
+	  val v1Layers = net1.getLayersList.map(layer => layer.getName -> layer).toMap
 	  for(layer <- net1.getLayerList) {
-	    if(layer.getBlobsCount == 0) {
+	    val blobs = if(layer.getBlobsCount != 0) layer.getBlobsList else if(v1Layers.contains(layer.getName)) v1Layers.get(layer.getName).get.getBlobsList else null
+	      
+	    if(blobs == null || blobs.size == 0) {
 	      // No weight or bias
 	      Caffe2DML.LOG.debug("The layer:" + layer.getName + " has no blobs")
 	    }
-	    else if(layer.getBlobsCount == 2) {
+	    else if(blobs.size == 2) {
 	      // Both weight and bias
 	      val caffe2DMLLayer = net.getCaffeLayer(layer.getName)
 	      val transpose = caffe2DMLLayer.isInstanceOf[InnerProduct]
 	      
 	      // weight
-	      val data = layer.getBlobs(0).getDataList
+	      val data = blobs(0).getDataList
 	      val shape = caffe2DMLLayer.weightShape()
 	      if(shape == null)
-	        throw new DMLRuntimeException("Didnot expect weights for the layer " + layer.getName)
+  	        throw new DMLRuntimeException("Didnot expect weights for the layer " + layer.getName)
 	      validateShape(shape, data, layer.getName)
-	      val ret1 = allocateMatrixBlock(data, shape(0), shape(1), transpose)
+	      
+	      val ret1 = if(caffe2DMLLayer.isInstanceOf[DeConvolution]) {
+	        // Swap dimensions: Caffe's format (F, C*Hf*Wf) to NN layer's format (C, F*Hf*Wf).
+	        val deconvLayer = caffe2DMLLayer.asInstanceOf[DeConvolution]
+	        val C = shape(0)
+	        val F = deconvLayer.numKernels.toInt
+	        val Hf = deconvLayer.kernel_h.toInt
+	        val Wf = deconvLayer.kernel_w.toInt
+	        allocateDeconvolutionWeight(data, F, C, Hf, Wf)
+	      }
+	      else {
+  	      allocateMatrixBlock(data, shape(0), shape(1), transpose)
+	      }
 	      asyncThreads.add(ret1._2)
 	      inputVariables.put(caffe2DMLLayer.weight, ret1._1)
 	      
 	      // bias
-	      val biasData = layer.getBlobs(1).getDataList
+	      val biasData = blobs(1).getDataList
 	      val biasShape = caffe2DMLLayer.biasShape()
 	      if(biasShape == null)
 	        throw new DMLRuntimeException("Didnot expect bias for the layer " + layer.getName)
@@ -192,15 +231,17 @@ object Utils {
 	      inputVariables.put(caffe2DMLLayer.bias, ret2._1)
 	      Caffe2DML.LOG.debug("Read weights/bias for layer:" + layer.getName)
 	    }
-	    else if(layer.getBlobsCount == 1) {
+	    else if(blobs.size == 1) {
 	      // Special case: convolution/deconvolution without bias
 	      // TODO: Extend nn layers to handle this situation + Generalize this to other layers, for example: InnerProduct
 	      val caffe2DMLLayer = net.getCaffeLayer(layer.getName)
 	      val convParam = if((caffe2DMLLayer.isInstanceOf[Convolution] || caffe2DMLLayer.isInstanceOf[DeConvolution]) && caffe2DMLLayer.param.hasConvolutionParam())  caffe2DMLLayer.param.getConvolutionParam else null  
 	      if(convParam == null)
 	        throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported for the layer " + layer.getName)
+	      else if(convParam.hasBiasTerm && convParam.getBiasTerm)
+	        throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " and with bias term is not supported for the layer " + layer.getName)
 	     
-	      val data = layer.getBlobs(0).getDataList
+	      val data = blobs(0).getDataList
 	      val shape = caffe2DMLLayer.weightShape()
 	      validateShape(shape, data, layer.getName)
 	      val ret1 = allocateMatrixBlock(data, shape(0), shape(1), false)
@@ -217,6 +258,10 @@ object Utils {
 	  // Wait for the copy to be finished
 	  for(t <- asyncThreads) {
 	    t.join()
+	  }
+	  
+	  for(mb <- inputVariables.values()) {
+	    mb.recomputeNonZeros();
 	  }
 	  
 	  // Return the NetParameter without

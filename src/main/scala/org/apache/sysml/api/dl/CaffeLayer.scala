@@ -45,6 +45,9 @@ trait CaffeLayer extends BaseDMLGenerator {
   var computedBottomLayerOutputShape:(String, String, String) = null
   def bottomLayerOutputShape:(String, String, String) = {
     if(computedBottomLayerOutputShape == null) {
+      // Note: if you get org.apache.sysml.parser.LanguageException: Map is null exception
+      // from org.apache.sysml.api.dl.CaffeNetwork.org$apache$sysml$api$dl$CaffeNetwork$$convertLayerParameterToCaffeLayer
+      // you are attempting to get traverse the network (for example: bottomLayerOutputShape) before it is created.
       val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
       if(ret.size == 0) throw new LanguageException("Expected atleast 1 bottom layer for " + param.getName)
       computedBottomLayerOutputShape = ret(0).outputShape
@@ -487,28 +490,51 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
 
 class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with IsLossLayer {
   // -------------------------------------------------
-  override def sourceFileName = "softmax"
+  override def sourceFileName = if(!isSegmentationProblem()) "softmax" else "softmax2d" 
   override def init(dmlScript:StringBuilder) = {}
-  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
-    invokeForward(dmlScript, List[String](out), scores)
+  def isSegmentationProblem():Boolean = {
+    try {
+      return outputShape._2.toInt != 1 && outputShape._3.toInt != 1
+    } catch { 
+      case _:Throwable => throw new RuntimeException("Cannot infer the output dimensions:" + outputShape)
+    }
+  }
+  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = {
+    if(!isSegmentationProblem()) {
+      invokeForward(dmlScript, List[String](out), scores)
+    }
+    else {
+      invokeForward(dmlScript, List[String](out), scores, outputShape._1)
+    }
+  }
   override def backward(dmlScript:StringBuilder, outSuffix:String) =  {
-    invoke(dmlScript, "cross_entropy_loss::", List[String]("dProbs" + outSuffix), "backward", false, out, "yb")
-    dmlScript.append("; ") 
-    invoke(dmlScript, "softmax::", List[String]("dOut" + id + outSuffix), "backward", false, "dProbs", scores)
-    val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
-    dmlScript.append("; ")
-    bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
-    dmlScript.append("\n")
+    if(!isSegmentationProblem()) {
+      invoke(dmlScript, "cross_entropy_loss::", List[String]("dProbs" + outSuffix), "backward", false, out, "yb")
+      dmlScript.append("; ") 
+      invoke(dmlScript, "softmax::", List[String]("dOut" + id + outSuffix), "backward", false, "dProbs", scores)
+      val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+      dmlScript.append("; ")
+      bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+      dmlScript.append("\n")
+    }
+    else {
+      throw new RuntimeException("backward for SoftmaxWithLoss is not implemented for segmentation problem")
+    }
   }
   override def computeLoss(dmlScript:StringBuilder, numTabs:Int) = {
-    val tabBuilder = new StringBuilder
-    for(i <- 0 until numTabs) tabBuilder.append("\t")
-    val tabs = tabBuilder.toString
-    dmlScript.append("tmp_loss = cross_entropy_loss::forward(" + commaSep(out, "yb") + ")\n")
-    dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
-    dmlScript.append(tabs).append("true_yb = rowIndexMax(yb)\n")
-    dmlScript.append(tabs).append("predicted_yb = rowIndexMax(" + out + ")\n")
-    dmlScript.append(tabs).append("accuracy = mean(predicted_yb == true_yb)*100\n")
+    if(!isSegmentationProblem()) {
+      val tabBuilder = new StringBuilder
+      for(i <- 0 until numTabs) tabBuilder.append("\t")
+      val tabs = tabBuilder.toString
+      dmlScript.append("tmp_loss = cross_entropy_loss::forward(" + commaSep(out, "yb") + ")\n")
+      dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
+      dmlScript.append(tabs).append("true_yb = rowIndexMax(yb)\n")
+      dmlScript.append(tabs).append("predicted_yb = rowIndexMax(" + out + ")\n")
+      dmlScript.append(tabs).append("accuracy = mean(predicted_yb == true_yb)*100\n")
+    }
+    else {
+      throw new RuntimeException("Computation of loss for SoftmaxWithLoss is not implemented for segmentation problem")
+    }
   }
   def scores():String = {
 	  val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
@@ -840,8 +866,15 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
 }
 
 class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  def isDepthWise():Boolean = {
+    if(param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1 && numChannels.toInt % param.getConvolutionParam.getGroup != 0) 
+      throw new DMLRuntimeException("The number of groups=" + param.getConvolutionParam.getGroup + " is not supported as it is not divisible by number of channels" + numChannels + ".")
+    param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1
+  }
+  def depthMultiplier():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
+  
   // -------------------------------------------------
-  override def sourceFileName = "conv2d_builtin";
+  override def sourceFileName = if(isDepthWise) "conv2d_builtin_depthwise" else "conv2d_builtin" 
   /*
    * Initialize the parameters of this layer.
    *
@@ -854,9 +887,15 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    * assumption of relu neurons.
    *  - http://arxiv.org/abs/1502.01852
    *
-   * Inputs:
+   * Inputs without depthwise:
    *  - F: Number of filters.
    *  - C: Number of input channels (dimensionality of depth).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *
+   * Inputs with depthwise:
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - M: Number of filters per input channel (i.e. depth multiplier).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *
@@ -864,7 +903,12 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    *  - W: Weights, of shape (F, C*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  override def init(dmlScript:StringBuilder) = invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  override def init(dmlScript:StringBuilder) = {
+    if(isDepthWise)
+      invokeInit(dmlScript, List[String](weight, bias), numChannels, depthMultiplier, kernel_h, kernel_w)
+    else
+      invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  }
   /*
    * Computes the forward pass for a 2D spatial convolutional layer with
    * F filters.  The input data has N examples, each represented as a 3D
@@ -880,6 +924,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  (only for depthwise) - M: Number of filters per input channel (i.e. depth multiplier).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
@@ -900,9 +945,14 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    *  - Hout: Output height.
    *  - Wout: Output width.
    */
-  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
-    invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
+  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = {
+    if(isDepthWise)
+      invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
+        X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    else
+      invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  }
   /*
    * Computes the backward pass for a 2D spatial convolutional layer
    * with F filters.
@@ -918,6 +968,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  (only for depthwise) - M: Number of filters per input channel (i.e. depth multiplier).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
@@ -938,10 +989,18 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
    *  - db: Gradient wrt `b`, of shape (F, 1).
    */
-  override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
-  // n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
-  override def outputShape = ( numKernels, Hout, Wout )
+  override def backward(dmlScript:StringBuilder, outSuffix:String) =  {
+    if(isDepthWise)
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    else
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  }
+  // if not depthwise, n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
+  // else (N, C*M*Hout*Wout)
+  override def outputShape = {
+    if(isDepthWise) ( (numChannels.toInt*depthMultiplier.toInt).toString, Hout, Wout )
+    else ( numKernels, Hout, Wout )
+  }
   // -------------------------------------------------
   def numChannels = bottomLayerOutputShape._1
   def Hin = bottomLayerOutputShape._2
@@ -950,8 +1009,16 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   // -------------------------------------------------
   def convParam = param.getConvolutionParam
-  override def weightShape():Array[Int] = Array(numKernels.toInt, int_mult(numChannels, kernel_h, kernel_w).toInt)
-  override def biasShape():Array[Int] = Array(numKernels.toInt, 1)
+  // if depthwise (C, M*Hf*Wf) else (F, C*Hf*Wf)
+  override def weightShape():Array[Int] = {
+    if(isDepthWise) Array(numChannels.toInt, int_mult(depthMultiplier, kernel_h, kernel_w).toInt)
+    else Array(numKernels.toInt, int_mult(numChannels, kernel_h, kernel_w).toInt)
+  }
+  // if depthwise (C*M, 1) else (F, 1)
+  override def biasShape():Array[Int] = {
+    if(isDepthWise) Array(numChannels.toInt*depthMultiplier.toInt, 1)
+    else Array(numKernels.toInt, 1)
+  }
   // num_output (c_o): the number of filters
   def numKernels = convParam.getNumOutput.toString
   // kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
@@ -978,7 +1045,15 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
 }
 
 class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
-  override def sourceFileName: String = "conv2d_transpose"
+  def isDepthWise():Boolean = {
+    if(param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1 && numChannels.toInt % param.getConvolutionParam.getGroup != 0) 
+      throw new DMLRuntimeException("The number of groups=" + param.getConvolutionParam.getGroup + " is not supported as it is not divisible by number of channels" + numChannels + ".")
+    param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1
+  }
+  def depthMultiplier():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
+  
+  override def sourceFileName: String = if(isDepthWise) "conv2d_transpose_depthwise" else "conv2d_transpose" 
+  
   /*
    * Utility function to initialize the parameters of this layer.
    *
@@ -988,22 +1063,48 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    * assumption of relu neurons.
    *  - http://arxiv.org/abs/1502.01852
    *
-   * Inputs:
+   * Inputs without depthwise:
    *  - F: Number of filters.
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *
+   * Inputs with depthwise:
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - M: Depth of each filter (C must be divisible by M).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  
    * Outputs:
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  override def init(dmlScript: StringBuilder): Unit = 
-    invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
-    
-  override def weightShape():Array[Int] = Array(numKernels.toInt, int_mult(numChannels, kernel_h, kernel_w).toInt)
-  override def biasShape():Array[Int] = Array(numKernels.toInt, 1)
-    
+  override def init(dmlScript: StringBuilder): Unit = {
+    if(isDepthWise)
+      invokeInit(dmlScript, List[String](weight, bias), numChannels, depthMultiplier, kernel_h, kernel_w)
+    else
+      invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  }
+  
+  private def C_DivideBy_M():Int = numChannels.toInt / depthMultiplier.toInt
+  
+  // if depthwise (C/M, M*Hf*Wf), else (C, F*Hf*Wf) 
+  override def weightShape():Array[Int] = { 
+    if(isDepthWise)
+      Array(C_DivideBy_M, int_mult(depthMultiplier, kernel_h, kernel_w).toInt)
+    else
+      Array(numChannels.toInt, int_mult(numKernels, kernel_h, kernel_w).toInt)
+  }
+  // if depthwise (C/M, 1), else (F, 1)
+  override def biasShape():Array[Int] = {
+    if(isDepthWise)
+      Array(C_DivideBy_M, 1)
+    else
+      Array(numKernels.toInt, 1)
+  }
+  
+  private def numGroups:Int = if(param.getConvolutionParam.hasGroup) param.getConvolutionParam.getGroup else 1
+  
   /*
    * Computes the forward pass for a 2D spatial transpose convolutional
    * layer with F filters.  The input data has N examples, each
@@ -1011,18 +1112,19 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  (only for depthwise): - M: Depth of each filter (C must be divisible by M).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
    *  - stridew: Stride over width.
    *  - padh: Padding for top and bottom sides.
    *  - padw: Padding for left and right sides.
-   *  - out_padh: extra padding for top side. This should 
+   *  - out_padh: extra padding for top side. This should
    *      lie in [0, strideh-1].
    *  - out_padw: extra padding for right side. This should
    *      lie in [0, stridew-1].
@@ -1032,9 +1134,14 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    *  - Hout: Output height.
    *  - Wout: Output width.
    */
-  override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit =
-    invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
+  override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit = {
+    if(isDepthWise)
+      invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
+        X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
+    else
+      invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
+  }
         
   /*
    * Computes the backward pass for a 2D spatial transpose
@@ -1046,11 +1153,12 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    *  - Hout: Output height.
    *  - Wout: Output width.
    *  - X: Inputs, of shape (N, C*Hin*Win).
-   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - W: Weights, of shape (C, F*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  (only for depthwise): - M: Depth of each filter (C must be divisible by M).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
@@ -1060,14 +1168,20 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    *
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
-   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - dW: Gradient wrt `W`, of shape (C, F*Hf*Wf).
    *  - db: Gradient wrt `b`, of shape (F, 1).
    */
-  override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = {
+    if(isDepthWise)
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
+        dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    else
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
         dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
-  // n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
-  override def outputShape = ( numChannels, Hout, Wout )
+  }
+  // if not depthwise n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
+  // else (N, C/M*Hout*Wout)
+  override def outputShape = if(isDepthWise) ( C_DivideBy_M().toString, Hout, Wout ) else ( numChannels, Hout, Wout )
   // -------------------------------------------------
   def numChannels = bottomLayerOutputShape._1
   def Hin = bottomLayerOutputShape._2

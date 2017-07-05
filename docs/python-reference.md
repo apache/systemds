@@ -406,6 +406,10 @@ model.transform(df_test)
 </div>
 </div>
 
+Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemML 
+expects that labels have been converted to 1-based value.
+This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
+For scikit-learn API, there is no such requirement.
 
 The table below describes the parameter available for mllearn algorithms:
 

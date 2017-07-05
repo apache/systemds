@@ -163,6 +163,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
     new Caffe2DMLModel(this)
   }
 	// --------------------------------------------------------------
+  // Returns true if last 2 of 4 dimensions are 1.
+  // The first dimension refers to number of input datapoints.
+  // The second dimension refers to number of classes.
   def isClassification():Boolean = {
     val outShape = getOutputShapeOfLastLayer
     return outShape._2 == 1 && outShape._3 == 1

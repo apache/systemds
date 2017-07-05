@@ -871,7 +871,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
       throw new DMLRuntimeException("The number of groups=" + param.getConvolutionParam.getGroup + " is not supported as it is not divisible by number of channels" + numChannels + ".")
     param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1
   }
-  def depth():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
+  def depthMultiplier():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
   
   // -------------------------------------------------
   override def sourceFileName = if(isDepthWise) "conv2d_builtin_depthwise" else "conv2d_builtin" 
@@ -905,7 +905,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    */
   override def init(dmlScript:StringBuilder) = {
     if(isDepthWise)
-      invokeInit(dmlScript, List[String](weight, bias), numChannels, depth, kernel_h, kernel_w)
+      invokeInit(dmlScript, List[String](weight, bias), numChannels, depthMultiplier, kernel_h, kernel_w)
     else
       invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
   }
@@ -948,7 +948,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = {
     if(isDepthWise)
       invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
-        X, weight, bias, numChannels, Hin, Win, depth, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+        X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
     else
       invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
@@ -991,14 +991,14 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
    */
   override def backward(dmlScript:StringBuilder, outSuffix:String) =  {
     if(isDepthWise)
-      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depth, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
     else
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   }
   // if not depthwise, n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
   // else (N, C*M*Hout*Wout)
   override def outputShape = {
-    if(isDepthWise) ( (numChannels.toInt*depth.toInt).toString, Hout, Wout )
+    if(isDepthWise) ( (numChannels.toInt*depthMultiplier.toInt).toString, Hout, Wout )
     else ( numKernels, Hout, Wout )
   }
   // -------------------------------------------------
@@ -1011,12 +1011,12 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   def convParam = param.getConvolutionParam
   // if depthwise (C, M*Hf*Wf) else (F, C*Hf*Wf)
   override def weightShape():Array[Int] = {
-    if(isDepthWise) Array(numChannels.toInt, int_mult(depth, kernel_h, kernel_w).toInt)
+    if(isDepthWise) Array(numChannels.toInt, int_mult(depthMultiplier, kernel_h, kernel_w).toInt)
     else Array(numKernels.toInt, int_mult(numChannels, kernel_h, kernel_w).toInt)
   }
   // if depthwise (C*M, 1) else (F, 1)
   override def biasShape():Array[Int] = {
-    if(isDepthWise) Array(numChannels.toInt*depth.toInt, 1)
+    if(isDepthWise) Array(numChannels.toInt*depthMultiplier.toInt, 1)
     else Array(numKernels.toInt, 1)
   }
   // num_output (c_o): the number of filters
@@ -1050,7 +1050,7 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
       throw new DMLRuntimeException("The number of groups=" + param.getConvolutionParam.getGroup + " is not supported as it is not divisible by number of channels" + numChannels + ".")
     param.getConvolutionParam.hasGroup && param.getConvolutionParam.getGroup != 1
   }
-  def depth():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
+  def depthMultiplier():String = if(isDepthWise) (numChannels.toInt / param.getConvolutionParam.getGroup).toString else throw new DMLRuntimeException("Incorrect usage of depth")
   
   override def sourceFileName: String = if(isDepthWise) "conv2d_transpose_depthwise" else "conv2d_transpose" 
   
@@ -1081,17 +1081,17 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    */
   override def init(dmlScript: StringBuilder): Unit = {
     if(isDepthWise)
-      invokeInit(dmlScript, List[String](weight, bias), numChannels, depth, kernel_h, kernel_w)
+      invokeInit(dmlScript, List[String](weight, bias), numChannels, depthMultiplier, kernel_h, kernel_w)
     else
       invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
   }
   
-  private def C_DivideBy_M():Int = numChannels.toInt / depth.toInt
+  private def C_DivideBy_M():Int = numChannels.toInt / depthMultiplier.toInt
   
   // if depthwise (C/M, M*Hf*Wf), else (C, F*Hf*Wf) 
   override def weightShape():Array[Int] = { 
     if(isDepthWise)
-      Array(C_DivideBy_M, int_mult(depth, kernel_h, kernel_w).toInt)
+      Array(C_DivideBy_M, int_mult(depthMultiplier, kernel_h, kernel_w).toInt)
     else
       Array(numChannels.toInt, int_mult(numKernels, kernel_h, kernel_w).toInt)
   }
@@ -1137,7 +1137,7 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
   override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit = {
     if(isDepthWise)
       invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
-        X, weight, bias, numChannels, Hin, Win, depth, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
+        X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
     else
       invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
@@ -1174,7 +1174,7 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
   override def backward(dmlScript:StringBuilder, outSuffix:String) = {
     if(isDepthWise)
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
-        dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depth, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+        dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, depthMultiplier, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
     else
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
         dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)

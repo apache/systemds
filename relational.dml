@@ -1,6 +1,0 @@
-A = rand(rows=10, cols=10)
-B = rand(rows=10, cols=10)
-
-C = A >= B
-
-print(toString(C))

@@ -262,28 +262,32 @@ if __name__ == '__main__':
     # Remove duplicates algorithms and used as default inputs
     all_algos = set(reduce(lambda x, y: x + y, ML_ALGO.values()))
 
+    # Families
+    all_families = ML_ALGO.keys()
+
     # Argparse Module
     cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
-    cparser.add_argument('--family', help='specify class of algorithms (available : ' + ', '.join(ML_ALGO.keys()) + ')',
-                         metavar='', choices=ML_ALGO.keys(), nargs='+')
-    cparser.add_argument('--algo', help='specify the type of algorithm to run '
-                         '(Overrides --family, available : ' + ', '.join(all_algos) + ')', metavar='',
+    cparser.add_argument('--family', help='space separated list of classes of algorithms '
+                         '(available : ' + ', '.join(sorted(all_families)) + ')',
+                         metavar='', choices=all_families, nargs='+')
+    cparser.add_argument('--algo', help='space separated list of algorithm to run '
+                         '(Overrides --family, available : ' + ', '.join(sorted(all_algos)) + ')', metavar='',
                          choices=all_algos, nargs='+')
 
     cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
-                         '(e.g singlenode, spark-hybrid)', metavar='',
+                         '(available : singlenode, spark-hybrid)', metavar='',
                          choices=default_execution_mode)
-    cparser.add_argument('--mat-type', default=default_mat_type, help='type of matrix to generate '
-                         '(e.g dense or sparse)', metavar='', choices=default_mat_type,
+    cparser.add_argument('--mat-type', default=default_mat_type, help='space separated list of types of matrix to generate '
+                         '(available : dense, sparse)', metavar='', choices=default_mat_type,
                          nargs='+')
-    cparser.add_argument('--mat-shape', default=default_mat_shape, help='shape of matrix '
-                         'to generate (e.g 10k_1k)', metavar='', nargs='+')
-    cparser.add_argument('--temp-dir', default=default_temp_dir, help='specify temporary directory',
-                         metavar='')
-    cparser.add_argument('--filename', default='perf_test', help='specify output file for the perf'
-                         ' metics', metavar='')
+    cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
+                         'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')
+    cparser.add_argument('--temp-dir', default=default_temp_dir, help='temporary directory '
+                        'where generated, training and prediction data is put', metavar='')
+    cparser.add_argument('--filename', default='perf_test', help='name of the output file for the perf'
+                         ' metrics', metavar='')
     cparser.add_argument('--mode', default=default_workload,
-                         help='specify type of workload to run (e.g data-gen, train, predict)',
+                         help='space separated list of types of workloads to run (available: data-gen, train, predict)',
                          metavar='', choices=default_workload, nargs='+')
 
     # Args is a namespace

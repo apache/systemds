@@ -84,6 +84,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -716,9 +717,12 @@ public class SpoofCompiler
 			}
 			
 			//remove cplan w/ single op and w/o agg
-			if( (tpl instanceof CNodeCell && ((((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& TemplateUtils.hasSingleOperation(tpl)) || TemplateUtils.hasNoOperation(tpl)))
-				|| tpl instanceof CNodeRow && TemplateUtils.hasSingleOperation(tpl)) 
+			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
+					&& TemplateUtils.hasSingleOperation(tpl) )
+				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1)
+					&& TemplateUtils.hasSingleOperation(tpl))
+				|| TemplateUtils.hasNoOperation(tpl) ) 
 				cplans2.remove(e.getKey());
 				
 			//remove cplan if empty

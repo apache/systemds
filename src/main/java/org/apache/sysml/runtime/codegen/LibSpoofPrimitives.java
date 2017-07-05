@@ -644,6 +644,168 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
+	//custom cumsum
+	
+	public static void vectCumsumAdd(double[] a, double[] c, int ai, int ci, int len) {
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val += a[ai * j]; 
+			c[ci+j] += val;
+		}
+	}
+
+	public static void vectCumsumAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			for( int j2=lastIx+1; j2<aix[j]; j2++ )
+				c[j2] += val;
+			//update value and add current index
+			val += a[j];
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		for( int j2=lastIx+1; j2<len; j2++ )
+			c[j2] += val;
+	}
+	
+	public static double[] vectCumsumWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val += a[ai+j];
+			c[j] = val;
+		}
+		return c;
+	}
+
+	public static double[] vectCumsumWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			Arrays.fill(c, lastIx+1, aix[j], val);
+			//update value and add current index
+			val += a[j];
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		Arrays.fill(c, lastIx+1, len, val);
+		return c;
+	}
+
+	//custom cummin
+	
+	public static void vectCumminAdd(double[] a, double[] c, int ai, int ci, int len) {
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val = Math.min(val, a[ai * j]); 
+			c[ci+j] += val;
+		}
+	}
+
+	public static void vectCumminAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			for( int j2=lastIx+1; j2<aix[j]; j2++ )
+				c[j2] += val;
+			//update value and add current index
+			val = Math.min(val, a[j]);
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		for( int j2=lastIx+1; j2<len; j2++ )
+			c[j2] += val;
+	}
+	
+	public static double[] vectCumminWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val = Math.min(val, a[ai+j]);
+			c[j] = val;
+		}
+		return c;
+	}
+
+	public static double[] vectCumminWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			Arrays.fill(c, lastIx+1, aix[j], val);
+			//update value and add current index
+			val = Math.min(val, a[j]);
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		Arrays.fill(c, lastIx+1, len, val);
+		return c;
+	}
+	
+	//custom cummax
+
+	public static void vectCummaxAdd(double[] a, double[] c, int ai, int ci, int len) {
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val = Math.max(val, a[ai * j]); 
+			c[ci+j] += val;
+		}
+	}
+
+	public static void vectCummaxAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			for( int j2=lastIx+1; j2<aix[j]; j2++ )
+				c[j2] += val;
+			//update value and add current index
+			val = Math.max(val, a[j]);
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		for( int j2=lastIx+1; j2<len; j2++ )
+			c[j2] += val;
+	}
+	
+	public static double[] vectCummaxWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		for( int j = 0; j < len; j++ ) {
+			val = Math.max(val, a[ai+j]);
+			c[j] = val;
+		}
+		return c;
+	}
+
+	public static double[] vectCummaxWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, false);
+		double val = 0;
+		int lastIx = -1;
+		for( int j = ai; j < ai+alen; j++ ) {
+			//add non-existing indexes
+			Arrays.fill(c, lastIx+1, aix[j], val);
+			//update value and add current index
+			val = Math.max(val, a[j]);
+			c[aix[j]] = val;
+			lastIx = aix[j];
+		}
+		//add non-existing indexes
+		Arrays.fill(c, lastIx+1, len, val);
+		return c;
+	}
+	
 	//custom log
 	
 	public static void vectLogAdd(double[] a, double[] c, int ai, int ci, int len) {

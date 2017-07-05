@@ -31,6 +31,7 @@ public class CNodeUnary extends CNode
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
+		VECT_CUMSUM, VECT_CUMMIN, VECT_CUMMAX,
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
@@ -62,7 +63,10 @@ public class CNodeUnary extends CNode
 				case VECT_ROUND:
 				case VECT_CEIL:
 				case VECT_FLOOR:
-				case VECT_SIGN: {
+				case VECT_SIGN:
+				case VECT_CUMSUM:
+				case VECT_CUMMIN:
+				case VECT_CUMMAX:{
 					String vectName = getVectorPrimitiveName();
 					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" : 
 									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
@@ -128,7 +132,9 @@ public class CNodeUnary extends CNode
 				|| this == VECT_MULT2 || this == VECT_SQRT
 				|| this == VECT_LOG || this == VECT_ABS
 				|| this == VECT_ROUND || this == VECT_CEIL
-				|| this == VECT_FLOOR || this == VECT_SIGN;
+				|| this == VECT_FLOOR || this == VECT_SIGN
+				|| this == VECT_CUMSUM || this == VECT_CUMMIN
+				|| this == VECT_CUMMAX;
 		}
 		public UnaryType getVectorAddPrimitive() {
 			return UnaryType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
@@ -212,6 +218,9 @@ public class CNodeUnary extends CNode
 			case VECT_ROUND:
 			case VECT_CEIL:
 			case VECT_FLOOR:
+			case VECT_CUMSUM:
+			case VECT_CUMMIN:
+			case VECT_CUMMAX:
 			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
 			case LOOKUP_R:  return "u(ixr)";
 			case LOOKUP_C:  return "u(ixc)";
@@ -235,7 +244,10 @@ public class CNodeUnary extends CNode
 			case VECT_ROUND:
 			case VECT_CEIL:
 			case VECT_FLOOR:
-			case VECT_SIGN:	
+			case VECT_SIGN:
+			case VECT_CUMSUM:
+			case VECT_CUMMIN:
+			case VECT_CUMMAX:
 				_rows = _inputs.get(0)._rows;
 				_cols = _inputs.get(0)._cols;
 				_dataType= DataType.MATRIX;

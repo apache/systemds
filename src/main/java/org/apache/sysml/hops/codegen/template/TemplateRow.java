@@ -57,7 +57,8 @@ public class TemplateRow extends TemplateBase
 {
 	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX};
 	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
-			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN};
+			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
+			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX};
 	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
 			OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX,
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
@@ -107,7 +108,8 @@ public class TemplateRow extends TemplateBase
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)))
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && isFuseSkinnyMatrixMult(hop) //MM
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
-				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1));
+				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
+			|| isPartOfValidCumAggChain(hop) ); //cum* with transpose
 	}
 
 	@Override
@@ -143,6 +145,24 @@ public class TemplateRow extends TemplateBase
 		Hop in2 = hop.getInput().get(1);
 		return LibMatrixMult.isSkinnyRightHandSide(in1.getDim2(), in1.getDim1(), hop.getDim1(), hop.getDim2())
 			|| LibMatrixMult.isSkinnyRightHandSide(in2.getDim1(), in2.getDim2(), hop.getDim2(), hop.getDim1());
+	}
+	
+	private static boolean isPartOfValidCumAggChain(Hop hop) {
+		//check if operation is part of t(cumsum(t(X))) chain, w/ single consumers
+		if( HopRewriteUtils.isTransposeOperation(hop) ) {
+			return (HopRewriteUtils.isUnary(hop.getInput().get(0), OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX)
+				&& hop.getParent().size()==1 && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0).getInput().get(0))
+				&& hop.getInput().get(0).getInput().get(0).getParent().size()==1)
+				|| (HopRewriteUtils.isUnary(hop.getParent().get(0), OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX)
+				&& hop.getParent().size()==1 && HopRewriteUtils.isTransposeOperation(hop.getParent().get(0).getParent().get(0))
+				&& hop.getParent().get(0).getParent().size()==1);
+		}
+		else {
+			return (HopRewriteUtils.isUnary(hop, OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX)
+				&& hop.getParent().size()==1 && HopRewriteUtils.isTransposeOperation(hop.getParent().get(0))
+				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
+				&& hop.getInput().get(0).getParent().size()==1);
+		}
 	}
 
 	@Override

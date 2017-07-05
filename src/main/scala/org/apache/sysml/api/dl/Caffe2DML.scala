@@ -51,7 +51,6 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
 
-
 /***************************************************************************************
 DESIGN OF CAFFE2DML:
 
@@ -164,6 +163,17 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
     new Caffe2DMLModel(this)
   }
 	// --------------------------------------------------------------
+  // Returns true if last 2 of 4 dimensions are 1.
+  // The first dimension refers to number of input datapoints.
+  // The second dimension refers to number of classes.
+  def isClassification():Boolean = {
+    val outShape = getOutputShapeOfLastLayer
+    return outShape._2 == 1 && outShape._3 == 1
+  }
+  def getOutputShapeOfLastLayer():(Int, Int, Int) = {
+    val out = net.getCaffeLayer(net.getLayers().last).outputShape
+    (out._1.toInt, out._2.toInt, out._3.toInt) 
+  }
   
   // Used for simplifying transfer learning
   private val layersToIgnore:HashSet[String] = new HashSet[String]() 
@@ -184,7 +194,23 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   
   def getTrainAlgo():String = if(inputs.containsKey("$train_algo")) inputs.get("$train_algo") else "minibatch"
   def getTestAlgo():String = if(inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
-    
+
+  def summary(sparkSession:org.apache.spark.sql.SparkSession):Unit = {
+    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom")
+    val entries = net.getLayers.map(l => (l, net.getCaffeLayer(l))).map(l => {
+      val layer = l._2
+      (l._1, layer.param.getType, 
+          "(, " + layer.outputShape._1 + ", " + layer.outputShape._2 + ", " + layer.outputShape._3 + ")",
+          if(layer.weightShape != null) "[" + layer.weightShape()(0) + " X " + layer.weightShape()(1) + "]" else "",
+          if(layer.biasShape != null) "[" + layer.biasShape()(0) + " X " + layer.biasShape()(1) + "]" else "",
+          layer.param.getTopList.mkString(","),
+          layer.param.getBottomList.mkString(",")
+      )
+    })
+    import sparkSession.implicits._
+    sc.parallelize(entries).toDF(header : _*).show(net.getLayers.size)
+  }
+  
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
 	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
@@ -252,6 +278,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
             assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[group_beg:group_end,]")
             assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[group_beg:group_end,]")
             initializeGradients("parallel_batches")
+            assign(tabDMLScript, "X_group_batch_size", nrow("X_group_batch"))
             parForBlock("j", "1", "parallel_batches") {
               // Get a mini-batch in this group
               assign(tabDMLScript, "beg", "((j-1) * " + Caffe2DML.batchSize + ") %% nrow(X_group_batch) + 1")
@@ -280,6 +307,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	          assign(tabDMLScript, "end", " min(beg +  " + Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
 	          assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[beg:end,]")
             assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[beg:end,]")
+            assign(tabDMLScript, "X_group_batch_size", nrow("X_group_batch"))
 	          tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
 	          val localBatchSize = "local_batch_size"
 	          initializeGradients(localBatchSize)
@@ -500,11 +528,14 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   }
   private def flattenGradients():Unit = {
     tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
+    // Note: We multiply by a weighting to allow for proper gradient averaging during the
+    // aggregation even with uneven batch sizes.
+    assign(tabDMLScript, "weighting", "nrow(Xb)/X_group_batch_size")
     net.getLayers.map(layer => net.getCaffeLayer(layer)).map(l => {
       if(l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", 
-          matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight)))) 
+          matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting") 
       if(l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", 
-          matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))))
+          matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias)))  + " * weighting")
     })
   }
   private def aggregateAggGradients():Unit = {
@@ -581,8 +612,8 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
 	  updateMeanVarianceForBatchNorm(net, false)
 	  
 	  val lossLayers = getLossLayers(net)
-	  
-	  assign(tabDMLScript, "Prob", matrix("0", Caffe2DML.numImages, numClasses))
+	  val lastLayerShape = estimator.getOutputShapeOfLastLayer
+	  assign(tabDMLScript, "Prob", matrix("0", Caffe2DML.numImages, (lastLayerShape._1*lastLayerShape._2*lastLayerShape._3).toString))
 	  estimator.getTestAlgo.toLowerCase match {
       case "minibatch" => {
         ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
@@ -623,7 +654,7 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
         }
       }
       case "allreduce" => {
-        // This setting doesnot use the batch size for scoring and allows the parfor optimizer to select plan
+        // This setting doesnot use the batch size for scoring and allows the parfor optimizer to select the best plan
         // by minimizing the memory requirement (i.e. batch size = 1)
         parForBlock("i", "1", Caffe2DML.numImages) {
           assign(tabDMLScript, "Xb", "X_full[i,]")
@@ -632,6 +663,18 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
         }
       }
       case _ => throw new DMLRuntimeException("Unsupported test algo:" + estimator.getTestAlgo)
+    }
+    
+    if(estimator.inputs.containsKey("$output_activations")) {
+      if(estimator.getTestAlgo.toLowerCase.equals("batch")) {
+        net.getLayers.map(layer => 
+          tabDMLScript.append(write(net.getCaffeLayer(layer).out, 
+              estimator.inputs.get("$output_activations") + "/" + net.getCaffeLayer(layer).param.getName + "_activations.mtx", "csv") + "\n")
+        )  
+      }
+      else {
+        throw new DMLRuntimeException("Incorrect usage of output_activations. It should be only used in batch mode.")
+      }
     }
 		
 		val predictionScript = dmlScript.toString()
@@ -655,9 +698,36 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
   
   // Prediction
   def transform(X: MatrixBlock): MatrixBlock = {
-	  baseTransform(X, sc, "Prob")
+    if(estimator.isClassification) {
+      Caffe2DML.LOG.debug("Prediction assuming classification")
+      baseTransform(X, sc, "Prob")
+    }
+    else {
+      Caffe2DML.LOG.debug("Prediction assuming segmentation")
+      val outShape = estimator.getOutputShapeOfLastLayer
+      baseTransform(X, sc, "Prob", outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
+    }
   }
+  def transform_probability(X: MatrixBlock): MatrixBlock = {
+    if(estimator.isClassification) {
+      Caffe2DML.LOG.debug("Prediction of probability assuming classification")
+      baseTransformProbability(X, sc, "Prob")
+    }
+    else {
+      Caffe2DML.LOG.debug("Prediction of probability assuming segmentation")
+      val outShape = estimator.getOutputShapeOfLastLayer
+      baseTransformProbability(X, sc, "Prob", outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
+    }
+  } 
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = {
-	  baseTransform(df, sc, "Prob")
+    if(estimator.isClassification) {
+      Caffe2DML.LOG.debug("Prediction assuming classification")
+      baseTransform(df, sc, "Prob", true)
+    }
+    else {
+      Caffe2DML.LOG.debug("Prediction assuming segmentation")
+      val outShape = estimator.getOutputShapeOfLastLayer
+      baseTransform(df, sc, "Prob", true, outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
+    }
   }
 }

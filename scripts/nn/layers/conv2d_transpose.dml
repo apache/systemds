@@ -236,4 +236,3 @@ init_bilinear = function(int C, int K)
 
   b = matrix(0, rows=C, cols=1)
 }
-

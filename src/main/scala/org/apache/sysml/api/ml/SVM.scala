@@ -116,5 +116,6 @@ class SVMModel (override val uid: String)(estimator:SVM, val sc: SparkContext, v
   }
   
   def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "scores")
+  def transform_probability(X: MatrixBlock): MatrixBlock = baseTransformProbability(X, sc, "scores")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "scores")
 }

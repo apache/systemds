@@ -110,6 +110,7 @@ class NaiveBayesModel(override val uid: String)
   
   def baseEstimator():BaseSystemMLEstimator = estimator
   def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "probs")
+  def transform_probability(X: MatrixBlock): MatrixBlock = baseTransformProbability(X, sc, "probs")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "probs")
   
 }

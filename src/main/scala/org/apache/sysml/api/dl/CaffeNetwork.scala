@@ -208,8 +208,8 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   
   // Helper functions
   private def checkKey(m:Map[String, Any], key:String): Boolean = {
-    if(m == null) throw new LanguageException("Map is null")
-    else if(key == null) throw new LanguageException("key is null")
+    if(m == null) throw new LanguageException("Map is null (key=" + key + ")")
+    else if(key == null) throw new LanguageException("key is null (map=" + m + ")")
     else m.containsKey(key)
   }
   private def convertLayerParameterToCaffeLayer(param:LayerParameter):CaffeLayer = {

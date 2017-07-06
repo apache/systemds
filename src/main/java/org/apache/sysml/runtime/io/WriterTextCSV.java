@@ -64,9 +64,9 @@ public class WriterTextCSV extends MatrixWriter
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 			
@@ -81,9 +81,9 @@ public class WriterTextCSV extends MatrixWriter
 		throws IOException, DMLRuntimeException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		MatrixBlock src = new MatrixBlock((int)rlen, 1, true);
 		writeCSVMatrixToHDFS(path, job, fs, src, _props);
 
@@ -245,7 +245,7 @@ public class WriterTextCSV extends MatrixWriter
 
 		Path srcFilePath = new Path(srcFileName);
 		Path destFilePath = new Path(destFileName);
-		FileSystem hdfs = FileSystem.get(conf);
+		FileSystem fs = IOUtilFunctions.getFileSystem(srcFilePath, conf);
 		
 		if ( !_props.hasHeader() ) {
 			// simply move srcFile to destFile
@@ -259,22 +259,17 @@ public class WriterTextCSV extends MatrixWriter
 			 */
 			
 			// delete the destination file, if exists already
-			//boolean ret1 = 
-			hdfs.delete(destFilePath, true);
+			fs.delete(destFilePath, true);
 			
 			// Create /user/biadmin/csv/temp/out/file.csv so that ..../temp/out/ is created.
-			//boolean ret2 = 
-			hdfs.createNewFile(destFilePath);
+			fs.createNewFile(destFilePath);
 			
 			// delete the file "file.csv" but preserve the directory structure /user/biadmin/csv/temp/out/
-			//boolean ret3 = 
-			hdfs.delete(destFilePath, true);
+			fs.delete(destFilePath, true);
 			
 			// finally, move the data to destFilePath = /user/biadmin/csv/temp/out/file.csv
-			//boolean ret4 = 
-			hdfs.rename(srcFilePath, destFilePath);
+			fs.rename(srcFilePath, destFilePath);
 
-			//System.out.println("Return values = del:" + ret1 + ", createNew:" + ret2 + ", del:" + ret3 + ", rename:" + ret4);
 			return;
 		}
 	
@@ -287,11 +282,11 @@ public class WriterTextCSV extends MatrixWriter
 		}
 		sb.append('\n');
 
-		if (hdfs.isDirectory(srcFilePath)) {
+		if (fs.isDirectory(srcFilePath)) {
 
 			// compute sorted order among part files
 			ArrayList<Path> files=new ArrayList<Path>();
-			for(FileStatus stat: hdfs.listStatus(srcFilePath, CSVReblockMR.hiddenFileFilter))
+			for(FileStatus stat: fs.listStatus(srcFilePath, CSVReblockMR.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);
 		
@@ -300,14 +295,14 @@ public class WriterTextCSV extends MatrixWriter
 			
 			// create a temp file, and add header and contents of first part
 			Path tmp = new Path(firstpart.toString() + ".tmp");
-			OutputStream out = hdfs.create(tmp, true);
+			OutputStream out = fs.create(tmp, true);
 			out.write(sb.toString().getBytes());
 			sb.setLength(0);
 			
 			// copy rest of the data from firstpart
 			InputStream in = null;
 			try {
-				in = hdfs.open(firstpart);
+				in = fs.open(firstpart);
 				IOUtils.copyBytes(in, out, conf, true);
 			} finally {
 				IOUtilFunctions.closeSilently(in);
@@ -315,18 +310,18 @@ public class WriterTextCSV extends MatrixWriter
 			}
 			
 			// rename tmp to firstpart
-			hdfs.delete(firstpart, true);
-			hdfs.rename(tmp, firstpart);
+			fs.delete(firstpart, true);
+			fs.rename(tmp, firstpart);
 			
 			// rename srcfile to destFile
-			hdfs.delete(destFilePath, true);
-			hdfs.createNewFile(destFilePath); // force the creation of directory structure
-			hdfs.delete(destFilePath, true);  // delete the file, but preserve the directory structure
-			hdfs.rename(srcFilePath, destFilePath); // move the data 
+			fs.delete(destFilePath, true);
+			fs.createNewFile(destFilePath); // force the creation of directory structure
+			fs.delete(destFilePath, true);  // delete the file, but preserve the directory structure
+			fs.rename(srcFilePath, destFilePath); // move the data 
 		
-		} else if (hdfs.isFile(srcFilePath)) {
+		} else if (fs.isFile(srcFilePath)) {
 			// create destination file
-			OutputStream out = hdfs.create(destFilePath, true);
+			OutputStream out = fs.create(destFilePath, true);
 			
 			// write header
 			out.write(sb.toString().getBytes());
@@ -335,7 +330,7 @@ public class WriterTextCSV extends MatrixWriter
 			// copy the data from srcFile
 			InputStream in = null;
 			try {
-				in = hdfs.open(srcFilePath);
+				in = fs.open(srcFilePath);
 				IOUtils.copyBytes(in, out, conf, true);
 			} 
 			finally {

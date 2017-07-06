@@ -81,10 +81,10 @@ public class ReorgGPUInstruction extends GPUInstruction
 		
 		//execute operation
 		ec.setMetaData(_output.getName(), rlen, clen);
-		LibMatrixCUDA.transpose(ec, getExtendedOpcode(), mat, _output.getName());
+		LibMatrixCUDA.transpose(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName());
 		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
-        ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

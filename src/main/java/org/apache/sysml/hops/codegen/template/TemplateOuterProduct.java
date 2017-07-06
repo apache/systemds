@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
@@ -85,7 +84,9 @@ public class TemplateOuterProduct extends TemplateBase {
 	@Override
 	public CloseType close(Hop hop) {
 		// close on second matrix multiply (after open) or unary aggregate
-		if( hop instanceof AggUnaryOp && HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0)) )
+		if( hop instanceof AggUnaryOp && HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+			|| (hop instanceof AggBinaryOp && (HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+				|| HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(1)))) )
 			return CloseType.CLOSED_INVALID;
 		else if( (hop instanceof AggUnaryOp) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop) 
@@ -126,13 +127,19 @@ public class TemplateOuterProduct extends TemplateBase {
 		CNodeOuterProduct tpl = new CNodeOuterProduct(inputs, output);
 		tpl.setOutProdType(TemplateUtils.getOuterProductType(X, U, V, hop));
 		tpl.setTransposeOutput(!HopRewriteUtils.isTransposeOperation(hop)
-			&& tpl.getOutProdType()==OutProdType.LEFT_OUTER_PRODUCT); 
+			&& tpl.getOutProdType()==OutProdType.LEFT_OUTER_PRODUCT);
+		tpl.setBeginLine(hop.getBeginLine());
+		
 		
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
 	}
 	
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 
 	{
+		//memoization for common subexpression elimination and to avoid redundant work 
+		if( tmp.containsKey(hop.getHopID()) )
+			return;
+		
 		//recursively process required childs
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OuterProdTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
@@ -160,16 +167,14 @@ public class TemplateOuterProduct extends TemplateBase {
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
 			
-			if( (cdata1.getNumRows() > 1 && cdata1.getNumCols() == 1) || (cdata1.getNumRows() == 1 && cdata1.getNumCols() > 1) ) {
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			}
-			if( (cdata2.getNumRows() > 1 && cdata2.getNumCols() == 1) || (cdata2.getNumRows() == 1 && cdata2.getNumCols() > 1) ) {
-				cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
+			if( HopRewriteUtils.isEqualSize(hop.getInput().get(0), hop.getInput().get(1)) ) {
+				Hop main = hop.getInput().get((cdata1 instanceof CNodeData) ? 0 : 1);
+				inHops2.put("_X", main);
 			}
 			
-			if( HopRewriteUtils.isEqualSize(hop.getInput().get(0), hop.getInput().get(1))
-				&& hop.getInput().get(0) instanceof DataOp )
-				inHops2.put("_X", hop.getInput().get(0));
+			//add lookups if required
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
 			
 			out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
 		}
@@ -178,11 +183,11 @@ public class TemplateOuterProduct extends TemplateBase {
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			
-			//handle tanspose in outer or final product
+			//handle transpose in outer or final product
 			cdata1 = TemplateUtils.skipTranspose(cdata1, hop.getInput().get(0), tmp, compileLiterals);
 			cdata2 = TemplateUtils.skipTranspose(cdata2, hop.getInput().get(1), tmp, compileLiterals);
 			
-			//outerproduct U%*%t(V), see open
+			//outer product U%*%t(V), see open
 			if( HopRewriteUtils.isOuterProductLikeMM(hop) )
 			{
 				//keep U and V for later reference
@@ -213,5 +218,28 @@ public class TemplateOuterProduct extends TemplateBase {
 		}
 		
 		tmp.put(hop.getHopID(), out);
+	}
+
+	protected static MemoTableEntry dropAlternativePlan(CPlanMemoTable memo, MemoTableEntry me1, MemoTableEntry me2) {
+		//if there are two alternative sub plans with references to disjoint outer product plans
+		//drop the one that would render the other invalid
+		if( me1.countPlanRefs()==1 && me2.countPlanRefs()==1 
+			&& me1.getPlanRefIndex() != me2.getPlanRefIndex() ) 
+		{
+			Hop c1 = memo._hopRefs.get(me1.input(me1.getPlanRefIndex()));
+			Hop c2 = memo._hopRefs.get(me2.input(me2.getPlanRefIndex()));
+			
+			if( memo.contains(c1.getHopID(), TemplateType.OuterProdTpl) 
+				&& memo.contains(c2.getHopID(), TemplateType.OuterProdTpl) )
+			{
+				if( HopRewriteUtils.isBinaryMatrixMatrixOperation(c1) 
+					&& HopRewriteUtils.isBinary(c1, OpOp2.MULT, OpOp2.DIV) )
+					return me1;
+				if( HopRewriteUtils.isBinaryMatrixMatrixOperation(c2) 
+					&& HopRewriteUtils.isBinary(c2, OpOp2.MULT, OpOp2.DIV) )
+					return me2;
+			}
+		}
+		return null;
 	}
 }

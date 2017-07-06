@@ -924,7 +924,7 @@ public class LibMatrixBincell
 				
 				if( copyOnes ) { //SPECIAL CASE: e.g., (X != 0) 
 					//create sparse row without repeated resizing
-					SparseRow crow = new SparseRow(alen);
+					SparseRowVector crow = new SparseRowVector(alen);
 					crow.setSize(alen);
 					
 					//memcopy/memset of indexes/values (sparseblock guarantees absence of 0s) 
@@ -1082,7 +1082,7 @@ public class LibMatrixBincell
 						
 						//temp
 						SparseRow thisRow = c.get(r);
-						c.set(r, new SparseRow(estimateSize, clen), false);
+						c.set(r, new SparseRowVector(estimateSize, clen), false);
 						
 						if(thisRow!=null)
 						{
@@ -1105,7 +1105,7 @@ public class LibMatrixBincell
 				for(int r=0; r<rlen; r++)
 				{
 					if( !b.isEmpty(r) ) {
-						SparseRow tmp = new SparseRow( b.size(r), clen );
+						SparseRow tmp = new SparseRowVector( b.size(r), clen );
 						appendRightForSparseBinary(op, b.values(r), b.indexes(r), b.pos(r), b.size(r), 0, r, m1ret);
 						m1ret.sparseBlock.set(r, tmp, false);
 					}

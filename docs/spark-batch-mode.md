@@ -43,22 +43,22 @@ mode in more depth.
 
 SystemML can be invoked in Hadoop Batch mode using the following syntax:
 
-    spark-submit SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
+    spark-submit SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
 
 The DML script to invoke is specified after the `-f` argument. Configuration settings can be passed to SystemML
-using the optional `-config=` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
+using the optional `-config ` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
 arguments (`-args`). Named arguments are preferred over positional arguments. Positional arguments are considered
 to be deprecated. All the primary algorithm scripts included with SystemML use named arguments.
 
 
 **Example #1: DML Invocation with Named Arguments**
 
-    spark-submit systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
+    spark-submit SystemML.jar -f scripts/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
 
 
 **Example #2: DML Invocation with Positional Arguments**
 
-	spark-submit systemml/SystemML.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
+	spark-submit SystemML.jar -f src/test/scripts/applications/linear_regression/LinearRegression.dml -args "v" "y" 0.00000001 "w"
 
 # Execution modes
 
@@ -77,8 +77,8 @@ For best performance, we recommend setting the following flags when running Syst
 # Examples
 
 Please see the MNIST examples in the included
-[SystemML-NN](https://github.com/apache/incubator-systemml/tree/master/scripts/staging/SystemML-NN)
+[SystemML-NN](https://github.com/apache/systemml/tree/master/scripts/nn)
 library for examples of Spark Batch mode execution with SystemML to train MNIST classifiers:
 
-  * [MNIST Softmax Classifier](https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_softmax-train.dml)
-  * [MNIST LeNet ConvNet](https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_lenet-train.dml)
+  * [MNIST Softmax Classifier](https://github.com/apache/systemml/blob/master/scripts/nn/examples/mnist_softmax-train.dml)
+  * [MNIST LeNet ConvNet](https://github.com/apache/systemml/blob/master/scripts/nn/examples/mnist_lenet-train.dml)

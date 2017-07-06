@@ -50,9 +50,9 @@ public class WriterBinaryBlock extends MatrixWriter
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 
@@ -76,8 +76,8 @@ public class WriterBinaryBlock extends MatrixWriter
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
-		FileSystem fs = FileSystem.get(job);
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		SequenceFile.Writer writer = null;
 		try {
 			writer = new SequenceFile.Writer(fs, job, path,
@@ -268,7 +268,7 @@ public class WriterBinaryBlock extends MatrixWriter
 			throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )

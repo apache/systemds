@@ -31,6 +31,20 @@ x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChanne
 w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), rows=numFilters, cols=numChannels*filterSize*filterSize)
 b=matrix(seq(1, numFilters), rows=numFilters, cols=1) 
 
+if($9) {
+	zero_mask = (x - mean(x)) > 0 
+	x = x * zero_mask
+}
+else {
+	x = x - mean(x)
+}
+if($10) {
+	zero_mask = (w - mean(w)) > 0 
+	w = w * zero_mask
+}
+else {
+	w = w - mean(w)
+}
 output = conv2d(x, w, padding=[pad, pad], stride=[stride, stride], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize], bias=b)
 output = bias_add(output, b) 
 write(output, $8, format="text")

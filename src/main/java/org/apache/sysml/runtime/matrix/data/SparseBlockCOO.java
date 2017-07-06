@@ -218,7 +218,7 @@ public class SparseBlockCOO extends SparseBlock
 	@Override
 	public int size(int r) {
 		int pos = pos(r);
-		if( _rindexes[pos]!=r )
+		if( pos>=_size || _rindexes[pos]!=r )
 			return 0;
 		
 		//count number of equal row indexes
@@ -417,7 +417,7 @@ public class SparseBlockCOO extends SparseBlock
 		int pos = pos(r);
 		int len = size(r);
 		
-		SparseRow row = new SparseRow(len);
+		SparseRowVector row = new SparseRowVector(len);
 		System.arraycopy(_cindexes, pos, row.indexes(), 0, len);
 		System.arraycopy(_values, pos, row.values(), 0, len);
 		row.setSize(len);

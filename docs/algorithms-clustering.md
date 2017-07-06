@@ -123,10 +123,10 @@ apart is a "false negative" etc.
                                     maxi=[int]
                                     tol=[double]
                                     samp=[int]
-                                    isY=[int]
+                                    isY=[boolean]
                                     Y=[file]
                                     fmt=[format]
-                                    verb=[int]
+                                    verb=[boolean]
 </div>
 <div data-lang="Spark" markdown="1">
     $SPARK_HOME/bin/spark-submit --master yarn-cluster
@@ -134,7 +134,7 @@ apart is a "false negative" etc.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          C=[file]
@@ -143,10 +143,10 @@ apart is a "false negative" etc.
                                          maxi=[int]
                                          tol=[double]
                                          samp=[int]
-                                         isY=[int]
+                                         isY=[boolean]
                                          Y=[file]
                                          fmt=[format]
-                                         verb=[int]
+                                         verb=[boolean]
 </div>
 </div>
 
@@ -168,7 +168,7 @@ apart is a "false negative" etc.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=[file]
                                          C=[file]
@@ -203,14 +203,14 @@ in the centroid initialization procedure
 available mapping of records to clusters (defined by the output
 centroids)
 
-**isY**: (default: `0`) `0` = do not write matrix $Y$, `1` = write $Y$
+**isY**: (default: `FALSE`) Do not write matrix $Y$
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
-**verb**: (default: `0`) `0` = do not print per-iteration statistics for
-each run, `1` = print them (the "verbose" option)
+**verb**: (default: `FALSE`) Do not print per-iteration statistics for
+each run
 
 
 ### Arguments - K-Means Prediction
@@ -260,7 +260,7 @@ standard output
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
@@ -289,7 +289,7 @@ standard output
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
@@ -322,7 +322,7 @@ To predict Y given X and C:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
@@ -348,7 +348,7 @@ given X and C:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
@@ -373,7 +373,7 @@ labels prY:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs spY=/user/ml/Y.mtx
                                          prY=/user/ml/PredY.mtx

@@ -32,6 +32,7 @@ import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -80,25 +81,45 @@ public class MLContextParforDatasetTest extends AutomatedTestBase
 
 	@Test
 	public void testParforDatasetVector() {
-		runMLContextParforDatasetTest(true, false);
+		runMLContextParforDatasetTest(true, false, false);
 	}
 	
 	@Test
 	public void testParforDatasetRow() {
-		runMLContextParforDatasetTest(false, false);
+		runMLContextParforDatasetTest(false, false, false);
 	}
 	
 	@Test
 	public void testParforDatasetVectorUnkownDims() {
-		runMLContextParforDatasetTest(true, true);
+		runMLContextParforDatasetTest(true, true, false);
 	}
 	
 	@Test
 	public void testParforDatasetRowUnknownDims() {
-		runMLContextParforDatasetTest(false, true);
+		runMLContextParforDatasetTest(false, true, false);
 	}
 	
-	private void runMLContextParforDatasetTest(boolean vector, boolean unknownDims) 
+	@Test
+	public void testParforDatasetVectorMulti() {
+		runMLContextParforDatasetTest(true, false, true);
+	}
+	
+	@Test
+	public void testParforDatasetRowMulti() {
+		runMLContextParforDatasetTest(false, false, true);
+	}
+	
+	@Test
+	public void testParforDatasetVectorUnkownDimsMulti() {
+		runMLContextParforDatasetTest(true, true, true);
+	}
+	
+	@Test
+	public void testParforDatasetRowUnknownDimsMulti() {
+		runMLContextParforDatasetTest(false, true, true);
+	}
+	
+	private void runMLContextParforDatasetTest(boolean vector, boolean unknownDims, boolean multiInputs) 
 	{
 		//modify memory budget to trigger fused datapartition-execute
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
@@ -119,21 +140,34 @@ public class MLContextParforDatasetTest extends AutomatedTestBase
 			MatrixMetadata mm = new MatrixMetadata(vector ? MatrixFormat.DF_VECTOR_WITH_INDEX : MatrixFormat.DF_DOUBLES_WITH_INDEX);
 			mm.setMatrixCharacteristics(mc2);
 			
-			String s = "v = matrix(0, rows=nrow(X), cols=1)"
+			String s1 = "v = matrix(0, rows=nrow(X), cols=1)"
 					+ "parfor(i in 1:nrow(X), log=DEBUG) {"
 					+ "   v[i, ] = sum(X[i, ]);"
 					+ "}"
 					+ "r = sum(v);";
+			String s2 = "v = matrix(0, rows=nrow(X), cols=1)"
+					+"Y = X;"
+					+ "parfor(i in 1:nrow(X), log=DEBUG) {"
+					+ "   v[i, ] = sum(X[i, ]+Y[i, ]);"
+					+ "}"
+					+ "r = sum(v);";
+			String s = multiInputs ? s2 : s1;
+			
+			ml.setExplain(true);
+			ml.setExplainLevel(ExplainLevel.RUNTIME);
+			ml.setStatistics(true);
+			
 			Script script = dml(s).in("X", df, mm).out("r");
 			MLResults results = ml.execute(script);
 			
 			//compare aggregation results
 			double sum1 = results.getDouble("r");
-			double sum2 = mbA.sum();
+			double sum2 = mbA.sum() * (multiInputs ? 2 : 1);
 			
 			TestUtils.compareScalars(sum2, sum1, 0.000001);
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

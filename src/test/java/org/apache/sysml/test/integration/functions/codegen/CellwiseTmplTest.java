@@ -46,9 +46,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME8 = TEST_NAME+8;
 	private static final String TEST_NAME9 = TEST_NAME+9;   //sum((X + 7 * Y)^2)
 	private static final String TEST_NAME10 = TEST_NAME+10; //min/max(X + 7 * Y)
-	private static final String TEST_NAME11 = TEST_NAME+11; //replace((0 / (X - 500))+1, 0/0, 7);
+	private static final String TEST_NAME11 = TEST_NAME+11; //replace((0 / (X - 500))+1, 0/0, 7)
+	private static final String TEST_NAME12 = TEST_NAME+12; //((X/3) %% 0.6) + ((X/3) %/% 0.6)
+	private static final String TEST_NAME13 = TEST_NAME+13; //min(X + 7 * Y) large
+	private static final String TEST_NAME14 = TEST_NAME+14; //-2 * X + t(Y); t(Y) is rowvector
 	
-
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF6 = "SystemML-config-codegen6.xml";
@@ -60,7 +62,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=11; i++ ) {
+		for( int i=1; i<=14; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -121,6 +123,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite11() {
 		testCodegenIntegration( TEST_NAME11, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite12() {
+		testCodegenIntegration( TEST_NAME12, true, ExecType.CP  );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite13() {
+		testCodegenIntegration( TEST_NAME13, true, ExecType.CP  );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite14() {
+		testCodegenIntegration( TEST_NAME14, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -177,6 +194,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwise11() {
 		testCodegenIntegration( TEST_NAME11, false, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwise12() {
+		testCodegenIntegration( TEST_NAME12, false, ExecType.CP  );
+	}
+	
+	@Test
+	public void testCodegenCellwise13() {
+		testCodegenIntegration( TEST_NAME13, false, ExecType.CP  );
+	}
+	
+	@Test
+	public void testCodegenCellwise14() {
+		testCodegenIntegration( TEST_NAME14, false, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwiseRewrite1_sp() {
@@ -208,20 +240,36 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME11, true, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenCellwiseRewrite12_sp() {
+		testCodegenIntegration( TEST_NAME12, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite13_sp() {
+		testCodegenIntegration( TEST_NAME13, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite14_sp() {
+		testCodegenIntegration( TEST_NAME14, true, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
-	{	
-		
+	{			
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
-		
+		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: 
-				rtplatform = RUNTIME_PLATFORM.SPARK;
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true; 
-				break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
@@ -258,8 +306,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			}
 			
 			if( !(rewrites && testname.equals(TEST_NAME2)) ) //sigmoid
-				Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
-					|| heavyHittersContainsSubString("sp_spoofCell"));
+				Assert.assertTrue(heavyHittersContainsSubString(
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
@@ -268,6 +316,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("replace"));	
 		}
 		finally {
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;

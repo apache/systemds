@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Note this script is externalized to customer, please do not change w/o consulting component owner.
 # Implements multiclass C-SVM with squared slack variables, uses one-against-the-rest binary classifiers
 # 
 

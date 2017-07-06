@@ -91,7 +91,7 @@ They can also be configured on a **per SystemML-task basis** by inserting the fo
 
 Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/conf/`. It is passed to SystemML using the `-config` argument:
 
-    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
+    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
     
 See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
 
@@ -136,3 +136,7 @@ by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extra
 Out-Of-Memory on executors is often caused due to side-effects of lazy evaluation and in-memory input data of Spark for large-scale problems. 
 Though we are constantly improving our optimizer to address this scenario, a quick hack to resolve this is reducing the number of cores allocated to the executor.
 We would highly appreciate if you file a bug report on our [issue tracker](https://issues.apache.org/jira/browse/SYSTEMML) if and when you encounter OOM.
+
+## Native BLAS errors
+
+Please see [the user guide of native backend](http://apache.github.io/systemml/native-backend).

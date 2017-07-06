@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
@@ -36,7 +37,6 @@ import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
@@ -297,6 +297,9 @@ public class DataExpression extends DataIdentifier
 	public void addRandExprParam(String paramName, Expression paramValue) 
 		throws LanguageException
 	{
+		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (paramValue == null)) {
+			return;
+		}
 		// check name is valid
 		boolean found = false;
 		if (paramName != null ){
@@ -376,11 +379,9 @@ public class DataExpression extends DataIdentifier
 	
 	public DataExpression(DataOp op, HashMap<String,Expression> varParams, 
 			String filename, int blp, int bcp, int elp, int ecp) {
-		
-		_kind = Kind.DataOp;
 		_opcode = op;
 		_varParams = varParams;
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
@@ -484,6 +485,9 @@ public class DataExpression extends DataIdentifier
 	}
 
 	public void addVarParam(String name, Expression value){
+		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (value == null)) {
+			return;
+		}
 		_varParams.put(name, value);
 		
 		// if required, initialize values
@@ -508,26 +512,23 @@ public class DataExpression extends DataIdentifier
 		if (fileNameExpr instanceof ConstIdentifier){
 			return fileNameExpr.toString();
 		}
-		else if (fileNameExpr instanceof BinaryExpression){
+		else if (fileNameExpr instanceof BinaryExpression) {
 			BinaryExpression expr = (BinaryExpression)fileNameExpr;
-							
-			if (expr.getKind()== Expression.Kind.BinaryOp){
-				Expression.BinaryOp op = expr.getOpCode();
-				switch (op){
-				case PLUS:
-						filename = "";
-						filename = fileNameCat(expr, currConstVars, filename, conditional);
-						// Since we have computed the value of filename, we update
-						// varParams with a const string value
-						StringIdentifier fileString = new StringIdentifier(filename, 
-								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
-								this.getEndLine(), this.getEndColumn());
-						removeVarParam(IO_FILENAME);
-						addVarParam(IO_FILENAME, fileString);
-					break;
-				default:
-					raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ", conditional);
-				}
+			Expression.BinaryOp op = expr.getOpCode();
+			switch (op){
+			case PLUS:
+					filename = "";
+					filename = fileNameCat(expr, currConstVars, filename, conditional);
+					// Since we have computed the value of filename, we update
+					// varParams with a const string value
+					StringIdentifier fileString = new StringIdentifier(filename, 
+							this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
+							this.getEndLine(), this.getEndColumn());
+					removeVarParam(IO_FILENAME);
+					addVarParam(IO_FILENAME, fileString);
+				break;
+			default:
+				raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ", conditional);
 			}
 		}
 		else {
@@ -538,13 +539,7 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public static String getMTDFileName(String inputFileName) throws LanguageException {
-		String mtdName = inputFileName + ".mtd";
-		
-		//validate read filename
-		if( !LocalFileUtils.validateExternalFilename(mtdName, true) )
-			throw new LanguageException("Invalid (non-trustworthy) hdfs read filename.");
-
-		return mtdName;
+		return inputFileName + ".mtd";
 	}
 	
 	/**
@@ -1063,11 +1058,6 @@ public class DataExpression extends DataIdentifier
 			}*/
 			
 			//validate read filename
-			String fnameWrite = getVarParam(IO_FILENAME).toString();
-			if( !LocalFileUtils.validateExternalFilename(fnameWrite, true) ) //always unconditional
-				raiseValidateError("Invalid (non-trustworthy) hdfs write filename.", false);
-	    	
-			
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
@@ -1721,17 +1711,14 @@ public class DataExpression extends DataIdentifier
 	{
 		// Processing the left node first
 		if (expr.getLeft() instanceof BinaryExpression 
-				&& ((BinaryExpression)expr.getLeft()).getKind()== BinaryExpression.Kind.BinaryOp
-				&& ((BinaryExpression)expr.getLeft()).getOpCode() == BinaryOp.PLUS){
+			&& ((BinaryExpression)expr.getLeft()).getOpCode() == BinaryOp.PLUS){
 			filename = fileNameCat((BinaryExpression)expr.getLeft(), currConstVars, filename, conditional)+ filename;
 		}
 		else if (expr.getLeft() instanceof ConstIdentifier){
 			filename = ((ConstIdentifier)expr.getLeft()).toString()+ filename;
 		}
 		else if (expr.getLeft() instanceof DataIdentifier 
-				&& ((DataIdentifier)expr.getLeft()).getDataType() == Expression.DataType.SCALAR
-				&& ((DataIdentifier)expr.getLeft()).getKind() == Expression.Kind.Data){ 
-				//&& ((DataIdentifier)expr.getLeft()).getValueType() == Expression.ValueType.STRING){
+			&& ((DataIdentifier)expr.getLeft()).getDataType() == Expression.DataType.SCALAR){ 
 			String name = ((DataIdentifier)expr.getLeft()).getName();
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
@@ -1739,9 +1726,8 @@ public class DataExpression extends DataIdentifier
 			raiseValidateError("Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.", conditional);
 		}
 		// Now process the right node
-		if (expr.getRight()instanceof BinaryExpression 
-				&& ((BinaryExpression)expr.getRight()).getKind()== BinaryExpression.Kind.BinaryOp
-				&& ((BinaryExpression)expr.getRight()).getOpCode() == BinaryOp.PLUS){
+		if (expr.getRight() instanceof BinaryExpression 
+			&& ((BinaryExpression)expr.getRight()).getOpCode() == BinaryOp.PLUS){
 			filename = filename + fileNameCat((BinaryExpression)expr.getRight(), currConstVars, filename, conditional);
 		}
 		// DRB: CHANGE
@@ -1749,9 +1735,8 @@ public class DataExpression extends DataIdentifier
 			filename = filename + ((ConstIdentifier)expr.getRight()).toString();
 		}
 		else if (expr.getRight() instanceof DataIdentifier 
-				&& ((DataIdentifier)expr.getRight()).getDataType() == Expression.DataType.SCALAR
-				&& ((DataIdentifier)expr.getRight()).getKind() == Expression.Kind.Data 
-				&& ((DataIdentifier)expr.getRight()).getValueType() == Expression.ValueType.STRING){
+			&& ((DataIdentifier)expr.getRight()).getDataType() == Expression.DataType.SCALAR
+			&& ((DataIdentifier)expr.getRight()).getValueType() == Expression.ValueType.STRING){
 			String name = ((DataIdentifier)expr.getRight()).getName();
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}
@@ -1926,7 +1911,7 @@ public class DataExpression extends DataIdentifier
 					continue;
 				BufferedReader br = null;
 				try {
-					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+					FileSystem fs = IOUtilFunctions.getFileSystem(childPath);
 					br = new BufferedReader(new InputStreamReader(fs.open(childPath)));
 					JSONObject childObj = JSONHelper.parse(br);
 					for( Object obj : childObj.entrySet() ){
@@ -1950,8 +1935,9 @@ public class DataExpression extends DataIdentifier
 		{
 			BufferedReader br = null;
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
+				Path path = new Path(filename);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				br = new BufferedReader(new InputStreamReader(fs.open(path)));
 				retVal = new JSONObject(br);
 			} 
 			catch (Exception e){
@@ -1975,19 +1961,16 @@ public class DataExpression extends DataIdentifier
 		
 		try 
 		{
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-			Path pt = new Path(filename);
-			if (fs.exists(pt)){
-				exists = true;
-			}
-			
-			boolean getFileStatusIsDir = fs.getFileStatus(pt).isDirectory();
+			Path path = new Path(filename);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
+			exists = fs.exists(path);
+			boolean getFileStatusIsDir = fs.getFileStatus(path).isDirectory();
 			
 			if (exists && getFileStatusIsDir){
 				raiseValidateError("MatrixMarket files as directories not supported", conditional);
 			}
 			else if (exists) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
+				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(path)));
 				try
 				{
 					retVal[0] = in.readLine();
@@ -2030,8 +2013,9 @@ public class DataExpression extends DataIdentifier
 		{
 			BufferedReader in = null;
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				in = new BufferedReader(new InputStreamReader(fs.open(new Path(inputFileName))));
+				Path path = new Path(inputFileName);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				in = new BufferedReader(new InputStreamReader(fs.open(path)));
 				String headerLine = new String("");			
 				if (in.ready())
 					headerLine = in.readLine();

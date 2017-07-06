@@ -51,7 +51,7 @@ public class WriterBinaryCell extends MatrixWriter
 		//core write
 		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen);
 
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
@@ -62,8 +62,8 @@ public class WriterBinaryCell extends MatrixWriter
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
-		FileSystem fs = FileSystem.get(job);
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		SequenceFile.Writer writer = null;
 		try {
 			writer = new SequenceFile.Writer(fs, job, path,
@@ -86,7 +86,7 @@ public class WriterBinaryCell extends MatrixWriter
 	{
 		boolean sparse = src.isInSparseFormat();
 		boolean entriesWritten = false;
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class);
 		
 		MatrixIndexes indexes = new MatrixIndexes();

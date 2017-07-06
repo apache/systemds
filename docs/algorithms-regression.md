@@ -107,7 +107,7 @@ y_test = lr.fit(df_train)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -152,7 +152,7 @@ y_test = lr.fit(df_train)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -168,7 +168,7 @@ y_test = lr.fit(df_train)
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors, each row
 constitutes one feature vector
@@ -212,6 +212,8 @@ gradient iterations, or `0` if no maximum limit provided
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 ### Examples
 
@@ -223,7 +225,6 @@ SystemML Language Reference for details.
 import numpy as np
 from sklearn import datasets
 from systemml.mllearn import LinearRegression
-from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 # Use only one feature
@@ -235,7 +236,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, solver='direct-solve')
+regr = LinearRegression(spark, solver='direct-solve')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
@@ -258,7 +259,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -278,7 +279,6 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 import numpy as np
 from sklearn import datasets
 from systemml.mllearn import LinearRegression
-from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 # Use only one feature
@@ -290,7 +290,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, solver='newton-cg')
+regr = LinearRegression(spark, solver='newton-cg')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
@@ -316,7 +316,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -346,11 +346,11 @@ pair per each line.
 | AVG\_RES\_Y           | Average of the residual $Y - \mathop{\mathrm{pred}}(Y \mid X)$, i.e. residual bias
 | STDEV\_RES\_Y         | Standard Deviation of the residual $Y - \mathop{\mathrm{pred}}(Y \mid X)$
 | DISPERSION            | GLM-style dispersion, i.e. residual sum of squares / \#deg. fr.
-| PLAIN\_R2             | Plain $R^2$ of residual with bias included vs. total average
+| R2                    | $R^2$ of residual with bias included vs. total average
 | ADJUSTED\_R2          | Adjusted $R^2$ of residual with bias included vs. total average
-| PLAIN\_R2\_NOBIAS     | Plain $R^2$ of residual with bias subtracted vs. total average
+| R2\_NOBIAS            | Plain $R^2$ of residual with bias subtracted vs. total average
 | ADJUSTED\_R2\_NOBIAS  | Adjusted $R^2$ of residual with bias subtracted vs. total average
-| PLAIN\_R2\_VS\_0      | * Plain $R^2$ of residual with bias included vs. zero constant
+| R2\_VS\_0             | * $R^2$ of residual with bias included vs. zero constant
 | ADJUSTED\_R2\_VS\_0   | * Adjusted $R^2$ of residual with bias included vs. zero constant
 
 \* The last two statistics are only printed if there is no intercept (`icpt=0`)
@@ -471,7 +471,7 @@ $n\,{-}\,m\,{-}\,1$ is positive and the regularization constant
 $\lambda$ is negligible or zero. The formulas for $\sigma$ and
 $R^2$ are:
 
-$$R^2_{\textrm{plain}} = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
+$$R^2 = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
 \sigma \,=\, \sqrt{\frac{\mathrm{RSS}}{n - m - 1}},\quad
 R^2_{\textrm{adj.}} = 1 - \frac{\sigma^2 (n-1)}{\mathrm{TSS}}$$ 
 
@@ -557,7 +557,7 @@ lowest AIC is computed.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -570,7 +570,7 @@ lowest AIC is computed.
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors, each row
 contains one feature vector.
@@ -628,7 +628,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -760,7 +760,7 @@ distributions and link functions, see below for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -782,7 +782,7 @@ distributions and link functions, see below for details.
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes an example.
@@ -898,7 +898,7 @@ if no maximum limit provided
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1235,7 +1235,7 @@ distribution family is supported (see below for details).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1255,7 +1255,7 @@ distribution family is supported (see below for details).
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row is an
 example.
@@ -1340,7 +1340,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1486,7 +1486,7 @@ this step outside the scope of `GLM-predict.dml` for now.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1503,7 +1503,7 @@ this step outside the scope of `GLM-predict.dml` for now.
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the $n\,{\times}\,m$-matrix $X$ of feature
 vectors, each row constitutes one feature vector (one record)
@@ -1625,7 +1625,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1661,7 +1661,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1695,7 +1695,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=2
@@ -1730,7 +1730,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=3
@@ -1763,7 +1763,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=3
                                          X=/user/ml/X.mtx
@@ -1798,7 +1798,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=1.0
@@ -1837,7 +1837,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=2.0
@@ -1881,9 +1881,9 @@ statistic;
 | AVG\_RES\_Y          |  +  |       | $Y$-column residual average of $Y - pred. mean(Y\\|X)$ |
 | STDEV\_RES\_Y        |  +  |       | $Y$-column residual st. dev. of $Y - pred. mean(Y\\|X)$ |
 | PRED\_STDEV\_RES     |  +  |   +   | Model-predicted $Y$-column residual st. deviation|
-| PLAIN\_R2            |  +  |       | Plain $R^2$ of $Y$-column residual with bias included |
+| R2                   |  +  |       | $R^2$ of $Y$-column residual with bias included |
 | ADJUSTED\_R2         |  +  |       | Adjusted $R^2$ of $Y$-column residual w. bias included |
-| PLAIN\_R2\_NOBIAS    |  +  |       | Plain $R^2$ of $Y$-column residual, bias subtracted |
+| R2\_NOBIAS           |  +  |       | $R^2$ of $Y$-column residual, bias subtracted |
 | ADJUSTED\_R2\_NOBIAS |  +  |       | Adjusted $R^2$ of $Y$-column residual, bias subtracted |
 
 * * *
@@ -2114,7 +2114,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
+| $\texttt{R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
  
 
@@ -2125,7 +2125,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
+| $\texttt{R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 
 

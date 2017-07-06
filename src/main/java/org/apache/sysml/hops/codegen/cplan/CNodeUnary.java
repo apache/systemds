@@ -19,19 +19,23 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
-import java.util.Arrays;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
-		ROW_SUMS, LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
-		EXP, POW2, MULT2, SQRT, LOG,
+		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, CBIND0, //codegen specific
+		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
+		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
+		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
+		VECT_CUMSUM, VECT_CUMMIN, VECT_CUMMAX,
+		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
-		SELP, SPROP, SIGMOID, LOG_NZ; 
+		SELP, SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
 			for( UnaryType ut : values()  )
@@ -43,16 +47,43 @@ public class CNodeUnary extends CNode
 		public String getTemplate(boolean sparse) {
 			switch( this ) {
 				case ROW_SUMS:
-					return sparse ? "    double %TMP% = LibSpoofPrimitives.vectSum(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
-									"    double %TMP% = LibSpoofPrimitives.vectSum(%IN1%, %POS1%, %LEN%);\n"; 
+				case ROW_MINS:
+				case ROW_MAXS: {
+					String vectName = StringUtils.capitalize(this.toString().substring(4,7).toLowerCase());
+					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n": 
+									"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n"; 
+				}
+			
+				case VECT_EXP:
+				case VECT_POW2:
+				case VECT_MULT2: 
+				case VECT_SQRT: 
+				case VECT_LOG:
+				case VECT_ABS:
+				case VECT_ROUND:
+				case VECT_CEIL:
+				case VECT_FLOOR:
+				case VECT_SIGN:
+				case VECT_CUMSUM:
+				case VECT_CUMMIN:
+				case VECT_CUMMAX:{
+					String vectName = getVectorPrimitiveName();
+					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" : 
+									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+				}
+					
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
 			    case LOOKUP_R:
-					return "    double %TMP% = %IN1%[rowIndex];\n";
+			    	return "    double %TMP% = getValue(%IN1%, rowIndex);\n";
+			    case LOOKUP_C:
+			    	return "    double %TMP% = getValue(%IN1%, n, 0, colIndex);\n";
 			    case LOOKUP_RC:
-					return "    double %TMP% = %IN1%[rowIndex*n+colIndex];\n";	
+			    	return "    double %TMP% = getValue(%IN1%, n, rowIndex, colIndex);\n";	
 				case LOOKUP0:
 					return "    double %TMP% = %IN1%[0];\n" ;
+				case CBIND0:
+					return "    double %TMP% = %IN1%; rowIndex *= 2;\n" ;
 				case POW2:
 					return "    double %TMP% = %IN1% * %IN1%;\n" ;
 				case MULT2:
@@ -60,19 +91,19 @@ public class CNodeUnary extends CNode
 				case ABS:
 					return "    double %TMP% = Math.abs(%IN1%);\n";
 				case SIN:
-					return "    double %TMP% = Math.sin(%IN1%);\n";
+					return "    double %TMP% = FastMath.sin(%IN1%);\n";
 				case COS: 
-					return "    double %TMP% = Math.cos(%IN1%);\n";
+					return "    double %TMP% = FastMath.cos(%IN1%);\n";
 				case TAN:
-					return "    double %TMP% = Math.tan(%IN1%);\n";
+					return "    double %TMP% = FastMath.tan(%IN1%);\n";
 				case ASIN:
-					return "    double %TMP% = Math.asin(%IN1%);\n";
+					return "    double %TMP% = FastMath.asin(%IN1%);\n";
 				case ACOS:
-					return "    double %TMP% = Math.acos(%IN1%);\n";
+					return "    double %TMP% = FastMath.acos(%IN1%);\n";
 				case ATAN:
 					return "    double %TMP% = Math.atan(%IN1%);\n";
 				case SIGN:
-					return "    double %TMP% = Math.signum(%IN1%);\n";
+					return "    double %TMP% = FastMath.signum(%IN1%);\n";
 				case SQRT:
 					return "    double %TMP% = Math.sqrt(%IN1%);\n";
 				case LOG:
@@ -80,9 +111,9 @@ public class CNodeUnary extends CNode
 				case ROUND: 
 					return "    double %TMP% = Math.round(%IN1%);\n";
 				case CEIL:
-					return "    double %TMP% = Math.ceil(%IN1%);\n";
+					return "    double %TMP% = FastMath.ceil(%IN1%);\n";
 				case FLOOR:
-					return "    double %TMP% = Math.floor(%IN1%);\n";
+					return "    double %TMP% = FastMath.floor(%IN1%);\n";
 				case SELP:
 					return "    double %TMP% = (%IN1%>0) ? %IN1% : 0;\n";
 				case SPROP:
@@ -95,6 +126,22 @@ public class CNodeUnary extends CNode
 				default: 
 					throw new RuntimeException("Invalid unary type: "+this.toString());
 			}
+		}
+		public boolean isVectorScalarPrimitive() {
+			return this == VECT_EXP || this == VECT_POW2
+				|| this == VECT_MULT2 || this == VECT_SQRT
+				|| this == VECT_LOG || this == VECT_ABS
+				|| this == VECT_ROUND || this == VECT_CEIL
+				|| this == VECT_FLOOR || this == VECT_SIGN
+				|| this == VECT_CUMSUM || this == VECT_CUMMIN
+				|| this == VECT_CUMMAX;
+		}
+		public UnaryType getVectorAddPrimitive() {
+			return UnaryType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
+		}
+		public String getVectorPrimitiveName() {
+			String [] tmp = this.name().split("_");
+			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
 	}
 	
@@ -116,30 +163,37 @@ public class CNodeUnary extends CNode
 
 	@Override
 	public String codegen(boolean sparse) {
-		if( _generated )
+		if( isGenerated() )
 			return "";
-			
+		
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
 		sb.append(_inputs.get(0).codegen(sparse));
 		
 		//generate unary operation
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
 		String var = createVarname();
-		String tmp = _type.getTemplate(sparse);
-		tmp = tmp.replaceAll("%TMP%", var);
+		String tmp = _type.getTemplate(lsparse);
+		tmp = tmp.replace("%TMP%", var);
 		
 		String varj = _inputs.get(0).getVarname();
 		
 		//replace sparse and dense inputs
-		tmp = tmp.replaceAll("%IN1v%", varj+"vals");
-		tmp = tmp.replaceAll("%IN1i%", varj+"ix");
-		tmp = tmp.replaceAll("%IN1%", varj );
+		tmp = tmp.replace("%IN1v%", varj+"vals");
+		tmp = tmp.replace("%IN1i%", varj+"ix");
+		tmp = tmp.replace("%IN1%", varj );
 		
 		//replace start position of main input
-		String spos = !varj.startsWith("b") ? varj+"i" : "0";
-		tmp = tmp.replaceAll("%POS1%", spos);
-		tmp = tmp.replaceAll("%POS2%", spos);
+		String spos = (!varj.startsWith("b") 
+			&& _inputs.get(0) instanceof CNodeData 
+			&& _inputs.get(0).getDataType().isMatrix()) ? varj+"i" : "0";
+		tmp = tmp.replace("%POS1%", spos);
+		tmp = tmp.replace("%POS2%", spos);
+		
+		//replace length
+		if( _inputs.get(0).getDataType().isMatrix() )
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
 		
 		sb.append(tmp);
 		
@@ -153,21 +207,61 @@ public class CNodeUnary extends CNode
 	public String toString() {
 		switch(_type) {
 			case ROW_SUMS:  return "u(R+)";
-			case LOOKUP_R:	return "u(ixr)";
+			case ROW_MINS:  return "u(Rmin)";
+			case ROW_MAXS:  return "u(Rmax)";
+			case VECT_EXP:
+			case VECT_POW2:
+			case VECT_MULT2: 
+			case VECT_SQRT: 
+			case VECT_LOG:
+			case VECT_ABS:
+			case VECT_ROUND:
+			case VECT_CEIL:
+			case VECT_FLOOR:
+			case VECT_CUMSUM:
+			case VECT_CUMMIN:
+			case VECT_CUMMAX:
+			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
+			case LOOKUP_R:  return "u(ixr)";
+			case LOOKUP_C:  return "u(ixc)";
 			case LOOKUP_RC:	return "u(ixrc)";
-			case LOOKUP0:	return "u(ix0)";
-			default:		return "u("+_type.name()+")";
+			case LOOKUP0:   return "u(ix0)";
+			case CBIND0:    return "u(cbind0)";
+			case POW2:      return "^2";
+			default:		return "u("+_type.name().toLowerCase()+")";
 		}
 	}
 
 	@Override
 	public void setOutputDims() {
 		switch(_type) {
+			case VECT_EXP:
+			case VECT_POW2:
+			case VECT_MULT2: 
+			case VECT_SQRT: 
+			case VECT_LOG:
+			case VECT_ABS:
+			case VECT_ROUND:
+			case VECT_CEIL:
+			case VECT_FLOOR:
+			case VECT_SIGN:
+			case VECT_CUMSUM:
+			case VECT_CUMMIN:
+			case VECT_CUMMAX:
+				_rows = _inputs.get(0)._rows;
+				_cols = _inputs.get(0)._cols;
+				_dataType= DataType.MATRIX;
+				break;
+			
 			case ROW_SUMS:
+			case ROW_MINS:
+			case ROW_MAXS:
 			case EXP:
 			case LOOKUP_R:
+			case LOOKUP_C:
 			case LOOKUP_RC:
 			case LOOKUP0:	
+			case CBIND0:
 			case POW2:
 			case MULT2:	
 			case ABS:  
@@ -201,9 +295,8 @@ public class CNodeUnary extends CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = UtilFunctions.intHashCode(
+				super.hashCode(), _type.hashCode());
 		}
 		return _hash;
 	}

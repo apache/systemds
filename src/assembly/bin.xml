@@ -17,10 +17,11 @@
  * under the License.
 -->
 <assembly
-	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the binary tgz and zip SystemML releases for running standalone. -->
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+	<!-- Assembly file for the binary tgz and zip SystemML artifacts. -->
+	<!-- The binary artifacts can be used for both standalone and cluster deployments using Spark and Hadoop. -->
 	<id>bin</id>
 
 	<formats>
@@ -90,27 +91,10 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>DISCLAIMER</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<!-- Include all the libraries needed to run in standalone mode. -->
 	<dependencySets>
-		<dependencySet>
-			<excludes>
-				<exclude>*:${artifactId}*</exclude> <!-- exclude from base dir -->
-				<!-- Exclude compile-scoped dependencies since they are in main artifact jar -->
-				<exclude>*:antlr4-runtime*</exclude>
-				<exclude>*:wink-json4j*</exclude>
-			</excludes>
-		</dependencySet>
-
 		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>
@@ -118,6 +102,7 @@
 				<include>*:commons-collections*</include>
 				<include>*:commons-configuration*</include>
 				<include>*:commons-httpclient*</include>
+				<include>*:commons-io*</include>
 				<include>*:commons-lang</include>
 				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
@@ -131,13 +116,20 @@
 				<include>*:jackson-core-asl*</include>
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:log4j*</include>
-				<include>*:opencsv*</include>
 				<include>*:protobuf-java*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
-			<scope>provided</scope>
+			<scope>compile</scope>
 		</dependencySet>
 	</dependencySets>
+
+	<files>
+		<file>
+			<source>target/${artifactId}-${project.version}.jar</source>
+			<outputDirectory>.</outputDirectory>
+			<destName>SystemML.jar</destName>
+		</file>
+	</files>
 </assembly>

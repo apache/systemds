@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemml</groupId>
-	<version>1.0.0-incubating-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<artifactId>systemml</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemML</name>
@@ -38,9 +38,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
-		<url>https://git-wip-us.apache.org/repos/asf?p=incubator-systemml.git</url>
+		<connection>scm:git:git@github.com:apache/systemml</connection>
+		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/systemml</developerConnection>
+		<url>https://git-wip-us.apache.org/repos/asf?p=systemml.git</url>
 		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>
@@ -50,15 +50,15 @@
 	<mailingLists>
 		<mailingList>
 			<name>Dev Mailing List</name>
-			<post>dev@systemml.incubator.apache.org</post>
-			<subscribe>dev-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>dev-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>dev@systemml.apache.org</post>
+			<subscribe>dev-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>dev-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 		<mailingList>
 			<name>Commits Mailing List</name>
-			<post>commits@systemml.incubator.apache.org</post>
-			<subscribe>commits-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>commits-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>commits@systemml.apache.org</post>
+			<subscribe>commits-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>commits-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 	</mailingLists>
 
@@ -95,11 +95,12 @@
 			<directory>scripts</directory>
 			<excludes>
 				<exclude>algorithms/obsolete/*</exclude>
-				<exclude>algorithms/obsolete</exclude>
+				<exclude>datagen/obsolete/*</exclude>
 				<exclude>perftest/*</exclude>
-				<exclude>perftest</exclude>
 				<exclude>staging/**/*</exclude>
-				<exclude>staging</exclude>
+				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/examples/caffe2dml/**/*</exclude>
 				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 			</excludes>
 			<targetPath>scripts</targetPath>
@@ -110,6 +111,10 @@
 				<exclude>*.cu</exclude>
 			</excludes>
 			<targetPath>kernels</targetPath>
+		</resource>
+		<resource>
+			<directory>src/main/cpp/lib</directory>
+			<targetPath>lib</targetPath>
 		</resource>
 	</resources>
 
@@ -164,11 +169,12 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-						  <artifactSet>
-							  <!--<excludes>
-								<exclude>org.jcuda:*</exclude>
-							</excludes>-->
-						  </artifactSet>
+							<artifactSet>
+								<includes>
+									<include>org.apache.wink:wink-json4j:*</include>
+									<include>org.antlr:antlr4-runtime:*</include>
+								</includes>
+							</artifactSet>
 						</configuration>
 					</execution>
 				</executions>
@@ -249,15 +255,29 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
+				<executions>
+				  <execution>
+				  	<id>default-jar</id>
+		            <goals><goal>jar</goal></goals>
+		            <phase>package</phase>
+		            <configuration>
+		              <archive>
 						<index>true</index>
 						<manifestEntries>
 							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
 							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
 						</manifestEntries>
-					</archive>
-				</configuration>
+					  </archive>
+		              <excludes>
+		                <exclude>**/caffe/*</exclude>
+		                <exclude>**/org/tensorflow/*</exclude>
+		                <exclude>**/org/tensorflow/framework/*</exclude>
+		                <exclude>**/org/tensorflow/util/*</exclude>
+		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
+		              </excludes>
+		            </configuration>
+		          </execution>
+		        </executions>
 			</plugin>
 
 			<plugin>
@@ -324,6 +344,46 @@
 					</execution>
 				</executions>
 			</plugin>
+			
+			<plugin>
+			    <groupId>com.github.os72</groupId>
+			    <artifactId>protoc-jar-maven-plugin</artifactId>
+			    <version>3.0.0-b2.1</version>
+			    <executions>
+			        <execution>
+			        	<id>caffe-sources</id>
+			            <phase>generate-sources</phase>
+			            <goals>
+			                <goal>run</goal>
+			            </goals>
+			            <configuration>
+			                <protocVersion>2.5.0</protocVersion> <!-- 2.4.1, 2.5.0, 2.6.1, 3.0.0 -->
+			                <inputDirectories>
+			                    <include>src/main/proto/caffe</include>
+			                </inputDirectories>
+			                <outputDirectories>
+			                    <include>src/main/java</include>
+			                </outputDirectories>
+			            </configuration>
+			        </execution>
+			        <execution>
+			        	<id>tf-sources</id>
+			            <phase>generate-sources</phase>
+			            <goals>
+			                <goal>run</goal>
+			            </goals>
+			            <configuration>
+			                <protocVersion>3.0.0</protocVersion> <!-- 2.4.1, 2.5.0, 2.6.1, 3.0.0 -->
+			                <inputDirectories>
+			                    <include>src/main/proto/tensorflow</include>
+			                </inputDirectories>
+			                <outputDirectories>
+			                    <include>src/main/java</include>
+			                </outputDirectories>
+			            </configuration>
+			        </execution>
+			    </executions>
+			</plugin>
 
 			<!-- Currently, all tests are integration tests. -->
 			<plugin>
@@ -352,6 +412,7 @@
 						<exclude>**/slowtest/**</exclude>
 						<exclude>**/integration/**</exclude>
 						<exclude>**/test/unit/**</exclude>
+						<exclude>**/test/gpu/**</exclude>
 					</excludes>
 
 				</configuration>
@@ -394,6 +455,7 @@
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
+						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
 						<include>**/integration/applications/**/*Suite.java</include>
 						<include>**/integration/conversion/*Suite.java</include>
 						<include>**/integration/functions/data/*Suite.java</include>
@@ -401,6 +463,7 @@
 						<include>**/integration/functions/sparse/*Suite.java</include>
 						<include>**/integration/functions/**/*Test*.java</include>
 						<include>**/integration/mlcontext/*Suite.java</include>
+						<include>**/integration/scripts/nn/*Suite.java</include>
 						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
 
@@ -550,9 +613,10 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.5.0</version>
+				<version>1.6.0</version>
 				<executions>
 					<execution>
+						<id>install-dependency-for-integration-tests</id>
 						<phase>prepare-package</phase>
 						<goals>
 							<goal>java</goal>
@@ -562,6 +626,20 @@
 							<arguments>
 								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
 								<argument>${enableGPU}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-classes-for-mlcontext</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>org.apache.sysml.utils.GenerateClassesForMLContext</mainClass>
+							<arguments>
+								<arguments>scripts</arguments>
+								<arguments>target/classes</arguments>
 							</arguments>
 						</configuration>
 					</execution>
@@ -704,6 +782,20 @@
 										</pluginExecution>
 										<pluginExecution>
 											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-dependency-plugin</artifactId>
+												<versionRange>[2.10,)</versionRange>
+												<goals>
+													<goal>copy-dependencies</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
 												<groupId>net.alchim31.maven</groupId>
 												<artifactId>scala-maven-plugin</artifactId>
 												<versionRange>[3.2.2,)</versionRange>
@@ -711,6 +803,20 @@
 													<goal>add-source</goal>
 													<goal>compile</goal>
 													<goal>testCompile</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>org.codehaus.mojo</groupId>
+												<artifactId>build-helper-maven-plugin</artifactId>
+												<versionRange>[1.8,)</versionRange>
+												<goals>
+													<goal>add-test-source</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>
@@ -772,6 +878,11 @@
 								<exclude>src/main/python/systemml.egg-info/**</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
+								<!-- Proto files -->
+								<exclude>src/main/proto/caffe/caffe.proto</exclude>
+								<exclude>src/main/proto/tensorflow/event.proto</exclude>
+								<exclude>src/main/proto/tensorflow/summary.proto</exclude>
+								<exclude>scripts/nn/examples/caffe2dml/models/**/*</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
@@ -789,6 +900,14 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!-- profile to enable running tests on the GPU -->
+		<profile>
+			<id>gpuTests</id>
+			<properties>
+				<gpuTestsPath>**/integration/gpu/**/*Suite.java</gpuTestsPath>
+			</properties>
 		</profile>
 
 		<profile>
@@ -828,20 +947,6 @@
 							</execution>
 
 							<execution>
-								<id>create-binary-distribution-without-libs</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/distrib.xml</descriptor>
-									</descriptors>
-									<appendAssemblyId>false</appendAssemblyId>
-								</configuration>
-							</execution>
-
-							<execution>
 								<id>create-binary-distribution</id>
 								<phase>package</phase>
 								<goals>
@@ -851,6 +956,26 @@
 									<descriptors>
 										<descriptor>src/assembly/bin.xml</descriptor>
 									</descriptors>
+								</configuration>
+							</execution>
+							<execution>
+								<id>create-extra-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/extra.xml</descriptor>
+									</descriptors>
+									<archive>
+										<manifestEntries>
+											<Build-Time>${maven.build.timestamp}</Build-Time>
+											<Artifact-Id>${project.artifactId}-extra</Artifact-Id>
+											<Version>${project.version}</Version>
+										</manifestEntries>
+									</archive>
+									<classifier>extra</classifier>
 								</configuration>
 							</execution>
 						</executions>
@@ -896,8 +1021,6 @@
 									<resourceBundles>
 										<!-- Will generate META-INF/DEPENDENCIES META-INF/LICENSE META-INF/NOTICE -->
 										<resourceBundle>org.apache:apache-jar-resource-bundle:1.4</resourceBundle>
-										<!-- Will generate META-INF/DISCLAIMER -->
-										<resourceBundle>org.apache:apache-incubator-disclaimer-resource-bundle:1.1</resourceBundle>
 									</resourceBundles>
 								</configuration>
 							</execution>
@@ -916,7 +1039,7 @@
 								org.apache.sysml.runtime.matrix.data (for MatrixIndexes, MatrixBlock, etc)
 								org.apache.sysml.udf
 							-->
-							<excludePackageNames>org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+							<excludePackageNames>caffe:org.tensorflow:org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
 							<additionalparam>${javadoc.opts}</additionalparam>
 						</configuration>
 						<executions>
@@ -957,7 +1080,7 @@
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.5.0</version>
+						<version>1.6.0</version>
 						<executions>
 							<execution>
 								<id>generate-python-package-1</id>
@@ -1010,34 +1133,6 @@
 		</profile>
 
 		<profile>
-			<id>inmemory</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<configuration>
-							<tarLongFileMode>gnu</tarLongFileMode>
-						</configuration>
-						<executions>
-							<execution>
-								<id>create-inmemory-jar</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/inmemory.xml</descriptor>
-									</descriptors>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-		<profile>
 			<!-- Profile to create standalone jar.
 				Execute with `mvn clean package -P standalone-jar` -->
 			<id>standalone-jar</id>
@@ -1076,7 +1171,11 @@
 
 
 	<dependencies>
-
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.2.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
@@ -1187,13 +1286,11 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1205,7 +1302,6 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1217,13 +1313,11 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-app</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1241,20 +1335,17 @@
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.3</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.15</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>com.sun.jmx</groupId>
@@ -1269,13 +1360,6 @@
 					<artifactId>jms</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>2.3</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -1295,6 +1379,13 @@
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
+		</dependency>
+
+		<!-- fast java compiler for codegen, consistent version w/ spark -->
+		<dependency>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
+			<version>3.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1321,34 +1412,29 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-api</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>

@@ -46,7 +46,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	public enum ParameterizedBuiltinCode { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
-		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE };
+		TRANSFORMAPPLY, TRANSFORMDECODE };
 	public enum ProbabilityDistributionCode { 
 		INVALID, NORMAL, EXP, CHISQ, F, T };
 	
@@ -62,7 +62,6 @@ public class ParameterizedBuiltin extends ValueFunction
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
 		String2ParameterizedBuiltinCode.put( "replace", ParameterizedBuiltinCode.REPLACE);
 		String2ParameterizedBuiltinCode.put( "rexpand", ParameterizedBuiltinCode.REXPAND);
-		String2ParameterizedBuiltinCode.put( "transform", ParameterizedBuiltinCode.TRANSFORM);
 		String2ParameterizedBuiltinCode.put( "transformapply", ParameterizedBuiltinCode.TRANSFORMAPPLY);
 		String2ParameterizedBuiltinCode.put( "transformdecode", ParameterizedBuiltinCode.TRANSFORMDECODE);
 	}
@@ -168,9 +167,6 @@ public class ParameterizedBuiltin extends ValueFunction
 			
 			case REXPAND:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REXPAND);
-			
-			case TRANSFORM:
-				return new ParameterizedBuiltin(ParameterizedBuiltinCode.TRANSFORM);
 			
 			case TRANSFORMAPPLY:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.TRANSFORMAPPLY);

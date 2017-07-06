@@ -59,8 +59,8 @@ public class ReaderTextCell extends MatrixReader
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
@@ -79,6 +79,7 @@ public class ReaderTextCell extends MatrixReader
 		return ret;
 	}
 
+	@Override
 	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{

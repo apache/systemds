@@ -57,7 +57,6 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -267,7 +266,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			FileInputFormat.addInputPath(job, path); 
@@ -321,7 +320,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			
@@ -330,7 +329,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 
-			for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
+			for(Path lpath: IOUtilFunctions.getSequenceFilePaths(fs, path))
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -379,7 +378,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			
@@ -387,7 +386,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixBlock value = new MatrixBlock();
 			boolean diagBlocks = true;
 			
-			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path))
+			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path))
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				
@@ -631,7 +630,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 
 			//prepare output
@@ -732,7 +731,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 	
 			//prepare output
@@ -883,7 +882,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			String metaOut = stagingDir+"/meta";
 	
 			//prepare output

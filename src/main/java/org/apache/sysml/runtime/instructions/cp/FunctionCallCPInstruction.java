@@ -30,7 +30,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -123,6 +122,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
 		
+		// sanity check number of function paramters
+		if( _boundInputParamNames.size() < fpb.getInputParams().size() ) {
+			throw new DMLRuntimeException("Number of bound input parameters does not match the function signature "
+				+ "("+_boundInputParamNames.size()+", but "+fpb.getInputParams().size()+" expected)");
+		}
+		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
 		LocalVariableMap functionVariables = new LocalVariableMap();		
@@ -131,29 +136,28 @@ public class FunctionCallCPInstruction extends CPInstruction
 			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
 			String currFormalParamName = currFormalParam.getName();
 			Data currFormalParamValue = null; 
-			ValueType valType = fpb.getInputParams().get(i).getValueType();
 				
-			// CASE (a): default values, if call w/ less params than signature (scalars only)
-			if( i > _boundInputParamNames.size() )
-			{	
-				String defaultVal = fpb.getInputParams().get(i).getDefaultValue();
-				currFormalParamValue = ec.getScalarInput(defaultVal, valType, false);
+			CPOperand operand = _boundInputParamOperands.get(i);
+			String varname = operand.getName();
+			//error handling non-existing variables
+			if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
+				throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
+						DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 			}
-			// CASE (b) literals or symbol table entries
-			else {
-				CPOperand operand = _boundInputParamOperands.get(i);
-				String varname = operand.getName();
-				//error handling non-existing variables
-				if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
-					throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
-							DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
-				}
-				//get input matrix/frame/scalar
-				currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
-					ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
+			//get input matrix/frame/scalar
+			currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
+				ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
+			
+			//graceful value type conversion for scalar inputs with wrong type
+			if( currFormalParamValue.getDataType() == DataType.SCALAR
+				&& currFormalParamValue.getValueType() != operand.getValueType() )
+			{
+				ScalarObject so = (ScalarObject) currFormalParamValue;
+				currFormalParamValue = ScalarObjectFactory
+					.createScalarObject(operand.getValueType(), so);
 			}
 			
-			functionVariables.put(currFormalParamName,currFormalParamValue);						
+			functionVariables.put(currFormalParamName, currFormalParamValue);						
 		}
 		
 		// Pin the input variables so that they do not get deleted 
@@ -163,8 +167,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
+		if (DMLScript.USE_ACCELERATOR) {
+			fn_ec.setGPUContexts(ec.getGPUContexts());
+			ec.setGPUContexts(null);
+			fn_ec.getGPUContext(0).initializeThread();
+		}
 		fn_ec.setVariables(functionVariables);
-		
 		// execute the function block
 		try {
 			fpb._functionName = this._functionName;
@@ -178,7 +186,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 
@@ -197,6 +204,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// Unpin the pinned variables
 		ec.unpinVariables(_boundInputParamNames, pinStatus);
+
+		if (DMLScript.USE_ACCELERATOR) {
+			ec.setGPUContexts(fn_ec.getGPUContexts());
+			fn_ec.setGPUContexts(null);
+			ec.getGPUContext(0).initializeThread();
+		}
 		
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){

@@ -949,9 +949,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//note: all relational ops are not sparsesafe
 					return d3m * d3n; //covers all combinations of scalar and matrix  
 					
-				case File: //opcodes: rm, mv
-					return DEFAULT_NFLOP_NOOP;
-					
 				case Variable: //opcodes: assignvar, cpvar, rmvar, rmfilevar, assignvarwithfile, attachfiletovar, valuepick, iqsize, read, write, createvar, setfilename, castAsMatrix
 					if( optype.equals("write") ){
 						boolean text = args[0].equals("textcell") || args[0].equals("csv");

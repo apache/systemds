@@ -50,10 +50,10 @@ algorithms can be found in the [Algorithms Reference](algorithms-reference.html)
 
 # Download SystemML
 
-Apache incubator releases of SystemML are available from the [Downloads](http://systemml.apache.org/download.html) page.
+Apache SystemML releases are available from the [Downloads](http://systemml.apache.org/download.html) page.
 
 SystemML can also be downloaded from GitHub and built with Maven.
-The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
+The SystemML project is available on GitHub at [https://github.com/apache/systemml](https://github.com/apache/systemml).
 Instructions to build SystemML can be found in the <a href="engine-dev-guide.html">Engine Developer Guide</a>.
 
 # Standalone vs Distributed Execution Mode
@@ -527,11 +527,11 @@ The LinearRegDS.dml script generates statistics to standard output similar to th
 	AVG_RES_Y,-3.3127468704080085E-10
 	STDEV_RES_Y,1.7231785003947183E-8
 	DISPERSION,2.963950542926297E-16
-	PLAIN_R2,1.0
+	R2,1.0
 	ADJUSTED_R2,1.0
-	PLAIN_R2_NOBIAS,1.0
+	R2_NOBIAS,1.0
 	ADJUSTED_R2_NOBIAS,1.0
-	PLAIN_R2_VS_0,1.0
+	R2_VS_0,1.0
 	ADJUSTED_R2_VS_0,1.0
 	Writing the output matrix...
 	END LINEAR REGRESSION SCRIPT
@@ -572,9 +572,9 @@ This generates statistics similar to the following to standard output.
 	AVG_RES_Y,1,,-4.1450397073455047E-10
 	STDEV_RES_Y,1,,2.0519206226041048E-8
 	PRED_STDEV_RES,1,TRUE,1.0
-	PLAIN_R2,1,,1.0
+	R2,1,,1.0
 	ADJUSTED_R2,1,,1.0
-	PLAIN_R2_NOBIAS,1,,1.0
+	R2_NOBIAS,1,,1.0
 	ADJUSTED_R2_NOBIAS,1,,1.0
 
 
@@ -605,5 +605,5 @@ script (`runStandaloneSystemML.sh` or `runStandaloneSystemML.bat`) to increase
 the memory available to the JVM, i.e:
 
     java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
-         -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
+         -f ${SCRIPT_FILE} -exec singlenode -config SystemML-config.xml \
          $@

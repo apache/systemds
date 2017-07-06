@@ -20,8 +20,11 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
-
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -30,6 +33,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -127,73 +131,96 @@ public class ResultMergeRemoteSpark extends ResultMerge
 
 		RDDObject ret = null;
 		
-	    //determine degree of parallelism
+		//determine degree of parallelism
 		int numRed = (int)determineNumReducers(rlen, clen, brlen, bclen, _numReducers);
-	
+		
 		//sanity check for empty src files
 		if( inputs == null || inputs.length==0  )
 			throw new DMLRuntimeException("Execute merge should never be called with no inputs.");
 		
 		try
 		{
-		    //Step 1: union over all results
-		    JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
-		    		sec.getRDDHandleForMatrixObject(_inputs[0], InputInfo.BinaryBlockInputInfo);
-		    for( int i=1; i<_inputs.length; i++ ) {
-			    JavaPairRDD<MatrixIndexes, MatrixBlock> rdd2 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
-			    		sec.getRDDHandleForMatrixObject(_inputs[i], InputInfo.BinaryBlockInputInfo);
-			    rdd = rdd.union(rdd2);
-		    }
-		
-		    //Step 2a: merge with compare
-		    JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
-		    if( withCompare )
-		    {
-		    	JavaPairRDD<MatrixIndexes, MatrixBlock> compareRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
-			    		sec.getRDDHandleForMatrixObject(compare, InputInfo.BinaryBlockInputInfo);
-			    
-		    	//merge values which differ from compare values
-		    	ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare();
-		    	out = rdd.groupByKey(numRed) //group all result blocks per key
-		    	         .join(compareRdd)   //join compare block and result blocks 
-		    	         .mapToPair(cfun);   //merge result blocks w/ compare
-		    }
-		    //Step 2b: merge without compare
-		    else
-		    {
-		    	//direct merge in any order (disjointness guaranteed)
-		    	out = RDDAggregateUtils.mergeByKey(rdd, false);
-		    }
+			//note: initial implementation via union over all result rdds discarded due to 
+			//stack overflow errors with many parfor tasks, and thus many rdds
+			
+			//Step 1: construct input rdd from all result files of parfor workers
+			//a) construct job conf with all files
+			InputInfo ii = InputInfo.BinaryBlockInputInfo;
+			JobConf job = new JobConf( ResultMergeRemoteMR.class );
+			job.setJobName(jobname);
+			job.setInputFormat(ii.inputFormatClass);
+			Path[] paths = new Path[ inputs.length ];
+			for(int i=0; i<paths.length; i++) {
+				//ensure input exists on hdfs (e.g., if in-memory or RDD)
+				inputs[i].exportData();
+				paths[i] = new Path( inputs[i].getFileName() );
+				//update rdd handle to allow lazy evaluation by guarding 
+				//against cleanup of temporary result files
+				setRDDHandleForMerge(inputs[i], sec);
+			}
+			FileInputFormat.setInputPaths(job, paths);
+			
+			//b) create rdd from input files w/ deep copy of keys and blocks
+			JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = sec.getSparkContext()
+					.hadoopRDD(job, ii.inputFormatClass, ii.inputKeyClass, ii.inputValueClass)
+					.mapPartitionsToPair(new CopyBlockPairFunction(true), true);
+			
+			//Step 2a: merge with compare
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
+			if( withCompare )
+			{
+				JavaPairRDD<MatrixIndexes, MatrixBlock> compareRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
+						sec.getRDDHandleForMatrixObject(compare, InputInfo.BinaryBlockInputInfo);
+		    	
+				//merge values which differ from compare values
+				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare();
+				out = rdd.groupByKey(numRed) //group all result blocks per key
+		    			.join(compareRdd)   //join compare block and result blocks 
+		    			.mapToPair(cfun);   //merge result blocks w/ compare
+			}
+			//Step 2b: merge without compare
+			else {
+				//direct merge in any order (disjointness guaranteed)
+				out = RDDAggregateUtils.mergeByKey(rdd, false);
+			}
 		    
-		    //Step 3: create output rdd handle w/ lineage
-		    ret = new RDDObject(out, varname);
-		    for( int i=0; i<_inputs.length; i++ ) {
-		    	//child rdd handles guaranteed to exist
-		    	RDDObject child = _inputs[i].getRDDHandle();
-				ret.addLineageChild(child);
-		    }
+			//Step 3: create output rdd handle w/ lineage
+			ret = new RDDObject(out, varname);
+			for(int i=0; i<paths.length; i++)
+				ret.addLineageChild(inputs[i].getRDDHandle());
+			if( withCompare )
+				ret.addLineageChild(compare.getRDDHandle());
 		}
-		catch( Exception ex )
-		{
+		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
 		}	    
 		
 		//maintain statistics
-	    Statistics.incrementNoOfCompiledSPInst();
-	    Statistics.incrementNoOfExecutedSPInst();
-	    if( DMLScript.STATISTICS ){
+		Statistics.incrementNoOfCompiledSPInst();
+		Statistics.incrementNoOfExecutedSPInst();
+		if( DMLScript.STATISTICS ){
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
-	    
+		
 		return ret;
 	}
 
-	private int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed)
-	{
+	private int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
 		//set the number of mappers and reducers 
-	    long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
+		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
 		int ret = (int)Math.min( numRed, reducerGroups );
-	    
-	    return ret; 	
+		
+		return ret; 	
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
+		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+		JavaSparkContext sc = sec.getSparkContext();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) 
+			sc.hadoopFile( mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+		RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+		rddhandle.setHDFSFile(true);
+		mo.setRDDHandle(rddhandle);
 	}
 }

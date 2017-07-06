@@ -138,15 +138,15 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			
-			//CHECK compiled MR jobs (changed 07/2015 due to better sparsity inference, 08/2015 due to better worst-case inference)
+			//CHECK compiled MR jobs
 			int expectNumCompiled =   (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-	                                + ((testname.equals(TEST_NAME4) && !recompile)?2:0);//(+2 resultmerge)
+	                                + (testname.equals(TEST_NAME4)?2:0);//(+2 resultmerge)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
-			//CHECK executed MR jobs (changed 07/2015 due to better sparsity inference, 08/2015 due to better worst-case inference)
+			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
-			if( recompile ) expectNumExecuted = 0; //+ ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
+			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
 			else            expectNumExecuted =  (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if)
 					                              + ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 

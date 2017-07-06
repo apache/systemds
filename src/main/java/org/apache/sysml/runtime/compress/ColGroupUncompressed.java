@@ -25,10 +25,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -406,5 +408,56 @@ public class ColGroupUncompressed extends ColGroup
 	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		for( int i=rl; i<ru; i++ )
 			rnnz[i-rl] += _data.recomputeNonZeros(i, i, 0, _data.getNumColumns()-1);
+	}
+	
+	@Override
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+		//UC iterator is always row major, so no need for custom handling
+		return new UCIterator(rl, ru, inclZeros);
+	}
+	
+	private class UCIterator implements Iterator<IJV>
+	{
+		//iterator configuration
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private final IJV _buff = new IJV();
+		private int _rpos = -1;
+		private int _cpos = -1;
+		private double _value = 0;
+		
+		public UCIterator(int rl, int ru, boolean inclZeros) {
+			_ru = ru;
+			_inclZeros = inclZeros;
+			_rpos = rl;
+			_cpos = -1;
+			getNextValue();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public IJV next() {
+			_buff.set(_rpos, _colIndexes[_cpos], _value);
+			getNextValue();
+			return _buff;
+		}
+		
+		private void getNextValue() {
+			do {
+				boolean nextRow = (_cpos+1 >= getNumCols());
+				_rpos += nextRow ? 1 : 0; 
+				_cpos = nextRow ? 0 : _cpos+1;
+				if( _rpos >= _ru )
+					return; //reached end
+				_value = _data.quickGetValue(_rpos, _cpos);
+			}
+			while( !_inclZeros && _value==0 );
+		}
 	}
 }

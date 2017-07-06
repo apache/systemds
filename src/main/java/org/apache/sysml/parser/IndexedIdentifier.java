@@ -569,11 +569,9 @@ public class IndexedIdentifier extends DataIdentifier
 		newIndexedIdentifier.setOriginalDimensions(this._origDim1, this._origDim2);
 		
 		// set remaining properties (specific to DataIdentifier)
-		newIndexedIdentifier._kind = Kind.Data;
 		newIndexedIdentifier._name = prefix + this._name;
 		newIndexedIdentifier._valueTypeString = this.getValueType().toString();	
-		newIndexedIdentifier._defaultValue = this._defaultValue;
-	
+		
 		// creates rewritten expression (deep copy)
 		newIndexedIdentifier._rowLowerBound = (_rowLowerBound == null) ? null : _rowLowerBound.rewriteExpression(prefix);
 		newIndexedIdentifier._rowUpperBound = (_rowUpperBound == null) ? null : _rowUpperBound.rewriteExpression(prefix);

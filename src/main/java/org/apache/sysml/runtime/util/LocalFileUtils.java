@@ -43,7 +43,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -438,36 +437,6 @@ public class LocalFileUtils
 		sb.append( _seq.getNextID() );
 		
 		return sb.toString();
-	}
-	
-	/**
-	 * Validate external directory and filenames as soon as they enter the system
-	 * in order to prevent security issues such as path traversal, etc.
-	 * Currently, external (user provided) filenames are: scriptfile, config file,
-	 * local tmp working dir, hdfs working dir (scratch), read/write expressions,
-	 * and several export functionalities. 	 
-	 *  
-	 * 
-	 * @param fname file name
-	 * @param hdfs true if check for HDFS
-	 * @return true if valid filename
-	 */
-	public static boolean validateExternalFilename( String fname, boolean hdfs )
-	{
-		boolean ret = true;
-		
-		//check read local file from hdfs context
-		//(note: currently rejected with "wrong fs" anyway but this is impl-specific)
-		if( hdfs && !InfrastructureAnalyzer.isLocalMode() 
-			&& fname.startsWith("file:") )
-		{
-			//prevent redirection to local file system
-			ret = false; 
-		}
-		
-		//TODO white and black lists according to BI requirements
-		
-		return ret;
 	}
 	
 	/**

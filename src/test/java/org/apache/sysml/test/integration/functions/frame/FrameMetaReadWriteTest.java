@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.frame;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -101,10 +100,6 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		String ofmt = OutputInfo.outputInfoToStringExternal(oinfo);
-
-		boolean csvReblockOld = OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK;
-		if( ofmt.equals("csv") )
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 		
 		try
 		{
@@ -148,7 +143,6 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = csvReblockOld;
 		}
 	}
 }

@@ -33,6 +33,16 @@ Q = $10
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
 dout=matrix(seq(1, numImg*numChannels*P*Q), rows=numImg, cols=numChannels*P*Q)
+if($12) {
+	# zero_mask = (x - mean(x)) > 0 
+	# x = x * zero_mask
+}
+if($13) {
+	# zero_mask = (dout - mean(dout)) > 0 
+	# dout = dout * zero_mask
+}
+x = x - mean(x)
+dout = dout - mean(dout)
 if(poolMode == "max") {
 	output = max_pool_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }

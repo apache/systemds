@@ -32,7 +32,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * Regression test for function recompile-once issue with literal replacement.
@@ -43,7 +42,8 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	private static final String TEST_NAME1 = "RewriteFuseBinaryOpChainTest1"; //+* (X+s*Y)
 	private static final String TEST_NAME2 = "RewriteFuseBinaryOpChainTest2"; //-* (X-s*Y) 
 	private static final String TEST_NAME3 = "RewriteFuseBinaryOpChainTest3"; //+* (s*Y+X)
-
+	private static final String TEST_NAME4 = "RewriteFuseBinaryOpChainTest4"; //outer(X, s*Y, "+") not applied
+	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseBinaryOpChainTest.class.getSimpleName() + "/";
 	
@@ -55,6 +55,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );		
 	}
 	
 	@Test
@@ -147,6 +148,18 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		testFuseBinaryChain( TEST_NAME3, true, ExecType.MR );
 	}
 	
+	//negative tests
+	
+	@Test
+	public void testOuterBinaryPlusNoRewriteCP() {
+		testFuseBinaryChain( TEST_NAME4, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testOuterBinaryPlusRewriteCP() {
+		testFuseBinaryChain( TEST_NAME4, true, ExecType.CP);
+	}
+	
 	/**
 	 * 
 	 * @param testname
@@ -182,7 +195,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
 
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			runRScript(true); 
 			
 			//compare matrices 
@@ -199,7 +212,10 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 					prefix = Instruction.SP_INST_PREFIX;
 				
 				String opcode = (testname.equals(TEST_NAME1)||testname.equals(TEST_NAME3)) ? prefix+"+*" : prefix+"-*";
-				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				if( testname.equals(TEST_NAME4) )
+					Assert.assertFalse("Rewrite applied.", heavyHittersContainsSubString(opcode));
+				else
+					Assert.assertTrue("Rewrite not applied.", heavyHittersContainsSubString(opcode));
 			}
 		}
 		finally

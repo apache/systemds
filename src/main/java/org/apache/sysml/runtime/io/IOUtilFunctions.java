@@ -19,18 +19,22 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,6 +46,7 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -52,6 +57,37 @@ public class IOUtilFunctions
 
 	private static final char CSV_QUOTE_CHAR = '"';
 
+	public static FileSystem getFileSystem(String fname) throws IOException {
+		return getFileSystem(new Path(fname),
+			ConfigurationManager.getCachedJobConf());
+	}
+	
+	public static FileSystem getFileSystem(Path fname) throws IOException {
+		return getFileSystem(fname, 
+			ConfigurationManager.getCachedJobConf());
+	}
+	
+	public static FileSystem getFileSystem(Path fname, Configuration conf) throws IOException {
+		return FileSystem.get(fname.toUri(), conf);
+	}
+	
+	public static boolean isSameFileScheme(Path path1, Path path2) {
+		if( path1 == null || path2 == null || path1.toUri() == null || path2.toUri() == null)
+			return false;
+		String scheme1 = path1.toUri().getScheme();
+		String scheme2 = path2.toUri().getScheme();
+		return (scheme1 == null && scheme2 == null)
+			|| (scheme1 != null && scheme1.equals(scheme2));
+	}
+	
+	public static boolean isObjectStoreFileScheme(Path path) {
+		if( path == null || path.toUri() == null || path.toUri().getScheme() == null )
+			return false;
+		String scheme = path.toUri().getScheme();
+		//capture multiple alternatives s3, s3n, s3a, swift, swift2d
+		return scheme.startsWith("s3") || scheme.startsWith("swift");
+	}
+	
 	public static void closeSilently( Closeable io ) {
 		try {
 			if( io != null )
@@ -315,7 +351,7 @@ public class IOUtilFunctions
 	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
 	 * 
 	 * @param value string value
-	 * @return string size for modified UTF-8 specifiecation
+	 * @return string size for modified UTF-8 specification
 	 */
 	public static int getUTFSize(String value) {
 		if( value == null )
@@ -333,7 +369,7 @@ public class IOUtilFunctions
 	public static InputStream toInputStream(String input) throws IOException {
 		if( input == null ) 
 			return null;
-		return new ByteArrayInputStream(input.getBytes("UTF-8"));
+		return new ReaderInputStream(new StringReader(input), "UTF-8");
 	}
 
 	public static String toString(InputStream input) throws IOException {
@@ -410,6 +446,35 @@ public class IOUtilFunctions
 		return ncol;
 	}
 
+	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
+		throws IOException
+	{
+		Path[] ret = null;
+		
+		//Note on object stores: Since the object store file system implementations 
+		//only emulate a file system, the directory of a multi-part file does not
+		//exist physically and hence the isDirectory call returns false. Furthermore,
+		//listStatus call returns all files with the given directory as prefix, which
+		//includes the mtd file which needs to be ignored accordingly.
+		
+		if( fs.isDirectory(file) 
+			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
+		{
+			LinkedList<Path> tmp = new LinkedList<Path>();
+			FileStatus[] dStatus = fs.listStatus(file);
+			for( FileStatus fdStatus : dStatus )
+				if( !fdStatus.getPath().getName().startsWith("_") //skip internal files
+					&& !fdStatus.getPath().toString().equals(file.toString()+".mtd") ) //mtd file
+					tmp.add(fdStatus.getPath());
+			ret = tmp.toArray(new Path[0]);
+		}
+		else {
+			ret = new Path[]{ file };
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Delete the CRC files from the local file system associated with a
 	 * particular file and its metadata file.

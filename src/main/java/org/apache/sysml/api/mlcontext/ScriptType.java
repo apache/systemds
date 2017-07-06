@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,7 +37,7 @@ public enum ScriptType {
 
 	/**
 	 * Obtain script type as a lowercase string ("dml" or "pydml").
-	 * 
+	 *
 	 * @return lowercase string representing the script type
 	 */
 	public String lowerCase() {
@@ -46,7 +46,7 @@ public enum ScriptType {
 
 	/**
 	 * Is the script type DML?
-	 * 
+	 *
 	 * @return {@code true} if the script type is DML, {@code false} otherwise
 	 */
 	public boolean isDML() {
@@ -55,7 +55,7 @@ public enum ScriptType {
 
 	/**
 	 * Is the script type PYDML?
-	 * 
+	 *
 	 * @return {@code true} if the script type is PYDML, {@code false} otherwise
 	 */
 	public boolean isPYDML() {

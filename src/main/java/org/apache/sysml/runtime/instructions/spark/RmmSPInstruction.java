@@ -29,14 +29,17 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -83,25 +86,41 @@ public class RmmSPInstruction extends BinarySPInstruction
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( input2.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		MatrixCharacteristics mcOut = updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		
 		//execute Spark RMM instruction
-		//step 1: prepare join keys (w/ replication), i/j/k 
+		//step 1: prepare join keys (w/ shallow replication), i/j/k
 		JavaPairRDD<TripleIndexes,MatrixBlock> tmp1 = in1.flatMapToPair(
-				new RmmReplicateFunction(mc2.getCols(), mc2.getColsPerBlock(), true)); 
+			new RmmReplicateFunction(mc2.getCols(), mc2.getColsPerBlock(), true)); 
 		JavaPairRDD<TripleIndexes,MatrixBlock> tmp2 = in2.flatMapToPair(
-				new RmmReplicateFunction(mc1.getRows(), mc1.getRowsPerBlock(), false));
+			new RmmReplicateFunction(mc1.getRows(), mc1.getRowsPerBlock(), false));
 		
 		//step 2: join prepared datasets, multiply, and aggregate
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				tmp1.join( tmp2 )                              //join by result block 
-		            .mapToPair( new RmmMultiplyFunction() );   //do matrix multiplication
-		out = RDDAggregateUtils.sumByKeyStable(out, false);    //aggregation per result block
+		int numPartJoin = Math.max(getNumJoinPartitions(mc1, mc2),
+			SparkExecutionContext.getDefaultParallelism(true));
+		int numPartOut = SparkUtils.getNumPreferredPartitions(mcOut);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = tmp1
+			.join( tmp2, numPartJoin )               //join by result block 
+		    .mapToPair( new RmmMultiplyFunction() ); //do matrix multiplication
+		out = RDDAggregateUtils.sumByKeyStable(out,  //aggregation per result block
+			numPartOut, false); 
 		
 		//put output block into symbol table (no lineage because single block)
-		updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
+	}
+	
+	private static int getNumJoinPartitions(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
+		if( !mc1.dimsKnown() || !mc2.dimsKnown() )
+			SparkExecutionContext.getDefaultParallelism(true);
+		//compute data size of replicated inputs
+		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		double matrix1PSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc1)
+			* ((long) Math.ceil((double)mc2.getCols()/mc2.getColsPerBlock()));
+		double matrix2PSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc2)
+			* ((long) Math.ceil((double)mc1.getRows()/mc1.getRowsPerBlock()));
+		return (int) Math.max(Math.ceil((matrix1PSize+matrix2PSize)/hdfsBlockSize), 1);
 	}
 
 	private static class RmmReplicateFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, TripleIndexes, MatrixBlock> 
@@ -136,8 +155,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 				long k = ixIn.getColumnIndex();
 				for( long j=1; j<=numBlocks; j++ ) {
 					TripleIndexes tmptix = new TripleIndexes(i, j, k);
-					MatrixBlock tmpblk = new MatrixBlock(blkIn);
-					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, tmpblk) );
+					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, blkIn) );
 				}
 			} 
 			else // RHS MATRIX
@@ -147,8 +165,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 				long j = ixIn.getColumnIndex();
 				for( long i=1; i<=numBlocks; i++ ) {
 					TripleIndexes tmptix = new TripleIndexes(i, j, k);
-					MatrixBlock tmpblk = new MatrixBlock(blkIn);
-					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, tmpblk) );
+					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, blkIn) );
 				}
 			}
 			

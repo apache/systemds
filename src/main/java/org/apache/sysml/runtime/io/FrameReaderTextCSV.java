@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +32,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -38,6 +40,7 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.util.InputStreamInputFormat;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -59,8 +62,8 @@ public class FrameReaderTextCSV extends FrameReader
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		FileInputFormat.addInputPath(job, path);
 		
 		//check existence and non-empty file
@@ -83,6 +86,24 @@ public class FrameReaderTextCSV extends FrameReader
 		
 		return ret;
 	}
+	
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, 
+			long rlen, long clen)
+		throws IOException, DMLRuntimeException 
+	{
+		//allocate output frame block
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+	
+		//core read (sequential/parallel) 
+		InputStreamInputFormat informat = new InputStreamInputFormat(is);
+		InputSplit split = informat.getSplits(null, 1)[0];
+		readCSVFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
+		
+		return ret;
+	}
 
 	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
@@ -96,7 +117,7 @@ public class FrameReaderTextCSV extends FrameReader
 			readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
 	}
 
-	protected final void readCSVFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
+	protected final void readCSVFrameFromInputSplit( InputSplit split, InputFormat<LongWritable,Text> informat, JobConf job, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
 		throws IOException
 	{

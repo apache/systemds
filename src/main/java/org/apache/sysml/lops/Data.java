@@ -139,18 +139,9 @@ public class Data extends Lop
 		
 
 		if ( getFileFormatType() == FileFormatTypes.CSV ) {
-			Lop input = getInputs().get(0);
-			// If the input is data transform, then csv write can be piggybacked onto TRANSFORM job.
-			// Otherwise, the input must be converted to csv format via WriteCSV MR job.
-			if ( input instanceof ParameterizedBuiltin 
-					&& ((ParameterizedBuiltin)input).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
-				lps.addCompatibility(JobType.TRANSFORM);
-				definesMRJob = false;
-			}
-			else {
-				lps.addCompatibility(JobType.CSV_WRITE);
-				definesMRJob = true;
-			}
+			// The input must be converted to csv format via WriteCSV MR job.
+			lps.addCompatibility(JobType.CSV_WRITE);
+			definesMRJob = true;
 		}
 		else {
 			/*
@@ -477,16 +468,8 @@ public class Data extends Lop
 				
 				if ( this.getExecType() == ExecType.SPARK ) 
 				{
-					boolean isInputMatrixBlock = true;
-					Lop input = getInputs().get(0);
-					if ( input instanceof ParameterizedBuiltin 
-							&& ((ParameterizedBuiltin)input).getOp() == ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
-						// in the case of transform input, the input will be Text strings insteadof MatrixBlocks 
-						// This information is used to have correct class information while accessing RDDs from the symbol table 
-						isInputMatrixBlock = false;
-					}
 					sb.append(OPERAND_DELIMITOR);
-					sb.append(isInputMatrixBlock);
+					sb.append(true); //isInputMatrixBlock
 				}
 			}
 			

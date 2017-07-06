@@ -1,0 +1,105 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 2D Cross-Entropy loss function.
+ */
+ source("nn/util.dml") as util
+ source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+
+forward = function(matrix[double] pred, matrix[double] y, int C)
+    return (double loss) {
+  /*
+   * Computes the forward pass for a 2D cross-entropy loss function. The
+   * inputs consist of N examples, each of shape (C, Hin, Win), where
+   * each pixel has C dimensions corresponding to normalized
+   * probabilities of C classes. The loss is applied to each pixel
+   * location, and then averaged over all pixels and all examples.
+   *
+   *   ```
+   *   L_ijk = -y_ijk^T * log(pred_ijk)
+   *   L = (1/N*H*W) sum(L_ijk) for i=1 to N, j=1 to H, k=1 to W.
+   *   ```
+   *
+   * In these equations, `L` is the total loss, `L_ijk` is the loss for
+   * the pixel `j, k` in the example 'i', `y_ijk` is the C-dimensional
+   * vector of target class probabilities, `pred_ijk` is C-dimensional
+   * vector of predicted class probabilities, and `N` is the number of
+   * examples.
+   *
+   * For each pixel location, this can be interpreted as the negative
+   * log-likelihood assuming a Bernoulli distribution generalized to C
+   * dimensions, or a Multinomial with one observation.
+   *
+   * Inputs:
+   *  - pred: Predictions, of shape (N, C*Win*Hin).
+   *  - y: Targets, of shape (N, C*Win*Hin).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - loss: Average loss.
+   */
+  N = nrow(y)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
+  pred_NHW_C = t(pred_C_NHW)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
+  y_NHW_C = t(y_C_NHW)
+
+  loss = cross_entropy_loss::forward(pred_NHW_C, y_NHW_C)
+}
+
+backward = function(matrix[double] pred, matrix[double] y, int C)
+    return (matrix[double] dpred) {
+  /*
+   * Computes the backward pass of a 2D cross-entropy loss function.  The
+   * inputs consist of N examples with a shape (Hin, Win), each pixel in
+   * the 2d-example with C dimensions corresponding to normalized
+   * probabilities of C classes.
+   *
+   * Inputs:
+   *  - pred: Predictions, of shape (N, C*Win*Hin).
+   *  - y: Targets, of shape (N, C*Win*Hin).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - dpred: Gradient wrt `pred`, of shape (N, C*Win*Hin).
+   */
+  N = nrow(y)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  pred_C_NHW = util::transpose_NCHW_to_CNHW(pred, C)
+  pred_NHW_C = t(pred_C_NHW)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  y_C_NHW = util::transpose_NCHW_to_CNHW(y, C)
+  y_NHW_C = t(y_C_NHW)
+
+  dpred_NHW_C = cross_entropy_loss::backward(pred_NHW_C, y_NHW_C)
+
+  #Transpose the matrix from (N*H*W, C) to (N, C*H*W)
+  dpred_C_NHW = t(dpred_NHW_C)
+  dpred = util::transpose_NCHW_to_CNHW(dpred_C_NHW, N)
+}
+

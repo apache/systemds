@@ -436,10 +436,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 					+ ", dimensions: [" + mc.getRows() + ", " + mc.getCols() + ", " + mc.getNonZeros() + "]");
 			begin = System.currentTimeMillis();
 		}
-			
-		double sparsity = ( mc.getNonZeros() >= 0 ? ((double)mc.getNonZeros())/(mc.getRows()*mc.getCols()) : 1.0d) ; 
+		
+		//read matrix and maintain meta data
+		double sparsity = (mc.getNonZeros() >= 0 ? ((double)mc.getNonZeros())/(mc.getRows()*mc.getCols()) : 1.0d); 
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen, clen,
 				mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, getFileFormatProperties());
+		setHDFSFileExists(true);
 		
 		//sanity check correct output
 		if( newData == null )
@@ -488,8 +490,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
 					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
 					((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
+					((RDDObject)rdd).setPending(false); //mark rdd as non-pending (for export)
 					((RDDObject)rdd).setHDFSFile(true); //mark rdd as hdfs file (for restore)
 					writeStatus.setValue(true);         //mark for no cache-write on read
+					//note: the flag hdfsFile is actually not entirely correct because we still hold an rdd 
+					//reference to the input not to an rdd of the hdfs file but the resulting behavior is correct
 				}
 				mb = readBlobFromHDFS(_hdfsFileName);
 			}

@@ -49,6 +49,11 @@ public abstract class ParWorker
 	protected long                      _workerID    = -1;
 	
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
+
+	public ExecutionContext getExecutionContext() {
+		return _ec;
+	}
+
 	protected ExecutionContext          _ec          = null;
 	protected ArrayList<String>         _resultVars  = null;
 

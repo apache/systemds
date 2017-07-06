@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Note this script is externalized to customer, please do not change w/o consulting component owner.
-
 # 100k Dataset:
 # hadoop jar SystemML.jar -f MultiClassSVMScore.dml -args itau/svm/X_100k_500 1 itau/svm/y_100k 0 itau/svm/w_100k_1 itau/svm/X_100k_500_scores itau/svm/X_100k_500_predicted_y itau/svm/X_100k_500_correct_percentage
 

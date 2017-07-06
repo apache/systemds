@@ -34,28 +34,28 @@ There are many ways to become involved with SystemML:
 ### Development Mailing List
 
 Perhaps the easiest way to obtain help and contribute to SystemML is to join the SystemML Development
-mailing list (dev@systemml.incubator.apache.org). You can subscribe to this list by sending an email to
-[dev-subscribe@systemml.incubator.apache.org](mailto:dev-subscribe@systemml.incubator.apache.org).
-You can unsubscribe from this list by sending an email to [dev-unsubscribe@systemml.incubator.apache.org](mailto:dev-unsubscribe@systemml.incubator.apache.org). The dev mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-dev/).
+mailing list (dev@systemml.apache.org). You can subscribe to this list by sending an email to
+[dev-subscribe@systemml.apache.org](mailto:dev-subscribe@systemml.apache.org).
+You can unsubscribe from this list by sending an email to [dev-unsubscribe@systemml.apache.org](mailto:dev-unsubscribe@systemml.apache.org). The dev mailing list archive can be found
+[here](http://mail-archives.apache.org/mod_mbox/systemml-dev/).
 
 ### Issues Mailing List
 
 The issues mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-issues/).
+[here](http://mail-archives.apache.org/mod_mbox/systemml-issues/).
 To subscribe to the issues list, send an email to
-[issues-subscribe@systemml.incubator.apache.org](mailto:issues-subscribe@systemml.incubator.apache.org).
+[issues-subscribe@systemml.apache.org](mailto:issues-subscribe@systemml.apache.org).
 To unsubscribe from the issues list, send an email to
-[issues-unsubscribe@systemml.incubator.apache.org](mailto:issues-unsubscribe@systemml.incubator.apache.org).
+[issues-unsubscribe@systemml.apache.org](mailto:issues-unsubscribe@systemml.apache.org).
 
 ### Commits Mailing List
 
 The commits mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-commits/).
+[here](http://mail-archives.apache.org/mod_mbox/systemml-commits/).
 To subscribe to the issues list, send an email to
-[commits-subscribe@systemml.incubator.apache.org](mailto:commits-subscribe@systemml.incubator.apache.org).
+[commits-subscribe@systemml.apache.org](mailto:commits-subscribe@systemml.apache.org).
 To unsubscribe from the issues list, send an email to
-[commits-unsubscribe@systemml.incubator.apache.org](mailto:commits-unsubscribe@systemml.incubator.apache.org).
+[commits-unsubscribe@systemml.apache.org](mailto:commits-unsubscribe@systemml.apache.org).
 
 
 ## Issue Tracker
@@ -74,12 +74,12 @@ fashion, please contact us on the dev mailing list and we will be happy to help 
 
 Once you have an issue to work on, how do you go about doing your work? The first thing you need is a GitHub
 account. Once you have a GitHub account, go to the Apache SystemML GitHub site at
-[https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml) and
+[https://github.com/apache/systemml](https://github.com/apache/systemml) and
 click the Fork button to fork a personal remote copy of the SystemML repository to your GitHub account.
 
 The next step is to clone your SystemML fork to your local machine.
 
-	$ git clone https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git
+	$ git clone https://github.com/YOUR_GITHUB_NAME/systemml.git
 
 Following this, it's a good idea to set your git user name and email address. In addition, you may want
 to set the `push.default` property to `simple`. You only need to execute these commands once.
@@ -91,17 +91,17 @@ to set the `push.default` property to `simple`. You only need to execute these c
 Next, reference the main SystemML repository as a remote repository. By convention, you can
 call this `upstream`. You only need to add the remote `upstream` repository once.
 
-	$ git remote add upstream https://github.com/apache/incubator-systemml.git
+	$ git remote add upstream https://github.com/apache/systemml.git
 
 After this, you should have an `origin` repository, which references your personal forked SystemML
 repository on GitHub, and the `upstream` repository, which references the main SystemML repository
 on GitHub.
 
 	$ git remote -v
-	origin   https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git (fetch)
-	origin   https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git (push)
-	upstream https://github.com/apache/incubator-systemml.git (fetch)
-	upstream https://github.com/apache/incubator-systemml.git (push)
+	origin   https://github.com/YOUR_GITHUB_NAME/systemml.git (fetch)
+	origin   https://github.com/YOUR_GITHUB_NAME/systemml.git (push)
+	upstream https://github.com/apache/systemml.git (fetch)
+	upstream https://github.com/apache/systemml.git (push)
 
 The main code branch by convention is the `master` branch. You can check out the `master` branch
 using the `checkout` command:
@@ -150,7 +150,7 @@ that you did on this branch. A Pull Request is a request for project committers 
 write access to Apache SystemML) to review your code and integrate your code into the project.
 Typically, you will see a green button to allow you to file a Pull Request.
 
-Once your Pull Request is opened at [SystemML Pull Requests](https://github.com/apache/incubator-systemml/pulls),
+Once your Pull Request is opened at [SystemML Pull Requests](https://github.com/apache/systemml/pulls),
 typically Jenkins will automatically build the project to see
 if all tests pass when run for your particular branch. These automatic builds
 can be seen [here](https://sparktc.ibmcloud.com/jenkins/job/SystemML-PullRequestBuilder/).
@@ -195,10 +195,29 @@ You can allow others to preview your documentation updates on GitHub by pushing 
 For instance, if you have filed a Pull Request for a documentation update on a regular branch,
 you could additionally push the `docs` subtree to the remote `gh-pages` branch. In the Pull Request
 conversation, you could include a link to the documentation that was automatically generated
-when you pushed to `gh-pages`. The URL is http://&lt;YOUR_NAME&gt;.github.io/incubator-systemml/.
+when you pushed to `gh-pages`. The URL is http://&lt;YOUR_NAME&gt;.github.io/systemml/.
 
 If you experience issues pushing the `docs` subtree to the `gh-pages` branch because you've
 previously pushed from a different branch, one simple solution is to delete the remote `gh-pages`
 branch and perform the `subtree` command again.
 
 	git push origin --delete gh-pages
+
+
+## Code Format
+
+### Java Code Format
+
+Java in SystemML should be formatted using a standard format. The "SystemML Format" at
+`dev/code-style/systemml-style-eclipse.xml` can be imported into Eclipse and
+`dev/code-style/systemml-style-intellij.xml` can be imported into IntelliJ
+for this purpose.
+
+No trailing whitespace is preferred. IDEs such as Eclipse and IntelliJ can be configured
+for this option.
+
+
+### DML Code Format
+
+DML in SystemML should be formatted according to a standard format. Indentation in DML
+files should be two spaces.

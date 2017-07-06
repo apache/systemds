@@ -47,14 +47,14 @@ public class PoolTest extends AutomatedTestBase
 	public void testMaxPool2DDense1() 
 	{
 		int numImg = 1; int imgSize = 6; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
 	public void testMaxPool2DDense2() 
 	{
 		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	
@@ -62,14 +62,43 @@ public class PoolTest extends AutomatedTestBase
 	public void testMaxPool2DDense3() 
 	{
 		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
 	public void testMaxPool2DDense4() 
 	{
 		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
+	}
+	
+	@Test
+	public void testMaxPool2DSparse1() 
+	{
+		int numImg = 1; int imgSize = 6; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
+	}
+	
+	@Test
+	public void testMaxPool2DSparse2() 
+	{
+		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
+	}
+	
+	
+	@Test
+	public void testMaxPool2DSparse3() 
+	{
+		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
+	}
+	
+	@Test
+	public void testMaxPool2DSparse4() 
+	{
+		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
 	}
 	
 	// ----------------------------------------
@@ -78,14 +107,14 @@ public class PoolTest extends AutomatedTestBase
 	public void testMaxPool2DDense1SP() 
 	{
 		int numImg = 1; int imgSize = 50; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
 	public void testMaxPool2DDense2SP() 
 	{
 		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	
@@ -93,14 +122,14 @@ public class PoolTest extends AutomatedTestBase
 	public void testMaxPool2DDense3SP() 
 	{
 		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
 	public void testMaxPool2DDense4SP() 
 	{
 		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	/**
@@ -109,7 +138,7 @@ public class PoolTest extends AutomatedTestBase
 	 * @param sparse
 	 */
 	public void runPoolTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
-			int pad, int poolSize1, int poolSize2, String poolMode) 
+			int pad, int poolSize1, int poolSize2, String poolMode, boolean sparse) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
@@ -117,13 +146,14 @@ public class PoolTest extends AutomatedTestBase
 		
 		try
 		{
-		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
+			String sparseVal = (""+sparse).toUpperCase();
+	    TestConfiguration config = getTestConfiguration(TEST_NAME);
+	    if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+	    }
 			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
@@ -136,7 +166,7 @@ public class PoolTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
 					"" + numChannels, "" + poolSize1, "" + poolSize2, 
 					"" + stride, "" + pad, poolMode, 
-					output("B")};
+					output("B"), sparseVal};
 			        
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
@@ -145,7 +175,7 @@ public class PoolTest extends AutomatedTestBase
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
 					" " + numChannels + " " + poolSize1 + 
-					" " + poolSize2 + " " + stride + " " + pad + " " + expectedDir(); 
+					" " + poolSize2 + " " + stride + " " + pad + " " + expectedDir() + " " + sparseVal; 
 			
 			// Run comparison R script
 			runRScript(true);
@@ -161,5 +191,6 @@ public class PoolTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
+	
 	
 }

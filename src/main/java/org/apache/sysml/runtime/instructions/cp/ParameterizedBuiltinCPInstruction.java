@@ -33,12 +33,10 @@ import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
-import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
-import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
@@ -56,7 +54,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 	private static final boolean TOSTRING_SPARSE = false;
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
-	
 	
 	private int arity;
 	protected HashMap<String,String> params;
@@ -142,8 +139,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if (   opcode.equals("transform")
-				 || opcode.equals("transformapply")
+		else if (   opcode.equals("transformapply")
 				 || opcode.equals("transformdecode")
 				 || opcode.equals("transformmeta")) 
 		{
@@ -248,21 +244,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			boolean dirVal = params.get("dir").equals("rows");
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
-			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(new MatrixBlock(), maxVal, dirVal, cast, ignore);
+			int numThreads = Integer.parseInt(params.get("k"));
+			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(
+				new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
-		}
-		else if ( opcode.equalsIgnoreCase("transform")) {
-			FrameObject fo = ec.getFrameObject(params.get("target"));
-			MatrixObject out = ec.getMatrixObject(output.getName());			
-			try {
-				JobReturn jt = DataTransform.cpDataTransform(this, new FrameObject[] { fo } , new MatrixObject[] {out} );
-				out.updateMatrixCharacteristics(jt.getMatrixCharacteristics(0));
-			} catch (Exception e) {
-				throw new DMLRuntimeException(e);
-			}
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply")) {
 			//acquire locks

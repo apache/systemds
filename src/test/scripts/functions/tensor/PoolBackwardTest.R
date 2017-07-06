@@ -34,7 +34,16 @@ Q=as.integer(args[9])
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
 dout=matrix(seq(1, numImg*numChannels*P*Q), numImg, numChannels*P*Q, byrow=TRUE)
-
+if(as.logical(args[11])) {
+	# zero_mask = (x - mean(x)) > 0 
+	# x = x * zero_mask
+}
+if(as.logical(args[12])) {
+	# zero_mask = (dout - mean(dout)) > 0 
+	# dout = dout * zero_mask
+}
+x = x - mean(x)
+dout = dout - mean(dout)
 max_pool_backward <- function(dout, Hout, Wout, X, C,
                     Hin, Win, Hf, Wf, strideh, stridew)
      {

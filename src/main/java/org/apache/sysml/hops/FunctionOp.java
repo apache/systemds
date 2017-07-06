@@ -79,7 +79,11 @@ public class FunctionOp extends Hop
 			in.getParent().add(this);
 		}
 	}
-	
+
+	/** FunctionOps may have any number of inputs. */
+	@Override
+	public void checkArity() throws HopsException {}
+
 	public String getFunctionNamespace()
 	{
 		return _fnamespace;

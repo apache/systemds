@@ -131,7 +131,7 @@ Eqs. (1) and (2).
 {% highlight python %}
 from systemml.mllearn import LogisticRegression
 # C = 1/reg
-logistic = LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
+logistic = LogisticRegression(spark, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = logistic.fit(X_train, y_train).predict(X_test)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -165,7 +165,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -180,7 +180,7 @@ val prediction = model.transform(X_test_df)
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the input matrix of feature vectors; each row
 constitutes one feature vector.
@@ -229,6 +229,8 @@ if no maximum limit provided
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 ### Examples
 
@@ -255,9 +257,7 @@ print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_te
 from pyspark.ml import Pipeline
 from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
-training = sqlCtx.createDataFrame([
+training = spark.createDataFrame([
     (0L, "a b c d e spark", 1.0),
     (1L, "b d", 2.0),
     (2L, "spark f g h", 1.0),
@@ -273,10 +273,10 @@ training = sqlCtx.createDataFrame([
 ], ["id", "text", "label"])
 tokenizer = Tokenizer(inputCol="text", outputCol="words")
 hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-lr = LogisticRegression(sqlCtx)
+lr = LogisticRegression(spark)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
 model = pipeline.fit(training)
-test = sqlCtx.createDataFrame([
+test = spark.createDataFrame([
     (12L, "spark i j k"),
     (13L, "l m n"),
     (14L, "mapreduce spark"),
@@ -290,7 +290,7 @@ prediction.show()
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
 import org.apache.sysml.api.ml.LogisticRegression
 import org.apache.spark.ml.Pipeline
-val training = sqlContext.createDataFrame(Seq(
+val training = spark.createDataFrame(Seq(
     ("a b c d e spark", 1.0),
     ("b d", 2.0),
     ("spark f g h", 1.0),
@@ -308,7 +308,7 @@ val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutp
 val lr = new LogisticRegression("logReg", sc)
 val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
 val model = pipeline.fit(training)
-val test = sqlContext.createDataFrame(Seq(
+val test = spark.createDataFrame(Seq(
     ("spark i j k", 1.0),
     ("l m n", 2.0),
     ("mapreduce spark", 1.0),
@@ -336,7 +336,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -500,7 +500,7 @@ support vector machine (`y` with domain size `2`).
 {% highlight python %}
 from systemml.mllearn import SVM
 # C = 1/reg
-svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
+svm = SVM(spark, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -532,7 +532,7 @@ val model = svm.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -579,7 +579,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -592,7 +592,7 @@ val prediction = model.transform(X_test_df)
 </div>
 </div>
 
-#### Arguments
+#### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each
 row constitutes one feature vector.
@@ -637,6 +637,8 @@ held-out test set. Note that this is an optional argument.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
 using a held-out test set. Note that this is an optional argument.
 
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 #### Examples
 
@@ -661,7 +663,7 @@ using a held-out test set. Note that this is an optional argument.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -695,7 +697,7 @@ using a held-out test set. Note that this is an optional argument.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -768,7 +770,7 @@ class labels.
 {% highlight python %}
 from systemml.mllearn import SVM
 # C = 1/reg
-svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
+svm = SVM(spark, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -800,7 +802,7 @@ val model = svm.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -847,7 +849,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -861,7 +863,7 @@ val prediction = model.transform(X_test_df)
 </div>
 
 
-#### Arguments
+#### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) containing the explanatory variables in
     a matrix. Each row constitutes an example.
@@ -906,6 +908,8 @@ SystemML Language Reference for details.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
     using a held-out test set. Note that this is an optional argument.
 
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 #### Examples
 
@@ -917,25 +921,21 @@ SystemML Language Reference for details.
 # Scikit-learn way
 from sklearn import datasets, neighbors
 from systemml.mllearn import SVM
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
 y_digits = digits.target 
 n_samples = len(X_digits)
-X_train = X_digits[:.9 * n_samples]
-y_train = y_digits[:.9 * n_samples]
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
-svm = SVM(sqlCtx, is_multi_class=True)
+X_train = X_digits[:int(.9 * n_samples)]
+y_train = y_digits[:int(.9 * n_samples)]
+X_test = X_digits[int(.9 * n_samples):]
+y_test = y_digits[int(.9 * n_samples):]
+svm = SVM(spark, is_multi_class=True)
 print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
 
 # MLPipeline way
 from pyspark.ml import Pipeline
 from systemml.mllearn import SVM
 from pyspark.ml.feature import HashingTF, Tokenizer
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 training = sqlCtx.createDataFrame([
     (0L, "a b c d e spark", 1.0),
     (1L, "b d", 2.0),
@@ -952,7 +952,7 @@ training = sqlCtx.createDataFrame([
 ], ["id", "text", "label"])
 tokenizer = Tokenizer(inputCol="text", outputCol="words")
 hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-svm = SVM(sqlCtx, is_multi_class=True)
+svm = SVM(spark, is_multi_class=True)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, svm])
 model = pipeline.fit(training)
 test = sqlCtx.createDataFrame([
@@ -969,7 +969,7 @@ prediction.show()
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
 import org.apache.sysml.api.ml.SVM
 import org.apache.spark.ml.Pipeline
-val training = sqlContext.createDataFrame(Seq(
+val training = spark.createDataFrame(Seq(
     ("a b c d e spark", 1.0),
     ("b d", 2.0),
     ("spark f g h", 1.0),
@@ -987,7 +987,7 @@ val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutp
 val svm = new SVM("svm", sc, isMultiClass=true)
 val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, svm))
 val model = pipeline.fit(training)
-val test = sqlContext.createDataFrame(Seq(
+val test = spark.createDataFrame(Seq(
     ("spark i j k", 1.0),
     ("l m n", 2.0),
     ("mapreduce spark", 1.0),
@@ -1014,7 +1014,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1048,7 +1048,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1123,7 +1123,7 @@ applicable when all features are counts of categorical values.
 <div data-lang="Python" markdown="1">
 {% highlight python %}
 from systemml.mllearn import NaiveBayes
-nb = NaiveBayes(sqlCtx, laplace=1.0)
+nb = NaiveBayes(spark, laplace=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = nb.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -1153,7 +1153,7 @@ val model = nb.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1198,7 +1198,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1212,7 +1212,7 @@ val prediction = model.transform(X_test_df)
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each
     row constitutes one feature vector.
@@ -1246,6 +1246,8 @@ SystemML Language Reference for details.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
     using a held-out test set. Note that this is an optional argument.
 
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 ### Examples
 
@@ -1258,8 +1260,6 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
 from systemml.mllearn import NaiveBayes
 from sklearn import metrics
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
 newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
 newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
@@ -1267,7 +1267,7 @@ vectorizer = TfidfVectorizer()
 # Both vectors and vectors_test are SciPy CSR matrix
 vectors = vectorizer.fit_transform(newsgroups_train.data)
 vectors_test = vectorizer.transform(newsgroups_test.data)
-nb = NaiveBayes(sqlCtx)
+nb = NaiveBayes(spark)
 nb.fit(vectors, newsgroups_train.target)
 pred = nb.predict(vectors_test)
 metrics.f1_score(newsgroups_test.target, pred, average='weighted')
@@ -1289,7 +1289,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1321,7 +1321,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1420,7 +1420,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1458,7 +1458,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1472,7 +1472,7 @@ implementation is well-suited to handle large-scale data and builds a
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes one feature vector. Note that categorical features in $X$
@@ -1558,7 +1558,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1593,7 +1593,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1828,7 +1828,7 @@ for classification in parallel.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1871,7 +1871,7 @@ for classification in parallel.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1887,7 +1887,7 @@ for classification in parallel.
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes one feature vector. Note that categorical features in $X$
@@ -1994,7 +1994,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -2032,7 +2032,7 @@ To compute predictions:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx

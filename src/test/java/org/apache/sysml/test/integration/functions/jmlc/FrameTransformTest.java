@@ -24,9 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
@@ -36,11 +33,9 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * 
- * 
- */
 public class FrameTransformTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "transform";
@@ -81,13 +76,6 @@ public class FrameTransformTest extends AutomatedTestBase
 		runJMLCReuseTest(TEST_NAME1, true, true);
 	}
 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @throws IOException 
-	 */
 	private void runJMLCReuseTest( String testname, boolean sparse, boolean modelReuse ) 
 		throws IOException
 	{	
@@ -110,13 +98,6 @@ public class FrameTransformTest extends AutomatedTestBase
 			Assert.assertEquals("Wrong result: "+data[0][0]+".", new Double(8), new Double(data[0][0]));
 	}
 
-	/**
-	 * 
-	 * @param X
-	 * @return
-	 * @throws DMLException
-	 * @throws IOException
-	 */
 	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, String[][] X, String[][] M, boolean modelReuse) 
 		throws IOException
 	{
@@ -173,12 +154,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	protected static String[][] createFrameData(double[][] data) {
 		return createFrameData(data, "V");
 	}
-	
-	/**
-	 * 
-	 * @param data
-	 * @return
-	 */
+
 	protected static String[][] createFrameData(double[][] data, String prefix) {
 		String[][] ret = new String[data.length][];
 		for( int i=0; i<data.length; i++ ) {

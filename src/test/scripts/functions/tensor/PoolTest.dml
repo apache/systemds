@@ -29,6 +29,13 @@ poolMode=$8
 
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
+if($10) {
+	zero_mask = (x - mean(x)) > 0 
+	x = x * zero_mask
+}
+else {
+	x = x - mean(x)
+}
 if(poolMode == "max") {
 	output = max_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }

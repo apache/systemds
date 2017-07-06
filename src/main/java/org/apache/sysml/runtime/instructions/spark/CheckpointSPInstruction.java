@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -76,7 +77,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		// Step 1: early abort on non-existing inputs 
+		// Step 1: early abort on non-existing or in-memory (cached) inputs
 		// -------
 		// (checkpoints are generated for all read only variables in loops; due to unbounded scoping and 
 		// conditional control flow they to not necessarily exist in the symbol table during runtime - 
@@ -85,6 +86,14 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
 			sec.setVariable( output.getName(), new BooleanObject(false));
+			return;
+		}
+		//-------
+		//(for csv input files with unknown dimensions, we might have generated a checkpoint after
+		//csvreblock although not necessary because the csvreblock was subject to in-memory reblock)
+		CacheableData<?> obj = sec.getCacheableData(input1.getName());
+		if( obj.isCached(true) ) { //available in memory
+			sec.setVariable(output.getName(), obj);
 			return;
 		}
 		
@@ -121,10 +130,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 					out = ((JavaPairRDD<Long,FrameBlock>)in)
 						.mapValues(new CopyFrameBlockFunction(false));	
 			}
-		
+			
 			//convert mcsr into memory-efficient csr if potentially sparse
 			if( input1.getDataType()==DataType.MATRIX 
-				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn) ) 
+				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn)
+				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) 
 			{				
 				out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)out)
 					.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));

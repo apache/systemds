@@ -32,5 +32,19 @@ Q = $9
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
 dout=matrix(seq(1, numImg*numFilters*P*Q), rows=numImg, cols=numFilters*P*Q)
+if($11) {
+	zero_mask = (x - mean(x)) > 0 
+	x = x * zero_mask
+}
+else {
+	x = x - mean(x)
+}
+if($12) {
+	zero_mask = (dout - mean(dout)) > 0 
+	dout = dout * zero_mask
+}
+else {
+	dout = dout - mean(dout)
+}
 dw = conv2d_backward_filter(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize])
 write(dw, $10, format="text")

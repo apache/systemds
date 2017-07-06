@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# Inverse of lower triangular matrix
+L_triangular_inv = function(Matrix[double] L)
+  return(Matrix[double] A) {
+    n = ncol(L)
+
+    if (n == 1) {
+      A = 1/L[1,1]
+    } else if (n == 2) {
+      A = matrix(0, rows=2, cols=2)
+      A[1,1] = L[2,2]
+      A[2,2] = L[1,1]
+      A[2,1] = -L[2,1]
+      A = A/(as.scalar(L[1,1] * L[2,2]))
+    } else {
+      k = as.integer(floor(n/2))
+
+      L11 = L[1:k,1:k]
+      L21 = L[k+1:n,1:k]
+      L22 = L[k+1:n,k+1:n]
+
+      A11 = L_triangular_inv(L11)
+      A22 = L_triangular_inv(L22)
+      A12 = matrix(0, rows=nrow(A11), cols=ncol(A22))
+      A21 = -A22 %*% L21 %*% A11
+
+      A = rbind(cbind(A11, A12), cbind(A21, A22))
+    }
+  }
+
+# Inverse of upper triangular matrix
+U_triangular_inv = function(Matrix[double] U)
+  return(Matrix[double] A) {
+    n = ncol(U)
+
+    if (n == 1) {
+      A = 1/U[1,1]
+    } else if (n == 2) {
+      A = matrix(0, rows=2, cols=2)
+      A[1,1] = U[2,2]
+      A[2,2] = U[1,1]
+
+      A[1,2] = -U[1,2]
+      A = A/(as.scalar(U[1,1] * U[2,2]))
+    } else {
+      k = as.integer(floor(n/2))
+
+      U11 = U[1:k,1:k]
+      U12 = U[1:k,k+1:n]
+      U22 = U[k+1:n,k+1:n]
+
+      A11 = U_triangular_inv(U11)
+      A22 = U_triangular_inv(U22)
+      A12 = -A11 %*% U12 %*% A22
+      A21 = matrix(0, rows=nrow(A22), cols=ncol(A11))
+
+      A = rbind(cbind(A11, A12), cbind(A21, A22))
+    }
+  }

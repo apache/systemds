@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -45,6 +45,7 @@ def assemble(sparkSession, pdf, inputCols, outputCol):
 class BaseSystemMLEstimator(Estimator):
     features_col = 'features'
     label_col = 'label'
+    do_visualize = False
     
     def set_features_col(self, colName):
         """
@@ -66,6 +67,73 @@ class BaseSystemMLEstimator(Estimator):
         """
         self.label_col = colName
 
+    def setGPU(self, enable):
+        """
+        Whether or not to enable GPU.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self.estimator.setGPU(enable)
+        return self
+    
+    def setForceGPU(self, enable):
+        """
+        Whether or not to force the usage of GPU operators.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self.estimator.setForceGPU(enable)
+        return self
+        
+    def setExplain(self, explain):
+        """
+        Explanation about the program. Mainly intended for developers.
+
+        Parameters
+        ----------
+        explain: boolean
+        """
+        self.estimator.setExplain(explain)
+        return self
+            
+    def setStatistics(self, statistics):
+        """
+        Whether or not to output statistics (such as execution time, elapsed time)
+        about script executions.
+
+        Parameters
+        ----------
+        statistics: boolean
+        """
+        self.estimator.setStatistics(statistics)
+        return self
+    
+    def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
+        """
+        The maximum number of heavy hitters that are printed as part of the statistics.
+
+        Parameters
+        ----------
+        maxHeavyHitters: int
+        """
+        self.estimator.setStatisticsMaxHeavyHitters(maxHeavyHitters)
+        return self
+        
+    def setConfigProperty(self, propertyName, propertyValue):
+        """
+        Set configuration property, such as setConfigProperty("localtmpdir", "/tmp/systemml").
+
+        Parameters
+        ----------
+        propertyName: String
+        propertyValue: String
+        """
+        self.estimator.setConfigProperty(propertyName, propertyValue)
+        return self
     
     def _fit_df(self):
         try:
@@ -149,6 +217,76 @@ class BaseSystemMLEstimator(Estimator):
     def transform(self, X):
         return self.predict(X)
     
+    def _convertPythonXToJavaObject(self, X):
+        """
+        Converts the input python object X to a java-side object (either MatrixBlock or Java DataFrame)
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        """
+        if isinstance(X, SUPPORTED_TYPES) and self.transferUsingDF:
+            pdfX = convertToPandasDF(X)
+            df = assemble(self.sparkSession, pdfX, pdfX.columns, self.features_col).select(self.features_col)
+            return df._jdf
+        elif isinstance(X, SUPPORTED_TYPES):
+            return convertToMatrixBlock(self.sc, X)
+        elif hasattr(X, '_jdf') and self.features_col in X.columns:
+            # No need to assemble as input DF is likely coming via MLPipeline
+            return X._jdf
+        elif hasattr(X, '_jdf'):
+            assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
+            df = assembler.transform(X)
+            return df._jdf
+        else:
+            raise Exception('Unsupported input type')
+        
+    def _convertJavaOutputToPythonObject(self, X, output):
+        """
+        Converts the a java-side object output (either MatrixBlock or Java DataFrame) to a python object (based on the type of X).
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        output: a java-side object (either MatrixBlock or Java DataFrame)
+        """
+        if isinstance(X, SUPPORTED_TYPES) and self.transferUsingDF:
+            retDF = DataFrame(output, self.sparkSession)
+            retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
+            return retPDF.as_matrix().flatten() if isinstance(X, np.ndarray) else retPDF
+        elif isinstance(X, SUPPORTED_TYPES):
+            return convertToNumPyArr(self.sc, output)
+        elif hasattr(X, '_jdf'):
+            retDF = DataFrame(output, self.sparkSession)
+            # Return DF
+            return retDF.sort('__INDEX')
+        else:
+            raise Exception('Unsupported input type')
+        
+    def predict_proba(self, X):
+        """
+        Invokes the transform_probability method on Estimator object on JVM if X and y are on of the supported data types
+        Return predicted class probabilities for X.
+
+        Parameters
+        ----------
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        """
+        if hasattr(X, '_jdf'):
+            return self.predict(X)
+        elif self.transferUsingDF:
+            raise ValueError('The parameter transferUsingDF is not valid for the method predict_proba')
+        try:
+            if self.estimator is not None and self.model is not None:
+                self.estimator.copyProperties(self.model)
+        except AttributeError:
+            pass
+        try:
+            jX = self._convertPythonXToJavaObject(X)
+            return self._convertJavaOutputToPythonObject(X, self.model.transform_probability(jX))
+        except Py4JError:
+            traceback.print_exc()
+    
     # Returns either a DataFrame or MatrixBlock after calling transform(X:MatrixBlock, y:MatrixBlock) on Model object on JVM
     def predict(self, X):
         """
@@ -158,40 +296,17 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
         """
-        if isinstance(X, SUPPORTED_TYPES):
-            if self.transferUsingDF:
-                pdfX = convertToPandasDF(X)
-                df = assemble(self.sparkSession, pdfX, pdfX.columns, self.features_col).select(self.features_col)
-                retjDF = self.model.transform(df._jdf)
-                retDF = DataFrame(retjDF, self.sparkSession)
-                retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
-                if isinstance(X, np.ndarray):
-                    return self.decode(retPDF.as_matrix().flatten())
-                else:
-                    return self.decode(retPDF)
-            else:
-                try:
-                    retNumPy = self.decode(convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X))))
-                except Py4JError:
-                    traceback.print_exc()
-                if isinstance(X, np.ndarray):
-                    return retNumPy
-                else:
-                    return retNumPy # TODO: Convert to Pandas
-        elif hasattr(X, '_jdf'):
-            if self.features_col in X.columns:
-                # No need to assemble as input DF is likely coming via MLPipeline
-                df = X
-            else:
-                assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
-                df = assembler.transform(X)
-            retjDF = self.model.transform(df._jdf)
-            retDF = DataFrame(retjDF, self.sparkSession)
-            # Return DF
-            return retDF.sort('__INDEX')
-        else:
-            raise Exception('Unsupported input type')
-
+        try:
+            if self.estimator is not None and self.model is not None:
+                self.estimator.copyProperties(self.model)
+        except AttributeError:
+            pass
+        try:
+            jX = self._convertPythonXToJavaObject(X)
+            ret = self._convertJavaOutputToPythonObject(X, self.model.transform(jX))
+            return self.decode(ret) if isinstance(X, SUPPORTED_TYPES) else ret
+        except Py4JError:
+            traceback.print_exc()
 
 class BaseSystemMLClassifier(BaseSystemMLEstimator):
 
@@ -201,11 +316,29 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         return self.le.transform(y) + 1
         
     def decode(self, y):
+        if not hasattr(self, 'le'):
+            self.le = None
+        if not hasattr(self, 'labelMap'):
+            self.labelMap = None
         if self.le is not None:
             return self.le.inverse_transform(np.asarray(y - 1, dtype=int))
-        else:
+        elif self.labelMap is not None:
             return [ self.labelMap[int(i)] for i in y ]
+        else:
+            return y
         
+    def predict(self, X):
+        predictions = super(BaseSystemMLClassifier, self).predict(X)
+        from pyspark.sql.dataframe import DataFrame as df
+        if type(predictions) == df:
+            return predictions
+        else:
+            try:
+                return np.asarray(predictions, dtype='double')
+            except ValueError:
+                print(type(predictions))
+                return np.asarray(predictions, dtype='str')
+            
     def score(self, X, y):
         """
         Scores the predicted value with ground truth 'y'
@@ -215,8 +348,59 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return accuracy_score(y, self.predict(X))
+        predictions = np.asarray(self.predict(X))
+        if np.issubdtype(predictions.dtype.type, np.number):
+            return accuracy_score(y, predictions)
+        else:
+            return accuracy_score(np.asarray(y, dtype='str'), np.asarray(predictions, dtype='str'))
+            
+    def loadLabels(self, file_path):
+        createJavaObject(self.sc, 'dummy')
+        utilObj = self.sc._jvm.org.apache.sysml.api.ml.Utils()
+        if utilObj.checkIfFileExists(file_path):
+            df = self.sparkSession.read.csv(file_path, header=False).toPandas()
+            keys = np.asarray(df._c0, dtype='int')
+            values = np.asarray(df._c1, dtype='str')
+            self.labelMap = {}
+            for i in range(len(keys)):
+                self.labelMap[int(keys[i])] = values[i]
+            # self.encode(classes) # Giving incorrect results
+        
+    def load(self, weights, sep='/'):
+        """
+        Load a pretrained model. 
 
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored
+        sep: seperator to use (default: '/')
+        """
+        self.weights = weights
+        self.model.load(self.sc._jsc, weights, sep)
+        self.loadLabels(weights + '/labels.txt')
+        
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(self.sc._jsc, outputDir, format, sep)
+            if self.le is not None:
+                labelMapping = dict(enumerate(list(self.le.classes_), 1))
+            else:
+                labelMapping = self.labelMap
+            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
+            df = self.sparkSession.createDataFrame(lStr)
+            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
@@ -236,6 +420,34 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
         return r2_score(y, self.predict(X), multioutput='variance_weighted')
+        
+    def load(self, weights=None, sep='/'):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        sep: seperator to use (default: '/')
+        """
+        self.weights = weights
+        self.model.load(self.sc._jsc, weights, sep)
+
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self
 
 
 class LogisticRegression(BaseSystemMLClassifier):
@@ -328,11 +540,12 @@ class LogisticRegression(BaseSystemMLClassifier):
         self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = True
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegressionModel(self.estimator)
         if penalty != 'l2':
             raise Exception('Only l2 penalty is supported')
         if solver != 'newton-cg':
             raise Exception('Only newton-cg solver supported')
-
+        
 
 class LinearRegression(BaseSystemMLRegressor):
     """
@@ -398,6 +611,7 @@ class LinearRegression(BaseSystemMLRegressor):
         self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.LinearRegressionModel(self.estimator)
 
 
 class SVM(BaseSystemMLClassifier):
@@ -443,6 +657,7 @@ class SVM(BaseSystemMLClassifier):
         self.sc = sparkSession._sc
         self.uid = "svm"
         createJavaObject(self.sc, 'dummy')
+        self.is_multi_class = is_multi_class
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.SVM(self.uid, self.sc._jsc.sc(), is_multi_class)
         self.estimator.setMaxIter(max_iter)
         if C <= 0:
@@ -454,7 +669,7 @@ class SVM(BaseSystemMLClassifier):
         self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
-
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.SVMModel(self.estimator, self.is_multi_class)
 
 class NaiveBayes(BaseSystemMLClassifier):
     """
@@ -500,3 +715,127 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayesModel(self.estimator)
+
+class Caffe2DML(BaseSystemMLClassifier):
+    """
+    Performs training/prediction for a given caffe network.
+    
+    Examples
+    --------
+    
+    >>> from systemml.mllearn import Caffe2DML
+    >>> from mlxtend.data import mnist_data
+    >>> import numpy as np
+    >>> from sklearn.utils import shuffle
+    >>> X, y = mnist_data()
+    >>> X, y = shuffle(X, y)
+    >>> imgShape = (1, 28, 28)
+    >>> import urllib
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+    >>> caffe2DML = Caffe2DML(spark, 'lenet_solver.proto').set(max_iter=500)
+    >>> caffe2DML.fit(X, y)
+    """
+    def __init__(self, sparkSession, solver, input_shape, transferUsingDF=False, tensorboard_log_dir=None):
+        """
+        Performs training/prediction for a given caffe network. 
+
+        Parameters
+        ----------
+        sparkSession: PySpark SparkSession
+        solver: caffe solver file path
+        input_shape: 3-element list (number of channels, input height, input width)
+        transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
+        tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
+        """
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
+        createJavaObject(self.sc, 'dummy')
+        self.uid = "Caffe2DML"
+        self.model = None
+        if len(input_shape) != 3:
+            raise ValueError('Expected input_shape as list of 3 element')
+        solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver)
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver, str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
+        self.transferUsingDF = transferUsingDF
+        self.setOutputRawPredictionsToFalse = False
+        self.visualize_called = False
+        if tensorboard_log_dir is not None:
+            self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
+
+    def load(self, weights=None, sep='/', ignore_weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        sep: seperator to use (default: '/')
+        ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
+        """
+        self.weights = weights
+        self.estimator.setInput("$weights", str(weights))
+        self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+        self.model.load(self.sc._jsc, weights, sep)
+        self.loadLabels(weights + '/labels.txt')
+        if ignore_weights is not None:
+            self.estimator.setWeightsToIgnore(ignore_weights)
+            
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None):
+        """
+        Set input to Caffe2DML
+        
+        Parameters
+        ----------
+        debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
+        train_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
+        test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
+        parallel_batches: number of parallel batches
+        output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
+        """
+        if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
+        if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
+        if test_algo is not None: self.estimator.setInput("$test_algo", str(test_algo).lower())
+        if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
+        if output_activations is not None: self.estimator.setInput("$output_activations", str(output_activations))
+        return self
+    
+    def summary(self):
+        """
+        Print the summary of the network
+        """
+        import pyspark
+        if type(self.sparkSession) == pyspark.sql.session.SparkSession:
+            self.estimator.summary(self.sparkSession._jsparkSession)
+        else:
+            raise TypeError('Please use spark session of type pyspark.sql.session.SparkSession in the constructor')
+    
+    def visualize(self, layerName=None, varType='weight', aggFn='mean'):
+        """
+        Use this to visualize the training procedure (requires validation_percentage to be non-zero).
+        When one provides no argument to this method, we visualize training and validation loss.
+        
+        Parameters
+        ----------
+        layerName: Name of the layer in the Caffe prototype
+        varType: should be either 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
+        aggFn: should be either 'sum', 'mean', 'var' or 'sd'
+        """
+        valid_vis_var_types = ['weight', 'bias', 'dweight', 'dbias', 'output', 'doutput']
+        valid_vis_aggFn = [ 'sum', 'mean', 'var', 'sd' ]
+        if layerName is not None and varType is not None and aggFn is not None:
+            # Visualize other values
+            if varType not in valid_vis_var_types:
+                raise ValueError('The second argument should be either weight, bias, dweight, dbias, output or doutput')
+            if aggFn not in valid_vis_aggFn:
+                raise ValueError('The third argument should be either sum, mean, var, sd.')
+            if self.visualize_called:
+                self.estimator.visualizeLoss()
+            self.estimator.visualizeLayer(layerName, varType, aggFn)
+        else:
+            self.estimator.visualizeLoss()
+        self.visualize_called = True
+        return self
+    
+    

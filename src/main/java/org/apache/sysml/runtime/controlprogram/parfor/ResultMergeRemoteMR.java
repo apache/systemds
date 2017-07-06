@@ -39,6 +39,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -175,8 +176,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		String jobname = "ParFor-RMMR";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
-		JobConf job;
-		job = new JobConf( ResultMergeRemoteMR.class );
+		JobConf job = new JobConf( ResultMergeRemoteMR.class );
 		job.setJobName(jobname+_pfid);
 
 		//maintain dml script counters
@@ -195,8 +195,10 @@ public class ResultMergeRemoteMR extends ResultMerge
 			/////
 			//configure the MR job
 			if( withCompare ) {
-				pathCompare = new Path(fname).makeQualified(FileSystem.get(job));
-				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), ii, LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, brlen, bclen);
+				FileSystem fs = IOUtilFunctions.getFileSystem(pathNew, job);
+				pathCompare = new Path(fname).makeQualified(fs);
+				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), ii, 
+					LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, brlen, bclen);
 			}
 			else
 				MRJobConfiguration.setResultMergeInfo(job, "null", ii, LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, bclen, bclen);

@@ -39,17 +39,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 
 
-public class DMLConfig 
+public class DMLConfig
 {
 
 	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
@@ -71,17 +71,17 @@ public class DMLConfig
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	public static final String NATIVE_BLAS    			= "native.blas";
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
 	public static final String EXTRA_GPU_STATS			= "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS			= "systemml.stats.extraDNN"; //boolean
+	public static final String MAX_GPUS_PER_PROCESS = "systemml.gpu.perProcessMax"; // boolean, maximum number of gpus to use, -1 for all
 
-	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
+	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
-	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
-	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -116,12 +116,13 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
+		_defaultVals.put(NATIVE_BLAS,      			 "none" );
 
 		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
 
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
+		_defaultVals.put(MAX_GPUS_PER_PROCESS,	"-1");
 	}
 	
 	public DMLConfig()
@@ -174,16 +175,12 @@ public class DMLConfig
 		if (_fileName.startsWith("hdfs:") ||
 		    _fileName.startsWith("gpfs:") )  // config file from DFS
 		{
-			if( !LocalFileUtils.validateExternalFilename(_fileName, true) )
-				throw new IOException("Invalid (non-trustworthy) hdfs config filename.");
-			FileSystem DFS = FileSystem.get(ConfigurationManager.getCachedJobConf());
-            Path configFilePath = new Path(_fileName);
+			Path configFilePath = new Path(_fileName);
+			FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath);
             domTree = builder.parse(DFS.open(configFilePath));  
 		}
 		else  // config from local file system
 		{
-			if( !LocalFileUtils.validateExternalFilename(_fileName, false) )
-				throw new IOException("Invalid (non-trustworthy) local config filename.");
 			domTree = builder.parse(_fileName);
 		}
 		
@@ -405,7 +402,7 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO,
+				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO, NATIVE_BLAS,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
 				EXTRA_GPU_STATS, EXTRA_DNN_STATS
 		}; 

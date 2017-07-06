@@ -56,7 +56,7 @@ if(cmdLine_Y != " "){
 	if(min(y) < 1)
 		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
 	
-	correct_percentage = sum(ppred(predicted_y - y, 0, "==")) / N * 100;
+	correct_percentage = sum((predicted_y - y) == 0) / N * 100;
 	
 	acc_str = "Accuracy (%): " + correct_percentage
 	print(acc_str)

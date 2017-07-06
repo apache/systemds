@@ -342,19 +342,18 @@ public class Script {
 				inputParameters = new LinkedHashMap<String, Object>();
 			}
 			inputParameters.put(name, value);
-		} 
-		else {
+		} else {
 			Data data = MLContextUtil.convertInputType(name, value, metadata);
 			if (data != null) {
-				//store input variable name and data
+				// store input variable name and data
 				symbolTable.put(name, data);
 				inputVariables.add(name);
-				
-				//store matrix/frame meta data and disable variable cleanup
-				if( data instanceof CacheableData ) {
-					if( metadata != null )
+
+				// store matrix/frame meta data and disable variable cleanup
+				if (data instanceof CacheableData) {
+					if (metadata != null)
 						inputMetadata.put(name, metadata);
-					((CacheableData<?>)data).enableCleanup(false);
+					((CacheableData<?>) data).enableCleanup(false);
 				}
 			}
 		}
@@ -382,6 +381,31 @@ public class Script {
 	 */
 	public Script out(String... outputNames) {
 		outputVariables.addAll(Arrays.asList(outputNames));
+		return this;
+	}
+
+	/**
+	 * Register output variables.
+	 *
+	 * @param outputNames
+	 *            names of the output variables
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script out(scala.collection.Seq<String> outputNames) {
+		List<String> list = JavaConversions.seqAsJavaList(outputNames);
+		outputVariables.addAll(list);
+		return this;
+	}
+
+	/**
+	 * Register output variables.
+	 *
+	 * @param outputNames
+	 *            names of the output variables
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script out(List<String> outputNames) {
+		outputVariables.addAll(outputNames);
 		return this;
 	}
 
@@ -517,7 +541,8 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + ";\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "');\n");
+					sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue)
+							+ "');\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = read('', data_type='frame');\n");
 				} else {
@@ -528,7 +553,8 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + "\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = load('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "')\n");
+					sb.append(" = load('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue)
+							+ "')\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = load('', data_type='frame')\n");
 				} else {
@@ -678,4 +704,16 @@ public class Script {
 		return this;
 	}
 
+	/**
+	 * Execute the script and return the results as an MLResults object.
+	 *
+	 * @return results as an MLResults object
+	 */
+	public MLResults execute() {
+		MLContext ml = MLContext.getActiveMLContext();
+		if (ml == null) {
+			throw new MLContextException("No MLContext object exists. Please create one.");
+		}
+		return ml.execute(this);
+	}
 }

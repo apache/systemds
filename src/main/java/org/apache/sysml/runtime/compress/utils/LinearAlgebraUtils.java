@@ -128,44 +128,28 @@ public class LinearAlgebraUtils
 		final int bn = len%8;
 		
 		//rest, not aligned to 8-blocks
-		for( int j = 0; j < bn; j++, ai++ )
-			val += a[ ai ];
+		for( int j = ai; j < ai+bn; j++ )
+			val += a[ j ];
 		
 		//unrolled 8-block (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, ai+=8 )
-		{
-			val += a[ ai+0 ]
-			     + a[ ai+1 ]
-			     + a[ ai+2 ]
-			     + a[ ai+3 ]
-			     + a[ ai+4 ]
-			     + a[ ai+5 ]
-			     + a[ ai+6 ]
-			     + a[ ai+7 ];
+		for( int j = ai+bn; j < ai+len; j+=8 ) {
+			val += a[ j+0 ] + a[ j+1 ] + a[ j+2 ] + a[ j+3 ]
+			     + a[ j+4 ] + a[ j+5 ] + a[ j+6 ] + a[ j+7 ];
 		}
 		
 		return val;
 	}
 
-	public static void copyUpperToLowerTriangle( MatrixBlock ret )
-	{
-		double[] c = ret.getDenseBlock();
-		final int m = ret.getNumRows();
-		final int n = ret.getNumColumns();
-		
-		//copy symmetric values
-		for( int i=0, uix=0; i<m; i++, uix+=n )
-			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-				c[ lix ] = c[ uix+j ];
+	public static long copyUpperToLowerTriangle( MatrixBlock ret ) {
+		return LibMatrixMult.copyUpperToLowerTriangle(ret);
 	}
-
-	public static void copyNonZerosToRowCol( MatrixBlock ret, MatrixBlock tmp, int ix )
-	{
+	
+	public static void copyNonZerosToUpperTriangle( MatrixBlock ret, MatrixBlock tmp, int ix ) {
+		double[] a = tmp.getDenseBlock();
 		for(int i=0; i<tmp.getNumColumns(); i++) {
-			double val = tmp.quickGetValue(0, i);
-			if( val != 0 ) {
-				ret.setValueDenseUnsafe(ix, i, val);
-				ret.setValueDenseUnsafe(i, ix, val);
+			if( a[i] != 0 ) {
+				ret.setValueDenseUnsafe(
+					(ix<i)?ix:i, (ix<i)?i:ix, a[i]);
 			}
 		}
 	}

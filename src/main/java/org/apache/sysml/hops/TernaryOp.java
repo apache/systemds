@@ -42,9 +42,10 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
-/* Primary use cases for now, are
+/** Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <scalar>):       quantile (A, w, s)
  * 		interquantile (<n-1-matrix>, <n-1-matrix>, <scalar>):  interquantile (A, w, s)
@@ -55,9 +56,10 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  * 	interquantile (A, s)
  * 
  * Note: this hop should be called AggTernaryOp in consistency with AggUnaryOp and AggBinaryOp;
- * however, since there does not exist a real TernaryOp yet - we can leave it as is for now. 
+ * however, since there does not exist a real TernaryOp yet - we can leave it as is for now.
+ *
+ * CTABLE op takes 2 extra inputs with target dimensions for padding and pruning.
  */
-
 public class TernaryOp extends Hop 
 {
 	
@@ -105,7 +107,18 @@ public class TernaryOp extends Hop
 		inp5.getParent().add(this);
 		_dimInputsPresent = true;
 	}
-	
+
+	@Override
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		if (_dimInputsPresent) {
+			// only CTABLE
+			HopsException.check(sz == 5, this, "should have arity 5 for op %s but has arity %d", _op, sz);
+		} else {
+			HopsException.check(sz == 3, this, "should have arity 3 for op %s but has arity %d", _op, sz);
+		}
+	}
+
 	public OpOp3 getOp(){
 		return _op;
 	}
@@ -637,7 +650,8 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = null;
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) )
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
+				.initialGPUMemBudget()) )
 			et = ExecType.GPU;
 		else
 			et = optFindExecType();

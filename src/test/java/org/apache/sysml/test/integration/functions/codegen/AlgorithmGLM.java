@@ -144,25 +144,24 @@ public class AlgorithmGLM extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			String[] addArgs = new String[4];
+			String param4Name = "lpow=";
 			switch(type) {
-				case POISSON_LOG: //dfam, vpow, link, vpow
+				case POISSON_LOG: //dfam, vpow, link, lpow
 					addArgs[0] = "1"; addArgs[1] = "1.0"; addArgs[2] = "1"; addArgs[3] = "0.0";
 					break;
-				case GAMMA_LOG:   //dfam, vpow, link, vpow
+				case GAMMA_LOG:   //dfam, vpow, link, lpow
 					addArgs[0] = "1"; addArgs[1] = "2.0"; addArgs[2] = "1"; addArgs[3] = "0.0";
 					break;
 				case BINOMIAL_PROBIT: //dfam, vpow, link, yneg 
 					addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "2";
+					param4Name = "yneg=";
 					break;
 			}
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "-stats",
-				"-args", input("X"), input("Y"),
-				String.valueOf(intercept), String.valueOf(epsilon), String.valueOf(maxiter), 
-				addArgs[0], addArgs[1], addArgs[2], addArgs[3], output("w")};
+			fullDMLScriptName = "scripts/algorithms/GLM.dml";
+			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "moi="+String.valueOf(maxiter), 
+				"dfam="+addArgs[0], "vpow="+addArgs[1], "link="+addArgs[2], param4Name+addArgs[3], "B="+output("w")};
 
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), addArgs[0], addArgs[1], addArgs[2], addArgs[3], expectedDir());

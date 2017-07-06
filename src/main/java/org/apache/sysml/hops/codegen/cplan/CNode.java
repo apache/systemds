@@ -20,10 +20,10 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class CNode
 {
@@ -59,12 +59,23 @@ public abstract class CNode
 		return _inputs;
 	}
 	
+	public boolean isGenerated() {
+		return _generated;
+	}
+
+	public void resetGenerated() {
+		if( isGenerated() )
+			for( CNode cn : _inputs )
+				cn.resetGenerated();
+		_generated = false;
+	}
+	
 	public String createVarname() {
 		_genVar = "TMP"+_seqVar.getNextID();
 		return _genVar; 
 	}
 	
-	protected String getCurrentVarName() {
+	protected static String getCurrentVarName() {
 		return "TMP"+(_seqVar.getCurrentID()-1);
 	}
 	
@@ -72,15 +83,22 @@ public abstract class CNode
 		return _genVar;
 	}
 	
+	public String getVectorLength() {
+		if( getVarname().startsWith("a") )
+			return "len";
+		else if( getVarname().startsWith("b") )
+			return getVarname()+".clen";
+		else if( _dataType==DataType.MATRIX )
+			return getVarname()+".length";
+		return "";
+	}
+	
 	public String getClassname() {
 		return getVarname();
 	}
 	
-	public void resetGenerated() {
-		if( _generated )
-			for( CNode cn : _inputs )
-				cn.resetGenerated();
-		_generated = false;
+	public void resetHash() {
+		_hash = 0;
 	}
 	
 	public void setNumRows(long rows) {
@@ -146,7 +164,7 @@ public abstract class CNode
 		setVisited(false);
 	}
 	
-	public abstract String codegen(boolean sparse) ;
+	public abstract String codegen(boolean sparse);
 	
 	public abstract void setOutputDims();
 	
@@ -159,21 +177,19 @@ public abstract class CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int numIn = _inputs.size();
-			int[] tmp = new int[numIn + 3];
 			//include inputs, partitioned by matrices and scalars to increase 
 			//reuse in case of interleaved inputs (see CNodeTpl.renameInputs)
-			int pos = 0;
+			int h = 1;
 			for( CNode c : _inputs )
 				if( c.getDataType()==DataType.MATRIX )
-					tmp[pos++] = c.hashCode();
+					h = UtilFunctions.intHashCode(h, c.hashCode());
 			for( CNode c : _inputs )
 				if( c.getDataType()!=DataType.MATRIX )
-					tmp[pos++] = c.hashCode();
-			tmp[numIn+0] = (_output!=null)?_output.hashCode():0;
-			tmp[numIn+1] = (_dataType!=null)?_dataType.hashCode():0;
-			tmp[numIn+2] = Boolean.valueOf(_literal).hashCode();
-			_hash = Arrays.hashCode(tmp);
+					h = UtilFunctions.intHashCode(h, c.hashCode());
+			h = UtilFunctions.intHashCode(h, (_output!=null)?_output.hashCode():0);
+			h = UtilFunctions.intHashCode(h, (_dataType!=null)?_dataType.hashCode():0);
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(_literal));
+			_hash = h;
 		}
 		return _hash;
 	}

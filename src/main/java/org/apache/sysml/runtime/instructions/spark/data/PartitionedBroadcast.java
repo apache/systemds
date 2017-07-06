@@ -54,6 +54,14 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	public Broadcast<PartitionedBlock<T>>[] getBroadcasts() {
 		return _pbc;
 	}
+	
+	public long getNumRows() {
+		return _pbc[0].value().getNumRows();
+	}
+	
+	public long getNumCols() {
+		return _pbc[0].value().getNumCols();
+	}
 
 	public int getNumRowBlocks() {
 		return _pbc[0].value().getNumRowBlocks();

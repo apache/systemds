@@ -139,3 +139,87 @@ updates for the image:
 |-----------------|---------------------------------|-----------------|
 | `w3*y1 + w1*y3` | `w4*y1 + w3*y2 + w2*y3 + w1*y4` | `w4*y2 + w2*y4` |
 | `w3*y3`         | `w4*y3 + w3*y4`                 | `w4*y4`         |
+
+# Caffe2DML examples
+
+## Training using Caffe models on Lenet
+
+The below script also demonstrates how to save the trained model.
+
+```python
+# Download the MNIST dataset
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+X, y = mnist_data()
+X, y = shuffle(X, y)
+num_classes = np.unique(y).shape[0]
+img_shape = (1, 28, 28)
+
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+
+# Download the Lenet network
+import urllib
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+
+# Train Lenet On MNIST using scikit-learn like API
+from systemml.mllearn import Caffe2DML
+lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto').set(max_iter=500, debug=True).setStatistics(True)
+print('Lenet score: %f' % lenet.fit(X_train, y_train).score(X_test, y_test))
+
+# Save the trained model
+lenet.save('lenet_model')
+```
+
+## Load the trained model and retrain (i.e. finetuning)
+
+```python
+# Fine-tune the existing trained model
+new_lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto', weights='lenet_model').set(max_iter=500, debug=True)
+new_lenet.fit(X_train, y_train)
+new_lenet.save('lenet_model')
+```
+
+## Perform prediction using the above trained model
+
+```python
+# Use the new model for prediction
+predict_lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto', weights='lenet_model')
+print('Lenet score: %f' % predict_lenet.score(X_test, y_test))
+```
+
+Similarly, you can perform prediction using the pre-trained ResNet network
+
+```python
+from systemml.mllearn import Caffe2DML
+from pyspark.sql import SQLContext
+import numpy as np
+import urllib, os, scipy.ndimage
+from PIL import Image
+import systemml as sml
+
+# ImageNet specific parameters
+img_shape = (3, 224, 224)
+
+# Downloads a jpg image, resizes it to 224 and return as numpy array in N X CHW format
+url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/MountainLion.jpg/312px-MountainLion.jpg'
+outFile = 'test.jpg'
+urllib.urlretrieve(url, outFile)
+input_image = sml.convertImageToNumPyArr(Image.open(outFile), img_shape=img_shape)
+
+# Download the ResNet network
+import urllib
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/resnet/ilsvrc12/ResNet_50_network.proto', 'ResNet_50_network.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/resnet/ilsvrc12/ResNet_50_solver.proto', 'ResNet_50_solver.proto')
+
+# Assumes that you have cloned the model_zoo repository
+# git clone https://github.com/niketanpansare/model_zoo.git
+resnet = Caffe2DML(sqlCtx, solver='ResNet_50_solver.proto', weights='~/model_zoo/caffe/vision/resnet/ilsvrc12/ResNet_50_pretrained_weights').set(input_shape=img_shape)
+resnet.predict(input_image)
+```

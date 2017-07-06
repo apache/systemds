@@ -61,7 +61,7 @@ top-$K$ (for a given value of $K$) principal components.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f PCA.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=<file>
                                          K=<int>
@@ -113,7 +113,7 @@ SystemML Language Reference for details.
                             -nvargs INPUT=/user/ml/input.mtx
                                     K=10
                                     CENTER=1
-                                    SCALE=1O
+                                    SCALE=1
                                     FMT=csv
                                     PROJDATA=1
                                     OUTPUT=/user/ml/pca_output/
@@ -124,12 +124,12 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f PCA.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=/user/ml/input.mtx
                                          K=10
                                          CENTER=1
-                                         SCALE=1O
+                                         SCALE=1
                                          FMT=csv
                                          PROJDATA=1
                                          OUTPUT=/user/ml/pca_output/
@@ -142,7 +142,7 @@ SystemML Language Reference for details.
                             -nvargs INPUT=/user/ml/test_input.mtx
                                     K=10
                                     CENTER=1
-                                    SCALE=1O
+                                    SCALE=1
                                     FMT=csv
                                     PROJDATA=1
                                     MODEL=/user/ml/pca_output/
@@ -154,12 +154,12 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f PCA.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=/user/ml/test_input.mtx
                                          K=10
                                          CENTER=1
-                                         SCALE=1O
+                                         SCALE=1
                                          FMT=csv
                                          PROJDATA=1
                                          MODEL=/user/ml/pca_output/
@@ -262,7 +262,7 @@ problems.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs V=<file>
                                          L=<file>
@@ -296,7 +296,7 @@ problems.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS_predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -327,7 +327,7 @@ problems.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS_topk_predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -436,7 +436,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs V=/user/ml/V
                                          L=/user/ml/L
@@ -472,7 +472,7 @@ To compute predicted ratings for a given list of users and items:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS_predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y
@@ -506,7 +506,7 @@ predicted ratings for a given list of users:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f ALS_topk_predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y

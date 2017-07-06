@@ -40,21 +40,20 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
-import org.apache.sysml.runtime.io.FrameReaderTextCell;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
-import org.apache.sysml.runtime.io.ReaderTextCell;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -87,7 +86,7 @@ import org.apache.wink.json4j.JSONObject;
  * For examples, please see the following:
  * <ul>
  *   <li>JMLC JUnit test cases (org.apache.sysml.test.integration.functions.jmlc)</li>
- *   <li><a target="_blank" href="http://apache.github.io/incubator-systemml/jmlc.html">JMLC section
+ *   <li><a target="_blank" href="http://apache.github.io/systemml/jmlc.html">JMLC section
  *   of SystemML online documentation</a></li>
  * </ul>
  */
@@ -167,7 +166,7 @@ public class Connection implements Closeable
 		try
 		{
 			//parsing
-			AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate
@@ -197,8 +196,7 @@ public class Connection implements Closeable
 			// don't chain ParseException (for cleaner error output)
 			throw pe;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLException(ex);
 		}
 			
@@ -234,8 +232,8 @@ public class Connection implements Closeable
 			if(    fname.startsWith("hdfs:") 
 				|| fname.startsWith("gpfs:") ) 
 			{ 
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path scriptPath = new Path(fname);
+				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system
@@ -249,7 +247,8 @@ public class Connection implements Closeable
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
-		} finally {
+		}
+		finally {
 			IOUtilFunctions.closeSilently(in);
 		}
 		
@@ -324,16 +323,93 @@ public class Connection implements Closeable
 	}
 	
 	/**
-	 * Converts an input string representation of a matrix in textcell format
+	 * Converts an input string representation of a matrix in csv or textcell format
 	 * into a dense double array. The meta data string is the SystemML generated
 	 * .mtd file including the number of rows and columns.
 	 * 
-	 * @param input string matrix in textcell format
+	 * @param input string matrix in csv or textcell format
 	 * @param meta string representing SystemML matrix metadata in JSON format
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(String input, String meta) 
+		throws IOException
+	{
+		MatrixBlock mb = convertToMatrix(input, meta);
+		return DataConverter.convertToDoubleMatrix(mb);
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in textcell format
+	 * into a dense double array. 
+	 * 
+	 * @param input string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a two-dimensional double array
+	 * @throws IOException if IOException occurs
+	 */
+	public double[][] convertToDoubleMatrix(String input, int rows, int cols) throws IOException {
+		return convertToDoubleMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in textcell format
+	 * into a dense double array. 
+	 * 
+	 * @param input InputStream to a string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a two-dimensional double array
+	 * @throws IOException if IOException occurs
+	 */
+	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) throws IOException {
+		return convertToDoubleMatrix(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in csv or textcell format
+	 * into a dense double array. 
+	 * 
+	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @param format input format of the given stream
+	 * @return matrix as a two-dimensional double array
+	 * @throws IOException if IOException occurs
+	 */
+	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols, String format) 
+		throws IOException
+	{
+		MatrixBlock mb = convertToMatrix(input, rows, cols, format);
+		return DataConverter.convertToDoubleMatrix(mb);
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in csv or textcell format
+	 * into a matrix block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input string matrix in csv or textcell format
+	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(String input, String meta) throws IOException {
+		return convertToMatrix(IOUtilFunctions.toInputStream(input), meta);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in csv or textcell format
+	 * into a matrix block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(InputStream input, String meta) 
 		throws IOException
 	{
 		try {
@@ -342,15 +418,9 @@ public class Connection implements Closeable
 			int rows = jmtd.getInt(DataExpression.READROWPARAM);
 			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-	
-			//sanity check input format
-			if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
-				||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format))) {
-				throw new IOException("Invalid input format (expected: text or mm): "+format);
-			}
 			
 			//parse the input matrix
-			return convertToDoubleMatrix(input, rows, cols);
+			return convertToMatrix(input, rows, cols, format);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -359,50 +429,66 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a matrix in textcell format
-	 * into a dense double array. The number of rows and columns need to be 
-	 * specified because textcell only represents non-zero values and hence
-	 * does not define the dimensions in the general case.
+	 * into a matrix block. 
 	 * 
 	 * @param input string matrix in textcell format
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
-	 * @return matrix as a two-dimensional double array
+	 * @return matrix as a matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
-		throws IOException
-	{
-		InputStream is = IOUtilFunctions.toInputStream(input);
-		return convertToDoubleMatrix(is, rows, cols);
+	public MatrixBlock convertToMatrix(String input, int rows, int cols) throws IOException {
+		return convertToMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
 	}
 	
 	/**
 	 * Converts an input stream of a string matrix in textcell format
-	 * into a dense double array. The number of rows and columns need to be 
-	 * specified because textcell only represents non-zero values and hence
-	 * does not define the dimensions in the general case.
+	 * into a matrix block. 
 	 * 
 	 * @param input InputStream to a string matrix in textcell format
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
-	 * @return matrix as a two-dimensional double array
+	 * @return matrix as a matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) 
+	public MatrixBlock convertToMatrix(InputStream input, int rows, int cols) throws IOException {
+		return convertToMatrix(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in csv or textcell format
+	 * into a matrix block. 
+	 * 
+	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @param format input format of the given stream
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(InputStream input, int rows, int cols, String format) 
 		throws IOException
 	{
-		double[][] ret = null;
+		MatrixBlock ret = null;
+
+		//sanity check input format
+		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
+			||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format)
+			||DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format)) ) {
+			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
+		}
 		
 		try {
 			//read input matrix
-			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(input, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
-		
-			//convert to double array
-			ret = DataConverter.convertToDoubleMatrix( mb );
+			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
+					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			int blksz = ConfigurationManager.getBlocksize();
+			ret = reader.readMatrixFromInputStream(input, 
+					rows, cols, blksz, blksz, (long)rows*cols);
 		}
 		catch(DMLRuntimeException rex) {
-			throw new IOException( rex );
+			throw new IOException(rex);
 		}
 		
 		return ret;
@@ -467,16 +553,93 @@ public class Connection implements Closeable
 	}
 	
 	/**
-	 * Converts an input string representation of a frame in textcell format
+	 * Converts an input string representation of a frame in csv or textcell format
 	 * into a dense string array. The meta data string is the SystemML generated
 	 * .mtd file including the number of rows and columns.
 	 * 
-	 * @param input string frame in textcell format
+	 * @param input string frame in csv or textcell format
 	 * @param meta string representing SystemML frame metadata in JSON format
 	 * @return frame as a two-dimensional string array
 	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(String input, String meta) 
+		throws IOException
+	{
+		FrameBlock fb = convertToFrame(input, meta);
+		return DataConverter.convertToStringFrame(fb);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in textcell format
+	 * into a dense string array. 
+	 * 
+	 * @param input string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException if IOException occurs
+	 */
+	public String[][] convertToStringFrame(String input, int rows, int cols) throws IOException {
+		return convertToStringFrame(IOUtilFunctions.toInputStream(input), rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in textcell format
+	 * into a dense string array. 
+	 * 
+	 * @param input InputStream to a string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException if IOException occurs
+	 */
+	public String[][] convertToStringFrame(InputStream input, int rows, int cols) throws IOException {
+		return convertToStringFrame(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in csv or textcell format
+	 * into a dense string array. 
+	 * 
+	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @param format input format of the given stream
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException if IOException occurs
+	 */
+	public String[][] convertToStringFrame(InputStream input, int rows, int cols, String format) 
+		throws IOException
+	{
+		FrameBlock fb = convertToFrame(input, rows, cols, format);
+		return DataConverter.convertToStringFrame(fb);
+	}
+	
+	/**
+	 * Converts an input string representation of a frame in csv or textcell format
+	 * into a frame block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input string frame in csv or textcell format
+	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(String input, String meta) throws IOException {
+		return convertToFrame(IOUtilFunctions.toInputStream(input), meta);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in csv or textcell format
+	 * into a frame block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(InputStream input, String meta) 
 		throws IOException
 	{
 		try {
@@ -485,15 +648,9 @@ public class Connection implements Closeable
 			int rows = jmtd.getInt(DataExpression.READROWPARAM);
 			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-	
-			//sanity check input format
-			if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
-				||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format))) {
-				throw new IOException("Invalid input format (expected: text or mm): "+format);
-			}
 			
 			//parse the input frame
-			return convertToStringFrame(input, rows, cols);
+			return convertToFrame(input, rows, cols, format);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -502,55 +659,68 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a frame in textcell format
-	 * into a dense string array. The number of rows and columns need to be 
-	 * specified because textcell only represents non-zero values and hence
-	 * does not define the dimensions in the general case.
+	 * into a frame block. 
 	 * 
 	 * @param input string frame in textcell format
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
-	 * @return frame as a two-dimensional string array
+	 * @return frame as a frame block
 	 * @throws IOException if IOException occurs
 	 */
-	public String[][] convertToStringFrame(String input, int rows, int cols) 
-		throws IOException
-	{
-		InputStream is = IOUtilFunctions.toInputStream(input);
-		return convertToStringFrame(is, rows, cols);
+	public FrameBlock convertToFrame(String input, int rows, int cols) throws IOException {
+		return convertToFrame(IOUtilFunctions.toInputStream(input), rows, cols);
 	}
 	
 	/**
 	 * Converts an input stream of a string frame in textcell format
-	 * into a dense string array. The number of rows and columns need to be 
-	 * specified because textcell only represents non-zero values and hence
-	 * does not define the dimensions in the general case.
+	 * into a frame block. 
 	 * 
 	 * @param input InputStream to a string frame in textcell format
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
-	 * @return frame as a two-dimensional string array
+	 * @return frame as a frame block
 	 * @throws IOException if IOException occurs
 	 */
-	public String[][] convertToStringFrame(InputStream input, int rows, int cols) 
+	public FrameBlock convertToFrame(InputStream input, int rows, int cols) throws IOException {
+		return convertToFrame(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a frame in csv or textcell format
+	 * into a frame block. 
+	 * 
+	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @param format input format of the given stream
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(InputStream input, int rows, int cols, String format) 
 		throws IOException
 	{
-		String[][] ret = null;
+		FrameBlock ret = null;
+	
+		//sanity check input format
+		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
+			||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format)
+			||DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format))) {
+			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
+		}
 		
 		try {
-			//read input matrix
-			FrameReaderTextCell reader = (FrameReaderTextCell)FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo);
-			FrameBlock mb = reader.readFrameFromInputStream(input, rows, cols);
-		
-			//convert to double array
-			ret = DataConverter.convertToStringFrame( mb );
+			//read input frame
+			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
+					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
+			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+			ret = reader.readFrameFromInputStream(input, rows, cols);
 		}
 		catch(DMLRuntimeException rex) {
-			throw new IOException( rex );
+			throw new IOException(rex);
 		}
 		
 		return ret;
 	}
-	
 	
 	////////////////////////////////////////////
 	// Read transform meta data

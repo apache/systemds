@@ -22,9 +22,6 @@ package org.apache.sysml.test.integration.functions.jmlc;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
@@ -32,11 +29,9 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * 
- * 
- */
 public class ReuseModelVariablesTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "reuse-glm-predict";
@@ -100,13 +95,6 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		runJMLCReuseTest(TEST_NAME2, true, true);
 	}
 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @throws IOException 
-	 */
 	private void runJMLCReuseTest( String testname, boolean sparse, boolean modelReuse ) 
 		throws IOException
 	{	
@@ -125,13 +113,6 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		Assert.assertEquals(Xset.size(), Yset.size());
 	}
 
-	/**
-	 * 
-	 * @param X
-	 * @return
-	 * @throws DMLException
-	 * @throws IOException
-	 */
 	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, ArrayList<double[][]> X, boolean modelReuse) 
 		throws IOException
 	{
@@ -187,15 +168,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param num
-	 * @param rows
-	 * @param cols
-	 * @param sparsity
-	 * @return
-	 */
+
 	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity )
 	{
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();

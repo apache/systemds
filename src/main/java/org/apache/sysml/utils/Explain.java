@@ -26,12 +26,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.codegen.cplan.CNode;
+import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
@@ -39,18 +39,18 @@ import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -105,6 +105,18 @@ public class Explain
 	//////////////
 	// public explain interface
 
+	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
+		throws HopsException, DMLRuntimeException, LanguageException {
+		if( counts == null )
+			counts = countDistributedOperations(rtprog);
+		
+		//explain plan of program (hops or runtime)
+		return "# EXPLAIN ("+type.name()+"):\n" 
+			+ Explain.explainMemoryBudget(counts)+"\n"
+			+ Explain.explainDegreeOfParallelism(counts)
+			+ Explain.explain(prog, rtprog, type, counts);
+	}
+	
 	public static String explainMemoryBudget() {
 		return explainMemoryBudget(new ExplainCounts());
 	}
@@ -187,6 +199,11 @@ public class Explain
 	}
 
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
+		throws HopsException, DMLRuntimeException, LanguageException {
+		return explain(prog, rtprog, type);
+	}	
+	
+	public static String explain(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
 		throws HopsException, DMLRuntimeException, LanguageException
 	{
 		//dispatch to individual explain utils
@@ -198,7 +215,7 @@ public class Explain
 			//explain runtime program	
 			case RUNTIME:  
 			case RECOMPILE_RUNTIME: 
-				return explain(rtprog);
+				return explain(rtprog, counts);
 			case NONE:
 				//do nothing
 		}
@@ -229,11 +246,12 @@ public class Explain
 				for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
 					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
 					FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+					String fkey = DMLProgram.constructFunctionKey(namespace, fname);
 					
 					if (fstmt instanceof ExternalFunctionStatement)
-						sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
+						sb.append("----EXTERNAL FUNCTION " + fkey + "\n");
 					else {
-						sb.append("----FUNCTION " + namespace + "::" + fname + " [recompile="+fsb.isRecompileOnce()+"]\n");
+						sb.append("----FUNCTION " + fkey + " [recompile="+fsb.isRecompileOnce()+"]\n");
 						for (StatementBlock current : fstmt.getBody())
 							sb.append(explainStatementBlock(current, 3));
 					}
@@ -249,13 +267,19 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( Program rtprog ) 
+	public static String explain( Program rtprog ) throws HopsException {
+		return explain(rtprog, null);
+	}
+	
+	public static String explain( Program rtprog, ExplainCounts counts ) 
 		throws HopsException 
 	{
 		//counts number of instructions
 		boolean sparkExec = OptimizerUtils.isSparkExecutionMode();
-		ExplainCounts counts = new ExplainCounts();
-		countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
+		if( counts == null ) {
+			counts = new ExplainCounts();
+			countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
+		}
 	
 		StringBuilder sb = new StringBuilder();		
 		
@@ -380,9 +404,13 @@ public class Explain
 		sb.append("----------------------------------------\n");
 		
 		//explain body dag
-		cplan.getOutput().resetVisitStatus();
-		sb.append(explainCNode(cplan.getOutput(), 1));
-		cplan.getOutput().resetVisitStatus();
+		cplan.resetVisitStatusOutputs();
+		if( cplan instanceof CNodeMultiAgg )
+			for( CNode output : ((CNodeMultiAgg)cplan).getOutputs() )
+				sb.append(explainCNode(output, 1));
+		else
+			sb.append(explainCNode(cplan.getOutput(), 1));
+		cplan.resetVisitStatusOutputs();
 		sb.append("----------------------------------------\n");
 		
 		return sb.toString();
@@ -421,8 +449,7 @@ public class Explain
 	 * @param rtprog runtime program
 	 * @return counts
 	 */
-	public static ExplainCounts countDistributedOperations( Program rtprog )
-	{		
+	public static ExplainCounts countDistributedOperations( Program rtprog ) {
 		ExplainCounts counts = new ExplainCounts();
 		if( OptimizerUtils.isSparkExecutionMode() ) 
 			Explain.countCompiledInstructions(rtprog, counts, false, true, true);
@@ -431,30 +458,7 @@ public class Explain
 				
 		return counts;		
 	}
-
-	public static ExplainType parseExplainType( String arg ) 
-		throws DMLException
-	{
-		ExplainType ret = ExplainType.NONE;
-		
-		if( arg !=null )
-		{
-			if( arg.equalsIgnoreCase("hops") )
-				ret = ExplainType.HOPS;
-			else if( arg.equalsIgnoreCase("runtime") )
-				ret = ExplainType.RUNTIME;
-			else if( arg.equalsIgnoreCase("recompile_hops") )
-				ret = ExplainType.RECOMPILE_HOPS;
-			else if( arg.equalsIgnoreCase("recompile_runtime") )
-				ret = ExplainType.RECOMPILE_RUNTIME;
-			else 
-				throw new DMLException("Failed to parse explain type: "+arg+" " +
-						               "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
-		}
-		
-		return ret;
-	}
-
+	
 	public static String getIdentation( int level ) {
 		return createOffset(level);
 	}
@@ -584,7 +588,7 @@ public class Explain
 			childs.append(" (");
 			boolean childAdded = false;
 			for( Hop input : hop.getInput() )
-				if( !(input instanceof LiteralOp) ){
+				if( SHOW_LITERAL_HOPS || !(input instanceof LiteralOp) ){
 					childs.append(childAdded?",":"");
 					childs.append(input.getHopID());
 					childAdded = true;

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,7 +39,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderBinaryBlock extends FrameReader
 {
-
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
@@ -50,8 +50,8 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname ); 
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
@@ -61,12 +61,19 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		return ret;
 	}
+	
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("Not implemented yet.");
+	}
 
 	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
 		//sequential read from sequence files
-		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
+		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 			readBinaryBlockFrameFromSequenceFile(lpath, job, fs, dest);
 	}
 
@@ -121,14 +128,14 @@ public class FrameReaderBinaryBlock extends FrameReader
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname ); 
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		LongWritable key = new LongWritable();
 		FrameBlock value = new FrameBlock();
 		
 		//read first block from first file
-		Path lpath = getSequenceFilePaths(fs, path)[0];  
+		Path lpath = IOUtilFunctions.getSequenceFilePaths(fs, path)[0];  
 		SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);		
 		try {
 			reader.next(key, value);

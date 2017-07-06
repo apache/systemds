@@ -27,7 +27,6 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -37,6 +36,8 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -55,7 +56,15 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	private final static double sparsity2 = 0.1;
 	private final static double eps=0.0000000001;
 
-	 
+	private static SparkSession spark;
+	private static JavaSparkContext sc;
+
+	@BeforeClass
+	public static void setUpClass() {
+		spark = createSystemMLSparkSession("DataFrameMatrixConversionTest", "local");
+		sc = new JavaSparkContext(spark.sparkContext());
+	}
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"A", "B"}));
@@ -160,20 +169,11 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	public void testVectorConversionWideSparseUnknown() {
 		testDataFrameConversion(true, cols3, false, true);
 	}
-	
-	/**
-	 * 
-	 * @param vector
-	 * @param singleColBlock
-	 * @param dense
-	 * @param unknownDims
-	 */
+
 	private void testDataFrameConversion(boolean vector, int cols, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
 
-		SparkExecutionContext sec = null;
-		
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -187,17 +187,12 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, cols, blksz, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
-			
-			//setup spark context
-			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
-			JavaSparkContext sc = sec.getSparkContext();
-			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-			
+
 			//get binary block input rdd
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
 			
 			//matrix - dataframe - matrix conversion
-			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(sparkSession, in, mc1, vector);
+			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(spark, in, mc1, vector);
 			df = ( rows==rows3 ) ? df.repartition(rows) : df;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
 			
@@ -212,9 +207,17 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			sec.close();
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 			DMLScript.rtplatform = oldPlatform;
 		}
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		// stop underlying spark context to allow single jvm tests (otherwise the
+		// next test that tries to create a SparkContext would fail)
+		spark.stop();
+		sc = null;
+		spark = null;
 	}
 }

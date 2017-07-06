@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.compress;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -31,6 +32,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
@@ -200,7 +202,18 @@ public abstract class ColGroupDDC extends ColGroupValue
 				c[i] = builtin.execute2(c[i], getData(i, j));
 	}
 	
-	
+	protected final void postScaling(double[] vals, double[] c) {
+		final int ncol = getNumCols();
+		final int numVals = getNumValues();
+		
+		for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
+			double aval = vals[k];
+			for( int j=0; j<ncol; j++ ) {
+				int colIx = _colIndexes[j];
+				c[colIx] += aval * _values[valOff+j];
+			}	
+		}
+	}
 
 	/**
 	 * Generic get value for byte-length-agnostic access.
@@ -223,5 +236,56 @@ public abstract class ColGroupDDC extends ColGroupValue
 	@Override
 	public long estimateInMemorySize() {
 		return super.estimateInMemorySize();
+	}
+	
+	@Override
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+		//DDC iterator is always row major, so no need for custom handling
+		return new DDCIterator(rl, ru, inclZeros);
+	}
+	
+	private class DDCIterator implements Iterator<IJV>
+	{
+		//iterator configuration 
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private final IJV _buff = new IJV(); 
+		private int _rpos = -1;
+		private int _cpos = -1;
+		private double _value = 0;
+		
+		public DDCIterator(int rl, int ru, boolean inclZeros) {
+			_ru = ru;
+			_inclZeros = inclZeros;
+			_rpos = rl;
+			_cpos = -1;
+			getNextValue();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public IJV next() {
+			_buff.set(_rpos, _colIndexes[_cpos], _value);
+			getNextValue();
+			return _buff;
+		}
+		
+		private void getNextValue() {
+			do {
+				boolean nextRow = (_cpos+1 >= getNumCols());
+				_rpos += nextRow ? 1 : 0; 
+				_cpos = nextRow ? 0 : _cpos+1;
+				if( _rpos >= _ru )
+					return; //reached end
+				_value = getData(_rpos, _cpos);
+			}
+			while( !_inclZeros && _value==0);
+		}
 	}
 }

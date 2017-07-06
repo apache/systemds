@@ -1,0 +1,213 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 2D Convolutional layer.
+ *
+ * This implementation is intended to be a simple, reference version.
+ */
+
+forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
+                   int C, int Hin, int Win, int Hf, int Wf,
+                   int strideh, int stridew, int padh, int padw)
+    return (matrix[double] out, int Hout, int Wout) {
+  /*
+   * Computes the forward pass for a 2D spatial convolutional layer with
+   * F filters.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * This implementation is intended to be a simple, reference version.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
+  N = nrow(X)
+  F = nrow(W)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
+
+  # Create output volume
+  out = matrix(0, rows=N, cols=F*Hout*Wout)
+
+  # Convolution - Simple reference implementation
+  parfor (n in 1:N) {  # all examples
+    Xn = matrix(X[n,], rows=C, cols=Hin*Win)
+    # Pad image
+    Xn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    parfor (c in 1:C) {
+      Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
+      Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
+      Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+    }
+    # Convolve image with filters
+    parfor (f in 1:F, check=0) {  # all filters
+      parfor (hout in 1:Hout, check=0) {  # all output rows
+        h0 = (hout-1)*strideh + 1
+        parfor (wout in 1:Wout, check=0) {  # all output columns
+          w0 = (wout-1)*stridew + 1
+          # Create a patch of the input example corresponding spatially to the filter sizes
+          Xn_padded_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
+          parfor (c in 1:C, check=0) {
+            Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)  # reshape
+            Xn_padded_patch[c,] = matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf], rows=1,
+                                         cols=Hf*Wf)  # reshape
+          }
+          out[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout] =
+              W[f,] %*% matrix(Xn_padded_patch, rows=C*Hf*Wf, cols=1) + b[f,]
+        }
+      }
+    }
+  }
+}
+
+backward = function(matrix[double] dout, int Hout, int Wout,
+                    matrix[double] X, matrix[double] W, matrix[double] b,
+                    int C, int Hin, int Win, int Hf, int Wf,
+                    int strideh, int stridew, int padh, int padw)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
+  /*
+   * Computes the backward pass for a 2D spatial convolutional layer
+   * with F filters.
+   *
+   * This implementation is intended to be a simple, reference version.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - db: Gradient wrt `b`, of shape (F, 1).
+   */
+  N = nrow(X)
+  F = nrow(W)
+
+  # Create gradient volumes
+  dX = matrix(0, rows=N, cols=C*Hin*Win)
+  dW = matrix(0, rows=F, cols=C*Hf*Wf)
+  db = matrix(0, rows=F, cols=1)
+
+  # Partial derivatives for convolution - Simple reference implementation
+  for (n in 1:N) {  # all examples
+    Xn = matrix(X[n,], rows=C, cols=Hin*Win)
+    # Pad image
+    Xn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    parfor (c in 1:C) {
+      Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
+      Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
+      Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+    }
+    dXn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))
+    for (f in 1:F) {  # all filters
+      for (hout in 1:Hout) {  # all output rows
+        h0 = (hout-1) * strideh + 1
+        for (wout in 1:Wout) {  # all output columns
+          w0 = (wout-1) * stridew + 1
+          # Create a patch of the input example corresponding spatially to the filter sizes
+          Xn_padded_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
+          dXn_padded_patch = matrix(W[f,] * dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout],
+                                    rows=C, cols=Hf*Wf)  # reshape
+          for (c in 1:C) {
+            Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)  # reshape
+            Xn_padded_patch[c,] = matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf],
+                                         rows=1, cols=Hf*Wf)  # reshape
+            dXn_padded_slice = matrix(0, rows=Hin+2*padh, cols=Win+2*padw)
+            dXn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf] = matrix(dXn_padded_patch[c,],
+                                                              rows=Hf, cols=Wf)  # reshape
+            dXn_padded[c,] = dXn_padded[c,] + matrix(dXn_padded_slice,
+                                                     rows=1, cols=(Hin+2*padh)*(Win+2*padw))
+          }
+          dW[f,] = dW[f,]
+                   + matrix(Xn_padded_patch, rows=1, cols=C*Hf*Wf)
+                   * dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout]
+          db[f,] = db[f,] + dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout]
+        }
+      }
+    }
+    # Unpad derivs on input
+    dXn = matrix(0, rows=C, cols=Hin*Win)
+    parfor (c in 1:C, check=0) {
+      dXn_padded_slice = matrix(dXn_padded[c,], rows=(Hin+2*padh), cols=(Win+2*padw))
+      dXn_slice = dXn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win]
+      dXn[c,] = matrix(dXn_slice, rows=1, cols=Hin*Win)
+    }
+    dX[n,] = matrix(dXn, rows=1, cols=C*Hin*Win)
+  }
+}
+
+init = function(int F, int C, int Hf, int Wf)
+    return (matrix[double] W, matrix[double] b) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
+   *
+   * Inputs:
+   *  - F: Number of filters.
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *
+   * Outputs:
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   */
+  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
+  b = matrix(0, rows=F, cols=1)
+}
+

@@ -49,11 +49,11 @@ refer to the Hadoop documentation.
 
 SystemML can be invoked in Hadoop Batch mode using the following syntax:
 
-    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
+    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
 
 The `SystemML.jar` file is specified to Hadoop using the `jar` option.
 The DML script to invoke is specified after the `-f` argument. Configuration settings can be passed to SystemML
-using the optional `-config=` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
+using the optional `-config ` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
 arguments (`-args`). Named arguments are preferred over positional arguments. Positional arguments are considered
 to be deprecated. All the primary algorithm scripts included with SystemML use named arguments.
 
@@ -69,11 +69,11 @@ to be deprecated. All the primary algorithm scripts included with SystemML use n
 
 In a clustered environment, it is *highly* recommended that SystemML configuration settings are specified
 in a `SystemML-config.xml` file. By default, SystemML will look for this file in the current working
-directory (`./SystemML-config.xml`). This location can be overridden by the `-config=` argument.
+directory (`./SystemML-config.xml`). This location can be overridden by the `-config ` argument.
 
 **Example #3: DML Invocation with Configuration File Explicitly Specified and Named Arguments**
 
-	hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -config=/conf/SystemML-config.xml -nvargs X=X.mtx k=5
+	hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -config /conf/SystemML-config.xml -nvargs X=X.mtx k=5
 
 For recommended SystemML configuration settings in a clustered environment, please see
 [Recommended Hadoop Cluster Configuration Settings](hadoop-batch-mode.html#recommended-hadoop-cluster-configuration-settings).
@@ -140,15 +140,15 @@ Following this, I unpacked it.
 
 **Alternatively**, we could have built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
 
-	[hadoop@host1 ~]$ git clone https://github.com/apache/incubator-systemml.git
-	[hadoop@host1 ~]$ cd incubator-systemml
-	[hadoop@host1 incubator-systemml]$ mvn clean package -P distribution
-	[hadoop@host1 incubator-systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
+	[hadoop@host1 ~]$ git clone https://github.com/apache/systemml.git
+	[hadoop@host1 ~]$ cd systemml
+	[hadoop@host1 systemml]$ mvn clean package -P distribution
+	[hadoop@host1 systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
 	[hadoop@host1 ~]$ cd ..
 
 I downloaded the `genLinearRegressionData.dml` script that is used in the SystemML README example.
 
-	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/datagen/genLinearRegressionData.dml
+	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genLinearRegressionData.dml
 
 Next, I invoked the `genLinearRegressionData.dml` DML script in Hadoop Batch mode.
 Hadoop was executed with the `SystemML.jar` file specified by the hadoop `jar` option.
@@ -170,7 +170,7 @@ arguments to the DML script were specified following the `-nvargs` option.
 
 In the console output, we see a warning that no default SystemML config file was found in the current working directory.
 In a distributed environment on a large data set, it is highly advisable to specify configuration settings in a SystemML config file for
-optimal performance. The location of the SystemML config file can be explicitly specified using the `-config=` argument.
+optimal performance. The location of the SystemML config file can be explicitly specified using the `-config ` argument.
 
 The OptimizerUtils warning occurs because parallel multi-threaded text reads in Java versions less than 1.8 result
 in thread contention issues, so only a single thread reads matrix data in text formats.
@@ -760,11 +760,11 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	AVG_RES_Y,1.5905895170230406E-10
 	STDEV_RES_Y,2.0668015575844624E-8
 	DISPERSION,4.262683023432828E-16
-	PLAIN_R2,1.0
+	R2,1.0
 	ADJUSTED_R2,1.0
-	PLAIN_R2_NOBIAS,1.0
+	R2_NOBIAS,1.0
 	ADJUSTED_R2_NOBIAS,1.0
-	PLAIN_R2_VS_0,1.0
+	R2_VS_0,1.0
 	ADJUSTED_R2_VS_0,1.0
 	Writing the output matrix...
 	END LINEAR REGRESSION SCRIPT
@@ -795,9 +795,9 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	AVG_RES_Y,1,,2.5577864570734575E-10
 	STDEV_RES_Y,1,,2.390848397359923E-8
 	PRED_STDEV_RES,1,TRUE,1.0
-	PLAIN_R2,1,,1.0
+	R2,1,,1.0
 	ADJUSTED_R2,1,,1.0
-	PLAIN_R2_NOBIAS,1,,1.0
+	R2_NOBIAS,1,,1.0
 	ADJUSTED_R2_NOBIAS,1,,1.0
 	15/11/17 15:51:17 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		0.269 sec.
@@ -853,13 +853,13 @@ The `numreducers` property specifies the number of reduce tasks per MR job.
 
 To begin, I'll download the `genRandData4Kmeans.dml` script that I'll use to generate a set of data.
 
-	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/datagen/genRandData4Kmeans.dml
+	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genRandData4Kmeans.dml
 
 A description of the named arguments that can be passed in to this script can be found in the comment section at the top of the
 `genRandData4Kmeans.dml` file. For data, I'll generate a matrix `X.mtx` consisting of 1 million rows and 100 features. I'll explicitly reference my `SystemML-config.xml` file, since I'm
 executing SystemML in Hadoop from my home directory rather than from the SystemML project root directory.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
 
 After the data generation has finished, I'll check HDFS for the amount of space used. The 1M-row matrix `X.mtx`
 requires about 2.8GB of space.
@@ -895,7 +895,7 @@ Here we can see the `X.mtx` data files.
 
 Next, I'll run the `Kmeans.dml` algorithm on the 1M-row matrix `X.mtx`.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config=/systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config /systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
 
 We can see the `Centroids.mtx` data file has been written to HDFS.
 
@@ -916,7 +916,7 @@ We can see the `Centroids.mtx` data file has been written to HDFS.
 Now that we have trained our model, next we will test our model. We can do this with
 the `Kmeans-predict.dml` script.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
 
 In the file system, we can see that the `PredY.mtx` matrix was created.
 The `stats.txt` file lists statistics about the results.

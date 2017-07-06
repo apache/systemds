@@ -34,13 +34,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public class SpoofCPInstruction extends ComputationCPInstruction
 {
-	private Class<?> _class = null;
-	private int _numThreads = 1;
-	private CPOperand[] _in = null;
+	private final Class<?> _class;
+	private final SpoofOperator _op;
+	private final int _numThreads;
+	private final CPOperand[] _in;
 	
-	public SpoofCPInstruction(Class<?> cla, int k, CPOperand[] in, CPOperand out, String opcode, String str) {
+	public SpoofCPInstruction(SpoofOperator op, Class<?> cla, int k, CPOperand[] in, CPOperand out, String opcode, String str) {
 		super(null, null, null, out, opcode, str);
 		_class = cla;
+		_op = op;
 		_numThreads = k;
 		_in = in;
 	}
@@ -55,23 +57,22 @@ public class SpoofCPInstruction extends ComputationCPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
 		ArrayList<CPOperand> inlist = new ArrayList<CPOperand>();
-		Class<?> cla = CodegenUtils.loadClass(parts[1]);
-		String opcode =  parts[0] + CodegenUtils.getSpoofType(cla);
+		Class<?> cla = CodegenUtils.getClass(parts[1]);
+		SpoofOperator op = CodegenUtils.createInstance(cla);
+		String opcode =  parts[0] + op.getSpoofType();
 		
 		for( int i=2; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
 		CPOperand out = new CPOperand(parts[parts.length-2]);
 		int k = Integer.parseInt(parts[parts.length-1]);
 		
-		return new SpoofCPInstruction(cla, k, inlist.toArray(new CPOperand[0]), out, opcode, str);
+		return new SpoofCPInstruction(op, cla, k, inlist.toArray(new CPOperand[0]), out, opcode, str);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 
-	{		
-		SpoofOperator op = (SpoofOperator) CodegenUtils.createInstance(_class);
-		
+	{
 		//get input matrices and scalars, incl pinning of matrices
 		ArrayList<MatrixBlock> inputs = new ArrayList<MatrixBlock>();
 		ArrayList<ScalarObject> scalars = new ArrayList<ScalarObject>();
@@ -87,11 +88,11 @@ public class SpoofCPInstruction extends ComputationCPInstruction
 		// set the output dimensions to the hop node matrix dimensions
 		if( output.getDataType() == DataType.MATRIX) {
 			MatrixBlock out = new MatrixBlock();
-			op.execute(inputs, scalars, out, _numThreads);
+			_op.execute(inputs, scalars, out, _numThreads);
 			ec.setMatrixOutput(output.getName(), out);
 		}
 		else if (output.getDataType() == DataType.SCALAR) {
-			ScalarObject out = op.execute(inputs, scalars, _numThreads);
+			ScalarObject out = _op.execute(inputs, scalars, _numThreads);
 			ec.setScalarOutput(output.getName(), out);
 		}
 		

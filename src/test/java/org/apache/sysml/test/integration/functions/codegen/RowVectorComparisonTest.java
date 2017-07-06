@@ -124,15 +124,16 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: 
-				rtplatform = RUNTIME_PLATFORM.SPARK;
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true; 
-				break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -159,10 +160,11 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 					|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
-			rtplatform = oldPlatform;
 		}
 	}	
 

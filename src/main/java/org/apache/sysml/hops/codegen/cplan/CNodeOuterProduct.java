@@ -20,10 +20,10 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CNodeOuterProduct extends CNodeTpl
@@ -39,10 +39,10 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    _outerProductType = OutProdType.%TYPE%;\n"
 			+ "  }\n"
-			+ "  protected void genexecDense( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, double[] c, int ci, int n, int m, int k, int rowIndex, int colIndex) { \n"
+			+ "  protected void genexecDense(double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, double[] c, int ci, int m, int n, int len, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "  }\n"
-			+ "  protected double genexecCellwise( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, int n, int m, int k, int rowIndex, int colIndex) { \n"
+			+ "  protected double genexecCellwise(double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, int m, int n, int len, int rowIndex, int colIndex) { \n"
 			+ "%BODY_cellwise%"
 			+ "    return %OUT_cellwise%;\n"
 			+ "  }\n"			
@@ -56,39 +56,41 @@ public class CNodeOuterProduct extends CNodeTpl
 	}
 	
 	@Override
+	public void renameInputs() {
+		rRenameDataNode(_output, _inputs.get(0), "a");
+		rRenameDataNode(_output, _inputs.get(1), "a1"); // u
+		rRenameDataNode(_output, _inputs.get(2), "a2"); // v
+		renameInputs(_inputs, 3);
+	}
+	
+	@Override
 	public String codegen(boolean sparse) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
 		
-		//rename inputs
-		rReplaceDataNode(_output, _inputs.get(0), "a");
-		rReplaceDataNode(_output, _inputs.get(1), "a1"); // u
-		rReplaceDataNode(_output, _inputs.get(2), "a2"); // v
-		renameInputs(_inputs, 3);
-
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false);
 		_output.resetGenerated();
 
-		tmp = tmp.replaceAll("%TMP%", createVarname());
+		tmp = tmp.replace("%TMP%", createVarname());
 
 		if(_type == OutProdType.LEFT_OUTER_PRODUCT || _type == OutProdType.RIGHT_OUTER_PRODUCT) {
-			tmp = tmp.replaceAll("%BODY_dense%", tmpDense);
-			tmp = tmp.replaceAll("%OUT%", "c");
-			tmp = tmp.replaceAll("%BODY_cellwise%", "");
-			tmp = tmp.replaceAll("%OUT_cellwise%", "0");
+			tmp = tmp.replace("%BODY_dense%", tmpDense);
+			tmp = tmp.replace("%OUT%", "c");
+			tmp = tmp.replace("%BODY_cellwise%", "");
+			tmp = tmp.replace("%OUT_cellwise%", "0");
 		}
 		else {
-			tmp = tmp.replaceAll("%BODY_dense%", "");
-			tmp = tmp.replaceAll("%BODY_cellwise%", tmpDense);
-			tmp = tmp.replaceAll("%OUT_cellwise%", getCurrentVarName());
+			tmp = tmp.replace("%BODY_dense%", "");
+			tmp = tmp.replace("%BODY_cellwise%", tmpDense);
+			tmp = tmp.replace("%OUT_cellwise%", getCurrentVarName());
 		}
 		//replace size information
-		tmp = tmp.replaceAll("%LEN%", "k");
+		tmp = tmp.replace("%LEN%", "len");
 		
-		tmp = tmp.replaceAll("%POSOUT%", "ci");
+		tmp = tmp.replace("%POSOUT%", "ci");
 		
-		tmp = tmp.replaceAll("%TYPE%", _type.toString());
+		tmp = tmp.replace("%TYPE%", _type.toString());
 
 		return tmp;
 	}
@@ -141,10 +143,9 @@ public class CNodeOuterProduct extends CNodeTpl
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = _type.hashCode();
-			int h3 = Boolean.valueOf(_transposeOutput).hashCode();
-			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
+			int h = UtilFunctions.intHashCode(super.hashCode(), _type.hashCode());
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(_transposeOutput));
+			_hash = h;
 		}
 		return _hash;
 	}

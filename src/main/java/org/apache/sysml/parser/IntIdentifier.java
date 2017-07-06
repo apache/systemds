@@ -33,21 +33,19 @@ public class IntIdentifier extends ConstIdentifier
 	public IntIdentifier(long val, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = val;
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.INT);
-        this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setDimensions(0,0);
+        computeDataType();
+        setValueType(ValueType.INT);
+        setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
 	public IntIdentifier(IntIdentifier i, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = i.getValue();
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.INT);
-        this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setDimensions(0,0);
+        computeDataType();
+        setValueType(ValueType.INT);
+        setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
 	// Used only by the parser for unary operation

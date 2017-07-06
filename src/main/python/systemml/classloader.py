@@ -38,6 +38,29 @@ def _createJavaObject(sc, obj_type):
     else:
         raise ValueError('Incorrect usage: supported values: mlcontext or dummy')
 
+def _getJarFileName(sc, suffix):
+    import imp, fnmatch
+    jar_file_name = '_ignore.jar'
+    java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
+    for file in os.listdir(java_dir):
+        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT' + suffix + '.jar') or fnmatch.fnmatch(file, 'systemml-*' + suffix + '.jar'):
+            jar_file_name = os.path.join(java_dir, file)
+    return jar_file_name
+
+def _getLoaderInstance(sc, jar_file_name, className, hint):
+    err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
+    if os.path.isfile(jar_file_name):
+        sc._jsc.addJar(jar_file_name)
+        jar_file_url = sc._jvm.java.io.File(jar_file_name).toURI().toURL()
+        url_class = sc._jvm.java.net.URL
+        jar_file_url_arr = sc._gateway.new_array(url_class, 1)
+        jar_file_url_arr[0] = jar_file_url
+        url_class_loader = sc._jvm.java.net.URLClassLoader(jar_file_url_arr, sc._jsc.getClass().getClassLoader())
+        c1 = sc._jvm.java.lang.Class.forName(className, True, url_class_loader)
+        return c1.newInstance()
+    else:
+        raise ImportError(err_msg + ' Hint: Download the jar from http://systemml.apache.org/download and ' + hint )
+
 def createJavaObject(sc, obj_type):
     """
     Performs appropriate check if SystemML.jar is available and returns the handle to MLContext object on JVM
@@ -51,27 +74,19 @@ def createJavaObject(sc, obj_type):
     try:
         return _createJavaObject(sc, obj_type)
     except (py4j.protocol.Py4JError, TypeError):
-        import imp, fnmatch
-        jar_file_name = '_ignore.jar'
-        java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
-        for file in os.listdir(java_dir):
-            if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating.jar'):
-                jar_file_name = os.path.join(java_dir, file)
-        err_msg = 'Unable to load SystemML.jar into current pyspark session.'
+        ret = None
+        err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
         hint = 'Provide the following argument to pyspark: --driver-class-path '
-        if os.path.isfile(jar_file_name):
-            sc._jsc.addJar(jar_file_name)
-            jar_file_url = sc._jvm.java.io.File(jar_file_name).toURI().toURL()
-            url_class = sc._jvm.java.net.URL
-            jar_file_url_arr = sc._gateway.new_array(url_class, 1)
-            jar_file_url_arr[0] = jar_file_url
-            url_class_loader = sc._jvm.java.net.URLClassLoader(jar_file_url_arr, sc._jsc.getClass().getClassLoader())
-            c1 = sc._jvm.java.lang.Class.forName('org.apache.sysml.utils.SystemMLLoaderUtils', True, url_class_loader)
-            x = c1.newInstance()
-            x.loadSystemML(jar_file_name)           
-        else:
-            raise ImportError(err_msg + ' Hint: Download the jar from http://systemml.apache.org/download and ' + hint + 'SystemML.jar')
+        # First load SystemML
+        jar_file_name = _getJarFileName(sc, '')
+        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.utils.SystemMLLoaderUtils', hint + 'SystemML.jar')
+        x.loadSystemML(jar_file_name)
         try:
-            return _createJavaObject(sc, obj_type)
+            ret = _createJavaObject(sc, obj_type)
         except (py4j.protocol.Py4JError, TypeError):
             raise ImportError(err_msg + ' Hint: ' + hint + jar_file_name)
+        # Now load caffe2dml
+        jar_file_name = _getJarFileName(sc, '-extra')
+        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-extra.jar')
+        x.loadCaffe2DML(jar_file_name)
+        return ret

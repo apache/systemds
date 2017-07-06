@@ -113,7 +113,6 @@ public class ExternalFunctionStatement extends FunctionStatement
 		for (int i=0; i<_inputParams.size(); i++){
 			DataIdentifier curr = _inputParams.get(i);
 			sb.append(curr.getName());
-			if (curr.getDefaultValue() != null) sb.append(" = " + curr.getDefaultValue());
 			if (i < _inputParams.size()-1) sb.append(", ");
 		}
 		sb.append(") return (");

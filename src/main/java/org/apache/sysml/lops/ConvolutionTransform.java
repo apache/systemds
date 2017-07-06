@@ -30,7 +30,7 @@ public class ConvolutionTransform extends Lop
 
 	
 	public enum OperationTypes {
-		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD,
+		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD, RELU_MAX_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
 		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY
 	};
@@ -111,6 +111,9 @@ public class ConvolutionTransform extends Lop
 			
 		case RELU_MAX_POOLING:
 			return "relu_maxpooling";
+			
+		case RELU_MAX_POOLING_BACKWARD:
+			return "relu_maxpooling_backward";
 			
 		case RELU_BACKWARD:
 			return "relu_backward";

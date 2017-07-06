@@ -62,7 +62,7 @@ censored and uncensored survival times.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TE=<file>
@@ -157,7 +157,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -194,7 +194,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -466,7 +466,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TE=<file>
@@ -508,7 +508,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          RT=<file>
@@ -617,7 +617,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -656,7 +656,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -696,7 +696,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X-sorted.mtx
                                          RT=/user/ml/recoded-timestamps.csv

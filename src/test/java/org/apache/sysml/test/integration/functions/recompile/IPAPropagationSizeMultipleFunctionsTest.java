@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -59,75 +58,57 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 	
 	@Test
 	public void testFunctionSizePropagationSameInput() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME1, false, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME1, false);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnzRight() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME2, false, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME2, false);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnzLeft() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME3, false, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME3, false);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnz() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME4, false, false);
-	}
-	
-	@Test
-	public void testFunctionSizePropagationDifferentDims() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, false, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME4, false);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationDifferentDimsUnary() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, false, true);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, false);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationSameInputIPA() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME1, true, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME1, true);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnzRightIPA() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME2, true, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME2, true);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnzLeftIPA() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME3, true, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME3, true);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationEqualDimsUnknownNnzIPA() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME4, true, false);
-	}
-	
-	@Test
-	public void testFunctionSizePropagationDifferentDimsIPA() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, true, false);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME4, true);
 	}
 	
 	@Test
 	public void testFunctionSizePropagationDifferentDimsIPAUnary() {
-		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, true, true);
+		runIPASizePropagationMultipleFunctionsTest(TEST_NAME5, true);
 	}
 	
-	
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
-	private void runIPASizePropagationMultipleFunctionsTest( String TEST_NAME, boolean IPA, boolean unary )
+	private void runIPASizePropagationMultipleFunctionsTest( String TEST_NAME, boolean IPA )
 	{	
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
-		boolean oldFlagUnary = InterProceduralAnalysis.UNARY_DIMS_PRESERVING_FUNS;
 		
 		try
 		{
@@ -142,8 +123,7 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
-			InterProceduralAnalysis.UNARY_DIMS_PRESERVING_FUNS = unary;
-
+			
 			//generate input data
 			double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrixWithMTD("V", V, true);
@@ -158,17 +138,15 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = (IPA) ? ((TEST_NAME.equals(TEST_NAME5))?(unary?2:4):1) : 
+			int expectedNumCompiled = (IPA) ? ((TEST_NAME.equals(TEST_NAME5))?2:1) : 
 				(TEST_NAME.equals(TEST_NAME5)?5:4); //reblock, 2xGMR foo, GMR 
 			int expectedNumExecuted = 0;			
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
-			InterProceduralAnalysis.UNARY_DIMS_PRESERVING_FUNS = oldFlagUnary;
 		}
 	}
 	

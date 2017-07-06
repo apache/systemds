@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,7 +35,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 public class ReaderBinaryCell extends MatrixReader
 {
-
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
@@ -44,8 +44,8 @@ public class ReaderBinaryCell extends MatrixReader
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
@@ -60,6 +60,13 @@ public class ReaderBinaryCell extends MatrixReader
 		return ret;
 	}
 
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("Not implemented yet.");
+	}
+	
 	@SuppressWarnings("deprecation")
 	private void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
@@ -72,7 +79,7 @@ public class ReaderBinaryCell extends MatrixReader
 		
 		try
 		{
-			for( Path lpath : getSequenceFilePaths(fs,path) ) //1..N files 
+			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs,path) ) //1..N files 
 			{
 				//directly read from sequence files (individual partfiles)
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);

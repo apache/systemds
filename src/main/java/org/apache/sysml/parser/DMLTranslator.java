@@ -41,6 +41,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.MultiInputOp;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -70,6 +71,7 @@ import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.Program;
 
 
 public class DMLTranslator 
@@ -263,11 +265,11 @@ public class DMLTranslator
 		
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
-			InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-		    ipa.analyzeProgram(dmlp);
-		   	resetHopsDAGVisitStatus(dmlp);
+			InterProceduralAnalysis ipa = new InterProceduralAnalysis(dmlp);
+			ipa.analyzeProgram(OptimizerUtils.ALLOW_IPA_SECOND_CHANCE ? 2 : 1);
+			resetHopsDAGVisitStatus(dmlp);
 		}
-		
+
 		//apply hop rewrites (dynamic rewrites, after IPA)
 		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
 		rewriter2.rewriteProgramHopDAGs(dmlp);
@@ -279,10 +281,16 @@ public class DMLTranslator
 		resetHopsDAGVisitStatus(dmlp);
 	}
 	
-	public void codgenHopsDAG(DMLProgram dmlp) 
+	public void codgenHopsDAG(DMLProgram dmlp)
 		throws LanguageException, HopsException, DMLRuntimeException 
 	{
-		SpoofCompiler.generateCode(dmlp);	
+		SpoofCompiler.generateCode(dmlp);
+	}
+	
+	public void codgenHopsDAG(Program rtprog)
+		throws LanguageException, HopsException, DMLRuntimeException, LopsException, IOException 
+	{
+		SpoofCompiler.generateCode(rtprog);
 	}
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
@@ -840,8 +848,10 @@ public class DMLTranslator
 			if (current instanceof AssignmentStatement) {
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
-				if (liveOut.containsVariable(target.getName())) {
-					liveOutToTemp.put(target.getName(), Integer.valueOf(i));
+				if (target != null) {
+					if (liveOut.containsVariable(target.getName())) {
+						liveOutToTemp.put(target.getName(), Integer.valueOf(i));
+					}
 				}
 			}
 			if (current instanceof MultiAssignmentStatement) {
@@ -949,7 +959,6 @@ public class DMLTranslator
 								current.getEndColumn());
 						output.add(stopHop);
 					} else if (ptype == PRINTTYPE.PRINTF) {
-						Hop.MultipleOperandOperation printfOperation = Hop.MultipleOperandOperation.PRINTF;
 						List<Expression> expressions = ps.getExpressions();
 						Hop[] inHops = new Hop[expressions.size()];
 						// process the expressions (function parameters) that
@@ -962,7 +971,7 @@ public class DMLTranslator
 						}
 						target.setValueType(ValueType.STRING);
 						Hop printfHop = new MultipleOp(target.getName(), target.getDataType(), target.getValueType(),
-								printfOperation, inHops);
+								MultiInputOp.PRINTF, inHops);
 						output.add(printfHop);
 					}
 
@@ -1058,7 +1067,13 @@ public class DMLTranslator
 
 					//create function op
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
+					FunctionOp fcall = null;
+					if (target == null) {
+						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{});
+					} else {
+						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
+					}
+
 					output.add(fcall);
 					
 					//TODO function output dataops (phase 3)
@@ -1378,72 +1393,64 @@ public class DMLTranslator
 	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processExpression(Expression source, DataIdentifier target, HashMap<String, Hop> hops) throws ParseException {
-		if (source.getKind() == Expression.Kind.BinaryOp) {
-			return processBinaryExpression((BinaryExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.RelationalOp) {
-			return processRelationalExpression((RelationalExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.BooleanOp) {
-			return processBooleanExpression((BooleanExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.Data) {
-			if (source instanceof IndexedIdentifier){
-				IndexedIdentifier sourceIndexed = (IndexedIdentifier) source;
-				return processIndexingExpression(sourceIndexed,target,hops);
-			} else if (source instanceof IntIdentifier) {
+		try {	
+			if( source instanceof BinaryExpression )
+				return processBinaryExpression((BinaryExpression) source, target, hops);
+			else if( source instanceof RelationalExpression )
+				return processRelationalExpression((RelationalExpression) source, target, hops);
+			else if( source instanceof BooleanExpression )
+				return processBooleanExpression((BooleanExpression) source, target, hops);
+			else if( source instanceof BuiltinFunctionExpression )
+				return processBuiltinFunctionExpression((BuiltinFunctionExpression) source, target, hops);
+			else if( source instanceof ParameterizedBuiltinFunctionExpression )
+				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
+			else if( source instanceof DataExpression ) {
+				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
+				if (ae instanceof DataOp){
+					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
+					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
+				}
+				return ae;
+			}
+			else if (source instanceof IndexedIdentifier)
+				return processIndexingExpression((IndexedIdentifier) source,target,hops);
+			else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceInt.getValue());
 				litop.setAllPositions(sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
 				setIdentifierParams(litop, sourceInt);
 				return litop;
-			} else if (source instanceof DoubleIdentifier) {
+			} 
+			else if (source instanceof DoubleIdentifier) {
 				DoubleIdentifier sourceDouble = (DoubleIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceDouble.getValue());
 				litop.setAllPositions(sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
 				setIdentifierParams(litop, sourceDouble);
 				return litop;
-			} else if (source instanceof DataIdentifier) {
-				DataIdentifier sourceId = (DataIdentifier) source;
-				return hops.get(sourceId.getName());
-			} else if (source instanceof BooleanIdentifier) {
+			}
+			else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceBoolean.getValue());
 				litop.setAllPositions(sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;
-			} else if (source instanceof StringIdentifier) {
+			} 
+			else if (source instanceof StringIdentifier) {
 				StringIdentifier sourceString = (StringIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceString.getValue());
 				litop.setAllPositions(sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
 				setIdentifierParams(litop, sourceString);
 				return litop;
-			}
-		} else if (source.getKind() == Expression.Kind.BuiltinFunctionOp) {
-			try {
-				return processBuiltinFunctionExpression((BuiltinFunctionExpression) source, target, hops);
-			} catch (HopsException e) {
-				throw new ParseException(e.getMessage());
-			}
-		} else if (source.getKind() == Expression.Kind.ParameterizedBuiltinFunctionOp ) {
-			try {
-				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
-			} catch ( HopsException e ) {
-				throw new ParseException(e.getMessage());
-			}
-		} else if (source.getKind() == Expression.Kind.DataOp ) {
-			try {	
-				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
-				
-				if (ae instanceof DataOp){
-					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
-				}
-				//hops.put(target.getName(), ae);
-				return ae;
-			} catch ( Exception e ) {
-				throw new ParseException(e.getMessage());
-			}
+			} 
+			else if (source instanceof DataIdentifier)
+				return hops.get(((DataIdentifier) source).getName());
+		} 
+		catch ( Exception e ) {
+			throw new ParseException(e.getMessage());
 		}
+		
 		return null;
-	} // end method processExpression
+	}
 
 	private DataIdentifier createTarget(Expression source) {
 		Identifier id = source.getOutput();
@@ -1530,7 +1537,7 @@ public class DMLTranslator
 		if( sourceOp.getDataType() == DataType.MATRIX && source.getOutput().getDataType() == DataType.SCALAR )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.DOUBLE, 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
 				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
@@ -1903,13 +1910,6 @@ public class DMLTranslator
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
 			
 			break;
-			
-		case TRANSFORM:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
-									paramHops);
-			break;	
 		
 		case TRANSFORMAPPLY:
 			currBuiltinOp = new ParameterizedBuiltinOp(
@@ -2137,7 +2137,7 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
-
+		
 		// Construct the hop based on the type of Builtin function
 		switch (source.getOpCode()) {
 
@@ -2770,7 +2770,12 @@ public class DMLTranslator
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
 		
-		setIdentifierParams(currBuiltinOp, source.getOutput());
+		if( !(source.getOpCode() == BuiltinFunctionOp.CONV2D || source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA ||
+				source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER || source.getOpCode() == BuiltinFunctionOp.MAX_POOL ||
+				source.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD) ) {
+			// Since the dimension of output doesnot match that of input variable for these operations
+			setIdentifierParams(currBuiltinOp, source.getOutput());
+		}
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
 	}

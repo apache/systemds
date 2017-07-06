@@ -938,7 +938,7 @@ public class ProgramConverter
 			//obtain serialized version of generated classes
 			if( linst instanceof SpoofCPInstruction ) {
 				Class<?> cla = ((SpoofCPInstruction) linst).getOperatorClass();
-				clsMap.put(cla.getName(), CodegenUtils.getClassAsByteArray(cla.getName()));
+				clsMap.put(cla.getName(), CodegenUtils.getClassData(cla.getName()));
 			}
 			
 			if( count > 0 )

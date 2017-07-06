@@ -25,13 +25,11 @@ import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 public class RelationalExpression extends Expression
 {
-		
 	private Expression _left;
 	private Expression _right;
 	private RelationalOp _opcode;
 	
 	public RelationalExpression(RelationalOp bop) {
-		_kind = Kind.RelationalOp;
 		_opcode = bop;
 		
 		setFilename("MAIN SCRIPT");
@@ -42,7 +40,6 @@ public class RelationalExpression extends Expression
 	}
 	
 	public RelationalExpression(RelationalOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn) {
-		_kind = Kind.RelationalOp;
 		_opcode = bop;
 		
 		setFilename(filename);

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,8 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 /**
  * Factory for creating DML and PYDML Script objects from strings, files, URLs,
@@ -42,7 +41,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on a string path to a file.
-	 * 
+	 *
 	 * @param scriptFilePath
 	 *            path to DML script file (local or HDFS)
 	 * @return DML Script object
@@ -53,7 +52,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on an input stream.
-	 * 
+	 *
 	 * @param inputStream
 	 *            input stream to DML
 	 * @return DML Script object
@@ -66,7 +65,7 @@ public class ScriptFactory {
 	 * Creates a DML Script object based on a file in the local file system. To
 	 * create a DML Script object from a local file or HDFS, please use
 	 * {@link #dmlFromFile(String)}.
-	 * 
+	 *
 	 * @param localScriptFile
 	 *            the local DML file
 	 * @return DML Script object
@@ -77,7 +76,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on a string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            string of DML
 	 * @return DML Script object
@@ -88,7 +87,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on a URL path.
-	 * 
+	 *
 	 * @param scriptUrlPath
 	 *            URL path to DML script
 	 * @return DML Script object
@@ -99,7 +98,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on a URL.
-	 * 
+	 *
 	 * @param scriptUrl
 	 *            URL to DML script
 	 * @return DML Script object
@@ -110,7 +109,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML Script object based on a resource path.
-	 * 
+	 *
 	 * @param resourcePath
 	 *            path to a resource on the classpath
 	 * @return DML Script object
@@ -121,7 +120,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML Script object based on a string path to a file.
-	 * 
+	 *
 	 * @param scriptFilePath
 	 *            path to PYDML script file (local or HDFS)
 	 * @return PYDML Script object
@@ -132,7 +131,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML Script object based on an input stream.
-	 * 
+	 *
 	 * @param inputStream
 	 *            input stream to PYDML
 	 * @return PYDML Script object
@@ -145,7 +144,7 @@ public class ScriptFactory {
 	 * Creates a PYDML Script object based on a file in the local file system.
 	 * To create a PYDML Script object from a local file or HDFS, please use
 	 * {@link #pydmlFromFile(String)}.
-	 * 
+	 *
 	 * @param localScriptFile
 	 *            the local PYDML file
 	 * @return PYDML Script object
@@ -156,7 +155,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML Script object based on a string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            string of PYDML
 	 * @return PYDML Script object
@@ -167,7 +166,7 @@ public class ScriptFactory {
 
 	/**
 	 * Creat a PYDML Script object based on a URL path.
-	 * 
+	 *
 	 * @param scriptUrlPath
 	 *            URL path to PYDML script
 	 * @return PYDML Script object
@@ -178,7 +177,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML Script object based on a URL.
-	 * 
+	 *
 	 * @param scriptUrl
 	 *            URL to PYDML script
 	 * @return PYDML Script object
@@ -189,7 +188,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML Script object based on a resource path.
-	 * 
+	 *
 	 * @param resourcePath
 	 *            path to a resource on the classpath
 	 * @return PYDML Script object
@@ -200,7 +199,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML or PYDML Script object based on a string path to a file.
-	 * 
+	 *
 	 * @param scriptFilePath
 	 *            path to DML or PYDML script file (local or HDFS)
 	 * @param scriptType
@@ -214,7 +213,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML or PYDML Script object based on an input stream.
-	 * 
+	 *
 	 * @param inputStream
 	 *            input stream to DML or PYDML
 	 * @param scriptType
@@ -230,7 +229,7 @@ public class ScriptFactory {
 	 * Creates a DML or PYDML Script object based on a file in the local file
 	 * system. To create a Script object from a local file or HDFS, please use
 	 * {@link scriptFromFile(String, ScriptType)}.
-	 * 
+	 *
 	 * @param localScriptFile
 	 *            The local DML or PYDML file
 	 * @param scriptType
@@ -244,7 +243,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML or PYDML Script object based on a string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            string of DML or PYDML
 	 * @param scriptType
@@ -257,7 +256,7 @@ public class ScriptFactory {
 
 	/**
 	 * Creat a DML or PYDML Script object based on a URL path.
-	 * 
+	 *
 	 * @param scriptUrlPath
 	 *            URL path to DML or PYDML script
 	 * @param scriptType
@@ -271,7 +270,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML or PYDML Script object based on a URL.
-	 * 
+	 *
 	 * @param scriptUrl
 	 *            URL to DML or PYDML script
 	 * @param scriptType
@@ -285,7 +284,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a DML or PYDML Script object based on a resource path.
-	 * 
+	 *
 	 * @param resourcePath
 	 *            path to a resource on the classpath
 	 * @param scriptType
@@ -293,13 +292,19 @@ public class ScriptFactory {
 	 * @return DML or PYDML Script object
 	 */
 	private static Script scriptFromResource(String resourcePath, ScriptType scriptType) {
+		if (resourcePath == null) {
+			return null;
+		}
+		if (!resourcePath.startsWith("/")) {
+			resourcePath = "/" + resourcePath;
+		}
 		InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath);
 		return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
 	}
 
 	/**
 	 * Create a DML Script object based on a string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            string of DML
 	 * @return DML Script object
@@ -312,7 +317,7 @@ public class ScriptFactory {
 	 * Obtain a script string from a file in the local file system. To obtain a
 	 * script string from a file in HDFS, please use
 	 * getScriptStringFromFile(String scriptFilePath).
-	 * 
+	 *
 	 * @param file
 	 *            The script file.
 	 * @return The script string.
@@ -325,13 +330,7 @@ public class ScriptFactory {
 		}
 		String filePath = file.getPath();
 		try {
-			if (!LocalFileUtils.validateExternalFilename(filePath, false)) {
-				throw new MLContextException("Invalid (non-trustworthy) local filename: " + filePath);
-			}
-			String scriptString = FileUtils.readFileToString(file);
-			return scriptString;
-		} catch (IllegalArgumentException e) {
-			throw new MLContextException("Error trying to read script string from file: " + filePath, e);
+			return FileUtils.readFileToString(file);
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + filePath, e);
 		}
@@ -339,7 +338,7 @@ public class ScriptFactory {
 
 	/**
 	 * Obtain a script string from a file.
-	 * 
+	 *
 	 * @param scriptFilePath
 	 *            The file path to the script file (either local file system or
 	 *            HDFS)
@@ -353,17 +352,11 @@ public class ScriptFactory {
 		}
 		try {
 			if (scriptFilePath.startsWith("hdfs:") || scriptFilePath.startsWith("gpfs:")) {
-				if (!LocalFileUtils.validateExternalFilename(scriptFilePath, true)) {
-					throw new MLContextException("Invalid (non-trustworthy) hdfs/gpfs filename: " + scriptFilePath);
-				}
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path path = new Path(scriptFilePath);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
 				FSDataInputStream fsdis = fs.open(path);
 				return IOUtils.toString(fsdis);
 			} else {// from local file system
-				if (!LocalFileUtils.validateExternalFilename(scriptFilePath, false)) {
-					throw new MLContextException("Invalid (non-trustworthy) local filename: " + scriptFilePath);
-				}
 				File scriptFile = new File(scriptFilePath);
 				return FileUtils.readFileToString(scriptFile);
 			}
@@ -376,7 +369,7 @@ public class ScriptFactory {
 
 	/**
 	 * Obtain a script string from an InputStream.
-	 * 
+	 *
 	 * @param inputStream
 	 *            The InputStream from which to read the script string
 	 * @return The script string
@@ -396,7 +389,7 @@ public class ScriptFactory {
 
 	/**
 	 * Obtain a script string from a URL.
-	 * 
+	 *
 	 * @param scriptUrlPath
 	 *            The URL path to the script file
 	 * @return The script string
@@ -417,7 +410,7 @@ public class ScriptFactory {
 
 	/**
 	 * Obtain a script string from a URL.
-	 * 
+	 *
 	 * @param url
 	 *            The script URL
 	 * @return The script string
@@ -442,7 +435,7 @@ public class ScriptFactory {
 
 	/**
 	 * Create a PYDML script object based on a string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            string of PYDML
 	 * @return PYDML Script object

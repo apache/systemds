@@ -174,7 +174,7 @@ class Matrix(object):
         NumPy Array
             A NumPy Array representing the Matrix object.
         """
-        np_array = convertToNumPyArr(self._sc, self._java_matrix.toBinaryBlockMatrix().getMatrixBlock())
+        np_array = convertToNumPyArr(self._sc, self._java_matrix.toMatrixBlock())
         return np_array
 
 
@@ -282,7 +282,7 @@ class MLContext(object):
 
     def __repr__(self):
         return "MLContext"
-
+    
     def execute(self, script):
         """
         Execute a DML / PyDML script.
@@ -351,6 +351,28 @@ class MLContext(object):
         self._ml.setStatistics(bool(statistics))
         return self
 
+    def setGPU(self, enable):
+        """
+        Whether or not to enable GPU.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self._ml.setGPU(bool(enable))
+        return self
+    
+    def setForceGPU(self, enable):
+        """
+        Whether or not to force the usage of GPU operators.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self._ml.setForceGPU(bool(enable))
+        return self
+        
     def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
         """
         The maximum number of heavy hitters that are printed as part of the statistics.
@@ -386,6 +408,18 @@ class MLContext(object):
         self._ml.setExplainLevel(explainLevel)
         return self
 
+    def setConfigProperty(self, propertyName, propertyValue):
+        """
+        Set configuration property, such as setConfigProperty("localtmpdir", "/tmp/systemml").
+
+        Parameters
+        ----------
+        propertyName: String
+        propertyValue: String
+        """
+        self._ml.setConfigProperty(propertyName, propertyValue)
+        return self
+    
     def version(self):
         """Display the project version."""
         return self._ml.version()

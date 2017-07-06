@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
@@ -43,27 +42,14 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
- * MB:
- * Library for matrix multiplications including MM, MV, VV for all
+ * MB: Library for matrix multiplications including MM, MV, VV for all
  * combinations of dense, sparse, ultrasparse representations and special
  * operations such as transpose-self matrix multiplication.
- * 
+ * <p>
  * In general all implementations use internally dense outputs
  * for direct access, but change the final result to sparse if necessary.
  * The only exceptions are ultra-sparse matrix mult, wsloss and wsigmoid.  
- * 
- * NOTES on BLAS:
- * * Experiments in 04/2013 showed that even on dense-dense this implementation 
- *   is 3x faster than f2j-BLAS-DGEMM, 2x faster than f2c-BLAS-DGEMM, and
- *   level (+10% after JIT) with a native C implementation. 
- * * Calling native BLAS would loose platform independence and would require 
- *   JNI calls incl data transfer. Furthermore, BLAS does not support sparse 
- *   matrices (except Sparse BLAS, with dedicated function calls and matrix formats) 
- *   and would be an external dependency. 
- * * Experiments in 02/2014 showed that on dense-dense this implementation now achieves
- *   almost 30% peak FP performance. Compared to Intel MKL 11.1 (dgemm, N=1000) it is
- *   just 3.2x (sparsity=1.0) and 1.9x (sparsity=0.5) slower, respectively.  
- *  
+ * <p> 
  */
 public class LibMatrixMult 
 {
@@ -123,7 +109,7 @@ public class LibMatrixMult
 	{
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
-
+	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
 	{	
@@ -132,9 +118,9 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-		
+			
 		//Timing time = new Timing(true);
-		
+			
 		//pre-processing: output allocation
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
@@ -166,6 +152,7 @@ public class LibMatrixMult
 		if(examSparsity)
 			ret.examSparsity();
 		
+		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
@@ -188,7 +175,7 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-		
+			
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
@@ -246,6 +233,7 @@ public class LibMatrixMult
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+		
 		
 		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();
@@ -385,8 +373,8 @@ public class LibMatrixMult
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
 
 		//post-processing
-		copyUpperToLowerTriangle( ret );		
-		ret.recomputeNonZeros();
+		long nnz = copyUpperToLowerTriangle(ret);
+		ret.setNonZeros(nnz);
 		ret.examSparsity();	
 		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
@@ -436,8 +424,8 @@ public class LibMatrixMult
 		}
 		
 		//post-processing
-		copyUpperToLowerTriangle( ret );		
-		ret.recomputeNonZeros();
+		long nnz = copyUpperToLowerTriangle(ret);		
+		ret.setNonZeros(nnz);
 		ret.examSparsity();	
 		
 		//System.out.println("TSMM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
@@ -1012,19 +1000,19 @@ public class LibMatrixMult
 					for( int k=rl, bix=rl*n; k<rl+kn; k++, bix+=n )
 						if( a[aix+k] != 0 )
 							vectMultiplyAdd(a[aix+k], b, c, bix, cix, n);
-
-				final int blocksizeK = 48;  
-				final int blocksizeJ = 1024; 
+				
+				final int blocksizeK = 48;
+				final int blocksizeJ = 1024;
 				
 				//blocked execution
 				for( int bk = rl+kn; bk < ru; bk+=blocksizeK ) 
-					for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
+					for( int bj = 0, bkmin = Math.min(ru, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
 					{
 						//compute blocks of 4 rows in rhs w/ IKJ
 						int bjlen = Math.min(n, bj+blocksizeJ)-bj;
 						for( int i=0, aix=0, cix=bj; i<m; i++, aix+=cd, cix+=n )
-							for( int k=bk, bix=bk*n; k<bkmin; k+=4, bix+=4*n ) {
-								vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3], 
+							for( int k=bk, bix=bk*n+bj; k<bkmin; k+=4, bix+=4*n ) {
+								vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3],
 										b, c, bix, bix+n, bix+2*n, bix+3*n, cix, bjlen);
 							}
 					}
@@ -3064,7 +3052,7 @@ public class LibMatrixMult
 			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ] + aval4 * b[ bi4+7 ];	
 		}
 	}
-
+	
 	@SuppressWarnings("unused")
 	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int ci, final int len )
 	{
@@ -3145,8 +3133,8 @@ public class LibMatrixMult
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -3196,6 +3184,25 @@ public class LibMatrixMult
 		}
 	}
 
+	//note: public for use by codegen for consistency
+	public static void vectAdd( double[] a, double bval, double[] c, int ai, int ci, final int len ) {
+		final int bn = len%8;
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, ai++, ci++)
+			c[ ci ] += a[ ai ];
+		//unrolled 8-block  (for better ILP)
+		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) {
+			c[ ci+0 ] += a[ ai+0 ] + bval;
+			c[ ci+1 ] += a[ ai+1 ] + bval;
+			c[ ci+2 ] += a[ ai+2 ] + bval;
+			c[ ci+3 ] += a[ ai+3 ] + bval;
+			c[ ci+4 ] += a[ ai+4 ] + bval;
+			c[ ci+5 ] += a[ ai+5 ] + bval;
+			c[ ci+6 ] += a[ ai+6 ] + bval;
+			c[ ci+7 ] += a[ ai+7 ] + bval;
+		}
+	}
+	
 	//note: public for use by codegen for consistency
 	public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
 	{
@@ -3413,17 +3420,47 @@ public class LibMatrixMult
 	 * result down to lower triangular matrix once.
 	 * 
 	 * @param ret matrix
+	 * @return number of non zeros
 	 */
-	private static void copyUpperToLowerTriangle( MatrixBlock ret )
+	public static long copyUpperToLowerTriangle( MatrixBlock ret )
 	{
-		double[] c = ret.denseBlock;
-		final int m = ret.rlen;
-		final int n = ret.clen;
+		//ret is guaranteed to be a squared, symmetric matrix
+		if( ret.rlen != ret.clen )
+			throw new RuntimeException("Invalid non-squared input matrix.");
 		
-		//copy symmetric values
-		for( int i=0, uix=0; i<m; i++, uix+=n )
-			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-				c[ lix ] = c[ uix+j ];
+		final double[] c = ret.denseBlock;
+		final int n = ret.rlen;
+		long nnz = 0;
+		
+		//blocked execution (2x128KB for L2 blocking)
+		final int blocksizeIJ = 128; 
+		
+		//handle blocks on diagonal
+		for( int bi = 0; bi<n; bi+=blocksizeIJ ) {
+			int bimin = Math.min(bi+blocksizeIJ, n);
+			for( int i=bi, rix=bi*n; i<bimin; i++, rix+=n ) {
+				LibMatrixReorg.transposeRow(c, c, rix+bi, bi*n+i, n, bimin-bi);
+				for( int j=rix+i+1; j<rix+bimin; j++ )
+					nnz += (c[j] != 0) ? 2 : 0;
+				nnz++; //for diagonal element
+			}
+		}
+		
+		//handle non-diagonal blocks (full block copies)
+		for( int bi = 0; bi<n; bi+=blocksizeIJ ) {
+			int bimin = Math.min(bi+blocksizeIJ, n);
+			for( int bj = bi; bj<n; bj+=blocksizeIJ ) 
+				if( bi != bj ) { //not on diagonal
+					int bjmin = Math.min(bj+blocksizeIJ, n);
+					for( int i=bi, rix=bi*n; i<bimin; i++, rix+=n ) {
+						LibMatrixReorg.transposeRow(c, c, rix+bj, bj*n+i, n, bjmin-bj);
+						for( int j=rix+bj; j<rix+bjmin; j++ )
+							nnz += (c[j] != 0) ? 2 : 0;
+					}
+				}
+		}
+		
+		return nnz;
 	}
 
 	private static MatrixBlock prepMatrixMultTransposeSelfInput( MatrixBlock m1, boolean leftTranspose ) 
@@ -3442,12 +3479,16 @@ public class LibMatrixMult
 		return ret;
 	}
 
-	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
-	{
+	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
 		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
-				&& m1.rlen > m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64
-				&& 8*m2.rlen*m2.clen < 256*1024 ); //rhs fits in L2 cache
+			&& isSkinnyRightHandSide(m1.rlen, m1.clen, m2.rlen, m2.clen));
+	}
+	
+	//note: public for use by codegen for consistency
+	public static boolean isSkinnyRightHandSide(long m1rlen, long m1clen, long m2rlen, long m2clen) {
+		return m1rlen > m2clen && m2rlen > m2clen && m2clen > 1 
+			&& m2clen < 64 && 8*m2rlen*m2clen < L2_CACHESIZE;
 	}
 
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {
@@ -3676,13 +3717,11 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
-		{
+		public Object call() throws DMLRuntimeException {
 			if( _m1.sparse )
 				matrixMultTransposeSelfSparse(_m1, _ret, _left, _rl, _ru);
 			else
 				matrixMultTransposeSelfDense(_m1, _ret, _left, _rl, _ru);
-			
 			return null;
 		}
 	}

@@ -21,9 +21,8 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.io.InputStream;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -42,7 +41,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public abstract class FrameReader 
 {
-
 	public abstract FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 
@@ -58,6 +56,21 @@ public abstract class FrameReader
 		return readFrameFromHDFS(fname, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
 
+	public abstract FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException;
+
+	public FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, long rlen, long clen )
+		throws IOException, DMLRuntimeException
+	{
+		return readFrameFromInputStream(is, schema, getDefColNames(schema.length), rlen, clen);
+	}
+
+	public FrameBlock readFrameFromInputStream( InputStream is, long rlen, long clen )
+		throws IOException, DMLRuntimeException
+	{
+		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
+	}
+
 	public ValueType[] getDefSchema( long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -70,28 +83,6 @@ public abstract class FrameReader
 	{
 		return (clen < 0) ? new String[0] : 
 			FrameBlock.createColNames((int)clen);
-	}
-
-	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
-		throws IOException
-	{
-		Path[] ret = null;
-		
-		if( fs.isDirectory(file) )
-		{
-			LinkedList<Path> tmp = new LinkedList<Path>();
-			FileStatus[] dStatus = fs.listStatus(file);
-			for( FileStatus fdStatus : dStatus )
-				if( !fdStatus.getPath().getName().startsWith("_") ) //skip internal files
-					tmp.add(fdStatus.getPath());
-			ret = tmp.toArray(new Path[0]);
-		}
-		else
-		{
-			ret = new Path[]{ file };
-		}
-		
-		return ret;
 	}
 	
 	/**
@@ -138,7 +129,7 @@ public abstract class FrameReader
 			throw new IOException("File "+path.toString()+" does not exist on HDFS/LFS.");
 	
 		//check for empty file
-		if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
+		if( MapReduceTool.isFileEmpty(fs, path) )
 			throw new EOFException("Empty input file "+ path.toString() +".");		
 	}
 }

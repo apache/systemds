@@ -21,7 +21,9 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -41,6 +43,7 @@ import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
@@ -54,12 +57,8 @@ import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.cp.BooleanObject;
-import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -186,28 +185,21 @@ public class HopRewriteUtils
 		return Long.MAX_VALUE;
 	}
 	
+	public static boolean isLiteralOfValue( Hop hop, double val ) {
+		return (hop instanceof LiteralOp 
+			&& (hop.getValueType()==ValueType.DOUBLE || hop.getValueType()==ValueType.INT)
+			&& getDoubleValueSafe((LiteralOp)hop)==val);
+	}
+	
 	public static ScalarObject getScalarObject( LiteralOp op )
 	{
-		ScalarObject ret = null;
-		
-		try
-		{
-			switch( op.getValueType() )
-			{
-				case DOUBLE:  ret = new DoubleObject(op.getDoubleValue()); break;
-				case INT:	  ret = new IntObject(op.getLongValue()); break;
-				case BOOLEAN: ret = new BooleanObject(op.getBooleanValue()); break;
-				case STRING:  ret = new StringObject(op.getStringValue()); break;
-				default:
-					throw new DMLRuntimeException("Invalid scalar object value type: "+op.getValueType());
-			}
+		try {
+			return ScalarObjectFactory
+				.createScalarObject(op.getValueType(), op);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException("Failed to create scalar object for constant. Continue.", ex);
 		}
-		
-		return ret;
 	}
 	
 
@@ -216,10 +208,8 @@ public class HopRewriteUtils
 	
 	
 
-	public static int getChildReferencePos( Hop parent, Hop child )
-	{
-		ArrayList<Hop> childs = parent.getInput();
-		return childs.indexOf(child);
+	public static int getChildReferencePos( Hop parent, Hop child ) {
+		return parent.getInput().indexOf(child);
 	}
 	
 	public static void removeChildReference( Hop parent, Hop child ) {
@@ -251,11 +241,20 @@ public class HopRewriteUtils
 		parent.getInput().add( pos, child );
 		child.getParent().add( parent );
 	}
-	
-	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
-		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
-		for( Hop lparent : parents )
-			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);	
+
+	/**
+	 * Replace an old Hop with a replacement Hop.
+	 * If the old Hop has no parents, then return the replacement.
+	 * Otherwise rewire each of the Hop's parents into the replacement and return the replacement.
+	 * @param hold To be replaced
+	 * @param hnew The replacement
+	 * @return hnew
+	 */
+	public static Hop rewireAllParentChildReferences( Hop hold, Hop hnew ) {
+		ArrayList<Hop> parents = hold.getParent();
+		while (!parents.isEmpty())
+			HopRewriteUtils.replaceChildReference(parents.get(0), hold, hnew);
+		return hnew;
 	}
 	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew ) {
@@ -532,6 +531,30 @@ public class HopRewriteUtils
 		return mmult;
 	}
 	
+	public static ParameterizedBuiltinOp createParameterizedBuiltinOp(Hop input, HashMap<String,Hop> args, ParamBuiltinOp op) {
+		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, args);
+		pbop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, pbop);
+		pbop.refreshSizeInformation();
+		
+		return pbop;
+	}
+	
+	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
+		Hop ix = createMatrixIndexing(input, rix, cix);
+		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
+	}
+	
+	public static Hop createMatrixIndexing(Hop input, long rix, long cix) {
+		LiteralOp row = new LiteralOp(rix);
+		LiteralOp col = new LiteralOp(cix);
+		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
+		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, ix);
+		ix.refreshSizeInformation();
+		return ix;
+	}
+	
 	public static Hop createValueHop( Hop hop, boolean row ) 
 		throws HopsException
 	{
@@ -751,18 +774,22 @@ public class HopRewriteUtils
 			|| isTransposeOperation(hop2) && hop2.getInput().get(0) == hop1;	
 	}
 	
+	public static boolean isTsmmInput(Hop input) {
+		if( input.getParent().size()==2 )
+			for(int i=0; i<2; i++)
+				if( isMatrixMultiply(input.getParent().get(i)) && isTransposeOfItself(
+					input.getParent().get(i).getInput().get(0), input.getParent().get(i).getInput().get(1)) )
+					return true;
+		return false;
+	}
+	
 	public static boolean isBinary(Hop hop, OpOp2 type) {
 		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==type;
 	}
 	
 	public static boolean isBinary(Hop hop, OpOp2... types) {
-		if( hop instanceof BinaryOp ) {
-			BinaryOp bop = (BinaryOp) hop;
-			for( OpOp2 type : types )
-				if( type == bop.getOp() )
-					return true;
-		}
-		return false;
+		return ( hop instanceof BinaryOp 
+			&& ArrayUtils.contains(types, ((BinaryOp) hop).getOp()));
 	}
 	
 	public static boolean isBinary(Hop hop, OpOp2 type, int maxParents) {
@@ -782,6 +809,24 @@ public class HopRewriteUtils
 			&& hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1;
 	}
 	
+	public static boolean isBinaryMatrixMatrixOperationWithSharedInput(Hop hop) {
+		boolean ret = isBinaryMatrixMatrixOperation(hop);
+		ret = ret && (rContainsInput(hop.getInput().get(0), hop.getInput().get(1), new HashSet<Long>())
+				|| rContainsInput(hop.getInput().get(1), hop.getInput().get(0), new HashSet<Long>()));
+		return ret;
+	}
+	
+	private static boolean rContainsInput(Hop current, Hop probe, HashSet<Long> memo) {
+		if( memo.contains(current.getHopID()) )
+			return false;
+		boolean ret = false;
+		for( int i=0; i<current.getInput().size() && !ret; i++ )
+			ret |= rContainsInput(current.getInput().get(i), probe, memo);
+		ret |= (current == probe);
+		memo.add(current.getHopID());
+		return ret;
+	}
+	
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
 		return hop instanceof BinaryOp 
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
@@ -796,6 +841,11 @@ public class HopRewriteUtils
 		return isUnary(hop, type) && hop.getParent().size() <= maxParents;
 	}
 	
+	public static boolean isUnary(Hop hop, OpOp1... types) {
+		return ( hop instanceof UnaryOp 
+			&& ArrayUtils.contains(types, ((UnaryOp) hop).getOp()));
+	}
+	
 	public static boolean isMatrixMultiply(Hop hop) {
 		return hop instanceof AggBinaryOp && ((AggBinaryOp)hop).isMatrixMultiply();
 	}
@@ -804,10 +854,7 @@ public class HopRewriteUtils
 		if( !(hop instanceof AggUnaryOp) )
 			return false;
 		AggOp hopOp = ((AggUnaryOp)hop).getOp();
-		for( AggOp opi : op ) 
-			if( hopOp == opi )
-				return true;
-		return false; 
+		return ArrayUtils.contains(op, hopOp);
 	}
 	
 	public static boolean isSum(Hop hop) {
@@ -866,22 +913,29 @@ public class HopRewriteUtils
 			|| (hop.getInput().get(0).getDataType()==DataType.MATRIX && hop.getInput().get(1).getDataType()==DataType.SCALAR));
 	}
 	
-	public static boolean isBasic1NSequence(Hop hop)
-	{
-		boolean ret = false;
-		
-		if( hop instanceof DataGenOp )
-		{
+	public static boolean isBasic1NSequence(Hop hop) {
+		if( hop instanceof DataGenOp && ((DataGenOp)hop).getOp() == DataGenMethod.SEQ  ) {
 			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == DataGenMethod.SEQ ){
-				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
-				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-				ret = (from instanceof LiteralOp && getDoubleValueSafe((LiteralOp)from)==1)
-					&&(incr instanceof LiteralOp && getDoubleValueSafe((LiteralOp)incr)==1);
-			}
+			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+			return (from instanceof LiteralOp && getDoubleValueSafe((LiteralOp)from)==1)
+				&&(incr instanceof LiteralOp && getDoubleValueSafe((LiteralOp)incr)==1);
 		}
-		
-		return ret;
+		return false;
+	}
+	
+	public static boolean isBasic1NSequence(Hop seq, Hop input, boolean row) {
+		if( seq instanceof DataGenOp && ((DataGenOp)seq).getOp() == DataGenMethod.SEQ  ) {
+			DataGenOp dgop = (DataGenOp) seq;
+			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+			Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
+			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+			return isLiteralOfValue(from, 1) && isLiteralOfValue(incr, 1)
+				&& (isLiteralOfValue(to, row?input.getDim1():input.getDim2())
+					|| (to instanceof UnaryOp && ((UnaryOp)to).getOp()==(row?
+						OpOp1.NROW:OpOp1.NCOL) && to.getInput().get(0)==input));
+		}
+		return false;
 	}
 	
 	public static boolean isBasicN1Sequence(Hop hop)
@@ -933,23 +987,6 @@ public class HopRewriteUtils
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
 			else if(inclPersistent)
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
-		}
-			
-				
-		return ret;
-	}
-	
-	public static boolean hasTransformParents( Hop hop )
-	{
-		boolean ret = false;
-		
-		ArrayList<Hop> parents = hop.getParent();
-		for( Hop p : parents )
-		{
-			if(    p instanceof ParameterizedBuiltinOp 
-				&& ((ParameterizedBuiltinOp)p).getOp()==ParamBuiltinOp.TRANSFORM) {
-				ret = true;
-			}
 		}
 			
 				
@@ -1024,46 +1061,28 @@ public class HopRewriteUtils
 	//////////////////////////////////////
 	// utils for lookup tables
 	
-	public static boolean isValidOp( AggOp input, AggOp[] validTab )
-	{
-		for( AggOp valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( AggOp input, AggOp... validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab )
-	{
-		for( OpOp1 valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( OpOp1 input, OpOp1... validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp2 input, OpOp2[] validTab )
-	{
-		for( OpOp2 valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( OpOp2 input, OpOp2... validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( ReOrgOp input, ReOrgOp[] validTab )
-	{
-		for( ReOrgOp valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( ReOrgOp input, ReOrgOp... validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static int getValidOpPos( OpOp2 input, OpOp2[] validTab )
-	{
-		for( int i=0; i<validTab.length; i++ ) {
-			 OpOp2 valid = validTab[i];
-			 if( valid == input )
-					return i;
-		}
-		return -1;
+	public static boolean isValidOp( ParamBuiltinOp input, ParamBuiltinOp... validTab ) {
+		return ArrayUtils.contains(validTab, input);
+	}
+	
+	public static int getValidOpPos( OpOp2 input, OpOp2... validTab ) {
+		return ArrayUtils.indexOf(validTab, input);
 	}
 	
 	/**

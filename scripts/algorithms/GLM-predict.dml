@@ -75,9 +75,9 @@
 # AVG_RES_Y               +             Average of column residual, i.e. of Y - mean(Y|X)
 # STDEV_RES_Y             +             St.Dev. of column residual, i.e. of Y - mean(Y|X)
 # PRED_STDEV_RES          +       +     Model-predicted St.Dev. of column residual
-# PLAIN_R2                +             Plain R^2 of Y column residual with bias included
+# R2                      +             R^2 of Y column residual with bias included
 # ADJUSTED_R2             +             Adjusted R^2 of Y column residual with bias included
-# PLAIN_R2_NOBIAS         +             Plain R^2 of Y column residual with bias subtracted
+# R2_NOBIAS               +             R^2 of Y column residual with bias subtracted
 # ADJUSTED_R2_NOBIAS      +             Adjusted R^2 of Y column residual with bias subtracted
 # ---------------------------------------------------------------------------------------------
 #
@@ -284,9 +284,9 @@ if (fileY != " ")
     } else {
         var_res_Y = matrix (0.0, rows = 1, cols = ncol (Y)) / 0.0;
     }
-    plain_R2_nobias  = 1 - ss_avg_res_Y / ss_avg_tot_Y;
+    R2_nobias  = 1 - ss_avg_res_Y / ss_avg_tot_Y;
     adjust_R2_nobias = 1 - var_res_Y / var_tot_Y;
-    plain_R2  = 1 - ss_res_Y / ss_avg_tot_Y;
+    R2  = 1 - ss_res_Y / ss_avg_tot_Y;
     if (df_ss_res_Y > 0) {
         adjust_R2 = 1 - (ss_res_Y / df_ss_res_Y) / var_tot_Y;
     } else {
@@ -320,9 +320,9 @@ if (fileY != " ")
         str = append (str, "AVG_RES_Y," + i + ",," + as.scalar (avg_res_Y [1, i]));
         str = append (str, "STDEV_RES_Y," + i + ",," + as.scalar (sqrt (var_res_Y [1, i])));
         str = append (str, "PRED_STDEV_RES," + i + ",TRUE," + as.scalar (sqrt (predicted_avg_var_res_Y [1, i])));
-        str = append (str, "PLAIN_R2," + i + ",," + as.scalar (plain_R2 [1, i]));
+        str = append (str, "R2," + i + ",," + as.scalar (R2 [1, i]));
         str = append (str, "ADJUSTED_R2," + i + ",," + as.scalar (adjust_R2 [1, i]));
-        str = append (str, "PLAIN_R2_NOBIAS," + i + ",," + as.scalar (plain_R2_nobias [1, i]));
+        str = append (str, "R2_NOBIAS," + i + ",," + as.scalar (R2_nobias [1, i]));
         str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + as.scalar (adjust_R2_nobias [1, i]));
     }
     

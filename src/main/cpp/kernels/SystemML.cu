@@ -24,6 +24,7 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 ***********************************/
 
 #include <cfloat>
+#include <cmath>
 
 
 /**
@@ -54,7 +55,8 @@ __forceinline__ __device__ double getBoolean(int val) {
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 // 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
-// 11=min, 12=max, 13=and, 14=or, 15=log}
+// 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
+// 17=modulus, 18=integer division}
 extern "C"
 __forceinline__ __device__ double binaryOp(double x, double y, int op) {
 	switch(op) {
@@ -71,6 +73,31 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
         case 10 : return getBoolean(x != y);
         case 11 : return min(x, y);
         case 12 : return max(x, y);
+        case 13 : return getBoolean((int)llrint(x) & (int)llrint(y));
+        case 14 : return getBoolean((int)llrint(x) | (int)llrint(y));
+        case 15 : return 1 - x * y;
+        case 16 : return (x != 0.0 ? x - y : 0.0);
+        case 17 : {
+            if (y == 0.0 || y == -0.0){
+                return nan("");
+            }
+            double v = x / y;
+            // Check for v being NaN (v != v) or if it is infinity
+            if (isnan(v) || isinf(v)){
+                return v;
+            } else {
+                v = floor(v);
+            }
+            return x - v * y;
+        }
+        case 18:{
+            double v = x / y;
+            if (isnan(v) || isinf(v)){
+                return v;
+            } else {
+                return floor(v);
+            }
+        }
         default : return DBL_MAX;
     }
 }
@@ -654,5 +681,192 @@ __global__ void matrix_exp(double *A, double *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = exp(A[index]);
+    }
+}
+
+/**
+ * Do an sqrt over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_sqrt(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = sqrt(A[index]);
+    }
+}
+
+/**
+ * Do an round over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_round(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = (double)llround(A[index]);
+    }
+}
+
+/**
+ * Do an abs over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_abs(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = (double)fabs(A[index]);
+    }
+}
+
+/**
+ * Do an log over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_log(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = log(A[index]);
+    }
+}
+
+/**
+ * Do an floor over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_floor(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = floor(A[index]);
+    }
+}
+
+/**
+ * Do an ceil over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_ceil(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = ceil(A[index]);
+    }
+}
+
+/**
+ * Do an sin over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_sin(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = sin(A[index]);
+    }
+}
+
+/**
+ * Do an cos over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_cos(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = cos(A[index]);
+    }
+}
+
+/**
+ * Do an tan over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_tan(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = tan(A[index]);
+    }
+}
+
+/**
+ * Do an asin over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_asin(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = asin(A[index]);
+    }
+}
+
+/**
+ * Do an acos over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_acos(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = acos(A[index]);
+    }
+}
+
+/**
+ * Do an atan over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_atan(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = atan(A[index]);
+    }
+}
+
+/**
+ * Do an sign over all the elements of a matrix
+ * Assign -1, 0 or 1 depending on the element being negative, 0 or positive
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_sign(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        if (A[index] == 0.0) {
+            C[index] = 0.0;
+        } else {
+            C[index] = copysign(1.0, A[index]);
+        }
     }
 }

@@ -22,7 +22,6 @@ package org.apache.sysml.lops.runtime;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONException;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -69,7 +68,6 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
-import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Statistics;
 
@@ -305,25 +303,7 @@ public class RunMRJobs
 			case DATA_PARTITION:
 				ret = DataPartitionMR.runJob(inst, inputMatrices, shuffleInst, inst.getIv_resultIndices(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
 				break;
-				
-			case TRANSFORM:
-				
-				if(    ConfigurationManager.isDynamicRecompilation()
-						&& OptimizerUtils.ALLOW_TRANSFORM_RECOMPILE
-						&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
-						&& Recompiler.checkCPTransform( inst, inputMatrices ) ) 
-					{
-						// transform the data and generate output in CSV format
-						ret = executeInMemoryTransform(inst, inputMatrices, outputMatrices);
-						Statistics.decrementNoOfExecutedMRJobs();
-						execCP = true;
-					}
-					else 
-					{
-						ret = DataTransform.mrDataTransform(inst, inputMatrices, shuffleInst, otherInst, inst.getIv_resultIndices(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
-					}
-				break;
-				
+			
 			default:
 				throw new DMLRuntimeException("Invalid jobtype: " + inst.getJobType());
 			}
@@ -360,11 +340,12 @@ public class RunMRJobs
 						
 						outputMatrices[i].setHDFSFileExists(true);
 						
-						if ( inst.getJobType() != JobType.CSV_WRITE && inst.getJobType() != JobType.TRANSFORM) {
+						if ( inst.getJobType() != JobType.CSV_WRITE ) {
 							// write out metadata file
 							// Currently, valueType information in not stored in MR instruction, 
 							// since only DOUBLE matrices are supported ==> hard coded the value type information for now
-							MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+							MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  
+								((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 						}
 					}
 				}
@@ -557,12 +538,5 @@ public class RunMRJobs
 		}
 		
 		return  new JobReturn( mc, inst.getOutputInfos(), true);
-	}
-	
-	private static JobReturn executeInMemoryTransform( MRJobInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
-		return DataTransform.cpDataTransform(
-				inst.getIv_shuffleInstructions(), 
-				inputMatrices, 
-				outputMatrices);
 	}
 }

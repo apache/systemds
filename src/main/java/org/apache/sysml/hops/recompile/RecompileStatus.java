@@ -25,24 +25,30 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class RecompileStatus 
 {
+	private final HashMap<String, MatrixCharacteristics> _lastTWrites; 
+	private final boolean _initialCodegen;
 	
-	private HashMap<String, MatrixCharacteristics> _lastTWrites = null; 
-	
-	public RecompileStatus()
-	{
-		_lastTWrites = new HashMap<String,MatrixCharacteristics>();
+	public RecompileStatus() {
+		this(false);
 	}
 	
-	public HashMap<String, MatrixCharacteristics> getTWriteStats()
-	{
+	public RecompileStatus(boolean initialCodegen) {
+		_lastTWrites = new HashMap<String,MatrixCharacteristics>();
+		_initialCodegen = initialCodegen;
+	}
+	
+	public HashMap<String, MatrixCharacteristics> getTWriteStats() {
 		return _lastTWrites;
+	}
+	
+	public boolean isInitialCodegen() {
+		return _initialCodegen;
 	}
 
 	@Override
-	public Object clone()
-	{
+	public Object clone() {
 		RecompileStatus ret = new RecompileStatus();
-		ret._lastTWrites.putAll(this._lastTWrites);
+		ret._lastTWrites.putAll(_lastTWrites);
 		return ret;
 	}
 }

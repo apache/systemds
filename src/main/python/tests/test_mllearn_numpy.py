@@ -149,12 +149,14 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:int(.9 * n_samples)]
         X_test = X_digits[int(.9 * n_samples):]
         y_test = y_digits[int(.9 * n_samples):]
-        svm = SVM(sparkSession, is_multi_class=True)
+        svm = SVM(sparkSession, is_multi_class=True, tol=0.0001)
         mllearn_predicted = svm.fit(X_train, y_train).predict(X_test)
         from sklearn import linear_model, svm
         clf = svm.LinearSVC()
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
-        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
+        accuracy = accuracy_score(sklearn_predicted, mllearn_predicted)
+        evaluation = 'test_svm accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
+        self.failUnless(accuracy > 0.95, evaluation)
 
     def test_naive_bayes(self):
         digits = datasets.load_digits()

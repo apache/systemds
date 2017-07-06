@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -35,6 +36,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
@@ -144,7 +146,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -167,7 +169,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -190,7 +192,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -213,7 +215,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 			while (decoder.hasNext()) {
 				int row = decoder.next();
@@ -260,18 +262,6 @@ public abstract class ColGroupOffset extends ColGroupValue
 	public boolean hasZeros() {
 		return _zeros;
 	}
-	
-	/**
-	 * @param k
-	 *            index of a specific compressed bitmap (stored in subclass,
-	 *            index same as {@link #getValues})
-	 * @return an object for iterating over the row offsets in this bitmap. Only
-	 *         valid until the next call to this method. May be reused across
-	 *         calls.
-	 */
-	public abstract Iterator<Integer> getDecodeIterator(int k);
-
-	//TODO getDecodeIterator(int k, int rl, int ru)
 
 	/**
 	 * Utility function of sparse-unsafe operations.
@@ -420,5 +410,211 @@ public abstract class ColGroupOffset extends ColGroupValue
 	protected abstract void computeColSums(MatrixBlock result, KahanFunction kplus);
 	
 	protected abstract void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru);
+
+	protected abstract boolean[] computeZeroIndicatorVector();
 	
+	@Override
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+		if( rowMajor )
+			return new OffsetRowIterator(rl, ru, inclZeros);
+		else
+			return new OffsetValueIterator(rl, ru, inclZeros);
+	}
+	
+	/**
+	 * @param k index of value tuple with associated bitmap
+	 * @return an iterator over the row offsets in this bitmap
+	 */
+	public abstract Iterator<Integer> getIterator(int k);
+
+	/**
+	 * 
+	 * @param k index of value tuple with associated bitmap
+	 * @param rl row lower index, inclusive
+	 * @param ru row upper index, exclusive
+	 * @return an iterator over the row offsets in this bitmap
+	 */
+	public abstract Iterator<Integer> getIterator(int k, int rl, int ru);
+
+	
+	protected class OffsetValueIterator implements Iterator<IJV>
+	{
+		//iterator configuration
+		private final int _rl;
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private final IJV _buff = new IJV();
+		private Iterator<Integer> _viter = null;
+		private int _vpos = -1;
+		private int _rpos = -1;
+		private int _cpos = -1;
+		
+		public OffsetValueIterator(int rl, int ru, boolean inclZeros) {
+			_rl = rl;
+			_ru = ru;
+			_inclZeros = inclZeros;
+			_vpos = -1;
+			_rpos = -1;
+			_cpos = 0;
+			getNextValue();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public IJV next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more offset entries.");
+			_buff.set(_rpos, _colIndexes[_cpos], (_vpos >= getNumValues()) ? 
+				0 : _values[_vpos*getNumCols()+_cpos]);
+			getNextValue();
+			return _buff;
+		}
+		
+		private void getNextValue() {
+			//advance to next value iterator if required
+			if(_viter != null && _viter instanceof ZeroValueIterator && !_viter.hasNext() ) {
+				_rpos = _ru; //end after zero iterator
+				return;
+			}
+			else if( (_rpos< 0 || _cpos+1 >= getNumCols()) 
+					&& !(_viter!=null && _viter.hasNext()) ) {
+				do {
+					_vpos++;
+					if( _vpos < getNumValues() )
+						_viter = getIterator(_vpos, _rl, _ru);
+					else if( _inclZeros && _zeros)
+						_viter = new ZeroValueIterator(_rl, _ru);
+					else {
+						_rpos = _ru; //end w/o zero iterator
+						return;
+					}
+				}
+				while(!_viter.hasNext());
+				_rpos = -1;
+			}
+			
+			//get next value from valid iterator
+			if( _rpos < 0 || _cpos+1 >= getNumCols() ) {
+				_rpos = _viter.next();
+				_cpos = 0;
+			}
+			else {
+				_cpos++;
+			}
+		}
+	}
+	
+	protected class ZeroValueIterator implements Iterator<Integer>
+	{
+		private final boolean[] _zeros;
+		private final int _ru;
+		private int _rpos; 
+		
+		public ZeroValueIterator(int rl, int ru) {
+			_zeros = computeZeroIndicatorVector();
+			_ru = ru;
+			_rpos = rl-1;
+			getNextValue();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public Integer next() {
+			int ret = _rpos;
+			getNextValue();
+			return ret;
+		}
+		
+		private void getNextValue() {
+			do { _rpos++; }
+			while( _rpos < _ru && !_zeros[_rpos] );
+		}
+	}
+	
+	protected class OffsetRowIterator implements Iterator<IJV>
+	{
+		//iterator configuration
+		private final int _rl;
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private final Iterator<Integer>[] _iters;
+		private final IJV _ret = new IJV(); 
+		private final HashMap<Integer,Integer> _ixbuff = 
+			new HashMap<Integer,Integer>(); //<rowid-value>
+		private int _rpos;
+		private int _cpos;
+		private int _vpos;
+		
+		@SuppressWarnings("unchecked")
+		public OffsetRowIterator(int rl, int ru, boolean inclZeros) {
+			_rl = rl;
+			_ru = ru;
+			_inclZeros = inclZeros;
+			
+			//initialize array of column group iterators
+			_iters = new Iterator[getNumValues()];
+			for( int k=0; k<getNumValues(); k++ )
+				_iters[k] = getIterator(k, _rl, _ru);
+			
+			//initialize O(1)-lookup for next value
+			for( int k=0; k<getNumValues(); k++ ) {
+				_ixbuff.put(_iters[k].hasNext() ? 
+						_iters[k].next() : _ru+k, k);
+			}
+			
+			//get initial row
+			_rpos = rl-1;
+			_cpos = getNumCols()-1;
+			getNextValue();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public IJV next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more offset entries.");
+			_ret.set(_rpos, _colIndexes[_cpos], 
+				(_vpos<0) ? 0 : getValue(_vpos, _cpos));
+			getNextValue();
+			return _ret;
+		}
+		
+		private void getNextValue() {
+			do {
+				//read iterators if necessary
+				if( _cpos+1 >= getNumCols() ) {
+					_rpos++; _cpos = -1; _vpos = -1;
+					//direct lookup of single value to pull next index
+					Integer ktmp = _ixbuff.remove(_rpos);
+					if( ktmp != null ) {
+						_ixbuff.put(_iters[ktmp].hasNext() ? 
+								_iters[ktmp].next() : _ru+ktmp, ktmp);
+						_vpos = ktmp;
+					}
+				}
+				//check for end of row partition
+				if( _rpos >= _ru )
+					return;
+				_cpos++;
+			}
+			while( !_inclZeros && (_vpos < 0 
+				|| getValue(_vpos, _cpos)==0) );
+		}
+	}
 }

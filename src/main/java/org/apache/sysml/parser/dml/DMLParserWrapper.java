@@ -36,12 +36,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
@@ -71,7 +71,7 @@ import org.apache.sysml.parser.dml.DmlParser.StatementContext;
  * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
  *
  */
-public class DMLParserWrapper extends AParserWrapper
+public class DMLParserWrapper extends ParserWrapper
 {
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
@@ -111,7 +111,7 @@ public class DMLParserWrapper extends AParserWrapper
 			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
 			in = new ANTLRInputStream(stream);
 		} catch (FileNotFoundException e) {
-			throw new ParseException("Cannot find file: " + fileName, e);
+			throw new ParseException("Cannot find file/resource: " + fileName, e);
 		} catch (IOException e) {
 			throw new ParseException("Cannot open file: " + fileName, e);
 		} catch (LanguageException e) {

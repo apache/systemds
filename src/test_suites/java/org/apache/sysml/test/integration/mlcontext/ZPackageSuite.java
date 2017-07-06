@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
   MLContextFrameTest.class,
   MLContextMultipleScriptsTest.class,
+  MLContextOutputBlocksizeTest.class,
   MLContextParforDatasetTest.class,
   MLContextScratchCleanupTest.class,
   MLContextTest.class

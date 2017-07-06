@@ -52,6 +52,7 @@ limitations under the License.
     * [Linear Algebra Built-In Functions](dml-language-reference.html#linear-algebra-built-in-functions)
     * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
     * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
+    * [Deep Learning Built-In Functions](dml-language-reference.html#deep-learning-built-in-functions)
     * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
   * [Frames](dml-language-reference.html#frames)
     * [Creating Frames](dml-language-reference.html#creating-frames)
@@ -1494,6 +1495,41 @@ The following code snippet shows an example scenario of transforming a training 
 
 Note that the metadata generated during the training phase (located at `/user/ml/train_tf_metadata`) is used to apply the list of transformations (that were carried out on training data set) on the test data set. Since the second invocation of `transform()` does not really generate any new metadata data, the given metadata (`/user/ml/train_tf_metdata`) is copied to the target location (`/user/ml/test_tf_metdata`). Even though such a behavior creates redundant copies of transformation metadata, it is preferred as it allows the association of every data set with the corresponding transformation metadata.
 
+### Deep Learning Built-In Functions
+
+SystemML represent a tensor as a matrix stored in a row-major format,
+where first dimension of tensor and matrix are exactly the same. For example, a tensor (with all zeros)
+of shape [3, 2, 4, 5] can be instantiated by following DML statement:
+```sh
+A = matrix(0, rows=3, cols=2*4*5) 
+```
+
+The images are assumed to be stored NCHW format, where N = batch size, C = #channels, H = height of image and W = width of image. 
+Hence, the images are internally represented as a matrix with dimension (N, C * H * W).
+
+
+| Function name          | Input matrices | Input Parameters                                                                                                                                                                            | Notes                                                                                    |
+|------------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| conv2d                 | input, filter  | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Performs 2D convolution operation                                                        |
+| conv2d_backward_filter | input, dout    | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Computes the gradients wrt filter of 2D convolution                                      |
+| conv2d_backward_data   | filter, dout   | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Computes the gradients wrt input of 2D convolution                                       |
+| max_pool               | input          | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                 | Performs max pooling operation                                                           |
+| max_pool_backward      | input, dout    | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                 | Computes the gradients wrt input of 2D maxpooling                                        |
+| bias_add               | input, bias    |                                                                                                                                                                                             | Adds the bias (row vector of size numChannels) to input with the given numChannels       |
+| bias_multiply          | input, bias    |                                                                                                                                                                                             | Multiplies the bias (row vector of size numChannels) to input with the given numChannels |
+
+
+Examples:
+
+| Function             | Parameters                  | Visualization / Equivalent DML                                                                                                                              |
+|----------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| conv2d               | stride=[1,1]                | ![conv2d with stride 1](img/dml-language-reference/Conv2d.gif "conv2d with stride 1")                                                                       |
+| conv2d               | stride=[2,2]                | ![conv2d with stride 2](img/dml-language-reference/Conv2d1.gif "conv2d with stride 2")                                                                      |
+| conv2d_backward_data | stride=[1,1]                | ![conv2d_backward_data with stride 1](img/dml-language-reference/Conv2d_backward_data.gif "conv2d_backward_data with stride 1")                             |
+| conv2d_backward_data | stride=[2,2]                | ![conv2d_backward_data with stride 2](img/dml-language-reference/Conv2d_backward_data1.gif "conv2d_backward_data with stride 2")                            |
+| conv2d_backward_data | stride=[2,2] and 2x2 filter | ![conv2d_backward_data with stride 2 2x2 filter](img/dml-language-reference/Conv2d_backward_data1.gif "conv2d_backward_data with stride 2 with 2x2 filter") |
+| bias_add             |                             | `ones = matrix(1, rows=1, cols=height*width); output = input + matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
+| bias_multiply        |                             | `ones = matrix(1, rows=1, cols=height*width); output = input * matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
 
 ### Other Built-In Functions
 

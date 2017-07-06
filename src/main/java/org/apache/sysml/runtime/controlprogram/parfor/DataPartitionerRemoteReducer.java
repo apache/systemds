@@ -104,8 +104,9 @@ public class DataPartitionerRemoteReducer
 			_fnameNew = fnameNew;
 			
 			try {
-				_fs = FileSystem.get(_job);
-			} catch (IOException e) {
+				_fs = IOUtilFunctions.getFileSystem(new Path(fnameNew), job);
+			} 
+			catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		}

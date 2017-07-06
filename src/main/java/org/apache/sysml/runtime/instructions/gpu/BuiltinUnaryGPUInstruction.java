@@ -43,7 +43,7 @@ public abstract class BuiltinUnaryGPUInstruction  extends GPUInstruction {
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
 		this._arity = _arity;
 		_input = in;
-        _output = out;
+    _output = out;
 	}
 
 	public int getArity() {

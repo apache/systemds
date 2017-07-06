@@ -71,6 +71,11 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
+	}
+
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
 	public OpOp1 getOp() {
 		return _op;
@@ -157,8 +162,14 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				else //default unary 
 				{
 					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
-					if(_op == OpOp1.SELP || _op == OpOp1.EXP) {
-						et = findGPUExecTypeByMemEstimate(et);
+					switch(_op) {
+						case SELP:case EXP:case SQRT:case LOG:case ABS:
+						case ROUND:case FLOOR:case CEIL:
+						case SIN:case COS: case TAN:case ASIN:case ACOS:case ATAN:
+						case SIGN:
+							et = findGPUExecTypeByMemEstimate(et);
+							break;
+						default:
 					}
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
 							                 getDataType(), getValueType(), et, k);

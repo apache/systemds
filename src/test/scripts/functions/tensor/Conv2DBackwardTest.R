@@ -34,7 +34,18 @@ Q=as.integer(args[9])
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
 dout=matrix(seq(1, numImg*numFilters*P*Q), numImg, numFilters*P*Q, byrow=TRUE)
 
-
+if(as.logical(args[11])) {
+	zero_mask = (x - mean(x)) > 0 
+	x = x * zero_mask
+} else {
+	x = x - mean(x)
+}
+if(as.logical(args[12])) {
+	zero_mask = (dout - mean(dout)) > 0 
+	dout = dout * zero_mask
+} else {
+	dout = dout - mean(dout)
+}
 pad_image <- function(img, Hin, Win, padh, padw){
   C = nrow(img)
   img_padded = matrix(0, C, (Hin+2*padh)*(Win+2*padw))  # zeros

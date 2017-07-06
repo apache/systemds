@@ -19,15 +19,15 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
-import java.util.Arrays;
-
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeData extends CNode 
 {
-	protected final String _name;
 	protected final long _hopID;
+	protected String _name;
+	private boolean _strictEquals;
 	
 	public CNodeData(Hop hop) {
 		this(hop, hop.getDim1(), hop.getDim2(), hop.getDataType());
@@ -36,6 +36,7 @@ public class CNodeData extends CNode
 	public CNodeData(Hop hop, long rows, long cols, DataType dt) {
 		//note: previous rewrites might have created hops with equal name
 		//hence, we also keep the hopID to uniquely identify inputs
+		super();
 		_name = hop.getName();
 		_hopID = hop.getHopID();
 		_rows = rows;
@@ -67,6 +68,15 @@ public class CNodeData extends CNode
 		return _hopID;
 	}
 	
+	public void setName(String name) {
+		_name = name;
+	}
+	
+	public void setStrictEquals(boolean flag) {
+		_strictEquals = flag;
+		_hash = 0;
+	}
+	
 	@Override
 	public String codegen(boolean sparse) {
 		return "";
@@ -85,9 +95,9 @@ public class CNodeData extends CNode
 	@Override
 	public int hashCode() {
 		if( _hash == 0 ) {
-			int h1 = super.hashCode();
-			int h2 = isLiteral() ? _name.hashCode() : 0;
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = UtilFunctions.intHashCode(
+				super.hashCode(), (isLiteral() || !_strictEquals) ? 
+				_name.hashCode() : Long.hashCode(_hopID));
 		}
 		return _hash;
 	}
@@ -97,6 +107,8 @@ public class CNodeData extends CNode
 		return (o instanceof CNodeData 
 			&& super.equals(o)
 			&& isLiteral() == ((CNodeData)o).isLiteral()
-			&& (isLiteral() ? _name.equals(((CNodeData)o)._name) : true));
+			&& (isLiteral() || !_strictEquals) ? 
+				_name.equals(((CNodeData)o)._name) : 
+				_hopID == ((CNodeData)o)._hopID);
 	}
 }

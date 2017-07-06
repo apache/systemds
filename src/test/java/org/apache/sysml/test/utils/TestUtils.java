@@ -40,7 +40,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -58,8 +57,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -67,7 +66,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
 /**
@@ -100,9 +98,9 @@ public class TestUtils
 		try {
 			String lineExpected = null;
 			String lineActual = null;
-			FileSystem fs = FileSystem.get(conf);
 			
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(compareFile, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
 				lineExpected = compareIn.readLine();
@@ -132,9 +130,9 @@ public class TestUtils
 		try {
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
 				String line;
@@ -209,9 +207,9 @@ public class TestUtils
 	 */
 	public static void compareMMMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
@@ -302,9 +300,9 @@ public class TestUtils
 	 */
 	public static void compareDMLMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
@@ -372,8 +370,8 @@ public class TestUtils
 		
 		try 
 		{
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
@@ -464,11 +462,10 @@ public class TestUtils
 	}
 
 	public static double readDMLScalar(String filePath) {
-		FileSystem fs;
 		try {
 			double d=Double.NaN;
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
@@ -487,11 +484,10 @@ public class TestUtils
 	}
 
 	public static boolean readDMLBoolean(String filePath) {
-		FileSystem fs;
 		try {
 			Boolean b = null;
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
@@ -510,11 +506,10 @@ public class TestUtils
 	}
 	
 	public static String readDMLString(String filePath) {
-		FileSystem fs;
 		try {
 			StringBuilder sb =  new StringBuilder();
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
@@ -638,7 +633,12 @@ public class TestUtils
 		}
 		return Math.abs(v1 - v2) <= t;
 	}
-
+	
+	public static void compareMatrices(double[] expectedMatrix, double[] actualMatrix, double epsilon) {
+		compareMatrices(new double[][]{expectedMatrix}, 
+			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon);
+	}
+	
 	/**
 	 * <p>
 	 * Compares two matrices in array format.
@@ -991,8 +991,8 @@ public class TestUtils
 	 */
 	public static void compareDMLHDFSFileWithRFile(String rFile, String hdfsDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(hdfsDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 			try(BufferedReader compareIn = new BufferedReader(new FileReader(rFile))) {
@@ -1048,8 +1048,10 @@ public class TestUtils
 	 * Checks a matrix against a number of specifications.
 	 * </p>
 	 * 
-	 * @param matrix
-	 *            matrix
+	 * @param data
+	 *            matrix data
+	 * @param mc
+	 *            matrix characteristics
 	 * @param rows
 	 *            number of rows
 	 * @param cols
@@ -1059,14 +1061,13 @@ public class TestUtils
 	 * @param max
 	 *            maximum value
 	 */
-	public static void checkMatrix(BinaryMatrixCharacteristics matrix, long rows, long cols, double min, double max) {
-		assertEquals(rows, matrix.getRows());
-		assertEquals(cols, matrix.getCols());
-		double[][] matrixValues = matrix.getValues();
+	public static void checkMatrix(double[][] data, MatrixCharacteristics mc, long rows, long cols, double min, double max) {
+		assertEquals(rows, mc.getRows());
+		assertEquals(cols, mc.getCols());
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				assertTrue("invalid value",
-						((matrixValues[i][j] >= min && matrixValues[i][j] <= max) || matrixValues[i][j] == 0));
+						((data[i][j] >= min && data[i][j] <= max) || data[i][j] == 0));
 			}
 		}
 	}
@@ -1090,8 +1091,8 @@ public class TestUtils
 	 */
 	public static void checkMatrix(String outDir, long rows, long cols, double min, double max) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			assertTrue(outDir + " does not exist", fs.exists(outDirectory));
 			
 			if( fs.getFileStatus(outDirectory).isDirectory() )
@@ -1144,8 +1145,8 @@ public class TestUtils
 	 */
 	public static void checkForOutputExistence(String outDir) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			assertEquals("number of files in directory not 1", 1, outFiles.length);
 			FSDataInputStream fsout = fs.open(outFiles[0].getPath());
@@ -1170,9 +1171,9 @@ public class TestUtils
 	 */
 	public static void removeHDFSDirectories(String[] directories) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			for (String directory : directories) {
 				Path dir = new Path(directory);
+				FileSystem fs = IOUtilFunctions.getFileSystem(dir, conf);
 				if (fs.exists(dir) && fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, true);
 				}
@@ -1220,9 +1221,9 @@ public class TestUtils
 	 */
 	public static void removeHDFSFiles(String[] files) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			for (String directory : files) {
 				Path dir = new Path(directory);
+				FileSystem fs = IOUtilFunctions.getFileSystem(dir, conf);
 				if (fs.exists(dir) && !fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, false);
 				}
@@ -1259,8 +1260,9 @@ public class TestUtils
 	 */
 	public static void clearDirectory(String directory) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] directoryContent = fs.listStatus(new Path(directory));
+			Path path = new Path(directory);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			FileStatus[] directoryContent = fs.listStatus(path);
 			for (FileStatus content : directoryContent) {
 				fs.delete(content.getPath(), true);
 			}
@@ -1369,8 +1371,8 @@ public class TestUtils
 	public static void generateTestMatrixToFile(String file, int rows, int cols, double min, double max,
 			double sparsity, long seed) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path inFile = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(inFile, conf);
 			DataOutputStream out = fs.create(inFile);
 			try( PrintWriter pw = new PrintWriter(out) ) {
 				Random random = (seed == -1) ? TestUtils.random : new Random(seed);
@@ -1412,8 +1414,9 @@ public class TestUtils
 		try 
 		{
 			//create outputstream to HDFS / FS and writer
-			FileSystem fs = FileSystem.get(conf);
-			DataOutputStream out = fs.create(new Path(file), true);
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			DataOutputStream out = fs.create(path, true);
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 				//writer actual matrix
 				StringBuilder sb = new StringBuilder();
@@ -1458,8 +1461,9 @@ public class TestUtils
 			//create outputstream to HDFS / FS and writer
 			DataOutputStream out = null;
 			if (!isR) {
-				FileSystem fs = FileSystem.get(conf);
-				out = fs.create(new Path(file), true);
+				Path path = new Path(file);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+				out = fs.create(path, true);
 			} 
 			else {
 				out = new DataOutputStream(new FileOutputStream(file));
@@ -1606,7 +1610,9 @@ public class TestUtils
 		try {
 			SequenceFile.Writer writer = null;
 			try {
-				writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+				Path path = new Path(file);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+				writer = new SequenceFile.Writer(fs, conf, path,
 					MatrixIndexes.class, MatrixCell.class);
 
 				MatrixIndexes index = new MatrixIndexes();
@@ -1652,7 +1658,9 @@ public class TestUtils
 		SequenceFile.Writer writer = null;
 			
 		try {
-			writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			writer = new SequenceFile.Writer(fs, conf, path,
 					MatrixIndexes.class, MatrixBlock.class);
 
 			MatrixIndexes index = new MatrixIndexes();
@@ -1775,8 +1783,8 @@ public class TestUtils
 	 */
 	public static void removeTemporaryFiles() {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path workingDir = new Path(".");
+			FileSystem fs = IOUtilFunctions.getFileSystem(workingDir, conf);
 			FileStatus[] files = fs.listStatus(workingDir);
 			for (FileStatus file : files) {
 				String fileName = file.getPath().toString().substring(
@@ -1800,8 +1808,8 @@ public class TestUtils
 	 */
 	public static boolean checkForTemporaryFiles() {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path workingDir = new Path(".");
+			FileSystem fs = IOUtilFunctions.getFileSystem(workingDir, conf);
 			FileStatus[] files = fs.listStatus(workingDir);
 			for (FileStatus file : files) {
 				String fileName = file.getPath().toString().substring(
@@ -1819,174 +1827,6 @@ public class TestUtils
 
 	/**
 	 * <p>
-	 * Reads binary cells from a file. A matrix characteristic is created which
-	 * contains the characteristics of the matrix read from the file and the
-	 * values.
-	 * </p>
-	 * 
-	 * @param directory
-	 *            directory containing the matrix
-	 * @return matrix characteristics
-	 */
-	@SuppressWarnings("deprecation")
-	public static BinaryMatrixCharacteristics readCellsFromSequenceFile(String directory) {
-		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
-
-			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
-			int rows = 0;
-			int cols = 0;
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixCell value = new MatrixCell();
-			for (FileStatus file : files) {
-				SequenceFile.Reader reader = null;
-				try {
-					reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
-					while (reader.next(indexes, value)) {
-						if (rows < indexes.getRowIndex())
-							rows = (int) indexes.getRowIndex();
-						if (cols < indexes.getColumnIndex())
-							cols = (int) indexes.getColumnIndex();
-						valueMap.put(new MatrixIndexes(indexes), value.getValue());
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
-			}
-
-			double[][] values = new double[rows][cols];
-			long nonZeros = 0;
-			for (MatrixIndexes index : valueMap.keySet()) {
-				values[(int)index.getRowIndex() - 1][(int)index.getColumnIndex() - 1] = valueMap.get(index);
-				if (valueMap.get(index) != 0)
-					nonZeros++;
-			}
-
-			return new BinaryMatrixCharacteristics(values, rows, cols, 0, 0, 0, 0, nonZeros);
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("unable to read sequence file in " + directory);
-		}
-
-		return null;
-	}
-
-	/**
-	 * <p>
-	 * Reads binary blocks from a file. A matrix characteristic is created which
-	 * contains the characteristics of the matrix read from the file and the
-	 * values.
-	 * </p>
-	 * 
-	 * @param directory
-	 *            directory containing the matrix
-	 * @param rowsInBlock
-	 *            rows in block
-	 * @param colsInBlock
-	 *            columns in block
-	 * @return matrix characteristics
-	 */
-	@SuppressWarnings("deprecation")
-	public static BinaryMatrixCharacteristics readBlocksFromSequenceFile(String directory, int rowsInBlock,
-			int colsInBlock) {
-		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
-
-			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
-			int rowsInLastBlock = -1;
-			int colsInLastBlock = -1;
-			int rows = 0;
-			int cols = 0;
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixBlock value = new MatrixBlock();
-			for (FileStatus file : files) {
-				SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
-
-				try {
-					while (reader.next(indexes, value)) {
-						if (value.getNumRows() < rowsInBlock) {
-							if (rowsInLastBlock == -1)
-								rowsInLastBlock = value.getNumRows();
-							else if (rowsInLastBlock != value.getNumRows())
-								fail("invalid block sizes");
-							rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
-						} else if (value.getNumRows() == rowsInBlock) {
-							if (rows <= (indexes.getRowIndex() * rowsInBlock + value.getNumRows())) {
-								if (rowsInLastBlock == -1)
-									rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
-								else
-									fail("invalid block sizes");
-							}
-						} else {
-							fail("invalid block sizes");
-						}
-	
-						if (value.getNumColumns() < colsInBlock) {
-							if (colsInLastBlock == -1)
-								colsInLastBlock = value.getNumColumns();
-							else if (colsInLastBlock != value.getNumColumns())
-								fail("invalid block sizes");
-							cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
-						} else if (value.getNumColumns() == colsInBlock) {
-							if (cols <= (indexes.getColumnIndex() * colsInBlock + value.getNumColumns())) {
-								if (colsInLastBlock == -1)
-									cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
-								else
-									fail("invalid block sizes");
-							}
-						} else {
-							fail("invalid block sizes");
-						}
-	
-						if (value.isInSparseFormat()) {
-							Iterator<IJV> iter = value.getSparseBlockIterator();
-							while( iter.hasNext() )
-							{
-								IJV cell = iter.next();
-								valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + cell.getI()),
-										(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.getJ())), cell.getV());
-							}
-							
-						} else {
-							double[] valuesInBlock = value.getDenseBlock();
-							for (int i = 0; i < value.getNumRows(); i++) {
-								for (int j = 0; j < value.getNumColumns(); j++) {
-									valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + i),
-											(int) ((indexes.getColumnIndex() - 1) * colsInBlock + j)), valuesInBlock[i
-											* value.getNumColumns() + j]);
-								}
-							}
-						}
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
-			}
-
-			long nonZeros = 0;
-			double[][] values = new double[rows][cols];
-			for (MatrixIndexes index : valueMap.keySet()) {
-				values[(int)index.getRowIndex()][(int)index.getColumnIndex()] = valueMap.get(index);
-				if (valueMap.get(index) != 0)
-					nonZeros++;
-			}
-
-			return new BinaryMatrixCharacteristics(values, rows, cols, rowsInBlock, rowsInLastBlock, colsInBlock,
-					colsInLastBlock, nonZeros);
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("unable to read sequence file in " + directory);
-		}
-
-		return null;
-	}
-
-	/**
-	 * <p>
 	 * Returns the path to a file in a directory if it is the only file in the
 	 * directory.
 	 * </p>
@@ -1997,8 +1837,9 @@ public class TestUtils
 	 */
 	public static Path getFileInDirectory(String directory) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
+			Path path = new Path(directory);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			FileStatus[] files = fs.listStatus(path);
 			if (files.length != 1)
 				throw new IOException("requires exactly one file in directory " + directory);
 
@@ -2020,8 +1861,9 @@ public class TestUtils
 	 *            filename
 	 */
 	public static void createFile(String filename) throws IOException {
-			FileSystem fs = FileSystem.get(conf);
-			fs.create(new Path(filename));
+		Path path = new Path(filename);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+		fs.create(path);
 	}
 
 	/**

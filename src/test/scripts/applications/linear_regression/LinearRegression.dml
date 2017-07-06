@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Note this script is externalized to customer, please do not change w/o consulting component owner.
 # How to invoke this dml script LinearRegression.dml?
 # Assume LR_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR

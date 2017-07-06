@@ -116,7 +116,7 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * NEW FUNCTIONALITIES (not for BI 2.0 release)
+ * NEW FUNCTIONALITIES
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository =&gt; modules OK, but second-order functions required
  *
@@ -629,6 +629,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			switch( _execMode )
 			{
 				case LOCAL: //create parworkers as local threads
+					if (DMLScript.USE_ACCELERATOR) {
+						setDegreeOfParallelism(ec.getNumGPUContexts());
+					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 					
@@ -718,6 +721,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, InterruptedException
 	{
+		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
 		 * Step 2) create tasks
@@ -749,7 +753,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				//create parallel workers as (lazy) deep copies
 				//including preparation of update-in-place variables
-				workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
+				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY); 
 			}
@@ -819,6 +823,15 @@ public class ParForProgramBlock extends ForProgramBlock
 						String[] parts = DMLProgram.splitFunctionKey(fn);
 						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
 					}
+			}
+
+			// Frees up the GPUContexts used in the threaded Parfor and sets
+			// the main thread to use the GPUContext
+			if (DMLScript.USE_ACCELERATOR) {
+				for (int i = 0; i < _numThreads; i++) {
+					workers[i].getExecutionContext().setGPUContexts(null);
+				}
+				ec.getGPUContext(0).initializeThread();
 			}
 		}
 		finally 
@@ -1367,10 +1380,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param pwID parworker id
 	 * @param queue task queue
 	 * @param ec execution context
+	 * @param index the index of the worker
 	 * @return local parworker
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec) 
+	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec, int index)
 		throws DMLRuntimeException
 	{
 		LocalParWorker pw = null; 
@@ -1399,6 +1413,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			//deep copy execution context (including prepare parfor update-in-place)
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+
+			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
+			// and sets it in the ExecutionContext of the parfor
+			if (DMLScript.USE_ACCELERATOR){
+				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(index)));
+			}
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)
 			prepareUpdateInPlaceVariables(cpEc, pwID);
@@ -1608,7 +1628,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			boolean flagFirst = true; //workaround for keeping gen order
@@ -1637,7 +1657,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path( fname );
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			Task t = null;

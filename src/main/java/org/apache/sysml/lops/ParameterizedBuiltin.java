@@ -28,7 +28,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 
 
 /**
@@ -40,7 +39,7 @@ public class ParameterizedBuiltin extends Lop
 	
 	public enum OperationTypes { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
-		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
 		TOSTRING
 	};
 	
@@ -48,7 +47,16 @@ public class ParameterizedBuiltin extends Lop
 	private HashMap<String, Lop> _inputParams;
 	private boolean _bRmEmptyBC;
 
+	//cp-specific parameters
+	private int _numThreads = 1;
+	
 	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+			throws HopsException 
+	{
+		this(paramLops, op, dt, vt, et, 1);
+	}
+	
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 		throws HopsException 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
@@ -60,6 +68,7 @@ public class ParameterizedBuiltin extends Lop
 		}
 		
 		_inputParams = paramLops;
+		_numThreads = k;
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -88,11 +97,6 @@ public class ParameterizedBuiltin extends Lop
 			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
-		}
-		else if ( _operation == OperationTypes.TRANSFORM && et == ExecType.MR ) {
-			definesMRJob = true;
-			eloc = ExecLocation.MapAndReduce;
-			lps.addCompatibility(JobType.TRANSFORM);
 		}
 		else //executed in CP / CP_FILE / SPARK
 		{
@@ -202,8 +206,7 @@ public class ParameterizedBuiltin extends Lop
 				}
 				
 				break;
-				
-			case TRANSFORM: 
+			
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMMETA:	{
@@ -229,8 +232,15 @@ public class ParameterizedBuiltin extends Lop
 			sb.append( _bRmEmptyBC );
 			sb.append(OPERAND_DELIMITOR);
 		}
-
-		sb.append(this.prepOutputOperand(output));
+		
+		if( getExecType()==ExecType.CP && _operation == OperationTypes.REXPAND ) {
+			sb.append( "k" );
+			sb.append( Lop.NAME_VALUE_SEPARATOR );
+			sb.append( _numThreads );	
+			sb.append(OPERAND_DELIMITOR);
+		}
+		
+		sb.append(prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -383,59 +393,6 @@ public class ParameterizedBuiltin extends Lop
 		
 		return sb.toString();
 	}
-	
-	@Override 
-	public String getInstructions(int output_index) 
-		throws LopsException
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-
-		if(_operation== OperationTypes.TRANSFORM) 
-		{
-			sb.append( "transform" );
-			sb.append( OPERAND_DELIMITOR );
-			
-			Lop iLop = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
-			sb.append(iLop.prepInputOperand(getInputIndex("target")));
-			sb.append( OPERAND_DELIMITOR );
-			
-			Lop iLop2 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
-			sb.append(iLop2.prepScalarLabel());
-			sb.append( OPERAND_DELIMITOR );
-			
-			// apply transform
-			Lop iLop3a = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
-			if ( iLop3a != null ) {
-				sb.append("applymtd=");
-				sb.append(iLop3a.prepScalarLabel());
-				sb.append( OPERAND_DELIMITOR );
-			}
-			
-			// transform specification (transform: mandatory, transformapply: optional)
-			Lop iLop3b = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC);
-			if ( iLop3b != null ) {
-				sb.append("spec=");
-				sb.append(iLop3b.prepScalarLabel());
-				sb.append( OPERAND_DELIMITOR );
-			}
-			
-			Lop iLop4 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
-			if( iLop4 != null ) {
-				sb.append("outnames=");
-				sb.append(iLop4.prepScalarLabel());
-				sb.append( OPERAND_DELIMITOR );
-			}
-			
-			sb.append( prepOutputOperand(output_index));
-		}
-		else
-			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
-	
-		return sb.toString();
-	}
-	
 
 	@Override
 	public String toString() {

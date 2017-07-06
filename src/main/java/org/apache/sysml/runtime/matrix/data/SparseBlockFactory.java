@@ -44,11 +44,7 @@ public abstract class SparseBlockFactory
 			return null;
 		
 		//check for existing target type
-		if( !forceCopy && 
-			( (sblock instanceof SparseBlockMCSR && type == SparseBlock.Type.MCSR)
-			||(sblock instanceof SparseBlockCSR && type == SparseBlock.Type.CSR)
-			||(sblock instanceof SparseBlockCOO && type == SparseBlock.Type.COO))  )
-		{
+		if( !forceCopy && isSparseBlockType(sblock, type) ){
 			return sblock;
 		}
 		
@@ -60,6 +56,16 @@ public abstract class SparseBlockFactory
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
+	}
+	
+	public static boolean isSparseBlockType(SparseBlock sblock, SparseBlock.Type type) {
+		return (getSparseBlockType(sblock) == type);
+	}
+	
+	public static SparseBlock.Type getSparseBlockType(SparseBlock sblock) {
+		return (sblock instanceof SparseBlockMCSR) ? SparseBlock.Type.MCSR :
+			(sblock instanceof SparseBlockCSR) ? SparseBlock.Type.CSR : 
+			(sblock instanceof SparseBlockCOO) ? SparseBlock.Type.COO : null;
 	}
 
 	public static long estimateSizeSparseInMemory(SparseBlock.Type type, long nrows, long ncols, double sparsity) {

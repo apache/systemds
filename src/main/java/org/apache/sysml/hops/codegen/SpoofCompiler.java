@@ -19,8 +19,10 @@
 
 package org.apache.sysml.hops.codegen;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,35 +31,44 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
+import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysml.hops.codegen.cplan.CNodeRow;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysml.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.PlanSelection;
+import org.apache.sysml.hops.codegen.template.PlanSelectionFuseCostBased;
 import org.apache.sysml.hops.codegen.template.PlanSelectionFuseAll;
 import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
+import org.apache.sysml.hops.recompile.RecompileStatus;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteCommonSubexpressionElimination;
 import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryCasts;
+import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -69,24 +80,46 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 
-public class SpoofCompiler 
+public class SpoofCompiler
 {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
 	//internal configuration flags
-	public static boolean LDEBUG = false;
-	public static final boolean RECOMPILE_CODEGEN = true;
+	public static boolean LDEBUG                      = false;
+	public static CompilerType JAVA_COMPILER          = CompilerType.JANINO; 
+	public static IntegrationType INTEGRATION         = IntegrationType.RUNTIME;
+	public static final boolean RECOMPILE_CODEGEN     = true;
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
-	public static PlanCachePolicy PLAN_CACHE_POLICY = PlanCachePolicy.CSLH;
-	public static final int PLAN_CACHE_SIZE = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_ALL; 
+	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
+	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
+	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED; 
+
+	public enum CompilerType {
+		JAVAC,
+		JANINO,
+	}
+	
+	public enum IntegrationType {
+		HOPS,
+		RUNTIME,
+	}
 	
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
@@ -104,6 +137,14 @@ public class SpoofCompiler
 		}
 	}
 	
+	static {
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("org.apache.sysml.hops.codegen")
+				  .setLevel((Level) Level.TRACE);
+		}
+	}
+	
 	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
 	//for equal operators from (1) different hop dags and (2) repeated recompilation 
 	//note: if PLAN_CACHE_SIZE is exceeded, we evict the least-recently-used plan (LRU policy)
@@ -113,27 +154,39 @@ public class SpoofCompiler
 			new RewriteCommonSubexpressionElimination(true),
 			new RewriteRemoveUnnecessaryCasts());
 	
-	public static void generateCode(DMLProgram dmlp) 
+	public static void generateCode(DMLProgram dmlprog) 
 		throws LanguageException, HopsException, DMLRuntimeException
 	{
 		// for each namespace, handle function statement blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()) {
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+		for (String namespaceKey : dmlprog.getNamespaces().keySet()) {
+			for (String fname : dmlprog.getFunctionStatementBlocks(namespaceKey).keySet()) {
+				FunctionStatementBlock fsblock = dmlprog.getFunctionStatementBlock(namespaceKey,fname);
 				generateCodeFromStatementBlock(fsblock);
 			}
 		}
 		
 		// handle regular statement blocks in "main" method
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
+		for (int i = 0; i < dmlprog.getNumStatementBlocks(); i++) {
+			StatementBlock current = dmlprog.getStatementBlock(i);
 			generateCodeFromStatementBlock(current);
 		}
 	}
 	
+	public static void generateCode(Program rtprog) 
+		throws LanguageException, HopsException, DMLRuntimeException, LopsException, IOException
+	{
+		// handle all function program blocks
+		for( FunctionProgramBlock pb : rtprog.getFunctionProgramBlocks().values() )
+			generateCodeFromProgramBlock(pb);
+		
+		// handle regular program blocks in "main" method
+		for( ProgramBlock pb : rtprog.getProgramBlocks() )
+			generateCodeFromProgramBlock(pb);
+	}
+	
 	public static void generateCodeFromStatementBlock(StatementBlock current)
 		throws HopsException, DMLRuntimeException
-	{		
+	{
 		if (current instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
@@ -145,15 +198,15 @@ public class SpoofCompiler
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) current;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wsb.setPredicateHops(optimize(wsb.getPredicateHops(), true));
+			wsb.setPredicateHops(optimize(wsb.getPredicateHops(), false));
 			for (StatementBlock sb : wstmt.getBody())
 				generateCodeFromStatementBlock(sb);
-		}	
+		}
 		else if (current instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) current;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			isb.setPredicateHops(optimize(isb.getPredicateHops(), true));
+			isb.setPredicateHops(optimize(isb.getPredicateHops(), false));
 			for (StatementBlock sb : istmt.getIfBody())
 				generateCodeFromStatementBlock(sb);
 			for (StatementBlock sb : istmt.getElseBody())
@@ -163,9 +216,9 @@ public class SpoofCompiler
 		{
 			ForStatementBlock fsb = (ForStatementBlock) current;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fsb.setFromHops(optimize(fsb.getFromHops(), true));
-			fsb.setToHops(optimize(fsb.getToHops(), true));
-			fsb.setIncrementHops(optimize(fsb.getIncrementHops(), true));
+			fsb.setFromHops(optimize(fsb.getFromHops(), false));
+			fsb.setToHops(optimize(fsb.getToHops(), false));
+			fsb.setIncrementHops(optimize(fsb.getIncrementHops(), false));
 			for (StatementBlock sb : fstmt.getBody())
 				generateCodeFromStatementBlock(sb);
 		}
@@ -173,6 +226,56 @@ public class SpoofCompiler
 		{
 			current.set_hops( generateCodeFromHopDAGs(current.get_hops()) );
 			current.updateRecompilationFlag();
+		}
+	}
+	
+	public static void generateCodeFromProgramBlock(ProgramBlock current)
+		throws HopsException, DMLRuntimeException, LopsException, IOException
+	{
+		if (current instanceof FunctionProgramBlock)
+		{
+			FunctionProgramBlock fsb = (FunctionProgramBlock)current;
+			for (ProgramBlock pb : fsb.getChildBlocks())
+				generateCodeFromProgramBlock(pb);
+		}
+		else if (current instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock) current;
+			WhileStatementBlock wsb = (WhileStatementBlock)wpb.getStatementBlock();
+			
+			if( wsb!=null && wsb.getPredicateHops()!=null )
+				wpb.setPredicate(generateCodeFromHopDAGsToInst(wsb.getPredicateHops()));
+			for (ProgramBlock sb : wpb.getChildBlocks())
+				generateCodeFromProgramBlock(sb);
+		}
+		else if (current instanceof IfProgramBlock)
+		{
+			IfProgramBlock ipb = (IfProgramBlock) current;
+			IfStatementBlock isb = (IfStatementBlock) ipb.getStatementBlock();
+			if( isb!=null && isb.getPredicateHops()!=null )
+				ipb.setPredicate(generateCodeFromHopDAGsToInst(isb.getPredicateHops()));
+			for (ProgramBlock pb : ipb.getChildBlocksIfBody())
+				generateCodeFromProgramBlock(pb);
+			for (ProgramBlock pb : ipb.getChildBlocksElseBody())
+				generateCodeFromProgramBlock(pb);
+		}
+		else if (current instanceof ForProgramBlock) //incl parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock) current;
+			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
+			if( fsb!=null && fsb.getFromHops()!=null )
+				fpb.setFromInstructions(generateCodeFromHopDAGsToInst(fsb.getFromHops()));
+			if( fsb!=null && fsb.getToHops()!=null )
+				fpb.setToInstructions(generateCodeFromHopDAGsToInst(fsb.getToHops()));
+			if( fsb!=null && fsb.getIncrementHops()!=null )
+				fpb.setIncrementInstructions(generateCodeFromHopDAGsToInst(fsb.getIncrementHops()));
+			for (ProgramBlock pb : fpb.getChildBlocks())
+				generateCodeFromProgramBlock(pb);
+		}
+		else //generic (last-level)
+		{
+			StatementBlock sb = current.getStatementBlock();
+			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.get_hops()) );
 		}
 	}
 
@@ -189,6 +292,22 @@ public class SpoofCompiler
 		return optimized;
 	}
 	
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(StatementBlock sb, ArrayList<Hop> roots) 
+		throws DMLRuntimeException, HopsException, LopsException, IOException 
+	{
+		//create copy of hop dag, call codegen, and generate instructions
+		return Recompiler.recompileHopsDag(sb, roots, 
+			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
+	}
+	
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) 
+		throws DMLRuntimeException, HopsException, LopsException, IOException 
+	{
+		//create copy of hop dag, call codegen, and generate instructions
+		return Recompiler.recompileHopsDag(root, 
+			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
+	}
+	
 	
 	/**
 	 * Main interface of sum-product optimizer, predicate dag.
@@ -202,7 +321,8 @@ public class SpoofCompiler
 		if( root == null )
 			return root;
 		
-		return optimize(new ArrayList<Hop>(Arrays.asList(root)), recompile).get(0);
+		return optimize(new ArrayList<Hop>(
+			Collections.singleton(root)), recompile).get(0);
 	}
 	
 	/**
@@ -231,12 +351,13 @@ public class SpoofCompiler
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
 			
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
-			//remove empty templates with single cnodedata input, remove spurious lookups)
+			//remove empty templates with single cnodedata input, remove spurious lookups,
+			//perform common subexpression elimination)
 			cplans = cleanupCPlans(cplans);
 			
 			//explain before modification
-			if( LDEBUG && !cplans.isEmpty() ) { //existing cplans
-				LOG.info("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
+			if( LOG.isTraceEnabled() && !cplans.isEmpty() ) { //existing cplans
+				LOG.trace("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
 			}
 			
 			//source code generation for all cplans
@@ -251,31 +372,34 @@ public class SpoofCompiler
 					String src = tmp.getValue().codegen(false);
 					
 					//explain debug output cplans or generated source code
-					if( LDEBUG || DMLScript.EXPLAIN.isHopsType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " +  cplan.getKey() +"):");
+					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
+						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " 
+							+ cplan.getKey() + ", line "+tmp.getValue().getBeginLine() + "):");
 						LOG.info(tmp.getValue().getClassname()
-								+Explain.explainCPlan(cplan.getValue().getValue()));
+							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
-					if( LDEBUG || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated code for HopID: " +  cplan.getKey() +"):");
+					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
+						LOG.info("Codegen EXPLAIN (generated code for HopID: "
+							+ cplan.getKey() + ", line "+tmp.getValue().getBeginLine() + "):");
 						LOG.info(src);
 					}
 					
 					//compile generated java source code
-					cla = CodegenUtils.compileClass(tmp.getValue().getClassname(), src);
+					cla = CodegenUtils.compileClass("codegen."+
+							tmp.getValue().getClassname(), src);
 					
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
 						planCache.putPlan(tmp.getValue(), cla);
 				}
-				else if( LDEBUG || DMLScript.STATISTICS ) {
+				else if( DMLScript.STATISTICS ) {
 					Statistics.incrementCodegenPlanCacheHits();
 				}
 				
 				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
-				if( LDEBUG || DMLScript.STATISTICS )
+				if( DMLScript.STATISTICS )
 					Statistics.incrementCodegenPlanCacheTotal();
 			}
 			
@@ -289,12 +413,14 @@ public class SpoofCompiler
 				ret = rewriteCSE.rewriteHopDAGs(ret, new ProgramRewriteStatus());	
 				
 				//explain after modification
-				if( LDEBUG ) {
-					LOG.info("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
+				if( LOG.isTraceEnabled() ) {
+					LOG.trace("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
 				}
 			}
 		}
 		catch( Exception ex ) {
+			LOG.error("Codegen failed to optimize the following HOP DAG: \n" + 
+				Explain.explainHops(roots));
 			throw new DMLRuntimeException(ex);
 		}
 		
@@ -302,6 +428,8 @@ public class SpoofCompiler
 			Statistics.incrementCodegenDAGCompile();
 			Statistics.incrementCodegenCompileTime(System.nanoTime()-t0);
 		}
+		
+		Hop.resetVisitStatus(roots);
 			
 		return ret;
 	}
@@ -325,10 +453,16 @@ public class SpoofCompiler
 			case FUSE_NO_REDUNDANCY: 
 				return new PlanSelectionFuseNoRedundancy();
 			case FUSE_COST_BASED:
+				return new PlanSelectionFuseCostBased();
 			default:	
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);
 		}
+	}
+	
+	public static void setExecTypeSpecificJavaCompiler() {
+		JAVA_COMPILER = OptimizerUtils.isSparkExecutionMode() ?
+			CompilerType.JANINO : CompilerType.JAVAC;
 	}
 	
 	////////////////////
@@ -345,18 +479,19 @@ public class SpoofCompiler
 		memo.pruneSuboptimal(roots);
 		
 		//construct actual cplan representations
+		//note: we do not use the hop visit status due to jumps over fused operators which would
+		//corrupt subsequent resets, leaving partial hops dags in visited status
 		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
-		Hop.resetVisitStatus(roots);
+		HashSet<Long> visited = new HashSet<Long>();
 		for( Hop hop : roots )
-			rConstructCPlans(hop, memo, ret, compileLiterals);
-		Hop.resetVisitStatus(roots);
+			rConstructCPlans(hop, memo, ret, compileLiterals, visited);
 		
 		return ret;
 	}
 	
 	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 		throws DMLException
-	{		
+	{
 		//top-down memoization of processed dag nodes
 		if( memo.contains(hop.getHopID()) || memo.containsHop(hop) )
 			return;
@@ -412,7 +547,9 @@ public class SpoofCompiler
 			if( k != pos ) {
 				Hop input2 = hop.getInput().get(k);
 				if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
-					&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) 
+					&& TemplateUtils.isType(memo.get(input2.getHopID()).get(0).type, tpl.getType(), TemplateType.CellTpl)
+					&& tpl.merge(hop, input2) && (tpl.getType()!=TemplateType.RowTpl || pos==-1 
+						|| TemplateUtils.hasCommonRowTemplateMatrixInput(hop.getInput().get(pos), input2, memo)))
 					P.crossProduct(k, -1L, input2.getHopID());
 				else
 					P.crossProduct(k, -1L);
@@ -420,11 +557,11 @@ public class SpoofCompiler
 		return P;
 	}
 	
-	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals) 
+	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) 
 		throws DMLException
-	{		
+	{
 		//top-down memoization of processed dag nodes
-		if( hop.isVisited() )
+		if( hop == null || visited.contains(hop.getHopID()) )
 			return;
 		
 		//generate cplan for existing memo table entry
@@ -439,14 +576,14 @@ public class SpoofCompiler
 		//process children recursively, but skip compiled operator
 		if( cplans.containsKey(hop.getHopID()) ) {
 			for( Hop c : cplans.get(hop.getHopID()).getKey() )
-				rConstructCPlans(c, memo, cplans, compileLiterals);
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);
 		}
 		else {
 			for( Hop c : hop.getInput() )
-				rConstructCPlans(c, memo, cplans, compileLiterals);	
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);	
 		}
 		
-		hop.setVisited();
+		visited.add(hop.getHopID());
 	}
 	
 	////////////////////
@@ -493,12 +630,26 @@ public class SpoofCompiler
 					hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
 			if(tmpCNode instanceof CNodeOuterProduct && ((CNodeOuterProduct)tmpCNode).isTransposeOutput() )
 				hnew = HopRewriteUtils.createTranspose(hnew);
+			else if( tmpCNode instanceof CNodeMultiAgg ) {
+				ArrayList<Hop> roots = ((CNodeMultiAgg)tmpCNode).getRootNodes();
+				hnew.setDataType(DataType.MATRIX);
+				HopRewriteUtils.setOutputParameters(hnew, 1, roots.size(), 
+					inHops[0].getRowsInBlock(), inHops[0].getColsInBlock(), -1);
+				//inject artificial right indexing operations for all parents of all nodes
+				for( int i=0; i<roots.size(); i++ ) {
+					Hop hnewi = (roots.get(i) instanceof AggUnaryOp) ? 
+						HopRewriteUtils.createScalarIndexing(hnew, 1, i+1) :
+						HopRewriteUtils.createMatrixIndexing(hnew, 1, i+1);
+					HopRewriteUtils.rewireAllParentChildReferences(roots.get(i), hnewi);
+				}
+			}
 			else if( tmpCNode instanceof CNodeCell && ((CNodeCell)tmpCNode).requiredCastDtm() ) {
 				HopRewriteUtils.setOutputParametersForScalar(hnew);
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
 			
-			HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);
+			if( !(tmpCNode instanceof CNodeMultiAgg) )
+				HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);
 			memo.add(hnew.getHopID());
 		}
 		
@@ -517,28 +668,42 @@ public class SpoofCompiler
 	 * 
 	 * @param cplans set of cplans
 	 */
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) {
+	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
+	{
 		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<Long, Pair<Hop[],CNodeTpl>>();
+		CPlanCSERewriter cse = new CPlanCSERewriter();
+		
 		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) {
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
-			//collect cplan leaf node names
-			HashSet<Long> leafs = new HashSet<Long>();
-			rCollectLeafIDs(tpl.getOutput(), leafs);
+			//perform common subexpression elimination
+			tpl = cse.eliminateCommonSubexpressions(tpl);
 			
-			//create clean cplan w/ minimal inputs
-			if( inHops.length == leafs.size() )
-				cplans2.put(e.getKey(), e.getValue());
-			else {
-				tpl.cleanupInputs(leafs);
-				ArrayList<Hop> tmp = new ArrayList<Hop>();
-				for( Hop hop : inHops ) {
-					if( hop!= null && leafs.contains(hop.getHopID()) )
-						tmp.add(hop);
+			//update input hops (order-preserving)
+			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
+			inHops = Arrays.stream(inHops)
+				.filter(p -> inputHopIDs.contains(p.getHopID()))
+				.toArray(Hop[]::new);
+			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
+			
+			//remove invalid plans with column indexing on main input
+			if( tpl instanceof CNodeCell ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				if( rHasLookupRC1(tpl.getOutput(), in1) || isLookupRC1(tpl.getOutput(), in1) ) {
+					cplans2.remove(e.getKey());
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
 				}
-				cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(
-						tmp.toArray(new Hop[0]),tpl));
+			}
+			else if( tpl instanceof CNodeMultiAgg ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
+					if( rHasLookupRC1(output, in1) || isLookupRC1(output, in1) ) {
+						cplans2.remove(e.getKey());
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
+					}
 			}
 			
 			//remove spurious lookups on main input of cell template
@@ -546,43 +711,49 @@ public class SpoofCompiler
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				rFindAndRemoveLookup(tpl.getOutput(), in1);
 			}
-			
-			//remove invalid plans with column indexing on main input
-			if( tpl instanceof CNodeCell ) {
+			else if( tpl instanceof CNodeMultiAgg ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				if( rHasLookupRC1(tpl.getOutput(), in1) )
-					cplans2.remove(e.getKey());
+				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
 			}
 			
 			//remove cplan w/ single op and w/o agg
-			if( tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& TemplateUtils.hasSingleOperation(tpl) ) 
+			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
+					&& TemplateUtils.hasSingleOperation(tpl) )
+				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1)
+					&& TemplateUtils.hasSingleOperation(tpl))
+				|| TemplateUtils.hasNoOperation(tpl) ) 
 				cplans2.remove(e.getKey());
 				
 			//remove cplan if empty
 			if( tpl.getOutput() instanceof CNodeData )
 				cplans2.remove(e.getKey());
+			
+			//rename inputs (for codegen and plan caching)
+			tpl.renameInputs();
 		}
 		
 		return cplans2;
 	}
 	
-	private static void rCollectLeafIDs(CNode node, HashSet<Long> leafs) {
-		//collect leaf variable names
-		if( node instanceof CNodeData && !((CNodeData)node).isLiteral() )
-			leafs.add(((CNodeData) node).getHopID());
+	private static void rFindAndRemoveLookupMultiAgg(CNodeMultiAgg node, CNodeData mainInput) {
+		//process all outputs individually
+		for( CNode output : node.getOutputs() )
+			rFindAndRemoveLookup(output, mainInput);
 		
-		//recursively process cplan
-		for( CNode c : node.getInput() )
-			rCollectLeafIDs(c, leafs);
+		//handle special case, of lookup being itself the output node
+		for( int i=0; i < node.getOutputs().size(); i++) {
+			CNode tmp = node.getOutputs().get(i);
+			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
+				node.getOutputs().set(i, tmp.getInput().get(0));
+		}
 	}
 	
 	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput) {
 		for( int i=0; i<node.getInput().size(); i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( tmp instanceof CNodeUnary && (((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_R 
-					|| ((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_RC)
-				&& tmp.getInput().get(0) instanceof CNodeData
+			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
 			{
 				node.getInput().set(i, tmp.getInput().get(0));
@@ -596,14 +767,18 @@ public class SpoofCompiler
 		boolean ret = false;
 		for( int i=0; i<node.getInput().size() && !ret; i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( tmp instanceof CNodeTernary && ((CNodeTernary)tmp).getType()==TernaryType.LOOKUP_RC1 
-				&& tmp.getInput().get(0) instanceof CNodeData
-				&& ((CNodeData)tmp.getInput().get(0)).getHopID() == mainInput.getHopID())
+			if( isLookupRC1(tmp, mainInput) )
 				ret = true;
 			else
 				ret |= rHasLookupRC1(tmp, mainInput);
 		}
 		return ret;
+	}
+	
+	private static boolean isLookupRC1(CNode node, CNodeData mainInput) {
+		return (node instanceof CNodeTernary && ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+				&& node.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)node.getInput().get(0)).getHopID() == mainInput.getHopID());
 	}
 	
 	/**

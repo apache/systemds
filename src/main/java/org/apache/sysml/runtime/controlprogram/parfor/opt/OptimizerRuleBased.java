@@ -103,7 +103,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -262,7 +262,7 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0a, M1, M2, M3, flagLIX );
 		
 		//exec-type-specific rewrites
-		if( pn.getExecType() == ExecType.MR || pn.getExecType()==ExecType.SPARK )
+		if( pn.getExecType() == getRemoteExecType() )
 		{
 			if( M1 > _rm && M3 <= _rm  ) {
 				// rewrite 1: data partitioning (apply conditional partitioning)
@@ -400,6 +400,10 @@ public class OptimizerRuleBased extends Optimizer
 		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 	}
 	
+	protected ExecType getRemoteExecType() {
+		return OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+	}
+	
 	///////
 	//REWRITE set data partitioner
 	///
@@ -483,7 +487,7 @@ public class OptimizerRuleBased extends Optimizer
 				//NOTE: for the moment, we do not partition according to the remote mem, because we can execute 
 				//it even without partitioning in CP. However, advanced optimizers should reason about this 					   
 				//double mold = h.getMemEstimate();
-				if(	   n.getExecType() == ExecType.MR ||  n.getExecType()==ExecType.SPARK  //Opt Condition: MR/Spark
+				if(	   n.getExecType() == getRemoteExecType()  //Opt Condition: MR/Spark
 					|| h.getMemEstimate() > thetaM ) //Opt Condition: mem estimate > constraint to force partitioning	
 				{
 					//NOTE: subsequent rewrites will still use the MR mem estimate
@@ -608,23 +612,22 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
 		
 		//search for candidates
-		Collection<OptNode> cand = n.getNodeList(ExecType.MR);
+		Collection<OptNode> cand = n.getNodeList(getRemoteExecType());
 		
 		//determine if applicable
-		boolean apply =    M < _rm         //ops fit in remote memory budget
-			            && !cand.isEmpty() //at least one MR
-		                && isResultPartitionableAll(cand,pfpb.getResultVariables(),vars, pfpb.getIterablePredicateVars()[0]); // check candidates
+		boolean apply = M < _rm   //ops fit in remote memory budget
+			&& !cand.isEmpty()    //at least one MR
+		    && isResultPartitionableAll(cand,pfpb.getResultVariables(), 
+		    		vars, pfpb.getIterablePredicateVars()[0]); // check candidates
 			
 		//recompile LIX
 		if( apply )
 		{
-			try
-			{
+			try {
 				for(OptNode lix : cand)
 					recompileLIX( lix, vars );
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				throw new DMLRuntimeException("Unable to recompile LIX.", ex);
 			}
 		}
@@ -747,13 +750,13 @@ public class OptimizerRuleBased extends Optimizer
 
 	private double estimateSizeSparseRow( long cols, long nnz ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
-		long cnnz = Math.max(SparseRow.initialCapacity, Math.max(cols, nnz));
+		long cnnz = Math.max(SparseRowVector.initialCapacity, Math.max(cols, nnz));
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 
 	private double estimateSizeSparseRowMin( long cols ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
-		long cnnz = Math.min(SparseRow.initialCapacity, cols);
+		long cnnz = Math.min(SparseRowVector.initialCapacity, cols);
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 
@@ -783,7 +786,8 @@ public class OptimizerRuleBased extends Optimizer
 		HashMap<Hop, Double> estRix = getPartitionedRIXEstimates(nParent);
 		
 		//construct new instructions
-		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, null, false, 0);
+		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
+			sb, sb.get_hops(), vars, null, false, false, 0);
 		pb.setInstructions( newInst );   
 		
 		//reset all rix estimated (modified by recompile)
@@ -827,8 +831,9 @@ public class OptimizerRuleBased extends Optimizer
 		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
 
 		String datapartitioner = n.getParam(ParamType.DATA_PARTITIONER);
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
+		ExecType REMOTE = getRemoteExecType();
+		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? 
+			PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
 
 		//deciding on the execution strategy
 		if( ConfigurationManager.isParallelParFor()  //allowed remote parfor execution
@@ -906,7 +911,7 @@ public class OptimizerRuleBased extends Optimizer
 		ExecType et = n.getExecType();
 		boolean ret = ( et == ExecType.CP);		
 		
-		if( n.isLeaf() && (et == ExecType.MR || et == ExecType.SPARK) )
+		if( n.isLeaf() && et == getRemoteExecType() )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
 			if(    h.getForcedExecType()!=LopProperties.ExecType.MR  //e.g., -exec=hadoop
@@ -1156,7 +1161,7 @@ public class OptimizerRuleBased extends Optimizer
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		//decide on the replication factor 
-		if( n.getExecType()==ExecType.MR || n.getExecType()==ExecType.SPARK )		
+		if( n.getExecType()==getRemoteExecType() )		
 		{
 			apply = true;
 			
@@ -1355,7 +1360,8 @@ public class OptimizerRuleBased extends Optimizer
 					if(    ConfigurationManager.isParallelMatrixOperations() 
 						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
 						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
-							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG)
+							 && !HopRewriteUtils.isValidOp(((ParameterizedBuiltinOp)h).getOp(), 
+								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND))
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
 							 && !((UnaryOp)h).isCumulativeUnaryOperation() )
 						&& !( h instanceof ReorgOp //only reorgop-transpose
@@ -1417,7 +1423,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			setTaskPartitioner( pn, PTaskPartitioner.FACTORING_CMAX );
 		}
-		else if( pn.getExecType()==ExecType.MR && !jvmreuse && pn.hasOnlySimpleChilds() )
+		else if( ((pn.getExecType()==ExecType.MR && !jvmreuse) 
+			|| pn.getExecType()==ExecType.SPARK) && pn.hasOnlySimpleChilds() )
 		{
 			//for simple body programs without loops, branches, or function calls, we don't
 			//expect much load imbalance and hence use static partitioning in order to
@@ -2931,7 +2938,7 @@ public class OptimizerRuleBased extends Optimizer
 		PResultMerge ret = null;
 		
 		//investigate details of current parfor node
-		boolean flagRemoteParFOR = (n.getExecType() == ExecType.MR || n.getExecType() == ExecType.SPARK);
+		boolean flagRemoteParFOR = (n.getExecType() == getRemoteExecType());
 		boolean flagLargeResult = hasLargeTotalResults( n, pfpb.getResultVariables(), vars, true );
 		boolean flagRemoteLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
@@ -3015,8 +3022,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			String opName = n.getParam(ParamType.OPSTRING);
 			//check opstring and exec type
-			if( opName !=null && opName.equals(LeftIndexingOp.OPSTRING) && 
-				(n.getExecType() == ExecType.MR || n.getExecType() == ExecType.SPARK) )
+			if( opName != null && opName.equals(LeftIndexingOp.OPSTRING) 
+				&& n.getExecType() == getRemoteExecType() )
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
@@ -3151,7 +3158,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( n.getNodeType() == NodeType.PARFOR )
 			{
 				rewriteSetResultMerge(n, vars, inLocal);
-				if( n.getExecType()==ExecType.MR || n.getExecType()==ExecType.SPARK )
+				if( n.getExecType()==getRemoteExecType() )
 					inLocal = false;
 			}
 			else if( n.getChilds()!=null )  
@@ -3492,7 +3499,6 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return count;
 	}
-	
 	
 	////////////////////////
 	//   Helper methods   //

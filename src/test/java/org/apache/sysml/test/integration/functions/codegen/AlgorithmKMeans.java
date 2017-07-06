@@ -156,12 +156,10 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = "scripts/algorithms/Kmeans.dml";
 			programArgs = new String[]{ "-explain", "-stats",
-				"-args", input("X"), String.valueOf(centroids),
-				String.valueOf(runs), String.valueOf(epsilon), String.valueOf(maxiter), output("C")};
+				"-nvargs", "X="+input("X"), "k="+String.valueOf(centroids), "runs="+String.valueOf(runs), 
+				"tol="+String.valueOf(epsilon), "maxi="+String.valueOf(maxiter), "C="+output("C")};
 
 			//rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 			//	String.valueOf(maxiter), expectedDir());

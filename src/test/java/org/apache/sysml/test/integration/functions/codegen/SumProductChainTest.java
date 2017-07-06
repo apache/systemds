@@ -99,15 +99,15 @@ public class SumProductChainTest extends AutomatedTestBase
 	
 	private void testSumProductChain(String testname, boolean vectors, boolean sparse, boolean rewrites, ExecType instType)
 	{	
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		
+		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
-		boolean oldSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
@@ -145,8 +145,8 @@ public class SumProductChainTest extends AutomatedTestBase
 						|| heavyHittersContainsSubString("sp_spoofCell"));
 		}
 		finally {
-			rtplatform = oldPlatform;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = oldSparkConfig;
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;

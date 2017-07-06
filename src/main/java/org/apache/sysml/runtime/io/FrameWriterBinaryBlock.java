@@ -63,7 +63,7 @@ public class FrameWriterBinaryBlock extends FrameWriter
 	protected void writeBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 			throws IOException, DMLRuntimeException
 	{
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		int blen = ConfigurationManager.getBlocksize();
 		
 		//sequential write to single file

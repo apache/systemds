@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -45,7 +46,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 {	
-
+	@Override
 	protected void writeBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -75,7 +76,7 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 			ArrayList<WriteFileTask> tasks = new ArrayList<WriteFileTask>();
 			int blklen = (int)Math.ceil((double)rlen / blen / numThreads) * blen;
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
-				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
 				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, (int)rlen), blen));
 			}
 
@@ -86,10 +87,17 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 			//check for exceptions 
 			for( Future<Object> task : rt )
 				task.get();
+			
+			// delete crc files if written to local file system
+			if (fs instanceof LocalFileSystem) {
+				for(int i=0; i<numThreads & i*blklen<rlen; i++) 
+					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs,
+						new Path(path, IOUtilFunctions.getPartFileName(i)));
+			}
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of binary block input.", e);
-		}	
+		}
 	}
 
 	private class WriteFileTask implements Callable<Object> 

@@ -66,8 +66,9 @@ public class FrameWriterTextCell extends FrameWriter
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//sequential write to single text file
-		writeTextCellFrameToFile(path, job, fs, src, 0, (int)rlen);	
-	}	
+		writeTextCellFrameToFile(path, job, fs, src, 0, (int)rlen);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+	}
 	
 	/**
 	 * Internal primitive to write a row range of a frame to a single text file, 

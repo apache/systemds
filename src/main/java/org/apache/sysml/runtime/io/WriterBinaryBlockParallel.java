@@ -73,7 +73,7 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			ArrayList<WriteFileTask> tasks = new ArrayList<WriteFileTask>();
 			int blklen = (int)Math.ceil((double)rlen / brlen / numThreads) * brlen;
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
-				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
 				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen), brlen, bclen));
 			}
 
@@ -84,18 +84,16 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			//check for exceptions 
 			for( Future<Object> task : rt )
 				task.get();
+			
+			// delete crc files if written to local file system
+			if (fs instanceof LocalFileSystem) {
+				for(int i=0; i<numThreads & i*blklen<rlen; i++) 
+					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs,
+						new Path(path, IOUtilFunctions.getPartFileName(i)));
+			}
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of binary block input.", e);
-		}
-
-		// delete crc files if written to local file system
-		if (fs instanceof LocalFileSystem) {
-			int blklen = (int)Math.ceil((double)rlen / numThreads);
-			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
-				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, newPath);
-			}
 		}
 	}
 

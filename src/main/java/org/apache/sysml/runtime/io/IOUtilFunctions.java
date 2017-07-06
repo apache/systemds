@@ -56,7 +56,7 @@ public class IOUtilFunctions
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	private static final char CSV_QUOTE_CHAR = '"';
-
+	
 	public static FileSystem getFileSystem(String fname) throws IOException {
 		return getFileSystem(new Path(fname),
 			ConfigurationManager.getCachedJobConf());
@@ -86,6 +86,10 @@ public class IOUtilFunctions
 		String scheme = path.toUri().getScheme();
 		//capture multiple alternatives s3, s3n, s3a, swift, swift2d
 		return scheme.startsWith("s3") || scheme.startsWith("swift");
+	}
+	
+	public static String getPartFileName(int pos) {
+		return String.format("0-m-%05d", pos);
 	}
 	
 	public static void closeSilently( Closeable io ) {

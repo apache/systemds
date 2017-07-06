@@ -50,4 +50,16 @@
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
 	</fileSets>
+
+	<!-- Include platform specific JCuda Jars -->
+	<dependencySets>
+		<dependencySet>
+			<includes>
+				<include>org.jcuda:*</include>
+			</includes>
+			<unpack>true</unpack>
+			<scope>compile</scope>
+		</dependencySet>
+	</dependencySets>
+
 </assembly>

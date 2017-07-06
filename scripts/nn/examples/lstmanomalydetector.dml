@@ -23,7 +23,7 @@
  * MNIST LeNet Example
  */
 # Imports
-source("nn/layers/affine.dml") as affine
+source("https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/layers/affine.dml") as affine
 source("nn/layers/conv2d_builtin.dml") as conv2d
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/dropout.dml") as dropout

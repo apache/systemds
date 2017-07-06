@@ -312,7 +312,7 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 				}
 				else {
 					double[] tmp = DataConverter.convertToDoubleVector(
-							mb.sliceOperations(i, i, j, j+colsVector-1, new MatrixBlock()));
+							mb.sliceOperations(i, i, j, j+colsVector-1, new MatrixBlock()), false);
 					row[j2+off] = new DenseVector(tmp);
 					j += colsVector-1;
 				}

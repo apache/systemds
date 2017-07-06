@@ -456,6 +456,12 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	public static boolean isDataGenOpWithConstantValue(Hop hop, double value) {
+		return hop instanceof DataGenOp
+			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
+			&& ((DataGenOp)hop).hasConstantValue(value);
+	}
+	
 	public static ReorgOp createTranspose(Hop input) {
 		return createReorg(input, ReOrgOp.TRANSPOSE);
 	}
@@ -493,8 +499,11 @@ public class HopRewriteUtils
 		return createBinary(new LiteralOp(0), input, OpOp2.MINUS);
 	}
 	
-	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op)
-	{
+	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op) {
+		return createBinary(input1, input2, op, false);
+	}
+	
+	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op, boolean outer) {
 		Hop mainInput = input1.getDataType().isMatrix() ? input1 : 
 			input2.getDataType().isMatrix() ? input2 : input1;
 		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(), 
@@ -502,6 +511,7 @@ public class HopRewriteUtils
 		//cleanup value type for relational operations
 		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
 			bop.setValueType(ValueType.BOOLEAN);
+		bop.setOuterVectorOperation(outer);
 		bop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
 		copyLineNumbers(mainInput, bop);
 		bop.refreshSizeInformation();	
@@ -714,6 +724,11 @@ public class HopRewriteUtils
 			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()	
 			&& hop.getInput().get(0).getDim1() > hop.getInput().get(0).getDim2()
 			&& hop.getInput().get(1).getDim1() < hop.getInput().get(1).getDim2();
+	}
+	
+	public static boolean isValidOuterBinaryOp( OpOp2 op ) {
+		String opcode = Hop.getBinaryOpCode(op);
+		return (Hop.getOpOp2ForOuterVectorOperation(opcode) == op);
 	}
 	
 	public static boolean isSparse( Hop hop ) {

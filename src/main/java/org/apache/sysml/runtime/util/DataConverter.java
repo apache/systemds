@@ -307,24 +307,27 @@ public class DataConverter
 		return ret;
 	}
 
-	public static double[] convertToDoubleVector( MatrixBlock mb )
+	public static double[] convertToDoubleVector( MatrixBlock mb ) {
+		return convertToDoubleVector(mb, true);
+	}
+	
+	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep )
 	{
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		double[] ret = new double[rows*cols]; //0-initialized 
+		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+			mb.getDenseBlock() : new double[rows*cols]; //0-initialized
 		
-		if( mb.getNonZeros() > 0 )
+		if( !mb.isEmptyBlock(false) )
 		{
-			if( mb.isInSparseFormat() )
-			{
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
 					ret[cell.getI()*cols+cell.getJ()] = cell.getV();
 				}
 			}
-			else
-			{
+			else if( deep ) {
 				//memcopy row major representation if at least 1 non-zero
 				System.arraycopy(mb.getDenseBlock(), 0, ret, 0, rows*cols);
 			}

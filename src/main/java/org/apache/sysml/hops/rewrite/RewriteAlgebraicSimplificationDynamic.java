@@ -411,14 +411,13 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		if( hi instanceof BinaryOp  ) //binary cell operation 
 		{
+			OpOp2 bop = ((BinaryOp)hi).getOp();
+			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
 			
-			//check for column replication
+			//check for matrix-vector column replication: (A + b %*% ones) -> (A + b)
 			if(    HopRewriteUtils.isMatrixMultiply(right) //matrix mult with datagen
-				&& right.getInput().get(1) instanceof DataGenOp 
-				&& ((DataGenOp)right.getInput().get(1)).getOp()==DataGenMethod.RAND
-				&& ((DataGenOp)right.getInput().get(1)).hasConstantValue(1d)
-				&& right.getInput().get(1).getDim1() == 1 //row vector for replication
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(right.getInput().get(1), 1)
 				&& right.getInput().get(0).getDim2() == 1 ) //column vector for mv binary
 			{
 				//remove unnecessary outer product
@@ -427,11 +426,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				LOG.debug("Applied removeUnnecessaryOuterProduct1 (line "+right.getBeginLine()+")");
 			}
-			//check for row replication
+			//check for matrix-vector row replication: (A + ones %*% b) -> (A + b)
 			else if( HopRewriteUtils.isMatrixMultiply(right) //matrix mult with datagen
-				&& right.getInput().get(0) instanceof DataGenOp 
-				&& ((DataGenOp)right.getInput().get(0)).hasConstantValue(1d)
-				&& right.getInput().get(0).getDim2() == 1 //colunm vector for replication
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(right.getInput().get(0), 1)
 				&& right.getInput().get(1).getDim1() == 1 ) //row vector for mv binary
 			{
 				//remove unnecessary outer product
@@ -439,6 +436,20 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.cleanupUnreferenced(right);
 				
 				LOG.debug("Applied removeUnnecessaryOuterProduct2 (line "+right.getBeginLine()+")");
+			}
+			//check for vector-vector column replication: (a %*% ones) == b) -> outer(a, b, "==")
+			else if(HopRewriteUtils.isValidOuterBinaryOp(bop) 
+				&& HopRewriteUtils.isMatrixMultiply(left)
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(left.getInput().get(1), 1)
+				&& left.getInput().get(0).getDim2() == 1 //column vector 
+				&& left.getDim1() != 1 && right.getDim1() == 1 ) //outer vector product 
+			{
+				Hop hnew = HopRewriteUtils.createBinary(left.getInput().get(0), right, bop, true);
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				
+				hi = hnew;
+				LOG.debug("Applied removeUnnecessaryOuterProduct3 (line "+right.getBeginLine()+")");
 			}
 		}
 		

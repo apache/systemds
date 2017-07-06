@@ -523,7 +523,7 @@ public class MapReduceTool
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
 		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
 		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, estnnz);
-		return DataConverter.convertToDoubleVector(mb);
+		return DataConverter.convertToDoubleVector(mb, false);
 	}
 	
 	public static double median(String dir, NumItemsByEachReducerMetaData metadata) throws IOException {

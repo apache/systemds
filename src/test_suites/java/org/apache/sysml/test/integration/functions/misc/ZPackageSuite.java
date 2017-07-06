@@ -48,6 +48,7 @@ import org.junit.runners.Suite;
 	PrintExpressionTest.class,
 	PrintMatrixTest.class,
 	ReadAfterWriteTest.class,
+	RewriteBinaryMV2OuterTest.class,
 	RewriteCSETransposeScalarTest.class,
 	RewriteCTableToRExpandTest.class,
 	RewriteElementwiseMultChainOptimizationTest.class,

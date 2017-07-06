@@ -367,7 +367,7 @@ public class LibMatrixAgg
 			ArrayList<CumAggTask> tasks2 = new ArrayList<CumAggTask>();
 			for( int i=0; i<k & i*blklen<m; i++ ) {
 				double[] agg = (i==0)? null : 
-					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()));
+					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()), false);
 				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
 			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);	

@@ -619,7 +619,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 				double[] ret2 = DataConverter.convertToDoubleVector(((MatrixBlock)in
 					.sliceOperations(i, i, 0, n-1, new MatrixBlock())
-					.unaryOperations(uop, new MatrixBlock())));
+					.unaryOperations(uop, new MatrixBlock())), false);
 				
 				//compare results
 				TestUtils.compareMatrices(ret1, ret2, eps);
@@ -683,18 +683,18 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, true);
 					bop.setConstant(inA.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
-						in2.scalarOperations(bop, new MatrixBlock()));
+						in2.scalarOperations(bop, new MatrixBlock()), false);
 				}
 				else if( type2 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, false);
 					bop.setConstant(inB.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
-						in1.scalarOperations(bop, new MatrixBlock()));
+						in1.scalarOperations(bop, new MatrixBlock()), false);
 				}
 				else { //vector-vector
 					BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
-						in1.binaryOperations(bop, in2, new MatrixBlock()));
+						in1.binaryOperations(bop, in2, new MatrixBlock()), false);
 				}
 				
 				//compare results

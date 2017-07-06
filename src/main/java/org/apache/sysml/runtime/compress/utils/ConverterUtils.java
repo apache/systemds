@@ -64,12 +64,8 @@ public class ConverterUtils
 		return ret;
 	}
 
-	public static double[] getDenseVector( MatrixBlock vector )
-	{
-		if( vector.isInSparseFormat() )
-			return DataConverter.convertToDoubleVector(vector);
-		else 
-			return vector.getDenseBlock();
+	public static double[] getDenseVector( MatrixBlock vector ) {
+		return DataConverter.convertToDoubleVector(vector, false);
 	}
 
 	public static MatrixBlock getUncompressedColBlock( ColGroup group )

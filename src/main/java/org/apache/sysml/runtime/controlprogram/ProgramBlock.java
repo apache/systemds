@@ -46,7 +46,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.MLContextProxy;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -147,9 +146,6 @@ public class ProgramBlock
 			{
 				tmp = Recompiler.recompileHopsDag(
 					_sb, _sb.get_hops(), ec.getVariables(), null, false, true, _tid);
-
-				if( MLContextProxy.isActive() )
-					tmp = MLContextProxy.performCleanupAfterRecompilation(tmp);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

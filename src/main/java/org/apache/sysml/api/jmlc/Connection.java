@@ -128,6 +128,23 @@ public class Connection implements Closeable
 	}
 	
 	/**
+	 * Connection constructor, the starting point for any other JMLC API calls.
+	 * This variant allows to enable a set of boolean compiler configurations.
+	 * 
+	 * @param config one or many boolean compiler configurations to enable.
+	 */
+	public Connection(CompilerConfig.ConfigType... configs) {
+		//basic constructor, which also constructs the compiler config
+		this();
+		
+		//set optional compiler configurations in current config
+		CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
+		for( ConfigType configType : configs )
+			cconf.set(configType, true);
+		ConfigurationManager.setLocalConfig(cconf);
+	}
+	
+	/**
 	 * Prepares (precompiles) a script and registers input and output variables.
 	 * 
 	 * @param script string representing the DML or PyDML script
@@ -190,7 +207,9 @@ public class Connection implements Closeable
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
 			
-			//System.out.println(Explain.explain(rtprog));
+			//activate thread-local proxy for dynamic recompilation
+			if( ConfigurationManager.isDynamicRecompilation() )
+				JMLCProxy.setActive(outputs);
 		}
 		catch(ParseException pe) {
 			// don't chain ParseException (for cleaner error output)
@@ -212,6 +231,8 @@ public class Connection implements Closeable
 	public void close() {
 		//clear thread-local dml / compiler configs
 		ConfigurationManager.clearLocalConfigs();
+		if( ConfigurationManager.isDynamicRecompilation() )
+			JMLCProxy.setActive(null);
 	}
 	
 	/**

@@ -849,12 +849,12 @@ public class TernaryOp extends Hop
 		}
 
 		//mark for recompile (forever)
-		// Necessary condition for recompilation is unknown dimensions.
-		// When execType=CP, it is marked for recompilation only when additional
-		// dimension inputs are provided (and those values are unknown at initial compile time).
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) ) {
-			if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
-				setRequiresRecompile();
+		// additional condition: when execType=CP and additional dimension inputs 
+		// are provided (and those values are unknown at initial compile time).
+		setRequiresRecompileIfNecessary();
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) 
+			&& _etype == ExecType.CP && _dimInputsPresent) {
+			setRequiresRecompile();
 		}
 		
 		return _etype;
@@ -1079,10 +1079,8 @@ public class TernaryOp extends Hop
 				}			
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
-			//ret = false;
 		}
 		
 		return ret;

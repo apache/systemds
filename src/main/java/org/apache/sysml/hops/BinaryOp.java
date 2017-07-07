@@ -1010,9 +1010,7 @@ public class BinaryOp extends Hop
 		}
 
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE ) {
-			setRequiresRecompile();
-		}
+		setRequiresRecompileIfNecessary();
 		
 		//ensure cp exec type for single-node operations
 		if ( op == OpOp2.SOLVE ) {

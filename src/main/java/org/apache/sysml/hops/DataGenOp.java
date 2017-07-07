@@ -293,9 +293,8 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		}
 
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
-
+		setRequiresRecompileIfNecessary();
+		
 		//always force string initialization into CP (not supported in MR)
 		//similarly, sample is currently not supported in MR either
 		if( _op == DataGenMethod.SINIT )

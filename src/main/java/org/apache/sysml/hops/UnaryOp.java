@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
@@ -667,9 +666,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
-
+		setRequiresRecompileIfNecessary();
+		
 		//ensure cp exec type for single-node operations
 		if( _op == OpOp1.PRINT || _op == OpOp1.STOP 
 			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY )

@@ -454,7 +454,7 @@ public class DataOp extends Hop
 			if( getDataType()==DataType.SCALAR || (getDataType()==DataType.FRAME && REMOTE==ExecType.MR) )
 				_etypeForced = ExecType.CP;
 			
-			if( _etypeForced != null ) 			
+			if( _etypeForced != null )
 			{
 				_etype = _etypeForced;
 			}
@@ -478,9 +478,7 @@ public class DataOp extends Hop
 			}
 			
 			//mark for recompile (forever)
-			if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE ) {
-				setRequiresRecompile();
-			}
+			setRequiresRecompileIfNecessary();
 		}
 	    else //READ
 		{

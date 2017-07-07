@@ -389,9 +389,8 @@ public class LeftIndexingOp  extends Hop
 		}
 		
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
-	
+		setRequiresRecompileIfNecessary();
+		
 		return _etype;
 	}
 

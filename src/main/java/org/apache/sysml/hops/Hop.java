@@ -1472,16 +1472,37 @@ public abstract class Hop
 	/**
 	 * Indicates if dynamic recompilation is required for this hop. 
 	 * 
-	 * @return true if dynamic recompilcation required
+	 * @return true if dynamic recompilation required
 	 */
-	public boolean requiresRecompile() 
-	{
+	public boolean requiresRecompile() {
 		return _requiresRecompile;
 	}
 	
-	public void setRequiresRecompile()
-	{
+	/**
+	 * Marks the hop for dynamic recompilation. 
+	 */
+	public void setRequiresRecompile() {
 		_requiresRecompile = true;
+	}
+	
+	/**
+	 * Marks the hop for dynamic recompilation, if dynamic recompilation is 
+	 * enabled and one of the two basic scenarios apply:
+	 * <ul>
+	 *  <li> The hop has unknown dimensions or sparsity and is scheduled for 
+	 *    remote execution, in which case the latency for distributed jobs easily 
+	 *    covers any recompilation overheads. </li>
+	 *  <li> The hop has unknown dimensions and is scheduled for local execution 
+	 *    due to forced single node execution type. </li>
+	 * <ul> <p>
+	 */
+	protected void setRequiresRecompileIfNecessary() {
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		boolean caseRemote = (!dimsKnown(true) && _etype == REMOTE);
+		boolean caseLocal = (!dimsKnown() && _etypeForced == ExecType.CP);
+		
+		if( ConfigurationManager.isDynamicRecompilation() && (caseRemote || caseLocal) )
+			setRequiresRecompile();
 	}
 
 	/**

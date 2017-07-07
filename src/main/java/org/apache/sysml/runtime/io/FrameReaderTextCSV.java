@@ -113,11 +113,12 @@ public class FrameReaderTextCSV extends FrameReader
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
 		splits = IOUtilFunctions.sortInputSplits(splits);
-		for( int i=0; i<splits.length; i++ )
-			readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
+		for( int i=0, rpos=0; i<splits.length; i++ )
+			rpos = readCSVFrameFromInputSplit(splits[i], informat,
+				job, dest, schema, names, rlen, clen, rpos, i==0);
 	}
 
-	protected final void readCSVFrameFromInputSplit( InputSplit split, InputFormat<LongWritable,Text> informat, JobConf job, 
+	protected final int readCSVFrameFromInputSplit( InputSplit split, InputFormat<LongWritable,Text> informat, JobConf job, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
 		throws IOException
 	{
@@ -184,6 +185,8 @@ public class FrameReaderTextCSV extends FrameReader
 		finally {
 			IOUtilFunctions.closeSilently(reader);
 		}
+		
+		return row;
 	}
 
 	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 

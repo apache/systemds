@@ -109,6 +109,8 @@ All performance test depend mainly on two scripts for execution `systemml-standa
 
 Constants like `DATA_FORMAT` currently set to `csv` and `MATRIX_TYPE_DICT` with `density` set to `0.9` and `sparsity` set to `0.01` are hardcoded in the performance test scripts. They can be changed easily as they are defined at the top of their respective operational scripts.
 
+Families like `clustering`, `stats1`, `stats2` support only dense matrix types. In such cases if sparse matrix type is specified the users request is overridden to generate `dense` matrix type.
+
 The logs contain the following information below comma separated.
 
 algorithm | run_type | intercept | matrix_type | data_shape | time_sec
@@ -120,9 +122,6 @@ MultiLogReg|predict|0|10k_100|dense|4.780
 These logs can be found in `temp` folder (`$SYSTEMML_HOME/scripts/perftest/temp`) in-case not overridden by `--temp-dir`. This `temp` folders also contain the data generated during our performance test.
 
 Every time a script executes in `data-gen` mode successfully, we write a `_SUCCESS` file. If this file exists we ensures that re-run of the same script is not possible as data already exists.
-
-TODO : Write about spark & standalone parameters
-TODO : Write about performance test comparison across previous versions
 
 ### Troubleshooting
 We can debug the performance test by making changes in the following locations based on 

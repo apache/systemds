@@ -138,7 +138,7 @@ def get_existence(path, action_mode):
     return exist
 
 
-def exec_dml_and_parse_time(exec_type, file_name, args, Time=True):
+def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, Time=True):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -146,8 +146,11 @@ def exec_dml_and_parse_time(exec_type, file_name, args, Time=True):
     exec_type: String
     Contains the execution type singlenode / hybrid_spark
 
-    file_name: String
+    dml_file_name: String
     DML file name to be used while processing the arguments give
+
+    execution_output_file: String
+    Name of the file where the output of the DML run is written out
 
     args: Dictionary
     Key values pairs depending on the arg type
@@ -156,7 +159,7 @@ def exec_dml_and_parse_time(exec_type, file_name, args, Time=True):
     Boolean argument used to extract time from raw output logs.
     """
 
-    algorithm = file_name + '.dml'
+    algorithm = dml_file_name + '.dml'
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
 
@@ -189,10 +192,14 @@ def exec_dml_and_parse_time(exec_type, file_name, args, Time=True):
         out1, err1 = proc1.communicate()
 
         if "Error" in str(err1):
-            print('Error Found in {}'.format(file_name))
+            print('Error Found in {}'.format(dml_file_name))
             total_time = 'failure'
         else:
             total_time = parse_time(proc1_log)
+
+        with open(execution_output_file, 'w') as f:
+            for row in proc1_log:
+                f.write("%s\n" % str(row))
 
     else:
         total_time = 'not_specified'
@@ -242,7 +249,8 @@ def exec_test_data(exec_type, path):
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
 
     # Call the exec script without time
-    exec_dml_and_parse_time(exec_type, test_split_script, args, False)
+    config_file_name = path.split('/')[-1]
+    exec_dml_and_parse_time(exec_type, test_split_script, config_file_name, args, False)
 
 
 def check_predict(current_algo, ML_PREDICT):

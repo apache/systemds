@@ -82,7 +82,7 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
 
 
 # Responsible for execution and metric logging
-def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
+def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode):
     """
     This function is responsible for overall workflow. This does the following actions
     Check if the input is key value argument or list of positional args
@@ -99,7 +99,7 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
     config_path : String
     Path to read the json file from
 
-    file_name : String
+    dml_file_name : String
     DML file name to be used while processing the arguments give
 
     action_mode : String
@@ -116,8 +116,8 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
         list_args = ' '.join(config_data)
         args = {'-args': list_args}
 
-    folder_name = config_path.split('/')[-1]
-    mat_type, mat_shape, intercept = get_folder_metrics(folder_name, action_mode)
+    config_file_name = config_path.split('/')[-1]
+    mat_type, mat_shape, intercept = get_folder_metrics(config_file_name, action_mode)
 
     exit_flag_success = get_existence(config_path, action_mode)
 
@@ -125,7 +125,7 @@ def algorithm_workflow(algo, exec_type, config_path, file_name, action_mode):
         print('data already exists {}'.format(config_path))
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, file_name, args)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, config_file_name,  args)
 
     # Write a _SUCCESS file only if time is found and in data-gen action_mode
     if len(time.split('.')) == 2 and action_mode == 'data-gen':

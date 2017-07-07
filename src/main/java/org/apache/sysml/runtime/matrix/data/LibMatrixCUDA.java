@@ -2751,7 +2751,7 @@ public class LibMatrixCUDA {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(constant == 0) {
-			MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, 0, instName, outputName);
+			getSparseMatrixOutputForGPUInstruction(ec, 0, instName, outputName);
 		} else {
 			//MatrixObject out = ec.getMatrixObject(outputName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);    // Allocated the dense output matrix

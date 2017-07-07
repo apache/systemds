@@ -48,8 +48,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * <p>
  * In general all implementations use internally dense outputs
  * for direct access, but change the final result to sparse if necessary.
- * The only exceptions are ultra-sparse matrix mult, wsloss and wsigmoid.  
- * <p> 
+ * The only exceptions are ultra-sparse matrix mult, wsloss and wsigmoid.
  */
 public class LibMatrixMult 
 {

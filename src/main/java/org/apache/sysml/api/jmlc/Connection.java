@@ -131,7 +131,7 @@ public class Connection implements Closeable
 	 * Connection constructor, the starting point for any other JMLC API calls.
 	 * This variant allows to enable a set of boolean compiler configurations.
 	 * 
-	 * @param config one or many boolean compiler configurations to enable.
+	 * @param configs one or many boolean compiler configurations to enable.
 	 */
 	public Connection(CompilerConfig.ConfigType... configs) {
 		//basic constructor, which also constructs the compiler config

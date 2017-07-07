@@ -67,9 +67,10 @@ Following changes to `predict.py`:
 - Test the perf test with the algorithm with `mode` as `predict`.
 - Check output folders, json files, output log.
 - Check for possible errors if these folders/files do not exist. (Please see the troubleshooting section).
+- Note: `predict.py` will not be executed if the current algorithm being executed does not have predict script.
 
 ### Current Default Settings
-Default setting for our performance test in-case these arguments are not provided by the user to override them.
+Default setting for our performance test below:
 
 - Matrix size to 10,000 rows and 100 columns.
 - Execution mode `singlenode`.
@@ -120,9 +121,12 @@ These logs can be found in `temp` folder (`$SYSTEMML_HOME/scripts/perftest/temp`
 
 Every time a script executes in `data-gen` mode successfully, we write a `_SUCCESS` file. If this file exists we ensures that re-run of the same script is not possible as data already exists.
 
+TODO : Write about spark & standalone parameters
+TODO : Write about performance test comparison across previous versions
+
 ### Troubleshooting
 We can debug the performance test by making changes in the following locations based on 
 
-- [utils.py][line 174] In  uncommenting the debug print statement in the function `exec_dml_and_parse_time`. This allows us to inspect the subprocess string being executed.
-- [run_perftest.py][line 329] Changing the verbosity level to `0` allows us to log more information while the script runs.
+- Please see `utils.py` function `exec_dml_and_parse_time`. In  uncommenting the debug print statement in the function `exec_dml_and_parse_time`. This allows us to inspect the subprocess string being executed.
+- Please see `run_perftest.py`. Changing the verbosity level to `0` allows us to log more information while the script runs.
 - Eyeballing the json files generated and making sure the arguments are correct.

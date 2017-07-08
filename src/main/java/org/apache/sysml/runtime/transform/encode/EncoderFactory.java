@@ -65,7 +65,7 @@ public class EncoderFactory
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames); 
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
-					CollectionUtils.subtract(UtilFunctions.getSequenceList(1, clen, 1), rcIDs), binIDs)); 
+					CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1), rcIDs), binIDs)); 
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_OMIT))); 
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(

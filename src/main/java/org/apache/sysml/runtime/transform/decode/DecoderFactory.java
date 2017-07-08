@@ -56,7 +56,7 @@ public class DecoderFactory
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
-					.subtract(UtilFunctions.getSequenceList(1, meta.getNumColumns(), 1), rcIDs)); 
+					.subtract(UtilFunctions.getSeqList(1, meta.getNumColumns(), 1), rcIDs)); 
 
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {

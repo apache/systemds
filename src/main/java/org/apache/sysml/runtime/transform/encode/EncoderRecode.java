@@ -112,7 +112,7 @@ public class EncoderRecode extends Encoder
 		if( !isApplicable() )
 			return;		
 
-		Iterator<String[]> iter = in.getStringRowIterator();
+		Iterator<String[]> iter = in.getStringRowIterator(_colList);
 		while( iter.hasNext() ) {
 			String[] row = iter.next(); 
 			for( int j=0; j<_colList.length; j++ ) {
@@ -122,7 +122,7 @@ public class EncoderRecode extends Encoder
 					_rcdMaps.put(colID, new HashMap<String,Long>());
 				//probe and build column map
 				HashMap<String,Long> map = _rcdMaps.get(colID);
-				String key = row[colID-1];
+				String key = row[j];
 				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
 					map.put(key, Long.valueOf(map.size()+1));
 			}

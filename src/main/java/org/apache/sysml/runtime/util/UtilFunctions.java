@@ -314,6 +314,37 @@ public class UtilFunctions
 		return 1L + (long) Math.floor(to/incr - from/incr);
 	}
 	
+	/**
+	 * Obtain sequence list
+	 * 
+	 * @param low   lower bound (inclusive)
+	 * @param up    upper bound (inclusive)
+	 * @param incr  increment 
+	 * @return list of integers
+	 */
+	public static List<Integer> getSeqList(int low, int up, int incr) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+		for( int i=low; i<=up; i+=incr )
+			ret.add(i);
+		return ret;
+	}
+	
+	/**
+	 * Obtain sequence array
+	 * 
+	 * @param low   lower bound (inclusive)
+	 * @param up    upper bound (inclusive)
+	 * @param incr  increment 
+	 * @return array of integers
+	 */
+	public static int[] getSeqArray(int low, int up, int incr) {
+		int len = (int) getSeqLength(low, up, incr);
+		int[] ret = new int[len];
+		for( int i=0, val=low; i<len; i++, val+=incr )
+			ret[i] = val;
+		return ret;
+	}
+	
  	public static int roundToNext(int val, int factor) {
 		//round up to next non-zero multiple of factor
 		int pval = Math.max(val, factor);
@@ -505,21 +536,6 @@ public class UtilFunctions
 			return String.format("%d KB", arg/(1024));
 		else
 			return String.format("%d", arg);
-	}
-	
-	/**
-	 * Obtain sequence list
-	 * 
-	 * @param low   lower bound (inclusive)
-	 * @param up    upper bound (inclusive)
-	 * @param incr  increment 
-	 * @return list of integers
-	 */
-	public static List<Integer> getSequenceList(int low, int up, int incr) {
-		ArrayList<Integer> ret = new ArrayList<Integer>();
-		for( int i=low; i<=up; i+=incr )
-			ret.add(i);
-		return ret;
 	}
 
 	public static double getDouble(Object obj) {

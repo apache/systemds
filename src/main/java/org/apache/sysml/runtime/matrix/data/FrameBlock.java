@@ -505,6 +505,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as strings independent of their value types.  
+	 * 
+	 * @param cols column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int[] cols) {
+		return new StringRowIterator(0, _numRows, cols);
+	}
+	
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as strings independent of their value types.  
 	 * 
@@ -514,6 +525,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public Iterator<String[]> getStringRowIterator(int rl, int ru) {
 		return new StringRowIterator(rl, ru);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as strings independent of their value types.  
+	 * 
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param cols column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int[] cols) {
+		return new StringRowIterator(rl, ru, cols);
 	}
 	
 	/**
@@ -527,6 +551,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as boxed objects according to their value types.  
+	 * 
+	 * @param cols column selection, 1-based
+	 * @return object array iterator
+	 */
+	public Iterator<Object[]> getObjectRowIterator(int[] cols) {
+		return new ObjectRowIterator(0, _numRows, cols);
+	}
+	
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.  
 	 * 
@@ -536,6 +571,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public Iterator<Object[]> getObjectRowIterator(int rl, int ru) {
 		return new ObjectRowIterator(rl, ru);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as boxed objects according to their value types.  
+	 * 
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param cols column selection, 1-based
+	 * @return object array iterator
+	 */
+	public Iterator<Object[]> getObjectRowIterator(int rl, int ru, int[] cols) {
+		return new ObjectRowIterator(rl, ru, cols);
 	}
 
 	///////
@@ -1111,14 +1159,20 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	// row iterators (over strings and boxed objects)
 
 	private abstract class RowIterator<T> implements Iterator<T[]> {
-		protected T[] _curRow = null;
+		protected final int[] _cols;
+		protected final T[] _curRow;
+		protected final int _maxPos;
 		protected int _curPos = -1;
-		protected int _maxPos = -1;
 		
 		protected RowIterator(int rl, int ru) {
-			_curPos = rl;
+			this(rl, ru, UtilFunctions.getSeqArray(1, getNumColumns(), 1));
+		}
+		
+		protected RowIterator(int rl, int ru, int[] cols) {
+			_curRow = createRow(cols.length);
+			_cols = cols;
 			_maxPos = ru;
-			_curRow = createRow(getNumColumns());
+			_curPos = rl;
 		}
 		
 		@Override
@@ -1139,6 +1193,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			super(rl, ru);
 		}
 		
+		public StringRowIterator(int rl, int ru, int[] cols) {
+			super(rl, ru, cols);
+		}
+		
 		@Override
 		protected String[] createRow(int size) {
 			return new String[size];
@@ -1146,11 +1204,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		@Override
 		public String[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ ) {
-				Object tmp = get(_curPos, j);
+			for( int j=0; j<_cols.length; j++ ) {
+				Object tmp = get(_curPos, _cols[j]-1);
 				_curRow[j] = (tmp!=null) ? tmp.toString() : null;
 			}
-			_curPos++;			
+			_curPos++;
 			return _curRow;
 		}
 	}
@@ -1160,6 +1218,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			super(rl, ru);
 		}
 		
+		public ObjectRowIterator(int rl, int ru, int[] cols) {
+			super(rl, ru, cols);
+		}
+		
 		@Override
 		protected Object[] createRow(int size) {
 			return new Object[size];
@@ -1167,9 +1229,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		@Override
 		public Object[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ )
-				_curRow[j] = get(_curPos, j);
-			_curPos++;			
+			for( int j=0; j<_cols.length; j++ )
+				_curRow[j] = get(_curPos, _cols[j]-1);
+			_curPos++;
 			return _curRow;
 		}
 	}

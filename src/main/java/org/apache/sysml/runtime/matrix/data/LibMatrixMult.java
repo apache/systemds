@@ -1565,26 +1565,35 @@ public class LibMatrixMult
 		
 		//temporary array for cache blocking
 		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
-		final int blocksize = 24; // constraint: factor of 4
-		double[] tmp = new double[blocksize];
-			
+		final int blocksizeI = 24; // constraint: factor of 4
+		final int blocksizeJ = 1024;
+		double[] tmp = new double[blocksizeI];
+		
 		//blockwise mmchain computation
-		final int bn = ru - ru % blocksize; //rl blocksize aligned
-		for( int bi=rl; bi < bn; bi+=blocksize ) 
+		final int bn = ru - ru % blocksizeI; //rl blocksize aligned
+		for( int bi=rl; bi < bn; bi+=blocksizeI ) 
 		{
 			//compute 1st matrix-vector for row block
-			for( int j=0, aix=bi*cd; j < blocksize; j++, aix+=cd)
-				tmp[j] = dotProduct(a, b, aix, 0, cd);
+			Arrays.fill(tmp, 0);
+			for( int bj=0; bj<cd; bj+=blocksizeJ ) {
+				int bjmin = Math.min(cd-bj, blocksizeJ);
+				for( int i=0, aix=bi*cd+bj; i < blocksizeI; i++, aix+=cd)
+					tmp[i] += dotProduct(a, b, aix, bj, bjmin);
+			}
 			
 			//multiply/subtract weights (in-place), if required
 			if( weights ) 
-				vectMultiply(w, tmp, bi, 0, blocksize);	
+				vectMultiply(w, tmp, bi, 0, blocksizeI);	
 			else if( weights2 )
-				vectSubtract(w, tmp, bi, 0, blocksize);
+				vectSubtract(w, tmp, bi, 0, blocksizeI);
 				
 			//compute 2nd matrix vector for row block and aggregate
-			for (int j=0, aix=bi*cd; j < blocksize; j+=4, aix+=4*cd)
-				vectMultiplyAdd4(tmp[j], tmp[j+1], tmp[j+2], tmp[j+3], a, c, aix, aix+cd, aix+2*cd, aix+3*cd, 0, cd);
+			for( int bj = 0; bj<cd; bj+=blocksizeJ ) {
+				int bjmin = Math.min(cd-bj, blocksizeJ);
+				for (int i=0, aix=bi*cd+bj; i<blocksizeI; i+=4, aix+=4*cd)
+					vectMultiplyAdd4(tmp[i], tmp[i+1], tmp[i+2], tmp[i+3],
+						a, c, aix, aix+cd, aix+2*cd, aix+3*cd, bj, bjmin);
+			}
 		}
 		
 		//compute rest (not aligned to blocksize)
@@ -1592,7 +1601,7 @@ public class LibMatrixMult
 			double val = dotProduct(a, b, aix, 0, cd);
 			val *= (weights) ? w[i] : 1;
 			val -= (weights2) ? w[i] : 0;
-			vectMultiplyAdd(val, a, c, aix, 0, cd);				
+			vectMultiplyAdd(val, a, c, aix, 0, cd);
 		}
 	}
 
@@ -1605,42 +1614,25 @@ public class LibMatrixMult
 		boolean weights = (ct == ChainType.XtwXv);
 		boolean weights2 = (ct == ChainType.XtXvy);
 		
-		//temporary array for cache blocking
-		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
-		final int blocksize = 24;
-		double[] tmp = new double[blocksize];
-		
-		//blockwise mmchain computation
-		for( int bi=rl; bi < ru; bi+=blocksize ) 
-		{
-			//reset row block intermediate
-			int tmplen = Math.min(blocksize, ru-bi);
-
-			//compute 1st matrix-vector for row block
-			for( int j=0; j < tmplen; j++) {
-				if( !a.isEmpty(bi+j) ) {
-					int apos = a.pos(bi+j);
-					int alen = a.size(bi+j);				
-					tmp[j] = dotProduct(a.values(bi+j), b, a.indexes(bi+j), apos, 0, alen);							
-				}
-			}
+		//row-wise mmchain computation
+		for( int i=rl; i < ru; i++ ) {
+			if( a.isEmpty(i) || (weights && w[i]==0) )
+				continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
 			
-			//multiply weights (in-place), if required
-			if( weights ) 
-				vectMultiply(w, tmp, bi, 0, tmplen);	
-			else if( weights2 )
-				vectSubtract(w, tmp, bi, 0, tmplen);
-		
-			//compute 2nd matrix vector for row block and aggregate
-			for( int j=0; j < tmplen; j++) {
-				if( !a.isEmpty(bi+j) && tmp[j] != 0 ) {
-					int apos = a.pos(bi+j);
-					int alen = a.size(bi+j);
-					int[] aix = a.indexes(bi+j);
-					double[] avals = a.values(bi+j);		
-					vectMultiplyAdd(tmp[j], avals, c, aix, apos, 0, alen);							
-				}
-			}
+			//compute 1st matrix-vector dot product
+			double val = dotProduct(avals, b, aix, apos, 0, alen);
+			
+			//multiply/subtract weights, if required
+			val *= (weights) ? w[i] : 1;
+			val -= (weights2) ? w[i] : 0;
+			
+			//compute 2nd matrix vector and aggregate
+			if( val != 0 )
+				vectMultiplyAdd(val, avals, c, aix, apos, 0, alen);
 		}
 	}
 

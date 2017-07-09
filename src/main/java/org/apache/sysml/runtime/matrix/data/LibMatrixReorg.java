@@ -1710,7 +1710,14 @@ public class LibMatrixReorg
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( in.sparse ) //* <- SPARSE
+		if( SHALLOW_COPY_REORG && m == rlen2 ) {
+			ret.sparse = in.sparse;
+			if( ret.sparse )
+				ret.sparseBlock = in.sparseBlock;
+			else
+				ret.denseBlock = in.denseBlock;
+		}
+		else if( in.sparse ) //* <- SPARSE
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
@@ -1798,14 +1805,7 @@ public class LibMatrixReorg
 			clen2 += flags[j] ? 1 : 0;
 		}
 		
-		//Step 3: create mapping of flags to target indexes
-		int[] cix = new int[n];
-		for( int j=0, pos=0; j<n; j++ ) {
-			if( flags[j] )
-				cix[j] = pos++;	
-		}
-		
-		//Step 3: reset result and copy cols
+		//Step 3: reset result and copy columns
 		//dense stays dense if correct input representation (but robust for any input), 
 		// sparse might be dense/sparse
 		clen2 = Math.max(clen2, 1); //ensure valid output
@@ -1814,42 +1814,61 @@ public class LibMatrixReorg
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( in.sparse ) //* <- SPARSE 
-		{
-			//note: output dense or sparse
-			SparseBlock a = in.sparseBlock;
-			
-			for( int i=0; i<m; i++ ) 
-				if ( !a.isEmpty(i) ) {
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					for( int j=apos; j<apos+alen; j++ )
-						if( flags[aix[j]] )
-							ret.appendValue(i, cix[aix[j]], avals[j]);
-				}
+		if( SHALLOW_COPY_REORG && n == clen2 ) {
+			//quick path: shallow copy if unmodified
+			ret.sparse = in.sparse;
+			if( ret.sparse )
+				ret.sparseBlock = in.sparseBlock;
+			else
+				ret.denseBlock = in.denseBlock;
 		}
-		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+		else
 		{
-			ret.allocateDenseBlock();
-			double[] a = in.denseBlock;
-			double[] c = ret.denseBlock;
+			//create mapping of flags to target indexes
+			int[] cix = new int[n];
+			for( int j=0, pos=0; j<n; j++ ) {
+				if( flags[j] )
+					cix[j] = pos++;
+			}
 			
-			for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
-				for(int j=0; j<n; j++, aix++)
-					if( flags[j] )
-						 c[ lcix+cix[j] ] = a[aix];	
-		}
-		else //SPARSE <- DENSE
-		{
-			ret.allocateSparseRowsBlock();
-			double[] a = in.denseBlock;
-			
-			for(int i=0, aix=0; i<m; i++)
-				for(int j=0; j<n; j++, aix++)
-					if( flags[j] && a[aix]!=0 )
-						 ret.appendValue(i, cix[j], a[aix]);	
+			//deep copy of modified outputs
+			if( in.sparse ) //* <- SPARSE
+			{
+				//note: output dense or sparse
+				SparseBlock a = in.sparseBlock;
+				
+				for( int i=0; i<m; i++ )
+					if ( !a.isEmpty(i) ) {
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for( int j=apos; j<apos+alen; j++ )
+							if( flags[aix[j]] )
+								ret.appendValue(i, cix[aix[j]], avals[j]);
+					}
+			}
+			else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+			{
+				ret.allocateDenseBlock();
+				double[] a = in.denseBlock;
+				double[] c = ret.denseBlock;
+				
+				for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
+					for(int j=0; j<n; j++, aix++)
+						if( flags[j] )
+							 c[ lcix+cix[j] ] = a[aix];	
+			}
+			else //SPARSE <- DENSE
+			{
+				ret.allocateSparseRowsBlock();
+				double[] a = in.denseBlock;
+				
+				for(int i=0, aix=0; i<m; i++)
+					for(int j=0; j<n; j++, aix++)
+						if( flags[j] && a[aix]!=0 )
+							 ret.appendValue(i, cix[j], a[aix]);
+			}
 		}
 		
 		//check sparsity

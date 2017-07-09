@@ -78,19 +78,21 @@ public class LocalVariableMap implements Cloneable
 	 * @param name the variable name for the data value
 	 * @param val the data value object (such as envelope)
 	 */
-	public void put(String name, Data val)
-	{
+	public void put(String name, Data val) {
 		localMap.put( name, val );
 	}
 
-	public Data remove( String name )
-	{
+	public Data remove( String name ) {
 		return localMap.remove( name );
 	}
 
-	public void removeAll()
-	{
+	public void removeAll() {
 		localMap.clear();
+	}
+	
+	public void removeAllNotIn(Set<String> blacklist) {
+		localMap.entrySet().removeIf(
+			e -> !blacklist.contains(e.getKey()));
 	}
 
 	public boolean hasReferences( Data d )

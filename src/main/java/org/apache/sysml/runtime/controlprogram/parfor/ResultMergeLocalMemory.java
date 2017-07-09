@@ -61,14 +61,16 @@ public class ResultMergeLocalMemory extends ResultMerge
 				
 		try
 		{
-			//get matrix blocks through caching 
+			//get old output matrix from cache for compare
 			MatrixBlock outMB = _output.acquireRead();
 			
-			//get old output matrix from cache for compare
-			int estnnz = outMB.getNumRows()*outMB.getNumColumns();
-			MatrixBlock outMBNew = new MatrixBlock(outMB.getNumRows(), outMB.getNumColumns(), 
-					                               outMB.isInSparseFormat(), estnnz);
+			//create output matrices in correct format according to 
+			//the estimated number of non-zeros
+			long estnnz = getOutputNnzEstimate();
+			MatrixBlock outMBNew = new MatrixBlock(
+				outMB.getNumRows(), outMB.getNumColumns(), estnnz);
 			boolean appendOnly = outMBNew.isInSparseFormat();
+			outMBNew.allocateDenseOrSparseBlock();
 			
 			//create compare matrix if required (existing data in result)
 			_compare = createCompareMatrix(outMB);
@@ -80,7 +82,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
-				if( in !=null && in != _output ) 
+				if( in != null && in != _output ) 
 				{
 					LOG.trace("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 					
@@ -97,7 +99,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 					
 					//determine need for sparse2dense change during merge
 					boolean sparseToDense = appendOnly && !MatrixBlock.evalSparseFormatInMemory(
-							                                 outMBNew.getNumRows(), outMBNew.getNumColumns(), outMBNew.getNonZeros()); 
+						outMBNew.getNumRows(), outMBNew.getNumColumns(), outMBNew.getNonZeros()); 
 					if( sparseToDense ) {
 						outMBNew.sortSparseRows(); //sort sparse due to append-only
 						outMBNew.examSparsity(); //sparse-dense representation change
@@ -129,8 +131,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			//release old output, and all inputs
 			_output.release();
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 
@@ -144,13 +145,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 		throws DMLRuntimeException
 	{		
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
-	
-		//Timing time = null;
-		LOG.trace("ResultMerge (local, in-memory): Execute parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-		//	time = new Timing();
-		//	time.start();
 		
-
+		LOG.trace("ResultMerge (local, in-memory): Execute parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		
 		try
 		{
 			//get matrix blocks through caching 
@@ -211,10 +208,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 			
 			//release old output, and all inputs
 			_output.release();			
-			//_output.clearData(); //save, since it respects pin/unpin  
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
@@ -228,8 +223,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		double[][] ret = null;
 		
 		//create compare matrix only if required
-		if( output.getNonZeros() > 0 )
-		{
+		if( output.getNonZeros() > 0 ) {
 			ret = DataConverter.convertToDoubleMatrix( output );
 		}
 		
@@ -287,6 +281,24 @@ public class ResultMergeLocalMemory extends ResultMerge
 			mergeWithoutComp(out, in, appendOnly);
 		else
 			mergeWithComp(out, in, _compare);
+	}
+	
+	/**
+	 * Estimates the number of non-zeros in the final merged output.
+	 * For scenarios without compare matrix, this is the exact number 
+	 * of non-zeros due to guaranteed disjoint results per worker.
+	 * 
+	 * @return estimated number of non-zeros.
+	 */
+	private long getOutputNnzEstimate() {
+		long nnzInputs = 0;
+		for( MatrixObject input : _inputs )
+			if( input != null )
+				nnzInputs += Math.max(input.getNnz(),1);
+		long rlen = _output.getNumRows();
+		long clen = _output.getNumColumns();
+		return Math.min(rlen * clen,
+			Math.max(nnzInputs, _output.getNnz()));
 	}
 	
 	

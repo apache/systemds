@@ -1033,7 +1033,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return true if matrix block shold be in sparse format in memory
 	 */
 	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
-	{				
+	{
 		//evaluate sparsity threshold
 		double lsparsity = (double)nnz/nrows/ncols;
 		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
@@ -1686,7 +1686,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			throw new DMLRuntimeException("Number of non-zeros mismatch on merge disjoint (target="+rlen+"x"+clen+", nnz target="+nonZeros+", nnz source="+that.nonZeros+")");
 		
 		//check for empty target (copy in full)
-		if( isEmptyBlock(false) ) {
+		if( isEmptyBlock(false) && !(!sparse && isAllocated()) ) {
 			copy(that);
 			return;
 		}

@@ -846,8 +846,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private Hop simplifyBinaryMatrixScalarOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
 	{
+		// Note: This rewrite is not applicable for all binary operations because some of them 
+		// are undefined over scalars. We explicitly exclude potential conflicting matrix-scalar binary
+		// operations; other operations like cbind/rbind will never occur as matrix-scalar operations.
+		
 		if( HopRewriteUtils.isUnary(hi, OpOp1.CAST_AS_SCALAR)  
-		   && hi.getInput().get(0) instanceof BinaryOp ) 
+			&& hi.getInput().get(0) instanceof BinaryOp
+			&& !HopRewriteUtils.isBinary(hi.getInput().get(0), OpOp2.QUANTILE, 
+			OpOp2.CENTRALMOMENT, OpOp2.MINUS1_MULT, OpOp2.MINUS_NZ, OpOp2.LOG_NZ)) 
 		{
 			BinaryOp bin = (BinaryOp) hi.getInput().get(0);
 			BinaryOp bout = null;

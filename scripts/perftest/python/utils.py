@@ -27,6 +27,9 @@ import subprocess
 import shlex
 import re
 import logging
+import sys
+import glob
+from functools import reduce
 
 # This file contains all the utility functions required for performance test module
 
@@ -302,3 +305,41 @@ def get_folder_metrics(folder_name, action_mode):
         intercept = 'none'
 
     return mat_type, mat_shape, intercept
+
+#TODO
+# Add signature
+def mat_type_check(current_family, matrix_type):
+    family_no_matrix_type = ['clustering', 'stats1', 'stats2']
+
+    current_shape = []
+    for current_matrix_type in matrix_type:
+        if current_matrix_type == 'all':
+            if current_family in family_no_matrix_type:
+                current_shape.append('dense')
+            else:
+                current_shape.append(['dense', 'sparse'])
+
+        if current_matrix_type == 'sparse':
+            if current_family in family_no_matrix_type:
+                sys.exit('{} does not support {} matrix type'.format(current_family, current_matrix_type))
+            else:
+                current_shape.append(current_matrix_type)
+
+        if current_matrix_type == 'dense':
+            current_shape.append(current_matrix_type)
+
+    return current_shape
+
+
+def relevant_folders(data_gen_path, matrix_type, matrix_shape):
+    folders = []
+    for current_matrix_type in matrix_type:
+        for current_matrix_shape in matrix_shape:
+            sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
+            data_gen_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
+            print(data_gen_path)
+            data_gen_folders = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
+            folders.append(data_gen_folders)
+
+    folders_flat = reduce(lambda x, y: x + y, folders)
+    return folders_flat

@@ -80,7 +80,6 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'GLM_gamma': 'GLM-predict',
               'GLM_binomial': 'GLM-predict'}
 
-
 # Responsible for execution and metric logging
 def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode):
     """
@@ -215,7 +214,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-        conf_packet = config_packets_train(algos_to_run, data_gen_dir, train_dir)
+        conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir, train_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
                 file_name = ML_TRAIN[algo_name]
@@ -229,7 +228,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
         if len(algos_to_run_perdict) < 0:
             pass
-        conf_packet = config_packets_predict(algos_to_run_perdict, data_gen_dir, train_dir, predict_dir)
+        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir, train_dir, predict_dir)
         for algo_name, config_files in conf_packet.items():
                 for config in config_files:
                     file_name = ML_PREDICT[algo_name]
@@ -244,7 +243,7 @@ if __name__ == '__main__':
         sys.exit()
 
     # Default Arguments
-    default_mat_type = ['dense', 'sparse']
+    default_mat_type = ['dense', 'sparse', 'all']
     default_workload = ['data-gen', 'train', 'predict']
     default_mat_shape = ['10k_100']
     default_execution_mode = ['hybrid_spark', 'singlenode']
@@ -277,13 +276,13 @@ if __name__ == '__main__':
     cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
                          '(available : singlenode, spark-hybrid)', metavar='',
                          choices=default_execution_mode)
-    cparser.add_argument('--mat-type', default=default_mat_type, help='space separated list of types of matrix to generate '
+    cparser.add_argument('--mat-type', default=['all'], help='space separated list of types of matrix to generate '
                          '(available : dense, sparse)', metavar='', choices=default_mat_type,
                          nargs='+')
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
                          'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')
     cparser.add_argument('--temp-dir', default=default_temp_dir, help='temporary directory '
-                        'where generated, training and prediction data is put', metavar='')
+                         'where generated, training and prediction data is put', metavar='')
     cparser.add_argument('--filename', default='perf_test', help='name of the output file for the perf'
                          ' metrics', metavar='')
     cparser.add_argument('--mode', default=default_workload,
@@ -296,6 +295,11 @@ if __name__ == '__main__':
 
     # Debug arguments
     # print(arg_dict)
+
+    # default_mat_type validity
+    if len(args.mat_type) > 2:
+        print('length of --mat-type argument cannot be greater than two')
+        sys.exit()
 
     # Check for validity of input arguments
     if args.family is not None:

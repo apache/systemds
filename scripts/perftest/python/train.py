@@ -21,10 +21,9 @@
 #-------------------------------------------------------------
 
 import sys
-import glob
 import os
 from os.path import join
-from utils import config_writer
+from utils import config_writer, relevant_folders
 from functools import reduce
 
 # Contains configuration setting for training
@@ -357,8 +356,9 @@ def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir):
 
     return data_folders
 
-
-def config_packets_train(algo_payload, datagen_dir, train_dir):
+#TODO
+# Update comments
+def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir):
     """
     This function has two responsibilities. Generate the configuration files for
     input training algorithms and return a dictionary that will be used for execution.
@@ -376,7 +376,6 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
     return: {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
-
     """
 
     config_bundle = {}
@@ -386,10 +385,8 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
 
     for current_algo, current_family in algo_payload:
         data_gen_path = join(datagen_dir, current_family)
-        data_gen_subdir = glob.glob(data_gen_path + "*")
+        data_gen_folders = relevant_folders(data_gen_path, matrix_type, matrix_shape)
 
-        # Filter for specific data gen
-        data_gen_folders = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))
             sys.exit()

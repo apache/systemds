@@ -22,7 +22,7 @@
 
 import itertools
 from os.path import join
-from utils import split_rowcol, config_writer
+from utils import split_rowcol, config_writer, mat_type_check
 
 # This file contains configuration settings for data generation
 DATA_FORMAT = 'csv'
@@ -222,6 +222,9 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
     matrix_shape: String
     Shape of matrix to generate e.g 100k_10
 
+    FAMILY_NO_MATRIX_TYPE: List
+    Algorithms that do not contain sparse data type
+
     return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
@@ -233,13 +236,10 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
 
     # Cross Product of all configurations
     for current_family in distinct_families:
-        if current_family in FAMILY_NO_MATRIX_TYPE:
-            config = list(itertools.product(matrix_shape, ['dense']))
-            config_bundle[current_family] = config
-        else:
-            config = list(itertools.product(matrix_shape, matrix_type))
-            # clustering : [[10k_1, dense], [10k_2, dense], ...]
-            config_bundle[current_family] = config
+        matrix_type = mat_type_check(current_family, matrix_type)
+        config = list(itertools.product(matrix_shape, matrix_type))
+        # clustering : [[10k_1, dense], [10k_2, dense], ...]
+        config_bundle[current_family] = config
 
     config_packets = {}
     for current_family, configs in config_bundle.items():

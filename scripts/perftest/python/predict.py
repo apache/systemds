@@ -24,7 +24,7 @@ import sys
 import os
 from os.path import join
 import glob
-from utils import create_dir, config_writer
+from utils import create_dir, config_writer, relevant_folders
 
 # Contains configuration setting for predicting
 DATA_FORMAT = 'csv'
@@ -220,8 +220,9 @@ def glm_gamma_predict(save_file_name, datagen_dir, train_dir, predict_dir):
 
     return full_path_predict
 
-
-def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
+#TODO
+# add doc for signature
+def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, predict_dir):
     """
     This function has two responsibilities. Generate the configuration files for
     prediction algorithms and return a dictionary that will be used for execution.
@@ -254,8 +255,10 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
     for current_algo in algo_payload_distinct:
         # Get all train folders related to the algorithm
         train_path = join(train_dir, current_algo)
-        train_subdir = glob.glob(train_path + "*")
-        train_folders = list(filter(lambda x: os.path.isdir(x), train_subdir))
+
+        train_folders = relevant_folders(train_path, matrix_type, matrix_shape)
+        print(train_folders)
+        exit()
 
         if len(train_folders) == 0:
             print('training folders not present for {}'.format(current_algo))
@@ -268,6 +271,7 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
             data_gen_path = join(datagen_dir, data_gen_folder_name)
             data_gen_subdir = glob.glob(data_gen_path + "*")
             data_gen_folder = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
+            print(data_gen_folder)
 
             if len(data_gen_folder) == 0:
                 print('data-gen folders not present for {}'.format(current_family))

@@ -251,9 +251,9 @@ if (link_type == 0)
     if (distribution_type == 1) {
         link_type = 1;
         link_as_power_of_the_mean = 1.0 - variance_as_power_of_the_mean;
-    } else { if (distribution_type == 2) {
+    } else if (distribution_type == 2) {
             link_type = 2;
-}   }   }
+}   }   
 
 # For power distributions and/or links, we use two constants,
 # "variance as power of the mean" and "link_as_power_of_the_mean",
@@ -637,9 +637,9 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
                 linear_terms = log (- log (1.0 - y_corr))
                     - log (- log (0.5)) * (is_zero_y_corr + is_one_y_corr)
                     + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
-            } else { if (link_type == 5)                  { # Binomial.cauchit
+            } else if (link_type == 5)                  { # Binomial.cauchit
                 linear_terms = tan ((y_corr - 0.5) * 3.1415926535897932384626433832795)
-                    + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);}
+                    + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         }   }      
     }
     
@@ -784,14 +784,14 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 the_exp_ratio = (1 - is_too_small) * (1 - the_exp_exp) / (the_exp + is_too_small) + is_too_small * (1 - the_exp / 2);
                 g_Y =  (rowSums (Y) * the_exp_exp - Y [, 2]) / the_exp_ratio;
                 w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio;
-            } else { if (link_type == 5)                  { # Binomial.cauchit
+            } else if (link_type == 5)                  { # Binomial.cauchit
                 Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / 3.1415926535897932384626433832795;
                 Y_prob = Y_prob * ((1.0 - rowSums (is_LT_infinite)) %*% ones_2) + is_LT_infinite;
                 y_residual = Y [, 1] * Y_prob [, 2] - Y [, 2] * Y_prob [, 1];
                 var_function = rowSums (Y) * Y_prob [, 1] * Y_prob [, 2];
                 link_gradient_normalized = (1 + linear_terms ^ 2) * 3.1415926535897932384626433832795;
                 g_Y =  rowSums (Y) * y_residual / (var_function * link_gradient_normalized);
-                w   = (rowSums (Y) ^ 2) / (var_function * link_gradient_normalized ^ 2);}
+                w   = (rowSums (Y) ^ 2) / (var_function * link_gradient_normalized ^ 2);
             }   
         }
     }
@@ -870,9 +870,11 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
             } else if ( 2 * link_power == 1.0 - var_power) {
                 natural_parameters = linear_terms ^ 2 / (1.0 - var_power);
             } else if (sum (linear_terms <= 0) == 0) {
-                    power = (1.0 - var_power) / link_power;
-                    natural_parameters = (linear_terms ^ power) / (1.0 - var_power);
-            } else {isNaN = 1;}
+                power = (1.0 - var_power) / link_power;
+                natural_parameters = (linear_terms ^ power) / (1.0 - var_power);
+            } else {
+                isNaN = 1;
+            } 
             
             if          (-2 * link_power == 2.0 - var_power) {
                 b_cumulant = 1.0 / (linear_terms ^ 2) / (2.0 - var_power);
@@ -882,11 +884,11 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
                 b_cumulant = linear_terms / (2.0 - var_power);
             } else if ( 2 * link_power == 2.0 - var_power) {
                 b_cumulant = linear_terms ^ 2 / (2.0 - var_power);
+            } else if (sum (linear_terms <= 0) == 0) {
+                power = (2.0 - var_power) / link_power;
+                b_cumulant = (linear_terms ^ power) / (2.0 - var_power);
             } else {
-                if (sum (linear_terms <= 0) == 0) {
-                    power = (2.0 - var_power) / link_power;
-                    b_cumulant = (linear_terms ^ power) / (2.0 - var_power);
-                } else {isNaN = 1;}
+                isNaN = 1;
             }
         }
         if (sum (is_natural_parameter_log_zero * abs (Y)) > 0) {
@@ -955,10 +957,10 @@ binomial_probability_two_column =
             Y_prob = exp (linear_terms) %*% p_one_m_one + ones_r %*% zero_one;    
         } else if (link_power == 0.5) { # Binomial.sqrt
             Y_prob = (linear_terms ^ 2) %*% p_one_m_one + ones_r %*% zero_one;    
-        } else {                          # Binomial.power_nonlog
-            if (sum (linear_terms < 0) == 0) {
-                Y_prob = (linear_terms ^ (1.0 / link_power)) %*% p_one_m_one + ones_r %*% zero_one;    
-            } else {isNaN = 1;}
+        } else if (sum (linear_terms < 0) == 0) { # Binomial.power_nonlog
+            Y_prob = (linear_terms ^ (1.0 / link_power)) %*% p_one_m_one + ones_r %*% zero_one;    
+        } else {
+            isNaN = 1;
         }
     } else {              # Binomial.non_power
         is_LT_pos_infinite = (linear_terms ==  1.0/0.0);

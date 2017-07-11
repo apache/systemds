@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.ipa;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -51,6 +52,9 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 		throws HopsException
 	{
+		if( !ConfigurationManager.isDynamicRecompilation() )
+			return;
+		
 		try {
 			for (String namespaceKey : prog.getNamespaces().keySet())
 				for (String fname : prog.getFunctionStatementBlocks(namespaceKey).keySet())

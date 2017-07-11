@@ -313,9 +313,13 @@ def mat_type_check(current_family, matrix_type):
     an algorithm
 
     current_family: String
+    Current family being porcessed in this function
+
     matrix_type: List
+    Type of matrix to generate dense, sparse, all
 
     return: List
+    Return the list of right matrix types supported by the family
     """
     family_no_matrix_type = ['clustering', 'stats1', 'stats2']
 
@@ -345,14 +349,24 @@ def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
     Finds the right folder to read the data based on given parameters
 
     path: String
+
     algo: String
+    Current algorithm being prcessed by this function
+
     family: String
+    Current family being prcessed by this function
+
     matrix_type: List
+    Type of matrix to generate dense, sparse, all
+
     matrix_shape: List
+    Dimensions of the input matrix with rows and columns
+
     mode: String
+    Based on mode and arguments we read the specific folders e.g data-gen folder or train folder
 
     return: List
-
+    List of folder locations to read data from
     """
     folders = []
     for current_matrix_type in matrix_type:
@@ -361,6 +375,7 @@ def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
                 data_gen_path = join(path, family)
                 sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
                 path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
+
             if mode == 'train':
                 train_path = join(path, algo)
                 sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])

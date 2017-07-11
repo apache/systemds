@@ -217,13 +217,10 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
     family type.
 
     matrix_type: String
-    Type of matrix to generate e.g dense or sparse
+    Type of matrix to generate e.g dense, sparse, all
 
     matrix_shape: String
     Shape of matrix to generate e.g 100k_10
-
-    FAMILY_NO_MATRIX_TYPE: List
-    Algorithms that do not contain sparse data type
 
     return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
@@ -236,8 +233,8 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
 
     # Cross Product of all configurations
     for current_family in distinct_families:
-        matrix_type = mat_type_check(current_family, matrix_type)
-        config = list(itertools.product(matrix_shape, matrix_type))
+        current_matrix_type = mat_type_check(current_family, matrix_type)
+        config = list(itertools.product(matrix_shape, current_matrix_type))
         # clustering : [[10k_1, dense], [10k_2, dense], ...]
         config_bundle[current_family] = config
 

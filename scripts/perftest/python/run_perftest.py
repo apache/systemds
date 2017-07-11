@@ -80,6 +80,7 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'GLM_gamma': 'GLM-predict',
               'GLM_binomial': 'GLM-predict'}
 
+
 # Responsible for execution and metric logging
 def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode):
     """
@@ -151,7 +152,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
     Contains the execution type singlenode / hybrid_spark
 
     mat_type: List
-    Type of matrix to generate dense or sparse
+    Type of matrix to generate dense, sparse, all
 
     mat_shape: List
     Dimensions of the input matrix with rows and columns
@@ -201,6 +202,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
         conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir)
+        #print(conf_packet)
         for family_name, config_folders in conf_packet.items():
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
@@ -277,7 +279,7 @@ if __name__ == '__main__':
                          'available : ' + ','.join(default_execution_mode), metavar='',
                          choices=default_execution_mode)
     cparser.add_argument('--mat-type', default=['all'], help='space separated list of types of matrix to generate '
-                         '(available : dense, sparse)', metavar='', choices=default_mat_type,
+                         'available : ' + ','.join(default_mat_type), metavar='', choices=default_mat_type,
                          nargs='+')
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
                          'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')

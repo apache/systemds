@@ -221,8 +221,6 @@ def glm_gamma_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     return full_path_predict
 
 
-#TODO
-# add doc for signature
 def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, predict_dir):
     """
     This function has two responsibilities. Generate the configuration files for
@@ -231,6 +229,12 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
     algo_payload : List of tuples
     The first tuple index contains algorithm name and the second index contains
     family type.
+
+    matrix_type: String
+    Type of matrix to generate e.g dense, sparse, all
+
+    matrix_shape: String
+    Shape of matrix to generate e.g 100k_10
 
     datagen_dir: String
     Path of the data generation directory
@@ -251,9 +255,9 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        matrix_type = mat_type_check(current_family, matrix_type)
+        current_matrix_type = mat_type_check(current_family, matrix_type)
         train_folders = relevant_folders(train_dir, current_algo, current_family,
-                                         matrix_type, matrix_shape, 'train')
+                                         current_matrix_type, matrix_shape, 'train')
 
         if len(train_folders) == 0:
             print('training folders not present for {}'.format(current_algo))
@@ -261,7 +265,7 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
 
         for current_train_folder in train_folders:
             current_data_gen_dir = relevant_folders(datagen_dir, current_algo, current_family,
-                                                    matrix_type, matrix_shape, 'data-gen')
+                                                    current_matrix_type, matrix_shape, 'data-gen')
             if len(current_data_gen_dir) == 0:
                 print('data-gen folders not present for {}'.format(current_family))
                 sys.exit()

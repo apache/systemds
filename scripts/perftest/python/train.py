@@ -366,8 +366,11 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
     The first tuple index contains algorithm name and the second index contains
     family type.
 
-    matrix_type
-    matrix_shape
+    matrix_type: String
+    Type of matrix to generate e.g dense, sparse, all
+
+    matrix_shape: String
+    Shape of matrix to generate e.g 100k_10
 
     datagen_dir: String
     Path of the data generation directory
@@ -386,8 +389,8 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        matrix_type = mat_type_check(current_family, matrix_type)
-        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family, matrix_type,
+        current_matrix_type = mat_type_check(current_family, matrix_type)
+        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family, current_matrix_type,
                                             matrix_shape, 'data-gen')
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))

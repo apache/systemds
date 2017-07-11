@@ -306,40 +306,69 @@ def get_folder_metrics(folder_name, action_mode):
 
     return mat_type, mat_shape, intercept
 
-#TODO
-# Add signature
+
 def mat_type_check(current_family, matrix_type):
+    """
+    Some Algorithms support different matrix_type. This function give us the right matrix_type given
+    an algorithm
+
+    current_family: String
+    matrix_type: List
+
+    return: List
+    """
     family_no_matrix_type = ['clustering', 'stats1', 'stats2']
 
-    current_shape = []
+    current_type = []
     for current_matrix_type in matrix_type:
         if current_matrix_type == 'all':
             if current_family in family_no_matrix_type:
-                current_shape.append('dense')
+                current_type.append('dense')
             else:
-                current_shape.append(['dense', 'sparse'])
+                current_type.append('dense')
+                current_type.append('sparse')
 
         if current_matrix_type == 'sparse':
             if current_family in family_no_matrix_type:
                 sys.exit('{} does not support {} matrix type'.format(current_family, current_matrix_type))
             else:
-                current_shape.append(current_matrix_type)
+                current_type.append(current_matrix_type)
 
         if current_matrix_type == 'dense':
-            current_shape.append(current_matrix_type)
+            current_type.append(current_matrix_type)
 
-    return current_shape
+    return current_type
 
 
-def relevant_folders(data_gen_path, matrix_type, matrix_shape):
+def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
+    """
+    Finds the right folder to read the data based on given parameters
+
+    path: String
+    algo: String
+    family: String
+    matrix_type: List
+    matrix_shape: List
+    mode: String
+
+    return: List
+
+    """
     folders = []
     for current_matrix_type in matrix_type:
         for current_matrix_shape in matrix_shape:
-            sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
-            data_gen_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
-            print(data_gen_path)
-            data_gen_folders = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
-            folders.append(data_gen_folders)
+            if mode == 'data-gen':
+                data_gen_path = join(path, family)
+                sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
+                path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
+            if mode == 'train':
+                train_path = join(path, algo)
+                sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
+                path_subdir = glob.glob(train_path + '.' + sub_folder_name + "*")
+
+            path_folders = list(filter(lambda x: os.path.isdir(x), path_subdir))
+            folders.append(path_folders)
 
     folders_flat = reduce(lambda x, y: x + y, folders)
+
     return folders_flat

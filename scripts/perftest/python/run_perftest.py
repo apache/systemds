@@ -27,7 +27,7 @@ from functools import reduce
 import os
 from os.path import join
 from utils import get_families, config_reader, create_dir,  get_existence, \
-    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, mat_type_check
 import logging
 from datetime import datetime
 from datagen import config_packets_datagen
@@ -274,7 +274,7 @@ if __name__ == '__main__':
                          choices=all_algos, nargs='+')
 
     cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
-                         '(available : singlenode, spark-hybrid)', metavar='',
+                         'available : ' + ','.join(default_execution_mode), metavar='',
                          choices=default_execution_mode)
     cparser.add_argument('--mat-type', default=['all'], help='space separated list of types of matrix to generate '
                          '(available : dense, sparse)', metavar='', choices=default_mat_type,

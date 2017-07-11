@@ -23,7 +23,7 @@
 import sys
 import os
 from os.path import join
-from utils import config_writer, relevant_folders
+from utils import config_writer, relevant_folders, mat_type_check
 from functools import reduce
 
 # Contains configuration setting for training
@@ -356,8 +356,7 @@ def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir):
 
     return data_folders
 
-#TODO
-# Update comments
+
 def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir):
     """
     This function has two responsibilities. Generate the configuration files for
@@ -366,6 +365,9 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
     algo_payload : List of tuples
     The first tuple index contains algorithm name and the second index contains
     family type.
+
+    matrix_type
+    matrix_shape
 
     datagen_dir: String
     Path of the data generation directory
@@ -384,19 +386,19 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        data_gen_path = join(datagen_dir, current_family)
-        data_gen_folders = relevant_folders(data_gen_path, matrix_type, matrix_shape)
-
+        matrix_type = mat_type_check(current_family, matrix_type)
+        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family, matrix_type,
+                                            matrix_shape, 'data-gen')
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))
             sys.exit()
 
-        for current_folder in data_gen_folders:
-            file_path_last = current_folder.split('/')[-1]
+        for current_datagen_dir in data_gen_folders:
+            file_path_last = current_datagen_dir.split('/')[-1]
             save_name = '.'.join([current_algo] + [file_path_last])
             algo_func = '_'.join([current_family] + [current_algo.lower().replace('-', '_')]
                                  + ['train'])
-            conf_path = globals()[algo_func](save_name, current_folder, train_dir)
+            conf_path = globals()[algo_func](save_name, current_datagen_dir, train_dir)
             config_bundle[current_algo].append(conf_path)
 
     config_packets = {}

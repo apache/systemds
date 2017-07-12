@@ -390,7 +390,7 @@ public class LibMatrixMult
 		
 		//check no parallelization benefit (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
-		if( ret.rlen == 1 
+		if( ret.rlen == 1 || k <= 1
 			|| leftTranspose && 1L * m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
 			|| !leftTranspose && 1L * m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD) 
 		{ 
@@ -533,6 +533,10 @@ public class LibMatrixMult
 		else
 			matrixMultWSLossGeneric(mX, mU, mV, mW, ret, wt, 0, mX.rlen);
 		
+		//add correction for sparse wsloss w/o weight
+		if( mX.sparse && wt==WeightsType.NONE )
+			addMatrixMultWSLossNoWeightCorrection(mU, mV, ret, 1);
+		
 		//System.out.println("MMWSLoss " +wt.toString()+ " ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
 		//                  "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
@@ -572,6 +576,10 @@ public class LibMatrixMult
 			throw new DMLRuntimeException(e);
 		}
 
+		//add correction for sparse wsloss w/o weight
+		if( mX.sparse && wt==WeightsType.NONE )
+			addMatrixMultWSLossNoWeightCorrection(mU, mV, ret, k);
+		
 		//System.out.println("MMWSLoss "+wt.toString()+" k="+k+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
 		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
@@ -2163,36 +2171,34 @@ public class LibMatrixMult
 		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
 		else if( wt==WeightsType.NONE )
 		{
-			// approach: iterate over all cells of X and 
-			for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) 
-			{
-				if( x.isEmpty(i) ) { //empty row
-					for( int j=0, vix=0; j<n; j++, vix+=cd) {
-						double uvij = dotProduct(u, v, uix, vix, cd);
-						wsloss += (-uvij)*(-uvij);
-					}
-				}
-				else { //non-empty row
-					int xpos = x.pos(i);
-					int xlen = x.size(i);
-					int[] xix = x.indexes(i);
-					double[] xval = x.values(i);
-					int last = -1;
-					for( int k=xpos; k<xpos+xlen; k++ ) {
-						//process last nnz til current nnz
-						for( int k2=last+1; k2<xix[k]; k2++ ){
-							double uvij = dotProduct(u, v, uix, k2*cd, cd);
-							wsloss += (-uvij)*(-uvij);							
+			//approach: use sparsity-exploiting pattern rewrite sum((X-(U%*%t(V)))^2) 
+			//-> sum(X^2)-sum(2*X*(U%*%t(V))))+sum((t(U)%*%U)*(t(V)%*%V)), where each
+			//parallel task computes sum(X^2)-sum(2*X*(U%*%t(V)))) and the last term
+			//sum((t(U)%*%U)*(t(V)%*%V)) is computed once via two tsmm operations.
+			
+			final int blocksizeIJ = (int) (8L*mX.rlen*mX.clen/mX.nonZeros); 
+			int[] curk = new int[blocksizeIJ];			
+			
+			for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
+				int bimin = Math.min(ru, bi+blocksizeIJ);
+				//prepare starting indexes for block row
+				Arrays.fill(curk, 0); 
+				//blocked execution over column blocks
+				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+					int bjmin = Math.min(n, bj+blocksizeIJ);
+					for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
+						if( x.isEmpty(i) ) continue; 
+						int xpos = x.pos(i);
+						int xlen = x.size(i);
+						int[] xix = x.indexes(i);
+						double[] xval = x.values(i);
+						int k = xpos + curk[i-bi];
+						for( ; k<xpos+xlen && xix[k]<bjmin; k++ ) {
+							double xij = xval[k];
+							double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
+							wsloss += xij * xij - 2 * xij * uvij;
 						}
-						//process current nnz
-						double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
-						wsloss += (xval[k]-uvij)*(xval[k]-uvij);
-						last = xix[k];
-					}
-					//process last nnz til end of row
-					for( int k2=last+1; k2<n; k2++ ) { 
-						double uvij = dotProduct(u, v, uix, k2*cd, cd);
-						wsloss += (-uvij)*(-uvij);							
+						curk[i-bi] = k - xpos;
 					}
 				}
 			}
@@ -2291,17 +2297,51 @@ public class LibMatrixMult
 		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
 		else if( wt==WeightsType.NONE )
 		{
-			// approach: iterate over all cells of X and 
-			for( int i=rl; i<ru; i++ )
-				for( int j=0; j<n; j++)
-				{
-					double xij = mX.quickGetValue(i, j);
-					double uvij = dotProductGeneric(mU, mV, i, j, cd);
-					wsloss += (xij-uvij)*(xij-uvij);
-				}
+			//approach: use sparsity-exploiting pattern rewrite sum((X-(U%*%t(V)))^2) 
+			//-> sum(X^2)-sum(2*X*(U%*%t(V))))+sum((t(U)%*%U)*(t(V)%*%V)), where each
+			//parallel task computes sum(X^2)-sum(2*X*(U%*%t(V)))) and the last term
+			//sum((t(U)%*%U)*(t(V)%*%V)) is computed once via two tsmm operations.
+			
+			if( mW.sparse ) { //SPARSE
+				SparseBlock x = mX.sparseBlock;
+				for( int i=rl; i<ru; i++ ) {
+					if( x.isEmpty(i) ) continue;
+					int xpos = x.pos(i);
+					int xlen = x.size(i);
+					int[] xix = x.indexes(i);
+					double[] xval = x.values(i);
+					for( int k=xpos; k<xpos+xlen; k++ ) {
+						double xij = xval[k];
+						double uvij = dotProductGeneric(mU, mV, i, xix[k], cd);
+						wsloss += xij * xij - 2 * xij * uvij;
+					}
+				}	
+			}
+			else { //DENSE
+				double[] x = mX.denseBlock;
+				for( int i=rl, xix=rl*n; i<ru; i++, xix+=n )
+					for( int j=0; j<n; j++)
+						if( x[xix+j] != 0 ) {
+							double xij = x[xix+j];
+							double uvij = dotProductGeneric(mU, mV, i, j, cd);
+							wsloss += xij * xij - 2 * xij * uvij;
+						}
+			}
 		}
 
 		ret.quickSetValue(0, 0, wsloss);
+	}
+	
+	private static void addMatrixMultWSLossNoWeightCorrection(MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, int k) 
+		throws DMLRuntimeException 
+	{
+		MatrixBlock tmp1 = new MatrixBlock(mU.clen, mU.clen, false);
+		MatrixBlock tmp2 = new MatrixBlock(mU.clen, mU.clen, false);
+		matrixMultTransposeSelf(mU, tmp1, true, k);
+		matrixMultTransposeSelf(mV, tmp2, true, k);
+		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) + 
+			((tmp1.sparse || tmp2.sparse) ? dotProductGeneric(tmp1, tmp2) :
+			dotProduct(tmp1.denseBlock, tmp2.denseBlock, mU.clen*mU.clen)));
 	}
 
 	private static void matrixMultWSigmoidDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
@@ -3401,6 +3441,16 @@ public class LibMatrixMult
 		double val = 0;
 		for( int k2=0; k2<len; k2++ )
 			val += a.quickGetValue(ai, k2) * b.quickGetValue(bi, k2);
+		
+		return val;
+	}
+	
+	private static double dotProductGeneric(MatrixBlock a, MatrixBlock b)
+	{
+		double val = 0;
+		for( int i=0; i<a.getNumRows(); i++ )
+			for( int j=0; j<a.getNumColumns(); j++ )
+				val += a.quickGetValue(i, j) * b.quickGetValue(i, j);
 		
 		return val;
 	}

@@ -2466,15 +2466,15 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs elementwise arithmetic operation specified by op of two input matrices in1 and in2
 	 *
-	 * @param ec execution context
-	 * @param gCtx a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param in1 input matrix 1
-	 * @param in2 input matrix 2
-	 * @param outputName output matrix name
-	 * @param isLeftTransposed true if left-transposed
+	 * @param ec                execution context
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param in1               input matrix 1
+	 * @param in2               input matrix 2
+	 * @param outputName        output matrix name
+	 * @param isLeftTransposed  true if left-transposed
 	 * @param isRightTransposed true if right-transposed
-	 * @param op binary operator
+	 * @param op                binary operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixMatrixArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
@@ -2506,13 +2506,14 @@ public class LibMatrixCUDA {
 
 	/**
 	 * Utility to do matrix-scalar operation kernel
-	 * @param gCtx a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param ec execution context
-	 * @param in input matrix
-	 * @param outputName output variable name
+	 *
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param ec                execution context
+	 * @param in                input matrix
+	 * @param outputName        output variable name
 	 * @param isInputTransposed true if input is transposed
-	 * @param op operator
+	 * @param op                operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
@@ -2703,9 +2704,9 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs a deep device copy of a matrix on the GPU
 	 *
-	 * @param ec execution context
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param src source matrix
+	 * @param ec         execution context
+	 * @param instName   the invoking instruction's name for record {@link Statistics}.
+	 * @param src        source matrix
 	 * @param outputName destination variable name
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
@@ -2973,6 +2974,80 @@ public class LibMatrixCUDA {
 	//******************* End of Re-org Functions ************************/
 	//********************************************************************/
 
+
+	//********************************************************************/
+	//**************** Matrix Manipulation Functions *********************/
+	//********************************************************************/
+
+
+	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		LOG.trace("GPU : cbind" + ", GPUContext=" + gCtx);
+
+		long t1 = 0;
+
+		// only Dense supported
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
+		Pointer C = getDensePointer(gCtx, out, instName);
+		Pointer A = getDensePointer(gCtx, in1, instName);
+		Pointer B = getDensePointer(gCtx, in2, instName);
+
+		int rowsA = (int) in1.getNumRows();
+		int colsA = (int) in1.getNumColumns();
+		int rowsB = (int) in2.getNumRows();
+		int colsB = (int) in2.getNumColumns();
+
+		if (rowsA != rowsB){
+			throw new DMLRuntimeException("GPU : Invalid internal state - the rows must match up for a cbind operation");
+		}
+		int maxRows = Math.max(rowsA, rowsB);
+		int maxCols = Math.max(colsA, colsB);
+
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		getCudaKernels(gCtx)
+				.launchKernel("cbind", ExecutionConfig.getConfigForSimpleMatrixOperations(maxRows, maxCols), A, B, C,
+						rowsA, colsA, rowsB, colsB);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CBIND_KERNEL, System.nanoTime() - t1);
+
+	}
+
+	public static void rbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		LOG.trace("GPU : rbind" + ", GPUContext=" + gCtx);
+
+		long t1 = 0;
+
+		// only Dense supported
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
+		Pointer C = getDensePointer(gCtx, out, instName);
+		Pointer A = getDensePointer(gCtx, in1, instName);
+		Pointer B = getDensePointer(gCtx, in2, instName);
+
+		int rowsA = (int) in1.getNumRows();
+		int colsA = (int) in1.getNumColumns();
+		int rowsB = (int) in2.getNumRows();
+		int colsB = (int) in2.getNumColumns();
+
+		if (colsA != colsB){
+			throw new DMLRuntimeException("GPU : Invalid internal state - the columns must match up for a rbind operation");
+		}
+		int maxRows = Math.max(rowsA, rowsB);
+		int maxCols = Math.max(colsA, colsB);
+
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		getCudaKernels(gCtx)
+				.launchKernel("rbind", ExecutionConfig.getConfigForSimpleMatrixOperations(maxRows, maxCols), A, B, C,
+						rowsA, colsA, rowsB, colsB);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RBIND_KERNEL, System.nanoTime() - t1);
+
+	}
+
+
+	//********************************************************************/
+	//*********** End of Matrix Manipulation Functions *******************/
+	//********************************************************************/
 
 
 	//********************************************************************/

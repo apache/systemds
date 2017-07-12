@@ -303,7 +303,7 @@ public class FunctionCallSizeInfo
 			sb.append(getFunctionCallCount(fkey));
 			if( !_fcandSafeNNZ.get(fkey).isEmpty() ) {
 				sb.append("\n----");
-				sb.append(Arrays.toString(_fcandSafeNNZ.get(fkey).toArray(new Long[0])));
+				sb.append(Arrays.toString(_fcandSafeNNZ.get(fkey).toArray(new Integer[0])));
 			}
 			sb.append("\n");
 		}

@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
 
 /**
- * Implements the cbind & rbind functions for matrices
+ * Implements the cbind and rbind functions for matrices
  */
 public class MatrixAppendGPUInstruction extends GPUInstruction {
 

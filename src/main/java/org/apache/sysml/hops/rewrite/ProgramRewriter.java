@@ -54,7 +54,7 @@ public class ProgramRewriter
 	private static final Log LOG = LogFactory.getLog(ProgramRewriter.class.getName());
 	
 	//internal local debug level
-	private static final boolean LDEBUG = false; 
+	private static final boolean LDEBUG = false;
 	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
@@ -96,8 +96,6 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
-			//if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
-			//	_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()   ); //dependency: cse
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
@@ -125,7 +123,9 @@ public class ProgramRewriter
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
 		{
-			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse 
+			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse
+			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
+				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()    ); //dependency: cse
 			
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 			{

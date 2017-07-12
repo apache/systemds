@@ -33,13 +33,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test whether `2*X*3*Y*4*X` successfully rewrites to `Y*(X^2)*24`.
+ * Test rewriting `2*X*3*v*5*w*4*z*5*Y*2*v*2*X`, where `v` and `z` are row vectors and `w` is a column vector,
+ * successfully rewrites to `Y*(X^2)*z*(v^2)*w*2400`.
  */
-public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBase
+public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTestBase
 {
-	private static final String TEST_NAME1 = "RewriteEMultChainOpXYX";
+	private static final String TEST_NAME1 = "RewriteEMultChainOpAll";
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteElementwiseMultChainOptimizationTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteElementwiseMultChainOptimizationAllTest.class.getSimpleName() + "/";
 	
 	private static final int rows = 123;
 	private static final int cols = 321;
@@ -50,7 +51,7 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 	}
-	
+
 	@Test
 	public void testMatrixMultChainOptNoRewritesCP() {
 		testRewriteMatrixMultChainOp(TEST_NAME1, false, ExecType.CP);
@@ -94,15 +95,21 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] { "-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R") };
+			programArgs = new String[] { "-explain", "hops", "-stats", "-args", input("X"), input("Y"), input("v"), input("z"), input("w"), output("R") };
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
 			double Xsparsity = 0.8, Ysparsity = 0.6;
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, Xsparsity, 7);
 			double[][] Y = getRandomMatrix(rows, cols, -1, 1, Ysparsity, 3);
+			double[][] z = getRandomMatrix(1, cols, -1, 1, Ysparsity, 5);
+			double[][] v = getRandomMatrix(1, cols, -1, 1, Xsparsity, 4);
+			double[][] w = getRandomMatrix(rows, 1, -1, 1, Ysparsity, 6);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
+			writeInputMatrixWithMTD("z", z, true);
+			writeInputMatrixWithMTD("v", v, true);
+			writeInputMatrixWithMTD("w", w, true);
 
 			//execute tests
 			runTest(true, false, null, -1); 

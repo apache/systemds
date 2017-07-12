@@ -200,7 +200,7 @@ public class Explain
 
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
 		throws HopsException, DMLRuntimeException, LanguageException {
-		return explain(prog, rtprog, type);
+		return explain(prog, rtprog, type, null);
 	}	
 	
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 

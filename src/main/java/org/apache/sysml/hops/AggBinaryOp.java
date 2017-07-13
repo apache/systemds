@@ -581,8 +581,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		
 		ExecType et = ExecType.CP;
-		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 			et = ExecType.GPU;
 		}
 		
@@ -661,8 +661,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{	
 		Lop matmultCP = null;
 
-		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			Lop left; Lop right;

@@ -790,8 +790,8 @@ public abstract class Hop
 	}
 	
 	protected ExecType findGPUExecTypeByMemEstimate(ExecType et) {
-		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 			return ExecType.GPU;
 		}
 		return et;

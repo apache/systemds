@@ -650,8 +650,8 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = null;
-		double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 			et = ExecType.GPU;
 		} else {
 			et = optFindExecType();

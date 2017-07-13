@@ -149,8 +149,8 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				}				
 				else { //general case		
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					double maxBudgetForGPU = Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget());
-					if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < maxBudgetForGPU)) {
+					if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+							|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 						// Only implemented methods for GPU
 						if ((_op == AggOp.SUM    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 						 || (_op == AggOp.SUM_SQ && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))

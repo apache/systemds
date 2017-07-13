@@ -166,7 +166,7 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def load(sc:JavaSparkContext, outputDir:String, sep:String, eager:Boolean=false):Unit = {
   	val dmlScript = new StringBuilder
   	dmlScript.append("print(\"Loading the model from " + outputDir + "...\")\n")
-  	val tmpSum = "tmp_sum_var" + (new Random()).nextLong()
+  	val tmpSum = "tmp_sum_var" + Math.abs((new Random()).nextInt())
   	if(eager)
   	  dmlScript.append(tmpSum + " = 0\n")
 		for(varName <- modelVariables) {

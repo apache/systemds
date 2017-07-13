@@ -75,7 +75,7 @@ Default setting for our performance test below:
 - Matrix size to 10,000 rows and 100 columns.
 - Execution mode `singlenode`.
 - Operation modes `data-gen`, `train` and `predict` in sequence.
-- Generate `dense` and `sparse` matrix. if `sparse` not available, generate only `dense` matrix.
+- Matrix type set to `all`. Which will generate `dense` or / and `sparse` matrices for all relevant algorithms.
 
 ### Examples
 Some examples of SystemML performance test with arguments shown below:
@@ -108,8 +108,6 @@ Run performance test for all algorithms under the family `regression2` and log w
 All performance test depend mainly on two scripts for execution `systemml-standalone.py` and `systemml-spark-submit.py`. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.
 
 Constants like `DATA_FORMAT` currently set to `csv` and `MATRIX_TYPE_DICT` with `density` set to `0.9` and `sparsity` set to `0.01` are hardcoded in the performance test scripts. They can be changed easily as they are defined at the top of their respective operational scripts.
-
-Families like `clustering`, `stats1`, `stats2` support only dense matrix types. In such cases if sparse matrix type is specified the users request is overridden to generate `dense` matrix type.
 
 The logs contain the following information below comma separated.
 

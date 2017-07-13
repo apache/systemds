@@ -54,7 +54,7 @@ public class CSRPointer {
 
 	private static final Log LOG = LogFactory.getLog(CSRPointer.class.getName());
 
-	private static final double ULTRA_SPARSITY_TURN_POINT = 0.0004;
+	private static final double ULTRA_SPARSITY_TURN_POINT = 0.00004;
 	public static cusparseMatDescr matrixDescriptor;
 	/**
 	 * {@link GPUContext} instance to track the GPU to do work on
@@ -242,7 +242,7 @@ public class CSRPointer {
 	 * Estimates the number of non-zero elements from the result of a sparse matrix multiplication C = A * B
 	 * and returns the {@link CSRPointer} to C with the appropriate GPU memory.
 	 *
-	 * @param gCtx   ?
+	 * @param gCtx   a valid {@link GPUContext}
 	 * @param handle a valid {@link cusparseHandle}
 	 * @param A      Sparse Matrix A on GPU
 	 * @param transA 'T' if A is to be transposed, 'N' otherwise
@@ -268,7 +268,7 @@ public class CSRPointer {
 	/**
 	 * Factory method to allocate an empty CSR Sparse matrix on the GPU
 	 *
-	 * @param gCtx ?
+	 * @param gCtx a valid {@link GPUContext}
 	 * @param nnz2 number of non-zeroes
 	 * @param rows number of rows
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU

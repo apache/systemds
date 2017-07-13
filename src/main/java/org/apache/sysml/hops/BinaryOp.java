@@ -583,9 +583,9 @@ public class BinaryOp extends Hop
 				ot = Unary.OperationTypes.MULTIPLY2;
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
-			
-			if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-					.initialGPUMemBudget())
+
+			if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+					|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))
 					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
 					|| op == OpOp2.MINUS_NZ || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
 					|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
@@ -606,8 +606,8 @@ public class BinaryOp extends Hop
 			ExecType et = optFindExecType();
 			if ( et == ExecType.CP ) 
 			{
-				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-						.initialGPUMemBudget())
+				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+						|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))
 						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
 						|| op == OpOp2.SOLVE || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
 						|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
@@ -829,10 +829,24 @@ public class BinaryOp extends Hop
 			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
 		else if ( op == OpOp2.SOLVE ) {
-			// x=solve(A,b) relies on QR decomposition of A, which is done using Apache commons-math
-			// matrix of size same as the first input
-			double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0); 
-			return interOutput;
+			if (DMLScript.USE_ACCELERATOR) {
+				// Solve on the GPU takes an awful lot of intermediate space
+				// First the inputs are converted from row-major to column major
+				// Then a workspace and a temporary output (workSize, tauSize) are needed
+				long m = getInput().get(0).getDim1();
+				long n = getInput().get(0).getDim2();
+				long tauSize = OptimizerUtils.estimateSize(m, 1);
+				long workSize = OptimizerUtils.estimateSize(m, n);
+				long AtmpSize = OptimizerUtils.estimateSize(m, n);
+				long BtmpSize = OptimizerUtils.estimateSize(n, 1);
+				return (tauSize + workSize + AtmpSize + BtmpSize);
+			} else {
+				// x=solve(A,b) relies on QR decomposition of A, which is done using Apache commons-math
+				// matrix of size same as the first input
+				double interOutput = OptimizerUtils
+						.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+				return interOutput;
+			}
 
 		}
 

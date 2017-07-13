@@ -22,7 +22,7 @@
 
 import itertools
 from os.path import join
-from utils import split_rowcol, config_writer
+from utils import split_rowcol, config_writer, mat_type_check
 
 # This file contains configuration settings for data generation
 DATA_FORMAT = 'csv'
@@ -181,8 +181,8 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
     NC = int(int(col)/2)
 
     config = dict(R=row, C=col, NC=NC, MAXDOMAIN=MAXDOMAIN, DATA=DATA, TYPES=TYPES, SETSIZE=SETSIZE,
-                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
-                  fmt=DATA_FORMAT)
+                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1,
+                  INDEX2=INDEX2, fmt=DATA_FORMAT)
 
     config_writer(full_path + '.json', config)
 
@@ -207,7 +207,7 @@ def stats2_datagen(matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
-def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir):
+def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     datagen algorithms and return a dictionary that will be used for execution.
@@ -217,10 +217,16 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
     family type.
 
     matrix_type: String
-    Type of matrix to generate e.g dense or sparse
+    Type of matrix to generate e.g dense, sparse, all
 
     matrix_shape: String
     Shape of matrix to generate e.g 100k_10
+
+    datagen_dir: String
+    Path of the data generation directory
+
+    dense_algos: List
+    Algorithms that support only dense matrix type
 
     return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
@@ -233,13 +239,10 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
 
     # Cross Product of all configurations
     for current_family in distinct_families:
-        if current_family in FAMILY_NO_MATRIX_TYPE:
-            config = list(itertools.product(matrix_shape, ['dense']))
-            config_bundle[current_family] = config
-        else:
-            config = list(itertools.product(matrix_shape, matrix_type))
-            # clustering : [[10k_1, dense], [10k_2, dense], ...]
-            config_bundle[current_family] = config
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
+        config = list(itertools.product(matrix_shape, current_matrix_type))
+        # clustering : [[10k_1, dense], [10k_2, dense], ...]
+        config_bundle[current_family] = config
 
     config_packets = {}
     for current_family, configs in config_bundle.items():

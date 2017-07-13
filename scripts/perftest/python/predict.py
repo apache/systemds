@@ -21,10 +21,8 @@
 #-------------------------------------------------------------
 
 import sys
-import os
 from os.path import join
-import glob
-from utils import create_dir, config_writer
+from utils import config_writer, relevant_folders, mat_type_check
 
 # Contains configuration setting for predicting
 DATA_FORMAT = 'csv'
@@ -221,7 +219,7 @@ def glm_gamma_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     return full_path_predict
 
 
-def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
+def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, predict_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     prediction algorithms and return a dictionary that will be used for execution.
@@ -229,6 +227,12 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
     algo_payload : List of tuples
     The first tuple index contains algorithm name and the second index contains
     family type.
+
+    matrix_type: String
+    Type of matrix to generate e.g dense, sparse, all
+
+    matrix_shape: String
+    Shape of matrix to generate e.g 100k_10
 
     datagen_dir: String
     Path of the data generation directory
@@ -239,45 +243,39 @@ def config_packets_predict(algo_payload, datagen_dir, train_dir, predict_dir):
     predict_dir: String
     Path of the prediction directory
 
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: Dictionary  {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
     """
-
-    algo_payload_distinct = set(map(lambda x: x[0], algo_payload))
-
     config_bundle = {}
 
-    for k, v in algo_payload:
+    for k, _ in algo_payload:
         config_bundle[k] = []
 
-    for current_algo in algo_payload_distinct:
-        # Get all train folders related to the algorithm
-        train_path = join(train_dir, current_algo)
-        train_subdir = glob.glob(train_path + "*")
-        train_folders = list(filter(lambda x: os.path.isdir(x), train_subdir))
+    for current_algo, current_family in algo_payload:
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
+        train_folders = relevant_folders(train_dir, current_algo, current_family,
+                                         current_matrix_type, matrix_shape, 'train')
 
         if len(train_folders) == 0:
             print('training folders not present for {}'.format(current_algo))
             sys.exit()
 
         for current_train_folder in train_folders:
-            save_name = current_train_folder.split('/')[-1]
-            # Get all datagen folders
-            data_gen_folder_name = '.'.join(save_name.split('.')[1:-1])
-            data_gen_path = join(datagen_dir, data_gen_folder_name)
-            data_gen_subdir = glob.glob(data_gen_path + "*")
-            data_gen_folder = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
-
-            if len(data_gen_folder) == 0:
+            current_data_gen_dir = relevant_folders(datagen_dir, current_algo, current_family,
+                                                    current_matrix_type, matrix_shape, 'data-gen')
+            if len(current_data_gen_dir) == 0:
                 print('data-gen folders not present for {}'.format(current_family))
                 sys.exit()
 
-            # Ideally we will have more than one datagen directory to be found
-            current_data_gen_dir = list(data_gen_folder)[0]
-
+            save_name = current_train_folder.split('/')[-1]
             algo_func = '_'.join([current_algo.lower().replace('-', '_')] + ['predict'])
-            conf_path = globals()[algo_func](save_name, current_data_gen_dir,
+
+            # current_data_gen_dir has index 0 as we would expect one datagen for each algorithm
+            conf_path = globals()[algo_func](save_name, current_data_gen_dir[0],
                                              current_train_folder, predict_dir)
 
             config_bundle[current_algo].append(conf_path)

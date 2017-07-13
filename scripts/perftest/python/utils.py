@@ -27,11 +27,14 @@ import subprocess
 import shlex
 import re
 import logging
+import sys
+import glob
+from functools import reduce
 
 # This file contains all the utility functions required for performance test module
 
 
-def get_families(current_algo, ML_ALGO):
+def get_families(current_algo, ml_algo):
     """
     Given current algorithm we get its families.
 
@@ -46,7 +49,7 @@ def get_families(current_algo, ML_ALGO):
     """
 
     family_list = []
-    for family, algos in ML_ALGO.items():
+    for family, algos in ml_algo.items():
         if current_algo in algos:
             family_list.append(family)
     return family_list
@@ -138,7 +141,7 @@ def get_existence(path, action_mode):
     return exist
 
 
-def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, Time=True):
+def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, time=True):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -181,7 +184,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
-    if Time:
+    if time:
         proc1_log = []
         while proc1.poll() is None:
             raw_std_out = proc1.stdout.readline()
@@ -189,7 +192,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
             proc1_log.append(decode_raw)
             logging.log(10, decode_raw)
 
-        out1, err1 = proc1.communicate()
+        _, err1 = proc1.communicate()
 
         if "Error" in str(err1):
             print('Error Found in {}'.format(dml_file_name))
@@ -197,9 +200,9 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
         else:
             total_time = parse_time(proc1_log)
 
-        with open(execution_output_file, 'w') as f:
+        with open(execution_output_file, 'w') as file:
             for row in proc1_log:
-                f.write("%s\n" % str(row))
+                file.write("%s\n" % str(row))
 
     else:
         total_time = 'not_specified'
@@ -253,20 +256,18 @@ def exec_test_data(exec_type, path):
     exec_dml_and_parse_time(exec_type, test_split_script, config_file_name, args, False)
 
 
-def check_predict(current_algo, ML_PREDICT):
+def check_predict(current_algo, ml_predict):
     """
     To check if the current algorithm requires to run the predict
 
     current_algo: String
     Algorithm being processed
 
-    ML_PREDICT: Dictionary
+    ml_predict: Dictionary
     Key value pairs of algorithm and predict file to process
     """
-    if current_algo in ML_PREDICT.keys():
+    if current_algo in ml_predict.keys():
         return True
-    else:
-        return False
 
 
 def get_folder_metrics(folder_name, action_mode):
@@ -302,3 +303,88 @@ def get_folder_metrics(folder_name, action_mode):
         intercept = 'none'
 
     return mat_type, mat_shape, intercept
+
+
+def mat_type_check(current_family, matrix_types, dense_algos):
+    """
+    Some Algorithms support different matrix_type. This function give us the right matrix_type given
+    an algorithm
+
+    current_family: String
+    Current family being porcessed in this function
+
+    matrix_type: List
+    Type of matrix to generate dense, sparse, all
+
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
+    return: List
+    Return the list of right matrix types supported by the family
+    """
+    current_type = []
+    for current_matrix_type in matrix_types:
+        if current_matrix_type == 'all':
+            if current_family in dense_algos:
+                current_type.append('dense')
+            else:
+                current_type.append('dense')
+                current_type.append('sparse')
+
+        if current_matrix_type == 'sparse':
+            if current_family in dense_algos:
+                sys.exit('{} does not support {} matrix type'.format(current_family,
+                                                                     current_matrix_type))
+            else:
+                current_type.append(current_matrix_type)
+
+        if current_matrix_type == 'dense':
+            current_type.append(current_matrix_type)
+
+    return current_type
+
+
+def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
+    """
+    Finds the right folder to read the data based on given parameters
+
+    path: String
+    Location of data-gen and training folders
+
+    algo: String
+    Current algorithm being processed by this function
+
+    family: String
+    Current family being processed by this function
+
+    matrix_type: List
+    Type of matrix to generate dense, sparse, all
+
+    matrix_shape: List
+    Dimensions of the input matrix with rows and columns
+
+    mode: String
+    Based on mode and arguments we read the specific folders e.g data-gen folder or train folder
+
+    return: List
+    List of folder locations to read data from
+    """
+    folders = []
+    for current_matrix_type in matrix_type:
+        for current_matrix_shape in matrix_shape:
+            if mode == 'data-gen':
+                data_gen_path = join(path, family)
+                sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
+                path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
+
+            if mode == 'train':
+                train_path = join(path, algo)
+                sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
+                path_subdir = glob.glob(train_path + '.' + sub_folder_name + "*")
+
+            path_folders = list(filter(lambda x: os.path.isdir(x), path_subdir))
+            folders.append(path_folders)
+
+    folders_flat = reduce(lambda x, y: x + y, folders)
+
+    return folders_flat

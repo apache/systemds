@@ -151,8 +151,8 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-							.initialGPUMemBudget())) {
+					if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+							|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 						et = ExecType.GPU;
 					}
 					Transform transform1 = new Transform( lin, 

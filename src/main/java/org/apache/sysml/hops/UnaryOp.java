@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
@@ -536,7 +537,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	{
 		//overwrites default hops behavior
 		super.computeMemEstimate(memo);
-		
+
 		if( _op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL ) //specific case for meta data ops
 		{
 			_memEstimate = OptimizerUtils.INT_SIZE;
@@ -547,8 +548,13 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+	{
+		double sparsity = -1;
+		if (DMLScript.USE_ACCELERATOR) {
+			sparsity = 1.0; // Output is always dense (for now) on the GPU
+		} else {
+			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		}
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -561,6 +567,10 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 
+		}
+
+		if (DMLScript.USE_ACCELERATOR) {
+			OptimizerUtils.estimateSize(dim1, dim2); // Intermediate memory required to convert sparse to dense
 		}
 		
 		return ret;

@@ -149,8 +149,8 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				}				
 				else { //general case		
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-							.initialGPUMemBudget())) {
+					if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+							|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 						// Only implemented methods for GPU
 						if ((_op == AggOp.SUM    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 						 || (_op == AggOp.SUM_SQ && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
@@ -328,8 +328,15 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+	{
+		double sparsity = -1;
+		if (DMLScript.USE_ACCELERATOR) {
+			// The GPU version (for the time being) only does dense outputs
+			sparsity = 1.0;
+		} else {
+			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		}
+
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -351,14 +358,14 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				break;
 			case SUM:
 			case SUM_SQ:
-				//worst-case correction LASTROW / LASTCOLUMN 
+				//worst-case correction LASTROW / LASTCOLUMN
 				if( _direction == Direction.Col ) //(potentially sparse)
 					val = OptimizerUtils.estimateSizeExactSparsity(1, dim2, sparsity);
 				else if( _direction == Direction.Row ) //(always dense)
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
 				break;
 			case MEAN:
-				//worst-case correction LASTTWOROWS / LASTTWOCOLUMNS 
+				//worst-case correction LASTTWOROWS / LASTTWOCOLUMNS
 				if( _direction == Direction.Col ) //(potentially sparse)
 					val = OptimizerUtils.estimateSizeExactSparsity(2, dim2, sparsity);
 				else if( _direction == Direction.Row ) //(always dense)
@@ -366,10 +373,31 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				break;
 			case VAR:
 				//worst-case correction LASTFOURROWS / LASTFOURCOLUMNS
-				if( _direction == Direction.Col ) //(potentially sparse)
+				if (DMLScript.USE_ACCELERATOR) {
+					// The GPU implementation only operates on dense data
+					// It allocates 2 dense blocks to help with these ops:
+					// Assume Y = var(X) Or colVars(X), Or rowVars(X)
+					// 1. Y = mean/rowMeans/colMeans(X)               <-- Y is a scalar or row-vector or col-vector
+					// 2. temp1 = X - Y                               <-- temp1 is a matrix of size(X)
+					// 3. temp2 = temp1 ^ 2                           <-- temp2 is a matrix of size(X)
+					// 4. temp3 = sum/rowSums/colSums(temp2)          <-- temp3 is a scalar or a row-vector or col-vector
+					// 5. Y = temp3 / (size(X) or nrow(X) or ncol(X)) <-- Y is a scalar or a row-vector or col-vector
+
+					long in1dim1 = getInput().get(0).getDim1();
+					long in1dim2 = getInput().get(0).getDim2();
+
+					val = 2 * OptimizerUtils.estimateSize(in1dim1, in1dim2);    // For temp1 & temp2
+					if (_direction == Direction.Col){
+						val += OptimizerUtils.estimateSize(in1dim1, 1);   // For temp3
+					} else if (_direction == Direction.Row){
+						val += OptimizerUtils.estimateSize(1, in1dim2);  // For temp3
+					}
+
+				} else if( _direction == Direction.Col ) { //(potentially sparse)
 					val = OptimizerUtils.estimateSizeExactSparsity(4, dim2, sparsity);
-				else if( _direction == Direction.Row ) //(always dense)
+				} else if( _direction == Direction.Row ) { //(always dense)
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 4, 1.0);
+				}
 				break;
 			case MAXINDEX:
 			case MININDEX:

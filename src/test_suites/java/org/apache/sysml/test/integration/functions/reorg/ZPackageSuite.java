@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
 	FullOrderTest.class,
 	FullReverseTest.class,
 	FullTransposeTest.class,
-	MatrixReshapeTest.class
+	MatrixReshapeTest.class,
+	VectorReshapeTest.class,
 })
 
 

@@ -540,7 +540,7 @@ public class BinaryOp extends Hop
 		else //SCALAR-STRING and SCALAR-STRING (always CP)
 		{
 			append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
-				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType(), cbind, et);
+				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType(), cbind, ExecType.CP);
 			append.getOutputParameters().setDimensions(0,0,-1,-1,-1);
 		}
 		

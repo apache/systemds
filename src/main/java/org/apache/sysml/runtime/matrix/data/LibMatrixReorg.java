@@ -1588,7 +1588,14 @@ public class LibMatrixReorg
 					computeResultBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
 					MatrixBlock out = rix.get(ixtmp);
 					computeInBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
+
+                                        if (out == null) {
+                                          System.out.println("********** OUT is NULL-------------");
+                                        } else {
+                                          out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
+                                        }
+
+                                        //out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
 				}
 			}
 		}

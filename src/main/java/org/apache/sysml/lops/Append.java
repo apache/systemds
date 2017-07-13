@@ -25,17 +25,19 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
 
-public class AppendCP extends Lop
+public class Append extends Lop
 {
 	public static final String OPCODE = "append";
 
 	private boolean _cbind = true;
-	
-	public AppendCP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind) 
+	private ExecType _et;
+
+	public Append(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind, ExecType et)
 	{
 		super(Lop.Type.Append, dt, vt);
+		_et = et;
 		init(input1, input2, input3, dt, vt);
-		
+
 		_cbind = cbind;
 	}
 	
@@ -55,13 +57,13 @@ public class AppendCP extends Lop
 		boolean definesMRJob = false;
 		
 		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, _et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	@Override
 	public String toString() {
 
-		return " AppendCP: ";
+		return " Append: ";
 	}
 
 	//called when append executes in CP

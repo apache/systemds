@@ -36,7 +36,7 @@ public class AppendGAlignedSP extends Lop
 		super(Lop.Type.Append, dt, vt);		
 		init(input1, input2, input3, dt, vt);
 		
-		_cbind = true;
+		_cbind = cbind;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 

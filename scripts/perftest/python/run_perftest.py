@@ -80,6 +80,8 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'GLM_gamma': 'GLM-predict',
               'GLM_binomial': 'GLM-predict'}
 
+DENSE_TYPE_ALGOS = ['clustering', 'stats1', 'stats2']
+
 
 # Responsible for execution and metric logging
 def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode):
@@ -201,13 +203,11 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
     if 'data-gen' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
-        conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir)
-        #print(conf_packet)
+        conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir, DENSE_TYPE_ALGOS)
         for family_name, config_folders in conf_packet.items():
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
                 algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen')
-
                 # Statistic family do not require to be split
                 if family_name not in ['stats1', 'stats2']:
                     exec_test_data(exec_type, config)
@@ -216,7 +216,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-        conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir, train_dir)
+        conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir, train_dir, DENSE_TYPE_ALGOS)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
                 file_name = ML_TRAIN[algo_name]
@@ -228,9 +228,12 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         predict_dir = join(temp_dir, 'predict')
         create_dir(predict_dir)
         algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
-        if len(algos_to_run_perdict) < 0:
+        if len(algos_to_run_perdict) < 1:
+            # No algorithms with predict found
             pass
-        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir, train_dir, predict_dir)
+        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir, train_dir,
+                                             predict_dir, DENSE_TYPE_ALGOS)
+
         for algo_name, config_files in conf_packet.items():
                 for config in config_files:
                     file_name = ML_PREDICT[algo_name]
@@ -244,11 +247,12 @@ if __name__ == '__main__':
         print('SYSTEMML_HOME not found')
         sys.exit()
 
+    # Supported Arguments
+    mat_type = ['dense', 'sparse', 'all']
+    workload = ['data-gen', 'train', 'predict']
+    execution_mode = ['hybrid_spark', 'singlenode']
     # Default Arguments
-    default_mat_type = ['dense', 'sparse', 'all']
-    default_workload = ['data-gen', 'train', 'predict']
     default_mat_shape = ['10k_100']
-    default_execution_mode = ['hybrid_spark', 'singlenode']
 
     # Default temp directory, contains everything generated in perftest
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
@@ -275,11 +279,11 @@ if __name__ == '__main__':
                          '(Overrides --family, available : ' + ', '.join(sorted(all_algos)) + ')', metavar='',
                          choices=all_algos, nargs='+')
 
-    cparser.add_argument('--exec-type', default='singlenode', help='System-ML backend '
-                         'available : ' + ','.join(default_execution_mode), metavar='',
-                         choices=default_execution_mode)
+    cparser.add_argument('--exec-type', default='hybrid_spark', help='System-ML backend '
+                         'available : ' + ','.join(execution_mode), metavar='',
+                         choices=execution_mode)
     cparser.add_argument('--mat-type', default=['all'], help='space separated list of types of matrix to generate '
-                         'available : ' + ','.join(default_mat_type), metavar='', choices=default_mat_type,
+                         'available : ' + ','.join(mat_type), metavar='', choices=mat_type,
                          nargs='+')
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
                          'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')
@@ -287,9 +291,9 @@ if __name__ == '__main__':
                          'where generated, training and prediction data is put', metavar='')
     cparser.add_argument('--filename', default='perf_test', help='name of the output file for the perf'
                          ' metrics', metavar='')
-    cparser.add_argument('--mode', default=default_workload,
+    cparser.add_argument('--mode', default=workload,
                          help='space separated list of types of workloads to run (available: data-gen, train, predict)',
-                         metavar='', choices=default_workload, nargs='+')
+                         metavar='', choices=workload, nargs='+')
 
     # Args is a namespace
     args = cparser.parse_args()

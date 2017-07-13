@@ -221,7 +221,7 @@ def glm_gamma_predict(save_file_name, datagen_dir, train_dir, predict_dir):
     return full_path_predict
 
 
-def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, predict_dir):
+def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, predict_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     prediction algorithms and return a dictionary that will be used for execution.
@@ -245,6 +245,9 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
     predict_dir: String
     Path of the prediction directory
 
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: Dictionary  {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
@@ -255,7 +258,7 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        current_matrix_type = mat_type_check(current_family, matrix_type)
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
         train_folders = relevant_folders(train_dir, current_algo, current_family,
                                          current_matrix_type, matrix_shape, 'train')
 

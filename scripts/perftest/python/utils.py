@@ -307,7 +307,7 @@ def get_folder_metrics(folder_name, action_mode):
     return mat_type, mat_shape, intercept
 
 
-def mat_type_check(current_family, matrix_type):
+def mat_type_check(current_family, matrix_types, dense_algos):
     """
     Some Algorithms support different matrix_type. This function give us the right matrix_type given
     an algorithm
@@ -318,22 +318,23 @@ def mat_type_check(current_family, matrix_type):
     matrix_type: List
     Type of matrix to generate dense, sparse, all
 
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: List
     Return the list of right matrix types supported by the family
     """
-    family_no_matrix_type = ['clustering', 'stats1', 'stats2']
-
     current_type = []
-    for current_matrix_type in matrix_type:
+    for current_matrix_type in matrix_types:
         if current_matrix_type == 'all':
-            if current_family in family_no_matrix_type:
+            if current_family in dense_algos:
                 current_type.append('dense')
             else:
                 current_type.append('dense')
                 current_type.append('sparse')
 
         if current_matrix_type == 'sparse':
-            if current_family in family_no_matrix_type:
+            if current_family in dense_algos:
                 sys.exit('{} does not support {} matrix type'.format(current_family, current_matrix_type))
             else:
                 current_type.append(current_matrix_type)
@@ -349,12 +350,13 @@ def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
     Finds the right folder to read the data based on given parameters
 
     path: String
+    Location of data-gen and training folders
 
     algo: String
-    Current algorithm being prcessed by this function
+    Current algorithm being processed by this function
 
     family: String
-    Current family being prcessed by this function
+    Current family being processed by this function
 
     matrix_type: List
     Type of matrix to generate dense, sparse, all

@@ -207,7 +207,7 @@ def stats2_datagen(matrix_dim, matrix_type, datagen_dir):
     return full_path
 
 
-def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir):
+def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     datagen algorithms and return a dictionary that will be used for execution.
@@ -222,6 +222,12 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
     matrix_shape: String
     Shape of matrix to generate e.g 100k_10
 
+    datagen_dir: String
+    Path of the data generation directory
+
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: Dictionary {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
@@ -233,7 +239,7 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir)
 
     # Cross Product of all configurations
     for current_family in distinct_families:
-        current_matrix_type = mat_type_check(current_family, matrix_type)
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
         config = list(itertools.product(matrix_shape, current_matrix_type))
         # clustering : [[10k_1, dense], [10k_2, dense], ...]
         config_bundle[current_family] = config

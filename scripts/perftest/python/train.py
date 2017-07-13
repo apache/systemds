@@ -357,7 +357,7 @@ def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir):
     return data_folders
 
 
-def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir):
+def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     input training algorithms and return a dictionary that will be used for execution.
@@ -378,6 +378,9 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
     train_dir: String
     Path of the training directory
 
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
@@ -389,7 +392,7 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        current_matrix_type = mat_type_check(current_family, matrix_type)
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
         data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family, current_matrix_type,
                                             matrix_shape, 'data-gen')
         if len(data_gen_folders) == 0:

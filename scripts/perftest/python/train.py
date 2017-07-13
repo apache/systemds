@@ -21,7 +21,6 @@
 #-------------------------------------------------------------
 
 import sys
-import os
 from os.path import join
 from utils import config_writer, relevant_folders, mat_type_check
 from functools import reduce
@@ -47,8 +46,8 @@ def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
         model = join(full_path_train, 'model.data')
         Log = join(full_path_train, 'Log.data')
 
-        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter, model=model,
-                      Log=Log, fmt=DATA_FORMAT)
+        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter,
+                      model=model, Log=Log, fmt=DATA_FORMAT)
         config_writer(full_path_train + '.json', config)
 
     return data_folders
@@ -116,8 +115,8 @@ def multinomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
         model = join(full_path_train, 'model.data')
         Log = join(full_path_train, 'Log.data')
 
-        config = dict(X=X, Y=Y, icpt=icpt, classes=150, reg=reg, tol=tol, maxiter=maxiter, model=model,
-                      Log=Log, fmt=DATA_FORMAT)
+        config = dict(X=X, Y=Y, icpt=icpt, classes=150, reg=reg, tol=tol, maxiter=maxiter,
+                      model=model, Log=Log, fmt=DATA_FORMAT)
         config_writer(full_path_train + '.json', config)
         data_folders.append(full_path_train)
 
@@ -388,13 +387,13 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
 
     config_bundle = {}
 
-    for k, v in algo_payload:
+    for k, _ in algo_payload:
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
         current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
-        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family, current_matrix_type,
-                                            matrix_shape, 'data-gen')
+        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family,
+                                            current_matrix_type, matrix_shape, 'data-gen')
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))
             sys.exit()

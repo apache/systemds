@@ -34,7 +34,7 @@ from functools import reduce
 # This file contains all the utility functions required for performance test module
 
 
-def get_families(current_algo, ML_ALGO):
+def get_families(current_algo, ml_algo):
     """
     Given current algorithm we get its families.
 
@@ -49,7 +49,7 @@ def get_families(current_algo, ML_ALGO):
     """
 
     family_list = []
-    for family, algos in ML_ALGO.items():
+    for family, algos in ml_algo.items():
         if current_algo in algos:
             family_list.append(family)
     return family_list
@@ -141,7 +141,7 @@ def get_existence(path, action_mode):
     return exist
 
 
-def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, Time=True):
+def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, time=True):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -184,7 +184,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
-    if Time:
+    if time:
         proc1_log = []
         while proc1.poll() is None:
             raw_std_out = proc1.stdout.readline()
@@ -192,7 +192,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
             proc1_log.append(decode_raw)
             logging.log(10, decode_raw)
 
-        out1, err1 = proc1.communicate()
+        _, err1 = proc1.communicate()
 
         if "Error" in str(err1):
             print('Error Found in {}'.format(dml_file_name))
@@ -200,9 +200,9 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
         else:
             total_time = parse_time(proc1_log)
 
-        with open(execution_output_file, 'w') as f:
+        with open(execution_output_file, 'w') as file:
             for row in proc1_log:
-                f.write("%s\n" % str(row))
+                file.write("%s\n" % str(row))
 
     else:
         total_time = 'not_specified'
@@ -256,20 +256,18 @@ def exec_test_data(exec_type, path):
     exec_dml_and_parse_time(exec_type, test_split_script, config_file_name, args, False)
 
 
-def check_predict(current_algo, ML_PREDICT):
+def check_predict(current_algo, ml_predict):
     """
     To check if the current algorithm requires to run the predict
 
     current_algo: String
     Algorithm being processed
 
-    ML_PREDICT: Dictionary
+    ml_predict: Dictionary
     Key value pairs of algorithm and predict file to process
     """
-    if current_algo in ML_PREDICT.keys():
+    if current_algo in ml_predict.keys():
         return True
-    else:
-        return False
 
 
 def get_folder_metrics(folder_name, action_mode):
@@ -335,7 +333,8 @@ def mat_type_check(current_family, matrix_types, dense_algos):
 
         if current_matrix_type == 'sparse':
             if current_family in dense_algos:
-                sys.exit('{} does not support {} matrix type'.format(current_family, current_matrix_type))
+                sys.exit('{} does not support {} matrix type'.format(current_family,
+                                                                     current_matrix_type))
             else:
                 current_type.append(current_matrix_type)
 

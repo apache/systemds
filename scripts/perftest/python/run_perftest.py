@@ -26,13 +26,14 @@ import argparse
 from functools import reduce
 import os
 from os.path import join
-from utils import get_families, config_reader, create_dir,  get_existence, \
-    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, mat_type_check
 import logging
 from datetime import datetime
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
+from utils import get_families, config_reader, create_dir, get_existence, \
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics
+
 
 # A packet is a dictionary
 # with key as the algorithm
@@ -127,7 +128,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode)
         print('data already exists {}'.format(config_path))
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, config_file_name,  args)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, config_file_name, args)
 
     # Write a _SUCCESS file only if time is found and in data-gen action_mode
     if len(time.split('.')) == 2 and action_mode == 'data-gen':
@@ -203,7 +204,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
     if 'data-gen' in mode:
         data_gen_dir = join(temp_dir, 'data-gen')
         create_dir(data_gen_dir)
-        conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir, DENSE_TYPE_ALGOS)
+        conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir,
+                                             DENSE_TYPE_ALGOS)
         for family_name, config_folders in conf_packet.items():
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
@@ -216,7 +218,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         create_dir(train_dir)
-        conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir, train_dir, DENSE_TYPE_ALGOS)
+        conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir,
+                                           train_dir, DENSE_TYPE_ALGOS)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
                 file_name = ML_TRAIN[algo_name]
@@ -231,8 +234,8 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
         if len(algos_to_run_perdict) < 1:
             # No algorithms with predict found
             pass
-        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir, train_dir,
-                                             predict_dir, DENSE_TYPE_ALGOS)
+        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir,
+                                             train_dir, predict_dir, DENSE_TYPE_ALGOS)
 
         for algo_name, config_files in conf_packet.items():
                 for config in config_files:

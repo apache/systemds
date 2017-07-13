@@ -21,10 +21,8 @@
 #-------------------------------------------------------------
 
 import sys
-import os
 from os.path import join
-import glob
-from utils import create_dir, config_writer, relevant_folders, mat_type_check
+from utils import config_writer, relevant_folders, mat_type_check
 
 # Contains configuration setting for predicting
 DATA_FORMAT = 'csv'
@@ -254,7 +252,7 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
     """
     config_bundle = {}
 
-    for k, v in algo_payload:
+    for k, _ in algo_payload:
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:

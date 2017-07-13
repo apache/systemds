@@ -181,8 +181,8 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir):
     NC = int(int(col)/2)
 
     config = dict(R=row, C=col, NC=NC, MAXDOMAIN=MAXDOMAIN, DATA=DATA, TYPES=TYPES, SETSIZE=SETSIZE,
-                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1, INDEX2=INDEX2,
-                  fmt=DATA_FORMAT)
+                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1,
+                  INDEX2=INDEX2, fmt=DATA_FORMAT)
 
     config_writer(full_path + '.json', config)
 

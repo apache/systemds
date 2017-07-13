@@ -989,15 +989,30 @@ public class Explain
 		}
 	}
 
-	private static int countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
+	/**
+	 * Count the number of Hadoop instructions, CP instructions, Spark
+	 * instructions, and/or Spark reblock instructions in a list of
+	 * instructions.
+	 *
+	 * @param instSet
+	 *            list of instructions
+	 * @param counts
+	 *            explain counts
+	 * @param MR
+	 *            if true, count Hadoop instructions
+	 * @param CP
+	 *            if true, count CP instructions
+	 * @param SP
+	 *            if true, count Spark instructions and Spark reblock
+	 *            instructions
+	 */
+	private static void countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
 	{
-		int ret = 0;
-		
 		for( Instruction inst : instSet )
 		{
 			if( MR && inst instanceof MRJobInstruction ) 
 				counts.numJobs++;
-			else if( SP && inst instanceof CPInstruction )
+			else if( CP && inst instanceof CPInstruction )
 				counts.numCPInst++;
 			else if( SP && inst instanceof SPInstruction )
 				counts.numJobs++;
@@ -1006,8 +1021,6 @@ public class Explain
 			if( SP && (inst instanceof CSVReblockSPInstruction || inst instanceof ReblockSPInstruction) )
 				counts.numReblocks++;
 		}
-		
-		return ret;
 	}
 
 	private static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level) 

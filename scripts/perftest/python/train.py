@@ -21,10 +21,8 @@
 #-------------------------------------------------------------
 
 import sys
-import glob
-import os
 from os.path import join
-from utils import config_writer
+from utils import config_writer, relevant_folders, mat_type_check
 from functools import reduce
 
 # Contains configuration setting for training
@@ -48,8 +46,8 @@ def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
         model = join(full_path_train, 'model.data')
         Log = join(full_path_train, 'Log.data')
 
-        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter, model=model,
-                      Log=Log, fmt=DATA_FORMAT)
+        config = dict(X=X, Y=Y, icpt=icpt, classes=2, reg=reg, tol=tol, maxiter=maxiter,
+                      model=model, Log=Log, fmt=DATA_FORMAT)
         config_writer(full_path_train + '.json', config)
 
     return data_folders
@@ -117,8 +115,8 @@ def multinomial_m_svm_train(save_folder_name, datagen_dir, train_dir):
         model = join(full_path_train, 'model.data')
         Log = join(full_path_train, 'Log.data')
 
-        config = dict(X=X, Y=Y, icpt=icpt, classes=150, reg=reg, tol=tol, maxiter=maxiter, model=model,
-                      Log=Log, fmt=DATA_FORMAT)
+        config = dict(X=X, Y=Y, icpt=icpt, classes=150, reg=reg, tol=tol, maxiter=maxiter,
+                      model=model, Log=Log, fmt=DATA_FORMAT)
         config_writer(full_path_train + '.json', config)
         data_folders.append(full_path_train)
 
@@ -358,7 +356,7 @@ def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir):
     return data_folders
 
 
-def config_packets_train(algo_payload, datagen_dir, train_dir):
+def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, dense_algos):
     """
     This function has two responsibilities. Generate the configuration files for
     input training algorithms and return a dictionary that will be used for execution.
@@ -367,39 +365,45 @@ def config_packets_train(algo_payload, datagen_dir, train_dir):
     The first tuple index contains algorithm name and the second index contains
     family type.
 
+    matrix_type: String
+    Type of matrix to generate e.g dense, sparse, all
+
+    matrix_shape: String
+    Shape of matrix to generate e.g 100k_10
+
     datagen_dir: String
     Path of the data generation directory
 
     train_dir: String
     Path of the training directory
 
+    dense_algos: List
+    Algorithms that support only dense matrix type
+
     return: {string: list}
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
-
     """
 
     config_bundle = {}
 
-    for k, v in algo_payload:
+    for k, _ in algo_payload:
         config_bundle[k] = []
 
     for current_algo, current_family in algo_payload:
-        data_gen_path = join(datagen_dir, current_family)
-        data_gen_subdir = glob.glob(data_gen_path + "*")
-
-        # Filter for specific data gen
-        data_gen_folders = list(filter(lambda x: os.path.isdir(x), data_gen_subdir))
+        current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
+        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family,
+                                            current_matrix_type, matrix_shape, 'data-gen')
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))
             sys.exit()
 
-        for current_folder in data_gen_folders:
-            file_path_last = current_folder.split('/')[-1]
+        for current_datagen_dir in data_gen_folders:
+            file_path_last = current_datagen_dir.split('/')[-1]
             save_name = '.'.join([current_algo] + [file_path_last])
             algo_func = '_'.join([current_family] + [current_algo.lower().replace('-', '_')]
                                  + ['train'])
-            conf_path = globals()[algo_func](save_name, current_folder, train_dir)
+            conf_path = globals()[algo_func](save_name, current_datagen_dir, train_dir)
             config_bundle[current_algo].append(conf_path)
 
     config_packets = {}

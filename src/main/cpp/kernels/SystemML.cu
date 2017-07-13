@@ -216,7 +216,7 @@ __global__ void matrix_matrix_cellwise_op(double* A, double* B, double* C,
 			bIndex = iy; // rlen == 1
 		C[outIndex] = binaryOp(A[aIndex], B[bIndex], op);
 		//printf("C[%d] = A[%d](%f) B[%d](%f) (%d %d)\n", outIndex, aIndex, A[aIndex], bIndex,  B[bIndex], (ix+1), (iy+1));
-    __syncthreads();
+	__syncthreads();
 	}
 }
 
@@ -238,9 +238,9 @@ __global__ void matrix_scalar_op(double* A, double scalar, double* C, int size, 
 			C[index] = binaryOp(scalar, A[index], op);
 		} else {
 			C[index] = binaryOp(A[index], scalar, op);
-    }
+		}
 	}
-  __syncthreads();
+	__syncthreads();
 }
 
 
@@ -257,6 +257,78 @@ __global__ void fill(double* A, double scalar, int lenA) {
 	    A[index] = scalar;
 	}
 }
+
+/**
+ * Appends Matrix B to the right side of Matrix A into a new matrix C
+ *         | 1 2 3 4 |   | 8 8 8 |     | 1 2 3 4 8 8 8 |
+ * cbind ( | 9 8 7 6 | , | 7 7 7 | ) = | 9 8 7 6 7 7 7 |
+ *         | 4 3 2 1 |   | 9 9 9 |     | 4 3 2 1 9 9 9 |
+ * @param A      input matrix A allocated on the GPU
+ * @param B      input matrix B allocated on the GPU
+ * @param C      input matrix C allocated on the GPU
+ * @param rowsA  rows in A
+ * @param colsA  columns in A
+ * @param rowsB  rows in B
+ * @param colsB  columns in B
+ */
+extern "C"
+__global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+
+	int colsC = colsA + colsB;
+	int rowsC = rowsA;
+
+	// Copy an element of A into C into the appropriate location
+	if (ix < rowsA && iy < colsA) {
+		double elemA = A[ix * colsA + iy];
+		C[ix * colsC + iy] = elemA;
+	}
+
+	// Copy an element of B into C into the appropriate location
+	if (ix < rowsB && iy < colsB) {
+		double elemB = B[ix * colsB + iy];
+		C[ix * colsC + (iy + colsA)] = elemB;
+	}
+}
+
+
+/**
+ * Appends Matrix B to the bottom of Matrix A into a new matrix C
+ *         | 2 3 4 |   | 8 8 8 |     | 2 3 4 |
+ * rbind ( | 8 7 6 | , | 7 7 7 | ) = | 8 7 6 |
+ *         | 3 2 1 |                 | 3 2 1 |
+                                     | 8 8 8 |
+                                     | 7 7 7 |
+ * @param A      input matrix A allocated on the GPU
+ * @param B      input matrix B allocated on the GPU
+ * @param C      input matrix C allocated on the GPU
+ * @param rowsA  rows in A
+ * @param colsA  columns in A
+ * @param rowsB  rows in B
+ * @param colsB  columns in B
+ */
+extern "C"
+__global__ void rbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+
+	int rowsC = rowsA + rowsB;
+	int colsC = colsA;
+
+	// Copy an element of A into C into the appropriate location
+	if (ix < rowsA && iy < colsA) {
+		double elemA = A[ix * colsA + iy];
+		C[ix * colsC + iy] = elemA;
+	}
+
+	// Copy an element of B into C into the appropriate location
+	if (ix < rowsB && iy < colsB) {
+		double elemB = B[ix * colsB + iy];
+		C[(ix + rowsA) * colsC + iy] = elemB;
+	}
+}
+
 
 /**
  * Does a reduce operation over all elements of the array.

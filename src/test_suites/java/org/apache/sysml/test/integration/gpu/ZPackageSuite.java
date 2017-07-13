@@ -20,6 +20,7 @@
 package org.apache.sysml.test.integration.gpu;
 
 import org.apache.sysml.test.gpu.AggregateUnaryOpTests;
+import org.apache.sysml.test.gpu.AppendTest;
 import org.apache.sysml.test.gpu.BinaryOpTests;
 import org.apache.sysml.test.gpu.MatrixMatrixElementWiseOpTests;
 import org.apache.sysml.test.gpu.MatrixMultiplicationOpTest;
@@ -33,6 +34,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class) @SuiteClasses({
 	BinaryOpTests.class,
+	AppendTest.class,
     ScalarMatrixElementwiseOpTests.class,
 	MatrixMatrixElementWiseOpTests.class,
 	ReorgOpTests.class,

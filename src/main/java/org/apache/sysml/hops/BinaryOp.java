@@ -23,24 +23,26 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Append;
+import org.apache.sysml.lops.AppendG;
 import org.apache.sysml.lops.AppendGAlignedSP;
 import org.apache.sysml.lops.AppendM;
-import org.apache.sysml.lops.AppendCP;
-import org.apache.sysml.lops.AppendG;
 import org.apache.sysml.lops.AppendR;
 import org.apache.sysml.lops.Binary;
-import org.apache.sysml.lops.BinaryScalar;
 import org.apache.sysml.lops.BinaryM;
+import org.apache.sysml.lops.BinaryScalar;
 import org.apache.sysml.lops.BinaryUAggChain;
 import org.apache.sysml.lops.CentralMoment;
 import org.apache.sysml.lops.CoVariance;
 import org.apache.sysml.lops.CombineBinary;
+import org.apache.sysml.lops.CombineBinary.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PartialAggregate;
 import org.apache.sysml.lops.PickByCount;
@@ -48,8 +50,6 @@ import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Unary;
 import org.apache.sysml.lops.UnaryCP;
-import org.apache.sysml.lops.CombineBinary.OperationTypes;
-import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -527,15 +527,20 @@ public class BinaryOp extends Hop
 			}
 			else //CP
 			{
+				if (DMLScript.USE_ACCELERATOR && dt1 == DataType.MATRIX && (DMLScript.FORCE_ACCELERATOR
+						|| getMemEstimate() < GPUContextPool.initialGPUMemBudget())) {
+					et = ExecType.GPU;
+				}
+
 				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
-				append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind);
+				append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind, et);
 				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
 			}
 		}
 		else //SCALAR-STRING and SCALAR-STRING (always CP)
 		{
-			append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType(), cbind);
+			append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
+				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType(), cbind, ExecType.CP);
 			append.getOutputParameters().setDimensions(0,0,-1,-1,-1);
 		}
 		

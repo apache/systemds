@@ -131,7 +131,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//setup thread-local memory if necessary
-		if( allocTmp )
+		if( allocTmp &&_reqVectMem > 0 )
 			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n, n2);
 		
 		//core sequential execute
@@ -144,7 +144,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			executeSparse(a.getSparseBlock(), b, scalars, c, n, 0, m);
 		
 		//post-processing
-		if( allocTmp )
+		if( allocTmp &&_reqVectMem > 0 )
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
 		out.recomputeNonZeros();
 		out.examSparsity();
@@ -155,7 +155,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		throws DMLRuntimeException
 	{
 		//redirect to serial execution
-		if( k <= 1 || (long)inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
+		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.checkParColumnAgg(inputs.get(0), k, false))
+			|| (long)inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
 			execute(inputs, scalarObjects, out);
 			return;
 		}
@@ -320,7 +321,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		public double[] call() throws DMLRuntimeException {
 			
 			//allocate vector intermediates and partial output
-			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
+			if( _reqVectMem > 0 )
+				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
 			double[] c = new double[(_clen2>0)?_clen*_clen2 : _clen];
 			
 			if( _a instanceof CompressedMatrixBlock )
@@ -330,7 +332,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _clen, _rl, _ru);
 			
-			LibSpoofPrimitives.cleanupThreadLocalMemory();
+			if( _reqVectMem > 0 )
+				LibSpoofPrimitives.cleanupThreadLocalMemory();
 			return c;
 		}
 	}
@@ -363,7 +366,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		@Override
 		public Long call() throws DMLRuntimeException {
 			//allocate vector intermediates
-			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
+			if( _reqVectMem > 0 )
+				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
 			
 			if( _a instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
@@ -371,7 +375,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
-			LibSpoofPrimitives.cleanupThreadLocalMemory();
+			
+			if( _reqVectMem > 0 )
+				LibSpoofPrimitives.cleanupThreadLocalMemory();
 			
 			//maintain nnz for row partition
 			return _c.recomputeNonZeros(_rl, _ru-1, 0, _c.getNumColumns()-1);

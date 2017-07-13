@@ -320,6 +320,7 @@ public class TemplateRow extends TemplateBase
 			//special case for cbind with zeros
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			out = new CNodeUnary(cdata1, UnaryType.CBIND0);
+			inHops.remove(hop.getInput().get(1)); //rm 0-matrix
 		}
 		else if(hop instanceof BinaryOp)
 		{

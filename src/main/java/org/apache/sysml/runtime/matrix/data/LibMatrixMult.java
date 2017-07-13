@@ -309,9 +309,7 @@ public class LibMatrixMult
 		
 		//check too high additional memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
-		if( 8L * mV.rlen * k > MEM_OVERHEAD_THRESHOLD 
-			|| 4L * mX.rlen * mX.clen < PAR_MINFLOP_THRESHOLD) 
-		{ 
+		if( !checkParColumnAgg(mX, k, true) ) { 
 			matrixMultChain(mX, mV, mW, ret, ct);
 			return;
 		}
@@ -3530,6 +3528,11 @@ public class LibMatrixMult
 	public static boolean isSkinnyRightHandSide(long m1rlen, long m1clen, long m2rlen, long m2clen) {
 		return m1rlen > m2clen && m2rlen > m2clen && m2clen > 1 
 			&& m2clen < 64 && 8*m2rlen*m2clen < L2_CACHESIZE;
+	}
+	
+	public static boolean checkParColumnAgg(MatrixBlock m1, int k, boolean inclFLOPs) {
+		return (8L * m1.clen * k <= MEM_OVERHEAD_THRESHOLD 
+			&& (!inclFLOPs || 4L * m1.rlen * m1.clen >= PAR_MINFLOP_THRESHOLD));
 	}
 
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {

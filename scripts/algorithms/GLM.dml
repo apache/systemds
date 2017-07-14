@@ -558,7 +558,7 @@ check_if_supported =
         else if (link_type == 2)                      print ("Binomial.logit");        
         else if (link_type == 3)                      print ("Binomial.probit");       
         else if (link_type == 4)                      print ("Binomial.cloglog");      
-        else (link_type == 5)                         print ("Binomial.cauchit");     
+        else if (link_type == 5)                         print ("Binomial.cauchit");     
     }   
     if (is_supported == 0) {
         print ("Response matrix with " + ncol_y + " columns, distribution family (" + dist_type + ", " + var_power

@@ -105,13 +105,13 @@ dispersion = as.double (dispersion);
 
 if (dist_type == 3) {
     link_type = 2;
-} else { if (link_type == 0) { # Canonical Link
+} else if (link_type == 0) { # Canonical Link
     if (dist_type == 1) {
         link_type = 1;
         link_power = 1.0 - var_power;
-    } else { if (dist_type == 2) {
+    } else if (dist_type == 2) {
             link_type = 2;
-}}} }
+}   }
 
 X = read (fileX);
 num_records  = nrow (X);
@@ -343,36 +343,36 @@ glm_means_and_vars =
     # POWER DISTRIBUTION
         if          (link_power ==  0) {
             y_mean = exp (linear_terms);
-        } else { if (link_power ==  1.0) {
+        } else if (link_power ==  1.0) {
             y_mean = linear_terms;
-        } else { if (link_power == -1.0) {
+        } else if (link_power == -1.0) {
             y_mean = 1.0 / linear_terms;
         } else {
             y_mean = linear_terms ^ (1.0 / link_power);
-        }}}
+        }
         if (var_power == 0) {
             var_function = matrix (1.0, rows = num_points, cols = 1);
-        } else { if (var_power == 1.0) {
+        } else if (var_power == 1.0) {
             var_function = y_mean;
         } else {
             var_function = y_mean ^ var_power;
-        }}
+        }
         means = y_mean;
         vars = var_function;
-    } else { if (dist_type == 2 & link_type >= 1 & link_type <= 5) {
+    } else if (dist_type == 2 & link_type >= 1 & link_type <= 5) {
     # BINOMIAL/BERNOULLI DISTRIBUTION
         y_prob = matrix (0.0, rows = num_points, cols = 2);
         if          (link_type == 1 & link_power == 0)  { # Binomial.log
             y_prob [, 1]  = exp (linear_terms);
             y_prob [, 2]  = 1.0 - y_prob [, 1];
-        } else { if (link_type == 1 & link_power != 0)  { # Binomial.power_nonlog
+        } else if (link_type == 1 & link_power != 0)  { # Binomial.power_nonlog
             y_prob [, 1]  = linear_terms ^ (1.0 / link_power);
             y_prob [, 2]  = 1.0 - y_prob [, 1];
-        } else { if (link_type == 2)                      { # Binomial.logit
+        } else if (link_type == 2)                      { # Binomial.logit
             elt = exp (linear_terms);
             y_prob [, 1]  = elt / (1.0 + elt);
             y_prob [, 2]  = 1.0 / (1.0 + elt);
-        } else { if (link_type == 3)                      { # Binomial.probit
+        } else if (link_type == 3)                      { # Binomial.probit
             sign_lt = 2 * (linear_terms >= 0) - 1;
             t_gp = 1.0 / (1.0 + abs (linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
             erf_corr =
@@ -384,20 +384,20 @@ glm_means_and_vars =
             y_prob [, 1] = (1 + sign_lt) - erf_corr;
             y_prob [, 2] = (1 - sign_lt) + erf_corr;
             y_prob = y_prob / 2;
-        } else { if (link_type == 4)                      { # Binomial.cloglog
+        } else if (link_type == 4)                      { # Binomial.cloglog
             elt = exp (linear_terms);
             is_too_small = ((10000000 + elt) == 10000000);
             y_prob [, 2] = exp (- elt);
             y_prob [, 1] = (1 - is_too_small) * (1.0 - y_prob [, 2]) + is_too_small * elt * (1.0 - elt / 2);
-        } else { if (link_type == 5)                      { # Binomial.cauchit
+        } else if (link_type == 5)                      { # Binomial.cauchit
             atan_linear_terms = atan (linear_terms);
             y_prob [, 1] = 0.5 + atan_linear_terms / 3.1415926535897932384626433832795;
             y_prob [, 2] = 0.5 - atan_linear_terms / 3.1415926535897932384626433832795;
-        }}}}}}
+        }
         means = y_prob;
         ones_ctg = matrix (1, rows = 2, cols = 1);
         vars  = means * (means %*% (1 - diag (ones_ctg)));
-    } else { if (dist_type == 3) {
+    } else if (dist_type == 3) {
     # MULTINOMIAL LOGIT DISTRIBUTION
         elt = exp (linear_terms);
         ones_pts = matrix (1, rows = num_points, cols = 1);
@@ -408,7 +408,7 @@ glm_means_and_vars =
     } else {
         means = matrix (0.0, rows = num_points, cols = 1);
         vars  = matrix (0.0, rows = num_points, cols = 1);
-}   }}}
+}   }
 
 glm_partial_loglikelihood_for_power_dist_and_link =   # Assumes: dist_type == 1 & link_type == 1
     function (Matrix[double] linear_terms, Matrix[double] Y, double var_power, double link_power)
@@ -431,10 +431,10 @@ glm_partial_loglikelihood_for_power_dist_and_link =   # Assumes: dist_type == 1 
         if (var_power == 2.0 & link_power == 0)  { # Gamma.log
             natural_parameters = - exp (- linear_terms);
             b_cumulant = linear_terms;
-        } else { if (var_power == 2.0)  { # Gamma.power_nonlog
+        } else if (var_power == 2.0)  { # Gamma.power_nonlog
             natural_parameters = - linear_terms ^ (- 1.0 / link_power);
             b_cumulant = log (linear_terms) / link_power;
-        } else { if (link_power == 0) { # PowerDist.log
+        } else if (link_power == 0) { # PowerDist.log
             natural_parameters = exp (linear_terms * (1.0 - var_power)) / (1.0 - var_power);
             b_cumulant = exp (linear_terms * (2.0 - var_power)) / (2.0 - var_power);
         } else {                          # PowerDist.power_nonlog
@@ -442,6 +442,6 @@ glm_partial_loglikelihood_for_power_dist_and_link =   # Assumes: dist_type == 1 
             natural_parameters = (linear_terms ^ power_np) / (1.0 - var_power);
             power_cu = (2.0 - var_power) / link_power;
             b_cumulant = (linear_terms ^ power_cu) / (2.0 - var_power);
-        }}}
+        }
         log_l_part = Y * natural_parameters - b_cumulant;
 }   }

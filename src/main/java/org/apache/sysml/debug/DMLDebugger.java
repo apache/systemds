@@ -23,8 +23,6 @@ import java.io.PrintStream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.math.IntRange;
-
-import org.apache.sysml.debug.DMLDebuggerFunctions;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;

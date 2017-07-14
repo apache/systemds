@@ -27,10 +27,6 @@ import org.apache.sysml.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.FrameAppendCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.MatrixAppendCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.ScalarAppendCPInstruction;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -62,6 +58,7 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
+		@SuppressWarnings("unused")
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);

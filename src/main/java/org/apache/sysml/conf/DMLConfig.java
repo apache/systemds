@@ -172,8 +172,8 @@ public class DMLConfig
 		factory.setIgnoringComments(true); //ignore XML comments
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		Document domTree = null;
-		if (_fileName.startsWith("hdfs:") ||
-		    _fileName.startsWith("gpfs:") )  // config file from DFS
+		if( _fileName.startsWith("hdfs:") || _fileName.startsWith("gpfs:")
+			|| IOUtilFunctions.isObjectStoreFileScheme(new Path(_fileName)) )
 		{
 			Path configFilePath = new Path(_fileName);
 			FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath);

@@ -94,11 +94,12 @@ public abstract class ParserWrapper {
 		try 
 		{
 			//read from hdfs or gpfs file system
-			if(    script.startsWith("hdfs:") 
-				|| script.startsWith("gpfs:") ) 
+			if( script.startsWith("hdfs:") || script.startsWith("gpfs:")
+				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(script)) ) 
 			{
-				LOG.debug("Looking for the following file in HDFS or GPFS: " + script);
 				Path scriptPath = new Path(script);
+				String scheme = (scriptPath.toUri()!=null) ? scriptPath.toUri().getScheme() : null;
+				LOG.debug("Looking for the following file in "+scheme+": " + script);
 				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}

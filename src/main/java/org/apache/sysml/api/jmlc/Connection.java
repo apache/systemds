@@ -250,8 +250,8 @@ public class Connection implements Closeable
 		try 
 		{
 			//read from hdfs or gpfs file system
-			if(    fname.startsWith("hdfs:") 
-				|| fname.startsWith("gpfs:") ) 
+			if(    fname.startsWith("hdfs:") || fname.startsWith("gpfs:")
+				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fname)) ) 
 			{ 
 				Path scriptPath = new Path(fname);
 				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);

@@ -567,8 +567,8 @@ public class DMLScript
 			try 
 			{
 				//read from hdfs or gpfs file system
-				if(    fileName.startsWith("hdfs:")
-					|| fileName.startsWith("gpfs:") )
+				if(    fileName.startsWith("hdfs:") || fileName.startsWith("gpfs:")
+					|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fileName)) )
 				{ 
 					Path scriptPath = new Path(fileName);
 					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
@@ -588,8 +588,7 @@ public class DMLScript
 					sb.append( "\n" );
 				}
 			}
-			catch (IOException ex)
-			{
+			catch (IOException ex) {
 				LOG.error("Failed to read the script from the file system", ex);
 				throw ex;
 			}

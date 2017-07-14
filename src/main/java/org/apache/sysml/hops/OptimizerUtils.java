@@ -356,7 +356,7 @@ public class OptimizerUtils
 		}
 		
 		//handle parallel text io (incl awareness of thread contention in <jdk8)
-		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_IO)) {
 			cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
@@ -371,7 +371,7 @@ public class OptimizerUtils
 		}
 
 		//handle parallel matrix mult / rand configuration
-		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_OPS)) {
 			cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
 		}	
 		

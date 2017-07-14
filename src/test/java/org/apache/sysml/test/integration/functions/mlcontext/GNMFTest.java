@@ -200,14 +200,14 @@ public class GNMFTest extends AutomatedTestBase
 			
 			if(numRegisteredOutputs >= 2) {
 				script.out("W");
-				ml.setConfigProperty("cp.parallel.matrixmult", "false");
+				ml.setConfigProperty("cp.parallel.ops", "false");
 			}
 			
 			MLResults results = ml.execute(script);
 			
 			if(numRegisteredOutputs >= 2) {
 				String configStr = ConfigurationManager.getDMLConfig().getConfigInfo();
-				if(configStr.contains("cp.parallel.matrixmult: true"))
+				if(configStr.contains("cp.parallel.ops: true"))
 					Assert.fail("Configuration not updated via setConfig");
 			}
 			

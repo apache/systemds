@@ -20,6 +20,6 @@
 <numreducers>10</numreducers>
 <scratch>scratch_space</scratch>
 <defaultblocksize>1000</defaultblocksize>
-<cp.parallel.matrixmult>true</cp.parallel.matrixmult>
-<cp.parallel.textio>false</cp.parallel.textio>
+<cp.parallel.ops>true</cp.parallel.ops>
+<cp.parallel.io>false</cp.parallel.io>
 </root>

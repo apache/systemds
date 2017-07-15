@@ -458,6 +458,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				_etype = REMOTE;
 			}
 			
+			//check for valid CP mmchain, send invalid memory requirements to remote
+			if( _etype == ExecType.CP && checkMapMultChain() != ChainType.NONE
+				&& OptimizerUtils.getLocalMemBudget() < 
+				getInput().get(0).getInput().get(0).getOutputMemEstimate() )
+				_etype = REMOTE;
+			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}

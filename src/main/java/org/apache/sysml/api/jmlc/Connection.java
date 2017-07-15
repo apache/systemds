@@ -25,9 +25,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
@@ -43,6 +47,7 @@ import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
@@ -176,12 +181,21 @@ public class Connection implements Closeable
 	{
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
 
-		//prepare arguments
+		//check for valid names of passed arguments
+		String[] invalidArgs = args.keySet().stream()
+			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
+		if( invalidArgs.length > 0 )
+			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
+		
+		//check for valid names of input and output variables
+		String[] invalidVars = asSet(inputs, outputs).stream()
+			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
+		if( invalidVars.length > 0 )
+			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
 		
 		//simplified compilation chain
 		Program rtprog = null;
-		try
-		{
+		try {
 			//parsing
 			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
@@ -827,5 +841,12 @@ public class Connection implements Closeable
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) throws IOException {
 		return TfMetaUtils.readTransformMetaDataFromPath(spec, metapath, colDelim);
+	}
+	
+	private Set<String> asSet(String[] inputs, String[] outputs) {
+		Set<String> ret = new HashSet<String>();
+		CollectionUtils.addAll(ret, inputs);
+		CollectionUtils.addAll(ret, outputs);
+		return ret;
 	}
 }

@@ -64,11 +64,11 @@ public class TemplateRow extends TemplateBase
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
 	
 	public TemplateRow() {
-		super(TemplateType.RowTpl);
+		super(TemplateType.ROW);
 	}
 	
 	public TemplateRow(boolean closed) {
-		super(TemplateType.RowTpl, closed);
+		super(TemplateType.ROW, closed);
 	}
 	
 	@Override
@@ -208,7 +208,7 @@ public class TemplateRow extends TemplateBase
 			return;
 		
 		//recursively process required childs
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.RowTpl);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.ROW);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me!=null && me.isPlanRef(i) )

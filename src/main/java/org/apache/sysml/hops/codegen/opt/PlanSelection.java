@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.hops.codegen.template;
+package org.apache.sysml.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -55,12 +56,9 @@ public abstract class PlanSelection
 	 * @param hop current hop
 	 * @return true if entry is valid as top-level plan
 	 */
-	protected static boolean isValid(MemoTableEntry me, Hop hop) {
-		return (me.type == TemplateType.OuterProdTpl 
-				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)))
-			|| (me.type == TemplateType.RowTpl)	
-			|| (me.type == TemplateType.CellTpl)
-			|| (me.type == TemplateType.MultiAggTpl);
+	public static boolean isValid(MemoTableEntry me, Hop hop) {
+		return (me.type != TemplateType.OUTER //ROW, CELL, MAGG
+			|| (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)));
 	}
 	
 	protected void addBestPlan(long hopID, MemoTableEntry me) {
@@ -89,6 +87,12 @@ public abstract class PlanSelection
 	protected static class BasicPlanComparator implements Comparator<MemoTableEntry> {
 		@Override
 		public int compare(MemoTableEntry o1, MemoTableEntry o2) {
+			return icompare(o1, o2);
+		}
+		
+		public static int icompare(MemoTableEntry o1, MemoTableEntry o2) {
+			if( o2 == null ) return -1;
+			
 			//for different types, select preferred type
 			if( o1.type != o2.type )
 				return Integer.compare(o1.type.getRank(), o2.type.getRank());
@@ -99,7 +103,27 @@ public abstract class PlanSelection
 		}
 	}
 	
-	private static class VisitMark {
+	protected static class TypedPlanComparator implements Comparator<MemoTableEntry> {
+		private TemplateType _type;
+		
+		public void setType(TemplateType type) {
+			_type = type;
+		}
+		
+		@Override
+		public int compare(MemoTableEntry o1, MemoTableEntry o2) {
+			return icompare(o1, o2, _type);
+		}
+		
+		public static int icompare(MemoTableEntry o1, MemoTableEntry o2, TemplateType type) {
+			if( o2 == null ) return -1;
+			int score1 = 7 - ((o1.type==type)?4:0) - o1.countPlanRefs();
+			int score2 = 7 - ((o2.type==type)?4:0) - o2.countPlanRefs();
+			return Integer.compare(score1, score2);
+		}
+	}
+	
+	protected static class VisitMark {
 		private final long _hopID;
 		private final TemplateType _type;
 		
@@ -117,6 +141,27 @@ public abstract class PlanSelection
 			return (o instanceof VisitMark
 				&& _hopID == ((VisitMark)o)._hopID
 				&& _type == ((VisitMark)o)._type);
+		}
+	}
+	
+	public static class VisitMarkCost {
+		private final long _hopID;
+		private final long _costID;
+		
+		public VisitMarkCost(long hopID, long costID) {
+			_hopID = hopID;
+			_costID = costID;
+		}
+		@Override
+		public int hashCode() {
+			return UtilFunctions.longHashCode(
+				_hopID, _costID);
+		}
+		@Override 
+		public boolean equals(Object o) {
+			return (o instanceof VisitMarkCost
+				&& _hopID == ((VisitMarkCost)o)._hopID
+				&& _costID == ((VisitMarkCost)o)._costID);
 		}
 	}
 }

@@ -37,11 +37,11 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 public class TemplateMultiAgg extends TemplateCell 
 {	
 	public TemplateMultiAgg() {
-		super(TemplateType.MultiAggTpl, false);
+		super(TemplateType.MAGG, false);
 	}
 	
 	public TemplateMultiAgg(boolean closed) {
-		super(TemplateType.MultiAggTpl, closed);
+		super(TemplateType.MAGG, closed);
 	}
 
 	@Override
@@ -69,7 +69,7 @@ public class TemplateMultiAgg extends TemplateCell
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//get all root nodes for multi aggregation
-		MemoTableEntry multiAgg = memo.getBest(hop.getHopID(), TemplateType.MultiAggTpl);
+		MemoTableEntry multiAgg = memo.getBest(hop.getHopID(), TemplateType.MAGG);
 		ArrayList<Hop> roots = new ArrayList<Hop>();
 		for( int i=0; i<3; i++ )
 			if( multiAgg.isPlanRef(i) )

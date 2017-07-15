@@ -58,11 +58,11 @@ public class TemplateCell extends TemplateBase
 			new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX};
 	
 	public TemplateCell() {
-		super(TemplateType.CellTpl);
+		super(TemplateType.CELL);
 	}
 	
 	public TemplateCell(boolean closed) {
-		super(TemplateType.CellTpl, closed);
+		super(TemplateType.CELL, closed);
 	}
 	
 	public TemplateCell(TemplateType type, boolean closed) {
@@ -149,10 +149,10 @@ public class TemplateCell extends TemplateBase
 		if( tmp.containsKey(hop.getHopID()) )
 			return;
 		
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CELL);
 		
 		//recursively process required childs
-		if( me!=null && (me.type == TemplateType.RowTpl || me.type == TemplateType.OuterProdTpl) ) {
+		if( me!=null && me.type.isIn(TemplateType.ROW, TemplateType.OUTER) ) {
 			CNodeData cdata = TemplateUtils.createCNodeData(hop, compileLiterals);	
 			tmp.put(hop.getHopID(), cdata);
 			inHops.add(hop);
@@ -161,9 +161,9 @@ public class TemplateCell extends TemplateBase
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp)
-				&& (me.type!=TemplateType.MultiAggTpl || memo.contains(c.getHopID(), TemplateType.CellTpl)))
+				&& (me.type!=TemplateType.MAGG || memo.contains(c.getHopID(), TemplateType.CELL)))
 				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
-			else if( me!=null && (me.type==TemplateType.MultiAggTpl || me.type==TemplateType.CellTpl) 
+			else if( me!=null && (me.type==TemplateType.MAGG || me.type==TemplateType.CELL) 
 					&& HopRewriteUtils.isMatrixMultiply(hop) && i==0 ) //skip transpose
 				rConstructCplan(c.getInput().get(0), memo, tmp, inHops, compileLiterals);
 			else {

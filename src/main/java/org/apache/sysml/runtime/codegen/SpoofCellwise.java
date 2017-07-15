@@ -1060,7 +1060,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		
 		@Override
 		public Long call() throws DMLRuntimeException {
-			_c = (_type==CellType.COL_AGG)? new MatrixBlock(1,_clen, false) : _c;
+			if( _type==CellType.COL_AGG ) {
+				_c = new MatrixBlock(1,_clen, false);
+				_c.allocateDenseBlock();
+			}
 			if( _a instanceof CompressedMatrixBlock )
 				return executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c, _rlen, _clen, _safe, _rl, _ru);
 			else if( !_a.isInSparseFormat() )

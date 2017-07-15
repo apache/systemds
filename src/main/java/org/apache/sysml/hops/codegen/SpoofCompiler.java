@@ -43,16 +43,17 @@ import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeRow;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysml.hops.codegen.opt.PlanSelection;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseAll;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBased;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
-import org.apache.sysml.hops.codegen.template.PlanSelection;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseCostBased;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseAll;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
@@ -109,7 +110,7 @@ public class SpoofCompiler
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED; 
+	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED_V2; 
 
 	public enum CompilerType {
 		JAVAC,
@@ -124,7 +125,9 @@ public class SpoofCompiler
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
 		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
-		FUSE_COST_BASED;      //cost-based decision on materialization points
+		FUSE_COST_BASED,      //cost-based decision on materialization points
+		FUSE_COST_BASED_V2;   //cost-based decisions on materialization points per consumer, multi aggregates,
+		                      //sparsity exploitation, template types, local/distributed operations, constraints
 		public boolean isHeuristic() {
 			return this == FUSE_ALL
 				|| this == FUSE_NO_REDUNDANCY;
@@ -458,6 +461,8 @@ public class SpoofCompiler
 				return new PlanSelectionFuseNoRedundancy();
 			case FUSE_COST_BASED:
 				return new PlanSelectionFuseCostBased();
+			case FUSE_COST_BASED_V2:
+				return new PlanSelectionFuseCostBasedV2();
 			default:	
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);
@@ -530,8 +535,10 @@ public class SpoofCompiler
 		}
 		
 		//prune subsumed / redundant plans
-		if( PRUNE_REDUNDANT_PLANS )
-			memo.pruneRedundant(hop.getHopID());
+		if( PRUNE_REDUNDANT_PLANS ) {
+			memo.pruneRedundant(hop.getHopID(),
+				PLAN_SEL_POLICY.isHeuristic(), null);
+		}
 		
 		//mark visited even if no plans found (e.g., unsupported ops)
 		memo.addHop(hop);
@@ -542,7 +549,7 @@ public class SpoofCompiler
 		for(int k=0; k<hop.getInput().size(); k++) {
 			Hop input2 = hop.getInput().get(k);
 			if( input2 != c && tpl.merge(hop, input2) 
-				&& memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CellTpl))
+				&& memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CELL))
 				P.crossProduct(k, -1L, input2.getHopID());
 		}
 		return P;

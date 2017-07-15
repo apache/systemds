@@ -171,6 +171,12 @@ public class LibSpoofPrimitives
 		if( a == null ) return;
 		System.arraycopy(a, 0, c, ci, len);
 	}
+	
+	public static void vectWrite(boolean[] a, boolean[] c, int[] aix) {
+		if( a == null ) return;
+		for( int i=0; i<aix.length; i++ )
+			c[aix[i]] = a[i];
+	}
 
 	// custom vector sums, mins, maxs
 	

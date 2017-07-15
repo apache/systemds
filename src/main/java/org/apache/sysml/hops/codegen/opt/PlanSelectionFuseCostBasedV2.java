@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.hops.codegen.template;
+package org.apache.sysml.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,9 +32,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -47,22 +48,35 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.opt.ReachabilityGraph.SubProblem;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysml.hops.codegen.template.TemplateOuterProduct;
+import org.apache.sysml.hops.codegen.template.TemplateRow;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This cost-based plan selection algorithm chooses fused operators
  * based on the DAG structure and resulting overall costs. This includes
- * decisions on materialization points, template types, and composed
- * multi output templates. 
+ * holistic decisions on 
+ * <ul>
+ *   <li>Materialization points per consumer</li>
+ *   <li>Sparsity exploitation and operator ordering</li>
+ *   <li>Decisions on overlapping template types</li>
+ *   <li>Decisions on multi-aggregates with shared reads</li>
+ *   <li>Constraints (e.g., memory budgets and block sizes)</li>  
+ * </ul>
  * 
  */
-public class PlanSelectionFuseCostBased extends PlanSelection
+public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 {	
-	private static final Log LOG = LogFactory.getLog(PlanSelectionFuseCostBased.class.getName());
+	private static final Log LOG = LogFactory.getLog(PlanSelectionFuseCostBasedV2.class.getName());
 	
 	//common bandwidth characteristics, with a conservative write bandwidth in order 
 	//to cover result allocation, write into main memory, and potential evictions
@@ -71,155 +85,283 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	private static final double COMPUTE_BANDWIDTH = 2d*1024*1024*1024 //2GFLOPs/core
 		* InfrastructureAnalyzer.getLocalParallelism();
 	
+	//sparsity estimate for unknown sparsity to prefer sparse-safe fusion plans
+	private static final double SPARSE_SAFE_SPARSITY_EST = 0.1;
+	
+	//optimizer configuration
+	private static final boolean USE_COST_PRUNING = true;
+	private static final boolean USE_STRUCTURAL_PRUNING = true;
+	
 	private static final IDSequence COST_ID = new IDSequence();
 	private static final TemplateRow ROW_TPL = new TemplateRow();
+	private static final BasicPlanComparator BASE_COMPARE = new BasicPlanComparator();
+	private final TypedPlanComparator _typedCompare = new TypedPlanComparator();
 	
 	@Override
 	public void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots) 
 	{
-		//step 1: determine connected sub graphs of plans
-		Collection<HashSet<Long>> parts = getConnectedSubGraphs(memo, roots);
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Connected sub graphs: "+parts.size());
+		//step 1: analyze connected partitions (nodes, roots, mat points)
+		Collection<PlanPartition> parts = PlanAnalyzer.analyzePlanPartitions(memo, roots, true);
 		
-		for( HashSet<Long> partition : parts ) {
-			//step 2: determine materialization points
-			HashSet<Long> R = getPartitionRootNodes(memo, partition);
-			if( LOG.isTraceEnabled() )
-				LOG.trace("Partition root points: "+Arrays.toString(R.toArray(new Long[0])));
-			ArrayList<Long> M = getMaterializationPoints(R, partition, memo);
-			if( LOG.isTraceEnabled() )
-				LOG.trace("Partition materialization points: "+Arrays.toString(M.toArray(new Long[0])));
+		//step 2: optimize individual plan partitions
+		for( PlanPartition part : parts ) {
+			//create composite templates (within the partition)
+			createAndAddMultiAggPlans(memo, part.getPartition(), part.getRoots());
 			
-			//step 3: create composite templates (within the partition)
-			createAndAddMultiAggPlans(memo, partition, R);
-			
-			//step 4: plan enumeration and plan selection
-			selectPlans(memo, partition, R, M);
+			//plan enumeration and plan selection
+			selectPlans(memo, part);
 		}
 		
-		//step 5: add composite templates (across partitions)
+		//step 3: add composite templates (across partitions)
 		createAndAddMultiAggPlans(memo, roots);
-	
+		
 		//take all distinct best plans
 		for( Entry<Long, List<MemoTableEntry>> e : getBestPlans().entrySet() )
 			memo.setDistinct(e.getKey(), e.getValue());
 	}
 	
-	private static Collection<HashSet<Long>> getConnectedSubGraphs(CPlanMemoTable memo, ArrayList<Hop> roots) 
+	private void selectPlans(CPlanMemoTable memo, PlanPartition part) 
 	{
-		//build inverted index for 'referenced by' relationship 
-		HashMap<Long, HashSet<Long>> refBy = new HashMap<Long, HashSet<Long>>();
-		for( Entry<Long, List<MemoTableEntry>> e : memo._plans.entrySet() )
-			for( MemoTableEntry me : e.getValue() ) 
-				for( int i=0; i<3; i++ )
-					if( me.isPlanRef(i) ) {
-						if( !refBy.containsKey(me.input(i)) )
-							refBy.put(me.input(i), new HashSet<Long>());
-						refBy.get(me.input(i)).add(e.getKey());
-					}
+		//prune row aggregates with pure cellwise operations
+		for( Long hopID : part.getRoots() ) {
+			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
+			if( me.type == TemplateType.ROW && memo.contains(hopID, TemplateType.CELL)
+				&& isRowTemplateWithoutAgg(memo, memo.getHopRefs().get(hopID), new HashSet<Long>())) {
+				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
+				memo.remove(memo.getHopRefs().get(hopID), new HashSet<MemoTableEntry>(blacklist));
+				if( LOG.isTraceEnabled() ) {
+					LOG.trace("Removed row memo table entries w/o aggregation: "
+						+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
+				}
+			}
+		}
 		
-		//create a single partition per root node, if reachable over refBy of 
-		//other root node the resulting partition is empty and can be discarded
-		ArrayList<HashSet<Long>> parts = new ArrayList<HashSet<Long>>();
-		HashSet<Long> visited = new HashSet<Long>();
-		for( Entry<Long, List<MemoTableEntry>> e : memo._plans.entrySet() )
-			if( !refBy.containsKey(e.getKey()) ) { //root node
-				HashSet<Long> part = rGetConnectedSubGraphs(e.getKey(), 
-						memo, refBy, visited, new HashSet<Long>());
-				if( !part.isEmpty() )
-					parts.add(part);
+		//prune suboptimal outer product plans that are dominated by outer product plans w/ same number of 
+		//references but better fusion properties (e.g., for the patterns Y=X*(U%*%t(V)) and sum(Y*(U2%*%t(V2))), 
+		//we'd prune sum(X*(U%*%t(V))*Z), Z=U2%*%t(V2) because this would unnecessarily destroy a fusion pattern.
+		for( Long hopID : part.getPartition() ) {
+			if( memo.countEntries(hopID, TemplateType.OUTER) == 2 ) {
+				List<MemoTableEntry> entries = memo.get(hopID, TemplateType.OUTER);
+				MemoTableEntry me1 = entries.get(0);
+				MemoTableEntry me2 = entries.get(1);
+				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
+				if( rmEntry != null ) {
+					memo.remove(memo.getHopRefs().get(hopID), Collections.singleton(rmEntry));
+					memo.getPlansBlacklisted().remove(rmEntry.input(rmEntry.getPlanRefIndex()));
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);
+				}
+			}
+		}
+		
+		//if no materialization points, use basic fuse-all w/ partition awareness
+		if( part.getMatPointsExt() == null || part.getMatPointsExt().length==0 ) {
+			for( Long hopID : part.getRoots() )
+				rSelectPlansFuseAll(memo, 
+					memo.getHopRefs().get(hopID), null, part.getPartition());
+		}
+		else {
+			//obtain hop compute costs per cell once
+			HashMap<Long, Double> computeCosts = new HashMap<Long, Double>();
+			for( Long hopID : part.getRoots() )
+				rGetComputeCosts(memo.getHopRefs().get(hopID), part.getPartition(), computeCosts);
+			
+			//prepare pruning helpers and prune memo table w/ determined mat points
+			StaticCosts costs = new StaticCosts(computeCosts, getComputeCost(computeCosts, memo), 
+				getReadCost(part, memo), getWriteCost(part.getRoots(), memo));
+			ReachabilityGraph rgraph = USE_STRUCTURAL_PRUNING ? new ReachabilityGraph(part, memo) : null;
+			if( USE_STRUCTURAL_PRUNING ) {
+				part.setMatPointsExt(rgraph.getSortedSearchSpace());
+				for( Long hopID : part.getPartition() )
+					memo.pruneRedundant(hopID, true, part.getMatPointsExt());
+			}
+			
+			//enumerate and cost plans, returns optional plan
+			boolean[] bestPlan = enumPlans(memo, part, costs, rgraph, 
+					part.getMatPointsExt(), 0, Double.MAX_VALUE);
+			
+			//prune memo table wrt best plan and select plans
+			HashSet<Long> visited = new HashSet<Long>();
+			for( Long hopID : part.getRoots() )
+				rPruneSuboptimalPlans(memo, memo.getHopRefs().get(hopID), 
+					visited, part, part.getMatPointsExt(), bestPlan);
+			HashSet<Long> visited2 = new HashSet<Long>();
+			for( Long hopID : part.getRoots() )
+				rPruneInvalidPlans(memo, memo.getHopRefs().get(hopID), 
+					visited2, part, bestPlan);
+			
+			for( Long hopID : part.getRoots() )
+				rSelectPlansFuseAll(memo, 
+					memo.getHopRefs().get(hopID), null, part.getPartition());
+		}
+	}
+	
+	/**
+	 * Core plan enumeration algorithm, invoked recursively for conditionally independent
+	 * subproblems. This algorithm fully explores the exponential search space of 2^m,
+	 * where m is the number of interesting materialization points. We iterate over
+	 * a linearized search space without every instantiating the search tree. Furthermore,
+	 * in order to reduce the enumeration overhead, we apply two high-impact pruning
+	 * techniques (1) pruning by evolving lower/upper cost bounds, and (2) pruning by
+	 * conditional structural properties (so-called cutsets of interesting points). 
+	 * 
+	 * @param memo memoization table of partial fusion plans
+	 * @param part connected component (partition) of partial fusion plans with all necessary meta data
+	 * @param costs summary of static costs (e.g., partition reads, writes, and compute costs per operator)
+	 * @param rgraph reachability graph of interesting materialization points
+	 * @param matPoints sorted materialization points (defined the search space)
+	 * @param off offset for recursive invocation, indicating the fixed plan part
+	 * @param bestC currently known best plan costs (used of upper bound)
+	 * @return optimal assignment of materialization points
+	 */
+	private static boolean[] enumPlans(CPlanMemoTable memo, PlanPartition part, StaticCosts costs, 
+		ReachabilityGraph rgraph, InterestingPoint[] matPoints, int off, double bestC) 
+	{
+		//scan linearized search space, w/ skips for branch and bound pruning
+		//and structural pruning (where we solve conditionally independent problems)
+		//bestC is monotonically non-increasing and serves as the upper bound
+		long len = (long)Math.pow(2, matPoints.length-off);
+		boolean[] bestPlan = null;
+		int numEvalPlans = 0;
+		
+		for( long i=0; i<len; i++ ) {
+			//construct assignment
+			boolean[] plan = createAssignment(matPoints.length-off, off, i);
+			long pskip = 0; //skip after costing
+			
+			//skip plans with structural pruning
+			if( USE_STRUCTURAL_PRUNING && (rgraph!=null) && rgraph.isCutSet(plan) ) {
+				//compute skip (which also acts as boundary for subproblems)
+				pskip = rgraph.getNumSkipPlans(plan);
+				
+				//start increment rgraph get subproblems
+				SubProblem[] prob = rgraph.getSubproblems(plan);
+				
+				//solve subproblems independently and combine into best plan
+				for( int j=0; j<prob.length; j++ ) {
+					boolean[] bestTmp = enumPlans(memo, part, 
+						costs, null, prob[j].freeMat, prob[j].offset, bestC);
+					LibSpoofPrimitives.vectWrite(bestTmp, plan, prob[j].freePos);
+				}
+				
+				//note: the overall plan costs are evaluated in full, which reused
+				//the default code path; hence we postpone the skip after costing
+			}
+			//skip plans with branch and bound pruning (cost)
+			else if( USE_COST_PRUNING ) {
+				double lbC = Math.max(costs._read, costs._compute) + costs._write 
+					+ getMaterializationCost(part, matPoints, memo, plan);
+				if( lbC >= bestC ) {
+					long skip = getNumSkipPlans(plan);
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Enum: Skip "+skip+" plans (by cost).");
+					i += skip - 1;
+					continue;
+				}
+			}
+			
+			//cost assignment on hops
+			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts);
+			numEvalPlans ++;
+			if( LOG.isTraceEnabled() )
+				LOG.trace("Enum: "+Arrays.toString(plan)+" -> "+C);
+			
+			//cost comparisons
+			if( bestPlan == null || C < bestC ) {
+				bestC = C;
+				bestPlan = plan;
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Enum: Found new best plan.");
+			}
+			
+			//post skipping
+			i += pskip;
+			if( pskip !=0 && LOG.isTraceEnabled() )
+				LOG.trace("Enum: Skip "+pskip+" plans (by structure).");
+		}
+		
+		if( DMLScript.STATISTICS )
+			Statistics.incrementCodegenFPlanCompile(numEvalPlans);
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
+		
+		//copy best plan w/o fixed offset plan
+		return Arrays.copyOfRange(bestPlan, off, bestPlan.length);
+	}
+	
+	private static boolean[] createAssignment(int len, int off, long pos) {
+		boolean[] ret = new boolean[off+len];
+		Arrays.fill(ret, 0, off, true);
+		long tmp = pos;
+		for( int i=0; i<len; i++ ) {
+			ret[off+i] = (tmp >= Math.pow(2, len-i-1));
+			tmp %= Math.pow(2, len-i-1);
+		}
+		return ret;	
+	}
+	
+	private static long getNumSkipPlans(boolean[] plan) {
+		int pos = ArrayUtils.lastIndexOf(plan, true);
+		return (long) Math.pow(2, plan.length-pos-1);
+	}
+	
+	private static double getMaterializationCost(PlanPartition part, InterestingPoint[] M, CPlanMemoTable memo, boolean[] plan) {
+		double costs = 0;
+		//currently active materialization points
+		HashSet<Long> matTargets = new HashSet<>();
+		for( int i=0; i<plan.length; i++ ) {
+			long hopID = M[i].getToHopID();
+			if( plan[i] && !matTargets.contains(hopID) ) {
+				matTargets.add(hopID);
+				Hop hop = memo.getHopRefs().get(hopID);
+				long size = getSize(hop);
+				costs += size * 8 / WRITE_BANDWIDTH + 
+						size * 8 / READ_BANDWIDTH;
+			}
+		}
+		//points with non-partition consumers
+		for( Long hopID : part.getExtConsumed() )
+			if( !matTargets.contains(hopID) ) {
+				matTargets.add(hopID);
+				Hop hop = memo.getHopRefs().get(hopID);
+				costs += getSize(hop) * 8 / WRITE_BANDWIDTH;
 			}
 		
-		return parts;
+		return costs;
 	}
 	
-	private static HashSet<Long> rGetConnectedSubGraphs(long hopID, CPlanMemoTable memo, 
-			HashMap<Long, HashSet<Long>> refBy, HashSet<Long> visited, HashSet<Long> partition) 
-	{
-		if( visited.contains(hopID) )
-			return partition;
-		
-		//process node itself w/ memoization
-		if( memo.contains(hopID) ) {
-			partition.add(hopID);
-			visited.add(hopID);	
+	private static double getReadCost(PlanPartition part, CPlanMemoTable memo) {
+		double costs = 0;
+		//get partition input reads (at least read once)
+		for( Long hopID : part.getInputs() ) {
+			Hop hop = memo.getHopRefs().get(hopID);
+			costs += getSize(hop) * 8 / READ_BANDWIDTH;
 		}
-		
-		//recursively process parents
-		if( refBy.containsKey(hopID) )
-			for( Long ref : refBy.get(hopID) )
-				rGetConnectedSubGraphs(ref, memo, refBy, visited, partition);
-		
-		//recursively process children
-		if( memo.contains(hopID) ) {
-			long[] refs = memo.getAllRefs(hopID);
-			for( int i=0; i<3; i++ )
-				if( refs[i] != -1 )
-					rGetConnectedSubGraphs(refs[i], memo, refBy, visited, partition);
+		return costs;
+	}
+	
+	private static double getWriteCost(Collection<Long> R, CPlanMemoTable memo) {
+		double costs = 0;
+		for( Long hopID : R ) {
+			Hop hop = memo.getHopRefs().get(hopID);
+			costs += getSize(hop) * 8 / WRITE_BANDWIDTH;
 		}
-		
-		return partition;
+		return costs;
 	}
 	
-	private static HashSet<Long> getPartitionRootNodes(CPlanMemoTable memo, HashSet<Long> partition) 
-	{
-		//build inverted index of references entries 
-		HashSet<Long> ix = new HashSet<Long>();
-		for( Long hopID : partition )
-			if( memo.contains(hopID) )
-				for( MemoTableEntry me : memo.get(hopID) ) {
-					ix.add(me.input1); 
-					ix.add(me.input2); 
-					ix.add(me.input3);
-				}
-		
-		HashSet<Long> roots = new HashSet<Long>();
-		for( Long hopID : partition )
-			if( !ix.contains(hopID) )
-				roots.add(hopID);
-		return roots;
+	private static double getComputeCost(HashMap<Long, Double> computeCosts, CPlanMemoTable memo) {
+		double costs = 0;
+		for( Entry<Long,Double> e : computeCosts.entrySet() ) {
+			Hop mainInput = memo.getHopRefs()
+				.get(e.getKey()).getInput().get(0);
+			costs += getSize(mainInput) * e.getValue() / COMPUTE_BANDWIDTH;
+		}
+		return costs;
 	}
 	
-	private static ArrayList<Long> getMaterializationPoints(HashSet<Long> roots, 
-			HashSet<Long> partition, CPlanMemoTable memo) 
-	{
-		//collect materialization points bottom-up
-		ArrayList<Long> ret = new ArrayList<Long>();
-		HashSet<Long> visited = new HashSet<Long>();
-		for( Long hopID : roots )
-			rCollectMaterializationPoints(memo._hopRefs.get(hopID), 
-					visited, partition, ret);
-		
-		//remove special-case materialization points
-		//(root nodes w/ multiple consumers, tsmm input if consumed in partition)
-		ret.removeIf(hopID -> roots.contains(hopID)
-			|| HopRewriteUtils.isTsmmInput(memo._hopRefs.get(hopID)));
-		
-		return ret;
-	}
-	
-	private static void rCollectMaterializationPoints(Hop current, HashSet<Long> visited, 
-			HashSet<Long> partition, ArrayList<Long> M) 
-	{
-		//memoization (not via hops because in middle of dag)
-		if( visited.contains(current.getHopID()) )
-			return;
-		
-		//process children recursively
-		for( Hop c : current.getInput() )
-			rCollectMaterializationPoints(c, visited, partition, M);
-		
-		//collect materialization point
-		if( isMaterializationPointCandidate(current, partition) )
-			M.add(current.getHopID());
-		
-		visited.add(current.getHopID());
-	}
-	
-	private static boolean isMaterializationPointCandidate(Hop hop, HashSet<Long> partition) {
-		return hop.getParent().size()>=2 
-			&& partition.contains(hop.getHopID());
+	private static long getSize(Hop hop) {
+		return Math.max(hop.getDim1(),1) 
+			* Math.max(hop.getDim2(),1);
 	}
 	
 	//within-partition multi-agg templates
@@ -227,9 +369,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	{
 		//create index of plans that reference full aggregates to avoid circular dependencies
 		HashSet<Long> refHops = new HashSet<Long>();
-		for( Entry<Long, List<MemoTableEntry>> e : memo._plans.entrySet() )
+		for( Entry<Long, List<MemoTableEntry>> e : memo.getPlans().entrySet() )
 			if( !e.getValue().isEmpty() ) {
-				Hop hop = memo._hopRefs.get(e.getKey());
+				Hop hop = memo.getHopRefs().get(e.getKey());
 				for( Hop c : hop.getInput() )
 					refHops.add(c.getHopID());
 			}
@@ -238,7 +380,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		//that they also have common subexpressions, also full aggregations are by def root nodes)
 		ArrayList<Long> fullAggs = new ArrayList<Long>();
 		for( Long hopID : R ) {
-			Hop root = memo._hopRefs.get(hopID);
+			Hop root = memo.getHopRefs().get(hopID);
 			if( !refHops.contains(hopID) && isMultiAggregateRoot(root) )
 				fullAggs.add(hopID);
 		}
@@ -251,11 +393,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		for( int i=0; i<fullAggs.size(); i+=3 ) {
 			int ito = Math.min(i+3, fullAggs.size());
 			if( ito-i >= 2 ) {
-				MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
+				MemoTableEntry me = new MemoTableEntry(TemplateType.MAGG,
 					fullAggs.get(i), fullAggs.get(i+1), ((ito-i)==3)?fullAggs.get(i+2):-1, ito-i);
 				if( isValidMultiAggregate(memo, me) ) {
 					for( int j=i; j<ito; j++ ) {
-						memo.add(memo._hopRefs.get(fullAggs.get(j)), me);
+						memo.add(memo.getHopRefs().get(fullAggs.get(j)), me);
 						if( LOG.isTraceEnabled() )
 							LOG.trace("Added multiagg plan: "+fullAggs.get(j)+" "+me);
 					}
@@ -278,7 +420,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		Hop.resetVisitStatus(roots);
 
 		//remove operators with assigned multi-agg plans
-		fullAggs.removeIf(p -> memo.contains(p, TemplateType.MultiAggTpl));
+		fullAggs.removeIf(p -> memo.contains(p, TemplateType.MAGG));
 	
 		//check applicability for further analysis
 		if( fullAggs.size() <= 1 )
@@ -293,12 +435,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		//(subsumed aggregations, and inputs to fused operators) 
 		List<AggregateInfo> aggInfos = new ArrayList<AggregateInfo>();
 		for( Long hopID : fullAggs ) {
-			Hop aggHop = memo._hopRefs.get(hopID);
+			Hop aggHop = memo.getHopRefs().get(hopID);
 			AggregateInfo tmp = new AggregateInfo(aggHop);
 			for( int i=0; i<aggHop.getInput().size(); i++ ) {
 				Hop c = HopRewriteUtils.isMatrixMultiply(aggHop) && i==0 ? 
 					aggHop.getInput().get(0).getInput().get(0) : aggHop.getInput().get(i);
-				rExtractAggregateInfo(memo, c, tmp, TemplateType.CellTpl);
+				rExtractAggregateInfo(memo, c, tmp, TemplateType.CELL);
 			}
 			if( tmp._fusedInputs.isEmpty() ) {
 				if( HopRewriteUtils.isMatrixMultiply(aggHop) ) {
@@ -351,10 +493,10 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			if( info._aggregates.size()<=1 )
 				continue;
 			Long[] aggs = info._aggregates.keySet().toArray(new Long[0]);
-			MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
+			MemoTableEntry me = new MemoTableEntry(TemplateType.MAGG,
 				aggs[0], aggs[1], (aggs.length>2)?aggs[2]:-1, aggs.length);
 			for( int i=0; i<aggs.length; i++ ) {
-				memo.add(memo._hopRefs.get(aggs[i]), me);
+				memo.add(memo.getHopRefs().get(aggs[i]), me);
 				addBestPlan(aggs[i], me);
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Added multiagg* plan: "+aggs[i]+" "+me);
@@ -373,11 +515,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	private static boolean isValidMultiAggregate(CPlanMemoTable memo, MemoTableEntry me) {
 		//ensure input consistent sizes (otherwise potential for incorrect results)
 		boolean ret = true;
-		Hop refSize = memo._hopRefs.get(me.input1).getInput().get(0);
+		Hop refSize = memo.getHopRefs().get(me.input1).getInput().get(0);
 		for( int i=1; ret && i<3; i++ ) {
 			if( me.isPlanRef(i) )
 				ret &= HopRewriteUtils.isEqualSize(refSize, 
-					memo._hopRefs.get(me.input(i)).getInput().get(0));
+					memo.getHopRefs().get(me.input(i)).getInput().get(0));
 		}
 		
 		//ensure that aggregates are independent of each other, i.e.,
@@ -388,7 +530,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				for( int j=0; j<3; j++ )
 					if( i != j )
 						probe.add(me.input(j));
-				ret &= rCheckMultiAggregate(memo._hopRefs.get(me.input(i)), probe);
+				ret &= rCheckMultiAggregate(memo.getHopRefs().get(me.input(i)), probe);
 			}
 		return ret;
 	}
@@ -435,97 +577,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 	}
 	
-	private void selectPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, ArrayList<Long> M) 
-	{
-		//prune row aggregates with pure cellwise operations
-		for( Long hopID : R ) {
-			MemoTableEntry me = memo.getBest(hopID, TemplateType.RowTpl);
-			if( me.type == TemplateType.RowTpl && memo.contains(hopID, TemplateType.CellTpl)
-				&& isRowTemplateWithoutAgg(memo, memo._hopRefs.get(hopID), new HashSet<Long>())) {
-				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.RowTpl); 
-				memo.remove(memo._hopRefs.get(hopID), new HashSet<MemoTableEntry>(blacklist));
-				if( LOG.isTraceEnabled() ) {
-					LOG.trace("Removed row memo table entries w/o aggregation: "
-						+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
-				}
-			}
-		}
-		
-		//prune suboptimal outer product plans that are dominated by outer product plans w/ same number of 
-		//references but better fusion properties (e.g., for the patterns Y=X*(U%*%t(V)) and sum(Y*(U2%*%t(V2))), 
-		//we'd prune sum(X*(U%*%t(V))*Z), Z=U2%*%t(V2) because this would unnecessarily destroy a fusion pattern.
-		for( Long hopID : partition ) {
-			if( memo.countEntries(hopID, TemplateType.OuterProdTpl) == 2 ) {
-				List<MemoTableEntry> entries = memo.get(hopID, TemplateType.OuterProdTpl);
-				MemoTableEntry me1 = entries.get(0);
-				MemoTableEntry me2 = entries.get(1);
-				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
-				if( rmEntry != null ) {
-					memo.remove(memo._hopRefs.get(hopID), Collections.singleton(rmEntry));
-					memo._plansBlacklist.remove(rmEntry.input(rmEntry.getPlanRefIndex()));
-					if( LOG.isTraceEnabled() )
-						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);
-				}
-			}
-		}
-		
-		//if no materialization points, use basic fuse-all w/ partition awareness
-		if( M == null || M.isEmpty() ) {
-			for( Long hopID : R )
-				rSelectPlansFuseAll(memo, 
-					memo._hopRefs.get(hopID), null, partition);
-		}
-		else {
-			//TODO branch and bound pruning, right now we use exhaustive enum for early experiments
-			//via skip ahead in below enumeration algorithm
-			
-			//obtain hop compute costs per cell once
-			HashMap<Long, Double> computeCosts = new HashMap<Long, Double>();
-			for( Long hopID : R )
-				rGetComputeCosts(memo._hopRefs.get(hopID), partition, computeCosts);
-			
-			//scan linearized search space, w/ skips for branch and bound pruning
-			int len = (int)Math.pow(2, M.size());
-			boolean[] bestPlan = null;
-			double bestC = Double.MAX_VALUE;
-			
-			for( int i=0; i<len; i++ ) {
-				//construct assignment
-				boolean[] plan = createAssignment(M.size(), i);
-				
-				//cost assignment on hops
-				double C = getPlanCost(memo, partition, R, M, plan, computeCosts);
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Enum: "+Arrays.toString(plan)+" -> "+C);
-				
-				//cost comparisons
-				if( bestPlan == null || C < bestC ) {
-					bestC = C;
-					bestPlan = plan;
-					if( LOG.isTraceEnabled() )
-						LOG.trace("Enum: Found new best plan.");
-				}
-			}
-			
-			//prune memo table wrt best plan and select plans
-			HashSet<Long> visited = new HashSet<Long>();
-			for( Long hopID : R )
-				rPruneSuboptimalPlans(memo, memo._hopRefs.get(hopID), 
-					visited, partition, M, bestPlan);
-			HashSet<Long> visited2 = new HashSet<Long>();
-			for( Long hopID : R )
-				rPruneInvalidPlans(memo, memo._hopRefs.get(hopID), 
-					visited2, partition, M, bestPlan);
-			
-			for( Long hopID : R )
-				rSelectPlansFuseAll(memo, 
-					memo._hopRefs.get(hopID), null, partition);
-		}
-	}
-	
 	private static boolean isRowTemplateWithoutAgg(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
 		//consider all aggregations other than root operation
-		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.RowTpl);
+		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
 		boolean ret = true;
 		for(int i=0; i<3; i++)
 			if( me.isPlanRef(i) )
@@ -539,7 +593,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			return true;
 		
 		boolean ret = true;
-		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.RowTpl);
+		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
 		for(int i=0; i<3; i++)
 			if( me.isPlanRef(i) )
 				ret &= rIsRowTemplateWithoutAgg(memo, current.getInput().get(i), visited);
@@ -549,18 +603,20 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		return ret;
 	}
 	
-	private static void rPruneSuboptimalPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, HashSet<Long> partition, ArrayList<Long> M, boolean[] plan) {
+	private static void rPruneSuboptimalPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, 
+		PlanPartition part, InterestingPoint[] matPoints, boolean[] plan) 
+	{
 		//memoization (not via hops because in middle of dag)
 		if( visited.contains(current.getHopID()) )
 			return;
 		
 		//remove memo table entries if necessary
 		long hopID = current.getHopID();
-		if( partition.contains(hopID) && memo.contains(hopID) ) {
+		if( part.getPartition().contains(hopID) && memo.contains(hopID) ) {
 			Iterator<MemoTableEntry> iter = memo.get(hopID).iterator();
 			while( iter.hasNext() ) {
 				MemoTableEntry me = iter.next();
-				if( !hasNoRefToMaterialization(me, M, plan) && me.type!=TemplateType.OuterProdTpl ){
+				if( !hasNoRefToMatPoint(hopID, me, matPoints, plan) && me.type!=TemplateType.OUTER ) {
 					iter.remove();
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed memo table entry: "+me);
@@ -570,29 +626,29 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		
 		//process children recursively
 		for( Hop c : current.getInput() )
-			rPruneSuboptimalPlans(memo, c, visited, partition, M, plan);
+			rPruneSuboptimalPlans(memo, c, visited, part, matPoints, plan);
 		
-		visited.add(current.getHopID());		
+		visited.add(current.getHopID());
 	}
 	
-	private static void rPruneInvalidPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, HashSet<Long> partition, ArrayList<Long> M, boolean[] plan) {
+	private static void rPruneInvalidPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, PlanPartition part, boolean[] plan) {
 		//memoization (not via hops because in middle of dag)
 		if( visited.contains(current.getHopID()) )
 			return;
 		
 		//process children recursively
 		for( Hop c : current.getInput() )
-			rPruneInvalidPlans(memo, c, visited, partition, M, plan);
+			rPruneInvalidPlans(memo, c, visited, part, plan);
 		
 		//find invalid row aggregate leaf nodes (see TemplateRow.open) w/o matrix inputs, 
 		//i.e., plans that become invalid after the previous pruning step
 		long hopID = current.getHopID();
-		if( partition.contains(hopID) && memo.contains(hopID, TemplateType.RowTpl) ) {
+		if( part.getPartition().contains(hopID) && memo.contains(hopID, TemplateType.ROW) ) {
 			for( MemoTableEntry me : memo.get(hopID) ) {
-				if( me.type==TemplateType.RowTpl ) {
+				if( me.type==TemplateType.ROW ) {
 					//convert leaf node with pure vector inputs
 					if( !me.hasPlanRef() && !TemplateUtils.hasMatrixInput(current) ) {
-						me.type = TemplateType.CellTpl;
+						me.type = TemplateType.CELL;
 						if( LOG.isTraceEnabled() )
 							LOG.trace("Converted leaf memo table entry from row to cell: "+me);
 					}
@@ -602,9 +658,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 						boolean hasRowInput = false;
 						for( int i=0; i<3; i++ )
 							if( me.isPlanRef(i) )
-								hasRowInput |= memo.contains(me.input(i), TemplateType.RowTpl);
+								hasRowInput |= memo.contains(me.input(i), TemplateType.ROW);
 						if( !hasRowInput ) {
-							me.type = TemplateType.CellTpl;
+							me.type = TemplateType.CELL;
 							if( LOG.isTraceEnabled() )
 								LOG.trace("Converted inner memo table entry from row to cell: "+me);	
 						}
@@ -640,13 +696,13 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			if( currentType == null ) {
 				best = memo.get(current.getHopID()).stream()
 					.filter(p -> isValid(p, current))
-					.min(new BasicPlanComparator()).orElse(null);
+					.min(BASE_COMPARE).orElse(null);
 			}
 			else {
+				_typedCompare.setType(currentType);
 				best = memo.get(current.getHopID()).stream()
-					.filter(p -> p.type==currentType || p.type==TemplateType.CellTpl)
-					.min(Comparator.comparing(p -> 7-((p.type==currentType)?4:0)-p.countPlanRefs()))
-					.orElse(null);
+					.filter(p -> p.type==currentType || p.type==TemplateType.CELL)
+					.min(_typedCompare).orElse(null);
 			}
 			addBestPlan(current.getHopID(), best);
 		}
@@ -658,107 +714,122 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 		
 		setVisited(current.getHopID(), currentType);
-	}	
-	
-	private static boolean[] createAssignment(int len, int pos) {
-		boolean[] ret = new boolean[len]; 
-		int tmp = pos;
-		for( int i=0; i<len; i++ ) {
-			ret[i] = (tmp < (int)Math.pow(2, len-i-1));
-			tmp %= Math.pow(2, len-i-1);
-		}
-		return ret;	
 	}
 	
 	/////////////////////////////////////////////////////////
 	// Cost model fused operators w/ materialization points
 	//////////
 	
-	private static double getPlanCost(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, 
-			ArrayList<Long> M, boolean[] plan, HashMap<Long, Double> computeCosts) 
+	private static double getPlanCost(CPlanMemoTable memo, PlanPartition part, 
+		InterestingPoint[] matPoints,boolean[] plan, HashMap<Long, Double> computeCosts) 
 	{
 		//high level heuristic: every hop or fused operator has the following cost: 
 		//WRITE + max(COMPUTE, READ), where WRITE costs are given by the output size, 
 		//READ costs by the input sizes, and COMPUTE by operation specific FLOP
 		//counts times number of cells of main input, disregarding sparsity for now.
 		
-		HashSet<Pair<Long,Long>> visited = new HashSet<Pair<Long,Long>>();
+		HashSet<VisitMarkCost> visited = new HashSet<>();
 		double costs = 0;
-		for( Long hopID : R )
-			costs += rGetPlanCosts(memo, memo._hopRefs.get(hopID), 
-					visited, partition, M, plan, computeCosts, null, null);		
+		for( Long hopID : part.getRoots() ) {
+			costs += rGetPlanCosts(memo, memo.getHopRefs().get(hopID), 
+				visited, part, matPoints, plan, computeCosts, null, null);
+		}
 		return costs;
 	}
 	
-	private static double rGetPlanCosts(CPlanMemoTable memo, Hop current, HashSet<Pair<Long,Long>> visited, HashSet<Long> partition, 
-			ArrayList<Long> M, boolean[] plan, HashMap<Long, Double> computeCosts, CostVector costsCurrent, TemplateType currentType) 
+	private static double rGetPlanCosts(CPlanMemoTable memo, Hop current, HashSet<VisitMarkCost> visited, 
+		PlanPartition part, InterestingPoint[] matPoints, boolean[] plan, HashMap<Long, Double> computeCosts, 
+		CostVector costsCurrent, TemplateType currentType) 
 	{
 		//memoization per hop id and cost vector to account for redundant
 		//computation without double counting materialized results or compute
 		//costs of complex operation DAGs within a single fused operator
-		Pair<Long,Long> tag = Pair.of(current.getHopID(), 
-			(costsCurrent==null)?0:costsCurrent.ID);
+		VisitMarkCost tag = new VisitMarkCost(current.getHopID(), 
+			(costsCurrent==null || currentType==TemplateType.MAGG)?0:costsCurrent.ID);
 		if( visited.contains(tag) )
-			return 0; 
-		visited.add(tag);	
+			return 0;
+		visited.add(tag);
 		
 		//open template if necessary, including memoization
 		//under awareness of current plan choice
 		MemoTableEntry best = null;
 		boolean opened = false;
 		if( memo.contains(current.getHopID()) ) {
+			//note: this is the inner loop of plan enumeration and hence, we do not 
+			//use streams, lambda expressions, etc to avoid unnecessary overhead
+			long hopID = current.getHopID();
 			if( currentType == null ) {
-				best = memo.get(current.getHopID()).stream()
-					.filter(p -> isValid(p, current))
-					.filter(p -> hasNoRefToMaterialization(p, M, plan))
-					.min(new BasicPlanComparator()).orElse(null);
+				for( MemoTableEntry me : memo.get(hopID) )
+					best = isValid(me, current) 
+						&& hasNoRefToMatPoint(hopID, me, matPoints, plan) 
+						&& BasicPlanComparator.icompare(me, best)<0 ? me : best;
 				opened = true;
 			}
 			else {
-				best = memo.get(current.getHopID()).stream()
-					.filter(p -> p.type==currentType || p.type==TemplateType.CellTpl)
-					.filter(p -> hasNoRefToMaterialization(p, M, plan))
-					.min(Comparator.comparing(p -> 7-((p.type==currentType)?4:0)-p.countPlanRefs()))
-					.orElse(null);
+				for( MemoTableEntry me : memo.get(hopID) )
+					best = (me.type == currentType || me.type==TemplateType.CELL)
+						&& hasNoRefToMatPoint(hopID, me, matPoints, plan) 
+						&& TypedPlanComparator.icompare(me, best, currentType)<0 ? me : best;
 			}
 		}
 		
 		//create new cost vector if opened, initialized with write costs
-		CostVector costVect = !opened ? costsCurrent : 
-			new CostVector(Math.max(current.getDim1(),1)*Math.max(current.getDim2(),1));
+		CostVector costVect = !opened ? costsCurrent : new CostVector(getSize(current));
+		double costs = 0;
 		
-		//add compute costs of current operator to costs vector 
-		if( partition.contains(current.getHopID()) )
+		//add other roots for multi-agg template to account for shared costs
+		if( opened && best != null && best.type == TemplateType.MAGG ) {
+			//account costs to first multi-agg root 
+			if( best.input1 == current.getHopID() )
+				for( int i=1; i<3; i++ ) {
+					if( !best.isPlanRef(i) ) continue;
+					costs += rGetPlanCosts(memo, memo.getHopRefs().get(best.input(i)), visited, 
+						part, matPoints, plan, computeCosts, costVect, TemplateType.MAGG);
+				}
+			//skip other multi-agg roots
+			else
+				return 0;
+		}
+		
+		//add compute costs of current operator to costs vector
+		if( part.getPartition().contains(current.getHopID()) )
 			costVect.computeCosts += computeCosts.get(current.getHopID());
 		
 		//process children recursively
-		double costs = 0;
 		for( int i=0; i< current.getInput().size(); i++ ) {
 			Hop c = current.getInput().get(i);
 			if( best!=null && best.isPlanRef(i) )
-				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, costVect, best.type);
+				costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, costVect, best.type);
 			else if( best!=null && isImplicitlyFused(current, i, best.type) )
-				costVect.addInputSize(c.getInput().get(0).getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
+				costVect.addInputSize(c.getInput().get(0).getHopID(), getSize(c));
 			else { //include children and I/O costs
-				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, null, null);
+				costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, null, null);
 				if( costVect != null && c.getDataType().isMatrix() )
-					costVect.addInputSize(c.getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
-			}				
-		}	
+					costVect.addInputSize(c.getHopID(), getSize(c));
+			}
+		}
 		
 		//add costs for opened fused operator
-		if( partition.contains(current.getHopID()) ) {
+		if( part.getPartition().contains(current.getHopID()) ) {
 			if( opened ) {
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Cost vector for fused operator (hop "+current.getHopID()+"): "+costVect);
-				costs += costVect.outSize * 8 / WRITE_BANDWIDTH; //time for output write
-				costs += Math.max(
-						costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH, 
-						costVect.getSumInputSizes() * 8 / READ_BANDWIDTH); 
+				if( LOG.isTraceEnabled() ) {
+					String type = (best !=null) ? best.type.name() : "HOP";
+					LOG.trace("Cost vector ("+type+" "+current.getHopID()+"): "+costVect);
+				}
+				double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH //time for output write
+					+ Math.max(costVect.getSumInputSizes() * 8 / READ_BANDWIDTH,
+					costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH);
+				//sparsity correction for outer-product template (and sparse-safe cell)
+				if( best != null && best.type == TemplateType.OUTER ) {
+					Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
+					tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
+				}
+				costs += tmpCosts;
 			}
 			//add costs for non-partition read in the middle of fused operator
-			else if( hasNonPartitionConsumer(current, partition) ) {
-				costs += rGetPlanCosts(memo, current, visited, partition, M, plan, computeCosts, null, null);
+			else if( part.getExtConsumed().contains(current.getHopID()) ) {
+				costs += rGetPlanCosts(memo, current, visited,
+					part, matPoints, plan, computeCosts, null, null);
 			}
 		}
 		
@@ -771,7 +842,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	
 	private static void rGetComputeCosts(Hop current, HashSet<Long> partition, HashMap<Long, Double> computeCosts) 
 	{
-		if( computeCosts.containsKey(current.getHopID()) )
+		if( computeCosts.containsKey(current.getHopID()) 
+			|| !partition.contains(current.getHopID()) )
 			return;
 		
 		//recursively process children
@@ -894,7 +966,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			costs = 1;
 		}
 		else if( current instanceof AggBinaryOp ) {
-			costs = 2; //matrix vector
+			//outer product template
+			if( HopRewriteUtils.isOuterProductLikeMM(current) )
+				costs = 2 * current.getInput().get(0).getDim2();
+			//row template w/ matrix-vector or matrix-matrix
+			else
+				costs = 2 * current .getDim2();
 		}
 		else if( current instanceof AggUnaryOp) {
 			switch(((AggUnaryOp)current).getOp()) {
@@ -911,22 +988,13 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		computeCosts.put(current.getHopID(), costs);
 	}
 	
-	private static boolean hasNoRefToMaterialization(MemoTableEntry me, ArrayList<Long> M, boolean[] plan) {
-		boolean ret = true;
-		for( int i=0; ret && i<3; i++ )
-			ret &= (!M.contains(me.input(i)) || !plan[M.indexOf(me.input(i))]);
-		return ret;
-	}
-	
-	private static boolean hasNonPartitionConsumer(Hop hop, HashSet<Long> partition) {
-		boolean ret = false;
-		for( Hop p : hop.getParent() )
-			ret |= !partition.contains(p.getHopID());
-		return ret;
+	private static boolean hasNoRefToMatPoint(long hopID, 
+			MemoTableEntry me, InterestingPoint[] M, boolean[] plan) {
+		return !InterestingPoint.isMatPoint(M, hopID, me, plan);
 	}
 	
 	private static boolean isImplicitlyFused(Hop hop, int index, TemplateType type) {
-		return type == TemplateType.RowTpl
+		return type == TemplateType.ROW
 			&& HopRewriteUtils.isMatrixMultiply(hop) && index==0 
 			&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(index)); 
 	}
@@ -953,11 +1021,34 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			return inSizes.values().stream()
 				.mapToDouble(d -> d.doubleValue()).max().orElse(0);
 		}
+		public long getMaxInputSizeHopID() {
+			long id = -1; double max = 0;
+			for( Entry<Long,Double> e : inSizes.entrySet() )
+				if( max < e.getValue() ) {
+					id = e.getKey();
+					max = e.getValue();
+				}
+			return id;
+		}
 		@Override
 		public String toString() {
 			return "["+outSize+", "+computeCosts+", {"
 				+Arrays.toString(inSizes.keySet().toArray(new Long[0]))+", "
 				+Arrays.toString(inSizes.values().toArray(new Double[0]))+"}]";
+		}
+	}
+	
+	private static class StaticCosts {
+		public final HashMap<Long, Double> _computeCosts;
+		public final double _compute;
+		public final double _read;
+		public final double _write;
+		
+		public StaticCosts(HashMap<Long,Double> allComputeCosts, double computeCost, double readCost, double writeCost) {
+			_computeCosts = allComputeCosts;
+			_compute = computeCost;
+			_read = readCost;
+			_write = writeCost;
 		}
 	}
 	

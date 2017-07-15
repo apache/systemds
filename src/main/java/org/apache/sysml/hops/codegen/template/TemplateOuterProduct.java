@@ -48,11 +48,11 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 public class TemplateOuterProduct extends TemplateBase {
 	
 	public TemplateOuterProduct() {
-		super(TemplateType.OuterProdTpl);
+		super(TemplateType.OUTER);
 	}
 	
 	public TemplateOuterProduct(boolean closed) {
-		super(TemplateType.OuterProdTpl, closed);
+		super(TemplateType.OUTER, closed);
 	}
 
 	@Override
@@ -141,7 +141,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			return;
 		
 		//recursively process required childs
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OuterProdTpl);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OUTER);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me.isPlanRef(i) )
@@ -220,7 +220,7 @@ public class TemplateOuterProduct extends TemplateBase {
 		tmp.put(hop.getHopID(), out);
 	}
 
-	protected static MemoTableEntry dropAlternativePlan(CPlanMemoTable memo, MemoTableEntry me1, MemoTableEntry me2) {
+	public static MemoTableEntry dropAlternativePlan(CPlanMemoTable memo, MemoTableEntry me1, MemoTableEntry me2) {
 		//if there are two alternative sub plans with references to disjoint outer product plans
 		//drop the one that would render the other invalid
 		if( me1.countPlanRefs()==1 && me2.countPlanRefs()==1 
@@ -229,8 +229,8 @@ public class TemplateOuterProduct extends TemplateBase {
 			Hop c1 = memo._hopRefs.get(me1.input(me1.getPlanRefIndex()));
 			Hop c2 = memo._hopRefs.get(me2.input(me2.getPlanRefIndex()));
 			
-			if( memo.contains(c1.getHopID(), TemplateType.OuterProdTpl) 
-				&& memo.contains(c2.getHopID(), TemplateType.OuterProdTpl) )
+			if( memo.contains(c1.getHopID(), TemplateType.OUTER) 
+				&& memo.contains(c2.getHopID(), TemplateType.OUTER) )
 			{
 				if( HopRewriteUtils.isBinaryMatrixMatrixOperation(c1) 
 					&& HopRewriteUtils.isBinary(c1, OpOp2.MULT, OpOp2.DIV) )

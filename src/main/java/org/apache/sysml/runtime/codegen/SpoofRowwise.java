@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
@@ -121,7 +122,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() ? inputs.get(1).getNumColumns() : -1;
+		final int n2 = _type.isRowTypeB1() ?
+			getMinColsMatrixSideInputs(inputs) : -1;
 		if( !aggIncr || !out.isAllocated() )
 			allocateOutputMatrix(m, n, n2, out);
 		double[] c = out.getDenseBlock();
@@ -168,7 +170,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() ? inputs.get(1).getNumColumns() : -1;
+		final int n2 = _type.isRowTypeB1() ?
+			getMinColsMatrixSideInputs(inputs) : -1;
 		allocateOutputMatrix(m, n, n2, out);
 		
 		//input preparation
@@ -212,6 +215,14 @@ public abstract class SpoofRowwise extends SpoofOperator
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+	
+	private static int getMinColsMatrixSideInputs(ArrayList<MatrixBlock> inputs) {
+		//For B1 types, get the output number of columns as the minimum
+		//number of columns of side input matrices other than vectors.
+		return IntStream.range(1, inputs.size())
+			.map(i -> inputs.get(i).getNumColumns())
+			.filter(ncol -> ncol > 1).min().orElse(1);
 	}
 	
 	private void allocateOutputMatrix(int m, int n, int n2, MatrixBlock out) {

@@ -149,10 +149,10 @@ public class TemplateUtils
 	public static TemplateBase createTemplate(TemplateType type, boolean closed) {
 		TemplateBase tpl = null;
 		switch( type ) {
-			case CellTpl: tpl = new TemplateCell(closed); break;
-			case RowTpl: tpl = new TemplateRow(closed); break;
-			case MultiAggTpl: tpl = new TemplateMultiAgg(closed); break;
-			case OuterProdTpl: tpl = new TemplateOuterProduct(closed); break;
+			case CELL: tpl = new TemplateCell(closed); break;
+			case ROW: tpl = new TemplateRow(closed); break;
+			case MAGG: tpl = new TemplateMultiAgg(closed); break;
+			case OUTER: tpl = new TemplateOuterProduct(closed); break;
 		}
 		return tpl;
 	}
@@ -160,10 +160,10 @@ public class TemplateUtils
 	public static TemplateBase[] createCompatibleTemplates(TemplateType type, boolean closed) {
 		TemplateBase[] tpl = null;
 		switch( type ) {
-			case CellTpl: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRow(closed)}; break;
-			case RowTpl: tpl = new TemplateBase[]{new TemplateRow(closed)}; break;
-			case MultiAggTpl: tpl = new TemplateBase[]{new TemplateMultiAgg(closed)}; break;
-			case OuterProdTpl: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
+			case CELL: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRow(closed)}; break;
+			case ROW: tpl = new TemplateBase[]{new TemplateRow(closed)}; break;
+			case MAGG: tpl = new TemplateBase[]{new TemplateMultiAgg(closed)}; break;
+			case OUTER: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
 		}
 		return tpl;
 	}
@@ -183,9 +183,9 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop... inputs) {
 		Hop X = inputs[0];
 		Hop B1 = (inputs.length>1) ? inputs[1] : null;
-		if( X!=null && HopRewriteUtils.isEqualSize(output, X) )
+		if( (X!=null && HopRewriteUtils.isEqualSize(output, X)) || X==null )
 			return RowType.NO_AGG;
-		else if( (B1 != null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
+		else if( (B1!=null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
 			|| (output instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)output)))
 			return RowType.NO_AGG_B1;
 		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1 
@@ -372,7 +372,7 @@ public class TemplateUtils
 	
 	public static boolean hasCommonRowTemplateMatrixInput(Hop input1, Hop input2, CPlanMemoTable memo) {
 		//if second input has no row template, it's always true
-		if( !memo.contains(input2.getHopID(), TemplateType.RowTpl) )
+		if( !memo.contains(input2.getHopID(), TemplateType.ROW) )
 			return true;
 		//check for common row template input
 		long tmp1 = getRowTemplateMatrixInput(input1, memo);
@@ -381,11 +381,11 @@ public class TemplateUtils
 	}
 	
 	public static long getRowTemplateMatrixInput(Hop current, CPlanMemoTable memo) {
-		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.RowTpl);
+		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
 		long ret = -1;
 		for( int i=0; ret<0 && i<current.getInput().size(); i++ ) {
 			Hop input = current.getInput().get(i);
-			if( me.isPlanRef(i) && memo.contains(input.getHopID(), TemplateType.RowTpl) )
+			if( me.isPlanRef(i) && memo.contains(input.getHopID(), TemplateType.ROW) )
 				ret = getRowTemplateMatrixInput(input, memo);
 			else if( !me.isPlanRef(i) && isMatrix(input) )
 				ret = input.getHopID();

@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.codegen.template;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -28,12 +29,15 @@ public abstract class TemplateBase
 {	
 	public enum TemplateType {
 		//ordering specifies type preferences
-		MultiAggTpl,
-		OuterProdTpl,
-		RowTpl,
-		CellTpl;
+		MAGG,
+		OUTER,
+		ROW,
+		CELL;
 		public int getRank() {
 			return this.ordinal();
+		}
+		public boolean isIn(TemplateType... types) {
+			return ArrayUtils.contains(types, this);
 		}
 	}
 	

@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
 	CPlanComparisonTest.class,
 	CPlanVectorPrimitivesTest.class,
 	DAGCellwiseTmplTest.class,
+	MiscPatternTest.class,
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,
 	RowAggTmplTest.class,

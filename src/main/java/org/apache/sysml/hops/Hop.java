@@ -955,6 +955,10 @@ public abstract class Hop
 		_dim2 = dim2;
 	}
 	
+	public double getSparsity() {
+		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
+	}
+	
 	protected void setOutputDimensions(Lop lop) 
 		throws HopsException
 	{

@@ -26,8 +26,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
@@ -44,6 +44,15 @@ import org.apache.sysml.parser.Expression;
  *
  * Does not rewrite in the presence of foreign parents in the middle of the e-wise multiply chain,
  * since foreign parents may rely on the individual results.
+ * Does not perform rewrites on an element-wise multiply if its dimensions are unknown.
+ *
+ * The new order of element-wise multiply chains is as follows:
+ * <pre>
+ *     (((unknown * object * frame) * ([least-nnz-matrix * matrix] * most-nnz-matrix))
+ *      * ([least-nnz-row-vector * row-vector] * most-nnz-row-vector))
+ *     * ([[scalars * least-nnz-col-vector] * col-vector] * most-nnz-col-vector)
+ * </pre>
+ * Identical elements are replaced with powers.
  */
 public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	@Override
@@ -73,15 +82,18 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			return root;
 		root.setVisited();
 
-		// 1. Find immediate subtree of EMults.
-		if (isBinaryMult(root)) {
+		// 1. Find immediate subtree of EMults. Check dimsKnown.
+		if (isBinaryMult(root) && root.dimsKnown()) {
 			final Hop left = root.getInput().get(0), right = root.getInput().get(1);
+			// The set of BinaryOp element-wise multiply hops in the emult chain.
 			final Set<BinaryOp> emults = new HashSet<>();
+			// The multiset of multiplicands in the emult chain.
 			final Map<Hop, Integer> leaves = new HashMap<>(); // poor man's HashMultiset
 			findEMultsAndLeaves((BinaryOp)root, emults, leaves);
 
 			// 2. Ensure it is profitable to do a rewrite.
-			if (isOptimizable(emults, leaves)) {
+			// Only optimize a subtree of emults if there are at least two emults (meaning, at least 3 multiplicands).
+			if (emults.size() >= 2) {
 				// 3. Check for foreign parents.
 				// A foreign parent is a parent of some EMult that is not in the set.
 				// Foreign parents destroy correctness of this rewrite.
@@ -123,38 +135,110 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 
 	private static Hop constructReplacement(final Set<BinaryOp> emults, final Map<Hop, Integer> leaves) {
 		// Sort by data type
-		final SortedMap<Hop,Integer> sorted = new TreeMap<>(compareByDataType);
+		final SortedSet<Hop> sorted = new TreeSet<>(compareByDataType);
 		for (final Map.Entry<Hop, Integer> entry : leaves.entrySet()) {
 			final Hop h = entry.getKey();
 			// unlink parents that are in the emult set(we are throwing them away)
 			// keep other parents
 			h.getParent().removeIf(parent -> parent instanceof BinaryOp && emults.contains(parent));
-			sorted.put(h, entry.getValue());
+			sorted.add(constructPower(h, entry.getValue()));
 		}
 		// sorted contains all leaves, sorted by data type, stripped from their parents
 
 		// Construct right-deep EMult tree
-		// TODO compile binary outer mult for transition from row and column vectors to matrices
-		// TODO compile subtree for column vectors to avoid blow-up of intermediates on row-col vector transition
-		final Iterator<Map.Entry<Hop, Integer>> iterator = sorted.entrySet().iterator();
-		Hop first = constructPower(iterator.next());
+		final Iterator<Hop> iterator = sorted.iterator();
 
-		for (int i = 1; i < sorted.size(); i++) {
-			final Hop second = constructPower(iterator.next());
-			first = HopRewriteUtils.createBinary(second, first, Hop.OpOp2.MULT);
-			first.setVisited();
+		Hop next = iterator.hasNext() ? iterator.next() : null;
+		Hop colVectorsScalars = null;
+		while(next != null &&
+				(next.getDataType() == Expression.DataType.SCALAR
+						|| next.getDataType() == Expression.DataType.MATRIX && next.getDim2() == 1))
+		{
+			if( colVectorsScalars == null )
+				colVectorsScalars = next;
+			else {
+				colVectorsScalars = HopRewriteUtils.createBinary(next, colVectorsScalars, Hop.OpOp2.MULT);
+				colVectorsScalars.setVisited();
+			}
+			next = iterator.hasNext() ? iterator.next() : null;
 		}
-		return first;
+		// next is not processed and is either null or past col vectors
+
+		Hop rowVectors = null;
+		while(next != null &&
+				(next.getDataType() == Expression.DataType.MATRIX && next.getDim1() == 1))
+		{
+			if( rowVectors == null )
+				rowVectors = next;
+			else {
+				rowVectors = HopRewriteUtils.createBinary(rowVectors, next, Hop.OpOp2.MULT);
+				rowVectors.setVisited();
+			}
+			next = iterator.hasNext() ? iterator.next() : null;
+		}
+		// next is not processed and is either null or past row vectors
+
+		Hop matrices = null;
+		while(next != null &&
+				(next.getDataType() == Expression.DataType.MATRIX))
+		{
+			if( matrices == null )
+				matrices = next;
+			else {
+				matrices = HopRewriteUtils.createBinary(matrices, next, Hop.OpOp2.MULT);
+				matrices.setVisited();
+			}
+			next = iterator.hasNext() ? iterator.next() : null;
+		}
+		// next is not processed and is either null or past matrices
+
+		Hop other = null;
+		while(next != null)
+		{
+			if( other == null )
+				other = next;
+			else {
+				other = HopRewriteUtils.createBinary(other, next, Hop.OpOp2.MULT);
+				other.setVisited();
+			}
+			next = iterator.hasNext() ? iterator.next() : null;
+		}
+		// finished
+
+		// ((other * matrices) * rowVectors) * colVectorsScalars
+		Hop top = null;
+		if( other == null && matrices != null )
+			top = matrices;
+		else if( other != null && matrices == null )
+			top = other;
+		else if( other != null ) { //matrices != null
+			top = HopRewriteUtils.createBinary(other, matrices, Hop.OpOp2.MULT);
+			top.setVisited();
+		}
+
+		if( top == null && rowVectors != null )
+			top = rowVectors;
+		else if( rowVectors != null ) { //top != null
+			top = HopRewriteUtils.createBinary(top, rowVectors, Hop.OpOp2.MULT);
+			top.setVisited();
+		}
+
+		if( top == null && colVectorsScalars != null )
+			top = colVectorsScalars;
+		else if( colVectorsScalars != null ) { //top != null
+			top = HopRewriteUtils.createBinary(top, colVectorsScalars, Hop.OpOp2.MULT);
+			top.setVisited();
+		}
+
+		return top;
 	}
 
-	private static Hop constructPower(final Map.Entry<Hop, Integer> entry) {
-		final Hop hop = entry.getKey();
-		final int cnt = entry.getValue();
+	private static Hop constructPower(final Hop hop, final int cnt) {
 		assert(cnt >= 1);
 		hop.setVisited(); // we will visit the leaves' children next
 		if (cnt == 1)
 			return hop;
-		Hop pow = HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
+		final Hop pow = HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
 		pow.setVisited();
 		return pow;
 	}
@@ -162,8 +246,8 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	/**
 	 * A Comparator that orders Hops by their data type, dimension, and sparsity.
 	 * The order is as follows:
-	 * 		scalars > row vectors > col vectors >
-	 *      non-vector matrices ordered by sparsity (higher nnz first, unknown sparsity last) >
+	 * 		scalars < col vectors < row vectors <
+	 *      non-vector matrices ordered by sparsity (higher nnz last, unknown sparsity last) >
 	 *      other data types.
 	 * Disambiguate by Hop ID.
 	 */
@@ -174,33 +258,33 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		{
 			for (int i = 0, valuesLength = Expression.DataType.values().length; i < valuesLength; i++)
 				switch(Expression.DataType.values()[i]) {
-				case SCALAR: orderDataType[i] = 4; break;
-				case MATRIX: orderDataType[i] = 3; break;
+				case SCALAR: orderDataType[i] = 0; break;
+				case MATRIX: orderDataType[i] = 1; break;
 				case FRAME:  orderDataType[i] = 2; break;
-				case OBJECT: orderDataType[i] = 1; break;
-				case UNKNOWN:orderDataType[i] = 0; break;
+				case OBJECT: orderDataType[i] = 3; break;
+				case UNKNOWN:orderDataType[i] = 4; break;
 				}
 		}
 
 		@Override
-		public final int compare(Hop o1, Hop o2) {
-			int c = Integer.compare(orderDataType[o1.getDataType().ordinal()], orderDataType[o2.getDataType().ordinal()]);
+		public final int compare(final Hop o1, final Hop o2) {
+			final int c = Integer.compare(orderDataType[o1.getDataType().ordinal()], orderDataType[o2.getDataType().ordinal()]);
 			if (c != 0) return c;
 
 			// o1 and o2 have the same data type
 			switch (o1.getDataType()) {
 			case MATRIX:
 				// two matrices; check for vectors
-				if (o1.getDim1() == 1) { // row vector
-					if (o2.getDim1() != 1) return 1; // row vectors are greatest of matrices
-					return compareBySparsityThenId(o1, o2); // both row vectors
-				} else if (o2.getDim1() == 1) { // 2 is row vector; 1 is not
-					return -1; // row vectors are the greatest matrices
-				} else if (o1.getDim2() == 1) { // col vector
-					if (o2.getDim2() != 1) return 1; // col vectors greater than non-vectors
-					return compareBySparsityThenId(o1, o2); // both col vectors
+				if (o1.getDim2() == 1) { // col vector
+						if (o2.getDim2() != 1) return -1; // col vectors are greatest of matrices
+						return compareBySparsityThenId(o1, o2); // both col vectors
 				} else if (o2.getDim2() == 1) { // 2 is col vector; 1 is not
-					return -1; // col vectors greater than non-vectors
+						return 1; // col vectors are the greatest matrices
+				} else if (o1.getDim1() == 1) { // row vector
+						if (o2.getDim1() != 1) return -1; // row vectors greater than non-vectors
+						return compareBySparsityThenId(o1, o2); // both row vectors
+				} else if (o2.getDim1() == 1) { // 2 is row vector; 1 is not
+						return 1; // row vectors greater than non-vectors
 				} else { // both non-vectors
 					return compareBySparsityThenId(o1, o2);
 				}
@@ -208,13 +292,13 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 				return Long.compare(o1.getHopID(), o2.getHopID());
 			}
 		}
-		private int compareBySparsityThenId(Hop o1, Hop o2) {
+		private int compareBySparsityThenId(final Hop o1, final Hop o2) {
 			// the hop with more nnz is first; unknown nnz (-1) last
-			int c = Long.compare(o1.getNnz(), o2.getNnz());
-			if (c != 0) return c;
+			final int c = Long.compare(o1.getNnz(), o2.getNnz());
+			if (c != 0) return -c;
 			return Long.compare(o1.getHopID(), o2.getHopID());
 		}
-	}.reversed();
+	};
 
 	/**
 	 * Check if a node has a parent that is not in the set of emults. Recursively check children who are also emults.
@@ -242,8 +326,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	 * @param emults Out parameter. The set of BinaryOp element-wise multiply hops in the emult chain (including root).
 	 * @param leaves Out parameter. The multiset of multiplicands in the emult chain.
 	 */
-	private static void findEMultsAndLeaves(final BinaryOp root, final Set<BinaryOp> emults,
-			final Map<Hop, Integer> leaves) {
+	private static void findEMultsAndLeaves(final BinaryOp root, final Set<BinaryOp> emults, final Map<Hop, Integer> leaves) {
 		// Because RewriteCommonSubexpressionElimination already ran, it is safe to compare by equality.
 		emults.add(root);
 		
@@ -268,13 +351,4 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		map.put(k, map.getOrDefault(k, 0) + 1);
 	}
 
-	/**
-	 * Only optimize a subtree of emults if there are at least two emults (meaning, at least 3 multiplicands).
-	 * @param emults The set of BinaryOp element-wise multiply hops in the emult chain.
-	 * @param leaves The multiset of multiplicands in the emult chain.
-	 * @return If the multiset is worth optimizing.
-	 */
-	private static boolean isOptimizable(final Set<BinaryOp> emults, final Map<Hop, Integer> leaves) {
-		return emults.size() >= 2;
-	}
 }

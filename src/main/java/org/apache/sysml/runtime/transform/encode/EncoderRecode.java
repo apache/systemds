@@ -37,9 +37,6 @@ public class EncoderRecode extends Encoder
 {	
 	private static final long serialVersionUID = 8213163881283341874L;
 
-	private int[] _mvrcdList = null;
-	private int[] _fullrcdList = null;
-	
 	//recode maps and custom map for partial recode maps 
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
@@ -49,28 +46,9 @@ public class EncoderRecode extends Encoder
 		throws JSONException 
 	{
 		super(null, clen);
-		int rcdCount = 0;
 		
 		if( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
-			rcdCount = initColList(collist);
-		}
-		
-		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) {
-			_mvrcdList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_MVRCD);
-			rcdCount += _mvrcdList.length;
-		}
-		
-		if ( rcdCount > 0 ) {
-			_fullrcdList = new int[rcdCount];
-			int idx = -1;
-			if(_colList != null)
-				for(int i=0; i < _colList.length; i++)
-					_fullrcdList[++idx] = _colList[i]; 
-			
-			if(_mvrcdList != null)
-				for(int i=0; i < _mvrcdList.length; i++)
-					_fullrcdList[++idx] = _mvrcdList[i]; 
+			_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
 		}
 	}
 	

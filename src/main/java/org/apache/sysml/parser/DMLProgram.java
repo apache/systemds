@@ -284,7 +284,7 @@ public class DMLProgram
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		
 		// process If Statement - add runtime program blocks to program
@@ -351,7 +351,7 @@ public class DMLProgram
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		
 		// process For Statement - add runtime program blocks to program
@@ -429,7 +429,7 @@ public class DMLProgram
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		
 		// process function statement block - add runtime program blocks to program
@@ -511,7 +511,7 @@ public class DMLProgram
 			retPB = rtpb;
 			
 			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		else {
 	
@@ -548,7 +548,7 @@ public class DMLProgram
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		
 		return retPB;

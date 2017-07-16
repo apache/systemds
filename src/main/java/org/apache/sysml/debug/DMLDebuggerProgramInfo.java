@@ -336,9 +336,9 @@ public class DMLDebuggerProgramInfo
 				}
 				//set MR job line number
 				if (min == 0 || min == Integer.MAX_VALUE)
-					currMRInst.setLocation(prevLineNum, prevLineNum, -1, -1); //last seen instruction line number
+					currMRInst.setLocation(null, prevLineNum, prevLineNum, -1, -1); //last seen instruction line number
 				else
-					currMRInst.setLocation(min, min, -1, -1); //minimum instruction line number for this MR job
+					currMRInst.setLocation(null, min, min, -1, -1); //minimum instruction line number for this MR job
 				//insert current MR instruction into corresponding source code line
 				if (!disassembler.containsKey(currMRInst.getLineNum()))
 					disassembler.put(currMRInst.getLineNum(), new ArrayList<Instruction>());
@@ -348,7 +348,7 @@ public class DMLDebuggerProgramInfo
 			{
 				//if CP instruction line number is not set, then approximate to last seen line number
 				if (currInst.getLineNum() == 0)
-					currInst.setLocation(prevLineNum, prevLineNum, -1, -1);
+					currInst.setLocation(null, prevLineNum, prevLineNum, -1, -1);
 				//insert current CP instruction into corresponding source code line
 				if (!disassembler.containsKey(currInst.getLineNum()))
 					disassembler.put(currInst.getLineNum(), new ArrayList<Instruction>());

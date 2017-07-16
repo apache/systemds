@@ -76,6 +76,7 @@ public class ScriptExecutorUtils {
 		// in digging into performance problems are recorded and displayed
 		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
 		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
+		DMLScript.FINEGRAINED_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 
 		// Sets the maximum number of GPUs per process, -1 for all available
 		// GPUs

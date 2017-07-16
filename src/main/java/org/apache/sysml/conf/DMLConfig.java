@@ -75,6 +75,7 @@ public class DMLConfig
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
+	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
 	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS      = "systemml.stats.extraDNN"; //boolean
 	public static final String MAX_GPUS_PER_PROCESS = "systemml.gpu.perProcessMax"; // boolean, maximum number of gpus to use, -1 for all
@@ -117,6 +118,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
+		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 
@@ -403,7 +405,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
-				EXTRA_GPU_STATS, EXTRA_DNN_STATS
+				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

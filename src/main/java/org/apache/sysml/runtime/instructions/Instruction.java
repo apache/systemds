@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -56,6 +56,7 @@ public abstract class Instruction
 	private long instID = -1;
 	
 	//originating script positions
+	protected String filename = null;
 	protected int beginLine = -1;
 	protected int endLine = -1;  
 	protected int beginCol = -1; 
@@ -77,7 +78,8 @@ public abstract class Instruction
 	 * @param beginCol beginning column position
 	 * @param endCol ending column position
 	 */
-	public void setLocation ( int beginLine, int endLine,  int beginCol, int endCol) {
+	public void setLocation ( String filename, int beginLine, int endLine,  int beginCol, int endCol) {
+		this.filename = filename;
 		this.beginLine = beginLine;
 		this.endLine = endLine;
 		this.beginCol = beginCol;
@@ -86,6 +88,7 @@ public abstract class Instruction
 	
 	public void setLocation(Lop lop) {
 		if(lop != null) {
+			this.filename = lop.getFilename();
 			this.beginLine = lop._beginLine;
 			this.endLine = lop._endLine;
 			this.beginCol = lop._beginColumn;
@@ -95,6 +98,7 @@ public abstract class Instruction
 	
 	public void setLocation(DataIdentifier id) {
 		if(id != null) {
+			this.filename = id.getFilename();
 			this.beginLine = id.getBeginLine();
 			this.endLine = id.getEndLine();
 			this.beginCol = id.getBeginColumn();
@@ -104,6 +108,7 @@ public abstract class Instruction
 	
 	public void setLocation(Instruction oldInst) {
 		if(oldInst != null) {
+			this.filename = oldInst.filename;
 			this.beginLine = oldInst.beginLine;
 			this.endLine = oldInst.endLine;
 			this.beginCol = oldInst.beginCol;
@@ -152,12 +157,28 @@ public abstract class Instruction
 	}
 	
 	public String getExtendedOpcode() {
-		if( type == INSTRUCTION_TYPE.SPARK )
-			return SP_INST_PREFIX + getOpcode();
-		else if( type == INSTRUCTION_TYPE.GPU )
-			return GPU_INST_PREFIX + getOpcode();
-		else
-			return getOpcode();
+		if(DMLScript.FINEGRAINED_STATISTICS) {
+			String scriptInfo;
+			if(filename != null)
+				scriptInfo = " [" + filename + " " + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
+			else
+				scriptInfo = " [" + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
+			if( type == INSTRUCTION_TYPE.SPARK )
+				return SP_INST_PREFIX + getOpcode() + scriptInfo;
+			else if( type == INSTRUCTION_TYPE.GPU )
+				return GPU_INST_PREFIX + getOpcode() + scriptInfo;
+			else
+				return getOpcode() + scriptInfo;
+		}
+		else {
+			// This ensures that there is no overhead if finegrained statistics is disabled
+			if( type == INSTRUCTION_TYPE.SPARK )
+				return SP_INST_PREFIX + getOpcode();
+			else if( type == INSTRUCTION_TYPE.GPU )
+				return GPU_INST_PREFIX + getOpcode();
+			else
+				return getOpcode();
+		}
 	}
 
 	public boolean requiresLabelUpdate()

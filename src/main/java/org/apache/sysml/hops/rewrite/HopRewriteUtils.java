@@ -645,7 +645,7 @@ public class HopRewriteUtils
 	}
 	
 	public static void copyLineNumbers( Hop src, Hop dest ) {
-		dest.setAllPositions(src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
+		dest.setAllPositions(src.getFilename(), src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
 	}
 	
 	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, Hop src )

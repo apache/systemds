@@ -152,7 +152,7 @@ public class SortKeys extends Lop
 		}
 		
 		SortKeys retVal = new SortKeys(input1, op, dt, vt, et);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		retVal.setAllPositions(input1.getFilename(), input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
 		return retVal;
 	}
 
@@ -172,7 +172,7 @@ public class SortKeys extends Lop
 		}
 		
 		SortKeys retVal = new SortKeys(input1, input2, op, dt, vt, et);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		retVal.setAllPositions(input1.getFilename(), input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
 		return retVal;
 	}
 

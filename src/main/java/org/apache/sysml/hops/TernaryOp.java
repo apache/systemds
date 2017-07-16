@@ -422,7 +422,7 @@ public class TernaryOp extends Hop
 			Ternary tertiary = new Ternary(inputLops, tertiaryOp, getDataType(), getValueType(), ignoreZeros, et);
 			
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
-			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			tertiary.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			//force blocked output in CP (see below), otherwise binarycell
 			if ( et == ExecType.SPARK ) {
@@ -447,7 +447,7 @@ public class TernaryOp extends Hop
 			group1.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			
-			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			group1.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			Ternary tertiary = null;
 			// create "group" lops for MATRIX inputs
@@ -462,7 +462,7 @@ public class TernaryOp extends Hop
 					group2.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					group2.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					group3 = new Group(
 							inputLops[2],
@@ -471,7 +471,7 @@ public class TernaryOp extends Hop
 					group3.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					group3.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3 )
 						tertiary = new Ternary(
@@ -495,7 +495,7 @@ public class TernaryOp extends Hop
 					group2.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					group2.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3)
 						tertiary = new Ternary(
@@ -579,7 +579,7 @@ public class TernaryOp extends Hop
 					group3.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					group3.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3)
 						tertiary = new Ternary(
@@ -618,14 +618,14 @@ public class TernaryOp extends Hop
 						tertiary, Group.OperationTypes.Sort, getDataType(),
 						getValueType());
 				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-				group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				group4.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 				Aggregate agg1 = new Aggregate(
 						group4, HopsAgg2Lops.get(AggOp.SUM), getDataType(),
 						getValueType(), ExecType.MR);
 				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
 	
-				agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				agg1.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 				// kahamSum is used for aggregation but inputs do not have
 				// correction values

@@ -90,7 +90,7 @@ public class CombineUnary extends Lop
 		}
 		
 		CombineUnary comn = new CombineUnary(input1, dt, vt);
-		comn.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndLine());
+		comn.setAllPositions(input1.getFilename(), input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndLine());
 		return comn;
 	}
 	

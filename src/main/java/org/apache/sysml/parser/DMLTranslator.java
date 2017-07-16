@@ -877,7 +877,7 @@ public class DMLTranslator
 					long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
-					read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+					read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 					ids.put(varName, read);
 				}
 			}
@@ -946,7 +946,7 @@ public class DMLTranslator
 						Hop ae = processExpression(source, target, ids);
 						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
 								ae);
-						printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+						printHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
 								current.getEndColumn());
 						output.add(printHop);
 					} else if (ptype == PRINTTYPE.STOP) {
@@ -955,7 +955,7 @@ public class DMLTranslator
 						Hop ae = processExpression(source, target, ids);
 						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
 								ae);
-						stopHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+						stopHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
 								current.getEndColumn());
 						output.add(stopHop);
 					} else if (ptype == PRINTTYPE.PRINTF) {
@@ -1000,7 +1000,7 @@ public class DMLTranslator
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
-							transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndLine());
+							transientwrite.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndLine());
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
@@ -1031,7 +1031,7 @@ public class DMLTranslator
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
-							transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+							transientwrite.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
@@ -1241,7 +1241,7 @@ public class DMLTranslator
 				
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
 						null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
-				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+				read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 			}
 			_ids.put(varName, read);
 		}
@@ -1339,7 +1339,7 @@ public class DMLTranslator
 						long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
 								null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
-						read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+						read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 					}
 					_ids.put(varName, read);
 				}
@@ -1417,28 +1417,28 @@ public class DMLTranslator
 			else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceInt.getValue());
-				litop.setAllPositions(sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
+				litop.setAllPositions(sourceInt.getFilename(), sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
 				setIdentifierParams(litop, sourceInt);
 				return litop;
 			} 
 			else if (source instanceof DoubleIdentifier) {
 				DoubleIdentifier sourceDouble = (DoubleIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceDouble.getValue());
-				litop.setAllPositions(sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
+				litop.setAllPositions(source.getFilename(), sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
 				setIdentifierParams(litop, sourceDouble);
 				return litop;
 			}
 			else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceBoolean.getValue());
-				litop.setAllPositions(sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
+				litop.setAllPositions(sourceBoolean.getFilename(), sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;
 			} 
 			else if (source instanceof StringIdentifier) {
 				StringIdentifier sourceString = (StringIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceString.getValue());
-				litop.setAllPositions(sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
+				litop.setAllPositions(sourceString.getFilename(), sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
 				setIdentifierParams(litop, sourceString);
 				return litop;
 			} 
@@ -1505,7 +1505,7 @@ public class DMLTranslator
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
 			else {
 				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
-				rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+				rowUpperHops.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 			}
 		}
 		if (target.getColLowerBound() != null)
@@ -1543,7 +1543,7 @@ public class DMLTranslator
 		
 		setIdentifierParams(leftIndexOp, target);
 	
-		leftIndexOp.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+		leftIndexOp.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 		leftIndexOp.setDim1(target.getOrigDim1());
 		leftIndexOp.setDim2(target.getOrigDim2());
 	
@@ -1570,7 +1570,7 @@ public class DMLTranslator
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
 			else {
 				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
-				rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+				rowUpperHops.setAllPositions(source.getFilename(), source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			}
 		}
 		if (source.getColLowerBound() != null)
@@ -1599,7 +1599,7 @@ public class DMLTranslator
 				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
 				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
-		indexOp.setAllPositions(indexOp.getBeginLine(), indexOp.getBeginColumn(), indexOp.getEndLine(), indexOp.getEndColumn());
+		indexOp.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 		setIdentifierParams(indexOp, target);
 		
 		return indexOp;
@@ -1657,7 +1657,7 @@ public class DMLTranslator
 			throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
 		}
 		setIdentifierParams(currBop, source.getOutput());
-		currBop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBop;
 		
 	}
@@ -1701,7 +1701,7 @@ public class DMLTranslator
 			op = OpOp2.NOTEQUAL;
 		}
 		currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, left, right);
-		currBop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBop;
 	}
 
@@ -1735,7 +1735,7 @@ public class DMLTranslator
 		
 		if (source.getRight() == null) {
 			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
-			currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			currUop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			return currUop;
 		} 
 		else {
@@ -1751,7 +1751,7 @@ public class DMLTranslator
 				throw new RuntimeException(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
 			}
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, left, right);
-			currBop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			// setIdentifierParams(currBop,source.getOutput());
 			return currBop;
 		}
@@ -1830,9 +1830,9 @@ public class DMLTranslator
 		// set properties for created hops based on outputs of source expression
 		for ( int i=0; i < source.getOutputs().length; i++ ) {
 			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
-			outputs.get(i).setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			outputs.get(i).setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		}
-		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 
 		return currBuiltinOp;
 	}
@@ -1952,7 +1952,7 @@ public class DMLTranslator
 		
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		
-		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		
 		return currBuiltinOp;
 	}
@@ -2040,7 +2040,7 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		if( source.getOpCode()==DataExpression.DataOp.READ )
 			((DataOp)currBuiltinOp).setInputBlockSizes(target.getRowsInBlock(), target.getColumnsInBlock());
-		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		
 		return currBuiltinOp;
 	}
@@ -2102,9 +2102,9 @@ public class DMLTranslator
 		// set properties for created hops based on outputs of source expression
 		for ( int i=0; i < source.getOutputs().length; i++ ) {
 			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
-			outputs.get(i).setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			outputs.get(i).setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		}
-		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 
 		return currBuiltinOp;
 	}
@@ -2776,7 +2776,7 @@ public class DMLTranslator
 			// Since the dimension of output doesnot match that of input variable for these operations
 			setIdentifierParams(currBuiltinOp, source.getOutput());
 		}
-		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
 	}
 	

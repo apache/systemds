@@ -326,7 +326,7 @@ The following SLF4J dependencies are distributed under the MIT license.
 SLF4J API Module (http://www.slf4j.org) org.slf4j:slf4j-api:1.7.5 (slf4j-api-1.7.5.jar)
 SLF4J LOG4J-12 Binding (http://www.slf4j.org) org.slf4j:slf4j-log4j12:1.7.5 (slf4j-log4j12-1.7.5.jar)
 
-Copyright (c) 2004-2008 QOS.ch
+Copyright (c) 2004-2007 QOS.ch
 All rights reserved.
 
 MIT license:

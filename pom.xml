@@ -303,7 +303,7 @@
 							<outputDirectory>${basedir}/target/lib/hadoop/bin</outputDirectory>
 						</configuration>
 					</execution>
-					
+
 					<execution>
 						<id>copy-resources-filtered</id>
 						<phase>compile</phase>
@@ -344,7 +344,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 			    <groupId>com.github.os72</groupId>
 			    <artifactId>protoc-jar-maven-plugin</artifactId>
@@ -870,6 +870,7 @@
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
+ 								<exclude>**/*.svg</exclude>
 								<!-- Jupyter Notebooks -->
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -3816,7 +3817,57 @@ public class Dag<N extends Lop>
 		return false;
 	}
 	
+	/**
+	 * Performs various cleanups on the list of instructions in order to reduce the
+	 * number of instructions to simply debugging and reduce interpretation overhead. 
+	 * 
+	 * @param insts list of instructions
+	 * @return new list of potentially modified instructions
+	 * @throws DMLRuntimeException in case of instruction parsing errors
+	 */
 	private static ArrayList<Instruction> cleanupInstructions(ArrayList<Instruction> insts) 
+		throws DMLRuntimeException 
+	{
+		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2
+		ArrayList<Instruction> tmp1 = collapseAssignvarAndRmvarInstructions(insts);
+		
+		//step 2: create packed rmvar instructions: rmvar m1, rmvar m2 -> rmvar m1 m2
+		ArrayList<Instruction> tmp2 = createPackedRmvarInstructions(tmp1);
+		
+		return tmp2;
+	}
+	
+	private static ArrayList<Instruction> collapseAssignvarAndRmvarInstructions(ArrayList<Instruction> insts) 
+		throws DMLRuntimeException 
+	{
+		ArrayList<Instruction> ret = new ArrayList<Instruction>();
+		Iterator<Instruction> iter = insts.iterator();
+		while( iter.hasNext() ) {
+			Instruction inst = iter.next();
+			if( iter.hasNext() && inst instanceof VariableCPInstruction
+				&& ((VariableCPInstruction)inst).isAssignVariable() ) {
+				VariableCPInstruction inst1 = (VariableCPInstruction) inst;
+				Instruction inst2 = iter.next();
+				if( inst2 instanceof VariableCPInstruction
+					&& ((VariableCPInstruction)inst2).isRemoveVariableNoFile()
+					&& inst1.getInput1().getName().equals(
+						((VariableCPInstruction)inst2).getInput1().getName()) ) {
+					ret.add(VariableCPInstruction.prepareMoveInstruction(
+						inst1.getInput1().getName(), inst1.getInput2().getName()));
+				}
+				else {
+					ret.add(inst1);
+					ret.add(inst2);
+				}
+			}
+			else {
+				ret.add(inst);
+			}
+		}
+		return ret;
+	}
+	
+	private static ArrayList<Instruction> createPackedRmvarInstructions(ArrayList<Instruction> insts) 
 		throws DMLRuntimeException 
 	{
 		ArrayList<Instruction> ret = new ArrayList<Instruction>();

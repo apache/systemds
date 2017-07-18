@@ -228,6 +228,10 @@ public class VariableCPInstruction extends CPInstruction
 			|| opcode == VariableOperationCode.RemoveVariableAndFile);
 	}
 	
+	public boolean isAssignVariable() {
+		return (opcode == VariableOperationCode.AssignVariable);
+	}
+	
 	public FileFormatProperties getFormatProperties() {
 		return _formatProperties;
 	}
@@ -707,15 +711,19 @@ public class VariableCPInstruction extends CPInstruction
 			// get source variable 
 			Data srcData = ec.getVariable(getInput1().getName());		
 				
-			if ( srcData == null ) 
-				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
-				
-			// remove existing variable bound to target name
-			Data tgt = ec.removeVariable(getInput2().getName());
-				
-			//cleanup matrix data on fs/hdfs (if necessary)
-			if ( tgt != null && tgt instanceof MatrixObject ) {
-				ec.cleanupMatrixObject((MatrixObject) tgt);
+			if ( srcData == null ) {
+				throw new DMLRuntimeException("Unexpected error: could not find a data object "
+					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
+			}
+			
+			if( getInput2().getDataType().isMatrix() ) {
+				// remove existing variable bound to target name
+				Data tgt = ec.removeVariable(getInput2().getName());
+					
+				//cleanup matrix data on fs/hdfs (if necessary)
+				if ( tgt != null && tgt instanceof MatrixObject ) {
+					ec.cleanupMatrixObject((MatrixObject) tgt);
+				}
 			}
 			
 			// do the actual move

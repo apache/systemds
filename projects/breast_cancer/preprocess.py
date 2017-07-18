@@ -69,7 +69,7 @@ num_partitions = 20000
 add_row_indices = True
 train_frac = 0.8
 split_seed = 24
-folder = "/home/MDM/breast_cancer/data"
+folder = "data"  # Linux-filesystem directory to read raw data
 save_folder = "data"  # Hadoop-supported directory in which to save DataFrames
 df_path = os.path.join(save_folder, "samples_{}_{}{}.parquet".format(
     "labels" if training else "testing", sample_size, "_grayscale" if grayscale else ""))

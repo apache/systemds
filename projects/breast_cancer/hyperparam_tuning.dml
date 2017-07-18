@@ -23,7 +23,7 @@
  * Hyperparameter Tuning Script For LeNet-like CNN Model
  */
 # Imports
-source("cnn.dml") as clf
+source("breastcancer/convnet.dml") as clf
 
 # Read data
 # X = read("data/X_0.01_sample_binary")

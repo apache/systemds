@@ -28,21 +28,17 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
 import org.apache.sysml.api.mlcontext.FrameSchema;
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
@@ -50,19 +46,14 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import scala.collection.Iterator;
 
-public class MLContextFrameTest extends AutomatedTestBase {
-	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
-	protected final static String TEST_NAME = "MLContextFrame";
+public class MLContextFrameTest extends MLContextTestBase {
 
 	public static enum SCRIPT_TYPE {
 		DML, PYDML
@@ -72,23 +63,12 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		ANY, FILE, JAVA_RDD_STR_CSV, JAVA_RDD_STR_IJV, RDD_STR_CSV, RDD_STR_IJV, DATAFRAME
 	};
 
-	private static SparkSession spark;
-	private static JavaSparkContext sc;
-	private static MLContext ml;
 	private static String CSV_DELIM = ",";
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = createSystemMLSparkSession("MLContextFrameTest", "local");
-		ml = new MLContext(spark);
-		sc = MLContextUtil.getJavaSparkContext(ml);
+		MLContextTestBase.setUpClass();
 		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
-	}
-
-	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
 	@Test
@@ -644,21 +624,4 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	// }
 	// }
 
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		sc = null;
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
-	}
 }

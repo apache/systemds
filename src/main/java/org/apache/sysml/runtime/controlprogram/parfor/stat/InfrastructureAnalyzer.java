@@ -25,9 +25,12 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -57,7 +60,10 @@ public class InfrastructureAnalyzer
 	private static boolean _localJT      = false;
 	private static long _blocksize       = -1;
 	private static boolean _yarnEnabled  = false;
-	
+
+	private static int _numLocalGPUs = -1;	// The number of GPUs on the local system
+
+
 	//static initialization, called for each JVM (on each node)
 	static 
 	{
@@ -395,7 +401,15 @@ public class InfrastructureAnalyzer
 		String version = System.getProperty("java.version");
 		
 		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		_isLtJDK8 = (UtilFunctions.compareVersion(version, "1.8") < 0); 
+		_isLtJDK8 = (UtilFunctions.compareVersion(version, "1.8") < 0);
+
+		// Check for GPUs on this machine if GPU mode is enabled
+		try {
+			if (DMLScript.USE_ACCELERATOR)
+				_numLocalGPUs = GPUContextPool.getDeviceCount();
+		} catch (DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**

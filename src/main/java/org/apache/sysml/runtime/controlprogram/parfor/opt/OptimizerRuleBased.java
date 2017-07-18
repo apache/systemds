@@ -32,14 +32,15 @@ import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -48,15 +49,16 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
-import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
@@ -74,8 +76,6 @@ import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -83,6 +83,8 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -98,6 +100,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -931,8 +934,37 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		return ret;
 	}
-	
-	
+
+	/**
+	 * Calculates the maximum memory needed in a CP only Parfor
+	 * based on the {@link Hop#computeMemEstimate(MemoTable)} function
+	 * called recursively for the "children" of the parfor {@link OptNode}.
+	 *
+	 * @param n the parfor {@link OptNode}
+	 * @return the maximum memory needed for any operation inside a parfor in CP execution mode
+	 * @throws DMLRuntimeException if error
+	 */
+	protected double getMaxCPOnlyBudget(OptNode n) throws DMLRuntimeException {
+		ExecType et = n.getExecType();
+		double ret = 0;
+
+		if (n.isLeaf() && et != getRemoteExecType()) {
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			if (h.getForcedExecType() != LopProperties.ExecType.MR  //e.g., -exec=hadoop
+					&& h.getForcedExecType() != LopProperties.ExecType.SPARK) {
+				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
+				ret = Math.max(ret, mem);
+			}
+		}
+
+		if (!n.isLeaf()) {
+			for (OptNode c : n.getChilds()) {
+				ret = Math.max(ret, getMaxCPOnlyBudget(c));
+			}
+		}
+		return ret;
+	}
+
 	///////
 	//REWRITE set operations exec type
 	///
@@ -1275,7 +1307,24 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//constrain max parfor parallelism by problem size
 			int parforK = (int)((_N<kMax)? _N : kMax);
-			
+
+			// if gpu mode is enabled, the amount of parallelism is set to
+			// number of iterations that can be run in parallel on 1 GPU
+			// times the number of GPUs, otherwise it default to the
+			// number of CPU cores and the operations are run in CP mode
+			if (DMLScript.USE_ACCELERATOR) {
+				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
+				double maxMemUsage = getMaxCPOnlyBudget(n);
+				if (maxMemUsage < perGPUBudget){
+					int maxParallelismPerGPU = (int) Math.ceil(perGPUBudget / (double)maxMemUsage);
+					parforK = (GPUContextPool.getDeviceCount()) * maxParallelismPerGPU;
+					parforK = Math.min(parforK, (int)_N);
+					LOG.debug("Setting degree of parallelism + [" + parforK + "] for GPU; per GPU budget :["
+							+ perGPUBudget + "], parfor budget :[" + maxMemUsage + "],  max parallelism per GPU : ["
+							+ maxParallelismPerGPU + "]");
+				}
+			}
+
 			//set parfor degree of parallelism
 			pfpb.setDegreeOfParallelism(parforK);
 			n.setK(parforK);	

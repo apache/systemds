@@ -225,7 +225,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		MatrixBlock outputBlock =  new MatrixBlock(input.getNumRows(), input.getNumColumns(), (input.isInSparseFormat() || dout.isInSparseFormat()));
 		
 		if( !input.isEmpty() && !dout.isEmpty() ) {
-			outputBlock.allocateDenseOrSparseBlock();
+			outputBlock.allocateDenseBlock();
 			LibMatrixDNN.reluBackward(input, dout, outputBlock, _numThreads);
 		}
 		

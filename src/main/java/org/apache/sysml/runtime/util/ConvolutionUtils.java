@@ -92,7 +92,7 @@ public class ConvolutionUtils {
 						int prevDestIndex = 0;
 						for(int j = apos; j < apos+alen; j++) {
 							// Multiplication by zero. Assumption: aix is sorted.
-							Arrays.fill(dest, cix+prevDestIndex, aix[j], 0);
+							Arrays.fill(dest, cix+prevDestIndex, cix+aix[j], 0);
 							prevDestIndex = aix[j]+1;
 							dest[ cix+aix[j] ] *= avals[j];
 						}

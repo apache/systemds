@@ -37,7 +37,7 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofOuterProduct { \n"
 			+ "  public %TMP%() {\n"
-			+ "    _outerProductType = OutProdType.%TYPE%;\n"
+			+ "    super(OutProdType.%TYPE%);\n"
 			+ "  }\n"
 			+ "  protected void genexecDense(double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, double[] c, int ci, int m, int n, int len, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"

@@ -831,6 +831,10 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+	public static boolean containsInput(Hop current, Hop probe) {
+		return rContainsInput(current, probe, new HashSet<Long>());	
+	}
+	
 	private static boolean rContainsInput(Hop current, Hop probe, HashSet<Long> memo) {
 		if( memo.contains(current.getHopID()) )
 			return false;

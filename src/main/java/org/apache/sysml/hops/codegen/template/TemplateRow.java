@@ -118,8 +118,10 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() &&
 			((hop instanceof BinaryOp && isValidBinaryOperation(hop)
 				&& hop.getDim1() > 1 && input.getDim1()>1) 
-			 ||(hop instanceof AggBinaryOp && input.getDim2()==1
-				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
+			 ||(hop instanceof AggBinaryOp
+				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
+			 	&& (input.getDim2()==1 || (input==hop.getInput().get(1) 
+			 	&& HopRewriteUtils.containsInput(input, hop.getInput().get(0).getInput().get(0))))));
 	}
 
 	@Override

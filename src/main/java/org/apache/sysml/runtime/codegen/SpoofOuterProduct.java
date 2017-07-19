@@ -51,8 +51,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	protected OutProdType _outerProductType;
 	
-	public SpoofOuterProduct() {
-
+	public SpoofOuterProduct(OutProdType type) {
+		setOuterProdType(type);
 	}
 	
 	public void setOuterProdType(OutProdType type) {

@@ -21,10 +21,7 @@ package org.apache.sysml.test.integration.mlcontext;
 
 import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
@@ -36,43 +33,14 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-
-public class MLContextOutputBlocksizeTest extends AutomatedTestBase
+public class MLContextOutputBlocksizeTest extends MLContextTestBase
 {
-	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
-	protected final static String TEST_NAME = "MLContext";
-
 	private final static int rows = 100;
 	private final static int cols = 63;
 	private final static double sparsity = 0.7;
-
-	private static SparkConf conf;
-	private static JavaSparkContext sc;
-	private static MLContext ml;
-
-	@BeforeClass
-	public static void setUpClass() {
-		if (conf == null)
-			conf = SparkExecutionContext.createSystemMLSparkConf()
-				.setAppName("MLContextTest").setMaster("local");
-		if (sc == null)
-			sc = new JavaSparkContext(conf);
-		ml = new MLContext(sc);
-	}
-
-	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
-	}
-
 
 	@Test
 	public void testOutputBlocksizeTextcell() {
@@ -131,21 +99,4 @@ public class MLContextOutputBlocksizeTest extends AutomatedTestBase
 		}
 	}
 
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		sc.stop();
-		sc = null;
-		conf = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
-	}
 }

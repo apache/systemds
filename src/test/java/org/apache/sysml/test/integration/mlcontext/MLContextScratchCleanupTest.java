@@ -80,10 +80,6 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SPARK, true);
 	}
 
-	/**
-	 * 
-	 * @param platform
-	 */
 	private void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
 	{
 		RUNTIME_PLATFORM oldplatform = DMLScript.rtplatform;

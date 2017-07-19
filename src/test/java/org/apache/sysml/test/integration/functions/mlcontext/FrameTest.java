@@ -29,10 +29,8 @@ import java.util.List;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
@@ -40,8 +38,6 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
 import org.apache.sysml.api.mlcontext.FrameSchema;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
@@ -57,17 +53,14 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 
-public class FrameTest extends AutomatedTestBase 
+public class FrameTest extends MLContextTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "FrameGeneral";
@@ -96,17 +89,6 @@ public class FrameTest extends AutomatedTestBase
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
 		schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
-	}
-
-	private static SparkSession spark;
-	private static JavaSparkContext sc;
-	private static MLContext ml;
-
-	@BeforeClass
-	public static void setUpClass() {
-		spark = createSystemMLSparkSession("FrameTest", "local");
-		ml = new MLContext(spark);
-		sc = MLContextUtil.getJavaSparkContext(ml);
 	}
 
 	@Override
@@ -372,23 +354,5 @@ public class FrameTest extends AutomatedTestBase
 					Assert.fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the R value " + val2);
 			}
-	}
-
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		sc = null;
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
 	}
 }

@@ -42,6 +42,16 @@ public abstract class CPInstruction extends Instruction
 	
 	protected boolean _requiresLabelUpdate = false;
 	
+	public final static String MISC_TIMER_GET_SPARSE_MB =          		"aqrs";	// time spent in bringing input sparse matrix block
+	public final static String MISC_TIMER_GET_DENSE_MB =          		"aqrd";	// time spent in bringing input dense matrix block
+	public final static String MISC_TIMER_RELEASE_MB =      			"rls";	// time spent in release matrix block
+	public final static String MISC_TIMER_SPARSE_OP =       			"sop";	// time spent in sparse operation
+	public final static String MISC_TIMER_DENSE_OP =       				"dop";	// time spent in dense operation
+	public final static String MISC_TIMER_RELEASE_EVICTION =			"rlsev";// time spent in buffer eviction of release operation
+	public final static String MISC_TIMER_RELEASE_BUFF_WRITE =			"rlswr";// time spent in buffer write in release operation
+	public final static String MISC_TIMER_SPARSE_TO_DENSE =				"s2d";  // time spent in sparse to dense conversion
+	public final static String MISC_TIMER_DENSE_TO_SPARSE =				"d2s";  // time spent in sparse to dense conversion
+	
 	public CPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
 		instString = istr;

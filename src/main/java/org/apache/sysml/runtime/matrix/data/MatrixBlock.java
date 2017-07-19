@@ -61,6 +61,7 @@ import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -86,6 +87,7 @@ import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
@@ -992,6 +994,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatOnDisk(lrlen, lclen, nonZeros);
 	}
 	
+	public void examSparsity() throws DMLRuntimeException {
+		examSparsity(null);
+	}
+	
 	/**
 	 * Evaluates if this matrix block should be in sparse format in
 	 * memory. Depending on the current representation, the state of the
@@ -999,10 +1005,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * Note that this consumes for the time of execution memory for both 
 	 * representations.  
 	 * 
+	 * @param opcode  extended opcode
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unused")
-	public void examSparsity() 
+	public void examSparsity(String opcode) 
 		throws DMLRuntimeException
 	{
 		long start = DISPLAY_STATISTICS && DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -1016,9 +1023,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//change representation if required (also done for 
 		//empty blocks in order to set representation flags)
 		if( sparse && !sparseDst)
-			sparseToDense();
+			sparseToDense(opcode);
 		else if( !sparse && sparseDst )
-			denseToSparse();
+			denseToSparse(opcode);
 		
 		Statistics.examSparsityTime += DISPLAY_STATISTICS && DMLScript.STATISTICS ? (System.nanoTime() - start) : 0;
 	}
@@ -1075,7 +1082,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	// basic block handling functions	
 
 	void denseToSparse() 
+	{
+		denseToSparse(null);
+	}
+	
+	void denseToSparse(String opcode) 
 	{	
+		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		
 		//set target representation
 		sparse = true;
 		
@@ -1115,11 +1129,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//update nnz and cleanup dense block
 		nonZeros = nnz;
 		denseBlock = null;
+		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+			long t2 = System.nanoTime();
+			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_DENSE_TO_SPARSE, t2-t1);
+		}
+	}
+	
+	public void sparseToDense() throws DMLRuntimeException {
+		sparseToDense(null);
 	}
 
-	public void sparseToDense() 
+	public void sparseToDense(String opcode) 
 		throws DMLRuntimeException 
-	{	
+	{
+		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		//set target representation
 		sparse = false;
 		
@@ -1153,6 +1176,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//cleanup sparse rows
 		sparseBlock = null;
+		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+			long t2 = System.nanoTime();
+			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_SPARSE_TO_DENSE, t2-t1);
+		}
 	}
 
 	/**

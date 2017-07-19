@@ -53,6 +53,7 @@ public abstract class Instruction
 	protected INSTRUCTION_TYPE type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
+	private String extendedOpcode = null;
 	private long instID = -1;
 	
 	//originating script positions
@@ -157,6 +158,8 @@ public abstract class Instruction
 	}
 	
 	public String getExtendedOpcode() {
+		if(extendedOpcode != null)
+			return extendedOpcode;
 		if(DMLScript.FINEGRAINED_STATISTICS) {
 			String scriptInfo;
 			if(filename != null)
@@ -164,21 +167,22 @@ public abstract class Instruction
 			else
 				scriptInfo = " [" + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
 			if( type == INSTRUCTION_TYPE.SPARK )
-				return SP_INST_PREFIX + getOpcode() + scriptInfo;
+				extendedOpcode = SP_INST_PREFIX + getOpcode() + scriptInfo;
 			else if( type == INSTRUCTION_TYPE.GPU )
-				return GPU_INST_PREFIX + getOpcode() + scriptInfo;
+				extendedOpcode = GPU_INST_PREFIX + getOpcode() + scriptInfo;
 			else
-				return getOpcode() + scriptInfo;
+				extendedOpcode = getOpcode() + scriptInfo;
 		}
 		else {
 			// This ensures that there is no overhead if finegrained statistics is disabled
 			if( type == INSTRUCTION_TYPE.SPARK )
-				return SP_INST_PREFIX + getOpcode();
+				extendedOpcode = SP_INST_PREFIX + getOpcode();
 			else if( type == INSTRUCTION_TYPE.GPU )
-				return GPU_INST_PREFIX + getOpcode();
+				extendedOpcode = GPU_INST_PREFIX + getOpcode();
 			else
-				return getOpcode();
+				extendedOpcode = getOpcode();
 		}
+		return extendedOpcode;
 	}
 
 	public boolean requiresLabelUpdate()

@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -54,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.GPUStatistics;
 
 
 public class ExecutionContext {
@@ -231,6 +233,27 @@ public class ExecutionContext {
 	}
 	
 	/**
+	 * Pins a matrix variable into memory, update the finegrained statistics and returns the internal matrix block.
+	 * 
+	 * @param varName variable name
+	 * @param opcode  extended opcode
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public MatrixBlock getMatrixInput(String varName, String opcode) throws DMLRuntimeException {
+		long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		MatrixBlock mb = getMatrixInput(varName);
+		if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+			long t2 = System.nanoTime();
+			if(mb.isInSparseFormat())
+				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, t2-t1);
+			else
+				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_DENSE_MB, t2-t1);
+		}
+		return mb;
+	}
+	
+	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.
 	 * 
 	 * @param varName variable name
@@ -337,6 +360,21 @@ public class ExecutionContext {
 			mo.release();
 		}
 		return new Pair<MatrixObject, Boolean>(mo, copied);
+	}
+	
+	/**
+	 * Unpins a currently pinned matrix variable and update fine-grained statistics. 
+	 * 
+	 * @param varName variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public void releaseMatrixInput(String varName, String opcode) throws DMLRuntimeException {
+		long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		releaseMatrixInput(varName);
+		if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+			long t2 = System.nanoTime();
+			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_MB, t2-t1);
+		}
 	}
 	
 	/**

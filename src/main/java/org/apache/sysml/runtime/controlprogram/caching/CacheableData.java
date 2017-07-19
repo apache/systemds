@@ -566,6 +566,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _data;
 	}
 	
+	public void release() throws CacheException {
+		release(null);
+	}
+	
 	/**
 	 * Releases the shared ("read-only") or exclusive ("write") lock.  Updates
 	 * size information, last-access time, metadata, etc.
@@ -578,7 +582,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @throws CacheException if CacheException occurs
 	 */
-	public synchronized void release() 
+	public synchronized void release(String opcode) 
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
@@ -612,7 +616,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
-					LazyWriteBuffer.writeBlock(filePath, _data);
+					LazyWriteBuffer.writeBlock(filePath, _data, opcode);
 				}
 				catch (Exception e)
 				{
@@ -720,6 +724,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
+			throws CacheException
+	{
+		exportData(fName, outputFormat, replication, formatProperties, null);
+	}
+	
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same object (in case it was created before the loop).
@@ -735,9 +745,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param outputFormat format
 	 * @param replication ?
 	 * @param formatProperties file format properties
+	 * @param opcode instruction opcode if available
 	 * @throws CacheException if CacheException occurs
 	 */
-	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties, String opcode)
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
@@ -815,7 +826,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			}
 			finally
 			{
-				release();
+				release(opcode);
 			}
 		}
 		else if( pWrite ) // pwrite with same output format

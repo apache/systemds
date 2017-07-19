@@ -61,15 +61,15 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			else //via slicing the in-memory matrix
 			{
 				//execute right indexing operation
-				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 				resultBlock = matBlock.sliceOperations(ixrange, new MatrixBlock());	
 				
 				//unpin rhs input
-				ec.releaseMatrixInput(input1.getName());
+				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 				
 				//ensure correct sparse/dense output representation
 				//(memory guarded by release of input)
-				resultBlock.examSparsity();
+				resultBlock.examSparsity(getExtendedOpcode());
 			}	
 			
 			//unpin output
@@ -86,12 +86,12 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 				Statistics.incrementTotalLix();
 			}
 			
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 			MatrixBlock resultBlock = null;
 			
 			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
-				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
+				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType);
 				ec.releaseMatrixInput(input2.getName());
 			}
@@ -105,11 +105,11 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			}
 
 			//unpin lhs input
-			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 			
 			//ensure correct sparse/dense output representation
 			//(memory guarded by release of input)
-			resultBlock.examSparsity();
+			resultBlock.examSparsity(getExtendedOpcode());
 			
 			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock, updateType);

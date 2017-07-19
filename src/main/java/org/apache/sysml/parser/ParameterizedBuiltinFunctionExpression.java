@@ -244,7 +244,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Unsupported parameterized function "+ getOpCode(), 
 						false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
-		return;
 	}
 
 	@Override
@@ -277,8 +276,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			default: //always unconditional (because unsupported operation)
 				raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-		
-		return;
 	}
 	
 	// example: A = transformapply(target=X, meta=M, spec=s)
@@ -645,7 +642,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.SCALAR);
 		output.setValueType(ValueType.DOUBLE);
 		output.setDimensions(0, 0);
-		return;
 	}
 	
 	private void validateCastAsString(DataIdentifier output, boolean conditional) 

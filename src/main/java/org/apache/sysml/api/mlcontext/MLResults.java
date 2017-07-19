@@ -1980,7 +1980,7 @@ public class MLResults {
 	private <T> T outputValue(String outputName) {
 		Data data = getData(outputName);
 		if (data instanceof BooleanObject) {
-			return (T) new Boolean(((BooleanObject) data).getBooleanValue());
+			return (T) Boolean.valueOf(((BooleanObject) data).getBooleanValue());
 		} else if (data instanceof DoubleObject) {
 			return (T) new Double(((DoubleObject) data).getDoubleValue());
 		} else if (data instanceof IntObject) {

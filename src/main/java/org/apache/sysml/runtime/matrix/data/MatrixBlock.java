@@ -2979,7 +2979,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						for(int c=0; c<clen; c++)
 						{
 							buffer._sum=this.quickGetValue(r, c);
-							buffer._correction=cor.quickGetValue(r, 0);;
+							buffer._correction=cor.quickGetValue(r, 0);
 							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
 							quickSetValue(r, c, buffer._sum);
 							cor.quickSetValue(r, 0, buffer._correction);

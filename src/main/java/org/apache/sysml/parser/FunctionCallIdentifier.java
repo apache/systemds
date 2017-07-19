@@ -163,8 +163,6 @@ public class FunctionCallIdentifier extends DataIdentifier
 		for(int i=0; i < fstmt.getOutputParams().size(); i++) {
 			_outputs[i] = new DataIdentifier(fstmt.getOutputParams().get(i));
 		}
-		
-		return;
 	}
 	
 	@Override

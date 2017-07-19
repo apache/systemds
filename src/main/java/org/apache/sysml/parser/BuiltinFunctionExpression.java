@@ -1217,7 +1217,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
-		return;
 	}
 	
 	private void setBinaryOutputProperties(DataIdentifier output) 

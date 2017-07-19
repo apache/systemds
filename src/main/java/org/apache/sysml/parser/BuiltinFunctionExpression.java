@@ -181,22 +181,28 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// setup output properties
 			DataIdentifier svdOut1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier svdOut2 = (DataIdentifier) getOutputs()[1];
+			DataIdentifier svdOut3 = (DataIdentifier) getOutputs()[2];
 			
-			if ( inrows != incols ) {
-			       raiseValidateError("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + inrows + ", cols=" + incols + ")", conditional);
-			}
+			long inrows = getFirstExpr().getOutput().getDim1();
+			long incols = getFirstExpr().getOutput().getDim2();
 			
-			//Output1 - P
+			//Output1 - U (unitary matrix) 
 			svdOut1.setDataType(DataType.MATRIX);
 			svdOut1.setValueType(ValueType.DOUBLE);
 			svdOut1.setDimensions(inrows, inrows);
 			svdOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
-			//Output2 - Q
+			//Output2 - W (the rectangular diagonal matrix)
 			svdOut2.setDataType(DataType.MATRIX);
 			svdOut2.setValueType(ValueType.DOUBLE);
-			svdOut2.setDimensions(inrows, inrows);
+			svdOut2.setDimensions(inrows, incols);
 			svdOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			
+			//Output3 - V' (unitary matrix)
+			svdOut3.setDataType(DataType.MATRIX);
+			svdOut3.setValueType(ValueType.DOUBLE);
+			svdOut3.setDimensions(incols, inrows);
+			svdOut3.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			break;			
 			

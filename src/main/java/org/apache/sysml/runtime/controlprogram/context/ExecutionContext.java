@@ -241,9 +241,9 @@ public class ExecutionContext {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock getMatrixInput(String varName, String opcode) throws DMLRuntimeException {
-		long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		MatrixBlock mb = getMatrixInput(varName);
-		if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
 			long t2 = System.nanoTime();
 			if(mb.isInSparseFormat())
 				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, t2-t1);
@@ -369,9 +369,9 @@ public class ExecutionContext {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void releaseMatrixInput(String varName, String opcode) throws DMLRuntimeException {
-		long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		releaseMatrixInput(varName);
-		if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
 			long t2 = System.nanoTime();
 			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_MB, t2-t1);
 		}

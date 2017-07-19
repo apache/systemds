@@ -51,6 +51,8 @@ public abstract class CPInstruction extends Instruction
 	public final static String MISC_TIMER_RELEASE_BUFF_WRITE =			"rlswr";// time spent in buffer write in release operation
 	public final static String MISC_TIMER_SPARSE_TO_DENSE =				"s2d";  // time spent in sparse to dense conversion
 	public final static String MISC_TIMER_DENSE_TO_SPARSE =				"d2s";  // time spent in sparse to dense conversion
+	public final static String MISC_TIMER_CSR_LIX_COPY =				"csrlix";// time spent in CSR-specific method to address performance issues due to repeated re-shifting on update-in-place.
+	public final static String MISC_TIMER_LIX_COPY =					"lixcp";// time spent in range copy
 	
 	public CPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;

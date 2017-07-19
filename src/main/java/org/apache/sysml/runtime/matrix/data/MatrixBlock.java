@@ -3640,13 +3640,22 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
 
 	}
+	
+	public final MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update) throws DMLRuntimeException {
+		return leftIndexingOperations(rhsMatrix, ixrange, ret, update, null);
+	}
 
-	public final MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update) 
+	public final MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update, String opcode) 
 		throws DMLRuntimeException 
 	{
 		return leftIndexingOperations(
 				rhsMatrix, (int)ixrange.rowStart, (int)ixrange.rowEnd, 
-				(int)ixrange.colStart, (int)ixrange.colEnd, ret, update);
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret, update, opcode);
+	}
+	
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
+			int cl, int cu, MatrixBlock ret, UpdateType update) throws DMLRuntimeException {
+		return leftIndexingOperations(rhsMatrix, rl, ru, cl, cu, ret, update, null);
 	}
 	
 	/**
@@ -3668,7 +3677,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
-			int cl, int cu, MatrixBlock ret, UpdateType update) 
+			int cl, int cu, MatrixBlock ret, UpdateType update, String opcode) 
 		throws DMLRuntimeException 
 	{	
 		// Check the validity of bounds
@@ -3705,9 +3714,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//ensure that the current block adheres to the sparsity estimate
 			//and thus implicitly the memory budget used by the compiler
 			if( result.sparse && !sp )
-				result.sparseToDense();
+				result.sparseToDense(opcode);
 			else if( !result.sparse && sp )
-				result.denseToSparse();	
+				result.denseToSparse(opcode);	
 			
 			//ensure right sparse block representation to prevent serialization
 			if( result.sparse && update != UpdateType.INPLACE_PINNED ) {
@@ -3729,6 +3738,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
 		}		
 		else { //general case
+			long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+			boolean isCSRCopy = false;
 			//handle csr sparse blocks separately to avoid repeated shifting on column-wise access
 			if( !result.isEmptyBlock(false) && result.sparse && result.sparseBlock instanceof SparseBlockCSR ) {
 				SparseBlockCSR sblock = (SparseBlockCSR) result.sparseBlock;
@@ -3737,10 +3748,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				else //dense
 					sblock.setIndexRange(rl, ru+1, cl, cu+1, src.getDenseBlock(), 0, src.getNumRows()*src.getNumColumns());
 				result.nonZeros = sblock.size();
+				isCSRCopy = true;
 			}
 			//copy submatrix into result
 			else {
 				result.copy(rl, ru, cl, cu, src, true);
+			}
+			if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+				long t2 = System.nanoTime();
+				if(isCSRCopy)
+					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_CSR_LIX_COPY, t2-t1);
+				else
+					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_LIX_COPY, t2-t1);
 			}
 		}
 

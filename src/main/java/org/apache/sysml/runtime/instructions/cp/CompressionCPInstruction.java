@@ -51,14 +51,14 @@ public class CompressionCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException
 	{
 		//get matrix block input
-		MatrixBlock in = ec.getMatrixInput(input1.getName());
+		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		
 		//compress the matrix block
 		CompressedMatrixBlock cmb = new CompressedMatrixBlock(in);
 		cmb.compress(OptimizerUtils.getConstrainedNumThreads(-1));
 		
 		//set output and release input
-		ec.releaseMatrixInput(input1.getName());
-		ec.setMatrixOutput(output.getName(), cmb);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), cmb, getExtendedOpcode());
 	}
 }

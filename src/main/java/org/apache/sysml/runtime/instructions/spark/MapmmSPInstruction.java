@@ -143,7 +143,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out2);
+			sec.setMatrixOutput(output.getName(), out2, getExtendedOpcode());
 		}
 		else //MULTI_BLOCK or NONE
 		{

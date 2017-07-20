@@ -82,7 +82,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		      
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(output.getName(), out);
+		sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 	}
 
 	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 

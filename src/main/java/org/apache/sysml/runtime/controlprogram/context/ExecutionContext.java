@@ -260,7 +260,7 @@ public class ExecutionContext {
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock getMatrixInput(String varName) 
+	private MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{	
 		MatrixObject mo = getMatrixObject(varName);
@@ -370,24 +370,12 @@ public class ExecutionContext {
 	 */
 	public void releaseMatrixInput(String varName, String opcode) throws DMLRuntimeException {
 		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		releaseMatrixInput(varName);
+		MatrixObject mo = getMatrixObject(varName);
+		mo.release(opcode);
 		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
 			long t2 = System.nanoTime();
-			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_MB, t2-t1);
+			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_INPUT_MB, t2-t1);
 		}
-	}
-	
-	/**
-	 * Unpins a currently pinned matrix variable. 
-	 * 
-	 * @param varName variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public void releaseMatrixInput(String varName) 
-		throws DMLRuntimeException 
-	{
-		MatrixObject mo = getMatrixObject(varName);
-		mo.release();
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName)
@@ -456,24 +444,14 @@ public class ExecutionContext {
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	
-	public void setMatrixOutput(String varName, MatrixBlock outputData) 
-			throws DMLRuntimeException 
-	{
-		setMatrixOutput(varName, outputData, "");
-	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) 
 			throws DMLRuntimeException 
 	{
-		opcode = opcode == null || opcode.equals("") ? null : opcode; 
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData, opcode);
 	    mo.release(opcode);
 	    setVariable(varName, mo);
-	}
-	
-	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) throws DMLRuntimeException {
-		setMatrixOutput(varName, outputData, flag, null);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) 

@@ -141,19 +141,19 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		else 
 		{
 			/* Default behavior for AggregateUnary Instruction */
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());		
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());		
 			AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
 			
 			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
 			
-			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 			
 			if(output.getDataType() == DataType.SCALAR){
 				DoubleObject ret = new DoubleObject(output_name, resultBlock.getValue(0, 0));
 				ec.setScalarOutput(output_name, ret);
 			} else{
 				// since the computed value is a scalar, allocate a "temp" output matrix
-				ec.setMatrixOutput(output_name, resultBlock);
+				ec.setMatrixOutput(output_name, resultBlock, getExtendedOpcode());
 			}
 		}
 	}

@@ -111,7 +111,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 
 		
 		for(int i=0; i < _outputs.size(); i++) {
-			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
+			ec.setMatrixOutput(_outputs.get(i).getName(), out[i], getExtendedOpcode());
 		}
 	}
 }

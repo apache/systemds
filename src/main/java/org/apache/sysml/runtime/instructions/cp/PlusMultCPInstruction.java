@@ -57,8 +57,8 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction
 		String output_name = output.getName();
 
 		//get all the inputs
-		MatrixBlock matrix1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock matrix2 = ec.getMatrixInput(input2.getName());
+		MatrixBlock matrix1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matrix2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		ScalarObject scalar = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()); 
 		
 		//execution
@@ -66,9 +66,9 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction
 		MatrixBlock out = (MatrixBlock) matrix1.binaryOperations((BinaryOperator) _optr, matrix2, new MatrixBlock());
 		
 		//release the matrices
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
-		ec.setMatrixOutput(output_name, out);
+		ec.setMatrixOutput(output_name, out, getExtendedOpcode());
 	}
 }

@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.sysml.api.DMLScript;
+
 /**
  * Measures performance numbers when GPU mode is enabled
  * Printed as part of {@link Statistics}.
@@ -119,7 +121,7 @@ public class GPUStatistics {
    */
   public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
   {
-    if (!DISPLAY_STATISTICS)
+    if (!(DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS))
       return;
 
     HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);

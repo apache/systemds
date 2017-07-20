@@ -455,17 +455,28 @@ public class ExecutionContext {
 		}
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
-
+	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 
 			throws DMLRuntimeException 
 	{
-		MatrixObject mo = getMatrixObject(varName);
-		mo.acquireModify(outputData);
-	    mo.release();
-	    setVariable(varName, mo);
+		setMatrixOutput(varName, outputData, "");
 	}
 
-	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) 
+	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) 
+			throws DMLRuntimeException 
+	{
+		opcode = opcode == null || opcode.equals("") ? null : opcode; 
+		MatrixObject mo = getMatrixObject(varName);
+		mo.acquireModify(outputData, opcode);
+	    mo.release(opcode);
+	    setVariable(varName, mo);
+	}
+	
+	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) throws DMLRuntimeException {
+		setMatrixOutput(varName, outputData, flag, null);
+	}
+
+	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) 
 		throws DMLRuntimeException 
 	{
 		if( flag.isInPlace() ) {
@@ -475,7 +486,7 @@ public class ExecutionContext {
 		}
 		
 		//default case
-		setMatrixOutput(varName, outputData);
+		setMatrixOutput(varName, outputData, opcode);
 	}
 
 	public void setFrameOutput(String varName, FrameBlock outputData) 

@@ -44,6 +44,8 @@ public abstract class CPInstruction extends Instruction
 	
 	public final static String MISC_TIMER_GET_SPARSE_MB =          		"aqrs";	// time spent in bringing input sparse matrix block
 	public final static String MISC_TIMER_GET_DENSE_MB =          		"aqrd";	// time spent in bringing input dense matrix block
+	public final static String MISC_TIMER_ACQ_MODIFY_SPARSE_MB =        "aqms";	// time spent in bringing output sparse matrix block
+	public final static String MISC_TIMER_ACQ_MODIFY_DENSE_MB =         "aqmd";	// time spent in bringing output dense matrix block
 	public final static String MISC_TIMER_RELEASE_MB =      			"rls";	// time spent in release matrix block
 	public final static String MISC_TIMER_SPARSE_OP =       			"sop";	// time spent in sparse operation
 	public final static String MISC_TIMER_DENSE_OP =       				"dop";	// time spent in dense operation

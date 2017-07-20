@@ -38,6 +38,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
@@ -50,10 +51,12 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.GPUStatistics;
 
 
 /**
@@ -521,6 +524,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _data;
 	}
 	
+	public T acquireModify(T newData) throws DMLRuntimeException {
+		return acquireModify(newData, null);
+	}
+	
 	/**
 	 * Acquires the exclusive "write" lock for a thread that wants to throw away the
 	 * old cache block data and link up with new cache block data. Abandons the old data
@@ -530,10 +537,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: MODIFY.
 	 * 
 	 * @param newData new data
+	 * @param opcode extended instruction opcode
 	 * @return cacheable data
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public synchronized T acquireModify(T newData)
+	public synchronized T acquireModify(T newData, String opcode)
 		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
@@ -561,6 +569,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireMTime(t1-t0);
+			if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
+				if(_data instanceof MatrixBlock) {
+					MatrixBlock currObject = (MatrixBlock)_data;
+					if(currObject.isInSparseFormat())
+						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_SPARSE_MB, t1-t0);
+					else
+						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_DENSE_MB, t1-t0);
+				}
+			}
 		}
 		
 		return _data;

@@ -73,7 +73,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			}	
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock);
+			ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
@@ -112,7 +112,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			resultBlock.examSparsity(getExtendedOpcode());
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock, updateType);
+			ec.setMatrixOutput(output.getName(), resultBlock, updateType, getExtendedOpcode());
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");		

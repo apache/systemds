@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -595,7 +596,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//update meta data
 			refreshMetaData();
 		}
-
+		
 		//compact empty in-memory block 
 		_data.compactEmptyBlock();
 		
@@ -1242,11 +1243,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	protected void updateStatusPinned(boolean add) {
-		if( _data != null ) { //data should never be null
-			long size = sizePinned.get();
-			size += (add ? 1 : -1) * _data.getInMemorySize();
-			sizePinned.set( Math.max(size,0) );
-		}
+		if( _data == null || !OptimizerUtils.isHybridExecutionMode() )
+			return; //avoid size computation for string frames
+		long size = sizePinned.get();
+		size += (add ? 1 : -1) * _data.getInMemorySize();
+		sizePinned.set( Math.max(size,0) );
 	}
 
 	protected long getPinnedSize() {

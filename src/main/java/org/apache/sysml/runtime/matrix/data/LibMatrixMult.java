@@ -1292,8 +1292,11 @@ public class LibMatrixMult
 			{							
 				//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
 				//while blocking A/C for L1/L2 yet allowing long scans (2 pages) in the inner loop over j
-				final int blocksizeI = 32;
-				final int blocksizeK = 24; 
+				//in case of almost ultra-sparse matrices, we cannot ensure the blocking for the rhs and
+				//output - however, in this case it's unlikely that we consume every cache line in the rhs
+				
+				final int blocksizeI = (int) (8L*m*cd/m1.nonZeros);
+				final int blocksizeK = (int) (8L*m*cd/m1.nonZeros);
 				final int blocksizeJ = 1024; 
 				
 				//temporary array of current sparse positions
@@ -1314,7 +1317,7 @@ public class LibMatrixMult
 									int[] aix = a.indexes(i);
 									double[] avals = a.values(i);					
 									
-									int k = curk[i-bi] + apos;									
+									int k = curk[i-bi] + apos;			
 					    			//rest not aligned to blocks of 4 rows
 									int bn = alen%4;
 									for( ; k<apos+bn && aix[k]<bkmin; k++ )

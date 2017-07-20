@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.gpu;
+package org.apache.sysml.test.gpu;
 
 import org.apache.sysml.test.gpu.AggregateUnaryOpTests;
 import org.apache.sysml.test.gpu.AppendTest;

@@ -52,7 +52,13 @@ import org.apache.log4j.spi.ThrowableInformation;
 /**
  * Builds a light-weight SystemML jar file based on loaded classes and
  * additional resources. Additionally generates maven assembly dependency sets
- * that be used by the lite.xml assembly.
+ * that are used by the lite.xml assembly. Note that the jar file automatically
+ * built by createLiteJar will only contain required SystemML classes, whereas
+ * the assembly jar file (built by lite.xml) includes all SystemML classes. All
+ * log4j classes are included in both the automatic jar and the assembly jar.
+ * All commons-math3 classes are included by default in both the automatic jar
+ * and the assembly jar, but this can be switched using createLiteJar to only
+ * include the detected required commons-math3 classes.
  *
  */
 public class BuildLite {
@@ -84,6 +90,8 @@ public class BuildLite {
 		additionalResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
 		// shutdown hook class
 		additionalResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
+
+		additionalResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
 	};
 
 	/**
@@ -95,6 +103,7 @@ public class BuildLite {
 		SortedSet<String> hadoopCommonResources = new TreeSet<String>();
 		hadoopCommonResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
 		hadoopCommonResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
+		hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
 		additionalJarToFileMappingsForDependencySets.put("hadoop-common", hadoopCommonResources);
 	}
 
@@ -144,15 +153,32 @@ public class BuildLite {
 	 */
 	protected static Logger log = Logger.getLogger(BuildLite.class);
 
+	private static boolean includeAllCommonsMath3 = true;
+
 	/**
 	 * Create lite jar file using the default path and file name as the
-	 * destination.
+	 * destination. All commons-math3 classes will be included.
 	 * 
 	 * @throws Exception
 	 *             if exception occurs building jar
 	 */
 	public static void createLiteJar() throws Exception {
-		createLiteJar(null);
+		createLiteJar(null, true);
+	}
+
+	/**
+	 * Create lite jar file using the default path and file name as the
+	 * destination, specifying whether all commons-math3 classes should be
+	 * included in the jar or only the detected required subset.
+	 * 
+	 * @param allCommonsMath3
+	 *            if true, include all commons-math3 classes. if false, include
+	 *            only required subset in jar built
+	 * @throws Exception
+	 *             if exception occurs building jar
+	 */
+	public static void createLiteJar(boolean allCommonsMath3) throws Exception {
+		createLiteJar(null, allCommonsMath3);
 	}
 
 	/**
@@ -161,13 +187,17 @@ public class BuildLite {
 	 * 
 	 * @param jarFileDestination
 	 *            the path and file name for the lite jar
+	 * @param allCommonsMath3
+	 *            if true, include all commons-math3 classes. if false, include
+	 *            only required subset in jar built
 	 * @throws Exception
 	 *             if exception occurs building jar
 	 */
-	public static void createLiteJar(String jarFileDestination) throws Exception {
+	public static void createLiteJar(String jarFileDestination, boolean allCommonsMath3) throws Exception {
 		if (jarFileDestination != null) {
 			liteJarLocation = jarFileDestination;
 		}
+		includeAllCommonsMath3 = allCommonsMath3;
 		scanJavaFilesForClassesToLoad();
 		List<Class<?>> loadedClasses = getLoadedClasses();
 		displayLoadedClasses(loadedClasses);
@@ -176,8 +206,11 @@ public class BuildLite {
 		groupLoadedClassesByJarAndClass(loadedClasses);
 		List<String> log4jClassPathNames = getLog4jClassPathNames();
 		displayLog4JClassPathNames(log4jClassPathNames);
-		List<String> commonsMath3ClassPathNames = getCommonsMath3ClassPathNames();
-		displayCommonsMath3ClassPathNames(commonsMath3ClassPathNames);
+		List<String> commonsMath3ClassPathNames = null;
+		if (includeAllCommonsMath3) {
+			commonsMath3ClassPathNames = getCommonsMath3ClassPathNames();
+			displayCommonsMath3ClassPathNames(commonsMath3ClassPathNames);
+		}
 		displayJarsAndClasses();
 		Set<String> consolidatedClassPathNames = consolidateClassPathNames(loadedClasses, log4jClassPathNames,
 				commonsMath3ClassPathNames);
@@ -226,7 +259,8 @@ public class BuildLite {
 	}
 
 	/**
-	 * Consolidate the loaded classes and all the log4j classes.
+	 * Consolidate the loaded classes and all the log4j classes and potentially
+	 * all the commons-math3 classes.
 	 * 
 	 * @param loadedClasses
 	 *            the loaded classes
@@ -240,9 +274,13 @@ public class BuildLite {
 	private static Set<String> consolidateClassPathNames(List<Class<?>> loadedClasses, List<String> log4jClassPathNames,
 			List<String> commonsMath3ClassPathNames) {
 
-		System.out.println("\nConsolidating loaded class names, log4j class names, and commons-math3 class names");
 		SortedSet<String> allClassPathNames = new TreeSet<String>(log4jClassPathNames);
-		allClassPathNames.addAll(commonsMath3ClassPathNames);
+		if (includeAllCommonsMath3) {
+			System.out.println("\nConsolidating loaded class names, log4j class names, and commons-math3 class names");
+			allClassPathNames.addAll(commonsMath3ClassPathNames);
+		} else {
+			System.out.println("\nConsolidating loaded class names and log4j class names");
+		}
 		for (Class<?> clazz : loadedClasses) {
 			String loadedClassPathName = clazz.getName();
 			loadedClassPathName = loadedClassPathName.replace(".", "/");
@@ -270,23 +308,22 @@ public class BuildLite {
 		attr.putValue("" + Attributes.Name.MANIFEST_VERSION, "1.0");
 
 		File file = new File(liteJarLocation);
-		FileOutputStream fos = new FileOutputStream(file);
-		JarOutputStream jos = new JarOutputStream(fos, mf);
-		int numFilesWritten = 0;
-		for (String classPathName : consolidateClassPathNames) {
-			writeMessage(classPathName, ++numFilesWritten);
-			InputStream is = cl.getResourceAsStream(classPathName);
-			byte[] bytes = IOUtils.toByteArray(is);
+		try (FileOutputStream fos = new FileOutputStream(file); JarOutputStream jos = new JarOutputStream(fos, mf)) {
+			int numFilesWritten = 0;
+			for (String classPathName : consolidateClassPathNames) {
+				writeMessage(classPathName, ++numFilesWritten);
+				InputStream is = cl.getResourceAsStream(classPathName);
+				byte[] bytes = IOUtils.toByteArray(is);
 
-			JarEntry je = new JarEntry(classPathName);
-			jos.putNextEntry(je);
-			jos.write(bytes);
+				JarEntry je = new JarEntry(classPathName);
+				jos.putNextEntry(je);
+				jos.write(bytes);
+			}
+
+			writeIdentifierFileToLiteJar(jos, ++numFilesWritten);
+			writeAdditionalResourcesToJar(jos, numFilesWritten);
 		}
 
-		writeIdentifierFileToLiteJar(jos, ++numFilesWritten);
-		writeAdditionalResourcesToJar(jos, numFilesWritten); // incr in method
-
-		jos.close();
 	}
 
 	/**
@@ -390,19 +427,19 @@ public class BuildLite {
 		List<String> classPathNames = new ArrayList<String>();
 		String jarLocation = classInJarFile.getProtectionDomain().getCodeSource().getLocation().getPath();
 		File f = new File(jarLocation);
-		FileInputStream fis = new FileInputStream(f);
-		JarArchiveInputStream jais = new JarArchiveInputStream(fis);
-		while (true) {
-			JarArchiveEntry jae = jais.getNextJarEntry();
-			if (jae == null) {
-				break;
-			}
-			String name = jae.getName();
-			if (name.endsWith(".class")) {
-				classPathNames.add(name);
+		try (FileInputStream fis = new FileInputStream(f);
+				JarArchiveInputStream jais = new JarArchiveInputStream(fis)) {
+			while (true) {
+				JarArchiveEntry jae = jais.getNextJarEntry();
+				if (jae == null) {
+					break;
+				}
+				String name = jae.getName();
+				if (name.endsWith(".class")) {
+					classPathNames.add(name);
+				}
 			}
 		}
-		jais.close();
 
 		String jarName = jarLocation.substring(jarLocation.lastIndexOf("/") + 1);
 		addClassPathNamesToJarsAndClasses(jarName, classPathNames);
@@ -621,17 +658,11 @@ public class BuildLite {
 				String s = "import " + additionalPackage + "(.*?);";
 				Pattern p = Pattern.compile(s);
 				Matcher m = p.matcher(content);
-				boolean found = false;
 				while (m.find()) {
 					totalMatches++;
-					found = true;
 					String match = m.group(1);
 					String matchClass = additionalPackage + match;
 					uniqueMatches.add(matchClass);
-					// System.out.println("FOUND " + matchClass);
-				}
-				if (!found) {
-					// System.out.println("NOT FOUND " + s);
 				}
 			}
 		}
@@ -686,12 +717,28 @@ public class BuildLite {
 		System.out.println("\nCreating maven dependency sets");
 
 		StringBuilder sb = new StringBuilder();
+		sb.append("\t<dependencySets>\n");
 		Set<String> jarNames = jarsAndClasses.keySet();
 		for (String jarName : jarNames) {
 			String s = generateDependencySet(jarName, jarsAndClasses.get(jarName));
 			sb.append(s);
 		}
+		sb.append(generateSystemMLDependencySet());
+		sb.append("\t</dependencySets>\n");
 		System.out.println(sb.toString());
+
+		final String liteXml = "src/assembly/lite.xml";
+		File f = new File(liteXml);
+		if (f.exists()) {
+			System.out.println("Found '" + liteXml + "', so updating dependencySets in the file.");
+			String s = FileUtils.readFileToString(f);
+			int start = s.indexOf("\t<dependencySets>");
+			int end = s.indexOf("</dependencySets>") + "</dependencySets>".length() + 1;
+			String before = s.substring(0, start);
+			String after = s.substring(end);
+			String newS = before + sb.toString() + after;
+			FileUtils.writeStringToFile(f, newS);
+		}
 	}
 
 	/**
@@ -711,6 +758,7 @@ public class BuildLite {
 		String jarNameNoVersion = null;
 		if ("SystemML".equalsIgnoreCase(jarName)) {
 			jarNameNoVersion = "systemml";
+			return ""; // handle in generateSystemMLDependencySet()
 		} else {
 			jarNameNoVersion = jarName.substring(0, jarName.lastIndexOf("-"));
 		}
@@ -731,9 +779,15 @@ public class BuildLite {
 			}
 		}
 
-		for (String className : classNames) {
-			String classFileName = className.replace(".", "/") + ".class";
-			sb.append("\t\t\t\t\t<include>" + classFileName + "</include>\n");
+		if (jarName.startsWith("log4j")) {
+			sb.append("\t\t\t\t\t<include>**/*.class</include>\n");
+		} else if (includeAllCommonsMath3 && (jarName.startsWith("commons-math3"))) {
+			sb.append("\t\t\t\t\t<include>**/*.class</include>\n");
+		} else {
+			for (String className : classNames) {
+				String classFileName = className.replace(".", "/") + ".class";
+				sb.append("\t\t\t\t\t<include>" + classFileName + "</include>\n");
+			}
 		}
 		sb.append("\t\t\t\t</includes>\n");
 		sb.append("\t\t\t</unpackOptions>\n");
@@ -745,4 +799,24 @@ public class BuildLite {
 		return sb.toString();
 	}
 
+	private static String generateSystemMLDependencySet() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\t\t<dependencySet>\n");
+		sb.append("\t\t\t<includes>\n");
+		sb.append("\t\t\t\t<include>*:systemml*</include>\n");
+		sb.append("\t\t\t</includes>\n");
+		sb.append("\t\t\t<unpackOptions>\n");
+		sb.append("\t\t\t\t<excludes>\n");
+		sb.append("\t\t\t\t\t<exclude>META-INF/DEPENDENCIES</exclude>\n");
+		sb.append("\t\t\t\t\t<exclude>META-INF/maven/**</exclude>\n");
+		sb.append("\t\t\t\t\t<exclude>kernels/**</exclude>\n");
+		sb.append("\t\t\t\t\t<exclude>lib/**</exclude>\n");
+		sb.append("\t\t\t\t</excludes>\n");
+		sb.append("\t\t\t</unpackOptions>\n");
+		sb.append("\t\t\t<outputDirectory>.</outputDirectory>\n");
+		sb.append("\t\t\t<scope>compile</scope>\n");
+		sb.append("\t\t\t<unpack>true</unpack>\n");
+		sb.append("\t\t</dependencySet>\n");
+		return sb.toString();
+	}
 }

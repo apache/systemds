@@ -29,9 +29,14 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.DataConverter;
 
 /**
  * Execute code and conditionally build a lightweight jar file that can support
@@ -40,7 +45,13 @@ import org.apache.sysml.api.jmlc.ResultVariables;
  */
 public class BuildLiteExecution {
 
+	protected static Logger log = Logger.getLogger(BuildLiteExecution.class);
+
 	public static void main(String[] args) throws Exception {
+
+		BasicConfigurator.configure();
+		Logger.getRootLogger().setLevel(Level.INFO);
+		log.setLevel(Level.DEBUG);
 
 		jmlcHelloWorld();
 		jmlcScoringExample();
@@ -54,7 +65,7 @@ public class BuildLiteExecution {
 		jmlcKmeans();
 		jmlcTests();
 
-		BuildLite.createLiteJar();
+		BuildLite.createLiteJar(true);
 
 	}
 
@@ -96,17 +107,17 @@ public class BuildLiteExecution {
 		script.setMatrix("W", mtx);
 		script.setMatrix("X", randomMatrix(3, 3, -1, 1, 0.7));
 		result = script.executeScript().getMatrix("predicted_y");
-		displayMatrix(result);
+		log.debug(displayMatrix(result));
 
 		script.setMatrix("W", mtx);
 		script.setMatrix("X", randomMatrix(3, 3, -1, 1, 0.7));
 		result = script.executeScript().getMatrix("predicted_y");
-		displayMatrix(result);
+		log.debug(displayMatrix(result));
 
 		script.setMatrix("W", mtx);
 		script.setMatrix("X", randomMatrix(3, 3, -1, 1, 0.7));
 		result = script.executeScript().getMatrix("predicted_y");
-		displayMatrix(result);
+		log.debug(displayMatrix(result));
 
 		conn.close();
 	}
@@ -131,14 +142,14 @@ public class BuildLiteExecution {
 			double[] row = new double[] { one, two, three, four };
 			data[i] = row;
 		}
-		displayMatrix(data);
+		log.debug(displayMatrix(data));
 
 		double[][] types = matrix(1, 4, new double[] { 1, 1, 1, 2 });
 
 		script.setMatrix("A", data);
 		script.setMatrix("K", types);
 		double[][] baseStats = script.executeScript().getMatrix("baseStats");
-		displayMatrix(baseStats);
+		log.debug(displayMatrix(baseStats));
 
 		conn.close();
 	}
@@ -287,10 +298,9 @@ public class BuildLiteExecution {
 			double[] row = new double[] { one, two, three };
 			trainData[i] = row;
 		}
-		displayMatrix(trainData);
 
 		l2svm.setMatrix("X", trainData);
-		displayMatrix(trainData);
+		log.debug(displayMatrix(trainData));
 
 		double[][] trainLabels = new double[150][1];
 		for (int i = 0; i < 150; i++) {
@@ -299,7 +309,7 @@ public class BuildLiteExecution {
 			trainLabels[i] = row;
 		}
 		l2svm.setMatrix("Y", trainLabels);
-		displayMatrix(trainLabels);
+		log.debug(displayMatrix(trainLabels));
 
 		l2svm.setScalar("fmt", "csv");
 
@@ -307,11 +317,11 @@ public class BuildLiteExecution {
 
 		ResultVariables l2svmResults = l2svm.executeScript();
 		double[][] model = l2svmResults.getMatrix("w");
-		System.out.println("MODEL:");
-		displayMatrix(model);
+		log.debug("MODEL:");
+		log.debug(displayMatrix(model));
 		String debugString = l2svmResults.getString("debug_str");
-		System.out.println("DEBUG STRING:");
-		System.out.println(debugString);
+		log.debug("DEBUG STRING:");
+		log.debug(debugString);
 
 		String s = conn.readScript("scripts/algorithms/l2-svm-predict.dml");
 		Map<String, String> m = new HashMap<String, String>();
@@ -345,12 +355,12 @@ public class BuildLiteExecution {
 
 		ResultVariables l2svmPredictResults = l2svmPredict.executeScript();
 		double[][] scores = l2svmPredictResults.getMatrix("scores");
-		System.out.println("SCORES:");
-		displayMatrix(scores);
+		log.debug("SCORES:");
+		log.debug(displayMatrix(scores));
 
 		double[][] confusionMatrix = l2svmPredictResults.getMatrix("confusion_mat");
-		System.out.println("CONFUSION MATRIX:");
-		displayMatrix(confusionMatrix);
+		log.debug("CONFUSION MATRIX:");
+		log.debug(displayMatrix(confusionMatrix));
 
 		conn.close();
 	}
@@ -372,7 +382,7 @@ public class BuildLiteExecution {
 			trainData[i] = row;
 		}
 		linRegDSScript.setMatrix("X", trainData);
-		displayMatrix(trainData);
+		log.debug(displayMatrix(trainData));
 
 		double[][] trainLabels = new double[500][1];
 		for (int i = 0; i < 500; i++) {
@@ -381,12 +391,12 @@ public class BuildLiteExecution {
 			trainLabels[i] = row;
 		}
 		linRegDSScript.setMatrix("y", trainLabels);
-		displayMatrix(trainLabels);
+		log.debug(displayMatrix(trainLabels));
 
 		ResultVariables linRegDSResults = linRegDSScript.executeScript();
 		double[][] dsBetas = linRegDSResults.getMatrix("beta_out");
-		System.out.println("DS BETAS:");
-		displayMatrix(dsBetas);
+		log.debug("DS BETAS:");
+		log.debug(displayMatrix(dsBetas));
 
 		String linRegCG = conn.readScript("scripts/algorithms/LinearRegCG.dml");
 		PreparedScript linRegCGScript = conn.prepareScript(linRegCG, new String[] { "X", "y" },
@@ -395,8 +405,8 @@ public class BuildLiteExecution {
 		linRegCGScript.setMatrix("y", trainLabels);
 		ResultVariables linRegCGResults = linRegCGScript.executeScript();
 		double[][] cgBetas = linRegCGResults.getMatrix("beta_out");
-		System.out.println("CG BETAS:");
-		displayMatrix(cgBetas);
+		log.debug("CG BETAS:");
+		log.debug(displayMatrix(cgBetas));
 
 		String glmPredict = conn.readScript("scripts/algorithms/GLM-predict.dml");
 		PreparedScript glmPredictScript = conn.prepareScript(glmPredict, new String[] { "X", "Y", "B_full" },
@@ -420,8 +430,8 @@ public class BuildLiteExecution {
 		glmPredictScript.setMatrix("B_full", cgBetas);
 		ResultVariables glmPredictResults = glmPredictScript.executeScript();
 		double[][] means = glmPredictResults.getMatrix("means");
-		System.out.println("GLM PREDICT MEANS:");
-		displayMatrix(means);
+		log.debug("GLM PREDICT MEANS:");
+		log.debug(displayMatrix(means));
 
 		conn.close();
 	}
@@ -442,7 +452,7 @@ public class BuildLiteExecution {
 
 		ResultVariables dataGenResults = dataGenScript.executeScript();
 		double[][] x = dataGenResults.getMatrix("X");
-		displayMatrix(x);
+		log.debug(displayMatrix(x));
 
 		Map<String, String> m2 = new HashMap<String, String>();
 		m2.put("$rank", "100");
@@ -452,11 +462,11 @@ public class BuildLiteExecution {
 		alsCgScript.setMatrix("X", x);
 		ResultVariables alsCgResults = alsCgScript.executeScript();
 		double[][] u = alsCgResults.getMatrix("U");
-		System.out.println("u:" + u);
-		displayMatrix(u);
+		log.debug("u:" + u);
+		log.debug(displayMatrix(u));
 		double[][] v = alsCgResults.getMatrix("V");
-		System.out.println("v:" + v);
-		displayMatrix(v);
+		log.debug("v:" + v);
+		log.debug(displayMatrix(v));
 
 		String alsDs = conn.readScript("scripts/algorithms/ALS-DS.dml");
 		PreparedScript alsDsScript = conn.prepareScript(alsDs, m2, new String[] { "V" }, new String[] { "L", "Rt" },
@@ -464,11 +474,11 @@ public class BuildLiteExecution {
 		alsDsScript.setMatrix("V", x);
 		ResultVariables alsDsResults = alsDsScript.executeScript();
 		double[][] l = alsDsResults.getMatrix("L");
-		System.out.println("l:" + l);
-		displayMatrix(l);
+		log.debug("l:" + l);
+		log.debug(displayMatrix(l));
 		double[][] rt = alsDsResults.getMatrix("Rt");
-		System.out.println("rt:" + rt);
-		displayMatrix(rt);
+		log.debug("rt:" + rt);
+		log.debug(displayMatrix(rt));
 
 		conn.close();
 	}
@@ -488,17 +498,17 @@ public class BuildLiteExecution {
 
 		double[][] x = randomMatrix(50, 50, -1, 1, 0.1);
 		kMeansScript.setMatrix("X", x);
-		System.out.println("X:");
-		displayMatrix(x);
+		log.debug("X:");
+		log.debug(displayMatrix(x));
 
 		ResultVariables kMeansResults = kMeansScript.executeScript();
 		double[][] c = kMeansResults.getMatrix("C");
-		System.out.println("C:");
-		displayMatrix(c);
+		log.debug("C:");
+		log.debug(displayMatrix(c));
 
 		double[][] y = kMeansResults.getMatrix("Y");
-		System.out.println("Y:");
-		displayMatrix(y);
+		log.debug("Y:");
+		log.debug(displayMatrix(y));
 
 		conn.close();
 	}
@@ -508,7 +518,7 @@ public class BuildLiteExecution {
 		try {
 			File jmlcTestDir = new File("target/test-classes");
 			if (!jmlcTestDir.exists()) {
-				System.out.println("Test class directory could not be found");
+				log.error("Test class directory could not be found");
 				return;
 			}
 			URL url = jmlcTestDir.toURI().toURL();
@@ -680,16 +690,11 @@ public class BuildLiteExecution {
 		return matrix;
 	}
 
-	public static void displayMatrix(double[][] matrix) {
-		System.out.println("Matrix size:" + matrix.length + "x" + matrix[0].length);
-		for (int i = 0; i < matrix.length; i++) {
-			for (int j = 0; j < matrix[0].length; j++) {
-				if (j > 0) {
-					System.out.print(", ");
-				}
-				System.out.print("[" + i + "," + j + "]:" + matrix[i][j]);
-			}
-			System.out.println();
+	public static String displayMatrix(double[][] matrix) {
+		try {
+			return DataConverter.toString(DataConverter.convertToMatrixBlock(matrix));
+		} catch (DMLRuntimeException e) {
+			return "N/A";
 		}
 	}
 

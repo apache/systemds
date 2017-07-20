@@ -23,6 +23,8 @@ import java.io.InputStream;
 
 public class LiteCheck {
 
+	private static Boolean lite = null;
+
 	/**
 	 * Return {@code true} if using lightweight SystemML jar, {@code false}
 	 * otherwise. This is done by looking for an identifier file that is written
@@ -32,17 +34,15 @@ public class LiteCheck {
 	 *         otherwise
 	 */
 	public static boolean isLite() {
-		InputStream is = null;
-		try {
-			is = LiteCheck.class.getResourceAsStream("/" + BuildLite.LITE_JAR_IDENTIFIER_FILE);
-			return (is != null);
-		} finally {
-			if (is != null) {
-				try {
-					is.close();
-				} catch (IOException e) {
-				}
-			}
+		if (lite != null) {
+			return lite;
+		}
+		try (InputStream is = LiteCheck.class.getResourceAsStream("/" + BuildLite.LITE_JAR_IDENTIFIER_FILE)) {
+			lite = (is != null);
+			return lite;
+		} catch (IOException e) {
+			lite = false;
+			return lite;
 		}
 	}
 

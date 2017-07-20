@@ -22,6 +22,7 @@ package org.apache.sysml.conf;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.utils.lite.LiteCheck;
 
 
@@ -58,7 +59,7 @@ public class ConfigurationManager
  		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
 
-		if (LiteCheck.isLite()) {
+		if (LiteCheck.isLite() && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION) {
 			// to be able to write using binary format
 			// WritableSerialization -> MatrixIndexes
 			// BinaryBlockSerialization -> MatrixBlock

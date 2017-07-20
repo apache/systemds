@@ -95,7 +95,7 @@ public class InfrastructureAnalyzer
 	 * @return number of cluster nodes
 	 */
 	public static int getRemoteParallelNodes() {
-		if ((!LiteCheck.isLite()) && (_remotePar == -1))
+		if ((_remotePar == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopCluster();
 		return _remotePar;
 	}
@@ -106,7 +106,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel map tasks
 	 */
 	public static int getRemoteParallelMapTasks() {
-		if ((!LiteCheck.isLite()) && (_remoteParMap == -1))
+		if ((_remoteParMap == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopCluster();
 		return _remoteParMap;
 	}
@@ -122,7 +122,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel reduce tasks
 	 */
 	public static int getRemoteParallelReduceTasks() {
-		if ((!LiteCheck.isLite()) && (_remoteParReduce == -1))
+		if ((_remoteParReduce == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopCluster();
 		return _remoteParReduce;
 	}
@@ -156,7 +156,7 @@ public class InfrastructureAnalyzer
 	 * @return maximum memory of remote hadoop map task jvm
 	 */
 	public static long getRemoteMaxMemoryMap() {
-		if ((!LiteCheck.isLite()) && (_remoteJVMMaxMemMap == -1))
+		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _remoteJVMMaxMemMap;
 	}
@@ -172,7 +172,7 @@ public class InfrastructureAnalyzer
 	 * @return maximum memory of remote hadoop reduce task jvm
 	 */
 	public static long getRemoteMaxMemoryReduce() {
-		if ((!LiteCheck.isLite()) && (_remoteJVMMaxMemReduce == -1))
+		if ((_remoteJVMMaxMemReduce == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _remoteJVMMaxMemReduce;
 	}
@@ -188,13 +188,13 @@ public class InfrastructureAnalyzer
 	 * @return maximum sort buffer memory of hadoop task
 	 */
 	public static long getRemoteMaxMemorySortBuffer() {
-		if ((!LiteCheck.isLite()) && (_remoteMRSortMem == -1))
+		if ((_remoteMRSortMem == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _remoteMRSortMem;
 	}
 
 	public static boolean isLocalMode() {
-		if ((!LiteCheck.isLite()) && (_remoteJVMMaxMemMap == -1))
+		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _localJT;
 	}
@@ -255,13 +255,13 @@ public class InfrastructureAnalyzer
 	 * @return HDFS block size
 	 */
 	public static long getHDFSBlockSize() {
-		if ((!LiteCheck.isLite()) && (_blocksize == -1))
+		if ((_blocksize == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _blocksize;
 	}
 
 	public static boolean isYarnEnabled() {
-		if ((!LiteCheck.isLite()) && (_remoteJVMMaxMemMap == -1))
+		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
 			analyzeHadoopConfiguration();
 		return _yarnEnabled;
 	}

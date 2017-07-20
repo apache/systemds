@@ -360,7 +360,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		if(_coldata != null) {
 			for( int i=0; i < _coldata.length; i++ )
-				_coldata[i]._size = nrow;
+				_coldata[i].reset(nrow);
 		}
 	}
 
@@ -1258,6 +1258,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public abstract void append(T value);
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
+		public abstract void reset(int size); 
 	}
 
 	private static class StringArray extends Array<String> {
@@ -1306,6 +1307,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public Array slice(int rl, int ru) {
 			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new String[size];
+			_size = size;
 		}
 	}
 
@@ -1357,6 +1363,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public Array slice(int rl, int ru) {
 			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new boolean[size];
+			_size = size;
+		}
 	}
 
 	private static class LongArray extends Array<Long> {
@@ -1407,6 +1418,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public Array slice(int rl, int ru) {
 			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new long[size];
+			_size = size;
+		}
 	}
 
 	private static class DoubleArray extends Array<Double> {
@@ -1456,6 +1472,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public Array slice(int rl, int ru) {
 			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new double[size];
+			_size = size;
 		}
 	}
 

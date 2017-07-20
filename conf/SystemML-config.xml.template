@@ -78,6 +78,6 @@
    <!-- prints extra statistics information for Deep Neural Networks done in CP mode -->
    <systemml.stats.extraDNN>false</systemml.stats.extraDNN>
 
-   <!-- sets the maximum number of GPUs per process, -1 for all GPUs -->
-   <systemml.gpu.perProcessMax>-1</systemml.gpu.perProcessMax>
+    <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
+    <systemml.gpu.availableGPUs>-1</systemml.gpu.availableGPUs>
 </root>

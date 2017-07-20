@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.ParameterBuilder;
@@ -1851,5 +1852,13 @@ public abstract class AutomatedTestBase
 		builder.config("spark.locality.wait", "5s");
 		SparkSession spark = builder.getOrCreate();
 		return spark;
+	}
+
+	public static String getMatrixAsString(double[][] matrix) {
+		try {
+			return DataConverter.toString(DataConverter.convertToMatrixBlock(matrix));
+		} catch (DMLRuntimeException e) {
+			return "N/A";
+		}
 	}
 }

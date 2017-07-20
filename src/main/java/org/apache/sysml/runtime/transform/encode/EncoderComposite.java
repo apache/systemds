@@ -80,13 +80,6 @@ public class EncoderComposite extends Encoder
 		for( Encoder encoder : _encoders )
 			encoder.build(in);
 	}
-
-	@Override
-	public String[] apply(String[] in) {
-		for( Encoder encoder : _encoders )
-			encoder.apply(in);
-		return in;
-	}
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {

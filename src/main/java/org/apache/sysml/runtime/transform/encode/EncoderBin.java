@@ -44,7 +44,6 @@ public class EncoderBin extends Encoder
 
 	private int[] _numBins = null;
 	private double[] _min=null, _max=null;	// min and max among non-missing values
-	private double[] _binWidths = null;		// width of a bin for each attribute
 	
 	//frame transform-apply attributes
 	private double[][] _binMins = null;
@@ -83,8 +82,6 @@ public class EncoderBin extends Encoder
 			Arrays.fill(_min, Double.MAX_VALUE);
 			_max = new double[_colList.length];
 			Arrays.fill(_max, -Double.MAX_VALUE);
-			
-			_binWidths = new double[_colList.length];
 		}
 	}
 
@@ -121,34 +118,6 @@ public class EncoderBin extends Encoder
 		// nothing to do
 	}
 	
-	/**
-	 * Method to apply transformations.
-	 */
-	@Override
-	public String[] apply(String[] words) {
-		if( !isApplicable() )
-			return words;
-	
-		for(int i=0; i < _colList.length; i++) {
-			int colID = _colList[i];
-			try {
-				double val = UtilFunctions.parseToDouble(words[colID-1]);
-				int binid = 1;
-				double tmp = _min[i] + _binWidths[i];
-				while(val > tmp && binid < _numBins[i]) {
-					tmp += _binWidths[i];
-					binid++;
-				}
-				words[colID-1] = Integer.toString(binid);
-			} 
-			catch(NumberFormatException e) {
-				throw new RuntimeException("Encountered \"" + words[colID-1] + "\" in column ID \"" + colID + "\", when expecting a numeric value. Consider adding \"" + words[colID-1] + "\" to na.strings, along with an appropriate imputation method.");
-			}
-		}
-		
-		return words;
-	}
-
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for(int j=0; j<_colList.length; j++) {

@@ -48,11 +48,6 @@ public class EncoderPassThrough extends Encoder
 	public void build(FrameBlock in) {
 		//do nothing
 	}
-
-	@Override
-	public String[] apply(String[] in) {
-		return in;
-	}
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {

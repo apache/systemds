@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -39,7 +38,6 @@ public class EncoderRecode extends Encoder
 
 	//recode maps and custom map for partial recode maps 
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
-	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	
 	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen)
@@ -60,17 +58,9 @@ public class EncoderRecode extends Encoder
 		return _rcdMapsPart; 
 	}
 	
-	public HashMap<Integer, HashMap<String,String>> getRecodeMaps() {
-		return _finalMaps;
-	}
-	
-	private String lookupRCDMap(int colID, String key) {
-		if( _finalMaps!=null )
-			return _finalMaps.get(colID).get(key);
-		else { //used for cp
-			Long tmp = _rcdMaps.get(colID).get(key);
-			return (tmp!=null) ? Long.toString(tmp) : null;
-		}
+	private long lookupRCDMap(int colID, String key) {
+		Long tmp = _rcdMaps.get(colID).get(key);
+		return (tmp!=null) ? tmp : -1;
 	}
 	
 	@Override
@@ -132,28 +122,6 @@ public class EncoderRecode extends Encoder
 		}
 	}
 	
-	/**
-	 * Method to apply transformations.
-	 */
-	@Override
-	public String[] apply(String[] words) 
-	{
-		if( !isApplicable() )
-			return words;
-		
-		//apply recode maps on relevant columns of given row
-		for(int i=0; i < _colList.length; i++) {
-			//prepare input and get code
-			int colID = _colList[i];
-			String key = UtilFunctions.unquote(words[colID-1].trim());
-			String val = lookupRCDMap(colID, key);			
-			// replace unseen keys with NaN 
-			words[colID-1] = (val!=null) ? val : "NaN";
-		}
-			
-		return words;
-	}
-	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		//apply recode maps column wise
@@ -162,9 +130,9 @@ public class EncoderRecode extends Encoder
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object okey = in.get(i, colID-1);
 				String key = (okey!=null) ? okey.toString() : null;
-				String val = lookupRCDMap(colID, key);			
-				out.quickSetValue(i, colID-1, (val!=null) ? 
-						Double.parseDouble(val) : Double.NaN);
+				long code = lookupRCDMap(colID, key);			
+				out.quickSetValue(i, colID-1,
+					(code >= 0) ? code : Double.NaN);
 			}
 		}
 		
@@ -228,4 +196,3 @@ public class EncoderRecode extends Encoder
 		return token + Lop.DATATYPE_PREFIX + code.toString();
 	}
 }
- 

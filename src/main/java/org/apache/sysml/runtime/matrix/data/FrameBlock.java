@@ -67,13 +67,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/** The data frame data as an ordered list of columns */
 	private Array[] _coldata = null;
 	
-	/** Cache for recode maps from frame meta data, indexed by column 0-based */
-	private Map<Integer, SoftReference<HashMap<String,Long>>> _rcdMapCache = null;
-	
 	public FrameBlock() {
 		_numRows = 0;
-		if( REUSE_RECODE_MAPS )
-			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -120,8 +115,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_colmeta[j] = new ColumnMetadata(0);
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
-		if( REUSE_RECODE_MAPS )
-			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -872,16 +865,25 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				ret._colnames[j-cl] = getColumnName(j);
 		}	
 		ret._numRows = ru-rl+1;
-
-		//copy output data
-		if(ret._coldata == null ) { 
+		if(ret._coldata == null )
 			ret._coldata = new Array[numCols];
+		
+		//fast-path: shallow copy column indexing 
+		if( ret._numRows == _numRows ) {
+			//this shallow copy does not only avoid an array copy, but
+			//also allows for bi-directional reuses of recodemaps 
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata[j-cl] = _coldata[j].slice(rl,ru);
+				ret._coldata[j-cl] = _coldata[j];
 		}
-		else
-			for( int j=cl; j<=cu; j++ )
-				ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);	
+		//copy output data
+		else {
+			for( int j=cl; j<=cu; j++ ) {
+				if( ret._coldata[j-cl] == null )
+					ret._coldata[j-cl] = _coldata[j].slice(rl,ru);
+				else
+					ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);
+			}
+		}
 		
 		return ret;
 	}
@@ -1023,7 +1025,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public HashMap<String,Long> getRecodeMap(int col) {
 		//probe cache for existing map
 		if( REUSE_RECODE_MAPS ) {
-			SoftReference<HashMap<String,Long>> tmp = _rcdMapCache.get(col);
+			SoftReference<HashMap<String,Long>> tmp = _coldata[col]._rcdMapCache;
 			HashMap<String,Long> map = (tmp!=null) ? tmp.get() : null;
 			if( map != null ) return map;
 		}
@@ -1034,10 +1036,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-//				String[] tmp = IOUtilFunctions.splitCSV(
-//						val.toString(), Lop.DATATYPE_PREFIX);
-
-				// Instead of using splitCSV which is forcing string with RFC-4180 format, using Lop.DATATYPE_PREFIX separator to split token and code 
+				// Instead of using splitCSV which is forcing string with RFC-4180 format, 
+				// using Lop.DATATYPE_PREFIX separator to split token and code 
 				String[] tmp = 	new String[2];
 				int pos = val.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
 				tmp[0] = val.toString().substring(0, pos);
@@ -1047,9 +1047,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		
 		//put created map into cache
-		if( REUSE_RECODE_MAPS ) {
-			_rcdMapCache.put(col, new SoftReference<HashMap<String,Long>>(map));
-		}
+		if( REUSE_RECODE_MAPS )
+			_coldata[col]._rcdMapCache = new SoftReference<>(map);
 		
 		return map;
 	}
@@ -1245,6 +1244,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * in order to avoid unnecessary dependencies.
 	 */
 	private abstract static class Array<T> implements Writable {
+		protected SoftReference<HashMap<String,Long>> _rcdMapCache = null;
+		
 		protected int _size = 0;
 		protected int newSize() {
 			return (int) Math.max(_size*2, 4); 

@@ -336,36 +336,6 @@ public class EncoderMVImpute extends Encoder
 			throw new RuntimeException(ex);
 		}
 	}
-
-	@Override
-	public String[] apply(String[] words) 
-	{	
-		if( isApplicable() )
-			for(int i=0; i < _colList.length; i++) {
-				int colID = _colList[i];
-				String w = UtilFunctions.unquote(words[colID-1]);
-				if(TfUtils.isNA(_NAstrings, w))
-					w = words[colID-1] = _replacementList[i];
-				
-				if ( _isMVScaled.get(i) )
-					if ( _mvscMethodList[i] == MVMethod.GLOBAL_MEAN )
-						words[colID-1] = Double.toString( UtilFunctions.parseToDouble(w) - _meanList[i]._sum );
-					else
-						words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(w) - _meanList[i]._sum) / _varList[i].mean._sum );
-			}
-		
-		if(_scnomvList != null)
-		for(int i=0; i < _scnomvList.length; i++)
-		{
-			int colID = _scnomvList[i];
-			if ( _scnomvMethodList[i] == MVMethod.GLOBAL_MEAN )
-				words[colID-1] = Double.toString( UtilFunctions.parseToDouble(words[colID-1]) - _scnomvMeanList[i]._sum );
-			else
-				words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(words[colID-1]) - _scnomvMeanList[i]._sum) / _scnomvVarList[i].mean._sum );
-		}
-			
-		return words;
-	}
 	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {

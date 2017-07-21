@@ -69,6 +69,9 @@
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
    <native.blas>none</native.blas>
 
+   <!-- prints finegrained statistics information -->
+   <systemml.stats.finegrained>false</systemml.stats.finegrained>
+   
    <!-- prints extra statistics information for GPU -->
    <systemml.stats.extraGPU>false</systemml.stats.extraGPU>
 

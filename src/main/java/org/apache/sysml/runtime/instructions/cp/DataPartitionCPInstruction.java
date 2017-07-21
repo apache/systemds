@@ -97,6 +97,6 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		}
 		
 		//release input
-		ec.releaseMatrixInput(input1.getName());		
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());		
 	}
 }

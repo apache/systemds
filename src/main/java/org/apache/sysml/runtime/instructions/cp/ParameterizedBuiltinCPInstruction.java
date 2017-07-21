@@ -177,11 +177,11 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		} 
 		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
 			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get(Statement.GAGG_TARGET));
-			MatrixBlock groups = ec.getMatrixInput(params.get(Statement.GAGG_GROUPS));
+			MatrixBlock target = ec.getMatrixInput(params.get(Statement.GAGG_TARGET), getExtendedOpcode());
+			MatrixBlock groups = ec.getMatrixInput(params.get(Statement.GAGG_GROUPS), getExtendedOpcode());
 			MatrixBlock weights= null;
 			if ( params.get(Statement.GAGG_WEIGHTS) != null )
-				weights = ec.getMatrixInput(params.get(Statement.GAGG_WEIGHTS));
+				weights = ec.getMatrixInput(params.get(Statement.GAGG_WEIGHTS), getExtendedOpcode());
 			
 			int ngroups = -1;
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
@@ -192,19 +192,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			int k = Integer.parseInt(params.get("k")); //num threads
 			MatrixBlock soresBlock = groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr, k);
 			
-			ec.setMatrixOutput(output.getName(), soresBlock);
+			ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
 			// release locks
 			target = groups = weights = null;
-			ec.releaseMatrixInput(params.get(Statement.GAGG_TARGET));
-			ec.releaseMatrixInput(params.get(Statement.GAGG_GROUPS));
+			ec.releaseMatrixInput(params.get(Statement.GAGG_TARGET), getExtendedOpcode());
+			ec.releaseMatrixInput(params.get(Statement.GAGG_GROUPS), getExtendedOpcode());
 			if ( params.get(Statement.GAGG_WEIGHTS) != null )
-				ec.releaseMatrixInput(params.get(Statement.GAGG_WEIGHTS));
+				ec.releaseMatrixInput(params.get(Statement.GAGG_WEIGHTS), getExtendedOpcode());
 			
 		}
 		else if ( opcode.equalsIgnoreCase("rmempty") ) {
 			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			MatrixBlock select = params.containsKey("select")? ec.getMatrixInput(params.get("select")):null;
+			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
+			MatrixBlock select = params.containsKey("select")? ec.getMatrixInput(params.get("select"), getExtendedOpcode()):null;
 			
 			// compute the result
 			String margin = params.get("margin");
@@ -217,14 +217,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
 			
 			//release locks
-			ec.setMatrixOutput(output.getName(), soresBlock);
-			ec.releaseMatrixInput(params.get("target"));
+			ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 			if (params.containsKey("select"))
-				ec.releaseMatrixInput(params.get("select"));
+				ec.releaseMatrixInput(params.get("select"), getExtendedOpcode());
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) {
 			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
 			
 			// compute the result
 			double pattern = Double.parseDouble( params.get("pattern") );
@@ -232,12 +232,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			MatrixBlock ret = (MatrixBlock) target.replaceOperations(new MatrixBlock(), pattern, replacement);
 			
 			//release locks
-			ec.setMatrixOutput(output.getName(), ret);
-			ec.releaseMatrixInput(params.get("target"));
+			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 		}
 		else if ( opcode.equalsIgnoreCase("rexpand") ) {
 			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
 			
 			// compute the result
 			double maxVal = Double.parseDouble( params.get("max") );
@@ -249,8 +249,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
 			
 			//release locks
-			ec.setMatrixOutput(output.getName(), ret);
-			ec.releaseMatrixInput(params.get("target"));
+			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply")) {
 			//acquire locks
@@ -263,13 +263,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
 			
 			//release locks
-			ec.setMatrixOutput(output.getName(), mbout);
+			ec.setMatrixOutput(output.getName(), mbout, getExtendedOpcode());
 			ec.releaseFrameInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
 		}
 		else if ( opcode.equalsIgnoreCase("transformdecode")) {			
 			//acquire locks
-			MatrixBlock data = ec.getMatrixInput(params.get("target"));
+			MatrixBlock data = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
 			String[] colnames = meta.getColumnNames();
 			
@@ -279,7 +279,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), fbout);
-			ec.releaseMatrixInput(params.get("target"));
+			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 			ec.releaseFrameInput(params.get("meta"));
 		}
 		else if ( opcode.equalsIgnoreCase("transformmeta")) {

@@ -137,7 +137,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			{
 				//will return an empty matrix partition 
 				MatrixBlock resultBlock = mo.readMatrixPartition( ixrange );
-				ec.setMatrixOutput(output.getName(), resultBlock);
+				ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 			}
 		}
 		else

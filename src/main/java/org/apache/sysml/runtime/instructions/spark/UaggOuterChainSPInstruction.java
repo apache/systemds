@@ -132,8 +132,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 		{
 			//create sorted broadcast matrix 
-			MatrixBlock mb = sec.getMatrixInput(bcastVar);
-			sec.releaseMatrixInput(bcastVar);
+			MatrixBlock mb = sec.getMatrixInput(bcastVar, getExtendedOpcode());
+			sec.releaseMatrixInput(bcastVar, getExtendedOpcode());
 			bcastVar = null; //prevent lineage tracking
 			double[] vmb = DataConverter.convertToDoubleVector(mb);
 			Broadcast<int[]> bvi = null;
@@ -166,7 +166,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			tmp.dropLastRowsOrColums(_aggOp.correctionLocation);
 
 			//put output block into symbol table (no lineage because single block)
-			sec.setMatrixOutput(output.getName(), tmp);
+			sec.setMatrixOutput(output.getName(), tmp, getExtendedOpcode());
 		}
 		else //R/C AGG (output is rdd)
 		{			

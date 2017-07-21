@@ -533,7 +533,7 @@ public class Statistics
 		final String instCol = "Instruction";
 		final String timeSCol = "Time(s)";
 		final String countCol = "Count";
-		final String gpuCol = "GPU";
+		final String gpuCol = "Misc Timers";
 		StringBuilder sb = new StringBuilder();
 		int numHittersToDisplay = Math.min(num, len);
 		int maxNumLen = String.valueOf(numHittersToDisplay).length();
@@ -557,7 +557,7 @@ public class Statistics
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
-		if (GPUStatistics.DISPLAY_STATISTICS) {
+		if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
 			sb.append("  ");
 			sb.append(gpuCol);
 		}
@@ -575,7 +575,7 @@ public class Statistics
 					(i + 1), instruction, timeSString, count));
 
 			// Add the miscellaneous timer info
-			if (GPUStatistics.DISPLAY_STATISTICS) {
+			if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
 				sb.append("  ");
 				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction));
 			}

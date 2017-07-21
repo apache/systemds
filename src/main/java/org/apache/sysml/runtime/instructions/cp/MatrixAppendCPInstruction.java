@@ -35,8 +35,8 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction
 		throws DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 	
 		//check input dimensions
 		if( _type == AppendType.CBIND && matBlock1.getNumRows() != matBlock2.getNumRows() ) {
@@ -52,8 +52,8 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction
 		MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock(), _type==AppendType.CBIND);
 		
 		//set output and release inputs 
-		ec.setMatrixOutput(output.getName(), ret);
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 	}
 }

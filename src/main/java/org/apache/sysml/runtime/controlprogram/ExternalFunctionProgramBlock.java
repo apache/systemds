@@ -304,7 +304,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		else if (getOutputParams().size() > 0)
 			einst.setLocation(getOutputParams().get(0));
 		else
-			einst.setLocation(this._beginLine, this._endLine, this._beginColumn, this._endColumn);
+			einst.setLocation(this.getFilename(), this._beginLine, this._endLine, this._beginColumn, this._endColumn);
 		
 		_inst.add(einst);
 

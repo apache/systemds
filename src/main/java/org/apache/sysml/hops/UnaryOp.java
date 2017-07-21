@@ -290,7 +290,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 
 			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
 			
-			lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			lit.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
             			
 			PickByCount pick = new PickByCount(
 					sort, lit, DataType.MATRIX, getValueType(),

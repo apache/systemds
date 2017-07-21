@@ -97,7 +97,7 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException {
 		
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
@@ -126,19 +126,19 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		switch(ctableOp) {
 		case CTABLE_TRANSFORM: //(VECTOR)
 			// F=ctable(A,B,W)
-			matBlock2 = ec.getMatrixInput(input2.getName());
-			wtBlock = ec.getMatrixInput(input3.getName());
+			matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+			wtBlock = ec.getMatrixInput(input3.getName(), getExtendedOpcode());
 			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, resultMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 			// F = ctable(A,B) or F = ctable(A,B,1)
-			matBlock2 = ec.getMatrixInput(input2.getName());
+			matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, cst1, _ignoreZeros, resultMap, resultBlock);
 			break;
 		case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 			// F = ctable(seq,A) or F = ctable(seq,B,1)
-			matBlock2 = ec.getMatrixInput(input2.getName());
+			matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			// only resultBlock.rlen known, resultBlock.clen set in operation
 			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, cst1, resultBlock);
@@ -151,7 +151,7 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 			// F=ctable(A,1,W)
-			wtBlock = ec.getMatrixInput(input3.getName());
+			wtBlock = ec.getMatrixInput(input3.getName(), getExtendedOpcode());
 			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
 			matBlock1.ternaryOperations((SimpleOperator)_optr, cst1, wtBlock, resultMap, resultBlock);
 			break;
@@ -161,11 +161,11 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		}
 		
 		if(input1.getDataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		if(input2.getDataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input2.getName());
+			ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		if(input3.getDataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input3.getName());
+			ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
 		
 		if ( resultBlock == null ){
 			//we need to respect potentially specified output dimensions here, because we might have 
@@ -178,6 +178,6 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		else
 			resultBlock.examSparsity();
 		
-		ec.setMatrixOutput(output.getName(), resultBlock);
+		ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 	}	
 }

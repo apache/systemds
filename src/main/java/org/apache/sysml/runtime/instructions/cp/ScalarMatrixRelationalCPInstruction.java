@@ -46,7 +46,7 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
-		MatrixBlock inBlock = ec.getMatrixInput(mat.getName());
+		MatrixBlock inBlock = ec.getMatrixInput(mat.getName(), getExtendedOpcode());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		ScalarOperator sc_op = (ScalarOperator) _optr;
@@ -54,13 +54,13 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 		
 		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
 		
-		ec.releaseMatrixInput(mat.getName());
+		ec.releaseMatrixInput(mat.getName(), getExtendedOpcode());
 
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
  			retBlock.examSparsity();
  		}
 		
-		ec.setMatrixOutput(output.getName(), retBlock);
+		ec.setMatrixOutput(output.getName(), retBlock, getExtendedOpcode());
 	}
 }

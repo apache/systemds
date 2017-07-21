@@ -43,16 +43,16 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		throws DMLRuntimeException
 	{
 		// Read input matrices
-        MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName());
+        MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+        MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		// Perform computation using input matrices, and produce the result matrix
 		BinaryOperator bop = (BinaryOperator) _optr;
 		MatrixBlock retBlock = (MatrixBlock) (inBlock1.binaryOperations (bop, inBlock2, new MatrixBlock()));
 		
 		// Release the memory occupied by input matrices
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock) ) {
@@ -60,6 +60,6 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		}
 		
 		// Attach result matrix with MatrixObject associated with output_name
-		ec.setMatrixOutput(output.getName(), retBlock);
+		ec.setMatrixOutput(output.getName(), retBlock, getExtendedOpcode());
 	}
 }

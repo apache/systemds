@@ -43,20 +43,20 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		String opcode = getOpcode();
 		if(LibCommonsMath.isSupportedUnaryOperation(opcode)) {
 			MatrixBlock retBlock = LibCommonsMath.unaryOperations(ec.getMatrixObject(input1.getName()),getOpcode());
-			ec.setMatrixOutput(output_name, retBlock);
+			ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 		}
 		else {
-			MatrixBlock inBlock = ec.getMatrixInput(input1.getName());
+			MatrixBlock inBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 			MatrixBlock retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
 		
-			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 			
 			// Ensure right dense/sparse output representation (guarded by released input memory)
 			if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
 	 			retBlock.examSparsity();
 	 		}
 			
-			ec.setMatrixOutput(output_name, retBlock);
+			ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 		}		
 	}
 }

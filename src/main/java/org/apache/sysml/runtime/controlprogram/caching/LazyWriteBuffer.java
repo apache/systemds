@@ -28,7 +28,9 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class LazyWriteBuffer 
 {
@@ -56,7 +58,7 @@ public class LazyWriteBuffer
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
 
-	public static void writeBlock( String fname, CacheBlock cb ) 
+	public static void writeBlock( String fname, CacheBlock cb, String opcode ) 
 		throws IOException
 	{	
 		//obtain basic meta data of cache block
@@ -72,6 +74,7 @@ public class LazyWriteBuffer
 			ByteBuffer bbuff = new ByteBuffer( lSize );
 			int numEvicted = 0;
 			
+			long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			//modify buffer pool
 			synchronized( _mQueue )
 			{
@@ -99,21 +102,33 @@ public class LazyWriteBuffer
 				_mQueue.addLast(fname, bbuff);
 				_size += lSize;	
 			}
+			long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			
 			//serialize matrix (outside synchronized critical path)
-			bbuff.serializeBlock(cb); 
+			bbuff.serializeBlock(cb);
 			
 			if( DMLScript.STATISTICS ) {
+				if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
+					long t3 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_EVICTION, t2-t1, numEvicted);
+					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t3-t2, 1);
+				}
 				CacheStatistics.incrementFSBuffWrites();
 				CacheStatistics.incrementFSWrites(numEvicted);
 			}
 		}	
 		else
 		{
+			long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			//write directly to local FS (bypass buffer if too large)
 			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
-			if( DMLScript.STATISTICS )
+			if( DMLScript.STATISTICS ) {
+				if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
+					long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t2-t1, 1);
+				}
 				CacheStatistics.incrementFSWrites();
+			}
 		}	
 	}
 

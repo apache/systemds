@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.lops.LopProperties.ExecLocation;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.Dag;
@@ -620,13 +619,16 @@ public abstract class Lop
 	///////////////////////////////////////////////////////////////////////////
 	public int _beginLine, _beginColumn;
 	public int _endLine, _endColumn;
+	public String _filename;
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	public void setFilename(String passed) { _filename = passed; }
 	
-	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
+		_filename = filename;
 		_beginLine	 = blp; 
 		_beginColumn = bcp; 
 		_endLine 	 = elp;
@@ -637,6 +639,7 @@ public abstract class Lop
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
+	public String getFilename()	{ return _filename; }
 	
 	public String printErrorLocation(){
 		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";

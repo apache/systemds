@@ -161,7 +161,7 @@ public class SpoofSPInstruction extends SPInstruction
 					.mapToPair(new MultiAggregateFunction(_class.getName(), _classBytes, bcMatrices, scalars))
 					.values().fold(new MatrixBlock(), new MultiAggAggregateFunction(aggOps) );
 			
-			sec.setMatrixOutput(_out.getName(), tmpMB);
+			sec.setMatrixOutput(_out.getName(), tmpMB, getExtendedOpcode());
 			return;
 		}
 		else if(_class.getSuperclass() == SpoofOuterProduct.class) // outer product operator
@@ -205,7 +205,7 @@ public class SpoofSPInstruction extends SPInstruction
 			if( op.getRowType().isColumnAgg() || op.getRowType()==RowType.FULL_AGG ) {
 				MatrixBlock tmpMB = RDDAggregateUtils.sumStable(out);
 				if( op.getRowType().isColumnAgg() )
-					sec.setMatrixOutput(_out.getName(), tmpMB);
+					sec.setMatrixOutput(_out.getName(), tmpMB, getExtendedOpcode());
 				else
 					sec.setScalarOutput(_out.getName(), 
 						new DoubleObject(tmpMB.quickGetValue(0, 0)));

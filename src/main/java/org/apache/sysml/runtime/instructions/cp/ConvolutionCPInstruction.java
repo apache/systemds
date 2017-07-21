@@ -220,8 +220,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 	
 	public void processReluBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// (X > 0) * dout
-		MatrixBlock input = ec.getMatrixInput(input1.getName());
-		MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock outputBlock =  new MatrixBlock(input.getNumRows(), input.getNumColumns(), (input.isInSparseFormat() || dout.isInSparseFormat()));
 		
 		if( !input.isEmpty() && !dout.isEmpty() ) {
@@ -230,14 +230,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(_in2.getName());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
 	public void processBiasAddInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		MatrixBlock input = ec.getMatrixInput(input1.getName());
-		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
+		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock outputBlock = null;
 		
 		if(bias.getNumColumns() != 1) {
@@ -258,14 +258,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(_in2.getName());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
 	public void processBiasMultiplyInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		MatrixBlock input = ec.getMatrixInput(input1.getName());
-		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
+		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock outputBlock = null;
 		
 		if(bias.getNumColumns() != 1) {
@@ -284,9 +284,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(_in2.getName());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
 	// Assumption: enableNative && NativeHelper.isNativeLibraryLoaded() is true
@@ -319,7 +319,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		
 		// acquire inputs
 		MatrixBlock outputBlock = null;
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int pad_h = getScalarInput(ec, _padding, 0);
 		int pad_w = getScalarInput(ec, _padding, 1);
 		int stride_h = getScalarInput(ec, _stride, 0);
@@ -351,7 +351,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 			if(matBlock.isEmpty() || dout.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
@@ -362,10 +362,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				else
 					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, true);
 			}
-			ec.releaseMatrixInput(_in2.getName());
+			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
-			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
+			MatrixBlock filter = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 			if(filter.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
@@ -376,11 +376,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName());
+			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
-			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
-			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
+			MatrixBlock filter = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
+			MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 			if(bias.getNumRows() != params.K || bias.getNumColumns() != 1) {
 				throw new DMLRuntimeException("Incorrect shape of bias matrix: [" + bias.getNumRows() + " " + bias.getNumColumns() + "]. "
 						+ "Expected: [" + params.K + ", 1]");
@@ -408,11 +408,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in3.getName());
-			ec.releaseMatrixInput(_in2.getName());
+			ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
 			}
@@ -423,10 +423,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				else
 					LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName());
+			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
 			}
@@ -437,15 +437,15 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				else
 					LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName());
+			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
 	private MatrixBlock getDenseOutputBlock(int numRows, int numCols) throws DMLRuntimeException {

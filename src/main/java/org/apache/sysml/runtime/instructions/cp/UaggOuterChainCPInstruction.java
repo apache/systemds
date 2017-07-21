@@ -87,19 +87,19 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 		MatrixBlock mbLeft = null, mbRight = null, mbOut = null;		
 		//get the main data input
 		if( rightCached ) { 
-			mbLeft = ec.getMatrixInput(input1.getName());
-			mbRight = ec.getMatrixInput(input2.getName());
+			mbLeft = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+			mbRight = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		}
 		else { 
-			mbLeft = ec.getMatrixInput(input2.getName());
-			mbRight = ec.getMatrixInput(input1.getName());
+			mbLeft = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+			mbRight = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		}
 		
 		mbOut = mbLeft.uaggouterchainOperations(mbLeft, mbRight, mbOut, _bOp, _uaggOp);
 
 		//release locks
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		if( _uaggOp.aggOp.correctionExists )
 			mbOut.dropLastRowsOrColums(_uaggOp.aggOp.correctionLocation);
@@ -122,7 +122,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 		{	
 			//Additional memory requirement to convert from dense to sparse can be leveraged from released memory needed for input data above.
 			mbOut.examSparsity();
-			ec.setMatrixOutput(output_name, mbOut);
+			ec.setMatrixOutput(output_name, mbOut, getExtendedOpcode());
 		}
 		
 	}		

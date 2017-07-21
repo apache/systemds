@@ -366,7 +366,7 @@ public class Dag<N extends Lop>
 		for (String varName : sb.liveIn().getVariableNames()) {
 			if (!sb.liveOut().containsVariable(varName)) {
 				inst = VariableCPInstruction.prepareRemoveInstruction(varName);
-				inst.setLocation(sb.getEndLine(), sb.getEndLine(), -1, -1);
+				inst.setLocation(sb.getFilename(), sb.getEndLine(), sb.getEndLine(), -1, -1);
 				
 				deleteInst.add(inst);
 

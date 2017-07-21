@@ -116,10 +116,10 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			
 			if( isSingleBlockLookup(mcIn, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
+				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange), getExtendedOpcode());
 			}
 			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
+				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange), getExtendedOpcode());
 			}
 			else { //rdd output for general case
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);

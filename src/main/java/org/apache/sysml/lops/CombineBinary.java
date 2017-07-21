@@ -124,7 +124,7 @@ public class CombineBinary extends Lop
 		}
 		
 		CombineBinary comn = new CombineBinary(op, input1, input2, dt, vt);
-		comn.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		comn.setAllPositions(input1.getFilename(), input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
 		return comn;
 	}
  

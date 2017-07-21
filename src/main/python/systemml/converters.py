@@ -25,6 +25,9 @@ import numpy as np
 import pandas as pd
 import os
 import math
+import skimage
+from skimage.transform import resize
+
 from pyspark.context import SparkContext
 from scipy.sparse import coo_matrix, spmatrix, csr_matrix
 from .classloader import *
@@ -39,7 +42,7 @@ def getNumCols(numPyArr):
 
 def get_pretty_str(key, value):
     return '\t"' + key + '": ' + str(value) + ',\n'
-        
+
 def save_tensor_csv(tensor, file_path, shouldTranspose):
     w = w.reshape(w.shape[0], -1)
     if shouldTranspose:
@@ -51,29 +54,29 @@ def save_tensor_csv(tensor, file_path, shouldTranspose):
         file.write(get_pretty_str('cols', w.shape[1]))
         file.write(get_pretty_str('nnz', np.count_nonzero(w)))
         file.write('\t"format": "csv",\n\t"description": {\n\t\t"author": "SystemML"\n\t}\n}\n')
-    
+
 def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="binary", is_caffe_installed=False):
     """
-    Saves the weights and bias in the caffemodel file to output_dir in the specified format. 
+    Saves the weights and bias in the caffemodel file to output_dir in the specified format.
     This method does not requires caffe to be installed.
-    
+
     Parameters
     ----------
     sc: SparkContext
         SparkContext
-    
+
     deploy_file: string
         Path to the input network file
-        
+
     caffemodel_file: string
         Path to the input caffemodel file
-    
+
     output_dir: string
         Path to the output directory
-    
+
     format: string
         Format of the weights and bias (can be binary, csv or text)
-    
+
     is_caffe_installed: bool
         True if caffe is installed
     """
@@ -104,17 +107,17 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
         utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
         utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
 
-    
+
 def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
     """
     Saves the images in the lmdb file as jpeg in the output_dir. This method requires caffe to be installed along with lmdb and cv2 package.
     To install cv2 package, do `pip install opencv-python`.
-    
+
     Parameters
     ----------
     lmdb_img_file: string
         Path to the input lmdb file
-    
+
     output_dir: string
         Output directory for images (local filesystem)
     """
@@ -163,7 +166,7 @@ def _convertSPMatrixToMB(sc, src):
     buf3 = bytearray(col.tostring())
     createJavaObject(sc, 'dummy')
     return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
-            
+
 def _convertDenseMatrixToMB(sc, src):
     numCols = getNumCols(src)
     numRows = src.shape[0]
@@ -178,7 +181,7 @@ def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
     mb = _convertSPMatrixToMB(sc, tmp) if isinstance(src, spmatrix) else _convertDenseMatrixToMB(sc, tmp)
     sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
-    
+
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if not isinstance(sc, SparkContext):
         raise TypeError('sc needs to be of type SparkContext')
@@ -212,10 +215,86 @@ def convertToNumPyArr(sc, mb):
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
+
+#   Load an image converting from grayscale or alpha as needed.
+def load_image(filename, color=True):
+    """
+    Input Parameters
+    ----------
+    filename : string
+    color : boolean
+        flag for color format. True (default) loads as RGB while False
+        loads as intensity (if image is already grayscale).
+
+    Returns
+    -------
+    image : an image with type np.float32 in range [0, 1]
+        of size (H x W x 3) in RGB or
+        of size (H x W x 1) in grayscale.
+    """
+    import cv2
+    image = skimage.img_as_float(cv2.imread(filename))
+    # cv2 reads in BGR format, so converting back to RGB format.
+    image = image[:,:,::-1]
+    if image.ndim == 2:
+        image = image[:, :, np.newaxis]
+        if color:
+            image = np.tile(image, (1, 1, 3))
+    elif image.shape[2] == 4:
+        image = image[:, :, :3]
+    return image
+
+
+# Resize an image array with interpolation.
+def resize_image(image, new_dims, interp_order=1):
+    """
+    Input Parameters
+    ----------
+    image : (H x W x K) ndarray
+    new_dims : (height, width) tuple of new dimensions.
+    interp_order : interpolation order, default is linear.
+
+    Returns
+    -------
+    image : resized ndarray with shape (new_dims[0], new_dims[1], K)
+    """
+    if image.shape[-1] == 1 or image.shape[-1] == 3:
+        im_min, im_max = image.min(), image.max()
+        if im_max > im_min:
+            # skimage is fast but only understands {1,3} channel images
+            # in [0, 1].
+            im_std = (image - im_min) / (im_max - im_min)
+            resized_std = resize(im_std, new_dims, order=interp_order)
+            resized_im = resized_std * (im_max - im_min) + im_min
+        else:
+            # the image is a constant -- avoid divide by 0
+            ret = np.empty((new_dims[0], new_dims[1], image.shape[-1]),
+                           dtype=np.float32)
+            ret.fill(im_min)
+            return ret
+    else:
+        # ndimage interpolates anything but more slowly.
+        scale = tuple(np.array(new_dims, dtype=float) / np.array(image.shape[:2]))
+        resized_im = zoom(image, scale + (1,), order=interp_order)
+    return resized_im.astype(np.float32)
+
+
 # Example usage: convertImageToNumPyArr(im, img_shape=(3, 224, 224), add_rotated_images=True, add_mirrored_images=True)
 # The above call returns a numpy array of shape (6, 50176) in NCHW format
-def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mirrored_images=False):
-    from PIL import Image
+def convertImageToNumPyArr(image_file_name, img_shape=None, add_rotated_images=False, add_mirrored_images=False,
+    color=True, transpose=(2,0,1), color_mode = 'BGR', raw_scale=255, mean=[103.939, 116.779, 123.68]):
+
+    ## Input Parameters
+
+    # transpose: This parameter with default value (2,0,1)is used to convert data from (HxWxC) to (CxHxW)
+
+    # color_mode: In case of VGG models which expect image data in BGR format instead of RGB for other most models,
+    # color_mode parameter is used to process image data in BGR format.
+
+    # raw_scale: Its used to convert data from (0 to 1) to (0 to 255) form.
+
+    # mean: mean value is used to subtract from input data from every pixel value. Default value specified is for VGG-19 model.
+
     if img_shape is not None:
         num_channels = img_shape[0]
         size = (img_shape[1], img_shape[2])
@@ -224,22 +303,35 @@ def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mir
         size = None
     if num_channels != 1 and num_channels != 3:
         raise ValueError('Expected the number of channels to be either 1 or 3')
+
+    im  =  load_image(image_file_name, color)
     if size is not None:
-        im = im.resize(size, Image.LANCZOS)
-    expected_mode = 'L' if num_channels == 1 else 'RGB'
-    if expected_mode is not im.mode:
-        im = im.convert(expected_mode)
+        im = resize_image(im, size)
+        #im = im.resize(size, Image.LANCZOS)
+    if transpose is not None:
+        im = im.transpose(transpose)
+
+    # RGB -> BGR
+    if color_mode == 'BGR':
+        im = im[...,::-1]
+
+    # Convert input image data from (0,1) to (0,255) range, if raw_scale=255
+    im *= raw_scale
+
+    # Subtract Mean
+    if mean is not None:
+        for c in range(3):
+            im[:, :, c] = im[:, :, c] - mean[c]
+
     def _im2NumPy(im):
-        if expected_mode == 'L':
-            return np.asarray(im.getdata()).reshape((1, -1))
-        else:
-            # (H,W,C) --> (C,H,W) --> (1, C*H*W)
-            return np.asarray(im).transpose(2, 0, 1).reshape((1, -1))
+        return np.asarray(im).reshape((1, -1))
+
     ret = _im2NumPy(im)
+
     if add_rotated_images:
-        ret = np.vstack((ret, _im2NumPy(im.rotate(90)), _im2NumPy(im.rotate(180)), _im2NumPy(im.rotate(270)) ))
+        ret = np.vstack((ret, _im2NumPy(skimage.transform.rotate(90)), _im2NumPy(skimage.transform.rotate(180)), _im2NumPy(skimage.transform.rotate(270)) ))
     if add_mirrored_images:
-        ret = np.vstack((ret, _im2NumPy(im.transpose(Image.FLIP_LEFT_RIGHT)), _im2NumPy(im.transpose(Image.FLIP_TOP_BOTTOM))))
+        ret = np.vstack((ret, _im2NumPy(np.fliplr(np.asarray(im))), _im2NumPy(np.flipud(np.asarray(im)))))
     return ret
 
 def convertToPandasDF(X):

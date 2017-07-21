@@ -459,18 +459,16 @@ public class TernarySPInstruction extends ComputationSPInstruction
 
 		private static final long serialVersionUID = -5933677686766674444L;
 		
-		@SuppressWarnings("deprecation")
 		@Override
 		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
 				throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes, Double>>();
-			
-			for(LLDoubleEntry ijv : ctableMap.entrySet()) {
+			Iterator<LLDoubleEntry> iter = ctableMap.getIterator();
+			while( iter.hasNext() ) {
+				LLDoubleEntry ijv = iter.next();
 				long i = ijv.key1;
 				long j =  ijv.key2;
 				double v =  ijv.value;
-				
-				// retVal.add(new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell));
 				retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), v));
 			}
 			return retVal.iterator();

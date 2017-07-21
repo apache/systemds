@@ -155,12 +155,10 @@ public class GPUContextPool {
 
 	/**
 	 * Parses a string into a list. The string can be of these forms:
-	 * <b/>
 	 * 1. "-1" : all integers from range 0 to max - [0,1,2,3....max]
 	 * 2. "2,3,0" : comma separated list of integers - [0,2,3]
 	 * 3. "4" : a specific integer - [4]
 	 * 4. "0-4" : a range of integers - [0,1,2,3,4]
-	 * <b/>
 	 * In ranges and comma separated lists, all values must be positive. Anything else is invalid.
 	 * @param str input string
 	 * @param max maximum range of integers

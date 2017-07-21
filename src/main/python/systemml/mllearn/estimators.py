@@ -374,7 +374,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         ----------
         weights: directory whether learned weights are stored
         sep: seperator to use (default: '/')
-        eager: load the model eagerly
+        eager: load the model eagerly. This flag should be only used for debugging purposes. (default: False)
         """
         self.weights = weights
         self.model.load(self.sc._jsc, weights, sep, eager)

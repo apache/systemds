@@ -78,7 +78,7 @@ public class DMLConfig
 	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
 	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS      = "systemml.stats.extraDNN"; //boolean
-	public static final String MAX_GPUS_PER_PROCESS = "systemml.gpu.perProcessMax"; // boolean, maximum number of gpus to use, -1 for all
+	public static final String AVAILABLE_GPUS = "systemml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -123,7 +123,7 @@ public class DMLConfig
 		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(MAX_GPUS_PER_PROCESS,   "-1");
+		_defaultVals.put(AVAILABLE_GPUS,   "-1");
 	}
 	
 	public DMLConfig()

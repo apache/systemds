@@ -168,6 +168,19 @@ public abstract class SpoofOperator implements Serializable
 			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, colIndex) : 0;
 	}
 	
+	protected static double[] getVector(SideInput data, int n, double rowIndex, double colIndex) {
+		int irowIndex = UtilFunctions.toInt(rowIndex);
+		int icolIndex = UtilFunctions.toInt(colIndex);
+		return getVector(data, n, irowIndex, icolIndex);
+	}
+	
+	protected static double[] getVector(SideInput data, int n, int rowIndex, int colIndex) {
+		//note: wrapper sideinput guaranteed to be in dense format
+		double[] c = LibSpoofPrimitives.allocVector(colIndex+1, false);
+		System.arraycopy(data.ddat, rowIndex*n, c, 0, colIndex+1);
+		return c;
+	}
+	
 	public static class SideInput {
 		public final double[] ddat;
 		public final MatrixBlock mdat;

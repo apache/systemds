@@ -578,7 +578,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
+				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
+					&& !heavyHittersContainsSubString("rangeReIndex"));
 		}
 		finally {
 			rtplatform = platformOld;

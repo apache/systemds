@@ -32,6 +32,7 @@ import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
@@ -174,9 +175,10 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop... inputs) {
 		Hop X = inputs[0];
 		Hop B1 = (inputs.length>1) ? inputs[1] : null;
-		if( HopRewriteUtils.isEqualSize(output, X) )
+		if( X!=null && HopRewriteUtils.isEqualSize(output, X) )
 			return RowType.NO_AGG;
-		else if( B1 != null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2() )
+		else if( (B1 != null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
+			|| (output instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)output)))
 			return RowType.NO_AGG_B1;
 		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1 
 				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND)) 
@@ -325,6 +327,8 @@ public class TemplateUtils
 		int max = 0;
 		for( CNode input : node.getInput() )
 			max = Math.max(max, getMaxVectorIntermediates(input));
+		max = Math.max(max, (node instanceof CNodeTernary
+			&& ((CNodeTernary)node).getType().isVectorPrimitive()) ? 1 : 0);
 		max = Math.max(max, (node instanceof CNodeBinary)? 
 			(((CNodeBinary)node).getType().isVectorVectorPrimitive() ? 3 :
 			((CNodeBinary)node).getType().isVectorScalarPrimitive() ? 2 :
@@ -345,10 +349,13 @@ public class TemplateUtils
 			ret += countVectorIntermediates(c);
 		//compute vector requirements of current node
 		int cntBin = (node instanceof CNodeBinary 
-			&& ((CNodeBinary)node).getType().isVectorPrimitive()) ? 1 : 0;
+			&& ((CNodeBinary)node).getType().isVectorPrimitive()
+			&& !((CNodeBinary)node).getType().name().endsWith("_ADD")) ? 1 : 0;
 		int cntUn = (node instanceof CNodeUnary
 				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
-		return ret + cntBin + cntUn;
+		int cntTn = (node instanceof CNodeTernary
+				&& ((CNodeTernary)node).getType().isVectorPrimitive()) ? 1 : 0;
+		return ret + cntBin + cntUn + cntTn;
 	}
 
 	public static boolean isType(TemplateType type, TemplateType... validTypes) {

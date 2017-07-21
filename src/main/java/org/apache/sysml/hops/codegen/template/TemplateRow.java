@@ -88,7 +88,8 @@ public class TemplateRow extends TemplateBase
 				&& isFuseSkinnyMatrixMult(hop.getParent().get(0)))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1
-				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG));
+				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
+			|| (hop instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop));
 	}
 
 	@Override
@@ -398,9 +399,9 @@ public class TemplateRow extends TemplateBase
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			out = new CNodeTernary(cdata1, 
-					TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
-					TemplateUtils.createCNodeData(hop.getInput().get(4), true),
-					TernaryType.LOOKUP_RC1);
+				TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
+				TemplateUtils.createCNodeData(hop.getInput().get(4), true),
+				(!hop.dimsKnown()||hop.getDim2()>1) ? TernaryType.LOOKUP_RVECT1 : TernaryType.LOOKUP_RC1);
 		}
 		
 		if( out == null ) {

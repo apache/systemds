@@ -688,7 +688,7 @@ public class SpoofCompiler
 			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
 			
 			//remove invalid plans with column indexing on main input
-			if( tpl instanceof CNodeCell ) {
+			if( tpl instanceof CNodeCell || tpl instanceof CNodeRow ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				if( rHasLookupRC1(tpl.getOutput(), in1) || isLookupRC1(tpl.getOutput(), in1) ) {
 					cplans2.remove(e.getKey());
@@ -776,7 +776,8 @@ public class SpoofCompiler
 	}
 	
 	private static boolean isLookupRC1(CNode node, CNodeData mainInput) {
-		return (node instanceof CNodeTernary && ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+		return (node instanceof CNodeTernary && (((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+				|| ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RVECT1 )
 				&& node.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)node.getInput().get(0)).getHopID() == mainInput.getHopID());
 	}

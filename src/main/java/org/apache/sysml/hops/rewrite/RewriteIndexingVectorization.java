@@ -197,8 +197,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		if( hop instanceof LeftIndexingOp ) //left indexing
 		{
 			LeftIndexingOp ihop0 = (LeftIndexingOp) hop;
-			boolean isSingleRow = ihop0.getRowLowerEqualsUpper();
-			boolean isSingleCol = ihop0.getColLowerEqualsUpper();
+			boolean isSingleRow = ihop0.isRowLowerEqualsUpper();
+			boolean isSingleCol = ihop0.isColLowerEqualsUpper();
 			boolean appliedRow = false;
 			
 			if( isSingleRow && isSingleCol )
@@ -210,7 +210,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				while( current.getInput().get(0) instanceof LeftIndexingOp ) {
 					LeftIndexingOp tmp = (LeftIndexingOp) current.getInput().get(0);
 					if(    tmp.getParent().size()>1  //multiple consumers, i.e., not a simple chain
-						|| !((LeftIndexingOp) tmp).getRowLowerEqualsUpper() //row merge not applicable
+						|| !((LeftIndexingOp) tmp).isRowLowerEqualsUpper() //row merge not applicable
 						|| tmp.getInput().get(2) != ihop0.getInput().get(2) //not the same row
 						|| tmp.getInput().get(0).getDim2() <= 1 ) //target is single column or unknown 
 					{
@@ -289,7 +289,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				while( current.getInput().get(0) instanceof LeftIndexingOp ) {
 					LeftIndexingOp tmp = (LeftIndexingOp) current.getInput().get(0);
 					if(    tmp.getParent().size()>1  //multiple consumers, i.e., not a simple chain
-						|| !((LeftIndexingOp) tmp).getColLowerEqualsUpper() //row merge not applicable
+						|| !((LeftIndexingOp) tmp).isColLowerEqualsUpper() //row merge not applicable
 						|| tmp.getInput().get(4) != ihop0.getInput().get(4)  //not the same col
 						|| tmp.getInput().get(0).getDim1() <= 1 )  //target is single row or unknown
 					{

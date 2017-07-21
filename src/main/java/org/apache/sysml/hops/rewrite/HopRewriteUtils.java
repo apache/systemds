@@ -904,26 +904,26 @@ public class HopRewriteUtils
 		return true;
 	}
 	
-	public static boolean isFullColumnIndexing(LeftIndexingOp hop)
-	{
-		boolean colPred = hop.getColLowerEqualsUpper();  //single col
-		
-		Hop rl = hop.getInput().get(2);
-		Hop ru = hop.getInput().get(3);
-		
-		return colPred && rl instanceof LiteralOp && getDoubleValueSafe((LiteralOp)rl)==1
-				&& ru instanceof LiteralOp && getDoubleValueSafe((LiteralOp)ru)==hop.getDim1();
+	public static boolean isFullColumnIndexing(LeftIndexingOp hop) {
+		return hop.isColLowerEqualsUpper()
+			&& ((isLiteralOfValue(hop.getInput().get(2), 1)
+			&& isLiteralOfValue(hop.getInput().get(3), hop.getDim1()))
+			|| hop.getDim1() == hop.getInput().get(0).getDim1());
 	}
 	
-	public static boolean isFullRowIndexing(LeftIndexingOp hop)
-	{
-		boolean rowPred = hop.getRowLowerEqualsUpper();  //single row
-		
-		Hop cl = hop.getInput().get(4);
-		Hop cu = hop.getInput().get(5);
-		
-		return rowPred && cl instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cl)==1
-				&& cu instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cu)==hop.getDim2();
+	public static boolean isFullRowIndexing(LeftIndexingOp hop) {
+		return hop.isRowLowerEqualsUpper()
+			&& ((isLiteralOfValue(hop.getInput().get(4), 1)
+			&& isLiteralOfValue(hop.getInput().get(5), hop.getDim2()))
+			|| hop.getDim2() == hop.getInput().get(0).getDim2());
+	}
+	
+	public static boolean isColumnRangeIndexing(IndexingOp hop) {
+		return ((isLiteralOfValue(hop.getInput().get(1), 1)
+			&& isLiteralOfValue(hop.getInput().get(2), hop.getDim1()))
+			|| hop.getDim1() == hop.getInput().get(0).getDim1())
+			&& isLiteralOfValue(hop.getInput().get(3), 1)
+			&& hop.getInput().get(4) instanceof LiteralOp;
 	}
 	
 	public static boolean isScalarMatrixBinaryMult( Hop hop ) {

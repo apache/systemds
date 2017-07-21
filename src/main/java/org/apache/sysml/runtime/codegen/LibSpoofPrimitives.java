@@ -1451,11 +1451,11 @@ public class LibSpoofPrimitives
 		memPool.remove();
 	}
 	
-	private static double[] allocVector(int len, boolean reset) {
+	protected static double[] allocVector(int len, boolean reset) {
 		return allocVector(len, reset, 0);
 	}
 	
-	private static double[] allocVector(int len, boolean reset, double resetVal) {
+	protected static double[] allocVector(int len, boolean reset, double resetVal) {
 		LinkedList<double[]> list = memPool.get(); 
 		
 		//find and remove vector with matching len 

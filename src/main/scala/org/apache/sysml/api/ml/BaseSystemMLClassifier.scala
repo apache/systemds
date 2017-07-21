@@ -36,6 +36,7 @@ import org.apache.spark.sql._
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
 import java.util.HashMap
 import scala.collection.JavaConversions._
+import java.util.Random
 
 
 /****************************************************
@@ -162,12 +163,20 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def baseEstimator():BaseSystemMLEstimator
   def modelVariables():List[String]
   // self.model.load(self.sc._jsc, weights, format, sep)
-  def load(sc:JavaSparkContext, outputDir:String, sep:String):Unit = {
+  def load(sc:JavaSparkContext, outputDir:String, sep:String, eager:Boolean=false):Unit = {
   	val dmlScript = new StringBuilder
   	dmlScript.append("print(\"Loading the model from " + outputDir + "...\")\n")
+  	val tmpSum = "tmp_sum_var" + Math.abs((new Random()).nextInt())
+  	if(eager)
+  	  dmlScript.append(tmpSum + " = 0\n")
 		for(varName <- modelVariables) {
 			dmlScript.append(varName + " = read(\"" + outputDir + sep + varName + ".mtx\")\n")
+			if(eager)
+			  dmlScript.append(tmpSum + " = " + tmpSum + " + 0.001*mean(" + varName + ")\n")
 		}
+  	if(eager) {
+  	  dmlScript.append("if(" + tmpSum + " > 0) { print(\"Loaded the model\"); } else {  print(\"Loaded the model.\"); }")
+  	}
   	val script = dml(dmlScript.toString)
 		for(varName <- modelVariables) {
 			script.out(varName)

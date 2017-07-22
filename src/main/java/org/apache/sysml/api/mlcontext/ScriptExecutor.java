@@ -169,7 +169,7 @@ public class ScriptExecutor {
 	protected void rewriteHops() {
 		try {
 			dmlTranslator.rewriteHopsDAG(dmlProgram);
-		} catch (LanguageException | HopsException | ParseException e) {
+		} catch (LanguageException | HopsException | ParseException | DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
 		}
 	}
@@ -210,8 +210,8 @@ public class ScriptExecutor {
 	 */
 	protected void generateRuntimeProgram() {
 		try {
-			runtimeProgram = dmlProgram.getRuntimeProgram(config);
-		} catch (LanguageException | DMLRuntimeException | LopsException | IOException e) {
+			runtimeProgram = dmlTranslator.getRuntimeProgram(dmlProgram, config);
+		} catch (LanguageException | DMLRuntimeException | LopsException | IOException | HopsException e) {
 			throw new MLContextException("Exception occurred while generating runtime program", e);
 		}
 	}

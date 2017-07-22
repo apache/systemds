@@ -65,9 +65,6 @@ import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
-import org.apache.sysml.hops.codegen.SpoofCompiler;
-import org.apache.sysml.hops.codegen.SpoofCompiler.IntegrationType;
-import org.apache.sysml.hops.codegen.SpoofCompiler.PlanCachePolicy;
 import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -690,16 +687,6 @@ public class DMLScript
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
-
-		//Step 5.1: Generate code for the rewritten Hop dags 
-		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) ){
-			SpoofCompiler.PLAN_CACHE_POLICY = PlanCachePolicy.get(
-					dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE),
-					dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
-			SpoofCompiler.setExecTypeSpecificJavaCompiler();
-			if( SpoofCompiler.INTEGRATION==IntegrationType.HOPS )
-				dmlt.codgenHopsDAG(prog);
-		}
 		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);
@@ -710,14 +697,8 @@ public class DMLScript
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
 		
-		//Step 7: generate runtime program
-		Program rtprog = prog.getRuntimeProgram(dmlconf);
-
-		//Step 7.1: Generate code for the rewritten Hop dags w/o modify
-		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) 
-			&& SpoofCompiler.INTEGRATION==IntegrationType.RUNTIME ){
-			dmlt.codgenHopsDAG(rtprog);
-		}
+		//Step 7: generate runtime program, incl codegen
+		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
 		
 		//Step 8: [optional global data flow optimization]
 		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
@@ -807,7 +788,7 @@ public class DMLScript
 		dmlt.constructLops(prog);
 	
 		//Step 6: generate runtime program
-		dbprog.rtprog = prog.getRuntimeProgram(conf);
+		dbprog.rtprog = dmlt.getRuntimeProgram(prog, conf);
 		
 		try {
 			//set execution environment

@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	AlgorithmMLogreg.class,
 	AlgorithmMSVM.class,
 	AlgorithmPNMF.class,
+	APICodegenTest.class,
 	CellwiseTmplTest.class,
 	CompressedCellwiseTest.class,
 	CompressedMultiAggregateTest.class,

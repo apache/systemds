@@ -71,8 +71,7 @@ public class ProgramRecompiler
 		
 		//construct runtime program from lops
 		for( StatementBlock sb : sbs ) {
-			DMLProgram prog = sb.getDMLProg();
-			ret.add( prog.createRuntimeProgramBlock(rtprog, sb, config) );
+			ret.add(dmlt.createRuntimeProgramBlock(rtprog, sb, config));
 		}
 		
 		return ret;

@@ -42,6 +42,7 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.parser.DMLProgram;
@@ -122,6 +123,7 @@ public class Connection implements Closeable
 		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
 		cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		cconf.set(ConfigType.CODEGEN_ENABLED, false);
 		ConfigurationManager.setLocalConfig(cconf);
 		
 		//disable caching globally 
@@ -216,7 +218,7 @@ public class Connection implements Closeable
 			
 			//lop construct and runtime prog generation
 			dmlt.constructLops(prog);
-			rtprog = prog.getRuntimeProgram(_dmlconf);
+			rtprog = dmlt.getRuntimeProgram(prog, _dmlconf);
 			
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
@@ -247,6 +249,8 @@ public class Connection implements Closeable
 		ConfigurationManager.clearLocalConfigs();
 		if( ConfigurationManager.isDynamicRecompilation() )
 			JMLCProxy.setActive(null);
+		if( ConfigurationManager.isCodegenEnabled() )
+			SpoofCompiler.cleanupCodeGenerator();
 	}
 	
 	/**

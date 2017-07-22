@@ -22,6 +22,7 @@ package org.apache.sysml.api;
 import java.util.List;
 
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -98,9 +99,9 @@ public class ScriptExecutorUtils {
 				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
 				GPUContextPool.freeAllGPUContexts();
 			}
-			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
+			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();
-
+			
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 

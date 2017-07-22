@@ -34,7 +34,6 @@ import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCProxy;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -222,8 +221,8 @@ public class Recompiler
 			memo.extract(hops, status);
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
-					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
+			if( ConfigurationManager.isCodegenEnabled()
+				&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				Hop.resetVisitStatus(hops);
 				hops = SpoofCompiler.optimize(hops, 
 					(status==null || !status.isInitialCodegen()));
@@ -337,8 +336,8 @@ public class Recompiler
 			hops.refreshMemEstimates(memo); 		
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
-					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
+			if( ConfigurationManager.isCodegenEnabled()
+				&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				hops.resetVisitStatus();
 				hops = SpoofCompiler.optimize(hops,
 					(status==null || !status.isInitialCodegen()));

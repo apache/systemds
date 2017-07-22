@@ -148,6 +148,7 @@ public class CNodeCell extends CNodeTpl
 		switch( _type ) {
 			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
 			case ROW_AGG: return SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS;
 			case FULL_AGG: return SpoofOutputDimsType.SCALAR;
 			default:
 				throw new RuntimeException("Unsupported cell type: "+_type.toString());

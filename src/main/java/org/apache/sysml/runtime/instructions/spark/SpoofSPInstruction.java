@@ -128,11 +128,17 @@ public class SpoofSPInstruction extends SPInstruction
 			AggregateOperator aggop = getAggregateOperator(op.getAggOp());
 			
 			if( _out.getDataType()==DataType.MATRIX ) {
-				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars), true);
-				if( op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
+				//execute codegen block operation
+				out = in.mapPartitionsToPair(new CellwiseFunction(
+					_class.getName(), _classBytes, bcMatrices, scalars), true);
+				
+				if( (op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock())
+					|| (op.getCellType()==CellType.COL_AGG && mcIn.getRows() > mcIn.getRowsPerBlock())) {
 					//TODO investigate if some other side effect of correct blocks
-					if( out.partitions().size() > mcIn.getNumRowBlocks() )
-						out = RDDAggregateUtils.aggByKeyStable(out, aggop, (int)mcIn.getNumRowBlocks(), false);
+					long numBlocks = (op.getCellType()==CellType.ROW_AGG ) ? 
+						mcIn.getNumRowBlocks() : mcIn.getNumColBlocks();
+					if( out.partitions().size() > numBlocks )
+						out = RDDAggregateUtils.aggByKeyStable(out, aggop, (int)numBlocks, false);
 					else
 						out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 				}
@@ -405,6 +411,8 @@ public class SpoofSPInstruction extends SPInstruction
 				else {
 					if(((SpoofCellwise)_op).getCellType()==CellType.ROW_AGG)
 						ixOut = new MatrixIndexes(ixOut.getRowIndex(), 1);
+					else if(((SpoofCellwise)_op).getCellType()==CellType.COL_AGG)
+						ixOut = new MatrixIndexes(1, ixOut.getColumnIndex());
 					_op.execute(inputs, _scalars, blkOut);
 				}
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut));

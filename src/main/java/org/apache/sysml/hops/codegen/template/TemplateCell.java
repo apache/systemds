@@ -31,7 +31,6 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
-import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.IndexingOp;
@@ -82,8 +81,7 @@ public class TemplateCell extends TemplateBase
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && (isValidOperation(hop) 
-			|| (HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG) 
-				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+			|| HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG)
 			|| (HopRewriteUtils.isMatrixMultiply(hop)
 				&& hop.getDim1()==1 && hop.getDim2()==1)
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
@@ -102,8 +100,7 @@ public class TemplateCell extends TemplateBase
 	@Override
 	public CloseType close(Hop hop) {
 		//need to close cell tpl after aggregation, see fuse for exact properties
-		if( (HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG) 
-				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+		if( HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG)
 			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1) )
 			return CloseType.CLOSED_VALID;
 		else if( hop instanceof AggUnaryOp || hop instanceof AggBinaryOp )

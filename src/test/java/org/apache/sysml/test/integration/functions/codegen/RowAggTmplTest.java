@@ -49,7 +49,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME11 = TEST_NAME+"11"; //y - X %*% v
 	private static final String TEST_NAME12 = TEST_NAME+"12"; //Y=(X>=v); R=Y/rowSums(Y)
 	private static final String TEST_NAME13 = TEST_NAME+"13"; //rowSums(X)+rowSums(Y)
-	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),1)))),7))
+	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),rowSums(X))))),7))
 	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward
 	private static final String TEST_NAME16 = TEST_NAME+"16"; //Y=X-rowIndexMax(X); R=Y/rowSums(Y)
 	private static final String TEST_NAME17 = TEST_NAME+"17"; //MLogreg - vector-matrix w/ indexing

@@ -167,9 +167,15 @@ public class TemplateUtils
 	}
 	
 	public static CellType getCellType(Hop hop) {
-		return (hop instanceof AggBinaryOp) ? CellType.FULL_AGG :
-			(hop instanceof AggUnaryOp) ? ((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
-			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
+		if( hop instanceof AggBinaryOp )
+			return CellType.FULL_AGG;
+		else if( hop instanceof AggUnaryOp )
+			switch( ((AggUnaryOp)hop).getDirection() ) {
+				case Row: return CellType.ROW_AGG;
+				case Col: return CellType.COL_AGG;
+				case RowCol: return CellType.FULL_AGG;
+			}
+		return CellType.NO_AGG;
 	}
 	
 	public static RowType getRowType(Hop output, Hop... inputs) {

@@ -24,11 +24,8 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
+X = matrix(seq(7, 1100*200+6), 1100, 200, byrow=TRUE);
 
-X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
-y = seq(1,150);
+R = t(colMins(2*log(X)));
 
-Z = pmax(floor(round(abs(pmin(sign(X+y),rowSums(X)%*%matrix(1,1,10))))),7);
-R = t(colSums(Z));
-
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 
+writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

@@ -1170,6 +1170,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * Recomputes and materializes the number of non-zero values
 	 * of the entire matrix block.
 	 * 
+	 * @return number of non-zeros
 	 */
 	public long recomputeNonZeros() {
 		if( sparse && sparseBlock!=null ) { //SPARSE (max long)
@@ -3637,24 +3638,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return leftIndexingOperations(rhsMatrix, rl, ru, cl, cu, ret, update, null);
 	}
 	
-	/**
-	 * Method to perform leftIndexing operation for a given lower and upper bounds in row and column dimensions.
-	 * Updated matrix is returned as the output.
-	 * 
-	 * Operations to be performed: 
-	 *   1) result=this; 
-	 *   2) result[rowLower:rowUpper, colLower:colUpper] = rhsMatrix;
-	 * 
-	 * @param rhsMatrix matrix
-	 * @param rl row lower
-	 * @param ru row upper
-	 * @param cl column lower
-	 * @param cu column upper
-	 * @param ret ?
-	 * @param update ?
-	 * @return matrix block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
 			int cl, int cu, MatrixBlock ret, UpdateType update, String opcode) 
 		throws DMLRuntimeException 

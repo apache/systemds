@@ -71,15 +71,7 @@ public abstract class Instruction
 		return type;
 	}
 	
-	/**
-	 * Setter for instruction line/column number 
-	 * 
-	 * @param beginLine beginning line position
-	 * @param endLine ending line position
-	 * @param beginCol beginning column position
-	 * @param endCol ending column position
-	 */
-	public void setLocation ( String filename, int beginLine, int endLine,  int beginCol, int endCol) {
+	public void setLocation(String filename, int beginLine, int endLine, int beginCol, int endCol) {
 		this.filename = filename;
 		this.beginLine = beginLine;
 		this.endLine = endLine;

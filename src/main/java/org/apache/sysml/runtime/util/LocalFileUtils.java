@@ -72,52 +72,62 @@ public class LocalFileUtils
 	
 	/** Reads a matrix block from local file system.
 	 * 
-	 * @param filePathAndName file to read
+	 * @param fname file name to read
 	 * @return matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName) throws IOException {
-		return (MatrixBlock) readWritableFromLocal(filePathAndName, new MatrixBlock());
+	public static MatrixBlock readMatrixBlockFromLocal(String fname) throws IOException {
+		return (MatrixBlock) readWritableFromLocal(fname, new MatrixBlock());
 	}
 	
 	/** Reads a matrix block from local file system.
 	 * 
-	 * @param filePathAndName file to read
+	 * @param fname file name to read
 	 * @param reuse matrix block to reuse
 	 * @return matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock reuse) throws IOException {
-		return (MatrixBlock) readWritableFromLocal(filePathAndName, reuse);
+	public static MatrixBlock readMatrixBlockFromLocal(String fname, MatrixBlock reuse) throws IOException {
+		return (MatrixBlock) readWritableFromLocal(fname, reuse);
 	}
 
+	/** Reads a frame block from local file system.
+	 * 
+	 * @param fname file name to read
+	 * @return frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public static FrameBlock readFrameBlockFromLocal(String fname) throws IOException {
+		return (FrameBlock) readWritableFromLocal(fname, new FrameBlock());
+	}
+	
 	/** Reads a matrix/frame block from local file system.
 	 * 
-	 * @param filePathAndName file to read
+	 * @param fname file name to read
 	 * @param matrix if true, read matrix. if false, read frame.
 	 * @return cache block (common interface to MatrixBlock and FrameBlock)
 	 * @throws IOException if IOException occurs
 	 */
-	public static CacheBlock readCacheBlockFromLocal(String filePathAndName, boolean matrix) throws IOException {
-		return (CacheBlock) readWritableFromLocal(filePathAndName, matrix?new MatrixBlock():new FrameBlock());
+	public static CacheBlock readCacheBlockFromLocal(String fname, boolean matrix) throws IOException {
+		return (CacheBlock) readWritableFromLocal(fname, matrix?new MatrixBlock():new FrameBlock());
 	}
 	
 	/**
 	 * Reads an arbitrary writable from local file system, using a fused buffered reader
 	 * with special support for matrix blocks.
 	 * 
-	 * @param filePathAndName file to read
+	 * @param fname file name to read
 	 * @param ret hadoop writable
 	 * @return hadoop writable
 	 * @throws IOException if IOException occurs
 	 */
-	public static Writable readWritableFromLocal(String filePathAndName, Writable ret)
+	public static Writable readWritableFromLocal(String fname, Writable ret)
 		throws IOException
 	{
-		FileInputStream fis = new FileInputStream( filePathAndName );
-		DataInput in  = !(ret instanceof MatrixBlock) ? 
-				new DataInputStream(new BufferedInputStream(fis, BUFFER_SIZE)) :
-				new FastBufferedDataInputStream(fis, BUFFER_SIZE);		
+		FileInputStream fis = new FileInputStream(fname);
+		DataInput in = !(ret instanceof MatrixBlock) ? 
+			new DataInputStream(new BufferedInputStream(fis, BUFFER_SIZE)) :
+			new FastBufferedDataInputStream(fis, BUFFER_SIZE);		
 		try {
 			ret.readFields(in);
 		}
@@ -129,38 +139,98 @@ public class LocalFileUtils
 		return ret;
 	}
 	
+	/**
+	 * Reads a matrix block from an input stream, using a fused buffered reader
+	 * with special support for matrix blocks.
+	 * 
+	 * @param is input stream to read
+	 * @return matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public static MatrixBlock readMatrixBlockFromStream(InputStream is) throws IOException {
+		return (MatrixBlock) readWritableFromStream(is, new MatrixBlock());
+	}
+	
+	/**
+	 * Reads a frame block from an input stream, using a fused buffered reader
+	 * with special support for matrix blocks.
+	 * 
+	 * @param is input stream to read
+	 * @return frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public static FrameBlock readFrameBlockFromStream(InputStream is) throws IOException {
+		return (FrameBlock) readWritableFromStream(is, new FrameBlock());
+	}
+	
+	/**
+	 * Reads an arbitrary writable from an input stream, using a fused buffered reader
+	 * with special support for matrix blocks.
+	 * 
+	 * @param is input stream to read
+	 * @param ret hadoop writable
+	 * @return hadoop writable
+	 * @throws IOException if IOException occurs
+	 */
+	public static Writable readWritableFromStream(InputStream is, Writable ret)
+		throws IOException
+	{
+		DataInput in = !(ret instanceof MatrixBlock) ? 
+			new DataInputStream(new BufferedInputStream(is, BUFFER_SIZE)) :
+			new FastBufferedDataInputStream(is, BUFFER_SIZE);		
+		try {
+			ret.readFields(in);
+		}
+		finally {
+			IOUtilFunctions.closeSilently((InputStream)in);
+			IOUtilFunctions.closeSilently(is);
+		}
+		
+		return ret;
+	}
+	
 	/** Writes a matrix block to local file system.
 	 * 
-	 * @param filePathAndName file to write
+	 * @param fname file name to write
 	 * @param mb matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeMatrixBlockToLocal(String filePathAndName, MatrixBlock mb) throws IOException {
-		writeWritableToLocal(filePathAndName, mb);
+	public static void writeMatrixBlockToLocal(String fname, MatrixBlock mb) throws IOException {
+		writeWritableToLocal(fname, mb);
+	}
+	
+	/** Writes a frame block to local file system.
+	 * 
+	 * @param fname file name to write
+	 * @param fb fame block
+	 * @throws IOException if IOException occurs
+	 */
+	public static void writeFrameBlockToLocal(String fname, FrameBlock fb) throws IOException {
+		writeWritableToLocal(fname, fb);
 	}
 
 	/** Writes a matrix/frame block to local file system.
 	 * 
-	 * @param filePathAndName file to write
+	 * @param fname file name to write
 	 * @param cb cache block (common interface to matrix block and frame block)
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeCacheBlockToLocal(String filePathAndName, CacheBlock cb) throws IOException {
-		writeWritableToLocal(filePathAndName, cb);
+	public static void writeCacheBlockToLocal(String fname, CacheBlock cb) throws IOException {
+		writeWritableToLocal(fname, cb);
 	}
 	
 	/**
 	 * Writes an arbitrary writable to local file system, using a fused buffered writer
 	 * with special support for matrix blocks.
 	 * 
-	 * @param filePathAndName file to write
+	 * @param fname file name to write
 	 * @param mb Hadoop writable
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeWritableToLocal(String filePathAndName, Writable mb)
+	public static void writeWritableToLocal(String fname, Writable mb)
 		throws IOException
 	{	
-		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		FileOutputStream fos = new FileOutputStream( fname );
 		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
 		
 		try {
@@ -172,13 +242,13 @@ public class LocalFileUtils
 		}	
 	}
 
-	public static void writeByteArrayToLocal( String filePathAndName, byte[] data )
+	public static void writeByteArrayToLocal( String fname, byte[] data )
 		throws IOException
 	{	
 		//byte array write via java.nio file channel ~10-15% faster than java.io
 		FileChannel channel = null;
 		try {
-			Path path = Paths.get(filePathAndName);
+			Path path = Paths.get(fname);
 			channel = FileChannel.open(path, StandardOpenOption.CREATE, 
 				StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 			channel.write(ByteBuffer.wrap(data));
@@ -188,15 +258,15 @@ public class LocalFileUtils
 		}
 	}
 
-	public static int readBlockSequenceFromLocal( String filePathAndName, Pair<MatrixIndexes,MatrixValue>[] outValues, HashMap<MatrixIndexes, Integer> outMap) 
+	public static int readBlockSequenceFromLocal(String fname, 
+			Pair<MatrixIndexes,MatrixValue>[] outValues, HashMap<MatrixIndexes, Integer> outMap) 
 		throws IOException
 	{
-		FileInputStream fis = new FileInputStream( filePathAndName );
-		FastBufferedDataInputStream in = new FastBufferedDataInputStream( fis, BUFFER_SIZE );
+		FileInputStream fis = new FileInputStream(fname);
+		FastBufferedDataInputStream in = new FastBufferedDataInputStream(fis, BUFFER_SIZE);
 		int bufferSize = 0;
 		
-		try
-		{
+		try {
 			int len = in.readInt();
 			for( int i=0; i<len; i++ ) {
 				outValues[i].getKey().readFields(in);
@@ -214,13 +284,13 @@ public class LocalFileUtils
 		return bufferSize;
 	}
 
-	public static void writeBlockSequenceToLocal( String filePathAndName, Pair<MatrixIndexes,MatrixValue>[] inValues, int len ) 
+	public static void writeBlockSequenceToLocal(String fname, Pair<MatrixIndexes,MatrixValue>[] inValues, int len) 
 		throws IOException
 	{
 		if( len > inValues.length )
 			throw new IOException("Invalid length of block sequence: len="+len+" vs data="+inValues.length);
 		
-		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		FileOutputStream fos = new FileOutputStream(fname);
 		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
 		
 		try 
@@ -281,7 +351,7 @@ public class LocalFileUtils
 		return ret;
 	}
 
-	public static void setLocalFilePermissions( File file, String permissions )
+	public static void setLocalFilePermissions(File file, String permissions)
 	{
 		//note: user and group treated the same way
 		char[] c = permissions.toCharArray();
@@ -310,7 +380,7 @@ public class LocalFileUtils
 		return createWorkingDirectoryWithUUID( DMLScript.getUUID() );
 	}
 
-	public static String createWorkingDirectoryWithUUID( String uuid )
+	public static String createWorkingDirectoryWithUUID(String uuid)
 		throws DMLRuntimeException 
 	{
 		//create local tmp dir if not existing
@@ -407,7 +477,7 @@ public class LocalFileUtils
 		return count;
 	}
 
-	public static String getWorkingDir( String category ) 
+	public static String getWorkingDir(String category) 
 		throws DMLRuntimeException
 	{
 		if( _workingDir == null )
@@ -422,7 +492,7 @@ public class LocalFileUtils
 		return sb.toString();
 	}
 
-	public static String getUniqueWorkingDir( String category ) 
+	public static String getUniqueWorkingDir(String category) 
 		throws DMLRuntimeException
 	{
 		if( _workingDir == null )
@@ -446,7 +516,7 @@ public class LocalFileUtils
 	 * @param text content of text file 
 	 * @throws IOException
 	 */
-	public static void writeTextFile( File file, String text ) 
+	public static void writeTextFile(File file, String text) 
 		throws IOException 
 	{
 		Writer writer = null;

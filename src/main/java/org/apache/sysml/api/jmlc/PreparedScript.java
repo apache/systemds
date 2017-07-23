@@ -19,13 +19,10 @@
 
 package org.apache.sysml.api.jmlc;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -387,28 +384,24 @@ public class PreparedScript
 		throws DMLException
 	{
 		//add reused variables
-		for( Entry<String,Data> e : _inVarReuse.entrySet() )
-			_vars.put(e.getKey(), e.getValue());
+		_vars.putAll(_inVarReuse);
 		
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_prog);	
-		ec.setVariables(_vars);
+		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);	
 		
 		//core execute runtime program	
-		_prog.execute( ec );  
+		_prog.execute(ec);  
 		
 		//cleanup unnecessary outputs
-		Collection<String> tmpVars = new ArrayList<String>(_vars.keySet());
-		for( String var :  tmpVars )
-			if( !_outVarnames.contains(var) )
-				_vars.remove(var);
+		_vars.removeAllNotIn(_outVarnames);
 		
 		//construct results
 		ResultVariables rvars = new ResultVariables();
-		for( String ovar : _outVarnames )
-			if( _vars.keySet().contains(ovar) )
-				rvars.addResult(ovar, _vars.get(ovar));
-			
+		for( String ovar : _outVarnames ) {
+			Data tmpVar = _vars.get(ovar);
+			if( tmpVar != null )
+				rvars.addResult(ovar, tmpVar);
+		}
 		return rvars;
 	}
 	

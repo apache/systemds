@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -43,20 +44,17 @@ public class LocalVariableMap implements Cloneable
 	private HashMap <String, Data> localMap = null;
 	private final long localID;
 	
-	public LocalVariableMap()
-	{
+	public LocalVariableMap() {
 		localMap = new HashMap <String, Data>();
 		localID = _seq.getNextID();
 	}
 	
-	public LocalVariableMap(LocalVariableMap vars)
-	{
+	public LocalVariableMap(LocalVariableMap vars) {
 		localMap = new HashMap <String, Data>(vars.localMap);
 		localID = _seq.getNextID();
 	}
 
-	public Set<String> keySet()
-	{
+	public Set<String> keySet() {
 		return localMap.keySet();
 	}
 	
@@ -66,8 +64,7 @@ public class LocalVariableMap implements Cloneable
 	 * @param name the variable name for the data object
 	 * @return the direct reference to the data object
 	 */
-	public Data get( String name )
-	{
+	public Data get( String name ) {
 		return localMap.get( name );
 	}
 	
@@ -80,6 +77,10 @@ public class LocalVariableMap implements Cloneable
 	 */
 	public void put(String name, Data val) {
 		localMap.put( name, val );
+	}
+	
+	public void putAll(Map<String, Data> vals) {
+		localMap.putAll(vals);
 	}
 
 	public Data remove( String name ) {
@@ -95,25 +96,20 @@ public class LocalVariableMap implements Cloneable
 			e -> !blacklist.contains(e.getKey()));
 	}
 
-	public boolean hasReferences( Data d )
-	{
+	public boolean hasReferences( Data d ) {
 		return localMap.containsValue(d);
 	}
 
-	public String serialize() 
-		throws DMLRuntimeException
-	{
+	public String serialize() throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
-		
 		int count = 0;
-		for (Entry <String, Data> e : localMap.entrySet ())
-		{
+		for (Entry <String, Data> e : localMap.entrySet ()) {
 			if (count != 0)
 				sb.append (ELEMENT_DELIM);
-			sb.append (ProgramConverter.serializeDataObject (e.getKey(), e.getValue()));
+			sb.append(ProgramConverter
+				.serializeDataObject(e.getKey(), e.getValue()));
 			count++;
 		}
-		
 		return sb.toString();		
 	}
 
@@ -122,24 +118,21 @@ public class LocalVariableMap implements Cloneable
 	{
 		StringTokenizer st2 = new StringTokenizer (varStr, ELEMENT_DELIM );
 		LocalVariableMap vars = new LocalVariableMap ();
-		while( st2.hasMoreTokens() )
-		{
+		while( st2.hasMoreTokens() ) {
 			String tmp = st2.nextToken().trim();
 			Object[] tmp2 = ProgramConverter.parseDataObject (tmp);
-			vars.put ((String) tmp2 [0], (Data) tmp2 [1]);
+			vars.put((String) tmp2 [0], (Data) tmp2 [1]);
 		}
 		return vars;		
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Local Variable Map ID = \"");
 		sb.append(localID);
 		sb.append("\":");
 		sb.append(eol);
-		
 		for (Entry <String, Data> pair : localMap.entrySet()) {
 			sb.append("  ");
 			sb.append(pair.getKey());
@@ -147,13 +140,11 @@ public class LocalVariableMap implements Cloneable
 			sb.append(pair.getValue());
 			sb.append(eol);
 		}
-		
 		return sb.toString();
 	}
 		
 	@Override
-	public Object clone()
-	{
-		return new LocalVariableMap( this );
+	public Object clone() {
+		return new LocalVariableMap(this);
 	}
 }

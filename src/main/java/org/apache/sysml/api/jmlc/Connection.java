@@ -27,11 +27,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
@@ -66,6 +63,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -190,7 +188,7 @@ public class Connection implements Closeable
 			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
 		
 		//check for valid names of input and output variables
-		String[] invalidVars = asSet(inputs, outputs).stream()
+		String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
 			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
 		if( invalidVars.length > 0 )
 			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
@@ -845,12 +843,5 @@ public class Connection implements Closeable
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) throws IOException {
 		return TfMetaUtils.readTransformMetaDataFromPath(spec, metapath, colDelim);
-	}
-	
-	private Set<String> asSet(String[] inputs, String[] outputs) {
-		Set<String> ret = new HashSet<String>();
-		CollectionUtils.addAll(ret, inputs);
-		CollectionUtils.addAll(ret, outputs);
-		return ret;
 	}
 }

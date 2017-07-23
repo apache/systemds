@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -582,5 +584,14 @@ public class UtilFunctions
 			if( data[i] == 0 )
 				return true;
 		return false;
+	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(T[]... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( T[] input : inputs )
+			for( T element : input )
+				ret.add(element);
+		return ret;
 	}
 }

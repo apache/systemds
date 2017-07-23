@@ -124,7 +124,11 @@ public class SpoofCompiler
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
 		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
-		FUSE_COST_BASED,      //cost-based decision on materialization points
+		FUSE_COST_BASED;      //cost-based decision on materialization points
+		public boolean isHeuristic() {
+			return this == FUSE_ALL
+				|| this == FUSE_NO_REDUNDANCY;
+		}
 	}
 
 	public enum PlanCachePolicy {
@@ -503,7 +507,7 @@ public class SpoofCompiler
 		//open initial operator plans, if possible
 		for( TemplateBase tpl : TemplateUtils.TEMPLATES )
 			if( tpl.open(hop) ) {
-				MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), false);
+				MemoTableEntrySet P = new MemoTableEntrySet(hop, tpl.getType(), false);
 				memo.addAll(hop, enumPlans(hop, -1, P, tpl, memo));
 			}
 		
@@ -514,15 +518,11 @@ public class SpoofCompiler
 					TemplateBase tpl = TemplateUtils.createTemplate(me.type, me.closed);
 					if( tpl.fuse(hop, c) ) {
 						int pos = hop.getInput().indexOf(c);
-						MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), pos, c.getHopID(), tpl.isClosed());
+						MemoTableEntrySet P = new MemoTableEntrySet(hop, tpl.getType(), pos, c.getHopID(), tpl.isClosed());
 						memo.addAll(hop, enumPlans(hop, pos, P, tpl, memo));
 					}
 				}	
 		}
-		
-		//prune subsumed / redundant plans
-		if( PRUNE_REDUNDANT_PLANS )
-			memo.pruneRedundant(hop.getHopID());
 		
 		//close operator plans, if required
 		if( memo.contains(hop.getHopID()) ) {
@@ -538,6 +538,10 @@ public class SpoofCompiler
 			}
 		}
 		
+		//prune subsumed / redundant plans
+		if( PRUNE_REDUNDANT_PLANS )
+			memo.pruneRedundant(hop.getHopID());
+		
 		//mark visited even if no plans found (e.g., unsupported ops)
 		memo.addHop(hop);
 	}
@@ -546,10 +550,8 @@ public class SpoofCompiler
 		for(int k=0; k<hop.getInput().size(); k++)
 			if( k != pos ) {
 				Hop input2 = hop.getInput().get(k);
-				if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
-					&& TemplateUtils.isType(memo.get(input2.getHopID()).get(0).type, tpl.getType(), TemplateType.CellTpl)
-					&& tpl.merge(hop, input2) && (tpl.getType()!=TemplateType.RowTpl || pos==-1 
-						|| TemplateUtils.hasCommonRowTemplateMatrixInput(hop.getInput().get(pos), input2, memo)))
+				if( memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CellTpl) 
+					&& tpl.merge(hop, input2) )
 					P.crossProduct(k, -1L, input2.getHopID());
 				else
 					P.crossProduct(k, -1L);

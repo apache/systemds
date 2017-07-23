@@ -34,8 +34,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CPlanMemoTable 
 {
@@ -64,8 +66,16 @@ public class CPlanMemoTable
 	}
 	
 	public boolean contains(long hopID, TemplateType type) {
-		return contains(hopID) && get(hopID)
-			.stream().anyMatch(p -> p.type==type);
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> p.type==type);
+	}
+	
+	public boolean contains(long hopID, boolean checkClose, TemplateType... type) {
+		if( !checkClose && type.length==1 )
+			return contains(hopID, type[0]);
+		Set<TemplateType> probe = UtilFunctions.asSet(type);
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> (!checkClose||!p.closed) && probe.contains(p.type));
 	}
 	
 	public int countEntries(long hopID) {
@@ -95,7 +105,8 @@ public class CPlanMemoTable
 	}
 	
 	public void add(Hop hop, TemplateType type, long in1, long in2, long in3) {
-		add(hop, new MemoTableEntry(type, in1, in2, in3));
+		int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
+		add(hop, new MemoTableEntry(type, in1, in2, in3, size));
 	}
 	
 	public void add(Hop hop, MemoTableEntry me) {
@@ -129,25 +140,31 @@ public class CPlanMemoTable
 		//prune redundant plans (i.e., equivalent) 
 		setDistinct(hopID, _plans.get(hopID));
 		
-		//prune dominated plans (e.g., opened plan subsumed
-		//by fused plan if single consumer of input)
-		HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
-		List<MemoTableEntry> list = _plans.get(hopID);
-		Hop hop = _hopRefs.get(hopID);
-		for( MemoTableEntry e1 : list )
-			for( MemoTableEntry e2 : list )
-				if( e1 != e2 && e1.subsumes(e2) ) {
-					//check that childs don't have multiple consumers
-					boolean rmSafe = true; 
-					for( int i=0; i<=2; i++ )
-						rmSafe &= (e1.isPlanRef(i) && !e2.isPlanRef(i)) ?
-							hop.getInput().get(i).getParent().size()==1 : true;
-					if( rmSafe )
-						rmList.add(e2);
-				}
+		//prune closed templates without group references
+		_plans.get(hopID).removeIf(p -> p.closed && !p.hasPlanRef());
 		
-		//update current entry list, by removing rmList
-		remove(hop, rmList);
+		//prune dominated plans (e.g., opened plan subsumed by fused plan 
+		//if single consumer of input; however this only applies to fusion
+		//heuristic that only consider materialization points)
+		if( SpoofCompiler.PLAN_SEL_POLICY.isHeuristic() ) {
+			HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
+			List<MemoTableEntry> list = _plans.get(hopID);
+			Hop hop = _hopRefs.get(hopID);
+			for( MemoTableEntry e1 : list )
+				for( MemoTableEntry e2 : list )
+					if( e1 != e2 && e1.subsumes(e2) ) {
+						//check that childs don't have multiple consumers
+						boolean rmSafe = true; 
+						for( int i=0; i<=2; i++ )
+							rmSafe &= (e1.isPlanRef(i) && !e2.isPlanRef(i)) ?
+								hop.getInput().get(i).getParent().size()==1 : true;
+						if( rmSafe )
+							rmList.add(e2);
+					}
+			
+			//update current entry list, by removing rmList
+			remove(hop, rmList);
+		}
 	}
 
 	public void pruneSuboptimal(ArrayList<Hop> roots) {
@@ -204,7 +221,7 @@ public class CPlanMemoTable
 	public List<MemoTableEntry> getDistinct(long hopID) {
 		//return distinct entries wrt type and closed attributes
 		return _plans.get(hopID).stream()
-			.map(p -> new MemoTableEntry(p.type,-1,-1,-1,p.closed))
+			.map(p -> new MemoTableEntry(p.type,-1,-1,-1,p.size,p.closed))
 			.distinct().collect(Collectors.toList());
 	}
 	
@@ -271,15 +288,17 @@ public class CPlanMemoTable
 		public final long input1; 
 		public final long input2;
 		public final long input3;
+		public final int size;
 		public boolean closed = false;
-		public MemoTableEntry(TemplateType t, long in1, long in2, long in3) {
-			this(t, in1, in2, in3, false);
+		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, int inlen) {
+			this(t, in1, in2, in3, inlen, false);
 		}
-		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, boolean close) {
+		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, int inlen, boolean close) {
 			type = t;
 			input1 = in1;
 			input2 = in2;
 			input3 = in3;
+			size = inlen;
 			closed = close;
 		}
 		public boolean isPlanRef(int index) {
@@ -324,7 +343,16 @@ public class CPlanMemoTable
 		}
 		@Override
 		public String toString() {
-			return type.name()+"("+input1+","+input2+","+input3+")";
+			StringBuilder sb = new StringBuilder();
+			sb.append(type.name());
+			sb.append("(");
+			for( int i=0; i<size; i++ ) {
+				if( i > 0 )
+					sb.append(",");
+				sb.append(input(i));
+			}
+			sb.append(")");
+			return sb.toString();
 		}
 	}
 	
@@ -332,13 +360,15 @@ public class CPlanMemoTable
 	{
 		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
 		
-		public MemoTableEntrySet(TemplateType type, boolean close) {
-			plans.add(new MemoTableEntry(type, -1, -1, -1, close));
+		public MemoTableEntrySet(Hop hop, TemplateType type, boolean close) {
+			int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
+			plans.add(new MemoTableEntry(type, -1, -1, -1, size, close));
 		}
 		
-		public MemoTableEntrySet(TemplateType type, int pos, long hopID, boolean close) {
+		public MemoTableEntrySet(Hop hop, TemplateType type, int pos, long hopID, boolean close) {
+			int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
 			plans.add(new MemoTableEntry(type, (pos==0)?hopID:-1, 
-					(pos==1)?hopID:-1, (pos==2)?hopID:-1));
+					(pos==1)?hopID:-1, (pos==2)?hopID:-1, size));
 		}
 		
 		public void crossProduct(int pos, Long... refs) {
@@ -346,7 +376,7 @@ public class CPlanMemoTable
 			for( MemoTableEntry me : plans )
 				for( Long ref : refs )
 					tmp.add(new MemoTableEntry(me.type, (pos==0)?ref:me.input1, 
-						(pos==1)?ref:me.input2, (pos==2)?ref:me.input3));
+						(pos==1)?ref:me.input2, (pos==2)?ref:me.input3, me.size));
 			plans = tmp;
 		}
 		

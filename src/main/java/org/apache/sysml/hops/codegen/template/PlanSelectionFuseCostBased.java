@@ -252,7 +252,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			int ito = Math.min(i+3, fullAggs.size());
 			if( ito-i >= 2 ) {
 				MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
-					fullAggs.get(i), fullAggs.get(i+1), ((ito-i)==3)?fullAggs.get(i+2):-1);
+					fullAggs.get(i), fullAggs.get(i+1), ((ito-i)==3)?fullAggs.get(i+2):-1, ito-i);
 				if( isValidMultiAggregate(memo, me) ) {
 					for( int j=i; j<ito; j++ ) {
 						memo.add(memo._hopRefs.get(fullAggs.get(j)), me);
@@ -352,7 +352,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				continue;
 			Long[] aggs = info._aggregates.keySet().toArray(new Long[0]);
 			MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
-				aggs[0], aggs[1], (aggs.length>2)?aggs[2]:-1);
+				aggs[0], aggs[1], (aggs.length>2)?aggs[2]:-1, aggs.length);
 			for( int i=0; i<aggs.length; i++ ) {
 				memo.add(memo._hopRefs.get(aggs[i]), me);
 				addBestPlan(aggs[i], me);

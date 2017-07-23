@@ -906,16 +906,17 @@ public class HopRewriteUtils
 	
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop) {
 		return hop.isColLowerEqualsUpper()
-			&& ((isLiteralOfValue(hop.getInput().get(2), 1)
-			&& isLiteralOfValue(hop.getInput().get(3), hop.getDim1()))
-			|| hop.getDim1() == hop.getInput().get(0).getDim1());
+			&& isLiteralOfValue(hop.getInput().get(2), 1)
+			&& isLiteralOfValue(hop.getInput().get(3), hop.getDim1());
+		//TODO extend by input/output size conditions, which are currently
+		//invalid due to temporarily incorrect size information
 	}
 	
 	public static boolean isFullRowIndexing(LeftIndexingOp hop) {
 		return hop.isRowLowerEqualsUpper()
-			&& ((isLiteralOfValue(hop.getInput().get(4), 1)
-			&& isLiteralOfValue(hop.getInput().get(5), hop.getDim2()))
-			|| hop.getDim2() == hop.getInput().get(0).getDim2());
+			&& isLiteralOfValue(hop.getInput().get(4), 1)
+			&& isLiteralOfValue(hop.getInput().get(5), hop.getDim2());
+		//TODO extend by input/output size conditions (see above)
 	}
 	
 	public static boolean isColumnRangeIndexing(IndexingOp hop) {

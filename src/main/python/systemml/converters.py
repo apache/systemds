@@ -19,20 +19,20 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convert_lmdb_to_jpeg', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convert_lmdb_to_jpeg', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr', 'getModelMean']
 
 import numpy as np
 import pandas as pd
 import os
 import math
-import skimage
-from skimage.transform import resize
 
 from pyspark.context import SparkContext
 from scipy.sparse import coo_matrix, spmatrix, csr_matrix
 from .classloader import *
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
+
+MODEL_MEAN = {'VGG-19':[103.939, 116.779, 123.68]}
 
 def getNumCols(numPyArr):
     if numPyArr.ndim == 1:
@@ -215,83 +215,35 @@ def convertToNumPyArr(sc, mb):
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
-
-#   Load an image converting from grayscale or alpha as needed.
-def load_image(filename, color=True):
+# Returns the mean of a model if defined otherwise None
+def getModelMean(model_name):
     """
     Input Parameters
-    ----------
-    filename : string
-    color : boolean
-        flag for color format. True (default) loads as RGB while False
-        loads as intensity (if image is already grayscale).
+    ----------------
+    model_name: Name of the model
 
     Returns
     -------
-    image : an image with type np.float32 in range [0, 1]
-        of size (H x W x 3) in RGB or
-        of size (H x W x 1) in grayscale.
-    """
-    import cv2
-    image = skimage.img_as_float(cv2.imread(filename))
-    # cv2 reads in BGR format, so converting back to RGB format.
-    image = image[:,:,::-1]
-    if image.ndim == 2:
-        image = image[:, :, np.newaxis]
-        if color:
-            image = np.tile(image, (1, 1, 3))
-    elif image.shape[2] == 4:
-        image = image[:, :, :3]
-    return image
+    mean: Mean value of model if its defined in the list MODEL_MEAN else None.
 
-
-# Resize an image array with interpolation.
-def resize_image(image, new_dims, interp_order=1):
     """
-    Input Parameters
-    ----------
-    image : (H x W x K) ndarray
-    new_dims : (height, width) tuple of new dimensions.
-    interp_order : interpolation order, default is linear.
 
-    Returns
-    -------
-    image : resized ndarray with shape (new_dims[0], new_dims[1], K)
-    """
-    if image.shape[-1] == 1 or image.shape[-1] == 3:
-        im_min, im_max = image.min(), image.max()
-        if im_max > im_min:
-            # skimage is fast but only understands {1,3} channel images
-            # in [0, 1].
-            im_std = (image - im_min) / (im_max - im_min)
-            resized_std = resize(im_std, new_dims, order=interp_order)
-            resized_im = resized_std * (im_max - im_min) + im_min
-        else:
-            # the image is a constant -- avoid divide by 0
-            ret = np.empty((new_dims[0], new_dims[1], image.shape[-1]),
-                           dtype=np.float32)
-            ret.fill(im_min)
-            return ret
-    else:
-        # ndimage interpolates anything but more slowly.
-        scale = tuple(np.array(new_dims, dtype=float) / np.array(image.shape[:2]))
-        resized_im = zoom(image, scale + (1,), order=interp_order)
-    return resized_im.astype(np.float32)
+    try:
+        mean = MODEL_MEAN[model_name.upper()]
+    except:
+        mean = None
+    return mean
 
 
 # Example usage: convertImageToNumPyArr(im, img_shape=(3, 224, 224), add_rotated_images=True, add_mirrored_images=True)
 # The above call returns a numpy array of shape (6, 50176) in NCHW format
 def convertImageToNumPyArr(image_file_name, img_shape=None, add_rotated_images=False, add_mirrored_images=False,
-    color=True, transpose=(2,0,1), color_mode = 'BGR', raw_scale=255, mean=[103.939, 116.779, 123.68]):
+    color_mode = 'RGB', mean=None):
 
     ## Input Parameters
 
-    # transpose: This parameter with default value (2,0,1)is used to convert data from (HxWxC) to (CxHxW)
-
     # color_mode: In case of VGG models which expect image data in BGR format instead of RGB for other most models,
     # color_mode parameter is used to process image data in BGR format.
-
-    # raw_scale: Its used to convert data from (0 to 1) to (0 to 255) form.
 
     # mean: mean value is used to subtract from input data from every pixel value. Default value specified is for VGG-19 model.
 
@@ -304,35 +256,44 @@ def convertImageToNumPyArr(image_file_name, img_shape=None, add_rotated_images=F
     if num_channels != 1 and num_channels != 3:
         raise ValueError('Expected the number of channels to be either 1 or 3')
 
-    im  =  load_image(image_file_name, color)
+    from PIL import Image
+    im = Image.open(image_file_name)
+
     if size is not None:
-        im = resize_image(im, size)
-        #im = im.resize(size, Image.LANCZOS)
-    if transpose is not None:
-        im = im.transpose(transpose)
-
-    # RGB -> BGR
-    if color_mode == 'BGR':
-        im = im[...,::-1]
-
-    # Convert input image data from (0,1) to (0,255) range, if raw_scale=255
-    im *= raw_scale
-
-    # Subtract Mean
-    if mean is not None:
-        for c in range(3):
-            im[:, :, c] = im[:, :, c] - mean[c]
+        im = im.resize(size, Image.LANCZOS)
+    expected_mode = 'L' if num_channels == 1 else 'RGB'
+    if expected_mode is not im.mode:
+        im = im.convert(expected_mode)
 
     def _im2NumPy(im):
-        return np.asarray(im).reshape((1, -1))
+        if expected_mode == 'L':
+            return np.asarray(im.getdata()).reshape((1, -1))
+        else:
+            im = (np.array(im).astype(np.float))
+
+            # (H,W,C) -> (C,H,W)
+            im = im.transpose(2, 0, 1)
+
+            # RGB -> BGR
+            if color_mode == 'BGR':
+                im = im[...,::-1]
+
+            # Subtract Mean
+            if mean is not None:
+                for c in range(3):
+                    im[:, :, c] = im[:, :, c] - mean[c]
+
+            # (C,H,W) --> (1, C*H*W)
+            return im.reshape((1, -1))
 
     ret = _im2NumPy(im)
 
     if add_rotated_images:
-        ret = np.vstack((ret, _im2NumPy(skimage.transform.rotate(90)), _im2NumPy(skimage.transform.rotate(180)), _im2NumPy(skimage.transform.rotate(270)) ))
+        ret = np.vstack((ret, _im2NumPy(im.rotate(90)), _im2NumPy(im.rotate(180)), _im2NumPy(im.rotate(270)) ))
     if add_mirrored_images:
-        ret = np.vstack((ret, _im2NumPy(np.fliplr(np.asarray(im))), _im2NumPy(np.flipud(np.asarray(im)))))
+        ret = np.vstack((ret, _im2NumPy(im.transpose(Image.FLIP_LEFT_RIGHT)), _im2NumPy(im.transpose(Image.FLIP_TOP_BOTTOM))))
     return ret
+
 
 def convertToPandasDF(X):
     if not isinstance(X, pd.DataFrame):

@@ -114,7 +114,6 @@ iqm = iqm/(n*0.5)
 
 #print(paste("IQM ", iqm));
 
-# outliers use ppred to describe it
 out_minus = t(as.numeric(V< mu-5*std_dev)*V) 
 out_plus = t(as.numeric(V> mu+5*std_dev)*V)
 

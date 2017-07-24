@@ -21,5 +21,5 @@
 
 
 X = rand(rows=10, cols=10);
-Y = ppred(X, $1, "<");
+Y = (X < $1);
 write(Y, $2);

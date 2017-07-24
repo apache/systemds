@@ -40,11 +40,11 @@ s = sum(Nc)
 Pc = Nc / s
 
 # all categorical values of a categorical variable
-C = ppred(Nc, 0, ">")
+C = (Nc > 0)
 
 # mode
 mx = max(Nc)
-Mode =  ppred(Nc, mx, "==")
+Mode =  (Nc == mx)
 
 write(Nc, $3, format="text")
 write(R, $4)

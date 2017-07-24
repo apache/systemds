@@ -55,9 +55,9 @@ stats = matrix(0, rows=k, cols=1); #k-folds x 1-stats
 parfor( i in 1:k )
 {
    #prepare train/test fold projections
-   vPxi = ppred( P, i, "==" );   #  Select 1/k fraction of the rows
+   vPxi = (P == i);   #  Select 1/k fraction of the rows
    mPxi = (vPxi %*% ones);       #  for the i-th fold TEST set
-   #nvPxi = ppred( P, i, "!=" );
+   #nvPxi = (P != i);
    #nmPxi = (nvPxi %*% ones);  #note: inefficient for sparse data  
 
    #create train/test folds
@@ -120,7 +120,7 @@ scoreMultiClassSVM = function( Matrix[double] X, Matrix[double] y, Matrix[double
    
    predicted_y = rowIndexMax( scores);
    
-   correct_percentage = sum( ppred( predicted_y - y, 0, "==")) / Nt * 100;
+   correct_percentage = sum((predicted_y - y) == 0) / Nt * 100;
 
    out_correct_pct = correct_percentage;
 
@@ -149,7 +149,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
       
       iter_class = 1
       
-      Y_local = 2 * ppred( Y, iter_class, "==") - 1
+      Y_local = 2 * (Y == iter_class) - 1
       w_class = Rand( rows=num_features, cols=1, min=0, max=0, pdf="uniform")
    
       if (intercept == 1) {
@@ -172,7 +172,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
         while(continue1 == 1){
          tmp_w = w_class + step_sz*s
          out = 1 - Y_local * (X %*% tmp_w)
-         sv = ppred(out, 0, ">")
+         sv = (out > 0)
          out = out * sv
          g = wd + step_sz*dd - sum(out * Y_local * Xd)
          h = dd + sum(Xd * sv * Xd)
@@ -186,14 +186,14 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
         w_class = w_class + step_sz*s
        
         out = 1 - Y_local * (X %*% w_class)
-        sv = ppred(out, 0, ">")
+        sv = (out > 0)
         out = sv * out
         obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
         g_new = t(X) %*% (out * Y_local) - lambda * w_class
       
         tmp = sum(s * g_old)
         
-        train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+        train_acc = sum((Y_local*(X%*%w_class)) >= 0)/num_samples*100
         print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
          
         if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
@@ -213,7 +213,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
       iter_class = iter_class + 1
       
       while(iter_class <= num_classes){
-       Y_local = 2 * ppred(Y, iter_class, "==") - 1
+       Y_local = 2 * (Y == iter_class) - 1
       # w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
        w_class = Rand(rows=ncol(X), cols=1, min=0, max=0, pdf="uniform")
        if (intercept == 1) {
@@ -236,7 +236,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
         while(continue1 == 1){
          tmp_w = w_class + step_sz*s
          out = 1 - Y_local * (X %*% tmp_w)
-         sv = ppred(out, 0, ">")
+         sv = (out > 0)
          out = out * sv
          g = wd + step_sz*dd - sum(out * Y_local * Xd)
          h = dd + sum(Xd * sv * Xd)
@@ -250,14 +250,14 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
         w_class = w_class + step_sz*s
        
         out = 1 - Y_local * (X %*% w_class)
-        sv = ppred(out, 0, ">")
+        sv = (out > 0)
         out = sv * out
         obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
         g_new = t(X) %*% (out * Y_local) - lambda * w_class
       
         tmp = sum(s * g_old)
         
-        train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+        train_acc = sum((Y_local*(X%*%w_class)) >= 0)/num_samples*100
         print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
          
         if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){

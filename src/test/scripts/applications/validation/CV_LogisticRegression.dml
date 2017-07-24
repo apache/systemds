@@ -60,9 +60,9 @@ stats = matrix(0, rows=k, cols=40); #k-folds x 40-stats
 parfor( i in 1:k )
 {
    #prepare train/test fold projections
-   vPxi = ppred( P, i, "==" );
+   vPxi = (P == i);
    mPxi = (vPxi %*% ones);   
-   #nvPxi = ppred( P, i, "!=" );
+   #nvPxi = (P != i);
    #nmPxi = (nvPxi %*% ones);  #note: inefficient for sparse data  
 
    #create train/test folds
@@ -292,7 +292,7 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
    } 
    
    o2 = y * o
-   correct = sum(ppred(o2, 0, ">"))
+   correct = sum(o2 > 0)
    accuracy = correct*100.0/N 
    iter = iter + 1
    #converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
@@ -352,7 +352,7 @@ scoreLogRegModel = function (Matrix[double] X_train, Matrix[double] y_train, Mat
     prob_train = 1.0 / (1.0 + exp (- linear_train));
     est_value_POS_train = value_TP * prob_train - cost_FP * (1.0 - prob_train);
     est_value_NEG_train = value_TN * (1.0 - prob_train) - cost_FN * prob_train;
-    y_train_pred = 2 * ppred (est_value_POS_train, est_value_NEG_train, ">") - 1;
+    y_train_pred = 2 * (est_value_POS_train > est_value_NEG_train) - 1;
 
 # Compute the estimated number of true/false positives/negatives
 
@@ -411,7 +411,7 @@ scoreLogRegModel = function (Matrix[double] X_train, Matrix[double] y_train, Mat
     prob_test = 1.0 / (1.0 + exp (- linear_test));
     est_value_POS_test = value_TP * prob_test - cost_FP * (1.0 - prob_test);
     est_value_NEG_test = value_TN * (1.0 - prob_test) - cost_FN * prob_test;
-    y_test_pred = 2 * ppred (est_value_POS_test, est_value_NEG_test, ">") - 1;
+    y_test_pred = 2 * (est_value_POS_test > est_value_NEG_test) - 1;
 
 # Compute the estimated number of true/false positives/negatives
 

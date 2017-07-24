@@ -34,9 +34,9 @@ import org.junit.runners.Suite;
 	FullMatrixMultiplicationUltraSparseTest.class,
 	FullMinMaxComparisonTest.class,
 	FullPowerTest.class,
-	FullPPredMatrixTest.class,
-	FullPPredScalarLeftTest.class,
-	FullPPredScalarRightTest.class,
+	FullLogicalMatrixTest.class,
+	FullLogicalScalarLeftTest.class,
+	FullLogicalScalarRightTest.class,
 	MatrixMultShortLhsTest.class,
 })
 

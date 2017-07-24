@@ -203,7 +203,7 @@ def bivar_cc(A:matrix[float], B:matrix[float]) -> (pval:float, contingencyTable:
     r = rowSums(F)
     c = colSums(F)
     E = (dot(r, c))/W
-    E = ppred(E, 0, "==")*0.0001 + E
+    E = (E == 0)*0.0001 + E
     T = (F-E)**2/E
     chi_squared = sum(T)
     # compute p-value
@@ -228,7 +228,7 @@ def bivar_sc(Y:matrix[float], A:matrix[float]) -> (pVal:float, CFreqs:matrix[flo
     
     # category-wise (frequencies, means, variances)
     CFreqs1 = aggregate(target=Y, groups=A, fn="count")
-    present_domain_vals_mat = removeEmpty(target=diag(1-ppred(CFreqs1, 0, "==")), axis=0)
+    present_domain_vals_mat = removeEmpty(target=diag(1-(CFreqs1 == 0)), axis=0)
     CFreqs = dot(present_domain_vals_mat, CFreqs1)
     
     CMeans = dot(present_domain_vals_mat, aggregate(target=Y, groups=A, fn="mean"))

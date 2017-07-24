@@ -65,7 +65,7 @@ else:
     
     debug_mat = full(-1, rows=max_iterations, cols=num_classes)
     parfor(iter_class in 1:num_classes):
-        Y_local = 2 * ppred(Y, iter_class, "==") - 1
+        Y_local = 2 * (Y == iter_class) - 1
         w_class = full(0, rows=num_features, cols=1)
         if (intercept == 1):
             zero_matrix = full(0, rows=1, cols=1)
@@ -86,7 +86,7 @@ else:
             while(continue1 == 1):
                 tmp_Xw = Xw + step_sz*Xd
                 out = 1 - Y_local * (tmp_Xw)
-                sv = ppred(out, 0, ">")
+                sv = (out > 0)
                 out = out * sv
                 g = wd + step_sz*dd - sum(out * Y_local * Xd)
                 h = dd + sum(Xd * sv * Xd)
@@ -99,14 +99,14 @@ else:
             Xw = Xw + step_sz*Xd
             
             out = 1 - Y_local * Xw
-            sv = ppred(out, 0, ">")
+            sv = (out > 0)
             out = sv * out
             obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
             g_new = dot(transpose(X), (out * Y_local)) - lambda * w_class
             
             tmp = sum(s * g_old)
             
-            train_acc = sum(ppred(Y_local*(dot(X, w_class)), 0, ">="))/num_samples*100
+            train_acc = sum(Y_local*(dot(X, w_class)) >= 0)/num_samples*100
             print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
             debug_mat[iter,iter_class-1] = obj
             

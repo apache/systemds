@@ -38,12 +38,12 @@ import org.apache.sysml.test.utils.TestUtils;
  * matrix-matrix ppred operations that internally translate to binary operations.
  * 
  */
-public class FullPPredMatrixTest extends AutomatedTestBase 
+public class FullLogicalMatrixTest extends AutomatedTestBase 
 {
 	
-	private final static String TEST_NAME1 = "PPredMatrixTest";
+	private final static String TEST_NAME1 = "LogicalMatrixTest";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FullPPredMatrixTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullLogicalMatrixTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1383;

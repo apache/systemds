@@ -142,7 +142,7 @@ else {
 
 					mode = rowIndexMax(t(cat_counts));
 					mx = max(cat_counts)
-					modeArr =  ppred(cat_counts, mx, "==")
+					modeArr =  (cat_counts == mx)
 					numModes = sum(modeArr);
 
 					# place the computed statistics in output matrices

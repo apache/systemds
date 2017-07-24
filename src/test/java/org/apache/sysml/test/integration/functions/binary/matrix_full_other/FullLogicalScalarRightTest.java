@@ -41,12 +41,12 @@ import org.apache.sysml.test.utils.TestUtils;
  * ppred operations in all execution types.
  * 
  */
-public class FullPPredScalarLeftTest extends AutomatedTestBase 
+public class FullLogicalScalarRightTest extends AutomatedTestBase 
 {
 	
-	private final static String TEST_NAME1 = "PPredScalarLeftTest";
+	private final static String TEST_NAME1 = "LogicalScalarRightTest";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FullPPredScalarLeftTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullLogicalScalarRightTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1072;
@@ -64,6 +64,16 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 		LESS_EQUALS,
 	}
 	
+	
+	@Override
+	public void setUp() 
+	{
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })   );
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
 	@BeforeClass
 	public static void init()
 	{
@@ -77,16 +87,6 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
-
-	@Override
-	public void setUp() 
-	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })   );
-		if (TEST_CACHE_ENABLED) {
-			setOutAndExpectedDeletionDisabled(true);
-		}
-	}
-
 	
 	@Test
 	public void testPPredGreaterZeroDenseCP() 
@@ -403,23 +403,22 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
 			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), 
+			programArgs = new String[]{"-args", input("A"), 
 				Integer.toString(type.ordinal()), Double.toString(constant), output("B") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +  inputDir() + " " + 
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + 
 				type.ordinal() + " " + constant + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 
 			writeInputMatrixWithMTD("A", A, true);
-	
+			
 			//run tests
 			runTest(true, false, null, -1); 
 			runRScript(true); 

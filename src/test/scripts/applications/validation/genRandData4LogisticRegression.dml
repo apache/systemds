@@ -82,7 +82,7 @@ if(addNoise == 1){
 
 print ("nrow(prob) = " + nrow(prob) + ", ncol(prob) = " + ncol(prob) + ";  nrow(r) = " + nrow(r) + ", ncol(r) = " + ncol(r));
 
-Y = 1 - 2*ppred(prob, r, "<")
+Y = 1 - 2*(prob < r)
 
 write (w, $5, format="text");
 write (X, $6, format="binary");

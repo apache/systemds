@@ -25,7 +25,7 @@ X = read($1);
 U = read($2);
 V = read($3);
 
-sl = sum( ppred(X,0,"!=") * (X - U %*% t(V)) ^ 2 );
+sl = sum( (X != 0) * (X - U %*% t(V)) ^ 2 );
 R = as.matrix(sl);
 
 write(R, $5);

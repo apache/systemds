@@ -23,27 +23,27 @@ A = read( $1 );
 
 if( $2 == 0 )
 {
-   B = ppred($3, A, ">")
+   B = ($3 > A)
 }
 else if( $2 == 1 )
 {
-   B = ppred($3, A, "<")
+   B = ($3 < A)
 }
 else if( $2 == 2 )
 {
-   B = ppred($3, A, "==")
+   B = ($3 == A)
 }
 else if( $2 == 3 )
 {
-   B = ppred($3, A, "!=")
+   B = ($3 != A)
 }
 else if( $2 == 4 )
 {
-   B = ppred($3, A, ">=")
+   B = ($3 >= A)
 }
 else if( $2 == 5 )
 {
-   B = ppred($3, A, "<=")
+   B = ($3 <= A)
 }
 
 write(B, $4, format="text");

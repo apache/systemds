@@ -108,8 +108,8 @@ atan_temporary =
     function (Matrix [double] Args) return (Matrix [double] AtanArgs)
 {
     AbsArgs = abs (Args);
-    Eks = AbsArgs + ppred (AbsArgs, 0.0, "==") * 0.000000000001;
-    Eks = ppred (AbsArgs, 1.0, "<=") * Eks + ppred (AbsArgs, 1.0, ">") / Eks;
+    Eks = AbsArgs + (AbsArgs == 0.0) * 0.000000000001;
+    Eks = (AbsArgs <= 1.0) * Eks + (AbsArgs > 1.0) / Eks;
     EksSq = Eks * Eks;
     AtanEks = 
         Eks   * ( 1.0000000000 + 
@@ -122,7 +122,7 @@ atan_temporary =
         EksSq * (-0.0161657367 + 
         EksSq *   0.0028662257 ))))))));
     pi_over_two = 1.5707963267948966192313216916398;
-    AtanAbsArgs = ppred (AbsArgs, 1.0, "<=") * AtanEks + ppred (AbsArgs, 1.0, ">") * (pi_over_two - AtanEks);
-    AtanArgs    = (ppred (Args, 0.0, ">=") - ppred (Args, 0.0, "<")) * AtanAbsArgs;
+    AtanAbsArgs = (AbsArgs <= 1.0) * AtanEks + (AbsArgs > 1.0) * (pi_over_two - AtanEks);
+    AtanArgs    = ((Args >= 0.0) - (Args < 0.0)) * AtanAbsArgs;
 }
 */

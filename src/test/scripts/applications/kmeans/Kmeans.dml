@@ -51,7 +51,7 @@ if (num_records > sample_size)
 {
    # Sample approximately 1000 records (Bernoulli sampling) 
    P = Rand( rows = num_records, cols = 1, min = 0.0, max = 1.0 );
-   P = ppred( P * num_records, sample_size, "<=" );
+   P = ((P * num_records) <= sample_size);
    X_sample = X * (P %*% t( one_per_feature ));
    X_sample = removeEmpty( target = X_sample, margin = "rows" );
 }
@@ -91,7 +91,7 @@ while (centroid_change > eps)
         D = one_per_record %*% t(rowSums (Y * Y)) - 2.0 * X %*% t(Y);
     }
     # Find the closest centroid for each record
-    P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
+    P = (D <= (rowMins (D) %*% t(one_per_centroid)));
     # If some records belong to multiple centroids, share them equally
     P = P / (rowSums (P) %*% t(one_per_centroid));
     # Normalize the columns of P to compute record weights for new centroids

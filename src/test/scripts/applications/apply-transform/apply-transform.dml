@@ -119,8 +119,8 @@ parfor(i in 1:ncol(X), check=0){
 	
 		# note that max_val entries will get assigned num_bins+1
 		col = round((col - min_val)/bin_width - 0.5) + 1
-		less_than_lb = ppred(col, 1, "<")
-		more_than_ub = ppred(col, num_bins, ">")
+		less_than_lb = (col < 1)
+		more_than_ub = (col > num_bins)
 		
 		col = (1 - less_than_lb - more_than_ub)*col + more_than_ub*num_bins + less_than_lb
 	}

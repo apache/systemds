@@ -40,10 +40,21 @@ Shell and from Notebooks such as Jupyter and Zeppelin.
 
 To use SystemML with Spark Shell, the SystemML jar can be referenced using Spark Shell's `--jars` option.
 
+<div class="codetabs">
+
+<div data-lang="Spark Shell" markdown="1">
 {% highlight bash %}
 spark-shell --executor-memory 4G --driver-memory 4G --jars SystemML.jar
 {% endhighlight %}
+</div>
 
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight bash %}
+pyspark --executor-memory 4G --driver-memory 4G --jars SystemML.jar --driver-class-path SystemML.jar
+{% endhighlight %}
+</div>
+
+</div>
 
 ## Create MLContext
 
@@ -76,6 +87,24 @@ Welcome to Apache SystemML!
 
 ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.MLContext@12139db0
 
+{% endhighlight %}
+</div>
+
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+ml = MLContext(spark)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+>>> ml = MLContext(spark)
+
+Welcome to Apache SystemML!
+Version 1.0.0-SNAPSHOT
 {% endhighlight %}
 </div>
 
@@ -118,6 +147,27 @@ None
 
 {% endhighlight %}
 </div>
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+helloScript = dml("print('hello world')")
+ml.execute(helloScript)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> helloScript = dml("print('hello world')")
+>>> ml.execute(helloScript)
+hello world
+SystemML Statistics:
+Total execution time:           0.001 sec.
+Number of executed Spark inst:  0.
+
+MLResults
+{% endhighlight %}
+</div>
+
 
 </div>
 
@@ -284,6 +334,30 @@ df: org.apache.spark.sql.DataFrame = [C0: double, C1: double, C2: double, C3: do
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+numRows = 10000
+numCols = 100
+from random import random
+from pyspark.sql.types import *
+data = sc.parallelize(range(numRows)).map(lambda x : [ random() for i in range(numCols) ])
+schema = StructType([ StructField("C" + str(i), DoubleType(), True) for i in range(numCols) ])
+df = spark.createDataFrame(data, schema)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> numRows = 10000
+>>> numCols = 100
+>>> from random import random
+>>> from pyspark.sql.types import *
+>>> data = sc.parallelize(range(numRows)).map(lambda x : [ random() for i in range(numCols) ])
+>>> schema = StructType([ StructField("C" + str(i), DoubleType(), True) for i in range(numCols) ])
+>>> df = spark.createDataFrame(data, schema)
+{% endhighlight %}
+</div>
+
 </div>
 
 
@@ -354,6 +428,33 @@ mean: Double = 0.49996223966662934
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+minMaxMean = """
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+minMaxMeanScript = dml(minMaxMean).input("Xin", df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> minMaxMean = """
+... minOut = min(Xin)
+... maxOut = max(Xin)
+... meanOut = mean(Xin)
+... """
+>>> minMaxMeanScript = dml(minMaxMean).input("Xin", df).output("minOut", "maxOut", "meanOut")
+>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+SystemML Statistics:
+Total execution time:           0.570 sec.
+Number of executed Spark inst:  0.
+{% endhighlight %}
+</div>
+
 </div>
 
 Many different types of input and output variables are automatically allowed. These types include
@@ -370,6 +471,7 @@ matrices and input these into a DML script. This script will sum each matrix and
 based on which sum is greater. We will output the sums and the message.
 
 For fun, we'll write the script String to a file and then use ScriptFactory's `dmlFromFile` method
+(in Python, this method is under the `systemml` package)
 to create the script object based on the file. We'll also specify the inputs using a Map, although
 we could have also chained together two `in` methods to specify the same inputs.
 
@@ -462,11 +564,76 @@ message: String = s2 is greater
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
+rdd2 = sc.parallelize(["5.0,6.0", "7.0,8.0"])
+sums = """
+s1 = sum(m1);
+s2 = sum(m2);
+if (s1 > s2) {
+  message = "s1 is greater"
+} else if (s2 > s1) {
+  message = "s2 is greater"
+} else {
+  message = "s1 and s2 are equal"
+}
+"""
+with open("sums.dml", "w") as text_file:
+    text_file.write(sums)
+
+sumScript = dmlFromFile("sums.dml").input(m1=rdd1, m2= rdd2).output("s1", "s2", "message")
+sumResults = ml.execute(sumScript)
+s1 = sumResults.get("s1")
+s2 = sumResults.get("s2")
+message = sumResults.get("message")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
+>>> rdd2 = sc.parallelize(["5.0,6.0", "7.0,8.0"])
+>>> sums = """
+... s1 = sum(m1);
+... s2 = sum(m2);
+... if (s1 > s2) {
+...   message = "s1 is greater"
+... } else if (s2 > s1) {
+...   message = "s2 is greater"
+... } else {
+...   message = "s1 and s2 are equal"
+... }
+... """
+>>> with open("sums.dml", "w") as text_file:
+...     text_file.write(sums)
+...
+>>> sumScript = dmlFromFile("sums.dml").input(m1=rdd1, m2= rdd2).output("s1", "s2", "message")
+>>> sumResults = ml.execute(sumScript)
+s1 = sumResults.get("s1")
+s2 = sumResults.get("s2")
+message = sumResults.get("message")
+SystemML Statistics:
+Total execution time:           0.933 sec.
+Number of executed Spark inst:  4.
+
+>>> s1 = sumResults.get("s1")
+>>> s2 = sumResults.get("s2")
+>>> message = sumResults.get("message")
+>>> s1
+10.0
+>>> s2
+26.0
+>>> message
+u's2 is greater'
+{% endhighlight %}
+</div>
+
 </div>
 
 
 If you have metadata that you would like to supply along with the input matrices, this can be
-accomplished using a Scala Seq, List, or Array.
+accomplished using a Scala Seq, List, or Array. This feature is currently not available in Python.
 
 <div class="codetabs">
 
@@ -512,7 +679,7 @@ sumMessage: String = s2 is greater
 
 
 The same inputs with metadata can be supplied by chaining `in` methods, as in the example below, which shows that `out` methods can also be
-chained.
+chained. 
 
 <div class="codetabs">
 
@@ -547,6 +714,34 @@ sumMessage: String = s2 is greater
 {% endhighlight %}
 </div>
 
+
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+sumScript = dmlFromFile("sums.dml").input(m1=rdd1).input(m2= rdd2).output("s1").output("s2").output("message")
+sumResults = ml.execute(sumScript)
+s1, s2, message = sumResults.get("s1", "s2", "message")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> sumScript = dmlFromFile("sums.dml").input(m1=rdd1).input(m2= rdd2).output("s1").output("s2").output("message")
+>>> sumResults = ml.execute(sumScript)
+SystemML Statistics:
+Total execution time:           1.057 sec.
+Number of executed Spark inst:  4.
+
+>>> s1, s2, message = sumResults.get("s1", "s2", "message")
+>>> s1
+10.0
+>>> s2
+26.0
+>>> message
+u's2 is greater'
+{% endhighlight %}
+</div>
+
 </div>
 
 
@@ -558,9 +753,12 @@ in which we create a 2x2 matrix `m`. We'll set the variable `n` to be the sum of
 We create a script object using String `s`, and we set `m` and `n` as the outputs. We execute the script, and in
 the results we see we have Matrix `m` and Double `n`. The `n` output variable has a value of `110.0`.
 
-We get Matrix `m` and Double `n` as a Tuple of values `x` and `y`. We then convert Matrix `m` to an
-RDD of IJV values, an RDD of CSV values, a DataFrame, and a two-dimensional Double Array, and we display
+We get Matrix `m` and Double `n` as a Tuple of values `x` and `y`. 
+
+In Scala, we then convert Matrix `m` to an RDD of IJV values, an RDD of CSV values, a DataFrame, and a two-dimensional Double Array, and we display
 the values in each of these data structures.
+
+In Python, we use the methods `toDF()` and `toNumPy()` to get the matrix as PySpark DataFrame or NumPy array respectively.
 
 <div class="codetabs">
 
@@ -632,6 +830,51 @@ scala> x.toDF.collect.foreach(println)
 scala> x.to2DDoubleArray
 res10: Array[Array[Double]] = Array(Array(11.0, 22.0), Array(33.0, 44.0))
 
+{% endhighlight %}
+</div>
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+s = """
+m = matrix("11 22 33 44", rows=2, cols=2)
+n = sum(m)
+"""
+scr = dml(s).output("m", "n");
+res = ml.execute(scr)
+x, y = res.get("m", "n")
+x.toDF().show()
+x.toNumPy()
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> s = """
+... m = matrix("11 22 33 44", rows=2, cols=2)
+... n = sum(m)
+... """
+>>> scr = dml(s).output("m", "n");
+>>> res = ml.execute(scr)
+SystemML Statistics:
+Total execution time:           0.000 sec.
+Number of executed Spark inst:  0.
+
+>>> x, y = res.get("m", "n")
+>>> x
+Matrix
+>>> y
+110.0
+>>> x.toDF().show()
++-------+----+----+
+|__INDEX|  C1|  C2|
++-------+----+----+
+|    1.0|11.0|22.0|
+|    2.0|33.0|44.0|
++-------+----+----+
+
+>>> x.toNumPy()
+array([[ 11.,  22.],
+       [ 33.,  44.]])
 {% endhighlight %}
 </div>
 
@@ -770,11 +1013,105 @@ None
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+import urllib
+urllib.urlretrieve(habermanUrl, "haberman.data")
+habermanList = [line.rstrip("\n") for line in open("haberman.data")]
+habermanRDD = sc.parallelize(habermanList)
+typesRDD = sc.parallelize(["1.0,1.0,1.0,2.0"])
+scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
+uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).input("$CONSOLE_OUTPUT", True)
+ml.execute(uni)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+>>> import urllib
+>>> urllib.urlretrieve(habermanUrl, "haberman.data")
+habermanList = [line.rstrip("\n") for line in open("haberman.data")]
+habermanRDD = sc.parallelize(habermanList)
+typesRDD = sc.parallelize(["1.0,1.0,1.0,2.0"])
+scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
+uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).input("$CONSOLE_OUTPUT", True)
+ml.execute(uni)('haberman.data', <httplib.HTTPMessage instance at 0x7f601ef2e3b0>)
+>>> habermanList = [line.rstrip("\n") for line in open("haberman.data")]
+>>> habermanRDD = sc.parallelize(habermanList)
+>>> typesRDD = sc.parallelize(["1.0,1.0,1.0,2.0"])
+>>> scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
+>>> uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).input("$CONSOLE_OUTPUT", True)
+>>> ml.execute(uni)
+17/07/22 13:42:57 WARN RewriteRemovePersistentReadWrite: Non-registered persistent write of variable 'baseStats' (line 186).
+-------------------------------------------------
+ (01) Minimum             | 30.0
+ (02) Maximum             | 83.0
+ (03) Range               | 53.0
+ (04) Mean                | 52.45751633986928
+ (05) Variance            | 116.71458266366658
+ (06) Std deviation       | 10.803452349303281
+ (07) Std err of mean     | 0.6175922641866753
+ (08) Coeff of variation  | 0.20594669940735139
+ (09) Skewness            | 0.1450718616532357
+ (10) Kurtosis            | -0.6150152487211726
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 52.0
+ (14) Interquartile mean  | 52.16013071895425
+Feature [1]: Scale
+-------------------------------------------------
+ (01) Minimum             | 58.0
+ (02) Maximum             | 69.0
+ (03) Range               | 11.0
+ (04) Mean                | 62.85294117647059
+ (05) Variance            | 10.558630665380907
+ (06) Std deviation       | 3.2494046632238507
+ (07) Std err of mean     | 0.18575610076612029
+ (08) Coeff of variation  | 0.051698529971741194
+ (09) Skewness            | 0.07798443581479181
+ (10) Kurtosis            | -1.1324380182967442
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 63.0
+ (14) Interquartile mean  | 62.80392156862745
+Feature [2]: Scale
+-------------------------------------------------
+ (01) Minimum             | 0.0
+ (02) Maximum             | 52.0
+ (03) Range               | 52.0
+ (04) Mean                | 4.026143790849673
+ (05) Variance            | 51.691117539912135
+ (06) Std deviation       | 7.189653506248555
+ (07) Std err of mean     | 0.41100513466216837
+ (08) Coeff of variation  | 1.7857418611299172
+ (09) Skewness            | 2.954633471088322
+ (10) Kurtosis            | 11.425776549251449
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 1.0
+ (14) Interquartile mean  | 1.2483660130718954
+Feature [3]: Scale
+-------------------------------------------------
+Feature [4]: Categorical (Nominal)
+ (15) Num of categories   | 2
+ (16) Mode                | 1
+ (17) Num of modes        | 1
+SystemML Statistics:
+Total execution time:           0.733 sec.
+Number of executed Spark inst:  4.
+
+MLResults
+>>>
+{% endhighlight %}
+</div>
+
 </div>
 
 
 Alternatively, we could supply a `java.net.URL` to the Script `in` method. Note that if the URL matrix data is in IJV
-format, metadata needs to be supplied for the matrix.
+format, metadata needs to be supplied for the matrix. This feature is not available in Python.
 
 <div class="codetabs">
 
@@ -875,7 +1212,7 @@ None
 
 
 As another example, we can also conveniently obtain a Univariate Statistics DML Script object
-via `ml.scripts.algorithms.Univar_Stats`, as shown below.
+via `ml.scripts.algorithms.Univar_Stats`, as shown below. This feature is not available in Python.
 
 <div class="codetabs">
 
@@ -1055,6 +1392,27 @@ scala> baseStats.toRDDStringIJV.collect.slice(0,9).foreach(println)
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).output("baseStats")
+baseStats = ml.execute(uni).get("baseStats")
+baseStats.toNumPy().flatten()[0:9]
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).output("baseStats")
+>>> baseStats = ml.execute(uni).get("baseStats")
+SystemML Statistics:
+Total execution time:           0.690 sec.
+Number of executed Spark inst:  4.
+
+>>> baseStats.toNumPy().flatten()[0:9]
+array([ 30.,  58.,   0.,   0.,  83.,  69.,  52.,   0.,  53.])
+{% endhighlight %}
+</div>
+
 </div>
 
 
@@ -1158,6 +1516,83 @@ write(meanOut, '');
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+minMaxMean = """
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+minMaxMeanScript = dml(minMaxMean).input(Xin = df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+print(minMaxMeanScript.info())
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> minMaxMean = """
+... minOut = min(Xin)
+... maxOut = max(Xin)
+... meanOut = mean(Xin)
+... """
+>>> minMaxMeanScript = dml(minMaxMean).input(Xin = df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+print(minMaxMeanScript.info())>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+
+SystemML Statistics:
+Total execution time:           0.521 sec.
+Number of executed Spark inst:  0.
+
+>>> print(minMaxMeanScript.info())
+Script Type: DML
+
+Inputs:
+  [1] (Dataset as Matrix) Xin: [C0: double, C1: double ... 98 more fields]
+
+Outputs:
+  [1] (Double) minOut: 8.754858571102808E-6
+  [2] (Double) maxOut: 0.9999878908225835
+  [3] (Double) meanOut: 0.49864912369337505
+
+Input Parameters:
+None
+
+Input Variables:
+  [1] Xin
+
+Output Variables:
+  [1] minOut
+  [2] maxOut
+  [3] meanOut
+
+Symbol Table:
+  [1] (Double) meanOut: 0.49864912369337505
+  [2] (Double) maxOut: 0.9999878908225835
+  [3] (Double) minOut: 8.754858571102808E-6
+  [4] (Matrix) Xin: MatrixObject: scratch_space/_p20299_10.168.31.110/_t0/temp283, [10000 x 100, nnz=1000000, blocks (1000 x 1000)], binaryblock, not-dirty
+
+Script String:
+
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+
+Script Execution String:
+Xin = read('');
+
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+write(minOut, '');
+write(maxOut, '');
+write(meanOut, '');
+
+
+>>>
+{% endhighlight %}
+</div>
+
 </div>
 
 
@@ -1199,6 +1634,33 @@ None
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+print(minMaxMeanScript.displaySymbolTable())
+minMaxMeanScript.clearAll()
+print(minMaxMeanScript.displaySymbolTable())
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> print(minMaxMeanScript.displaySymbolTable())
+Symbol Table:
+  [1] (Double) meanOut: 0.49825964615525964
+  [2] (Double) maxOut: 0.9999420388455621
+  [3] (Double) minOut: 2.177681068027404E-5
+  [4] (Matrix) Xin: MatrixObject: scratch_space/_p30346_10.168.31.110/_t0/temp0, [10000 x 100, nnz=1000000, blocks (1000 x 1000)], binaryblock, not-dirty
+
+>>> minMaxMeanScript.clearAll()
+Script
+>>> print(minMaxMeanScript.displaySymbolTable())
+Symbol Table:
+None
+
+>>>
+
+{% endhighlight %}
+</div>
 </div>
 
 The MLContext object holds references to the scripts that have been executed. Calling `clear` on
@@ -1292,6 +1754,59 @@ mean: Double = 0.5002109404821844
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+ml.setStatistics(True)
+minMaxMean = """
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+minMaxMeanScript = dml(minMaxMean).input(Xin=df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> ml.setStatistics(True)
+MLContext
+>>> minMaxMean = """
+... minOut = min(Xin)
+... maxOut = max(Xin)
+... meanOut = mean(Xin)
+... """
+>>> minMaxMeanScript = dml(minMaxMean).input(Xin=df).output("minOut", "maxOut", "meanOut")
+>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+SystemML Statistics:
+Total elapsed time:             0.608 sec.
+Total compilation time:         0.000 sec.
+Total execution time:           0.608 sec.
+Number of compiled Spark inst:  0.
+Number of executed Spark inst:  0.
+Cache hits (Mem, WB, FS, HDFS): 2/0/0/1.
+Cache writes (WB, FS, HDFS):    1/0/0.
+Cache times (ACQr/m, RLS, EXP): 0.586/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB): 0/0.
+HOP DAGs recompile time:        0.000 sec.
+Spark ctx create time (lazy):   0.000 sec.
+Spark trans counts (par,bc,col):0/0/1.
+Spark trans times (par,bc,col): 0.000/0.000/0.586 secs.
+Total JIT compile time:         1.289 sec.
+Total JVM GC count:             17.
+Total JVM GC time:              0.4 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  uamin          0.588      1
+ 2  uamean         0.018      1
+ 3  uamax          0.002      1
+ 4  assignvar      0.000      3
+ 5  rmvar          0.000      1
+
+>>>
+{% endhighlight %}
+</div>
+
 </div>
 
 ## GPU
@@ -1381,6 +1896,82 @@ None
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+ml.setGPU(True)
+ml.setStatistics(True)
+matMultScript = dml("""
+A = rand(rows=10, cols=1000)
+B = rand(rows=1000, cols=10)
+C = A %*% B
+print(toString(C))
+""")
+ml.execute(matMultScript)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> ml.setGPU(True)
+MLContext
+>>> ml.setStatistics(True)
+MLContext
+>>> matMultScript = dml("""
+... A = rand(rows=10, cols=1000)
+... B = rand(rows=1000, cols=10)
+... C = A %*% B
+... print(toString(C))
+... """)
+>>> ml.execute(matMultScript)
+260.861 262.732 256.630 255.152 254.806 264.448 256.020 250.240 257.520 261.278
+257.171 254.891 251.777 246.858 248.947 255.528 247.446 244.370 252.597 253.466
+259.844 255.613 257.720 253.652 249.693 261.110 252.608 250.833 251.968 259.176
+254.491 247.792 252.551 246.869 244.682 254.734 247.387 244.323 245.981 255.621
+259.835 258.062 255.868 252.217 246.304 263.997 255.831 249.846 248.409 260.124
+251.598 259.335 255.662 249.818 247.639 257.279 253.946 253.513 251.245 255.922
+258.898 258.961 264.036 249.118 250.780 259.547 249.149 258.040 249.100 258.516
+250.412 248.424 250.732 243.129 241.684 248.771 237.941 244.719 247.409 247.445
+252.990 244.238 248.096 241.145 242.065 253.795 245.352 246.056 251.132 253.063
+253.216 249.008 247.910 246.579 242.657 251.078 245.954 244.681 241.878 248.555
+
+SystemML Statistics:
+Total elapsed time:             0.042 sec.
+Total compilation time:         0.000 sec.
+Total execution time:           0.042 sec.
+Number of compiled Spark inst:  0.
+Number of executed Spark inst:  0.
+CUDA/CuLibraries init time:     7.058/0.749 sec.
+Number of executed GPU inst:    1.
+GPU mem tx time  (alloc/dealloc/set0/toDev/fromDev):    0.002/0.000/0.000/0.002/0.000 sec.
+GPU mem tx count (alloc/dealloc/set0/toDev/fromDev/evict):      3/3/3/0/2/1/0.
+GPU conversion time  (sparseConv/sp2dense/dense2sp):    0.000/0.000/0.000 sec.
+GPU conversion count (sparseConv/sp2dense/dense2sp):    0/0/0.
+Cache hits (Mem, WB, FS, HDFS): 3/0/0/0.
+Cache writes (WB, FS, HDFS):    2/0/0.
+Cache times (ACQr/m, RLS, EXP): 0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB): 0/0.
+HOP DAGs recompile time:        0.000 sec.
+Spark ctx create time (lazy):   0.000 sec.
+Spark trans counts (par,bc,col):0/0/0.
+Spark trans times (par,bc,col): 0.000/0.000/0.000 secs.
+Total JIT compile time:         1.348 sec.
+Total JVM GC count:             9.
+Total JVM GC time:              0.264 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           0.023      2
+ 2  gpu_ba+*       0.012      1
+ 3  toString       0.004      1
+ 4  createvar      0.000      3
+ 5  rmvar          0.000      3
+ 6  print          0.000      1
+
+18
+MLResults
+>>>
+{% endhighlight %}
+</div>
+
 </div>
 
 Note that GPU instructions show up prepended with a "gpu" in the statistics.
@@ -1460,6 +2051,53 @@ mean: Double = 0.5001096515241128
 {% endhighlight %}
 </div>
 
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+ml.setExplain(True)
+minMaxMean = """
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+minMaxMeanScript = dml(minMaxMean).input(Xin=df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> ml.setExplain(True)
+MLContext
+>>> minMaxMean = """
+... minOut = min(Xin)
+... maxOut = max(Xin)
+... meanOut = mean(Xin)
+... """
+>>> minMaxMeanScript = dml(minMaxMean).input(Xin=df).output("minOut", "maxOut", "meanOut")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+# EXPLAIN (RUNTIME):
+# Memory Budget local/remote = 687MB/?MB/?MB/?MB
+# Degree of Parallelism (vcores) local/remote = 24/?
+PROGRAM ( size CP/SP = 7/0 )
+--MAIN PROGRAM
+----GENERIC (lines 1-8) [recompile=false]
+------CP uamin Xin.MATRIX.DOUBLE _Var1.SCALAR.DOUBLE 24
+------CP uamax Xin.MATRIX.DOUBLE _Var2.SCALAR.DOUBLE 24
+------CP uamean Xin.MATRIX.DOUBLE _Var3.SCALAR.DOUBLE 24
+------CP assignvar _Var1.SCALAR.DOUBLE.false minOut.SCALAR.DOUBLE
+------CP assignvar _Var2.SCALAR.DOUBLE.false maxOut.SCALAR.DOUBLE
+------CP assignvar _Var3.SCALAR.DOUBLE.false meanOut.SCALAR.DOUBLE
+------CP rmvar _Var1 _Var2 _Var3
+
+SystemML Statistics:
+Total execution time:           0.952 sec.
+Number of executed Spark inst:  0.
+
+>>>
+{% endhighlight %}
+</div>
+
 </div>
 
 
@@ -1497,6 +2135,40 @@ min: Double = 5.16651366133658E-9
 max: Double = 0.9999999368927975
 mean: Double = 0.5001096515241128
 
+{% endhighlight %}
+</div>
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+ml.setExplainLevel("runtime")
+min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> ml.setExplainLevel("runtime")
+MLContext
+>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
+# EXPLAIN (RUNTIME):
+# Memory Budget local/remote = 687MB/?MB/?MB/?MB
+# Degree of Parallelism (vcores) local/remote = 24/?
+PROGRAM ( size CP/SP = 7/0 )
+--MAIN PROGRAM
+----GENERIC (lines 1-8) [recompile=false]
+------CP uamin Xin.MATRIX.DOUBLE _Var4.SCALAR.DOUBLE 24
+------CP uamax Xin.MATRIX.DOUBLE _Var5.SCALAR.DOUBLE 24
+------CP uamean Xin.MATRIX.DOUBLE _Var6.SCALAR.DOUBLE 24
+------CP assignvar _Var4.SCALAR.DOUBLE.false minOut.SCALAR.DOUBLE
+------CP assignvar _Var5.SCALAR.DOUBLE.false maxOut.SCALAR.DOUBLE
+------CP assignvar _Var6.SCALAR.DOUBLE.false meanOut.SCALAR.DOUBLE
+------CP rmvar _Var4 _Var5 _Var6
+
+SystemML Statistics:
+Total execution time:           0.022 sec.
+Number of executed Spark inst:  0.
+
+>>>
 {% endhighlight %}
 </div>
 
@@ -1964,6 +2636,37 @@ Version: 1.0.0-SNAPSHOT
 
 scala> print(ml.info.property("Main-Class"))
 org.apache.sysml.api.DMLScript
+{% endhighlight %}
+</div>
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+print(ml.version())
+print(ml.buildTime())
+print(ml.info())
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> print(ml.version())
+1.0.0-SNAPSHOT
+>>> print(ml.buildTime())
+2017-07-21 12:39:27 CDT
+>>> print(ml.info())
+Archiver-Version: Plexus Archiver
+Artifact-Id: systemml
+Build-Jdk: 1.8.0_111
+Build-Time: 2017-07-21 12:39:27 CDT
+Built-By: biuser
+Created-By: Apache Maven 3.0.5
+Group-Id: org.apache.systemml
+Main-Class: org.apache.sysml.api.DMLScript
+Manifest-Version: 1.0
+Minimum-Recommended-Spark-Version: 2.1.0
+Version: 1.0.0-SNAPSHOT
+
+>>>
 {% endhighlight %}
 </div>
 

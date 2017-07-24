@@ -62,7 +62,7 @@ def arima_css(w:matrix[float], X:matrix[float], pIn: int, P: int, qIn: int, Q:in
     iter = 0
     
     if(useJacobi == 1):
-        check = sum(ppred(rowSums(abs(R)), 1, ">="))
+        check = sum(rowSums(abs(R)) >= 1)
         if(check > 0):
             print("R is not diagonal dominant. Suggest switching to an exact solver.")
         diff = tol+1.0

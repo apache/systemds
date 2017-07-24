@@ -35,7 +35,7 @@ import org.apache.sysml.test.utils.TestUtils;
 /**
  * This test investigates the specific Hop-Lop rewrite for the following pattern:
  * 
- * IA = ppred (A, 0, "!=") * seq (1, nrow (A), 1);
+ * IA = (A != 0) * seq (1, nrow (A), 1);
  * IA = matrix (IA, rows = (nrow (A) * ncol(A)), cols = 1, byrow = FALSE);
  * VA = matrix ( A, rows = (nrow (A) * ncol(A)), cols = 1, byrow = FALSE);
  * IA = removeEmpty (target = IA, margin = "rows");

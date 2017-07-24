@@ -22,5 +22,5 @@
 
 
 A = read($1);
-B = A*ppred(A,0,">");
+B = A*(A > 0);
 write(B, $2);

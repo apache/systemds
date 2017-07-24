@@ -230,7 +230,7 @@ while(!converge) {
  } 
  
  o2 = y * o
- correct = sum(ppred(o2, 0, ">"))
+ correct = sum(o2 > 0)
  accuracy = correct*100.0/N 
  iter = iter + 1
  #converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)

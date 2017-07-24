@@ -68,7 +68,7 @@ log_model = log(model)
 transpose_log_model = log_model.transpose()
 log_probs = dot(D_w_ones, transpose_log_model)
 pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+acc = sum(pred == C) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)

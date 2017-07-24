@@ -41,7 +41,7 @@ binomQuantile =
     for (i in 1:27) {  #  Uses "division by half" method to solve equations
         p_new = (p_min + p_max) / 2.0;
         [alpha_p_new] = binomProb (n_vector, m_vector, p_new);
-        move_new_to_max = ppred (alpha_p_new, alpha_vector, "<");
+        move_new_to_max = (alpha_p_new < alpha_vector);
         p_max = (1 - move_new_to_max) * p_max + move_new_to_max * p_new;
         p_min = (1 - move_new_to_max) * p_new + move_new_to_max * p_min;
         alpha_p_max = (1 - move_new_to_max) * alpha_p_max + move_new_to_max * alpha_p_new;
@@ -64,15 +64,15 @@ binomProb =
     num_iterations = 100;
 
     mean_vector = p_vector * n_vector;
-    is_opposite = ppred (mean_vector, m_vector, "<");
+    is_opposite = (mean_vector < m_vector);
     l_vector = is_opposite * (n_vector - (m_vector + 1)) + (1 - is_opposite) * m_vector;
     q_vector = is_opposite * (1.0 - p_vector) + (1 - is_opposite) * p_vector;
     n_minus_l_vector = n_vector - l_vector;
     
-    is_result_zero1 = ppred (l_vector, - 0.0000000001, "<");
-    is_result_one1  = ppred (n_minus_l_vector, 0.0000000001, "<");
-    is_result_zero2 = ppred (q_vector, 0.9999999999, ">");
-    is_result_one2  = ppred (q_vector, 0.0000000001, "<");
+    is_result_zero1 = (l_vector < - 0.0000000001);
+    is_result_one1  = (n_minus_l_vector < 0.0000000001);
+    is_result_zero2 = (q_vector > 0.9999999999);
+    is_result_one2  = (q_vector < 0.0000000001);
     
     is_result_zero  = is_result_zero1 + (1 - is_result_zero1) * is_result_zero2 * (1 - is_result_one1);
     is_result_one   = (is_result_one1 + (1 - is_result_one1)  * is_result_one2) * (1 - is_result_zero);
@@ -116,8 +116,8 @@ binomProb =
         denom = denom_new;
         
         abs_denom = abs (denom);
-        denom_too_big = ppred (abs_denom, 10000000000.0, ">");
-        denom_too_small = ppred (abs_denom, 0.0000000001, "<");
+        denom_too_big = (abs_denom > 10000000000.0);
+        denom_too_small = (abs_denom < 0.0000000001);
         denom_normal = 1.0 - denom_too_big - denom_too_small;
         rescale_vector = denom_too_big * 0.0000000001 + denom_too_small * 10000000000.0 + denom_normal;
         numer_old = numer_old * rescale_vector;
@@ -127,7 +127,7 @@ binomProb =
         
         convergence_check_left  = abs (numer * denom_old - numer_old * denom);
         convergence_check_right = abs (numer * denom_old) * 0.000000001;
-        has_converged = ppred (convergence_check_left, convergence_check_right, "<=");
+        has_converged = (convergence_check_left <= convergence_check_right);
         has_converged = still_iterating * has_converged;
         still_iterating = still_iterating - has_converged;
         result = result + has_converged * numer / denom;

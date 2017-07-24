@@ -222,7 +222,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double pval, Mat
     r = rowSums(F)
     c = colSums(F)
     E = (r %*% c)/W
-    E = ppred(E, 0, "==")*0.0001 + E
+    E = (E == 0)*0.0001 + E
     T = (F-E)^2/E
     chi_squared = sum(T)
 
@@ -250,7 +250,7 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double pVal, Mat
 
     # category-wise (frequencies, means, variances)
     CFreqs1 = aggregate(target=Y, groups=A, fn="count")
-    present_domain_vals_mat = removeEmpty(target=diag(1-ppred(CFreqs1, 0, "==")), margin="rows")
+    present_domain_vals_mat = removeEmpty(target=diag(1-(CFreqs1 == 0)), margin="rows")
     CFreqs = present_domain_vals_mat %*% CFreqs1
 
     CMeans = present_domain_vals_mat %*% aggregate(target=Y, groups=A, fn="mean")

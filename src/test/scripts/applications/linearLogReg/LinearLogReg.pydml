@@ -198,7 +198,7 @@ while(!converge):
     
     ot = dot(Xt, w)
     ot2 = yt * ot
-    correct = sum(ppred(ot2, 0, ">"))
+    correct = sum(ot2 > 0)
     accuracy = correct*100.0/Nt 
     iter = iter + 1
     converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)

@@ -65,7 +65,7 @@ arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer pIn, Integer P,
   	iter = 0
   	
 	if(useJacobi == 1){
-		check = sum(ppred(rowSums(abs(R)), 1, ">="))
+		check = sum(rowSums(abs(R)) >= 1)
 		if(check > 0){
 			print("R is not diagonal dominant. Suggest switching to an exact solver.")
 		}

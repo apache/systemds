@@ -47,7 +47,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
  * This class captures all statistics.
  */
 public class Statistics 
-{
+{	
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
 	
@@ -553,6 +553,7 @@ public class Statistics
 
 			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
 		}
+		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
@@ -563,22 +564,38 @@ public class Statistics
 		sb.append("\n");
 		for (int i = 0; i < numHittersToDisplay; i++) {
 			String instruction = tmp[len - 1 - i].getKey();
+			String [] wrappedInstruction = wrap(instruction, maxInstLen);
 
 			Long timeNs = tmp[len - 1 - i].getValue();
 			double timeS = (double) timeNs / 1000000000.0;
 			String timeSString = sFormat.format(timeS);
 
 			Long count = _cpInstCounts.get(instruction);
-			sb.append(String.format(
-					" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
-					(i + 1), instruction, timeSString, count));
-
-			// Add the miscellaneous timer info
+			int numLines = wrappedInstruction.length;
+			String [] miscTimers = null;
+			
 			if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
-				sb.append("  ");
-				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction));
+				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
+				numLines = Math.max(numLines, miscTimers.length);
 			}
-			sb.append("\n");
+			
+			String miscFormatString = (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
+				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
+				String miscTimerStr = ( (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
+				if(wrapIter == 0) {
+					// Display instruction count
+					sb.append(String.format(
+							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d" + miscFormatString,
+							(i + 1), instStr, timeSString, count, miscTimerStr));
+				}
+				else {
+					sb.append(String.format(
+							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s" + miscFormatString,
+							"", instStr, "", "", miscTimerStr));
+				}
+				sb.append("\n");
+			}
 		}
 
 		return sb.toString();
@@ -668,6 +685,17 @@ public class Statistics
 	 */
 	public static String display() {
 		return display(DMLScript.STATISTICS_COUNT);
+	}
+	
+	
+	private static String [] wrap(String str, int wrapLength) {
+		int numLines = (int) Math.ceil( ((double)str.length()) / wrapLength);
+		int len = str.length();
+		String [] ret = new String[numLines];
+		for(int i = 0; i < numLines; i++) {
+			ret[i] = str.substring(i*wrapLength, Math.min((i+1)*wrapLength, len));
+		}
+		return ret;
 	}
 
 	/**

@@ -80,4 +80,7 @@
 
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
     <systemml.gpu.availableGPUs>-1</systemml.gpu.availableGPUs>
+    
+    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
+   <systemml.stats.maxWrapLength>30</systemml.stats.maxWrapLength>
 </root>

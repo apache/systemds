@@ -34,7 +34,7 @@ except ImportError:
 from .converters import *
 from .classloader import *
 
-def getSparkContext():
+def _get_spark_context():
     """
     Internal method to get already initialized SparkContext.
 
@@ -317,7 +317,7 @@ class Script(object):
         Optional script format, either "auto" or "url" or "file" or "resource" or "string"
     """
     def __init__(self, scriptString, scriptType="dml", isResource=False, scriptFormat="auto"):
-        self.sc = getSparkContext()
+        self.sc = _get_spark_context()
         self.scriptString = scriptString
         self.scriptType = scriptType
         self.isResource = isResource

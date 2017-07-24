@@ -679,7 +679,7 @@ sumMessage: String = s2 is greater
 
 
 The same inputs with metadata can be supplied by chaining `in` methods, as in the example below, which shows that `out` methods can also be
-chained. This feature is currently not available in Python.
+chained. 
 
 <div class="codetabs">
 
@@ -711,6 +711,34 @@ secondSum: Double = 26.0
 sumMessage: String = s2 is greater
 
 
+{% endhighlight %}
+</div>
+
+
+
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+sumScript = dmlFromFile("sums.dml").input(m1=rdd1).input(m2= rdd2).output("s1").output("s2").output("message")
+sumResults = ml.execute(sumScript)
+s1, s2, message = sumResults.get("s1", "s2", "message")
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark Shell" markdown="1">
+{% highlight python %}
+>>> sumScript = dmlFromFile("sums.dml").input(m1=rdd1).input(m2= rdd2).output("s1").output("s2").output("message")
+>>> sumResults = ml.execute(sumScript)
+SystemML Statistics:
+Total execution time:           1.057 sec.
+Number of executed Spark inst:  4.
+
+>>> s1, s2, message = sumResults.get("s1", "s2", "message")
+>>> s1
+10.0
+>>> s2
+26.0
+>>> message
+u's2 is greater'
 {% endhighlight %}
 </div>
 

@@ -34,6 +34,8 @@ ARTIFACT_VERSION = __project_version__
 ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+src_path_prefix = os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION_SHORT)
+src_path = src_path_prefix + '.zip' if platform.system() == "Windows" and os.path.exists(src_path_prefix + '.zip') else src_path_prefix + '.tar.gz' 
 os.rename(
-    os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION_SHORT + '.tar.gz'),
+    src_path,
     os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION + '-python.tgz'))

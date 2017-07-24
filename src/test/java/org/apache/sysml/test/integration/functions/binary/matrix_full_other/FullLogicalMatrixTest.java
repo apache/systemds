@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,23 +35,23 @@ import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * The main purpose of this test is to verify various input combinations for
- * matrix-matrix ppred operations that internally translate to binary operations.
- * 
+ * matrix-matrix logical operations that internally translate to binary operations.
+ *
  */
-public class FullLogicalMatrixTest extends AutomatedTestBase 
+public class FullLogicalMatrixTest extends AutomatedTestBase
 {
-	
+
 	private final static String TEST_NAME1 = "LogicalMatrixTest";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullLogicalMatrixTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-	
+
 	private final static int rows1 = 1383;
 	private final static int cols1 = 1432;
-	
+
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.01;
-	
+
 	public enum Type{
 		GREATER,
 		LESS,
@@ -60,11 +60,11 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 		GREATER_EQUALS,
 		LESS_EQUALS,
 	}
-		
+
 	@Override
-	public void setUp() 
+	public void setUp()
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) );
 		TestUtils.clearAssertionInformation();
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
@@ -84,499 +84,492 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
-	
+
 	@Test
-	public void testPPredGreaterDenseDenseCP() 
+	public void testLogicalGreaterDenseDenseCP()
 	{
-		runPPredTest(Type.GREATER, false, false, ExecType.CP);
+		runLogicalTest(Type.GREATER, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterDenseSparseCP() 
+	public void testLogicalGreaterDenseSparseCP()
 	{
-		runPPredTest(Type.GREATER, false, true, ExecType.CP);
+		runLogicalTest(Type.GREATER, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseDenseCP() 
+	public void testLogicalGreaterSparseDenseCP()
 	{
-		runPPredTest(Type.GREATER, true, false, ExecType.CP);
+		runLogicalTest(Type.GREATER, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseSparseCP() 
+	public void testLogicalGreaterSparseSparseCP()
 	{
-		runPPredTest(Type.GREATER, true, true, ExecType.CP);
+		runLogicalTest(Type.GREATER, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseDenseCP() 
+	public void testLogicalGreaterEqualsDenseDenseCP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, false, ExecType.CP);
+		runLogicalTest(Type.GREATER_EQUALS, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseSparseCP() 
+	public void testLogicalGreaterEqualsDenseSparseCP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, true, ExecType.CP);
+		runLogicalTest(Type.GREATER_EQUALS, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseDenseCP() 
+	public void testLogicalGreaterEqualsSparseDenseCP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, false, ExecType.CP);
+		runLogicalTest(Type.GREATER_EQUALS, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseSparseCP() 
+	public void testLogicalGreaterEqualsSparseSparseCP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, true, ExecType.CP);
+		runLogicalTest(Type.GREATER_EQUALS, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseDenseCP() 
+	public void testLogicalEqualsDenseDenseCP()
 	{
-		runPPredTest(Type.EQUALS, false, false, ExecType.CP);
+		runLogicalTest(Type.EQUALS, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseSparseCP() 
+	public void testLogicalEqualsDenseSparseCP()
 	{
-		runPPredTest(Type.EQUALS, false, true, ExecType.CP);
+		runLogicalTest(Type.EQUALS, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseDenseCP() 
+	public void testLogicalEqualsSparseDenseCP()
 	{
-		runPPredTest(Type.EQUALS, true, false, ExecType.CP);
+		runLogicalTest(Type.EQUALS, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseSparseCP() 
+	public void testLogicalEqualsSparseSparseCP()
 	{
-		runPPredTest(Type.EQUALS, true, true, ExecType.CP);
+		runLogicalTest(Type.EQUALS, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseDenseCP() 
+	public void testLogicalNotEqualsDenseDenseCP()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.CP);
+		runLogicalTest(Type.NOT_EQUALS, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseSparseCP() 
+	public void testLogicalNotEqualsDenseSparseCP()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.CP);
+		runLogicalTest(Type.NOT_EQUALS, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseDenseCP() 
+	public void testLogicalNotEqualsSparseDenseCP()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.CP);
+		runLogicalTest(Type.NOT_EQUALS, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseSparseCP() 
+	public void testLogicalNotEqualsSparseSparseCP()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.CP);
+		runLogicalTest(Type.NOT_EQUALS, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseDenseCP() 
+	public void testLogicalLessDenseDenseCP()
 	{
-		runPPredTest(Type.LESS, false, false, ExecType.CP);
+		runLogicalTest(Type.LESS, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseSparseCP() 
+	public void testLogicalLessDenseSparseCP()
 	{
-		runPPredTest(Type.LESS, false, true, ExecType.CP);
+		runLogicalTest(Type.LESS, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseDenseCP() 
+	public void testLogicalLessSparseDenseCP()
 	{
-		runPPredTest(Type.LESS, true, false, ExecType.CP);
+		runLogicalTest(Type.LESS, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseSparseCP() 
+	public void testLogicalLessSparseSparseCP()
 	{
-		runPPredTest(Type.LESS, true, true, ExecType.CP);
+		runLogicalTest(Type.LESS, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseDenseCP() 
+	public void testLogicalLessEqualsDenseDenseCP()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, false, ExecType.CP);
+		runLogicalTest(Type.LESS_EQUALS, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseSparseCP() 
+	public void testLogicalLessEqualsDenseSparseCP()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, true, ExecType.CP);
+		runLogicalTest(Type.LESS_EQUALS, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseDenseCP() 
+	public void testLogicalLessEqualsSparseDenseCP()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, false, ExecType.CP);
+		runLogicalTest(Type.LESS_EQUALS, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseSparseCP() 
+	public void testLogicalLessEqualsSparseSparseCP()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, true, ExecType.CP);
+		runLogicalTest(Type.LESS_EQUALS, true, true, ExecType.CP);
 	}
-	
-	
+
+
 	// ------------------------
 	@Test
-	public void testPPredGreaterDenseDenseSP() 
+	public void testLogicalGreaterDenseDenseSP()
 	{
-		runPPredTest(Type.GREATER, false, false, ExecType.SPARK);
+		runLogicalTest(Type.GREATER, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterDenseSparseSP() 
+	public void testLogicalGreaterDenseSparseSP()
 	{
-		runPPredTest(Type.GREATER, false, true, ExecType.SPARK);
+		runLogicalTest(Type.GREATER, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseDenseSP() 
+	public void testLogicalGreaterSparseDenseSP()
 	{
-		runPPredTest(Type.GREATER, true, false, ExecType.SPARK);
+		runLogicalTest(Type.GREATER, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseSparseSP() 
+	public void testLogicalGreaterSparseSparseSP()
 	{
-		runPPredTest(Type.GREATER, true, true, ExecType.SPARK);
+		runLogicalTest(Type.GREATER, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseDenseSP() 
+	public void testLogicalGreaterEqualsDenseDenseSP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, false, ExecType.SPARK);
+		runLogicalTest(Type.GREATER_EQUALS, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseSparseSP() 
+	public void testLogicalGreaterEqualsDenseSparseSP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, true, ExecType.SPARK);
+		runLogicalTest(Type.GREATER_EQUALS, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseDenseSP() 
+	public void testLogicalGreaterEqualsSparseDenseSP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, false, ExecType.SPARK);
+		runLogicalTest(Type.GREATER_EQUALS, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseSparseSP() 
+	public void testLogicalGreaterEqualsSparseSparseSP()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, true, ExecType.SPARK);
+		runLogicalTest(Type.GREATER_EQUALS, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseDenseSP() 
+	public void testLogicalEqualsDenseDenseSP()
 	{
-		runPPredTest(Type.EQUALS, false, false, ExecType.SPARK);
+		runLogicalTest(Type.EQUALS, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseSparseSP() 
+	public void testLogicalEqualsDenseSparseSP()
 	{
-		runPPredTest(Type.EQUALS, false, true, ExecType.SPARK);
+		runLogicalTest(Type.EQUALS, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseDenseSP() 
+	public void testLogicalEqualsSparseDenseSP()
 	{
-		runPPredTest(Type.EQUALS, true, false, ExecType.SPARK);
+		runLogicalTest(Type.EQUALS, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseSparseSP() 
+	public void testLogicalEqualsSparseSparseSP()
 	{
-		runPPredTest(Type.EQUALS, true, true, ExecType.SPARK);
+		runLogicalTest(Type.EQUALS, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseDenseSP() 
+	public void testLogicalNotEqualsDenseDenseSP()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.SPARK);
+		runLogicalTest(Type.NOT_EQUALS, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseSparseSP() 
+	public void testLogicalNotEqualsDenseSparseSP()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.SPARK);
+		runLogicalTest(Type.NOT_EQUALS, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseDenseSP() 
+	public void testLogicalNotEqualsSparseDenseSP()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.SPARK);
+		runLogicalTest(Type.NOT_EQUALS, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseSparseSP() 
+	public void testLogicalNotEqualsSparseSparseSP()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.SPARK);
+		runLogicalTest(Type.NOT_EQUALS, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseDenseSP() 
+	public void testLogicalLessDenseDenseSP()
 	{
-		runPPredTest(Type.LESS, false, false, ExecType.SPARK);
+		runLogicalTest(Type.LESS, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseSparseSP() 
+	public void testLogicalLessDenseSparseSP()
 	{
-		runPPredTest(Type.LESS, false, true, ExecType.SPARK);
+		runLogicalTest(Type.LESS, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseDenseSP() 
+	public void testLogicalLessSparseDenseSP()
 	{
-		runPPredTest(Type.LESS, true, false, ExecType.SPARK);
+		runLogicalTest(Type.LESS, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseSparseSP() 
+	public void testLogicalLessSparseSparseSP()
 	{
-		runPPredTest(Type.LESS, true, true, ExecType.SPARK);
+		runLogicalTest(Type.LESS, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseDenseSP() 
+	public void testLogicalLessEqualsDenseDenseSP()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, false, ExecType.SPARK);
+		runLogicalTest(Type.LESS_EQUALS, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseSparseSP() 
+	public void testLogicalLessEqualsDenseSparseSP()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, true, ExecType.SPARK);
+		runLogicalTest(Type.LESS_EQUALS, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseDenseSP() 
+	public void testLogicalLessEqualsSparseDenseSP()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, false, ExecType.SPARK);
+		runLogicalTest(Type.LESS_EQUALS, true, false, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseSparseSP() 
+	public void testLogicalLessEqualsSparseSparseSP()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, true, ExecType.SPARK);
+		runLogicalTest(Type.LESS_EQUALS, true, true, ExecType.SPARK);
 	}
 	// ----------------------
-	
+
 	@Test
-	public void testPPredGreaterDenseDenseMR() 
+	public void testLogicalGreaterDenseDenseMR()
 	{
-		runPPredTest(Type.GREATER, false, false, ExecType.MR);
+		runLogicalTest(Type.GREATER, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterDenseSparseMR() 
+	public void testLogicalGreaterDenseSparseMR()
 	{
-		runPPredTest(Type.GREATER, false, true, ExecType.MR);
+		runLogicalTest(Type.GREATER, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseDenseMR() 
+	public void testLogicalGreaterSparseDenseMR()
 	{
-		runPPredTest(Type.GREATER, true, false, ExecType.MR);
+		runLogicalTest(Type.GREATER, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterSparseSparseMR() 
+	public void testLogicalGreaterSparseSparseMR()
 	{
-		runPPredTest(Type.GREATER, true, true, ExecType.MR);
+		runLogicalTest(Type.GREATER, true, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseDenseMR() 
+	public void testLogicalGreaterEqualsDenseDenseMR()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, false, ExecType.MR);
+		runLogicalTest(Type.GREATER_EQUALS, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsDenseSparseMR() 
+	public void testLogicalGreaterEqualsDenseSparseMR()
 	{
-		runPPredTest(Type.GREATER_EQUALS, false, true, ExecType.MR);
+		runLogicalTest(Type.GREATER_EQUALS, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseDenseMR() 
+	public void testLogicalGreaterEqualsSparseDenseMR()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, false, ExecType.MR);
+		runLogicalTest(Type.GREATER_EQUALS, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredGreaterEqualsSparseSparseMR() 
+	public void testLogicalGreaterEqualsSparseSparseMR()
 	{
-		runPPredTest(Type.GREATER_EQUALS, true, true, ExecType.MR);
+		runLogicalTest(Type.GREATER_EQUALS, true, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseDenseMR() 
+	public void testLogicalEqualsDenseDenseMR()
 	{
-		runPPredTest(Type.EQUALS, false, false, ExecType.MR);
+		runLogicalTest(Type.EQUALS, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredEqualsDenseSparseMR() 
+	public void testLogicalEqualsDenseSparseMR()
 	{
-		runPPredTest(Type.EQUALS, false, true, ExecType.MR);
+		runLogicalTest(Type.EQUALS, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseDenseMR() 
+	public void testLogicalEqualsSparseDenseMR()
 	{
-		runPPredTest(Type.EQUALS, true, false, ExecType.MR);
+		runLogicalTest(Type.EQUALS, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredEqualsSparseSparseMR() 
+	public void testLogicalEqualsSparseSparseMR()
 	{
-		runPPredTest(Type.EQUALS, true, true, ExecType.MR);
+		runLogicalTest(Type.EQUALS, true, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseDenseMR() 
+	public void testLogicalNotEqualsDenseDenseMR()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.MR);
+		runLogicalTest(Type.NOT_EQUALS, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsDenseSparseMR() 
+	public void testLogicalNotEqualsDenseSparseMR()
 	{
-		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.MR);
+		runLogicalTest(Type.NOT_EQUALS, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseDenseMR() 
+	public void testLogicalNotEqualsSparseDenseMR()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.MR);
+		runLogicalTest(Type.NOT_EQUALS, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredNotEqualsSparseSparseMR() 
+	public void testLogicalNotEqualsSparseSparseMR()
 	{
-		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.MR);
+		runLogicalTest(Type.NOT_EQUALS, true, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseDenseMR() 
+	public void testLogicalLessDenseDenseMR()
 	{
-		runPPredTest(Type.LESS, false, false, ExecType.MR);
+		runLogicalTest(Type.LESS, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessDenseSparseMR() 
+	public void testLogicalLessDenseSparseMR()
 	{
-		runPPredTest(Type.LESS, false, true, ExecType.MR);
+		runLogicalTest(Type.LESS, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseDenseMR() 
+	public void testLogicalLessSparseDenseMR()
 	{
-		runPPredTest(Type.LESS, true, false, ExecType.MR);
+		runLogicalTest(Type.LESS, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessSparseSparseMR() 
+	public void testLogicalLessSparseSparseMR()
 	{
-		runPPredTest(Type.LESS, true, true, ExecType.MR);
+		runLogicalTest(Type.LESS, true, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseDenseMR() 
+	public void testLogicalLessEqualsDenseDenseMR()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, false, ExecType.MR);
+		runLogicalTest(Type.LESS_EQUALS, false, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsDenseSparseMR() 
+	public void testLogicalLessEqualsDenseSparseMR()
 	{
-		runPPredTest(Type.LESS_EQUALS, false, true, ExecType.MR);
+		runLogicalTest(Type.LESS_EQUALS, false, true, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseDenseMR() 
+	public void testLogicalLessEqualsSparseDenseMR()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, false, ExecType.MR);
+		runLogicalTest(Type.LESS_EQUALS, true, false, ExecType.MR);
 	}
-	
+
 	@Test
-	public void testPPredLessEqualsSparseSparseMR() 
+	public void testLogicalLessEqualsSparseSparseMR()
 	{
-		runPPredTest(Type.LESS_EQUALS, true, true, ExecType.MR);
+		runLogicalTest(Type.LESS_EQUALS, true, true, ExecType.MR);
 	}
-	
-	
-	/**
-	 * 
-	 * @param type
-	 * @param instType
-	 * @param sparse
-	 */
-	private void runPPredTest( Type type, boolean sp1, boolean sp2, ExecType et )
+
+	private void runLogicalTest( Type type, boolean sp1, boolean sp2, ExecType et )
 	{
 		String TEST_NAME = TEST_NAME1;
 		int rows = rows1;
 		int cols = cols1;
-		    
+
 	    RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
-		
+
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-	
+
 		double sparsityLeft = sp1 ? sparsity2 : sparsity1;
 		double sparsityRight = sp2 ? sparsity2 : sparsity1;
-		
+
 		String TEST_CACHE_DIR = "";
 		if (TEST_CACHE_ENABLED) {
 			TEST_CACHE_DIR = type.ordinal() + "_" + rows + "_" + cols + "_" + sparsityLeft + "_" + sparsityRight + "/";
 		}
-		
+
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config, TEST_CACHE_DIR);
-			
+
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("A"), input("B"), 
+			programArgs = new String[]{"-args", input("A"), input("B"),
 				Integer.toString(type.ordinal()), output("C") };
-			
+
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + type.ordinal() + " " + expectedDir();
-	
+
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsityLeft, 7); 
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsityLeft, 7);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = getRandomMatrix(rows, cols, -15, 15, sparsityRight, 3); 
+			double[][] B = getRandomMatrix(rows, cols, -15, 15, sparsityRight, 3);
 			writeInputMatrixWithMTD("B", B, true);
-			
+
 			//run tests
-			runTest(true, false, null, -1); 
-			runRScript(true); 
-			
-			//compare matrices 
+			runTest(true, false, null, -1);
+			runRScript(true);
+
+			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");

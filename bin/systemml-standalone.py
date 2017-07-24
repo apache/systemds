@@ -151,7 +151,8 @@ systemml_default_java_opts = \
     '-Xmx8g -Xms4g -Xmn1g ' + \
     '-cp ' + classpath + ' ' + \
     '-Dlog4j.configuration=file:' + log4j_properties_path + ' ' \
-    '-Duser.dir=' + user_dir
+    '-Duser.dir=' + user_dir 
+#    '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8111'
 
 
 # Reads in key-value pairs from the conf/systemml-env.sh file

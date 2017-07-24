@@ -167,7 +167,7 @@ public class GPUContextPool {
 	public static ArrayList<Integer> parseListString(String str, int max) {
 		ArrayList<Integer> result = new ArrayList<>();
 		str = str.trim();
-		if (str == "-1") {  // all
+		if (str.equalsIgnoreCase("-1")) {  // all
 			for (int i=0; i<max; i++){
 				result.add(i);
 			}

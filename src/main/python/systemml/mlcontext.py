@@ -606,6 +606,31 @@ class MLContext(object):
     def __repr__(self):
         return "MLContext"
     
+    def displayHopDAG(self, script, showLineNumbers=True, showMemEstimate=True, showDimensions=True):
+        """
+        Compile a DML / PyDML script.
+
+        Parameters
+        ----------
+        script: Script instance
+            Script instance defined with the appropriate input and output variables.
+        
+        showLineNumbers: boolean
+            If true, the line numbers will be included in the output of hop DAG.
+        
+        showMemEstimate: boolean
+            If true, the memory estimate will be included in the output of hop DAG.
+        
+        showDimensions: boolean
+            If true, the dimension will be included in the output of hop DAG. 
+        """
+        from graphviz import Source
+        if not isinstance(script, Script):
+            raise ValueError("Expected script to be an instance of Script")
+        scriptString = script.scriptString
+        script_java = script.script_java
+        Source(self._ml.getHopDAG(script_java, showLineNumbers, showMemEstimate, showDimensions))
+        
     def execute(self, script):
         """
         Execute a DML / PyDML script.

@@ -263,9 +263,12 @@ public class ScriptExecutor {
 		DMLScript.USE_ACCELERATOR = oldGPU;
 		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
 	}
-
+	
 	/**
-	 * Execute a DML or PYDML script. This is broken down into the following
+	 * Compile a DML or PYDML script. This will help analysis of DML programs
+	 * that have dynamic recompilation flag set to false without actually executing it. 
+	 * 
+	 * This is broken down into the following
 	 * primary methods:
 	 *
 	 * <ol>
@@ -283,16 +286,12 @@ public class ScriptExecutor {
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
 	 * <li>{@link #cleanupRuntimeProgram()}</li>
-	 * <li>{@link #createAndInitializeExecutionContext()}</li>
-	 * <li>{@link #executeRuntimeProgram()}</li>
-	 * <li>{@link #cleanupAfterExecution()}</li>
 	 * </ol>
 	 *
 	 * @param script
-	 *            the DML or PYDML script to execute
-	 * @return the results as a MLResults object
+	 *            the DML or PYDML script to compile
 	 */
-	public MLResults execute(Script script) {
+	public void compile(Script script) {
 
 		// main steps in script execution
 		setup(script);
@@ -315,6 +314,28 @@ public class ScriptExecutor {
 		if (statistics) {
 			Statistics.stopCompileTimer();
 		}
+	}
+
+
+	/**
+	 * Execute a DML or PYDML script. This is broken down into the following
+	 * primary methods:
+	 *
+	 * <ol>
+	 * <li>{@link #compile(Script)}</li>
+	 * <li>{@link #createAndInitializeExecutionContext()}</li>
+	 * <li>{@link #executeRuntimeProgram()}</li>
+	 * <li>{@link #cleanupAfterExecution()}</li>
+	 * </ol>
+	 *
+	 * @param script
+	 *            the DML or PYDML script to execute
+	 * @return the results as a MLResults object
+	 */
+	public MLResults execute(Script script) {
+
+		// main steps in script execution
+		compile(script);
 
 		try {
 			createAndInitializeExecutionContext();

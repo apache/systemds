@@ -31,9 +31,11 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.IntIdentifier;
+import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -44,6 +46,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.MLContextProxy;
 
@@ -306,6 +309,45 @@ public class MLContext {
 		}
 	}
 
+	/**
+	 * Get HOP DAG in dot format for a DML or PYDML Script. 
+	 *
+	 * @param script
+	 *            The DML or PYDML Script object to execute.
+	 * @throws LanguageException  if error occurs
+	 * @throws DMLRuntimeException  if error occurs
+	 * @throws HopsException 
+	 */
+	public String getHopDAG(Script script, boolean showLineNumbers, boolean showMemEstimate, boolean showDimensions) throws HopsException, DMLRuntimeException, LanguageException {
+		ScriptExecutor scriptExecutor = new ScriptExecutor();
+		scriptExecutor.setExecutionType(executionType);
+		scriptExecutor.setExplain(explain);
+		scriptExecutor.setExplainLevel(explainLevel);
+		scriptExecutor.setGPU(gpu);
+		scriptExecutor.setForceGPU(forceGPU);
+		scriptExecutor.setStatistics(statistics);
+		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
+		scriptExecutor.setInit(initBeforeExecution);
+		if (initBeforeExecution) {
+			initBeforeExecution = false;
+		}
+		scriptExecutor.setMaintainSymbolTable(maintainSymbolTable);
+		try {
+			executionScript = script;
+
+			Long time = new Long((new Date()).getTime());
+			if ((script.getName() == null) || (script.getName().equals(""))) {
+				script.setName(time.toString());
+			}
+
+			scriptExecutor.compile(script);
+			Explain.reset();
+			return Explain.getHopDAG(scriptExecutor.dmlProgram, showLineNumbers, showMemEstimate, showDimensions);
+		} catch (RuntimeException e) {
+			throw new MLContextException("Exception when compiling script", e);
+		}
+	}
+	
 	/**
 	 * Execute a DML or PYDML Script.
 	 *

@@ -63,6 +63,26 @@ public abstract class Instruction
 	protected int beginCol = -1; 
 	protected int endCol = -1;
 	
+	public String getFilename() {
+		return filename;
+	}
+
+	public int getBeginLine() {
+		return beginLine;
+	}
+
+	public int getEndLine() {
+		return endLine;
+	}
+	
+	public int getBeginColumn() {
+		return beginCol;
+	}
+
+	public int getEndColumn() {
+		return endCol;
+	}
+
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;
 	}

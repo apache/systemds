@@ -237,7 +237,7 @@ def getModelMean(model_name):
 
 # Example usage: convertImageToNumPyArr(im, img_shape=(3, 224, 224), add_rotated_images=True, add_mirrored_images=True)
 # The above call returns a numpy array of shape (6, 50176) in NCHW format
-def convertImageToNumPyArr(image_file_name, img_shape=None, add_rotated_images=False, add_mirrored_images=False,
+def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mirrored_images=False,
     color_mode = 'RGB', mean=None):
 
     ## Input Parameters
@@ -257,7 +257,6 @@ def convertImageToNumPyArr(image_file_name, img_shape=None, add_rotated_images=F
         raise ValueError('Expected the number of channels to be either 1 or 3')
 
     from PIL import Image
-    im = Image.open(image_file_name)
 
     if size is not None:
         im = im.resize(size, Image.LANCZOS)

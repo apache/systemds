@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convert_lmdb_to_jpeg', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr', 'getModelMean']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convert_lmdb_to_jpeg', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr', 'getDatasetMean']
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,7 @@ from .classloader import *
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
 
-MODEL_MEAN = {'VGG-19':[103.939, 116.779, 123.68]}
+DATASET_MEAN = {'VGG_ILSVRC_19_2014':[103.939, 116.779, 123.68]}
 
 def getNumCols(numPyArr):
     if numPyArr.ndim == 1:
@@ -216,20 +216,20 @@ def convertToNumPyArr(sc, mb):
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
 # Returns the mean of a model if defined otherwise None
-def getModelMean(model_name):
+def getDatasetMean(dataset_name):
     """
     Input Parameters
     ----------------
-    model_name: Name of the model
+    dataset_name: Name of the dataset used to train model. This name is artificial name based on dataset used to train the model.
 
     Returns
     -------
-    mean: Mean value of model if its defined in the list MODEL_MEAN else None.
+    mean: Mean value of model if its defined in the list DATASET_MEAN else None.
 
     """
 
     try:
-        mean = MODEL_MEAN[model_name.upper()]
+        mean = DATASET_MEAN[dataset_name.upper()]
     except:
         mean = None
     return mean
@@ -245,7 +245,7 @@ def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mir
     # color_mode: In case of VGG models which expect image data in BGR format instead of RGB for other most models,
     # color_mode parameter is used to process image data in BGR format.
 
-    # mean: mean value is used to subtract from input data from every pixel value. Default value specified is for VGG-19 model.
+    # mean: mean value is used to subtract from input data from every pixel value. By default value is None, so mean value not subtracted.
 
     if img_shape is not None:
         num_channels = img_shape[0]

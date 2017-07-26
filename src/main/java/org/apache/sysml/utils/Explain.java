@@ -44,7 +44,6 @@ import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.Unary;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;

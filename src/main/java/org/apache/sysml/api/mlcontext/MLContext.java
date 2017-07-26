@@ -310,8 +310,8 @@ public class MLContext {
 		}
 	}
 	
-	public String getHopDAG(Script script, ArrayList<Integer> lines, boolean performHOPRewrites) throws HopsException, DMLRuntimeException, LanguageException {
-		return getHopDAG(script, lines, null, performHOPRewrites);
+	public String getHopDAG(Script script, ArrayList<Integer> lines, boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
+		return getHopDAG(script, lines, null, performHOPRewrites, withSubgraph);
 	}
 
 	/**
@@ -325,12 +325,14 @@ public class MLContext {
 	 *            Spark Configuration.
 	 * @param performHOPRewrites
 	 *            should perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+	 * @param withSubgraph
+	 *            If false, the dot graph will be created without subgraphs for statement blocks.
 	 * @return hop DAG in dot format
 	 * @throws LanguageException  if error occurs
 	 * @throws DMLRuntimeException  if error occurs
 	 * @throws HopsException if error occurs
 	 */
-	public String getHopDAG(Script script, ArrayList<Integer> lines, SparkConf newConf, boolean performHOPRewrites) throws HopsException, DMLRuntimeException, LanguageException {
+	public String getHopDAG(Script script, ArrayList<Integer> lines, SparkConf newConf, boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
 		SparkConf oldConf = spark.sparkContext().getConf();
 		SparkExecutionContext.SparkClusterConfig systemmlConf = SparkExecutionContext.getSparkClusterConfig();
 		long oldMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
@@ -363,7 +365,7 @@ public class MLContext {
 			scriptExecutor.compile(script, performHOPRewrites);
 			Explain.reset();
 			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<Integer>() : lines; // To deal with potential Py4J issues
-			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines);
+			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines, withSubgraph);
 		} catch (RuntimeException e) {
 			throw new MLContextException("Exception when compiling script", e);
 		}

@@ -268,7 +268,7 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines) 
+	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph) 
 			throws HopsException, DMLRuntimeException, LanguageException 
 	{
 		StringBuilder sb = new StringBuilder();
@@ -292,12 +292,11 @@ public class Explain
 					String fkey = DMLProgram.constructFunctionKey(namespace, fname);
 					
 					if (!(fstmt instanceof ExternalFunctionStatement)) {
-						sb.append("subgraph cluster_" + (clusterID++) + " {\n");
-						String label = "FUNCTION " + fkey + " recompile="+fsb.isRecompileOnce()+"\n";
+						addSubGraphHeader(sb, withSubgraph);
 						for (StatementBlock current : fstmt.getBody())
-							sb.append(getHopDAG(current, nodes,  lines));
-						sb.append("label = \"" + label + "\";\n");
-						sb.append("}");
+							sb.append(getHopDAG(current, nodes,  lines, withSubgraph));
+						String label = "FUNCTION " + fkey + " recompile="+fsb.isRecompileOnce()+"\n";
+						addSubGraphFooter(sb, withSubgraph, label);
 					}
 				}
 			}
@@ -305,9 +304,10 @@ public class Explain
 		
 		// Explain main program
 		for( StatementBlock sblk : prog.getStatementBlocks() )
-			sb.append(getHopDAG(sblk, nodes,  lines));
+			sb.append(getHopDAG(sblk, nodes,  lines, withSubgraph));
 	
 		sb.append(nodes);
+		sb.append("rankdir = \"BT\"\n");
 		sb.append("}\n");
 		return sb.toString();
 	}
@@ -515,13 +515,26 @@ public class Explain
 	public static void reset() {
 		clusterID = 0;
 	}
-	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines) 
+	
+	private static void addSubGraphHeader(StringBuilder builder, boolean withSubgraph) {
+		if(withSubgraph) {
+			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+		}
+	}
+	private static void addSubGraphFooter(StringBuilder builder, boolean withSubgraph, String label) {
+		if(withSubgraph) {
+			builder.append("label = \"" + label + "\";\n");
+			builder.append("}\n");
+		}
+	}
+	
+	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph) 
 			throws HopsException, DMLRuntimeException 
 	{
 		StringBuilder builder = new StringBuilder();
 		
 		if (sb instanceof WhileStatementBlock) {
-			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+			addSubGraphHeader(builder, withSubgraph);
 			
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			String label = null;
@@ -534,13 +547,12 @@ public class Explain
 			
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);
 			for (StatementBlock current : ws.getBody())
-				builder.append(getHopDAG(current, nodes,  lines));
+				builder.append(getHopDAG(current, nodes,  lines, withSubgraph));
 			
-			builder.append("label = \"" + label + "\";\n");
-			builder.append("}\n");
+			addSubGraphFooter(builder, withSubgraph, label);
 		} 
 		else if (sb instanceof IfStatementBlock) {
-			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+			addSubGraphHeader(builder, withSubgraph);
 			IfStatementBlock ifsb = (IfStatementBlock) sb;
 			String label = "IF (lines "+ifsb.getBeginLine()+"-"+ifsb.getEndLine()+")";
 			// TODO: Don't show predicate hops for now
@@ -548,24 +560,21 @@ public class Explain
 			
 			IfStatement ifs = (IfStatement) sb.getStatement(0);
 			for (StatementBlock current : ifs.getIfBody()) {
-				builder.append(getHopDAG(current, nodes,  lines));
-				builder.append("label = \"" + label + "\";\n");
-				builder.append("}\n");
+				builder.append(getHopDAG(current, nodes,  lines, withSubgraph));
+				addSubGraphFooter(builder, withSubgraph, label);
 			}
 			if( !ifs.getElseBody().isEmpty() ) {
-				builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+				addSubGraphHeader(builder, withSubgraph);
 				label = "ELSE (lines "+ifsb.getBeginLine()+"-"+ifsb.getEndLine()+")";
 			
 				for (StatementBlock current : ifs.getElseBody()) 
-					builder.append(getHopDAG(current, nodes,  lines));
-				
-				builder.append("label = \"" + label + "\";\n");
-				builder.append("}\n");
+					builder.append(getHopDAG(current, nodes,  lines, withSubgraph));
+				addSubGraphFooter(builder, withSubgraph, label);
 			}
 		} 
 		else if (sb instanceof ForStatementBlock) {
 			ForStatementBlock fsb = (ForStatementBlock) sb;
-			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+			addSubGraphHeader(builder, withSubgraph);
 			String label = "";
 			if (sb instanceof ParForStatementBlock) {
 				if( !fsb.getUpdateInPlaceVars().isEmpty() )
@@ -589,38 +598,36 @@ public class Explain
 			
 			ForStatement fs = (ForStatement)sb.getStatement(0);
 			for (StatementBlock current : fs.getBody())
-				builder.append(getHopDAG(current, nodes,  lines));
-			builder.append("label = \"" + label + "\";\n");
-			builder.append("}\n");
+				builder.append(getHopDAG(current, nodes,  lines, withSubgraph));
+			addSubGraphFooter(builder, withSubgraph, label);
 			
 		} 
 		else if (sb instanceof FunctionStatementBlock) {
 			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
-			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+			addSubGraphHeader(builder, withSubgraph);
 			String label = "Function (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")";
 			for (StatementBlock current : fsb.getBody())
-				builder.append(getHopDAG(current, nodes,  lines));
-			builder.append("label = \"" + label + "\";\n");
-			builder.append("}\n");
+				builder.append(getHopDAG(current, nodes,  lines, withSubgraph));
+			addSubGraphFooter(builder, withSubgraph, label);
 		} 
 		else {
 			// For generic StatementBlock
 			if(sb.requiresRecompilation()) {
-				builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+				addSubGraphHeader(builder, withSubgraph);
 			}
 			ArrayList<Hop> hopsDAG = sb.get_hops();
 			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
 				Hop.resetVisitStatus(hopsDAG);
 				for (Hop hop : hopsDAG)
-					builder.append(getHopDAG(hop, nodes,  lines));
+					builder.append(getHopDAG(hop, nodes,  lines, withSubgraph));
 				Hop.resetVisitStatus(hopsDAG);
 			}
 			
 			if(sb.requiresRecompilation()) {
 				builder.append("style=filled;\n");
 				builder.append("color=lightgrey;\n");
-				builder.append("label = \"(lines "+sb.getBeginLine()+"-"+sb.getEndLine()+") [recompile=" + sb.requiresRecompilation() + "]\";\n");
-				builder.append("}\n");
+				String label = "(lines "+sb.getBeginLine()+"-"+sb.getEndLine()+") [recompile=" + sb.requiresRecompilation() + "]";
+				addSubGraphFooter(builder, withSubgraph, label);
 			}
 		}
 		return builder;
@@ -799,33 +806,29 @@ public class Explain
 	
 	private static boolean isInRange(Hop hop, ArrayList<Integer> lines) {
 		boolean isInRange = lines.size() == 0 ? true : false;
-		if(!isInRange) {
-			for(int lineNum : lines) {
-				if(hop.getBeginLine() == hop.getEndLine() && hop.getBeginLine() == lineNum) {
-					isInRange = true;
-					break;
-				}
+		for(int lineNum : lines) {
+			if(hop.getBeginLine() == lineNum && lineNum == hop.getEndLine()) {
+				return true;
 			}
 		}
 		return isInRange;
 	}
 	
-	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines) 
+	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph) 
 		throws DMLRuntimeException 
 	{
 		StringBuilder sb = new StringBuilder();
-		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) || !isInRange(hop, lines))
+		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp))
 			return sb;
 		
 		for( Hop input : hop.getInput() ) {
-			if(SHOW_LITERAL_HOPS || !(input instanceof LiteralOp)) {
+			if((SHOW_LITERAL_HOPS || !(input instanceof LiteralOp)) && isInRange(hop, lines)) {
 				String edgeLabel = showMem(input.getOutputMemEstimate(), true);
 				sb.append("h" + input.getHopID() + " -> h" + hop.getHopID() + " [label=\"" + edgeLabel + "\"];\n");
 			}
 		}
 		for( Hop input : hop.getInput() )
-			sb.append(getHopDAG(input, nodes, lines));
-		
+			sb.append(getHopDAG(input, nodes, lines, withSubgraph));
 		
 		String tooltip = hop.getExecType() == null ? ""  : hop.getExecType().name() + " ";
 		tooltip += "[" + hop.getDim1() + " X " + hop.getDim2() + "], nnz=" + hop.getNnz() + ", mem= [in=" 
@@ -876,8 +879,9 @@ public class Explain
 			color = "red";
 		}
 		
-		nodes.append("h" + hop.getHopID() + "[label=\"" + label + "\", shape=\"" + shape + "\", color=\"" +  color + "\", tooltip=\"" + tooltip + "\"];\n");
-		
+		if(isInRange(hop, lines)) {
+			nodes.append("h" + hop.getHopID() + "[label=\"" + label + "\", shape=\"" + shape + "\", color=\"" +  color + "\", tooltip=\"" + tooltip + "\"];\n");
+		}
 		hop.setVisited();
 		
 		return sb;

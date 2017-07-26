@@ -607,7 +607,7 @@ class MLContext(object):
     def __repr__(self):
         return "MLContext"
     
-    def getHopDAG(self, script, lines=None, conf=None, apply_rewrites=True):
+    def getHopDAG(self, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
         """
         Compile a DML / PyDML script.
 
@@ -623,7 +623,10 @@ class MLContext(object):
             Optional spark configuration
             
         apply_rewrites: boolean
-            If true, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+            If True, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+        
+        with_subgraph: boolean
+            If False, the dot graph will be created without subgraphs for statement blocks. 
         
         Returns
         -------
@@ -636,9 +639,9 @@ class MLContext(object):
         script_java = script.script_java
         lines = [ int(x) for x in lines] if lines is not None else [int(-1)]
         if conf is not None:
-            hopDAG = self._ml.getHopDAG(script_java, lines, conf._jconf, apply_rewrites)
+            hopDAG = self._ml.getHopDAG(script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
         else:
-            hopDAG = self._ml.getHopDAG(script_java, lines, apply_rewrites)
+            hopDAG = self._ml.getHopDAG(script_java, lines, apply_rewrites, with_subgraph)
         return hopDAG 
         
     def execute(self, script):

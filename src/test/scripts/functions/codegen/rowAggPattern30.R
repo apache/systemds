@@ -24,9 +24,9 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
-ssX_V = matrix(seq(1,40), 10, 4, byrow=TRUE);
-P = matrix(seq(1,3000), 600, 5, byrow=TRUE);
+X = matrix(seq(1,6000), 600, 10, byrow=TRUE)/6000;
+ssX_V = matrix(seq(1,40), 10, 4, byrow=TRUE)/40;
+P = matrix(seq(1,3000), 600, 5, byrow=TRUE)/3000;
 K = 4;
 
 Q = P[,1:K] * (X %*% ssX_V);

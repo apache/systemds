@@ -27,6 +27,7 @@ try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
     from pyspark import SparkContext
+    from pyspark.conf import SparkConf
     import pyspark.mllib.common
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
@@ -606,7 +607,7 @@ class MLContext(object):
     def __repr__(self):
         return "MLContext"
     
-    def displayHopDAG(self, script, showLineNumbers=True, showMemEstimate=True, showDimensions=True):
+    def getHopDAG(self, script, lines=None, conf=None, apply_rewrites=True):
         """
         Compile a DML / PyDML script.
 
@@ -615,21 +616,30 @@ class MLContext(object):
         script: Script instance
             Script instance defined with the appropriate input and output variables.
         
-        showLineNumbers: boolean
-            If true, the line numbers will be included in the output of hop DAG.
+        lines: list of integers
+            Optional: only display the hops that have begin and end line number equals to the given integers.
         
-        showMemEstimate: boolean
-            If true, the memory estimate will be included in the output of hop DAG.
+        conf: SparkConf instance
+            Optional spark configuration
+            
+        apply_rewrites: boolean
+            If true, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
         
-        showDimensions: boolean
-            If true, the dimension will be included in the output of hop DAG. 
+        Returns
+        -------
+        hopDAG: string
+            hop DAG in dot format 
         """
-        from graphviz import Source
         if not isinstance(script, Script):
             raise ValueError("Expected script to be an instance of Script")
         scriptString = script.scriptString
         script_java = script.script_java
-        Source(self._ml.getHopDAG(script_java, showLineNumbers, showMemEstimate, showDimensions))
+        lines = [ int(x) for x in lines] if lines is not None else [int(-1)]
+        if conf is not None:
+            hopDAG = self._ml.getHopDAG(script_java, lines, conf._jconf, apply_rewrites)
+        else:
+            hopDAG = self._ml.getHopDAG(script_java, lines, apply_rewrites)
+        return hopDAG 
         
     def execute(self, script):
         """

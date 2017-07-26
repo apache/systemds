@@ -1378,7 +1378,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * degree of parallelism. This configuration abstracts legacy (< Spark 1.6) and current
 	 * configurations and provides a unified view.
 	 */
-	private static class SparkClusterConfig
+	public static class SparkClusterConfig
 	{
 		//broadcasts are stored in mem-and-disk in data space, this config
 		//defines the fraction of data space to be used as broadcast budget

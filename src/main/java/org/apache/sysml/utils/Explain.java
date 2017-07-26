@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
@@ -267,7 +268,7 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String getHopDAG(DMLProgram prog, boolean showLineNumbers, boolean showMemEstimate, boolean showDimensions) 
+	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines) 
 			throws HopsException, DMLRuntimeException, LanguageException 
 	{
 		StringBuilder sb = new StringBuilder();
@@ -294,7 +295,7 @@ public class Explain
 						sb.append("subgraph cluster_" + (clusterID++) + " {\n");
 						String label = "FUNCTION " + fkey + " recompile="+fsb.isRecompileOnce()+"\n";
 						for (StatementBlock current : fstmt.getBody())
-							sb.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+							sb.append(getHopDAG(current, nodes,  lines));
 						sb.append("label = \"" + label + "\";\n");
 						sb.append("}");
 					}
@@ -304,7 +305,7 @@ public class Explain
 		
 		// Explain main program
 		for( StatementBlock sblk : prog.getStatementBlocks() )
-			sb.append(getSubgraph(sblk, nodes, showLineNumbers, showMemEstimate, showDimensions));
+			sb.append(getHopDAG(sblk, nodes,  lines));
 	
 		sb.append(nodes);
 		sb.append("}\n");
@@ -514,10 +515,11 @@ public class Explain
 	public static void reset() {
 		clusterID = 0;
 	}
-	private static StringBuilder getSubgraph(StatementBlock sb, StringBuilder nodes, boolean showLineNumbers, boolean showMemEstimate, boolean showDimensions) 
+	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines) 
 			throws HopsException, DMLRuntimeException 
 	{
 		StringBuilder builder = new StringBuilder();
+		
 		if (sb instanceof WhileStatementBlock) {
 			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
 			
@@ -532,7 +534,7 @@ public class Explain
 			
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);
 			for (StatementBlock current : ws.getBody())
-				builder.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+				builder.append(getHopDAG(current, nodes,  lines));
 			
 			builder.append("label = \"" + label + "\";\n");
 			builder.append("}\n");
@@ -546,7 +548,7 @@ public class Explain
 			
 			IfStatement ifs = (IfStatement) sb.getStatement(0);
 			for (StatementBlock current : ifs.getIfBody()) {
-				builder.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+				builder.append(getHopDAG(current, nodes,  lines));
 				builder.append("label = \"" + label + "\";\n");
 				builder.append("}\n");
 			}
@@ -555,7 +557,7 @@ public class Explain
 				label = "ELSE (lines "+ifsb.getBeginLine()+"-"+ifsb.getEndLine()+")";
 			
 				for (StatementBlock current : ifs.getElseBody()) 
-					builder.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+					builder.append(getHopDAG(current, nodes,  lines));
 				
 				builder.append("label = \"" + label + "\";\n");
 				builder.append("}\n");
@@ -587,7 +589,7 @@ public class Explain
 			
 			ForStatement fs = (ForStatement)sb.getStatement(0);
 			for (StatementBlock current : fs.getBody())
-				builder.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+				builder.append(getHopDAG(current, nodes,  lines));
 			builder.append("label = \"" + label + "\";\n");
 			builder.append("}\n");
 			
@@ -597,7 +599,7 @@ public class Explain
 			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
 			String label = "Function (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")";
 			for (StatementBlock current : fsb.getBody())
-				builder.append(getSubgraph(current, nodes, showLineNumbers, showMemEstimate, showDimensions));
+				builder.append(getHopDAG(current, nodes,  lines));
 			builder.append("label = \"" + label + "\";\n");
 			builder.append("}\n");
 		} 
@@ -610,7 +612,7 @@ public class Explain
 			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
 				Hop.resetVisitStatus(hopsDAG);
 				for (Hop hop : hopsDAG)
-					builder.append(getDAG(hop, nodes, showLineNumbers, showMemEstimate, showDimensions));
+					builder.append(getHopDAG(hop, nodes,  lines));
 				Hop.resetVisitStatus(hopsDAG);
 			}
 			
@@ -795,41 +797,73 @@ public class Explain
 		return sb.toString();
 	}
 	
+	private static boolean isInRange(Hop hop, ArrayList<Integer> lines) {
+		boolean isInRange = lines.size() == 0 ? true : false;
+		if(!isInRange) {
+			for(int lineNum : lines) {
+				if(hop.getBeginLine() == hop.getEndLine() && hop.getBeginLine() == lineNum) {
+					isInRange = true;
+					break;
+				}
+			}
+		}
+		return isInRange;
+	}
 	
-	private static StringBuilder getDAG(Hop hop, StringBuilder nodes, boolean showLineNumbers, boolean showMemEstimate, boolean showDimensions) 
+	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines) 
 		throws DMLRuntimeException 
 	{
 		StringBuilder sb = new StringBuilder();
-		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
+		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) || !isInRange(hop, lines))
 			return sb;
 		
 		for( Hop input : hop.getInput() ) {
-			if(SHOW_LITERAL_HOPS || !(hop instanceof LiteralOp))
-				sb.append("h" + input.getHopID() + " -> h" + hop.getHopID() + ";\n");
+			if(SHOW_LITERAL_HOPS || !(input instanceof LiteralOp)) {
+				String edgeLabel = showMem(input.getOutputMemEstimate(), true);
+				sb.append("h" + input.getHopID() + " -> h" + hop.getHopID() + " [label=\"" + edgeLabel + "\"];\n");
+			}
 		}
 		for( Hop input : hop.getInput() )
-			sb.append(getDAG(input, nodes, showLineNumbers, showMemEstimate, showDimensions));
+			sb.append(getHopDAG(input, nodes, lines));
 		
-		String label = hop.getOpString() + " (" + hop.getDim1() + " X " + hop.getDim2() + "), nnz=" + hop.getNnz() + ", mem=" + showMem(hop.getMemEstimate(), true);
+		
+		String tooltip = hop.getExecType() == null ? ""  : hop.getExecType().name() + " ";
+		tooltip += "[" + hop.getDim1() + " X " + hop.getDim2() + "], nnz=" + hop.getNnz() + ", mem= [in=" 
+		+ showMem(hop.getInputMemEstimate(), false) + ", inter=" + showMem(hop.getIntermediateMemEstimate(), false) + ", out=" 
+	    + showMem(hop.getOutputMemEstimate(), false) + " -> " + showMem(hop.getMemEstimate(), true) + "]";
+		String label = hop.getOpString();
+		if(hop instanceof AggBinaryOp) {
+			AggBinaryOp aggBinOp = (AggBinaryOp) hop;
+			if(aggBinOp.getMMultMethod() != null)
+				label += " " + aggBinOp.getMMultMethod().name() + " ";
+		}
 		//data flow properties
 		if( SHOW_DATA_FLOW_PROPERTIES ) {
 			if( hop.requiresReblock() && hop.requiresCheckpoint() )
-				label += " rblk,chkpt";
+				label += ", rblk,chkpt";
 			else if( hop.requiresReblock() )
-				label += " [rblk]";
+				label += ", rblk";
 			else if( hop.requiresCheckpoint() )
-				label += " [chkpt]";
+				label += ", chkpt";
+		}
+		if(hop.getFilename() == null) {
+			label = label + "[" + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]";
+		}
+		else {
+			label = label + "[" + hop.getFilename() + " "  + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]";
 		}
 		
 		if (hop.getUpdateType().isInPlace())
 			label = "," + hop.getUpdateType().toString().toLowerCase();
-		String shape = "";
-		switch(hop.getExecType()) {
-			case CP: 	shape = "ellipse"; break;
-			case SPARK: shape = "octagon"; break;
-			case GPU: 	shape = "trapezium"; break;
-			case MR: 	shape = "parallelogram"; break;
-			default: 	shape = "box"; break;
+		String shape = "box";
+		if(hop.getExecType() != null) {
+			switch(hop.getExecType()) {
+				case CP: 	shape = "ellipse"; break;
+				case SPARK: shape = "octagon"; break;
+				case GPU: 	shape = "trapezium"; break;
+				case MR: 	shape = "parallelogram"; break;
+				default: 	shape = "box"; break;
+			}
 		}
 		String color = "";
 		if(hop.getNnz() >= 0) {
@@ -842,7 +876,7 @@ public class Explain
 			color = "red";
 		}
 		
-		nodes.append("h" + hop.getHopID() + "[label=\"" + label + "\", shape=\"" + shape + "\", color=\"" +  color + "\"];\n");
+		nodes.append("h" + hop.getHopID() + "[label=\"" + label + "\", shape=\"" + shape + "\", color=\"" +  color + "\", tooltip=\"" + tooltip + "\"];\n");
 		
 		hop.setVisited();
 		

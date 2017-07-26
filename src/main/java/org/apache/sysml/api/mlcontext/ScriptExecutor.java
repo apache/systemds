@@ -264,6 +264,10 @@ public class ScriptExecutor {
 		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
 	}
 	
+	public void compile(Script script) {
+		compile(script, true);
+	}
+	
 	/**
 	 * Compile a DML or PYDML script. This will help analysis of DML programs
 	 * that have dynamic recompilation flag set to false without actually executing it. 
@@ -290,8 +294,10 @@ public class ScriptExecutor {
 	 *
 	 * @param script
 	 *            the DML or PYDML script to compile
+	 * @param performHOPRewrites
+	 *            should perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
 	 */
-	public void compile(Script script) {
+	public void compile(Script script, boolean performHOPRewrites) {
 
 		// main steps in script execution
 		setup(script);
@@ -302,7 +308,8 @@ public class ScriptExecutor {
 		liveVariableAnalysis();
 		validateScript();
 		constructHops();
-		rewriteHops();
+		if(performHOPRewrites)
+			rewriteHops();
 		rewritePersistentReadsAndWrites();
 		constructLops();
 		generateRuntimeProgram();

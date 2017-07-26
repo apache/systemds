@@ -20,8 +20,15 @@
 package org.apache.sysml.test.unit;
 
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.junit.Assert;
 import org.junit.Test;
@@ -75,4 +82,57 @@ public class UtilsTest {
 	public void testParseListStringFail4() {
 		GPUContextPool.parseListString("-1-4", 6);
 	}
+
+
+	@Test
+	public void testDMLConfig1() throws DMLRuntimeException{
+		DMLConfig dmlConfig = new DMLConfig();
+		dmlConfig.setTextValue("A", "a");
+		dmlConfig.setTextValue("B", "b");
+		dmlConfig.setTextValue("C", "2");
+		dmlConfig.setTextValue("D", "5");
+		dmlConfig.setTextValue("E", "5.01");
+
+		Assert.assertEquals("a", dmlConfig.getTextValue("A"));
+		Assert.assertEquals("b", dmlConfig.getTextValue("B"));
+		Assert.assertEquals(2, dmlConfig.getIntValue("C"));
+		Assert.assertEquals(5, dmlConfig.getIntValue("D"));
+		Assert.assertEquals(5.01, dmlConfig.getDoubleValue("E"), 1e-15);
+
+		dmlConfig.setTextValue("E", "a");
+		Assert.assertEquals("a", dmlConfig.getTextValue("E"));
+	}
+
+
+
+	@Test
+	public void testDMLConfig2() throws DMLRuntimeException, IOException, ParseException {
+
+		String testStr = "<root>"
+				+ "<A>a</A>"
+				+ "<B>b</B>"
+				+ "<C>2</C>"
+				+ "<D>5</D>"
+				+ "<E>5.01</E>"
+				+ "</root>";
+		File temp = File.createTempFile("tempfile", null);
+		BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
+		bw.write(testStr);
+		bw.close();
+
+		DMLConfig dmlConfig = new DMLConfig(temp.getAbsolutePath());
+
+		Assert.assertEquals("a", dmlConfig.getTextValue("A"));
+		Assert.assertEquals("b", dmlConfig.getTextValue("B"));
+		Assert.assertEquals(2, dmlConfig.getIntValue("C"));
+		Assert.assertEquals(5, dmlConfig.getIntValue("D"));
+		Assert.assertEquals(5.01, dmlConfig.getDoubleValue("E"), 1e-15);
+
+		dmlConfig.setTextValue("E", "a");
+		Assert.assertEquals("a", dmlConfig.getTextValue("E"));
+	}
+
+
+
+
 }

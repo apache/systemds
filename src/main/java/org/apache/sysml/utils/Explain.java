@@ -27,10 +27,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
@@ -39,6 +44,7 @@ import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.Unary;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
@@ -830,61 +836,99 @@ public class Explain
 		for( Hop input : hop.getInput() )
 			sb.append(getHopDAG(input, nodes, lines, withSubgraph));
 		
-		String tooltip = hop.getExecType() == null ? ""  : hop.getExecType().name() + " ";
-		tooltip += "[" + hop.getDim1() + " X " + hop.getDim2() + "], nnz=" + hop.getNnz() + ", mem= [in=" 
-		+ showMem(hop.getInputMemEstimate(), false) + ", inter=" + showMem(hop.getIntermediateMemEstimate(), false) + ", out=" 
-	    + showMem(hop.getOutputMemEstimate(), false) + " -> " + showMem(hop.getMemEstimate(), true) + "]";
-		String label = hop.getOpString();
-		if(hop instanceof AggBinaryOp) {
-			AggBinaryOp aggBinOp = (AggBinaryOp) hop;
-			if(aggBinOp.getMMultMethod() != null)
-				label += " " + aggBinOp.getMMultMethod().name() + " ";
-		}
-		//data flow properties
-		if( SHOW_DATA_FLOW_PROPERTIES ) {
-			if( hop.requiresReblock() && hop.requiresCheckpoint() )
-				label += ", rblk,chkpt";
-			else if( hop.requiresReblock() )
-				label += ", rblk";
-			else if( hop.requiresCheckpoint() )
-				label += ", chkpt";
-		}
-		if(hop.getFilename() == null) {
-			label = label + "[" + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]";
-		}
-		else {
-			label = label + "[" + hop.getFilename() + " "  + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]";
-		}
-		
-		if (hop.getUpdateType().isInPlace())
-			label = "," + hop.getUpdateType().toString().toLowerCase();
-		String shape = "box";
-		if(hop.getExecType() != null) {
-			switch(hop.getExecType()) {
-				case CP: 	shape = "ellipse"; break;
-				case SPARK: shape = "octagon"; break;
-				case GPU: 	shape = "trapezium"; break;
-				case MR: 	shape = "parallelogram"; break;
-				default: 	shape = "box"; break;
-			}
-		}
-		String color = "";
-		if(hop.getNnz() >= 0) {
-			color = "green";
-		}
-		else if(hop.getDim1() >= 0 && hop.getDim2() >= 0) {
-			color = "orange";
-		}
-		else {
-			color = "red";
-		}
-		
 		if(isInRange(hop, lines)) {
-			nodes.append("h" + hop.getHopID() + "[label=\"" + label + "\", shape=\"" + shape + "\", color=\"" +  color + "\", tooltip=\"" + tooltip + "\"];\n");
+			nodes.append("h" + hop.getHopID() + "[label=\"" + getNodeLabel(hop) + "\", "
+					+ "shape=\"" + getNodeShape(hop) + "\", color=\"" +  getNodeColor(hop) + "\", tooltip=\"" + getNodeToolTip(hop) + "\"];\n");
 		}
 		hop.setVisited();
 		
 		return sb;
+	}
+	
+	private static String getNodeLabel(Hop hop) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(hop.getOpString());
+		if(hop instanceof AggBinaryOp) {
+			AggBinaryOp aggBinOp = (AggBinaryOp) hop;
+			if(aggBinOp.getMMultMethod() != null)
+				sb.append(" " + aggBinOp.getMMultMethod().name() + " ");
+		}
+		//data flow properties
+		if( SHOW_DATA_FLOW_PROPERTIES ) {
+			if( hop.requiresReblock() && hop.requiresCheckpoint() )
+				sb.append(", rblk,chkpt");
+			else if( hop.requiresReblock() )
+				sb.append(", rblk");
+			else if( hop.requiresCheckpoint() )
+				sb.append(", chkpt");
+		}
+		if(hop.getFilename() == null) {
+			sb.append("[" + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]");
+		}
+		else {
+			sb.append("[" + hop.getFilename() + " "  + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":" + hop.getEndColumn() + "]");
+		}
+		
+		if (hop.getUpdateType().isInPlace())
+			sb.append("," + hop.getUpdateType().toString().toLowerCase());
+		return sb.toString();
+	}
+	
+	private static String getNodeToolTip(Hop hop) {
+		StringBuilder sb = new StringBuilder();
+		if(hop.getExecType() != null) {
+			sb.append(hop.getExecType().name());
+		}
+		sb.append("[" + hop.getDim1() + " X " + hop.getDim2() + "], nnz=" + hop.getNnz());
+		sb.append(", mem= [in=");
+		sb.append(showMem(hop.getInputMemEstimate(), false));
+		sb.append(", inter=");
+		sb.append(showMem(hop.getIntermediateMemEstimate(), false));
+		sb.append(", out=");
+		sb.append(showMem(hop.getOutputMemEstimate(), false));
+		sb.append(" -> ");
+		sb.append(showMem(hop.getMemEstimate(), true));
+		sb.append("]");
+		return sb.toString();
+	}
+	
+	private static String getNodeShape(Hop hop) {
+		String shape = "octagon";
+		if(hop.getExecType() != null) {
+			switch(hop.getExecType()) {
+				case CP: 	shape = "ellipse"; break;
+				case SPARK: shape = "box"; break;
+				case GPU: 	shape = "trapezium"; break;
+				case MR: 	shape = "parallelogram"; break;
+				default: 	shape = "octagon"; break;
+			}
+		}
+		return shape;
+	}
+	
+	private static String getNodeColor(Hop hop) {
+		if(hop instanceof DataOp) {
+			DataOp dOp = (DataOp) hop;
+			if(dOp.getDataOpType() == DataOpTypes.PERSISTENTREAD || dOp.getDataOpType() == DataOpTypes.TRANSIENTREAD) {
+				return "wheat2";
+			}
+			else if(dOp.getDataOpType() == DataOpTypes.PERSISTENTWRITE || dOp.getDataOpType() == DataOpTypes.TRANSIENTWRITE) {
+				return "wheat4";
+			}
+		}
+		else if(hop instanceof AggBinaryOp) {
+			return "orangered2";
+		}
+		else if(hop instanceof BinaryOp) {
+			return "royalblue2";
+		}
+		else if(hop instanceof ReorgOp) {
+			return "green";
+		}
+		else if(hop instanceof UnaryOp) {
+			return "yellow";
+		}
+		return "black";
 	}
 
 	//////////////

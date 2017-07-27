@@ -953,7 +953,12 @@ public class OptimizerRuleBased extends Optimizer
 			if (h.getForcedExecType() != LopProperties.ExecType.MR  //e.g., -exec=hadoop
 					&& h.getForcedExecType() != LopProperties.ExecType.SPARK) {
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
-				ret = Math.max(ret, mem);
+				if (mem >= OptimizerUtils.DEFAULT_SIZE) {
+					// memory estimate for worst case scenario.
+					// optimistically ignoring this
+				} else {
+					ret = Math.max(ret, mem);
+				}
 			}
 		}
 

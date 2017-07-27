@@ -33,54 +33,53 @@ public class MLContextGLMTest extends MLContextTestBase {
         protected static Logger log = logger.getLogger(MLContextGLMTest.class);
         
         protected final static String TEST_SCRIPT = "scripts/algorithms/GLM.dml";
+	
+	private final static double sparsity1 = 0.7; //dense
+	private final static double sparsity2 = 0.1; //sparse
+	
+	public enum GLMType {
+		POISSON_LOG,
+		GAMMA_LOG,
+		BINOMIAL_PROBIT,
+	}
         
         @Test 
-        public void testGLMPoissonwithRandomMatrixSparse() {
-                runGLMTestMLC(GLMType.POISSON_LOG, MatrixType.RandomMatrix, true);
+        public void testGLMPoissonSparse() {
+                runGLMTestMLC(GLMType.POISSON_LOG, true);
                                 
         }
         
         @Test
-        public void testGLMPoissonwithRandomMatrixDense() {
-                runGLMTestMLC(GLMType.POISSON_LOG, MatrixType.RandomMatrix, false);
+        public void testGLMPoissonDense() {
+                runGLMTestMLC(GLMType.POISSON_LOG, false);
         }
         
         @Test 
-        public void testGLMGammawithRandomMatrixSparse() {
-                runGLMTestMLC(GLMType.GAMMA_LOG, MatrixType.RandomMatrix, true);
+        public void testGLMGammaSparse() {
+                runGLMTestMLC(GLMType.GAMMA_LOG, true);
         }
         
         @Test 
-        public void testGLMGammawithRandomMatrixDense() {
-                runGLMTestMLC(GLMType.GAMMA_LOG, MatrixType.RandomMatrix, false);
+        public void testGLMGammaDense() {
+                runGLMTestMLC(GLMType.GAMMA_LOG, false);
         }
                
         @Test
-        public void testGLMBinomialwithRandomMatrixSparse() {
-                runGLMTestMLC(GLMType.BINOMIAL_PROBIT, MatrixType.RandomMatrix, true);
+        public void testGLMBinomialSparse() {
+                runGLMTestMLC(GLMType.BINOMIAL_PROBIT, true);
         }
         
         @Test
-        public void testGLMBinomialwithRandomMatrixDense() {
-                runGLMTestMLC(GLMType.BINOMIAL_PROBIT, MatrixType.RandomMatrix, false);
+        public void testGLMBinomialDense() {
+                runGLMTestMLC(GLMType.BINOMIAL_PROBIT, false);
         }
         
-        private void runGLMTestMLC( GLMType type, MatrixType MType, boolean sparse) {
+        private void runGLMTestMLC( GLMType type, boolean sparse) {
                 String[] addArgs = new String[4];
-		String param4Name = "lpow=";
-                
-                if (sparse) { 
-                       sparsity = 0.1;
-                } else {
-                       sparsity = 0.7;
-                }
+		String param4Name = "$lpow=";
                                         
-                switch(MType) { 
-                        case RandomMatrix:
-                                double[][] X = getRandomMatrix(10, 3, 0, 1, sparsity, -1);
-                                double[][] Y = TestUtils.round(getRandomMatrix(10, 1, 0, 1, sparsity, -1);
-                                break;
-                }
+                double[][] X = getRandomMatrix(10, 3, 0, 1, sparse?sparsity2:sparsity1, -1);
+                double[][] Y = TestUtils.round(getRandomMatrix(10, 1, 0, 1, sparsity, -1);
                 
 		switch(type) {
 			case POISSON_LOG: //dfam, vpow, link, lpow
@@ -91,12 +90,12 @@ public class MLContextGLMTest extends MLContextTestBase {
 				break;
 			case BINOMIAL_PROBIT: //dfam, vpow, link, yneg 
 				addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "2";
-				param4Name = "yneg=";
+				param4Name = "$yneg=";
 				break;
 		}
                 
                 Script glm = dmlFromFile(TEST_SCRIPT);
-                glm.in("X", X).in("Y", Y).in("dfam", addArgs[0]).in("vpow", addArgs[1]).in("link", addArgs[2]).in(param4Name, addArgs[3]).in("icpt", "0").in("tol", "0.000000001").in("moi", "5").out("B");
+                glm.in("X", X).in("Y", Y).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("B");
                 ml.execute(glm);
         }
                        

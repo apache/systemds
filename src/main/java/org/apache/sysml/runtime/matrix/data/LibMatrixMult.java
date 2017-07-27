@@ -2252,7 +2252,7 @@ public class LibMatrixMult
 		else if( wt==WeightsType.POST_NZ )
 		{
 			// approach: iterate over W, point-wise in order to exploit sparsity
-			if( mW.sparse ) //SPARSE
+			if( mX.sparse ) //SPARSE
 			{
 				SparseBlock x = mX.sparseBlock;
 				
@@ -2303,7 +2303,7 @@ public class LibMatrixMult
 			//parallel task computes sum(X^2)-sum(2*X*(U%*%t(V)))) and the last term
 			//sum((t(U)%*%U)*(t(V)%*%V)) is computed once via two tsmm operations.
 			
-			if( mW.sparse ) { //SPARSE
+			if( mX.sparse ) { //SPARSE
 				SparseBlock x = mX.sparseBlock;
 				for( int i=rl; i<ru; i++ ) {
 					if( x.isEmpty(i) ) continue;

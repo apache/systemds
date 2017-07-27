@@ -219,9 +219,16 @@ public class CPlanMemoTable
 	}
 	
 	public List<MemoTableEntry> getDistinct(long hopID) {
+		return _plans.get(hopID).stream()
+			.distinct().collect(Collectors.toList());
+	}
+	
+	public List<TemplateBase> getDistinctTemplates(long hopID) {
+		if(!contains(hopID))
+			return Collections.emptyList();
 		//return distinct entries wrt type and closed attributes
 		return _plans.get(hopID).stream()
-			.map(p -> new MemoTableEntry(p.type,-1,-1,-1,p.size,p.closed))
+			.map(p -> TemplateUtils.createTemplate(p.type, p.closed))
 			.distinct().collect(Collectors.toList());
 	}
 	
@@ -327,11 +334,14 @@ public class CPlanMemoTable
 				&& !(!isPlanRef(1) && that.isPlanRef(1))
 				&& !(!isPlanRef(2) && that.isPlanRef(2)));
 		}
-		
 		@Override
 		public int hashCode() {
-			return Arrays.hashCode(
-				new long[]{(long)type.ordinal(), input1, input2, input3});
+			int h = UtilFunctions.intHashCode(type.ordinal(), Long.hashCode(input1));
+			h = UtilFunctions.intHashCode(h, Long.hashCode(input2));
+			h = UtilFunctions.intHashCode(h, Long.hashCode(input3));
+			h = UtilFunctions.intHashCode(h, size);
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(closed));
+			return h;
 		}
 		@Override
 		public boolean equals(Object obj) {
@@ -339,7 +349,8 @@ public class CPlanMemoTable
 				return false;
 			MemoTableEntry that = (MemoTableEntry)obj;
 			return type == that.type && input1 == that.input1
-				&& input2 == that.input2 && input3 == that.input3;
+				&& input2 == that.input2 && input3 == that.input3
+				&& size == that.size && closed == that.closed;
 		}
 		@Override
 		public String toString() {
@@ -360,18 +371,16 @@ public class CPlanMemoTable
 	{
 		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
 		
-		public MemoTableEntrySet(Hop hop, TemplateType type, boolean close) {
+		public MemoTableEntrySet(Hop hop, Hop c, TemplateBase tpl) {
+			int pos = (c != null) ? hop.getInput().indexOf(c) : -1;
 			int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
-			plans.add(new MemoTableEntry(type, -1, -1, -1, size, close));
-		}
-		
-		public MemoTableEntrySet(Hop hop, TemplateType type, int pos, long hopID, boolean close) {
-			int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
-			plans.add(new MemoTableEntry(type, (pos==0)?hopID:-1, 
-					(pos==1)?hopID:-1, (pos==2)?hopID:-1, size));
+			plans.add(new MemoTableEntry(tpl.getType(), (pos==0)?c.getHopID():-1,
+				(pos==1)?c.getHopID():-1, (pos==2)?c.getHopID():-1, size, tpl.isClosed()));
 		}
 		
 		public void crossProduct(int pos, Long... refs) {
+			if( refs.length==1 && refs[0] == -1 )
+				return; //unmodified plan set
 			ArrayList<MemoTableEntry> tmp = new ArrayList<MemoTableEntry>();
 			for( MemoTableEntry me : plans )
 				for( Long ref : refs )

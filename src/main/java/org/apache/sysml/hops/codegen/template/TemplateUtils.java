@@ -54,7 +54,9 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
 {
-	public static final TemplateBase[] TEMPLATES = new TemplateBase[]{new TemplateRow(), new TemplateCell(), new TemplateOuterProduct()};
+	public static final TemplateBase[] TEMPLATES = new TemplateBase[]{
+		new TemplateRow(), new TemplateCell(), new TemplateOuterProduct()};
+	//note: multiagg not included because it's a composite template
 	
 	public static boolean isVector(Hop hop) {
 		return (hop.getDataType() == DataType.MATRIX 

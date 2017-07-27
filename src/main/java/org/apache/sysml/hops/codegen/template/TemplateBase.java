@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen.template;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class TemplateBase 
 {	
@@ -43,7 +44,7 @@ public abstract class TemplateBase
 	}
 
 	protected final TemplateType _type;
-	protected boolean _closed = false;
+	protected final boolean _closed;
 	
 	protected TemplateBase(TemplateType type) {
 		this(type, false);
@@ -60,6 +61,21 @@ public abstract class TemplateBase
 	
 	public boolean isClosed() {
 		return _closed;
+	}
+	
+	@Override
+	public int hashCode() {
+		return UtilFunctions.intHashCode(
+			_type.ordinal(), Boolean.hashCode(_closed));
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if( !(obj instanceof TemplateBase) )
+			return false;
+		TemplateBase that = (TemplateBase)obj;
+		return _type == that._type 
+			&& _closed == that._closed;
 	}
 	
 	/////////////////////////////////////////////
@@ -105,13 +121,6 @@ public abstract class TemplateBase
 	 * @return close type (closed invalid, closed valid, open)
 	 */
 	public abstract CloseType close(Hop hop);
-	
-	/**
-	 * Mark the template as closed either invalid or valid.
-	 */
-	public void close() {
-		_closed = true;
-	}
 	
 	/////////////////////////////////////////////
 	// CPlan construction interface

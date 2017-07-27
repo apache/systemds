@@ -29,6 +29,4 @@ if(1==1){}
 Q = P[,1:K] * (X %*% ssX_V);
 R = t(X) %*% (Q - P[,1:K] * rowSums(Q));
 
-print(max(R));
-
 write(R, $1)

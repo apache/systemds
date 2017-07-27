@@ -506,23 +506,14 @@ public class SpoofCompiler
 		
 		//open initial operator plans, if possible
 		for( TemplateBase tpl : TemplateUtils.TEMPLATES )
-			if( tpl.open(hop) ) {
-				MemoTableEntrySet P = new MemoTableEntrySet(hop, tpl.getType(), false);
-				memo.addAll(hop, enumPlans(hop, -1, P, tpl, memo));
-			}
+			if( tpl.open(hop) )
+				memo.addAll(hop, enumPlans(hop, null, tpl, memo));
 		
 		//fuse and merge operator plans
-		for( Hop c : hop.getInput() ) {
-			if( memo.contains(c.getHopID()) )
-				for( MemoTableEntry me : memo.getDistinct(c.getHopID()) ) {
-					TemplateBase tpl = TemplateUtils.createTemplate(me.type, me.closed);
-					if( tpl.fuse(hop, c) ) {
-						int pos = hop.getInput().indexOf(c);
-						MemoTableEntrySet P = new MemoTableEntrySet(hop, tpl.getType(), pos, c.getHopID(), tpl.isClosed());
-						memo.addAll(hop, enumPlans(hop, pos, P, tpl, memo));
-					}
-				}	
-		}
+		for( Hop c : hop.getInput() )
+			for( TemplateBase tpl : memo.getDistinctTemplates(c.getHopID()) )
+				if( tpl.fuse(hop, c) )
+					memo.addAll(hop, enumPlans(hop, c, tpl, memo));
 		
 		//close operator plans, if required
 		if( memo.contains(hop.getHopID()) ) {
@@ -546,16 +537,14 @@ public class SpoofCompiler
 		memo.addHop(hop);
 	}
 	
-	private static MemoTableEntrySet enumPlans(Hop hop, int pos, MemoTableEntrySet P, TemplateBase tpl, CPlanMemoTable memo) {
-		for(int k=0; k<hop.getInput().size(); k++)
-			if( k != pos ) {
-				Hop input2 = hop.getInput().get(k);
-				if( memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CellTpl) 
-					&& tpl.merge(hop, input2) )
-					P.crossProduct(k, -1L, input2.getHopID());
-				else
-					P.crossProduct(k, -1L);
-			}
+	private static MemoTableEntrySet enumPlans(Hop hop, Hop c, TemplateBase tpl, CPlanMemoTable memo) {
+		MemoTableEntrySet P = new MemoTableEntrySet(hop, c, tpl);
+		for(int k=0; k<hop.getInput().size(); k++) {
+			Hop input2 = hop.getInput().get(k);
+			if( input2 != c && tpl.merge(hop, input2) 
+				&& memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CellTpl))
+				P.crossProduct(k, -1L, input2.getHopID());
+		}
 		return P;
 	}
 	

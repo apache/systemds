@@ -102,6 +102,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -1412,8 +1413,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
 			// and sets it in the ExecutionContext of the parfor
 			if (DMLScript.USE_ACCELERATOR){
-				int perGPUThreads = Math.max(1, getDegreeOfParallelism() /  GPUContextPool.getDeviceCount());
-				int gpuIndex = index % perGPUThreads;	// threads are allocated in a round-robin way
+				int gpuIndex = index % GPUContextPool.getDeviceCount();
 				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(gpuIndex)));
 				LOG.debug("In Parfor : GPU " + gpuIndex + " was assigned to thread " + index);
 			}

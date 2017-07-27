@@ -61,8 +61,6 @@ public class InfrastructureAnalyzer
 	private static long _blocksize       = -1;
 	private static boolean _yarnEnabled  = false;
 
-	private static int _numLocalGPUs = -1;	// The number of GPUs on the local system
-
 
 	//static initialization, called for each JVM (on each node)
 	static 
@@ -402,14 +400,6 @@ public class InfrastructureAnalyzer
 		
 		//check for jdk version less than 8 (and raise warning if multi-threaded)
 		_isLtJDK8 = (UtilFunctions.compareVersion(version, "1.8") < 0);
-
-		// Check for GPUs on this machine if GPU mode is enabled
-		try {
-			if (DMLScript.USE_ACCELERATOR)
-				_numLocalGPUs = GPUContextPool.getDeviceCount();
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException(e);
-		}
 	}
 	
 	/**

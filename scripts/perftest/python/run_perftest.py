@@ -31,10 +31,10 @@ from datetime import datetime
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
-from utils import get_families, config_reader, \
+from utils_misc import get_families, config_reader, \
     exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, args_dict_split, \
     sup_args
-from file_system import create_dir_local, write_success, get_existence
+from utils_fs import create_dir_local, write_success, get_existence
 
 # A packet is a dictionary
 # with key as the algorithm

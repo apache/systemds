@@ -22,9 +22,9 @@
 
 import sys
 from os.path import join
-from utils import config_writer, mat_type_check
+from utils_misc import config_writer, mat_type_check
 from functools import reduce
-from file_system import relevant_folders_local, relevant_folders_hdfs
+from utils_fs import relevant_folders
 
 # Contains configuration setting for training
 DATA_FORMAT = 'csv'
@@ -376,12 +376,8 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
 
     for current_algo, current_family in algo_payload:
         current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
-        if train_dir.startswith('hdfs'):
-            data_gen_folders = relevant_folders_hdfs(datagen_dir, current_algo, current_family,
-                                                     current_matrix_type, matrix_shape, 'data-gen')
-        else:
-            data_gen_folders = relevant_folders_local(datagen_dir, current_algo, current_family,
-                                                      current_matrix_type, matrix_shape, 'data-gen')
+        data_gen_folders = relevant_folders(datagen_dir, current_algo, current_family,
+                                            current_matrix_type, matrix_shape, 'data-gen')
 
         if len(data_gen_folders) == 0:
             print('datagen folders not present for {}'.format(current_family))

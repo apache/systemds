@@ -22,8 +22,7 @@
 
 import itertools
 from os.path import join
-from utils import split_rowcol, config_writer, mat_type_check
-
+from utils_misc import split_rowcol, config_writer, mat_type_check
 
 # This file contains configuration settings for data generation
 DATA_FORMAT = 'csv'

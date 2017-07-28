@@ -22,14 +22,14 @@
 
 import sys
 from os.path import join
-from utils import config_writer, mat_type_check
-from file_system import relevant_folders_local, relevant_folders_hdfs
+from utils_misc import config_writer, mat_type_check
+from utils_fs import relevant_folders
 
 # Contains configuration setting for predicting
 DATA_FORMAT = 'csv'
 
 
-def m_svm_predict(save_folder_name, datagen_dir, train_dir, predict_dir):
+def m_svm_predict(save_folder_name, datagen_dir, train_dir, predict_dir, config_dir):
     save_path = join(config_dir, save_folder_name)
 
     X = join(datagen_dir, 'X_test.data')
@@ -246,24 +246,16 @@ def config_packets_predict(algo_payload, matrix_type, matrix_shape, datagen_dir,
 
     for current_algo, current_family in algo_payload:
         current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
+        train_folders = relevant_folders(train_dir, current_algo, current_family,
+                                         current_matrix_type, matrix_shape, 'train')
 
-        if train_dir.startswith('hdfs'):
-            train_folders = relevant_folders_hdfs(train_dir, current_algo, current_family,
-                                                  current_matrix_type, matrix_shape, 'train')
-        else:
-            train_folders = relevant_folders_local(train_dir, current_algo, current_family,
-                                                   current_matrix_type, matrix_shape, 'train')
         if len(train_folders) == 0:
             print('training folders not present for {}'.format(current_algo))
             sys.exit()
 
         for current_train_folder in train_folders:
-            if train_dir.startswith('hdfs'):
-                current_data_gen_dir = relevant_folders_hdfs(datagen_dir, current_algo, current_family,
-                                                             current_matrix_type, matrix_shape, 'data-gen')
-            else:
-                current_data_gen_dir = relevant_folders_local(datagen_dir, current_algo, current_family,
-                                                              current_matrix_type, matrix_shape, 'data-gen')
+            current_data_gen_dir = relevant_folders(datagen_dir, current_algo, current_family,
+                                                    current_matrix_type, matrix_shape, 'data-gen')
 
             if len(current_data_gen_dir) == 0:
                 print('data-gen folders not present for {}'.format(current_family))

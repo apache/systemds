@@ -30,7 +30,7 @@ import logging
 import sys
 import glob
 from functools import reduce
-from execution import subprocess_exec
+from utils_exec import subprocess_exec
 
 
 def create_dir_local(directory):
@@ -153,3 +153,40 @@ def contains_dir(hdfs_dirs, sub_folder):
         # print('{}, {}'.format(sub_folder, hdfs_dirs))
         pass
     return False
+
+
+def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
+    folders = []
+
+    for current_matrix_type in matrix_type:
+        for current_matrix_shape in matrix_shape:
+            if path.startswith('hdfs'):
+                if mode == 'data-gen':
+                    sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
+                    cmd = ['hdfs', 'dfs', '-ls', path]
+                    path_subdir = subprocess_exec(' '.join(cmd), 'dir')
+
+                if mode == 'train':
+                    sub_folder_name = '.'.join([algo, family, current_matrix_type, current_matrix_shape])
+                    cmd = ['hdfs', 'dfs', '-ls', path]
+                    path_subdir = subprocess_exec(' '.join(cmd), 'dir')
+
+                path_folders = list(filter(lambda x: contains_dir(x, sub_folder_name), path_subdir))
+
+            else:
+                if mode == 'data-gen':
+                    data_gen_path = join(path, family)
+                    sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
+                    path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
+
+                if mode == 'train':
+                    train_path = join(path, algo)
+                    sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
+                    path_subdir = glob.glob(train_path + '.' + sub_folder_name + "*")
+
+                path_folders = list(filter(lambda x: os.path.isdir(x), path_subdir))
+
+            folders.append(path_folders)
+
+    folders_flat = reduce(lambda x, y: x + y, folders)
+    return folders_flat

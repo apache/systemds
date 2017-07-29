@@ -111,4 +111,3 @@ if __name__ == '__main__':
 
     if return_code != 0:
         print('Failed to run SystemML. Exit code :' + str(return_code))
-        print(' '.join(cmd))

@@ -19,26 +19,37 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
 import os
 from os.path import join
-import os
-import json
-import subprocess
-import shlex
-import re
-import logging
-import sys
 import glob
 from functools import reduce
 from utils_exec import subprocess_exec
 
+# Utility support for all file system related operations
+
 
 def create_dir_local(directory):
+    """
+    Create a directory in the local fs
+
+    directory: String
+    Location to create a directory
+    """
     if not os.path.exists(directory):
         os.makedirs(directory)
 
 
 def write_success(time, cwd):
+    """
+    Write SUCCESS file in the given directory
+
+    time: String
+    Time taken to execute the dml script
+
+    cwd: String
+    Location to write the SUCCESS file
+    """
     if 'data-gen' in cwd:
         if cwd.startswith('hdfs') and len(time.split('.')) == 2:
             full_path = join(cwd, '_SUCCESS')
@@ -60,7 +71,8 @@ def get_existence(path):
     action_mode : String
     Type of action data-gen, train ...
 
-    return: Boolean check if the file _SUCCESS exists
+    return: Boolean
+    Checks if the file _SUCCESS exists
     """
     if 'data-gen' in path:
         if path.startswith('hdfs'):
@@ -76,7 +88,20 @@ def get_existence(path):
     return False
 
 
-def relevant_folders_local(path, algo, family, matrix_type, matrix_shape, mode):
+def contains_dir(hdfs_dirs, sub_folder):
+    """
+    Support for Lambda Function to check if a HDFS subfolder is contained by the HDFS directory
+    """
+    if sub_folder in hdfs_dirs:
+        return True
+    else:
+        # Debug
+        # print('{}, {}'.format(sub_folder, hdfs_dirs))
+        pass
+    return False
+
+
+def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
     """
     Finds the right folder to read the data based on given parameters
 
@@ -101,61 +126,6 @@ def relevant_folders_local(path, algo, family, matrix_type, matrix_shape, mode):
     return: List
     List of folder locations to read data from
     """
-    folders = []
-    for current_matrix_type in matrix_type:
-        for current_matrix_shape in matrix_shape:
-            if mode == 'data-gen':
-                data_gen_path = join(path, family)
-                sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
-                path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
-
-            if mode == 'train':
-                train_path = join(path, algo)
-                sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
-                path_subdir = glob.glob(train_path + '.' + sub_folder_name + "*")
-
-            path_folders = list(filter(lambda x: os.path.isdir(x), path_subdir))
-            folders.append(path_folders)
-
-    folders_flat = reduce(lambda x, y: x + y, folders)
-
-    return folders_flat
-
-
-def relevant_folders_hdfs(path, algo, family, matrix_type, matrix_shape, mode):
-
-    folders = []
-    for current_matrix_type in matrix_type:
-        for current_matrix_shape in matrix_shape:
-            if mode == 'data-gen':
-                sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
-                cmd = ['hdfs', 'dfs', '-ls', path]
-                path_subdir = subprocess_exec(' '.join(cmd), 'dir')
-
-            if mode == 'train':
-                sub_folder_name = '.'.join([algo, family, current_matrix_type, current_matrix_shape])
-                cmd = ['hdfs', 'dfs', '-ls', path]
-                path_subdir = subprocess_exec(' '.join(cmd), 'dir')
-
-            path_folders = list(filter(lambda x: contains_dir(x, sub_folder_name), path_subdir))
-            folders.append(path_folders)
-
-    folders_flat = reduce(lambda x, y: x + y, folders)
-
-    return folders_flat
-
-
-def contains_dir(hdfs_dirs, sub_folder):
-    if sub_folder in hdfs_dirs:
-        return True
-    else:
-        # Debug
-        # print('{}, {}'.format(sub_folder, hdfs_dirs))
-        pass
-    return False
-
-
-def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
     folders = []
 
     for current_matrix_type in matrix_type:

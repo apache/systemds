@@ -264,7 +264,7 @@ def regression2_glm_gamma_train(save_folder_name, datagen_dir, train_dir, config
     for i in [0, 1, 2]:
         X = join(datagen_dir, 'X.data')
         Y = join(datagen_dir, 'Y.data')
-        B = join(train_write, 'B.data')
+        B = join(train_write + '.' + str(i), 'B.data')
         icpt = str(i)
         fmt = DATA_FORMAT
         moi = '200'

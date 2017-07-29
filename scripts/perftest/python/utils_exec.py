@@ -24,26 +24,24 @@ import subprocess
 import shlex
 import re
 
-
-def get_std_out(process):
-    out_arr = []
-    while True:
-        nextline = process.stdout.readline().decode('utf8').strip()
-        out_arr.append(nextline)
-        if nextline == '' and process.poll() is not None:
-            break
-
-    error_arr = []
-    while True:
-        nextline = process.stderr.readline().decode('utf8').strip()
-        error_arr.append(nextline)
-        if nextline == '' and process.poll() is not None:
-            break
-
-    return out_arr, error_arr
+# Subprocess and log parsing related functions
 
 
+# TODO
+# return_code and better error handling
 def subprocess_exec(cmd_string, extract=None):
+    """
+    Execute the input string as subprocess
+
+    cmd_string: String
+    Input string to be executed as a sub process
+
+    extract: String
+    Based on this we extract logs accordingly
+
+    return: String
+    Based on extract we return the relevant string
+    """
     # Debug
     # print(cmd_string)
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
@@ -61,7 +59,44 @@ def subprocess_exec(cmd_string, extract=None):
     return return_data
 
 
+def get_std_out(process):
+    """
+    Based on the subprocess capture logs
+
+    process: Process
+    Process object
+
+    return: List, List
+    Std out and Error as logs as list
+    """
+    out_arr = []
+    while True:
+        nextline = process.stdout.readline().decode('utf8').strip()
+        out_arr.append(nextline)
+        if nextline == '' and process.poll() is not None:
+            break
+
+    error_arr = []
+    while True:
+        nextline = process.stderr.readline().decode('utf8').strip()
+        error_arr.append(nextline)
+        if nextline == '' and process.poll() is not None:
+            break
+
+    return out_arr, error_arr
+
+
 def parse_dir(std_outs):
+    """
+    Extract the hdfs paths from the input
+
+    std_outs: List
+    Std outs obtained from the subprocess
+
+    return: List
+    Obtain a list of hdfs paths
+    """
+
     hdfs_dir = []
     for i in std_outs:
         if 'No such file or directory' in i:

@@ -95,20 +95,23 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     Execution and time
     Logging Metrics
 
-    algo : String
+    algo: String
     Input algorithm specified
 
-    exec_type : String
+    exec_type: String
     Contains the execution type singlenode / hybrid_spark
 
-    config_path : String
+    config_path: String
     Path to read the json file from
 
-    dml_file_name : String
+    dml_file_name: String
     DML file name to be used while processing the arguments give
 
-    action_mode : String
+    action_mode: String
     Type of action data-gen, train ...
+
+    current_dir: String
+    Current location of hdfs / local temp being processed
     """
     config_data = config_reader(config_path + '.json')
 
@@ -137,6 +140,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
     current_metrics = [algo, action_mode, intercept, mat_type, mat_shape, time]
     logging.info(','.join(current_metrics))
+    return exit_flag_success
 
 
 def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mode, temp_dir):
@@ -214,13 +218,11 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
         for family_name, config_folders in conf_packet.items():
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
-                algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen', data_gen_dir)
+                success_file = algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen', data_gen_dir)
                 # Statistic family do not require to be split
                 if family_name not in ['stats1', 'stats2']:
-                    if data_gen_dir.startswith('hdfs'):
-                        exec_test_data(exec_type, spark_args_dict, sup_args_dict, config)
-                    else:
-                        exec_test_data(exec_type, spark_args_dict, sup_args_dict, config)
+                    if not success_file:
+                        exec_test_data(exec_type, spark_args_dict, sup_args_dict, data_gen_dir, config)
 
     if 'train' in mode:
         # Create config directories
@@ -340,7 +342,7 @@ if __name__ == '__main__':
     all_arg_dict = vars(args)
     arg_dict, config_dict, spark_dict = args_dict_split(all_arg_dict)
 
-    create_dir_local(default_temp_dir)
+    create_dir_local(args.config_dir)
 
     # Global variables
     sup_args_dict, spark_args_dict = sup_args(config_dict, spark_dict, args.exec_type)
@@ -387,7 +389,7 @@ if __name__ == '__main__':
     # Set level to 0 -> debug mode
     # Set level to 20 -> Plain metrics
     log_filename = args.filename + '_' + args.exec_type + '.out'
-    logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
+    logging.basicConfig(filename=join(args.config_dir, log_filename), level=20)
     logging.info('New performance test started at {}'.format(time_now))
     logging.info('algorithm,run_type,intercept,matrix_type,data_shape,time_sec')
 

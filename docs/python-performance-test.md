@@ -11,10 +11,13 @@ Our performance tests suit contains `7` families namely `binomial`, `multinomial
 
 On a very high level use construct a string with arguments required to run each operation. Once this string is constructed we use the subprocess module to execute this string and extract time from the standard out. 
 
-We also use `json` module write our configurations to a json file. This ensure that our current operation is easy to debug.
+We also use `json` module write our configurations to a json file. This ensure that our operations are easy to debug.
 
+We have `7` files in performance test suit:
 
-We have `5` files in performance test suit `run_perftest.py`, `datagen.py`, `train.py`, `predict.py` and `utils.py`. 
+- Entry File `run_perftest.py`
+- Supporting Files `datagen.py`, `train.py`, `predict.py`
+- Utility Files `utils_exec.py`, `utils_fs.py`, `utils_misc.py`
 
 `datagen.py`, `train.py` and `predict.py` generate a dictionary. Our key is the name of algorithm being processed and values is a list with path(s) where all the data required is present. We define this dictionary as a configuration packet.
 
@@ -28,7 +31,7 @@ In `train.py` script we have functions required to generate training output. We 
 
 The file `predict.py` contains all functions for all algorithms in the performance test that contain predict script. We return the required configuration packet as a result of this script, that contains key as the algorithm to run and values with location to read predict json files from.
 
-In the file `utils.py` we have all the helper functions required in our performance test. These functions do operations like write `json` files, extract time from std out etc.
+In the file(s) `utils_*.py` we have all the helper functions required in our performance test. These functions do operations like write `json` files, extract time from std out etc.
  
 ### Adding New Algorithms
 While adding a new algorithm we need know if it has to be part of the any pre existing family. If this algorithm depends on a new data generation script we would need to create a new family. Steps below to take below to add a new algorithm.
@@ -75,7 +78,7 @@ Default setting for our performance test below:
 - Matrix size to 10,000 rows and 100 columns.
 - Execution mode `singlenode`.
 - Operation modes `data-gen`, `train` and `predict` in sequence.
-- Matrix type set to `all`. Which will generate `dense` or / and `sparse` matrices for all relevant algorithms.
+- Matrix type set to `all`. Which will generate `dense`, `sparse` matrices for all relevant algorithms.
 
 ### Examples
 Some examples of SystemML performance test with arguments shown below:
@@ -104,6 +107,8 @@ Run performance test for the algorithms `m-svm` with `multinomial` family. Run o
 `
 Run performance test for all algorithms under the family `regression2` and log with filename `new_log`.
 
+For more examples please see [this](https://gist.github.com/krishnakalyan3/c641d53c39f19c228373337f2b14755f).
+
 ### Operational Notes
 All performance test depend mainly on two scripts for execution `systemml-standalone.py` and `systemml-spark-submit.py`. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.
 
@@ -117,13 +122,15 @@ multinomial|data-gen|0|dense|10k_100| 0.33
 MultiLogReg|train|0|10k_100|dense|6.956
 MultiLogReg|predict|0|10k_100|dense|4.780
 
-These logs can be found in `temp` folder (`$SYSTEMML_HOME/scripts/perftest/temp`) in-case not overridden by `--temp-dir`. This `temp` folders also contain the data generated during our performance test.
+These logs and config `json` files can be found in `temp` folder (`$SYSTEMML_HOME/scripts/perftest/temp`) in-case not overridden by `--config-dir`.
 
-Every time a script executes in `data-gen` mode successfully, we write a `_SUCCESS` file. If this file exists we ensures that re-run of the same script is not possible as data already exists.
+`--temp-dir` by default points to local file system. We can change this to point to a hdfs path by `--temp-dir hdfs://localhost:9000/temp` where all files generated during execution will be saved.
+
+Every time a script executes in `data-gen` mode successfully, we write a `_SUCCESS` file. If this file exists we ensures that re-runs of the same script is not possible. Support for configuration options like `-stats`, `-explain`, `--conf` have also been added.
 
 ### Troubleshooting
 We can debug the performance test by making changes in the following locations based on 
 
-- Please see `utils.py` function `exec_dml_and_parse_time`. In  uncommenting the debug print statement in the function `exec_dml_and_parse_time`. This allows us to inspect the subprocess string being executed.
+- Please see `utils_exec.py` function `subprocess_exec`.
 - Please see `run_perftest.py`. Changing the verbosity level to `0` allows us to log more information while the script runs.
-- Eyeballing the json files generated and making sure the arguments are correct.
+- Eyeballing the json files generated and making sure the configuration arguments are correct.

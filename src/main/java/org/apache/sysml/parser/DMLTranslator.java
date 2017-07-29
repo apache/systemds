@@ -2678,6 +2678,7 @@ public class DMLTranslator
 			// stdDev = sqrt(variance)
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
 					target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
+			HopRewriteUtils.setOutputParametersForScalar(currBuiltinOp);
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
 					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
 			break;

@@ -2525,15 +2525,17 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim1());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied simplifyNrowComputation nrow("+hi.getHopID()+") -> "
+					+ hnew.getName()+" (line "+hi.getBeginLine()+").");
 				hi = hnew;
-				LOG.debug("Applied simplifyNrowComputation.");
 			}
 			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).getDim2()>0 ) {
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim2());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied simplifyNcolComputation ncol("+hi.getHopID()+") -> "
+					+ hnew.getName()+" (line "+hi.getBeginLine()+").");
 				hi = hnew;
-				LOG.debug("Applied simplifyNcolComputation.");	
 			}
 		}
 		

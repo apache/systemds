@@ -115,25 +115,20 @@ public abstract class MatrixValue implements WritableComparable
 			int startRow, int startColumn, int length)
 	throws DMLRuntimeException;
 	
-	// tertiary where all three inputs are matrices
 	public abstract void ternaryOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLRuntimeException;
+		throws DMLRuntimeException;
 	
-	// tertiary where first two inputs are matrices, and third input is a scalar (double)
 	public abstract void ternaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLRuntimeException;
+		throws DMLRuntimeException;
 	
-	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public abstract void ternaryOperations(Operator op, double scalar_that, double scalar_that2, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLRuntimeException;
+		throws DMLRuntimeException;
 	
-	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public abstract void ternaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLRuntimeException;
+		throws DMLRuntimeException;
 
-	// tertiary where first and third inputs are matrices and second is a scalar
 	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock)
-	throws DMLRuntimeException;
+		throws DMLRuntimeException;
 
 	public abstract MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
 		throws DMLRuntimeException;

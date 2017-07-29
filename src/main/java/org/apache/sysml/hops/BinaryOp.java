@@ -1185,7 +1185,7 @@ public class BinaryOp extends Hop
 	}
 	
 	/**
-	 * Special case tertiary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
+	 * Special case ternary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
 	 * 
 	 * @param left ?
 	 * @param right1 ?

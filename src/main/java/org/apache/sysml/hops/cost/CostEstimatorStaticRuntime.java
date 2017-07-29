@@ -1146,7 +1146,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return   d1m * d1n * d1s
 					       + d2m * d2n * d2s;
 					
-				case CombineTernary: //opcodes: combinetertiary
+				case CombineTernary: //opcodes: combineternary
 					return   d1m * d1n * d1s
 				           + d2m * d2n * d2s
 				           + d3m * d3n * d3s;

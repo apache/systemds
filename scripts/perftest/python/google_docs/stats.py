@@ -20,15 +20,19 @@
 #
 # -------------------------------------------------------------
 
-import pandas as pd
 import argparse
-import gspread
+from functools import reduce
 import pprint
 from oauth2client.service_account import ServiceAccountCredentials
-from functools import reduce
+import gspread
+
+# Get time difference between difference runs
 
 
 def auth(path, sheet_name):
+    """
+    Responsible for authorization
+    """
     scope = ['https://spreadsheets.google.com/feeds']
     creds = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
     gc = gspread.authorize(creds)
@@ -37,6 +41,9 @@ def auth(path, sheet_name):
 
 
 def get_data(sheet, tag):
+    """
+    Get time and algorithm from the sheet
+    """
     time = sheet.find('time_{}'.format(tag))
     algo = sheet.find('algo_{}'.format(tag))
 
@@ -49,12 +56,17 @@ def get_data(sheet, tag):
 
 
 def get_data_dict(data_col):
+    """
+    Return data as dictionary with key as algorithm and list time values
+    """
     data_dict = {}
     all_algo = []
     for algo, _ in data_col:
         all_algo.append(algo)
 
     flatten_algo = reduce(lambda x, y: x+y, all_algo)
+
+    # remove the header
     filter_data = list(filter(lambda x: not x.startswith('algo_'), flatten_algo))
     distict_algos = set(filter_data)
 
@@ -68,7 +80,8 @@ def get_data_dict(data_col):
                         data_dict[k].append(v)
     return data_dict
 
-# ./stats.py --auth client_json.json --backend singlenode --tags 1.0 2.0
+# Example Usage
+# ./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0
 if __name__ == '__main__':
     execution_mode = ['hybrid_spark', 'singlenode']
 
@@ -82,7 +95,7 @@ if __name__ == '__main__':
 
     args = cparser.parse_args()
     arg_dict = vars(args)
-    sheet = auth(args.auth, args.backend)
+    sheet = auth(args.auth, args.exec_mode)
     all_data = sheet.get_all_records()
 
     data_col = []

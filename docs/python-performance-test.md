@@ -107,6 +107,9 @@ Run performance test for the algorithms `m-svm` with `multinomial` family. Run o
 `
 Run performance test for all algorithms under the family `regression2` and log with filename `new_log`.
 
+`./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --config-dir /Users/krishna/open-source/systemml/scripts/perftest/temp3 --temp-dir hdfs://localhost:9000/temp3`
+Run performance test for all algorithms using HDFS.
+
 For more examples please see [this](https://gist.github.com/krishnakalyan3/c641d53c39f19c228373337f2b14755f).
 
 ### Operational Notes

@@ -28,6 +28,10 @@ from utils import get_env, find_script_file, log4j_path, config_path
 
 
 def default_jars(systemml_home):
+    """
+    return: String
+    Location of systemml and jcuda jars
+    """
     build_dir = join(systemml_home, 'target')
     lib_dir = join(build_dir, 'lib')
     systemml_jar = build_dir + os.sep + "SystemML.jar"
@@ -36,11 +40,6 @@ def default_jars(systemml_home):
     return target_jars, systemml_jar
 
 
-# TODO:
-# Test config
-# add comments
-# Argparse add default and options
-# Windows Support
 def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
                        executor_cores, conf,
                        nvargs, args, config, explain, debug, stats, gpu, f):

@@ -27,6 +27,12 @@ from utils import get_env, find_script_file, log4j_path, config_path
 
 
 def default_classpath(systemml_home):
+    """
+    Classpath information required for excution
+
+    return: String
+    Classpath location of build, library and hadoop directories
+    """
     build_lib = join(systemml_home, 'target', '*')
     lib_lib = join(systemml_home, 'target', 'lib', '*')
     hadoop_lib = join(systemml_home, 'target', 'lib', 'hadoop', '*')
@@ -34,11 +40,6 @@ def default_classpath(systemml_home):
     return build_lib, lib_lib, hadoop_lib
 
 
-# TODO:
-# Test config
-# add comments
-# arg-parse add default and options
-# Windows support
 def standalone_entry(nvargs, args, config, explain, debug, stats, gpu, f):
 
     _, systemml_home = get_env()
@@ -55,7 +56,7 @@ def standalone_entry(nvargs, args, config, explain, debug, stats, gpu, f):
     if config is None:
         default_config = config_path(systemml_home)
     else:
-        default_config = ' --conf '.join(conf + [default_conf])
+        default_config = config
 
     ml_options = []
     if nvargs is not None:

@@ -20,6 +20,7 @@
 #
 # -------------------------------------------------------------
 
+import sys
 import os
 from os.path import join, exists
 from os import environ
@@ -27,6 +28,12 @@ import shutil
 
 
 def get_env():
+    """
+    Env variable error check and path location
+
+    return: String
+    Location of SPARK_HOME and SYSTEMML_HOME
+    """
     systemml_home = os.environ.get('SYSTEMML_HOME')
     if systemml_home is None:
         print('SYSTEMML_HOME not found')
@@ -40,13 +47,21 @@ def get_env():
 
 
 def find_file(name, path):
+    """
+
+    """
     for root, dirs, files in os.walk(path):
         if name in files:
             return join(root, name)
-    return None
 
 
 def find_script_file(systemml_home, script_file):
+    """
+    Find the location of DML script being executed
+
+    return: String
+    Location of the dml script
+    """
     scripts_dir = join(systemml_home, 'scripts')
     if not (exists(script_file)):
         script_file = find_file(script_file, scripts_dir)
@@ -58,6 +73,12 @@ def find_script_file(systemml_home, script_file):
 
 
 def log4j_path(systemml_home):
+    """
+    Create log4j.properties from the template if not exist
+
+    return: String
+    Location of log4j.properties path
+    """
     log4j_properties_path = join(systemml_home, 'conf', 'log4j.properties')
     log4j_template_properties_path = join(systemml_home, 'conf', 'log4j.properties.template')
     if not (exists(log4j_properties_path)):
@@ -67,10 +88,15 @@ def log4j_path(systemml_home):
 
 
 def config_path(systemml_home):
+    """
+    Create SystemML-config from the template if not exist
+
+    return: String
+    Location of SystemML-config.xml
+    """
     systemml_config_path = join(systemml_home, 'conf', 'SystemML-config.xml')
     systemml_template_config_path = join(systemml_home, 'conf', 'SystemML-config.xml.template')
     if not (exists(systemml_config_path)):
         shutil.copyfile(systemml_template_config_path, systemml_config_path)
         print('... created ' + systemml_config_path)
     return systemml_config_path
-

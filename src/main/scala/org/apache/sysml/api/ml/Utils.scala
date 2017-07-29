@@ -61,5 +61,19 @@ class Utils {
     }
     List[String](sb.toString).iterator
   }
+  val baos = new java.io.ByteArrayOutputStream()
+  val baes = new java.io.ByteArrayOutputStream()
+  val originalOut = System.out
+  val originalErr = System.err
+  def startRedirectStdOut():Unit = {  
+    System.setOut(new java.io.PrintStream(baos));
+    System.setErr(new java.io.PrintStream(baes));
+  }
+  def stopRedirectStdOut():String = {
+    val ret = baos.toString() + baes.toString()
+    System.setOut(originalOut)
+    System.setErr(originalErr)
+    return ret
+  }
   // --------------------------------------------------------------------------------
 }

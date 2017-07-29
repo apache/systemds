@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
+__all__ = ['MLResults', 'MLContext', 'Script', 'display_output', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
 
 import os
 
@@ -49,6 +49,17 @@ def _get_spark_context():
     else:
         raise Exception('Expected spark context to be created.')
 
+# This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+# Example usage:
+# with display_output():
+#    ml.execute(script)
+class display_output(object):
+    def __enter__(self):
+        self.util = SparkContext._active_spark_context._jvm.org.apache.sysml.api.ml.Utils()
+        self.util.startRedirectStdOut()
+
+    def __exit__(self, *args):
+        print(self.util.stopRedirectStdOut())
 
 def dml(scriptString):
     """

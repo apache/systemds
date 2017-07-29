@@ -22,6 +22,10 @@ import org.apache.spark.api.java.JavaPairRDD
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
+object Utils {
+  val originalOut = System.out
+  val originalErr = System.err
+}
 class Utils {
   def checkIfFileExists(filePath:String):Boolean = {
     return org.apache.sysml.runtime.util.MapReduceTool.existsFileOnHDFS(filePath)
@@ -63,16 +67,19 @@ class Utils {
   }
   val baos = new java.io.ByteArrayOutputStream()
   val baes = new java.io.ByteArrayOutputStream()
-  val originalOut = System.out
-  val originalErr = System.err
   def startRedirectStdOut():Unit = {  
     System.setOut(new java.io.PrintStream(baos));
     System.setErr(new java.io.PrintStream(baes));
   }
+  def flushStdOut():String = {
+    val ret = baos.toString() + baes.toString()
+    baos.reset(); baes.reset()
+    return ret
+  }
   def stopRedirectStdOut():String = {
     val ret = baos.toString() + baes.toString()
-    System.setOut(originalOut)
-    System.setErr(originalErr)
+    System.setOut(Utils.originalOut)
+    System.setErr(Utils.originalErr)
     return ret
   }
   // --------------------------------------------------------------------------------

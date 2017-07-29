@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'display_output', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
+__all__ = ['MLResults', 'MLContext', 'Script', 'jvm_stdout', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
 
 import os
 
@@ -34,6 +34,7 @@ except ImportError:
 
 from .converters import *
 from .classloader import *
+import threading, time
 
 def _get_spark_context():
     """
@@ -51,15 +52,42 @@ def _get_spark_context():
 
 # This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
 # Example usage:
-# with display_output():
+# with jvm_stdout():
 #    ml.execute(script)
-class display_output(object):
-    def __enter__(self):
+class jvm_stdout(object):
+    """
+    This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    def __init__(self, parallel_flush=False):
         self.util = SparkContext._active_spark_context._jvm.org.apache.sysml.api.ml.Utils()
+        self.parallel_flush = parallel_flush
+        self.t = threading.Thread(target=self.flush_stdout)
+        self.stop = False
+        
+    def flush_stdout(self):
+        while not self.stop: 
+            time.sleep(1) # flush stdout every 1 second
+            str = self.util.flushStdOut()
+            if str != '':
+                str = str[:-1] if str.endswith('\n') else str
+                print(str)
+    
+    def __enter__(self):
         self.util.startRedirectStdOut()
+        if self.parallel_flush:
+            self.t.start()
 
     def __exit__(self, *args):
+        if self.parallel_flush:
+            self.stop = True
+            self.t.join()
         print(self.util.stopRedirectStdOut())
+        
 
 def dml(scriptString):
     """

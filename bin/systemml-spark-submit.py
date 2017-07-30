@@ -22,7 +22,8 @@
 
 import os
 import glob
-from os.path import join, exists, abspath
+from os.path import join
+import platform
 import argparse
 from utils import get_env, find_script_file, log4j_path, config_path
 
@@ -57,13 +58,16 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
     if conf is None:
         default_conf = log4j_properties_path
     else:
-        default_conf = ' --conf '.join(conf + [default_conf])
+        default_conf = ' --conf '.join(conf + [log4j_properties_path])
 
-    # Config
+    # Config XML
     if config is None:
         default_config = config_path(systemml_home)
     else:
-        default_config = ' --conf '.join(conf + [default_conf])
+        default_config = ' -config '.join(conf + [config_path(systemml_home)])
+
+    if platform.system() == 'Windows':
+        default_conf = default_conf.replace('\\', '//')
 
     #  optional arguments
     ml_options = []

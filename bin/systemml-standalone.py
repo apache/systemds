@@ -21,8 +21,9 @@
 #-------------------------------------------------------------
 
 import os
-from os.path import join, exists
+from os.path import join
 import argparse
+import platform
 from utils import get_env, find_script_file, log4j_path, config_path
 
 
@@ -45,7 +46,11 @@ def standalone_entry(nvargs, args, config, explain, debug, stats, gpu, f):
     _, systemml_home = get_env()
     script_file = find_script_file(systemml_home, f)
 
-    default_cp = ':'.join(default_classpath(systemml_home))
+    if platform.system() == 'Windows':
+        default_cp = ';'.join(default_classpath(systemml_home))
+    else:
+        default_cp = ':'.join(default_classpath(systemml_home))
+
     java_memory = '-Xmx8g -Xms4g -Xmn1g'
 
     # Log4j

@@ -853,7 +853,7 @@ public class DataConverter
 				for (int i=0; i<rowLength; i++){
 					for (int j=0; j<colLength; j++){
 						Double value = mb.getValue(i, j);
-						if (!value.equals(0.0d) && !value.equals(-0.0d)){
+						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);
 							sb.append(dfFormat(df, value)).append(lineseparator);
 						}

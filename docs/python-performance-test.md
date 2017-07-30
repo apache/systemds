@@ -140,6 +140,8 @@ In the example above `--tag` can be a major/minor systemml version and `--auth` 
 Currently we only support time difference between algorithms in different versions. This can be obtained by running the script below
 `./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0`
 
+Note: Please pip install `https://github.com/burnash/gspread` to use google docs client.
+
 ### Troubleshooting
 We can debug the performance test by making changes in the following locations based on 
 

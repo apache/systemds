@@ -131,6 +131,15 @@ These logs and config `json` files can be found in `temp` folder (`$SYSTEMML_HOM
 
 Every time a script executes in `data-gen` mode successfully, we write a `_SUCCESS` file. If this file exists we ensures that re-runs of the same script is not possible. Support for configuration options like `-stats`, `-explain`, `--conf` have also been added.
 
+Results obtained by our performance tests can be automatically uploaded to google docs.
+
+`./update.py --file ../temp/singlenode.out --exec-mode singlenode --auth client_json.json --tag 1.0`
+
+In the example above `--tag` can be a major/minor systemml version and `--auth` points to the `json` key required by `google docs`.
+
+Currently we only support time difference between algorithms in different versions. This can be obtained by running the script below
+`./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0`
+
 ### Troubleshooting
 We can debug the performance test by making changes in the following locations based on 
 

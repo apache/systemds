@@ -1304,6 +1304,7 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.CAST_AS_SCALAR, "castAsScalar");
 		HopsOpOp12String.put(OpOp1.COS, "cos");
 		HopsOpOp12String.put(OpOp1.EIGEN, "eigen");
+		HopsOpOp12String.put(OpOp1.SVD, "svd");
 		HopsOpOp12String.put(OpOp1.EXP, "exp");
 		HopsOpOp12String.put(OpOp1.IQM, "iqm");
 		HopsOpOp12String.put(OpOp1.MEDIAN, "median");

@@ -105,6 +105,7 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
@@ -1326,7 +1327,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( varsRead.containsVariable(key) && !blacklist.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
+					if( d.getDataType() == DataType.MATRIX && !MapReduceTool.existsFileOnHDFS(((MatrixObject)d).getFileName()))
 						((MatrixObject)d).exportData(_replicationExport);
 				}
 			}

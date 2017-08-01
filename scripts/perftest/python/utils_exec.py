@@ -42,7 +42,7 @@ def subprocess_exec(cmd_string, extract=None):
     Based on extract we return the relevant string
     """
     # Debug
-    # print(cmd_string)
+    print(cmd_string)
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
@@ -57,7 +57,7 @@ def subprocess_exec(cmd_string, extract=None):
             return_data = parse_hdfs_paths(std_outs)
     else:
         return_data = 'proc_fail'
-        print('Sub-Process failed. Exit code {}'.format(return_code))
+        print('sub-process failed, return code {}'.format(return_code))
 
     return return_data
 

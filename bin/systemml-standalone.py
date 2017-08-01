@@ -41,6 +41,8 @@ def default_classpath(systemml_home):
     return build_lib, lib_lib, hadoop_lib
 
 
+#TODO
+# User dir, fix for SYSTEMML_1795
 def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu, f):
     """
     This function is responsible for the execution of arguments via

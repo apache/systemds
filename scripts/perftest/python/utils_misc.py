@@ -64,14 +64,17 @@ def get_config_args(config_dict, spark_dict, exec_type):
         if spark_dict['master'] is not None:
             spark_args_dict['--master'] = spark_dict['master']
 
+        if spark_dict['num_executors'] is not None:
+            spark_args_dict['--num-executors'] = spark_dict['num_executors']
+
         if spark_dict['driver_memory'] is not None:
             spark_args_dict['--driver-memory'] = spark_dict['driver_memory']
 
         if spark_dict['executor_cores'] is not None:
-            spark_args_dict['--executor_cores'] = spark_dict['executor_cores']
+            spark_args_dict['--executor-cores'] = spark_dict['executor_cores']
 
         if spark_dict['conf'] is not None:
-            spark_args_dict['--conf'] = spark_dict['conf']
+            spark_args_dict['--conf'] = ' '.join(spark_dict['conf'])
 
     return sup_args_dict, spark_args_dict
 
@@ -199,7 +202,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
 
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
-        spark_pre_args = ''.join(['{} {}'.format(k, v) for k, v in spark_args_dict.items()])
+        spark_pre_args = ''.join([' {} {} '.format(k, v) for k, v in spark_args_dict.items()])
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
         cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)

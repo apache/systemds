@@ -69,7 +69,7 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
     if config is None:
         default_config = config_path(systemml_home)
     else:
-        default_config = ' -config '.join(conf + [config_path(systemml_home)])
+        default_config = ' -config '.join([config] + [config_path(systemml_home)])
 
     if platform.system() == 'Windows':
         default_conf = default_conf.replace('\\', '//')
@@ -108,6 +108,9 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
                      '-exec', 'hybrid_spark', '-f', script_file, ' '.join(ml_options)]
 
     cmd = cmd_spark + cmd_system_ml
+
+    # Debug
+    # print(' '.join(cmd))
     return_code = os.system(' '.join(cmd))
     return return_code
 

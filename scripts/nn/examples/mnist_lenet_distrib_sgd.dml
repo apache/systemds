@@ -137,7 +137,7 @@ train = function(matrix[double] X, matrix[double] Y,
       # mode=REMOTE_SPARK, opt=CONSTRAINED
       parfor (j in 1:parallel_batches, mode=REMOTE_SPARK, opt=CONSTRAINED, resultmerge=REMOTE_SPARK) {
         # Get a mini-batch in this group
-        batch_beg = group_beg + ((j-1) * batch_size) %% (group_end - group_beg + 1) + 1
+        batch_beg = group_beg + ((j-1) * batch_size) %% row_group + 1
         batch_end = min(N, batch_beg + batch_size - 1)
         row_batch = batch_end - batch_beg + 1
 
@@ -242,7 +242,7 @@ train = function(matrix[double] X, matrix[double] Y,
       # Compute loss & accuracy for training & validation data every 100 iterations.
       if (g %% 10 == 0) {
         # Get a mini-batch in this group
-        batch_beg = group_beg + ((j-1) * batch_size) %% (group_end - group_beg + 1) + 1
+        batch_beg = group_beg + ((j-1) * batch_size) %% row_group + 1
         batch_end = min(N, batch_beg + batch_size - 1)
         row_batch = batch_end - batch_beg + 1
 

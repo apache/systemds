@@ -23,15 +23,77 @@
 from os.path import join
 import os
 import json
-import subprocess
-import shlex
 import re
-import logging
 import sys
-import glob
-from functools import reduce
+from utils_exec import subprocess_exec
 
-# This file contains all the utility functions required for performance test module
+# This file contains all misc utility functions required by performance test module
+
+
+def get_config_args(config_dict, spark_dict, exec_type):
+    """
+    Based on configuration parameters passed build configuration dictionary used by subprocess
+
+    config_dict: Dictionary
+    General configuration options
+
+    spark_dict: Dictionary
+    Spark configuration options
+
+    exec_type: String
+    Contains the execution type singlenode / hybrid_spark
+
+    return: Dictionary, Dictionary
+    Based on the parameters passed we build to dictionary that need to be passed either at the
+    beginning or at the end
+    """
+
+    sup_args_dict = {}
+
+    if config_dict['stats'] is not None:
+        sup_args_dict['-stats'] = config_dict['stats']
+
+    if config_dict['explain'] is not None:
+        sup_args_dict['-explain'] = config_dict['explain']
+
+    if config_dict['config'] is not None:
+        sup_args_dict['-config'] = config_dict['config']
+
+    spark_args_dict = {}
+    if exec_type == 'hybrid_spark':
+        if spark_dict['master'] is not None:
+            spark_args_dict['--master'] = spark_dict['master']
+
+        if spark_dict['num_executors'] is not None:
+            spark_args_dict['--num-executors'] = spark_dict['num_executors']
+
+        if spark_dict['driver_memory'] is not None:
+            spark_args_dict['--driver-memory'] = spark_dict['driver_memory']
+
+        if spark_dict['executor_cores'] is not None:
+            spark_args_dict['--executor-cores'] = spark_dict['executor_cores']
+
+        if spark_dict['conf'] is not None:
+            spark_args_dict['--conf'] = ' '.join(spark_dict['conf'])
+
+    return sup_args_dict, spark_args_dict
+
+
+def args_dict_split(all_arguments):
+    """
+    This functions split the super set of arguments to smaller dictionaries
+
+    all_arguments: Dictionary
+    All input arguments parsed
+
+    return: Dictionary, Dictionary, Dictionary
+    We return three dictionaries for init, script, spark arguments
+    """
+    args_dict = dict(list(all_arguments.items())[0:9])
+    config_dict = dict(list(all_arguments.items())[9:12])
+    spark_dict = dict(list(all_arguments.items())[12:])
+
+    return args_dict, config_dict, spark_dict
 
 
 def get_families(current_algo, ml_algo):
@@ -95,7 +157,7 @@ def config_reader(read_path):
 
     return: List or Dictionary
     Reading the json file can give us a list if we have positional args or
-    key value for a dictionary
+    key value args for a dictionary
     """
 
     with open(read_path, 'r') as input_file:
@@ -104,44 +166,7 @@ def config_reader(read_path):
     return conf_file
 
 
-def create_dir(directory):
-    """
-    Create directory given path if the directory does not exist already
-
-    directory: String
-    Input folder path
-    """
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-
-def get_existence(path, action_mode):
-    """
-    Check SUCCESS file is present in the input path
-
-    path: String
-    Input folder path
-
-    action_mode : String
-    Type of action data-gen, train ...
-
-    return: Boolean check if the file _SUCCESS exists
-    """
-
-    if action_mode == 'data-gen':
-        full_path = join(path, '_SUCCESS')
-        exist = os.path.isfile(full_path)
-    else:
-        # Files does not exist for other modes return False to continue
-        # For e.g some predict algorithms do not generate an output folder
-        # hence checking for SUCCESS would fail
-        exist = False
-
-    return exist
-
-
-def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, args, time=True):
+def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -152,62 +177,42 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, execution_output_file, arg
     dml_file_name: String
     DML file name to be used while processing the arguments give
 
-    execution_output_file: String
-    Name of the file where the output of the DML run is written out
-
     args: Dictionary
     Key values pairs depending on the arg type
 
-    time: Boolean (default=True)
-    Boolean argument used to extract time from raw output logs.
+    spark_args_dict: Dictionary
+    Spark configuration arguments
+
+    sup_args_dict: Dictionary
+    Supplementary arguments required by the script
+
+    return: String
+    The value of time parsed from the logs / error
     """
 
     algorithm = dml_file_name + '.dml'
+
+    sup_args = ''.join(['{} {}'.format(k, v) for k, v in sup_args_dict.items()])
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
 
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
-        cmd = [exec_script, algorithm, args]
+        cmd = [exec_script, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
+        spark_pre_args = ''.join([' {} {} '.format(k, v) for k, v in spark_args_dict.items()])
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
-        cmd = [exec_script, '-f', algorithm, args]
+        cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
     # Debug
     # print(cmd_string)
 
-    # Subprocess to execute input arguments
-    # proc1_log contains the shell output which is used for time parsing
-    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+    time = subprocess_exec(cmd_string, 'time')
 
-    if time:
-        proc1_log = []
-        while proc1.poll() is None:
-            raw_std_out = proc1.stdout.readline()
-            decode_raw = raw_std_out.decode('ascii').strip()
-            proc1_log.append(decode_raw)
-            logging.log(10, decode_raw)
-
-        _, err1 = proc1.communicate()
-
-        if "Error" in str(err1):
-            print('Error Found in {}'.format(dml_file_name))
-            total_time = 'failure'
-        else:
-            total_time = parse_time(proc1_log)
-
-        with open(execution_output_file, 'w') as file:
-            for row in proc1_log:
-                file.write("%s\n" % str(row))
-
-    else:
-        total_time = 'not_specified'
-
-    return total_time
+    return time
 
 
 def parse_time(raw_logs):
@@ -233,7 +238,7 @@ def parse_time(raw_logs):
     return 'time_not_found'
 
 
-def exec_test_data(exec_type, path):
+def exec_test_data(exec_type, spark_args_dict, sup_args_dict, datagen_path, config):
     """
     Creates the test data split from the given input path
 
@@ -245,15 +250,13 @@ def exec_test_data(exec_type, path):
     """
     systemml_home = os.environ.get('SYSTEMML_HOME')
     test_split_script = join(systemml_home, 'scripts', 'perftest', 'extractTestData')
+    path = join(datagen_path, config.split('/')[-1])
     X = join(path, 'X.data')
     Y = join(path, 'Y.data')
     X_test = join(path, 'X_test.data')
     Y_test = join(path, 'Y_test.data')
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
-
-    # Call the exec script without time
-    config_file_name = path.split('/')[-1]
-    exec_dml_and_parse_time(exec_type, test_split_script, config_file_name, args, False)
+    exec_dml_and_parse_time(exec_type, test_split_script, args, spark_args_dict, sup_args_dict)
 
 
 def check_predict(current_algo, ml_predict):
@@ -272,7 +275,7 @@ def check_predict(current_algo, ml_predict):
 
 def get_folder_metrics(folder_name, action_mode):
     """
-    Gets metrics from folder name
+    Gets metrics from folder name for logging
 
     folder_name: String
     Folder from which we want to grab details
@@ -307,7 +310,7 @@ def get_folder_metrics(folder_name, action_mode):
 
 def mat_type_check(current_family, matrix_types, dense_algos):
     """
-    Some Algorithms support different matrix_type. This function give us the right matrix_type given
+    Some Algorithms support different matrix_types. This function give us the right matrix_type given
     an algorithm
 
     current_family: String
@@ -342,49 +345,3 @@ def mat_type_check(current_family, matrix_types, dense_algos):
             current_type.append(current_matrix_type)
 
     return current_type
-
-
-def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
-    """
-    Finds the right folder to read the data based on given parameters
-
-    path: String
-    Location of data-gen and training folders
-
-    algo: String
-    Current algorithm being processed by this function
-
-    family: String
-    Current family being processed by this function
-
-    matrix_type: List
-    Type of matrix to generate dense, sparse, all
-
-    matrix_shape: List
-    Dimensions of the input matrix with rows and columns
-
-    mode: String
-    Based on mode and arguments we read the specific folders e.g data-gen folder or train folder
-
-    return: List
-    List of folder locations to read data from
-    """
-    folders = []
-    for current_matrix_type in matrix_type:
-        for current_matrix_shape in matrix_shape:
-            if mode == 'data-gen':
-                data_gen_path = join(path, family)
-                sub_folder_name = '.'.join([current_matrix_type, current_matrix_shape])
-                path_subdir = glob.glob(data_gen_path + '.' + sub_folder_name + "*")
-
-            if mode == 'train':
-                train_path = join(path, algo)
-                sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
-                path_subdir = glob.glob(train_path + '.' + sub_folder_name + "*")
-
-            path_folders = list(filter(lambda x: os.path.isdir(x), path_subdir))
-            folders.append(path_folders)
-
-    folders_flat = reduce(lambda x, y: x + y, folders)
-
-    return folders_flat

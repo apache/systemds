@@ -1671,7 +1671,6 @@ public class DataExpression extends DataIdentifier
 		default:
 			raiseValidateError("Unsupported Data expression"+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}
-		return;
 	}
 
 	private void performConstantPropagationRand( HashMap<String, ConstIdentifier> currConstVars )

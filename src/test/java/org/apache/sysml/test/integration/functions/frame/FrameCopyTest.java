@@ -137,7 +137,7 @@ public class FrameCopyTest extends AutomatedTestBase
 		for( int j=0; j<lschema.length; j++ )	{
 			switch( lschema[j] ) {
 				case STRING:  frame.set(updateRow,  j,  "String:"+ frame.get(updateRow, j)); break;
-				case BOOLEAN: frame.set(updateRow,  j, ((Boolean)frame.get(updateRow, j))?(new Boolean(false)):(new Boolean(true))); break;
+				case BOOLEAN: frame.set(updateRow,  j, ((Boolean)frame.get(updateRow, j))?Boolean.FALSE:Boolean.TRUE); break;
 				case INT:     frame.set(updateRow,  j, (Long)frame.get(updateRow, j) * 2 + 5); break;
 				case DOUBLE:  frame.set(updateRow,  j, (Double)frame.get(updateRow, j) * 2 + 7); break;
 				default: throw new RuntimeException("Unsupported value type: "+lschema[j]);

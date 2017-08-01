@@ -492,7 +492,7 @@ public class VariableCPInstruction extends CPInstruction
 				String fname = getInput2().getName();
 				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(getInput3().getName(), getInput3().getValueType(), true)).getBooleanValue();; //!(input1.getName().startsWith("p")); //    
+				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(getInput3().getName(), getInput3().getValueType(), true)).getBooleanValue();
 				if ( overrideFileName ) {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}

@@ -38,49 +38,49 @@ public class IndexRangeBlockAlignmentTest extends AutomatedTestBase
 	
 	@Test
 	public void testRowBlockFirstColumn() {
-		Assert.assertEquals(new Boolean(true), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 1, 1736, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.TRUE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockColBlock() {
-		Assert.assertEquals(new Boolean(true), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 7001, 9000, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.TRUE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 7001, 9000, BRLEN, BCLEN));
 	}
 
 	@Test
 	public void testSingleRowBlockFirstColumn() {
-		Assert.assertEquals(new Boolean(true), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 1, 1736, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.TRUE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testSingleRowBlockColBlock() {
-		Assert.assertEquals(new Boolean(true), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 7001, 9000, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.TRUE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 7001, 9000, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockFirstColumnNeg() {
-		Assert.assertEquals(new Boolean(false), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 1, 1736, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.FALSE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockColBlockNeg() {
-		Assert.assertEquals(new Boolean(false), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 7001, 9000, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.FALSE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 7001, 9000, BRLEN, BCLEN));
 	}
 
 	@Test
 	public void testSingleRowBlockFirstColumnNeg() {
-		Assert.assertEquals(new Boolean(false), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 1, 1736, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.FALSE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testSingleRowBlockColBlockNeg() {
-		Assert.assertEquals(new Boolean(false), 
-			OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 7001, 9000, BRLEN, BCLEN));
+		Assert.assertEquals(Boolean.FALSE,
+				OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 7001, 9000, BRLEN, BCLEN));
 	}
 }

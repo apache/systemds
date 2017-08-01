@@ -25,7 +25,7 @@ import glob
 from os.path import join
 import platform
 import argparse
-from utils import get_env, find_script_file, log4j_path, config_path
+from utils import get_env_systemml_home, get_env_spark_home, find_dml_file, log4j_path, config_path
 
 
 def default_jars(systemml_home):
@@ -44,10 +44,15 @@ def default_jars(systemml_home):
 def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
                        executor_cores, conf,
                        nvargs, args, config, explain, debug, stats, gpu, f):
+    """
+    This function is responsible for the execution of arguments via
+    subprocess call in hybrid_spark mode
+    """
 
-    spark_home, systemml_home = get_env()
+    spark_home = get_env_spark_home()
+    systemml_home = get_env_systemml_home()
     spark_path = join(spark_home, 'bin', 'spark-submit')
-    script_file = find_script_file(systemml_home, f)
+    script_file = find_dml_file(systemml_home, f)
 
     # Jars
     cuda_jars, systemml_jars = default_jars(systemml_home)
@@ -108,9 +113,8 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
 
 
 if __name__ == '__main__':
-    spark_home, systemml_home = get_env()
-
-    cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script')
+    cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                      description='System-ML Spark Submit Script')
     # SPARK-SUBMIT Options
     cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
     cparser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.g. 512M)', metavar='')

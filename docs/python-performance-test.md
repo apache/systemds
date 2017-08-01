@@ -110,8 +110,6 @@ Run performance test for all algorithms under the family `regression2` and log w
 `./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --config-dir /Users/krishna/open-source/systemml/scripts/perftest/temp3 --temp-dir hdfs://localhost:9000/temp3`
 Run performance test for all algorithms using HDFS.
 
-For more examples please see [this](https://gist.github.com/krishnakalyan3/c641d53c39f19c228373337f2b14755f).
-
 ### Operational Notes
 All performance test depend mainly on two scripts for execution `systemml-standalone.py` and `systemml-spark-submit.py`. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.
 

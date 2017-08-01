@@ -40,28 +40,28 @@ def create_dir_local(directory):
         os.makedirs(directory)
 
 
-def write_success(time, cwd):
+def write_success(time, path):
     """
     Write SUCCESS file in the given directory
 
     time: String
     Time taken to execute the dml script
 
-    cwd: String
+    path: String
     Location to write the SUCCESS file
     """
-    if 'data-gen' in cwd:
-        if cwd.startswith('hdfs') and len(time.split('.')) == 2:
-            full_path = join(cwd, '_SUCCESS')
+    if 'data-gen' in path:
+        if path.startswith('hdfs') and len(time.split('.')) == 2:
+            full_path = join(path, '_SUCCESS')
             cmd = ['hdfs', 'dfs', '-touchz', full_path]
             subprocess_exec(' '.join(cmd))
         else:
             if len(time.split('.')) == 2:
-                full_path = join(cwd, '_SUCCESS')
+                full_path = join(path, '_SUCCESS')
                 open(full_path, 'w').close()
 
 
-def get_existence(path):
+def check_SUCCESS_file_exists(path):
     """
     Check SUCCESS file is present in the input path
 

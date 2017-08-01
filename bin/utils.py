@@ -27,35 +27,46 @@ from os import environ
 import shutil
 
 
-def get_env():
+def get_env_systemml_home():
     """
     Env variable error check and path location
 
     return: String
-    Location of SPARK_HOME and SYSTEMML_HOME
+    Location of SYSTEMML_HOME
     """
     systemml_home = os.environ.get('SYSTEMML_HOME')
     if systemml_home is None:
         print('SYSTEMML_HOME not found')
         sys.exit()
+
+    return systemml_home
+
+
+def get_env_spark_home():
+    """
+    Env variable error check and path location
+
+    return: String
+    Location of SPARK_HOME
+    """
     spark_home = environ.get('SPARK_HOME')
     if spark_home is None:
         print('SPARK_HOME not found')
         sys.exit()
 
-    return spark_home, systemml_home
+    return spark_home
 
 
 def find_file(name, path):
     """
-
+    Responsible for finding a specific file recursively given a location
     """
     for root, dirs, files in os.walk(path):
         if name in files:
             return join(root, name)
 
 
-def find_script_file(systemml_home, script_file):
+def find_dml_file(systemml_home, script_file):
     """
     Find the location of DML script being executed
 

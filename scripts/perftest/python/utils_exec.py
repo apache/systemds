@@ -27,8 +27,6 @@ import re
 # Subprocess and log parsing related functions
 
 
-# TODO
-# return_code and better error handling
 def subprocess_exec(cmd_string, extract=None):
     """
     Execute the input string as subprocess
@@ -37,7 +35,8 @@ def subprocess_exec(cmd_string, extract=None):
     Input string to be executed as a sub process
 
     extract: String
-    Based on this we extract logs accordingly
+    Based on extract as time/dir we extract this information from
+    the logs accordingly
 
     return: String
     Based on extract we return the relevant string
@@ -47,19 +46,23 @@ def subprocess_exec(cmd_string, extract=None):
     proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
-    error_arr, out_arr = get_std_out(proc1)
+    error_arr, out_arr = get_all_logs(proc1)
     std_outs = out_arr + error_arr
-    return_data = proc1.returncode
+    return_code = proc1.returncode
 
-    if extract == 'Time':
-        return_data = parse_time(std_outs)
-    if extract == 'dir':
-        return_data = parse_dir(std_outs)
+    if return_code == 0:
+        if extract == 'time':
+            return_data = parse_time(std_outs)
+        if extract == 'dir':
+            return_data = parse_hdfs_paths(std_outs)
+    else:
+        return_data = 'proc_fail'
+        print('Sub-Process failed. Exit code {}'.format(return_code))
 
     return return_data
 
 
-def get_std_out(process):
+def get_all_logs(process):
     """
     Based on the subprocess capture logs
 
@@ -86,7 +89,7 @@ def get_std_out(process):
     return out_arr, error_arr
 
 
-def parse_dir(std_outs):
+def parse_hdfs_paths(std_outs):
     """
     Extract the hdfs paths from the input
 

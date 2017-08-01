@@ -30,9 +30,9 @@ from utils_exec import subprocess_exec
 # This file contains all misc utility functions required by performance test module
 
 
-def sup_args(config_dict, spark_dict, exec_type):
+def get_config_args(config_dict, spark_dict, exec_type):
     """
-    Build additional dictionary based on configuration parameters passed.
+    Based on configuration parameters passed build configuration dictionary used by subprocess
 
     config_dict: Dictionary
     General configuration options
@@ -207,7 +207,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
     # Debug
     # print(cmd_string)
 
-    time = subprocess_exec(cmd_string, 'Time')
+    time = subprocess_exec(cmd_string, 'time')
 
     return time
 

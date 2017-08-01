@@ -33,8 +33,8 @@ from train import config_packets_train
 from predict import config_packets_predict
 from utils_misc import get_families, config_reader, \
     exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, args_dict_split, \
-    sup_args
-from utils_fs import create_dir_local, write_success, get_existence
+    get_config_args
+from utils_fs import create_dir_local, write_success, check_SUCCESS_file_exists
 
 # A packet is a dictionary
 # with key as the algorithm
@@ -129,7 +129,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     temp_cwd = join(current_dir, config_file_name)
 
     # temp_dir_exist
-    exit_flag_success = get_existence(temp_cwd)
+    exit_flag_success = check_SUCCESS_file_exists(temp_cwd)
 
     if exit_flag_success:
         time = 'data_exists'
@@ -293,7 +293,8 @@ if __name__ == '__main__':
     all_families = ML_ALGO.keys()
 
     # Argparse Module
-    cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
+    cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                      description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='space separated list of classes of algorithms '
                          '(available : ' + ', '.join(sorted(all_families)) + ')',
                          metavar='', choices=all_families, nargs='+')
@@ -345,7 +346,7 @@ if __name__ == '__main__':
     create_dir_local(args.config_dir)
 
     # Global variables
-    sup_args_dict, spark_args_dict = sup_args(config_dict, spark_dict, args.exec_type)
+    sup_args_dict, spark_args_dict = get_config_args(config_dict, spark_dict, args.exec_type)
 
     # Debug arguments
     # print(arg_dict)

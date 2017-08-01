@@ -24,7 +24,7 @@ import os
 from os.path import join
 import argparse
 import platform
-from utils import get_env, find_script_file, log4j_path, config_path
+from utils import get_env_systemml_home, find_dml_file, log4j_path, config_path
 
 
 def default_classpath(systemml_home):
@@ -41,10 +41,14 @@ def default_classpath(systemml_home):
     return build_lib, lib_lib, hadoop_lib
 
 
-def standalone_entry(nvargs, args, config, explain, debug, stats, gpu, f):
+def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu, f):
+    """
+    This function is responsible for the execution of arguments via
+    subprocess call in singlenode mode
+    """
 
-    _, systemml_home = get_env()
-    script_file = find_script_file(systemml_home, f)
+    systemml_home = get_env_systemml_home()
+    script_file = find_dml_file(systemml_home, f)
 
     if platform.system() == 'Windows':
         default_cp = ';'.join(default_classpath(systemml_home))
@@ -93,7 +97,8 @@ def standalone_entry(nvargs, args, config, explain, debug, stats, gpu, f):
 
 if __name__ == '__main__':
 
-    cparser = argparse.ArgumentParser(description='System-ML Standalone Script')
+    cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                      description='System-ML Standalone Script')
 
     # SYSTEM-ML Options
     cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+', metavar='')
@@ -113,7 +118,7 @@ if __name__ == '__main__':
 
     args = cparser.parse_args()
     arg_dict = vars(args)
-    return_code = standalone_entry(**arg_dict)
+    return_code = standalone_execution_entry(**arg_dict)
 
     if return_code != 0:
         print('Failed to run SystemML. Exit code :' + str(return_code))

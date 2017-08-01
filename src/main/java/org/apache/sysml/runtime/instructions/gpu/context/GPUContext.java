@@ -656,6 +656,14 @@ public class GPUContext {
 		cusparseDestroy(cusparseHandle.get());
 		cusolverDnDestroy(cusolverDnHandle.get());
 		cusolverSpDestroy(cusolverSpHandle.get());
+<<<<<<< b717fbd18283e0df0e4fce1ea0c6635db17a7093
+=======
+		//cudnnHandle = null;
+		//cublasHandle = null;
+		//cusparseHandle = null;
+		//cusolverDnHandle = null;
+		//cusolverSpHandle = null;
+>>>>>>> Added more "synchronized", each thread has its own cuda lib handle
 	}
 
 	/**

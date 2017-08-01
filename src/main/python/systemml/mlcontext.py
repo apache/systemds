@@ -726,3 +726,11 @@ class MLContext(object):
     def isStatistics(self):
         """Returns True if program execution statistics should be output, False otherwise."""
         return self._ml.isStatistics()
+
+    def close(self):
+        """
+        Closes this MLContext instance to cleanup buffer pool, static/local state and scratch space.
+        Note the SparkContext is not explicitly closed to allow external reuse.
+        """
+        self._ml.close()
+        return self

@@ -183,10 +183,8 @@ public class ScriptExecutor {
 			return;
 
 		try {
-			ExplainType explainType = (explainLevel != null) ? 
-				explainLevel.getExplainType() : ExplainType.RUNTIME;
-			System.out.println(Explain.display(
-				dmlProgram, runtimeProgram, explainType, null));
+			ExplainType explainType = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
+			System.out.println(Explain.display(dmlProgram, runtimeProgram, explainType, null));
 		} catch (Exception e) {
 			throw new MLContextException("Exception occurred while explaining dml program", e);
 		}
@@ -298,6 +296,9 @@ public class ScriptExecutor {
 
 		// main steps in script execution
 		setup(script);
+		if (statistics) {
+			Statistics.startCompileTimer();
+		}
 		parseScript();
 		liveVariableAnalysis();
 		validateScript();
@@ -311,6 +312,9 @@ public class ScriptExecutor {
 		countCompiledMRJobsAndSparkInstructions();
 		initializeCachingAndScratchSpace();
 		cleanupRuntimeProgram();
+		if (statistics) {
+			Statistics.stopCompileTimer();
+		}
 
 		try {
 			createAndInitializeExecutionContext();
@@ -342,9 +346,9 @@ public class ScriptExecutor {
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
-		//reset all relevant summary statistics 
+		// reset all relevant summary statistics
 		Statistics.resetNoOfExecutedJobs();
-		if( statistics ) {
+		if (statistics) {
 			CacheStatistics.reset();
 			Statistics.reset();
 		}

@@ -31,9 +31,10 @@ from datetime import datetime
 from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
-from utils import get_families, config_reader, create_dir, get_existence, \
-    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics
-
+from utils_misc import get_families, config_reader, \
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, args_dict_split, \
+    get_config_args
+from utils_fs import create_dir_local, write_success, check_SUCCESS_file_exists
 
 # A packet is a dictionary
 # with key as the algorithm
@@ -83,32 +84,35 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
 
 DENSE_TYPE_ALGOS = ['clustering', 'stats1', 'stats2']
 
+sup_args_dict = {}
+
 
 # Responsible for execution and metric logging
-def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode):
+def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode, current_dir):
     """
     This function is responsible for overall workflow. This does the following actions
     Check if the input is key value argument or list of positional args
     Execution and time
     Logging Metrics
 
-
-    algo : String
+    algo: String
     Input algorithm specified
 
-    exec_type : String
+    exec_type: String
     Contains the execution type singlenode / hybrid_spark
 
-    config_path : String
+    config_path: String
     Path to read the json file from
 
-    dml_file_name : String
+    dml_file_name: String
     DML file name to be used while processing the arguments give
 
-    action_mode : String
+    action_mode: String
     Type of action data-gen, train ...
-    """
 
+    current_dir: String
+    Current location of hdfs / local temp being processed
+    """
     config_data = config_reader(config_path + '.json')
 
     if isinstance(config_data, dict):
@@ -122,26 +126,24 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode)
     config_file_name = config_path.split('/')[-1]
     mat_type, mat_shape, intercept = get_folder_metrics(config_file_name, action_mode)
 
-    exit_flag_success = get_existence(config_path, action_mode)
+    temp_cwd = join(current_dir, config_file_name)
+
+    # temp_dir_exist
+    exit_flag_success = check_SUCCESS_file_exists(temp_cwd)
 
     if exit_flag_success:
-        print('data already exists {}'.format(config_path))
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, config_file_name, args)
-
-    # Write a _SUCCESS file only if time is found and in data-gen action_mode
-    if len(time.split('.')) == 2 and action_mode == 'data-gen':
-        full_path = join(config_path, '_SUCCESS')
-        open(full_path, 'w').close()
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict)
+        write_success(time, temp_cwd)
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
     current_metrics = [algo, action_mode, intercept, mat_type, mat_shape, time]
     logging.info(','.join(current_metrics))
+    return exit_flag_success
 
 
-# Perf test entry point
-def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode):
+def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mode, temp_dir):
     """
     This function is the entry point for performance testing
 
@@ -160,13 +162,15 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
     mat_shape: List
     Dimensions of the input matrix with rows and columns
 
-    temp_dir: String
-    Location to store all files created during perf test
+    config_dir: String
+    Location to store all configuration
 
     mode: List
     Type of workload to run. data-gen, train ...
-    """
 
+    temp_dir: String
+    Location to store all output files created during perf test
+    """
     # algos to run is a list of tuples with
     # [(m-svm, binomial), (m-svm, multinomial)...]
     # Basic block for execution of scripts
@@ -202,48 +206,64 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, temp_dir, mode
                 algos_to_run.append((current_algo, current_family))
 
     if 'data-gen' in mode:
+        # Create config directories
+        data_gen_config_dir = join(config_dir, 'data-gen')
+        create_dir_local(data_gen_config_dir)
+
+        # Create output path
         data_gen_dir = join(temp_dir, 'data-gen')
-        create_dir(data_gen_dir)
         conf_packet = config_packets_datagen(algos_to_run, mat_type, mat_shape, data_gen_dir,
-                                             DENSE_TYPE_ALGOS)
+                                             DENSE_TYPE_ALGOS, data_gen_config_dir)
+
         for family_name, config_folders in conf_packet.items():
             for config in config_folders:
                 file_name = ML_GENDATA[family_name]
-                algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen')
+                success_file = algorithm_workflow(family_name, exec_type, config, file_name, 'data-gen', data_gen_dir)
                 # Statistic family do not require to be split
                 if family_name not in ['stats1', 'stats2']:
-                    exec_test_data(exec_type, config)
+                    if not success_file:
+                        exec_test_data(exec_type, spark_args_dict, sup_args_dict, data_gen_dir, config)
 
     if 'train' in mode:
+        # Create config directories
+        train_config_dir = join(config_dir, 'train')
+        create_dir_local(train_config_dir)
+
+        # Create output path
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
-        create_dir(train_dir)
+
         conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir,
-                                           train_dir, DENSE_TYPE_ALGOS)
+                                           train_dir, DENSE_TYPE_ALGOS, train_config_dir)
         for algo_name, config_files in conf_packet.items():
             for config in config_files:
                 file_name = ML_TRAIN[algo_name]
-                algorithm_workflow(algo_name, exec_type, config, file_name, 'train')
+                algorithm_workflow(algo_name, exec_type, config, file_name, 'train', train_dir)
 
     if 'predict' in mode:
+        # Create config directories
+        predict_config_dir = join(config_dir, 'predict')
+        create_dir_local(predict_config_dir)
+
+        # Create output path
         data_gen_dir = join(temp_dir, 'data-gen')
         train_dir = join(temp_dir, 'train')
         predict_dir = join(temp_dir, 'predict')
-        create_dir(predict_dir)
-        algos_to_run_perdict = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
-        if len(algos_to_run_perdict) < 1:
+
+        algos_to_run = list(filter(lambda algo: check_predict(algo[0], ML_PREDICT), algos_to_run))
+        if len(algos_to_run) < 1:
             # No algorithms with predict found
             pass
-        conf_packet = config_packets_predict(algos_to_run_perdict, mat_type, mat_shape, data_gen_dir,
-                                             train_dir, predict_dir, DENSE_TYPE_ALGOS)
-
+        conf_packet = config_packets_predict(algos_to_run, mat_type, mat_shape, data_gen_dir,
+                                             train_dir, predict_dir, DENSE_TYPE_ALGOS,
+                                             predict_config_dir)
         for algo_name, config_files in conf_packet.items():
                 for config in config_files:
                     file_name = ML_PREDICT[algo_name]
-                    algorithm_workflow(algo_name, exec_type, config, file_name, 'predict')
+                    algorithm_workflow(algo_name, exec_type, config, file_name, 'predict', predict_dir)
+
 
 if __name__ == '__main__':
-
     # sys ml env set and error handling
     systemml_home = os.environ.get('SYSTEMML_HOME')
     if systemml_home is None:
@@ -259,7 +279,6 @@ if __name__ == '__main__':
 
     # Default temp directory, contains everything generated in perftest
     default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
-    create_dir(default_temp_dir)
 
     # Initialize time
     start_time = time.time()
@@ -274,7 +293,8 @@ if __name__ == '__main__':
     all_families = ML_ALGO.keys()
 
     # Argparse Module
-    cparser = argparse.ArgumentParser(description='SystemML Performance Test Script')
+    cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                      description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='space separated list of classes of algorithms '
                          '(available : ' + ', '.join(sorted(all_families)) + ')',
                          metavar='', choices=all_families, nargs='+')
@@ -290,17 +310,43 @@ if __name__ == '__main__':
                          nargs='+')
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
                          'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')
-    cparser.add_argument('--temp-dir', default=default_temp_dir, help='temporary directory '
+
+    cparser.add_argument('--config-dir', default=default_temp_dir, help='temporary directory '
                          'where generated, training and prediction data is put', metavar='')
     cparser.add_argument('--filename', default='perf_test', help='name of the output file for the perf'
                          ' metrics', metavar='')
     cparser.add_argument('--mode', default=workload,
                          help='space separated list of types of workloads to run (available: data-gen, train, predict)',
                          metavar='', choices=workload, nargs='+')
+    # Change this to temp-dir
+    cparser.add_argument('--temp-dir', default=default_temp_dir,
+                         help='define the file system to work on', metavar='')
+
+    # Configuration Options
+    cparser.add_argument('-stats', help='Monitor and report caching/recompilation statistics, '
+                                        'heavy hitter <count> is 10 unless overridden', nargs='?', const='10',
+                         metavar='')
+    cparser.add_argument('-explain', help='explains plan levels can be hops, runtime, '
+                                          'recompile_hops, recompile_runtime', nargs='?', const='runtime', metavar='')
+    cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
+
+    # Spark Configuration Option
+    cparser.add_argument('--master', help='local, yarn-client, yarn-cluster', metavar='')
+    cparser.add_argument('--driver-memory', help='Memory for driver (e.g. 512M)', metavar='')
+    cparser.add_argument('--num-executors', help='Number of executors to launch', metavar='')
+    cparser.add_argument('--executor-memory', help='Memory per executor', metavar='')
+    cparser.add_argument('--executor-cores', help='Number of cores', metavar='')
+    cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
 
     # Args is a namespace
     args = cparser.parse_args()
-    arg_dict = vars(args)
+    all_arg_dict = vars(args)
+    arg_dict, config_dict, spark_dict = args_dict_split(all_arg_dict)
+
+    create_dir_local(args.config_dir)
+
+    # Global variables
+    sup_args_dict, spark_args_dict = get_config_args(config_dict, spark_dict, args.exec_type)
 
     # Debug arguments
     # print(arg_dict)
@@ -344,13 +390,12 @@ if __name__ == '__main__':
     # Set level to 0 -> debug mode
     # Set level to 20 -> Plain metrics
     log_filename = args.filename + '_' + args.exec_type + '.out'
-    logging.basicConfig(filename=join(default_temp_dir, log_filename), level=20)
+    logging.basicConfig(filename=join(args.config_dir, log_filename), level=20)
     logging.info('New performance test started at {}'.format(time_now))
     logging.info('algorithm,run_type,intercept,matrix_type,data_shape,time_sec')
 
     # Remove filename item from dictionary as its already used to create the log above
     del arg_dict['filename']
-
     perf_test_entry(**arg_dict)
 
     total_time = (time.time() - start_time)

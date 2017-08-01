@@ -254,8 +254,8 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			if( rewrites && et != ExecType.MR ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
 					(((testname.equals(TEST_NAME1) || vectors ) ? "tak+*" : "tack+*"));
-				Assert.assertEquals(new Boolean(true), new Boolean(
-					Statistics.getCPHeavyHitterOpCodes().contains(opcode)));
+				Assert.assertEquals(Boolean.TRUE,
+						Boolean.valueOf(Statistics.getCPHeavyHitterOpCodes().contains(opcode)));
 			}
 		}
 		finally {

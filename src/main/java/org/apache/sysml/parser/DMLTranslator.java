@@ -175,8 +175,6 @@ public class DMLTranslator
 				constVars = sb.getConstOut();
 			}	
 		}
-		
-		return;
 	}
 
 	public void liveVariableAnalysis(DMLProgram dmlp) throws LanguageException {
@@ -240,8 +238,6 @@ public class DMLTranslator
 				currentLiveOut = sb.analyze(currentLiveOut);
 			}
 		}
-		return;
-
 	}
 
 	/**

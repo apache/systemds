@@ -592,8 +592,8 @@ class MLContext(object):
 
     Parameters
     ----------
-    sc: SparkContext
-        SparkContext
+    sc: SparkContext or SparkSession
+        An instance of pyspark.SparkContext or pyspark.sql.SparkSession.
     """
     def __init__(self, sc):
         if isinstance(sc, pyspark.sql.session.SparkSession):
@@ -718,3 +718,19 @@ class MLContext(object):
     def info(self):
         """Display the project information."""
         return self._ml.info().toString()
+
+    def isExplain(self):
+        """Returns True if program instruction details should be output, False otherwise."""
+        return self._ml.isExplain()
+
+    def isStatistics(self):
+        """Returns True if program execution statistics should be output, False otherwise."""
+        return self._ml.isStatistics()
+
+    def close(self):
+        """
+        Closes this MLContext instance to cleanup buffer pool, static/local state and scratch space.
+        Note the SparkContext is not explicitly closed to allow external reuse.
+        """
+        self._ml.close()
+        return self

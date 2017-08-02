@@ -40,6 +40,7 @@ from .converters import *
 from .classloader import *
 import threading, time
 
+_loadedSystemML = False
 def _get_spark_context():
     """
     Internal method to get already initialized SparkContext.
@@ -50,7 +51,11 @@ def _get_spark_context():
         SparkContext
     """
     if SparkContext._active_spark_context is not None:
-        return SparkContext._active_spark_context
+        sc = SparkContext._active_spark_context
+        if not _loadedSystemML:
+            createJavaObject(sc, 'dummy')
+            _loadedSystemML = True
+        return sc
     else:
         raise Exception('Expected spark context to be created.')
 

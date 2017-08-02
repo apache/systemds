@@ -357,11 +357,11 @@ public class ExecutionContext {
 				mo.acquireRead();
 				acquired = true;
 			}
-		}
 
-		copied = mo.getGPUObject(gCtx).acquireDeviceRead();
-		if(acquired) {
-			mo.release();
+			copied = mo.getGPUObject(gCtx).acquireDeviceRead();
+			if (acquired) {
+				mo.release();
+			}
 		}
 		return new Pair<MatrixObject, Boolean>(mo, copied);
 	}

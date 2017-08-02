@@ -33,8 +33,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.
  * 
- * Note: Currently, we support expressions in function arguments but no function calls
- * in expressions.
+ * Note: Currently, we support expressions in function arguments along with function calls
+ * in expressions with single outputs, leaving multiple outputs handling as it is.
  */
 public class FunctionOp extends Hop
 {

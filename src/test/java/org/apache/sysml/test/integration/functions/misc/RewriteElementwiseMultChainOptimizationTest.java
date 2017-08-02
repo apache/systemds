@@ -61,7 +61,6 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 		testRewriteMatrixMultChainOp(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
-	/* TODO enable together with RewriteElementwiseMultChainOptimization
 	@Test
 	public void testMatrixMultChainOptRewritesCP() {
 		testRewriteMatrixMultChainOp(TEST_NAME1, true, ExecType.CP);
@@ -71,7 +70,6 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 	public void testMatrixMultChainOptRewritesSP() {
 		testRewriteMatrixMultChainOp(TEST_NAME1, true, ExecType.SPARK);
 	}
-	*/
 
 	private void testRewriteMatrixMultChainOp(String testname, boolean rewrites, ExecType et)
 	{	

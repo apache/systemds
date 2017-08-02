@@ -477,7 +477,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_numRows = cols[0].length;
 	}
 
-	public Object getColumn(int c) {
+	public Object getColumnData(int c) {
 		switch(_schema[c]) {
 			case STRING:  return ((StringArray)_coldata[c])._data; 
 			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
@@ -485,6 +485,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			case DOUBLE:  return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
+	}
+	
+	public Array getColumn(int c) {
+		return _coldata[c]; 
+	}
+	
+	public void setColumn(int c, Array column) {
+		if( _coldata == null )
+			_coldata = new Array[getNumColumns()];
+		_coldata[c] = column; 
 	}
 	
 	/**

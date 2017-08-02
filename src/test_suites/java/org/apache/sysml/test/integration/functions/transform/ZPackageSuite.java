@@ -30,6 +30,7 @@ import org.junit.runners.Suite;
 	TransformCSVFrameEncodeDecodeTest.class,
 	TransformCSVFrameEncodeReadTest.class,
 	TransformEncodeDecodeTest.class,
+	TransformFrameEncodeApplySubsetTest.class,
 	TransformFrameEncodeApplyTest.class,
 	TransformFrameEncodeDecodeTest.class,
 	TransformFrameEncodeDecodeTokenTest.class,

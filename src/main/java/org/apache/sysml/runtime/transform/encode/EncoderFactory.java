@@ -45,9 +45,9 @@ public class EncoderFactory
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Encoder createEncoder(String spec,  String[] colnames, ValueType[] schema, FrameBlock meta) 
+	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 
-	{	
+	{
 		Encoder encoder = null;
 		int clen = schema.length;
 		
@@ -93,10 +93,26 @@ public class EncoderFactory
 			}
 			
 			//create composite decoder of all created encoders
-			//and initialize meta data (recode, dummy, bin, mv)
 			encoder = new EncoderComposite(lencoders);
-			if( meta != null )
+			
+			//initialize meta data w/ robustness for superset of cols
+			if( meta != null ) {
+				String[] colnames2 = meta.getColumnNames();
+				if( !TfMetaUtils.isIDSpec(jSpec) && colnames!=null && colnames2!=null 
+					&& !ArrayUtils.isEquals(colnames, colnames2) ) 
+				{
+					//create temporary meta frame block w/ shallow column copy
+					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);
+					meta2.setNumRows(meta.getNumRows());
+					for( int i=0; i<colnames.length; i++ ) {
+						int pos = Arrays.binarySearch(colnames2, colnames[i]);
+						meta2.setColumn(i, meta.getColumn(pos));
+						meta2.setColumnMetadata(i, meta.getColumnMetadata(pos));
+					}
+					meta = meta2;
+				}
 				encoder.initMetaData(meta);
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

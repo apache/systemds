@@ -438,7 +438,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			String[] colnames = !TfMetaUtils.isIDSpecification(params.get("spec")) ?
+			String[] colnames = !TfMetaUtils.isIDSpec(params.get("spec")) ?
 					in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//compute omit offset map for block shifts

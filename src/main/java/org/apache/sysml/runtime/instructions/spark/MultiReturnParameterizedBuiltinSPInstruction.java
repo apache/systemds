@@ -116,7 +116,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			String[] colnames = !TfMetaUtils.isIDSpecification(spec) ?
+			String[] colnames = !TfMetaUtils.isIDSpec(spec) ?
 					in.lookup(1L).get(0).getColumnNames() : null; 
 					
 			//step 1: build transform meta data

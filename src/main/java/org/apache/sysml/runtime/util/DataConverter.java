@@ -528,7 +528,7 @@ public class DataConverter
 			double[][] a = new double[n][];
 			double[] c = mb.getDenseBlock();
 			for( int j=0; j<n; j++ )
-				a[j] = (double[])frame.getColumn(j);			
+				a[j] = (double[])frame.getColumnData(j);			
 			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
 			for( int bi=0; bi<m; bi+=blocksizeIJ )
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {

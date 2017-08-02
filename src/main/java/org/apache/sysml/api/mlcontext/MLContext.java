@@ -46,7 +46,6 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.MLContextProxy;
-
 /**
  * The MLContext API offers programmatic access to SystemML on Spark from
  * languages such as Scala, Java, and Python.
@@ -287,6 +286,8 @@ public class MLContext {
 	public void resetConfig() {
 		MLContextUtil.setDefaultConfig();
 	}
+	
+	
 
 	/**
 	 * Set configuration property, such as
@@ -305,7 +306,8 @@ public class MLContext {
 			throw new MLContextException(e);
 		}
 	}
-
+	
+	
 	/**
 	 * Execute a DML or PYDML Script.
 	 *
@@ -356,6 +358,16 @@ public class MLContext {
 		} catch (RuntimeException e) {
 			throw new MLContextException("Exception when executing script", e);
 		}
+	}
+	
+	/**
+	 * Sets the script that is being executed
+	 * 
+	 * @param executionScript
+	 *            script that is being executed
+	 */
+	public void setExecutionScript(Script executionScript) {
+		this.executionScript = executionScript;
 	}
 
 	/**
@@ -488,6 +500,15 @@ public class MLContext {
 		return this.gpu;
 	}
 
+	/**
+	 * Whether or not the "force" GPU mode is enabled.
+	 *
+	 * @return true if enabled, false otherwise
+	 */
+	public boolean isForceGPU() {
+		return this.forceGPU;
+	}
+	
 	/**
 	 * Used internally by MLContextProxy.
 	 *

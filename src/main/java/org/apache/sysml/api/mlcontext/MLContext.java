@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api.mlcontext;
 
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
@@ -32,11 +31,9 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.IntIdentifier;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -47,10 +44,8 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.MLContextProxy;
-import org.apache.spark.SparkConf;
 /**
  * The MLContext API offers programmatic access to SystemML on Spark from
  * languages such as Scala, Java, and Python.
@@ -291,6 +286,8 @@ public class MLContext {
 	public void resetConfig() {
 		MLContextUtil.setDefaultConfig();
 	}
+	
+	
 
 	/**
 	 * Set configuration property, such as
@@ -310,72 +307,6 @@ public class MLContext {
 		}
 	}
 	
-	public String getHopDAG(Script script, ArrayList<Integer> lines, boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
-		return getHopDAG(script, lines, null, performHOPRewrites, withSubgraph);
-	}
-
-	/**
-	 * Get HOP DAG in dot format for a DML or PYDML Script. 
-	 *
-	 * @param script
-	 *            The DML or PYDML Script object to execute.
-	 * @param lines
-	 *            Only display the hops that have begin and end line number equals to the given integers.
-	 * @param newConf
-	 *            Spark Configuration.
-	 * @param performHOPRewrites
-	 *            should perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
-	 * @param withSubgraph
-	 *            If false, the dot graph will be created without subgraphs for statement blocks.
-	 * @return hop DAG in dot format
-	 * @throws LanguageException  if error occurs
-	 * @throws DMLRuntimeException  if error occurs
-	 * @throws HopsException if error occurs
-	 */
-	public String getHopDAG(Script script, ArrayList<Integer> lines, SparkConf newConf, boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
-		SparkConf oldConf = spark.sparkContext().getConf();
-		SparkExecutionContext.SparkClusterConfig systemmlConf = SparkExecutionContext.getSparkClusterConfig();
-		long oldMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
-		try {
-			if(newConf != null) {
-				systemmlConf.analyzeSparkConfiguation(newConf);
-				InfrastructureAnalyzer.setLocalMaxMemory(newConf.getSizeAsBytes("spark.driver.memory"));
-				log.warn("Using Spark Configuration for getting HOP DAG: " + SparkExecutionContext.getSparkClusterConfig());
-			}
-			ScriptExecutor scriptExecutor = new ScriptExecutor();
-			scriptExecutor.setExecutionType(executionType);
-			scriptExecutor.setExplain(explain);
-			scriptExecutor.setExplainLevel(explainLevel);
-			scriptExecutor.setGPU(gpu);
-			scriptExecutor.setForceGPU(forceGPU);
-			scriptExecutor.setStatistics(statistics);
-			scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
-			scriptExecutor.setInit(initBeforeExecution);
-			if (initBeforeExecution) {
-				initBeforeExecution = false;
-			}
-			scriptExecutor.setMaintainSymbolTable(maintainSymbolTable);
-			executionScript = script;
-
-			Long time = new Long((new Date()).getTime());
-			if ((script.getName() == null) || (script.getName().equals(""))) {
-				script.setName(time.toString());
-			}
-
-			scriptExecutor.compile(script, performHOPRewrites);
-			Explain.reset();
-			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<Integer>() : lines; // To deal with potential Py4J issues
-			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines, withSubgraph);
-		} catch (RuntimeException e) {
-			throw new MLContextException("Exception when compiling script", e);
-		}
-		finally {
-			if(newConf != null) {
-				systemmlConf.analyzeSparkConfiguation(oldConf);
-				InfrastructureAnalyzer.setLocalMaxMemory(oldMaxMemory);
-			}
-		}
-	}
 	
 	/**
 	 * Execute a DML or PYDML Script.
@@ -427,6 +358,16 @@ public class MLContext {
 		} catch (RuntimeException e) {
 			throw new MLContextException("Exception when executing script", e);
 		}
+	}
+	
+	/**
+	 * Sets the script that is being executed
+	 * 
+	 * @param executionScript
+	 *            script that is being executed
+	 */
+	public void setExecutionScript(Script executionScript) {
+		this.executionScript = executionScript;
 	}
 
 	/**
@@ -559,6 +500,15 @@ public class MLContext {
 		return this.gpu;
 	}
 
+	/**
+	 * Whether or not the "force" GPU mode is enabled.
+	 *
+	 * @return true if enabled, false otherwise
+	 */
+	public boolean isForceGPU() {
+		return this.forceGPU;
+	}
+	
 	/**
 	 * Used internally by MLContextProxy.
 	 *

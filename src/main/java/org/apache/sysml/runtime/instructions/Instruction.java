@@ -74,7 +74,7 @@ public abstract class Instruction
 	public int getEndLine() {
 		return endLine;
 	}
-	
+
 	public int getBeginColumn() {
 		return beginCol;
 	}

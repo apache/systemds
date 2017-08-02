@@ -19,7 +19,11 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'jvm_stdout', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
+# Methods to create Script object
+script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
+# Utility methods
+util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG' ]
+__all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
 
 import os
 
@@ -88,6 +92,47 @@ class jvm_stdout(object):
             self.t.join()
         print(self.util.stopRedirectStdOut())
         
+
+def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
+    """
+    Compile a DML / PyDML script.
+
+    Parameters
+    ----------
+    ml: MLContext instance
+        MLContext instance.
+        
+    script: Script instance
+        Script instance defined with the appropriate input and output variables.
+    
+    lines: list of integers
+        Optional: only display the hops that have begin and end line number equals to the given integers.
+    
+    conf: SparkConf instance
+        Optional spark configuration
+        
+    apply_rewrites: boolean
+        If True, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+    
+    with_subgraph: boolean
+        If False, the dot graph will be created without subgraphs for statement blocks. 
+    
+    Returns
+    -------
+    hopDAG: string
+        hop DAG in dot format 
+    """
+    if not isinstance(script, Script):
+        raise ValueError("Expected script to be an instance of Script")
+    scriptString = script.scriptString
+    script_java = script.script_java
+    lines = [ int(x) for x in lines ] if lines is not None else [int(-1)]
+    sc = _get_spark_context()
+    if conf is not None:
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
+    else:
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, apply_rewrites, with_subgraph)
+    return hopDAG
 
 def dml(scriptString):
     """
@@ -370,9 +415,9 @@ class Script(object):
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
             elif scriptFormat == "file" and self.scriptType == "pydml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
-            elif scriptFormat == "file" and self.scriptType == "dml":
+            elif isResource and self.scriptType == "dml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(scriptString)
-            elif scriptFormat == "file" and self.scriptType == "pydml":
+            elif isResource and self.scriptType == "pydml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(scriptString)
             elif scriptFormat == "string" and self.scriptType == "dml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
@@ -645,43 +690,6 @@ class MLContext(object):
 
     def __repr__(self):
         return "MLContext"
-    
-    def getHopDAG(self, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
-        """
-        Compile a DML / PyDML script.
-
-        Parameters
-        ----------
-        script: Script instance
-            Script instance defined with the appropriate input and output variables.
-        
-        lines: list of integers
-            Optional: only display the hops that have begin and end line number equals to the given integers.
-        
-        conf: SparkConf instance
-            Optional spark configuration
-            
-        apply_rewrites: boolean
-            If True, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
-        
-        with_subgraph: boolean
-            If False, the dot graph will be created without subgraphs for statement blocks. 
-        
-        Returns
-        -------
-        hopDAG: string
-            hop DAG in dot format 
-        """
-        if not isinstance(script, Script):
-            raise ValueError("Expected script to be an instance of Script")
-        scriptString = script.scriptString
-        script_java = script.script_java
-        lines = [ int(x) for x in lines] if lines is not None else [int(-1)]
-        if conf is not None:
-            hopDAG = self._ml.getHopDAG(script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
-        else:
-            hopDAG = self._ml.getHopDAG(script_java, lines, apply_rewrites, with_subgraph)
-        return hopDAG 
         
     def execute(self, script):
         """

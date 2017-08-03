@@ -1413,7 +1413,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
 			// and sets it in the ExecutionContext of the parfor
 			if (DMLScript.USE_ACCELERATOR){
-				int gpuIndex = index % GPUContextPool.getDeviceCount();
+				int gpuIndex = index % ec.getNumGPUContexts();
 				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(gpuIndex)));
 				LOG.debug("In Parfor : GPU " + gpuIndex + " was assigned to thread " + index);
 			}

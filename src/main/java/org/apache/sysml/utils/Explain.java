@@ -26,10 +26,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
@@ -266,6 +272,50 @@ public class Explain
 	
 		return sb.toString();
 	}
+	
+	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph)
+			throws HopsException, DMLRuntimeException, LanguageException {
+		StringBuilder sb = new StringBuilder();
+		StringBuilder nodes = new StringBuilder();
+
+		// create header
+		sb.append("digraph {");
+
+		// Explain functions (if exists)
+		if (prog.hasFunctionStatementBlocks()) {
+
+			// show function call graph
+			// FunctionCallGraph fgraph = new FunctionCallGraph(prog);
+			// sb.append(explainFunctionCallGraph(fgraph, new HashSet<String>(),
+			// null, 3));
+
+			// show individual functions
+			for (String namespace : prog.getNamespaces().keySet()) {
+				for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
+					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
+					FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+					String fkey = DMLProgram.constructFunctionKey(namespace, fname);
+
+					if (!(fstmt instanceof ExternalFunctionStatement)) {
+						addSubGraphHeader(sb, withSubgraph);
+						for (StatementBlock current : fstmt.getBody())
+							sb.append(getHopDAG(current, nodes, lines, withSubgraph));
+						String label = "FUNCTION " + fkey + " recompile=" + fsb.isRecompileOnce() + "\n";
+						addSubGraphFooter(sb, withSubgraph, label);
+					}
+				}
+			}
+		}
+
+		// Explain main program
+		for (StatementBlock sblk : prog.getStatementBlocks())
+			sb.append(getHopDAG(sblk, nodes, lines, withSubgraph));
+
+		sb.append(nodes);
+		sb.append("rankdir = \"BT\"\n");
+		sb.append("}\n");
+		return sb.toString();
+	}
 
 	public static String explain( Program rtprog ) throws HopsException {
 		return explain(rtprog, null);
@@ -466,6 +516,128 @@ public class Explain
 	//////////////
 	// internal explain HOPS
 
+	private static int clusterID = 0;
+
+	public static void reset() {
+		clusterID = 0;
+	}
+
+	private static void addSubGraphHeader(StringBuilder builder, boolean withSubgraph) {
+		if (withSubgraph) {
+			builder.append("subgraph cluster_" + (clusterID++) + " {\n");
+		}
+	}
+
+	private static void addSubGraphFooter(StringBuilder builder, boolean withSubgraph, String label) {
+		if (withSubgraph) {
+			builder.append("label = \"" + label + "\";\n");
+			builder.append("}\n");
+		}
+	}
+
+	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines,
+			boolean withSubgraph) throws HopsException, DMLRuntimeException {
+		StringBuilder builder = new StringBuilder();
+
+		if (sb instanceof WhileStatementBlock) {
+			addSubGraphHeader(builder, withSubgraph);
+
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			String label = null;
+			if (!wsb.getUpdateInPlaceVars().isEmpty())
+				label = "WHILE (lines " + wsb.getBeginLine() + "-" + wsb.getEndLine() + ") in-place="
+						+ wsb.getUpdateInPlaceVars().toString() + "";
+			else
+				label = "WHILE (lines " + wsb.getBeginLine() + "-" + wsb.getEndLine() + ")";
+			// TODO: Don't show predicate hops for now
+			// builder.append(explainHop(wsb.getPredicateHops()));
+
+			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			for (StatementBlock current : ws.getBody())
+				builder.append(getHopDAG(current, nodes, lines, withSubgraph));
+
+			addSubGraphFooter(builder, withSubgraph, label);
+		} else if (sb instanceof IfStatementBlock) {
+			addSubGraphHeader(builder, withSubgraph);
+			IfStatementBlock ifsb = (IfStatementBlock) sb;
+			String label = "IF (lines " + ifsb.getBeginLine() + "-" + ifsb.getEndLine() + ")";
+			// TODO: Don't show predicate hops for now
+			// builder.append(explainHop(ifsb.getPredicateHops(), level+1));
+
+			IfStatement ifs = (IfStatement) sb.getStatement(0);
+			for (StatementBlock current : ifs.getIfBody()) {
+				builder.append(getHopDAG(current, nodes, lines, withSubgraph));
+				addSubGraphFooter(builder, withSubgraph, label);
+			}
+			if (!ifs.getElseBody().isEmpty()) {
+				addSubGraphHeader(builder, withSubgraph);
+				label = "ELSE (lines " + ifsb.getBeginLine() + "-" + ifsb.getEndLine() + ")";
+
+				for (StatementBlock current : ifs.getElseBody())
+					builder.append(getHopDAG(current, nodes, lines, withSubgraph));
+				addSubGraphFooter(builder, withSubgraph, label);
+			}
+		} else if (sb instanceof ForStatementBlock) {
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			addSubGraphHeader(builder, withSubgraph);
+			String label = "";
+			if (sb instanceof ParForStatementBlock) {
+				if (!fsb.getUpdateInPlaceVars().isEmpty())
+					label = "PARFOR (lines " + fsb.getBeginLine() + "-" + fsb.getEndLine() + ") in-place="
+							+ fsb.getUpdateInPlaceVars().toString() + "";
+				else
+					label = "PARFOR (lines " + fsb.getBeginLine() + "-" + fsb.getEndLine() + ")";
+			} else {
+				if (!fsb.getUpdateInPlaceVars().isEmpty())
+					label = "FOR (lines " + fsb.getBeginLine() + "-" + fsb.getEndLine() + ") in-place="
+							+ fsb.getUpdateInPlaceVars().toString() + "";
+				else
+					label = "FOR (lines " + fsb.getBeginLine() + "-" + fsb.getEndLine() + ")";
+			}
+			// TODO: Don't show predicate hops for now
+			// if (fsb.getFromHops() != null)
+			// builder.append(explainHop(fsb.getFromHops(), level+1));
+			// if (fsb.getToHops() != null)
+			// builder.append(explainHop(fsb.getToHops(), level+1));
+			// if (fsb.getIncrementHops() != null)
+			// builder.append(explainHop(fsb.getIncrementHops(), level+1));
+
+			ForStatement fs = (ForStatement) sb.getStatement(0);
+			for (StatementBlock current : fs.getBody())
+				builder.append(getHopDAG(current, nodes, lines, withSubgraph));
+			addSubGraphFooter(builder, withSubgraph, label);
+
+		} else if (sb instanceof FunctionStatementBlock) {
+			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
+			addSubGraphHeader(builder, withSubgraph);
+			String label = "Function (lines " + fsb.getBeginLine() + "-" + fsb.getEndLine() + ")";
+			for (StatementBlock current : fsb.getBody())
+				builder.append(getHopDAG(current, nodes, lines, withSubgraph));
+			addSubGraphFooter(builder, withSubgraph, label);
+		} else {
+			// For generic StatementBlock
+			if (sb.requiresRecompilation()) {
+				addSubGraphHeader(builder, withSubgraph);
+			}
+			ArrayList<Hop> hopsDAG = sb.get_hops();
+			if (hopsDAG != null && !hopsDAG.isEmpty()) {
+				Hop.resetVisitStatus(hopsDAG);
+				for (Hop hop : hopsDAG)
+					builder.append(getHopDAG(hop, nodes, lines, withSubgraph));
+				Hop.resetVisitStatus(hopsDAG);
+			}
+
+			if (sb.requiresRecompilation()) {
+				builder.append("style=filled;\n");
+				builder.append("color=lightgrey;\n");
+				String label = "(lines " + sb.getBeginLine() + "-" + sb.getEndLine() + ") [recompile="
+						+ sb.requiresRecompilation() + "]";
+				addSubGraphFooter(builder, withSubgraph, label);
+			}
+		}
+		return builder;
+	}
+
 	private static String explainStatementBlock(StatementBlock sb, int level) 
 		throws HopsException, DMLRuntimeException 
 	{
@@ -635,6 +807,134 @@ public class Explain
 		hop.setVisited();
 		
 		return sb.toString();
+	}
+	
+	private static boolean isInRange(Hop hop, ArrayList<Integer> lines) {
+		boolean isInRange = lines.size() == 0 ? true : false;
+		for (int lineNum : lines) {
+			if (hop.getBeginLine() == lineNum && lineNum == hop.getEndLine()) {
+				return true;
+			}
+		}
+		return isInRange;
+	}
+
+	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph)
+			throws DMLRuntimeException {
+		StringBuilder sb = new StringBuilder();
+		if (hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp))
+			return sb;
+
+		for (Hop input : hop.getInput()) {
+			if ((SHOW_LITERAL_HOPS || !(input instanceof LiteralOp)) && isInRange(hop, lines)) {
+				String edgeLabel = showMem(input.getOutputMemEstimate(), true);
+				sb.append("h" + input.getHopID() + " -> h" + hop.getHopID() + " [label=\"" + edgeLabel + "\"];\n");
+			}
+		}
+		for (Hop input : hop.getInput())
+			sb.append(getHopDAG(input, nodes, lines, withSubgraph));
+
+		if (isInRange(hop, lines)) {
+			nodes.append("h" + hop.getHopID() + "[label=\"" + getNodeLabel(hop) + "\", " + "shape=\""
+					+ getNodeShape(hop) + "\", color=\"" + getNodeColor(hop) + "\", tooltip=\"" + getNodeToolTip(hop)
+					+ "\"];\n");
+		}
+		hop.setVisited();
+
+		return sb;
+	}
+
+	private static String getNodeLabel(Hop hop) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(hop.getOpString());
+		if (hop instanceof AggBinaryOp) {
+			AggBinaryOp aggBinOp = (AggBinaryOp) hop;
+			if (aggBinOp.getMMultMethod() != null)
+				sb.append(" " + aggBinOp.getMMultMethod().name() + " ");
+		}
+		// data flow properties
+		if (SHOW_DATA_FLOW_PROPERTIES) {
+			if (hop.requiresReblock() && hop.requiresCheckpoint())
+				sb.append(", rblk,chkpt");
+			else if (hop.requiresReblock())
+				sb.append(", rblk");
+			else if (hop.requiresCheckpoint())
+				sb.append(", chkpt");
+		}
+		if (hop.getFilename() == null) {
+			sb.append("[" + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-" + hop.getEndLine() + ":"
+					+ hop.getEndColumn() + "]");
+		} else {
+			sb.append("[" + hop.getFilename() + " " + hop.getBeginLine() + ":" + hop.getBeginColumn() + "-"
+					+ hop.getEndLine() + ":" + hop.getEndColumn() + "]");
+		}
+
+		if (hop.getUpdateType().isInPlace())
+			sb.append("," + hop.getUpdateType().toString().toLowerCase());
+		return sb.toString();
+	}
+
+	private static String getNodeToolTip(Hop hop) {
+		StringBuilder sb = new StringBuilder();
+		if (hop.getExecType() != null) {
+			sb.append(hop.getExecType().name());
+		}
+		sb.append("[" + hop.getDim1() + " X " + hop.getDim2() + "], nnz=" + hop.getNnz());
+		sb.append(", mem= [in=");
+		sb.append(showMem(hop.getInputMemEstimate(), false));
+		sb.append(", inter=");
+		sb.append(showMem(hop.getIntermediateMemEstimate(), false));
+		sb.append(", out=");
+		sb.append(showMem(hop.getOutputMemEstimate(), false));
+		sb.append(" -> ");
+		sb.append(showMem(hop.getMemEstimate(), true));
+		sb.append("]");
+		return sb.toString();
+	}
+
+	private static String getNodeShape(Hop hop) {
+		String shape = "octagon";
+		if (hop.getExecType() != null) {
+			switch (hop.getExecType()) {
+			case CP:
+				shape = "ellipse";
+				break;
+			case SPARK:
+				shape = "box";
+				break;
+			case GPU:
+				shape = "trapezium";
+				break;
+			case MR:
+				shape = "parallelogram";
+				break;
+			default:
+				shape = "octagon";
+				break;
+			}
+		}
+		return shape;
+	}
+
+	private static String getNodeColor(Hop hop) {
+		if (hop instanceof DataOp) {
+			DataOp dOp = (DataOp) hop;
+			if (dOp.getDataOpType() == DataOpTypes.PERSISTENTREAD || dOp.getDataOpType() == DataOpTypes.TRANSIENTREAD) {
+				return "wheat2";
+			} else if (dOp.getDataOpType() == DataOpTypes.PERSISTENTWRITE
+					|| dOp.getDataOpType() == DataOpTypes.TRANSIENTWRITE) {
+				return "wheat4";
+			}
+		} else if (hop instanceof AggBinaryOp) {
+			return "orangered2";
+		} else if (hop instanceof BinaryOp) {
+			return "royalblue2";
+		} else if (hop instanceof ReorgOp) {
+			return "green";
+		} else if (hop instanceof UnaryOp) {
+			return "yellow";
+		}
+		return "black";
 	}
 
 	//////////////
@@ -867,6 +1167,7 @@ public class Explain
 			
 			sb.append( offsetInst );
 			sb.append( tmp );
+			
 			sb.append( '\n' );
 		}
 		

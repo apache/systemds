@@ -19,7 +19,11 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl',  '_java2py', 'Matrix']
+# Methods to create Script object
+script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
+# Utility methods
+util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG' ]
+__all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
 
 import os
 
@@ -27,13 +31,16 @@ try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
     from pyspark import SparkContext
+    from pyspark.conf import SparkConf
     import pyspark.mllib.common
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
 from .converters import *
 from .classloader import *
+import threading, time
 
+_loadedSystemML = False
 def _get_spark_context():
     """
     Internal method to get already initialized SparkContext.
@@ -44,10 +51,93 @@ def _get_spark_context():
         SparkContext
     """
     if SparkContext._active_spark_context is not None:
-        return SparkContext._active_spark_context
+        sc = SparkContext._active_spark_context
+        if not _loadedSystemML:
+            createJavaObject(sc, 'dummy')
+            _loadedSystemML = True
+        return sc
     else:
         raise Exception('Expected spark context to be created.')
 
+# This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+# Example usage:
+# with jvm_stdout():
+#    ml.execute(script)
+class jvm_stdout(object):
+    """
+    This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    def __init__(self, parallel_flush=False):
+        self.util = SparkContext._active_spark_context._jvm.org.apache.sysml.api.ml.Utils()
+        self.parallel_flush = parallel_flush
+        self.t = threading.Thread(target=self.flush_stdout)
+        self.stop = False
+        
+    def flush_stdout(self):
+        while not self.stop: 
+            time.sleep(1) # flush stdout every 1 second
+            str = self.util.flushStdOut()
+            if str != '':
+                str = str[:-1] if str.endswith('\n') else str
+                print(str)
+    
+    def __enter__(self):
+        self.util.startRedirectStdOut()
+        if self.parallel_flush:
+            self.t.start()
+
+    def __exit__(self, *args):
+        if self.parallel_flush:
+            self.stop = True
+            self.t.join()
+        print(self.util.stopRedirectStdOut())
+        
+
+def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
+    """
+    Compile a DML / PyDML script.
+
+    Parameters
+    ----------
+    ml: MLContext instance
+        MLContext instance.
+        
+    script: Script instance
+        Script instance defined with the appropriate input and output variables.
+    
+    lines: list of integers
+        Optional: only display the hops that have begin and end line number equals to the given integers.
+    
+    conf: SparkConf instance
+        Optional spark configuration
+        
+    apply_rewrites: boolean
+        If True, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+    
+    with_subgraph: boolean
+        If False, the dot graph will be created without subgraphs for statement blocks. 
+    
+    Returns
+    -------
+    hopDAG: string
+        hop DAG in dot format 
+    """
+    if not isinstance(script, Script):
+        raise ValueError("Expected script to be an instance of Script")
+    scriptString = script.scriptString
+    script_java = script.script_java
+    lines = [ int(x) for x in lines ] if lines is not None else [int(-1)]
+    sc = _get_spark_context()
+    if conf is not None:
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
+    else:
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, apply_rewrites, with_subgraph)
+    return hopDAG
 
 def dml(scriptString):
     """
@@ -330,9 +420,9 @@ class Script(object):
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
             elif scriptFormat == "file" and self.scriptType == "pydml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
-            elif scriptFormat == "file" and self.scriptType == "dml":
+            elif isResource and self.scriptType == "dml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(scriptString)
-            elif scriptFormat == "file" and self.scriptType == "pydml":
+            elif isResource and self.scriptType == "pydml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(scriptString)
             elif scriptFormat == "string" and self.scriptType == "dml":
                 self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
@@ -605,7 +695,7 @@ class MLContext(object):
 
     def __repr__(self):
         return "MLContext"
-    
+        
     def execute(self, script):
         """
         Execute a DML / PyDML script.

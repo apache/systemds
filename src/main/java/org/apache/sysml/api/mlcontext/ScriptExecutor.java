@@ -263,9 +263,16 @@ public class ScriptExecutor {
 		DMLScript.USE_ACCELERATOR = oldGPU;
 		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
 	}
-
+	
+	public void compile(Script script) {
+		compile(script, true);
+	}
+	
 	/**
-	 * Execute a DML or PYDML script. This is broken down into the following
+	 * Compile a DML or PYDML script. This will help analysis of DML programs
+	 * that have dynamic recompilation flag set to false without actually executing it. 
+	 * 
+	 * This is broken down into the following
 	 * primary methods:
 	 *
 	 * <ol>
@@ -283,6 +290,46 @@ public class ScriptExecutor {
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
 	 * <li>{@link #cleanupRuntimeProgram()}</li>
+	 * </ol>
+	 *
+	 * @param script
+	 *            the DML or PYDML script to compile
+	 * @param performHOPRewrites
+	 *            should perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+	 */
+	public void compile(Script script, boolean performHOPRewrites) {
+
+		// main steps in script execution
+		setup(script);
+		if (statistics) {
+			Statistics.startCompileTimer();
+		}
+		parseScript();
+		liveVariableAnalysis();
+		validateScript();
+		constructHops();
+		if(performHOPRewrites)
+			rewriteHops();
+		rewritePersistentReadsAndWrites();
+		constructLops();
+		generateRuntimeProgram();
+		showExplanation();
+		globalDataFlowOptimization();
+		countCompiledMRJobsAndSparkInstructions();
+		initializeCachingAndScratchSpace();
+		cleanupRuntimeProgram();
+		if (statistics) {
+			Statistics.stopCompileTimer();
+		}
+	}
+
+
+	/**
+	 * Execute a DML or PYDML script. This is broken down into the following
+	 * primary methods:
+	 *
+	 * <ol>
+	 * <li>{@link #compile(Script)}</li>
 	 * <li>{@link #createAndInitializeExecutionContext()}</li>
 	 * <li>{@link #executeRuntimeProgram()}</li>
 	 * <li>{@link #cleanupAfterExecution()}</li>
@@ -295,26 +342,7 @@ public class ScriptExecutor {
 	public MLResults execute(Script script) {
 
 		// main steps in script execution
-		setup(script);
-		if (statistics) {
-			Statistics.startCompileTimer();
-		}
-		parseScript();
-		liveVariableAnalysis();
-		validateScript();
-		constructHops();
-		rewriteHops();
-		rewritePersistentReadsAndWrites();
-		constructLops();
-		generateRuntimeProgram();
-		showExplanation();
-		globalDataFlowOptimization();
-		countCompiledMRJobsAndSparkInstructions();
-		initializeCachingAndScratchSpace();
-		cleanupRuntimeProgram();
-		if (statistics) {
-			Statistics.stopCompileTimer();
-		}
+		compile(script);
 
 		try {
 			createAndInitializeExecutionContext();

@@ -1,15 +1,46 @@
+---
+layout: global
+title: SystemML Performance Testing
+description: Description of SystemML performance testing.
+displayTitle: SystemML Performance Testing
+---
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
+
+* This will become a table of contents (this text will be scraped).
+{:toc}
+
+
 # Performance Testing Algorithms User Manual
 
 This user manual contains details on how to conduct automated performance tests. Work was mostly done in this [PR](https://github.com/apache/systemml/pull/537) and part of [SYSTEMML-1451](https://issues.apache.org/jira/browse/SYSTEMML-1451). Our aim was to move from existing `bash` based performance tests to automatic `python` based automatic performance tests.
 
-### Architecture
-Our performance tests suit contains `7` families namely `binomial`, `multinomial`, `stats1`, `stats2`, `regression1`, `regression2`, `clustering`. Within these families we have algorithms grouped under it. Typically a family is a set of algorithms that require the same data generation script. 
+
+## Architecture
+
+Our performance tests suit contains `7` families namely `binomial`, `multinomial`, `stats1`, `stats2`, `regression1`, `regression2`, `clustering`. Within these families we have algorithms grouped under it. Typically a family is a set of algorithms that require the same data generation script.
 
 - Exceptions: `regression1`, `regression2` and `binomial`. We decide to include these algorithms in separate families to keep the architecture simple.
 
 ![System ML Architecture](img/performance-test/perf_test_arch.png)
 
-On a very high level use construct a string with arguments required to run each operation. Once this string is constructed we use the subprocess module to execute this string and extract time from the standard out. 
+On a very high level use construct a string with arguments required to run each operation. Once this string is constructed we use the subprocess module to execute this string and extract time from the standard out.
 
 We also use `json` module write our configurations to a json file. This ensure that our operations are easy to debug.
 
@@ -32,8 +63,10 @@ In `train.py` script we have functions required to generate training output. We 
 The file `predict.py` contains all functions for all algorithms in the performance test that contain predict script. We return the required configuration packet as a result of this script, that contains key as the algorithm to run and values with location to read predict json files from.
 
 In the file(s) `utils_*.py` we have all the helper functions required in our performance test. These functions do operations like write `json` files, extract time from std out etc.
- 
-### Adding New Algorithms
+
+
+## Adding New Algorithms
+
 While adding a new algorithm we need know if it has to be part of the any pre existing family. If this algorithm depends on a new data generation script we would need to create a new family. Steps below to take below to add a new algorithm.
 
 Following changes to `run_perftest.py`:
@@ -72,7 +105,9 @@ Following changes to `predict.py`:
 - Check for possible errors if these folders/files do not exist. (Please see the troubleshooting section).
 - Note: `predict.py` will not be executed if the current algorithm being executed does not have predict script.
 
-### Current Default Settings
+
+## Current Default Settings
+
 Default setting for our performance test below:
 
 - Matrix size to 10,000 rows and 100 columns.
@@ -80,7 +115,9 @@ Default setting for our performance test below:
 - Operation modes `data-gen`, `train` and `predict` in sequence.
 - Matrix type set to `all`. Which will generate `dense`, `sparse` matrices for all relevant algorithms.
 
-### Examples
+
+## Examples
+
 Some examples of SystemML performance test with arguments shown below:
 
 `./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2
@@ -110,7 +147,9 @@ Run performance test for all algorithms under the family `regression2` and log w
 `./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --config-dir /Users/krishna/open-source/systemml/scripts/perftest/temp3 --temp-dir hdfs://localhost:9000/temp3`
 Run performance test for all algorithms using HDFS.
 
-### Operational Notes
+
+## Operational Notes
+
 All performance test depend mainly on two scripts for execution `systemml-standalone.py` and `systemml-spark-submit.py`. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.
 
 Constants like `DATA_FORMAT` currently set to `csv` and `MATRIX_TYPE_DICT` with `density` set to `0.9` and `sparsity` set to `0.01` are hardcoded in the performance test scripts. They can be changed easily as they are defined at the top of their respective operational scripts.
@@ -118,7 +157,7 @@ Constants like `DATA_FORMAT` currently set to `csv` and `MATRIX_TYPE_DICT` with 
 The logs contain the following information below comma separated.
 
 algorithm | run_type | intercept | matrix_type | data_shape | time_sec
---- | --- | --- | --- | --- | --- | 
+--- | --- | --- | --- | --- | --- |
 multinomial|data-gen|0|dense|10k_100| 0.33
 MultiLogReg|train|0|10k_100|dense|6.956
 MultiLogReg|predict|0|10k_100|dense|4.780
@@ -140,8 +179,10 @@ Currently we only support time difference between algorithms in different versio
 
 Note: Please pip install `https://github.com/burnash/gspread` to use google docs client.
 
-### Troubleshooting
-We can debug the performance test by making changes in the following locations based on 
+
+## Troubleshooting
+
+We can debug the performance test by making changes in the following locations based on
 
 - Please see `utils_exec.py` function `subprocess_exec`.
 - Please see `run_perftest.py`. Changing the verbosity level to `0` allows us to log more information while the script runs.

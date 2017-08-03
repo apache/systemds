@@ -366,8 +366,11 @@ For examples, see the [Spark MLContext Programming Guide](http://apache.github.i
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-Verify that the performance suite located at scripts/perftest/ executes on Spark and Hadoop. Testing should
+Verify that the performance suite executes on Spark and Hadoop. Testing should
 include 80MB, 800MB, 8GB, and 80GB data sizes.
+
+For more information, please see [SystemML Performance Testing](python-performance-test.html).
+
 
 # Run NN Unit Tests for GPU
 

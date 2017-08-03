@@ -77,6 +77,7 @@ public class DMLConfig
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
 	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
+	public static final String STATS_MAX_WRAP_LEN = "systemml.stats.maxWrapLength"; //int
 	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS      = "systemml.stats.extraDNN"; //boolean
 	public static final String AVAILABLE_GPUS       = "systemml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
@@ -122,6 +123,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
+		_defaultVals.put(STATS_MAX_WRAP_LEN,"30" );
 		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 
@@ -407,7 +409,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
-				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS,
+				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
 				AVAILABLE_GPUS
 		}; 
 		

@@ -128,7 +128,7 @@ public class GPUContext {
 	/**
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
-	private JCudaKernels kernels;
+	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
@@ -143,15 +143,13 @@ public class GPUContext {
 		long start = System.nanoTime();
 		initializeCudaLibraryHandles();
 
-		kernels = new JCudaKernels(deviceNum);
-
 		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
 	}
 
-	private void initializeCudaLibraryHandles() {
+	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
 		if (cudnnHandle.get() == null) {
 			cudnnHandle.set(new cudnnHandle());
 			cudnnCreate(cudnnHandle.get());
@@ -179,6 +177,10 @@ public class GPUContext {
 			cusolverSpHandle.set(new cusolverSpHandle());
 			cusolverSpCreate(cusolverSpHandle.get());
 		}
+
+		if (kernels.get() == null) {
+			kernels.set(new JCudaKernels());
+		}
 	}
 
 	public static int cudaGetDevice() {
@@ -198,7 +200,7 @@ public class GPUContext {
 	 * If in a multi-threaded env like parfor, this method must be called when in the
 	 * appropriate thread
 	 */
-	public void initializeThread() {
+	public void initializeThread() throws DMLRuntimeException {
 		cudaSetDevice(deviceNum);
 		initializeCudaLibraryHandles();
 	}
@@ -633,7 +635,7 @@ public class GPUContext {
 	}
 
 	public JCudaKernels getKernels() {
-		return kernels;
+		return kernels.get();
 	}
 
 	/**

@@ -1,0 +1,91 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/**
+ * Factorization Machines.
+ */
+
+forward = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
+    return (matrix[double] y) {
+  /*
+   * Computes the model y. 
+   *
+   * Reference: 
+   *  - Factorization Machines, Steffen Rendle.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  - w0: the global bias, of shape (1,).
+   *  - W : the strength of each feature, of shape (d, 1).
+   *  - V : factorized interaction terms, of shape (d, k).
+   *  
+   * Outputs:
+   *  - y : target vector, of shape (n, 1)
+   */
+   
+   y = w0 + X %*% W + 0.5 * rowSums( (X%*% V)^2 - (X^2 %*% V^2) )
+}
+   
+   
+// TODO : These gradients, from the paper, are the gradients w.r.t. the output y of the  
+// FM model, i.e., dy/dPARAM. We will want to optimize some loss function depending 
+// on the problem, so we'll want to compute dloss/dPARAM. 
+
+backward = function(matrix[double] dloss/dy, matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
+    return (matrix[double] dw0, matrix[double] dW, matrix[double] dV) {
+   /*
+    * This function accepts the upstream gradients w.r.t y, and returns
+    * the gradients of the loss w.r.t the parameters
+    *
+    * Inputs:
+    *  - dloss/dy : the gradient of the loss function w.r.t y, of shape (n, 1).
+    *  - X, w0, W, V are as mentioned in the above forward function.
+    *
+    * Outputs:
+    *  - dw0: the gradient of loss function w.r.t w0, of shape (1,).
+    *  - dW : the gradient of loss function w.r.t  W, of shape (d, 1). 
+    *  - dV : the gradient of loss function w.r.t  V, of shape (d, k).
+    */
+    
+    dw0 = as.matrix(1,)
+    dW  = colSums(X != 0)
+    dV  = (colSums(t(V) %*% colSums( X != 0)) - colSums(t(V) %*% (X * X))
+}
+
+init = function(int d, int k)
+    return (matrix[double] w0, matrix[double] W, matrix[double] V) {
+   /* 
+    * This function initializes the parameters.
+    * 
+    * Inputs:
+    *  - d: the number of features, is an integer.
+    *  - k: the factorization dimensionality, is an integer.
+    *
+    * Outputs:
+    *  - w0: the global bias, of shape (1,).
+    *  - W : the strength of each feature, of shape (d, 1).
+    *  - V : factorized interaction terms, of shape (d, k). 
+    */
+    
+    w0 = matrix(0, rows=1,);
+    W  = matrix(0, rows=d, cols=1)
+    V  = rand(rows=d, cols=k, min=0.0, max=1.0)
+}

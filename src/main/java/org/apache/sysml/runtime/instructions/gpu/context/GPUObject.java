@@ -95,7 +95,7 @@ public class GPUObject {
 	/**
 	 * whether the block attached to this {@link GPUContext} is dirty on the device and needs to be copied back to host
 	 */
-	protected boolean dirty = false;
+	protected volatile boolean dirty = false;
 
 	/**
 	 * number of read/write locks on this object (this GPUObject is being used in a current instruction)
@@ -110,7 +110,7 @@ public class GPUObject {
 	/**
 	 * Whether this block is in sparse format
 	 */
-	protected boolean isSparse = false;
+	protected volatile boolean isSparse = false;
 
 	/**
 	 * Enclosing {@link MatrixObject} instance
@@ -334,6 +334,8 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public synchronized void denseToSparse() throws DMLRuntimeException {
+		if (isSparse)
+			return;
 		LOG.trace("GPU : dense -> sparse on " + this + ", GPUContext=" + getGPUContext());
 		long t0 = 0;
 		if (DMLScript.STATISTICS)
@@ -416,6 +418,8 @@ public class GPUObject {
 	 * @throws DMLRuntimeException ?
 	 */
 	public synchronized void sparseToDense(String instructionName) throws DMLRuntimeException {
+		if (!isSparse)
+			return;
 		LOG.trace("GPU : sparse -> dense on " + this + ", GPUContext=" + getGPUContext());
 		long start = 0, end = 0;
 		if (DMLScript.STATISTICS)

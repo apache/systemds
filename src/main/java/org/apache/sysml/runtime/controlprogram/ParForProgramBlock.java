@@ -828,9 +828,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			// Frees up the GPUContexts used in the threaded Parfor and sets
 			// the main thread to use the GPUContext
 			if (DMLScript.USE_ACCELERATOR) {
-				for (int i = 0; i < _numThreads; i++) {
-					workers[i].getExecutionContext().setGPUContexts(null);
-				}
 				ec.getGPUContext(0).initializeThread();
 			}
 		}

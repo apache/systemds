@@ -131,7 +131,7 @@ public class FunctionCallCP extends Lop
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_outputs.length);
-		inst.append(outputs.lenth);
+		inst.append(outputs.length);
 		
 		for(int i=0; i<inputs.length; i++) {
 			inst.append(Lop.OPERAND_DELIMITOR);

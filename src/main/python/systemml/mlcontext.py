@@ -52,6 +52,7 @@ def _get_spark_context():
     """
     if SparkContext._active_spark_context is not None:
         sc = SparkContext._active_spark_context
+        global _loadedSystemML
         if not _loadedSystemML:
             createJavaObject(sc, 'dummy')
             _loadedSystemML = True

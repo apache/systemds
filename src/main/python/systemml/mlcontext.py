@@ -43,7 +43,8 @@ import threading, time
 _loadedSystemML = False
 def _get_spark_context():
     """
-    Internal method to get already initialized SparkContext.
+    Internal method to get already initialized SparkContext.  Developers should always use
+    _get_spark_context() instead of SparkContext._active_spark_context to ensure SystemML loaded.
 
     Returns
     -------
@@ -74,7 +75,7 @@ class jvm_stdout(object):
         Should flush the stdout in parallel
     """
     def __init__(self, parallel_flush=False):
-        self.util = SparkContext._active_spark_context._jvm.org.apache.sysml.api.ml.Utils()
+        self.util = _get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
         self.parallel_flush = parallel_flush
         self.t = threading.Thread(target=self.flush_stdout)
         self.stop = False

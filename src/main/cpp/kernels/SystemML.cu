@@ -35,12 +35,13 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  */
 extern "C"
 __global__ void copy_u2l_dense(double* ret, int dim, int N) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / dim;
+	int iy = tid % dim;
 	int id_dest = iy * dim + ix;
 	if(iy > ix && id_dest < N) {
 		// TODO: Potential to reduce the number of threads by half
-		int id_src = ix * dim + iy;
+		int id_src = tid;
 		ret[id_dest] = ret[id_src];
 	}
 }

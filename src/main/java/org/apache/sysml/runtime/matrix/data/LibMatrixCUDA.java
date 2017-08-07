@@ -1353,7 +1353,7 @@ public class LibMatrixCUDA {
 		}
 		int dim = (int) ret.getNumRows();
 		getCudaKernels(gCtx).launchKernel("copy_u2l_dense",
-						ExecutionConfig.getConfigForSimpleMatrixOperations(dim, dim),
+						ExecutionConfig.getConfigForSimpleVectorOperations(dim*dim),
 						getDensePointer(gCtx, ret, instName), dim, dim*dim);
 	}
 

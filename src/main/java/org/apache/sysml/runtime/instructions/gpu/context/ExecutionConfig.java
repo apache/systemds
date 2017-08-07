@@ -134,4 +134,10 @@ public class ExecutionConfig {
 		return ret;
 	}
 
+	@Override
+	public String toString() {
+		return "ExecutionConfig{" + "gridDimX=" + gridDimX + ", gridDimY=" + gridDimY + ", gridDimZ=" + gridDimZ
+				+ ", blockDimX=" + blockDimX + ", blockDimY=" + blockDimY + ", blockDimZ=" + blockDimZ
+				+ ", sharedMemBytes=" + sharedMemBytes + '}';
+	}
 }

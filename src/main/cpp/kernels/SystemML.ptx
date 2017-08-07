@@ -34,36 +34,33 @@
 )
 {
 	.reg .pred 	%p<4>;
-	.reg .b32 	%r<13>;
+	.reg .b32 	%r<10>;
 	.reg .f64 	%fd<2>;
 	.reg .b64 	%rd<7>;
 
 
 	ld.param.u64 	%rd1, [copy_u2l_dense_param_0];
-	ld.param.u32 	%r4, [copy_u2l_dense_param_1];
-	ld.param.u32 	%r5, [copy_u2l_dense_param_2];
-	mov.u32 	%r6, %ntid.x;
-	mov.u32 	%r7, %ctaid.x;
-	mov.u32 	%r8, %tid.x;
-	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	mov.u32 	%r9, %ntid.y;
-	mov.u32 	%r10, %ctaid.y;
-	mov.u32 	%r11, %tid.y;
-	mad.lo.s32 	%r2, %r9, %r10, %r11;
-	mad.lo.s32 	%r3, %r2, %r4, %r1;
-	setp.gt.s32	%p1, %r2, %r1;
-	setp.lt.s32	%p2, %r3, %r5;
+	ld.param.u32 	%r3, [copy_u2l_dense_param_1];
+	ld.param.u32 	%r4, [copy_u2l_dense_param_2];
+	mov.u32 	%r5, %ntid.x;
+	mov.u32 	%r6, %ctaid.x;
+	mov.u32 	%r7, %tid.x;
+	mad.lo.s32 	%r1, %r5, %r6, %r7;
+	div.s32 	%r8, %r1, %r3;
+	rem.s32 	%r9, %r1, %r3;
+	mad.lo.s32 	%r2, %r9, %r3, %r8;
+	setp.gt.s32	%p1, %r9, %r8;
+	setp.lt.s32	%p2, %r2, %r4;
 	and.pred  	%p3, %p1, %p2;
 	@!%p3 bra 	BB0_2;
 	bra.uni 	BB0_1;
 
 BB0_1:
 	cvta.to.global.u64 	%rd2, %rd1;
-	mad.lo.s32 	%r12, %r1, %r4, %r2;
-	mul.wide.s32 	%rd3, %r12, 8;
+	mul.wide.s32 	%rd3, %r1, 8;
 	add.s64 	%rd4, %rd2, %rd3;
 	ld.global.f64 	%fd1, [%rd4];
-	mul.wide.s32 	%rd5, %r3, 8;
+	mul.wide.s32 	%rd5, %r2, 8;
 	add.s64 	%rd6, %rd2, %rd5;
 	st.global.f64 	[%rd6], %fd1;
 

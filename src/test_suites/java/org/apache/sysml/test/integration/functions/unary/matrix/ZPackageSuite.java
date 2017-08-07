@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
 	FullSignTest.class,
 	IQMTest.class,
 	LUFactorizeTest.class,
+	SVDFactorizeTest.class,
 	MatrixInverseTest.class,
 	MinusTest.class,
 	MLUnaryBuiltinTest.class,

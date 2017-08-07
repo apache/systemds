@@ -744,11 +744,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//memoization per hop id and cost vector to account for redundant
 		//computation without double counting materialized results or compute
 		//costs of complex operation DAGs within a single fused operator
-		VisitMarkCost tag = new VisitMarkCost(current.getHopID(), 
-			(costsCurrent==null || currentType==TemplateType.MAGG)?0:costsCurrent.ID);
-		if( visited.contains(tag) )
-			return 0;
-		visited.add(tag);
+		if( !visited.add(new VisitMarkCost(current.getHopID(), 
+			(costsCurrent==null || currentType==TemplateType.MAGG)?0:costsCurrent.ID)) )
+			return 0; //already existing 
 		
 		//open template if necessary, including memoization
 		//under awareness of current plan choice
@@ -792,8 +790,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//add compute costs of current operator to costs vector
-		if( part.getPartition().contains(current.getHopID()) )
-			costVect.computeCosts += computeCosts.get(current.getHopID());
+		costVect.computeCosts += computeCosts.get(current.getHopID());
 		
 		//process children recursively
 		for( int i=0; i< current.getInput().size(); i++ ) {
@@ -803,34 +800,33 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			else if( best!=null && isImplicitlyFused(current, i, best.type) )
 				costVect.addInputSize(c.getInput().get(0).getHopID(), getSize(c));
 			else { //include children and I/O costs
-				costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, null, null);
+				if( part.getPartition().contains(c.getHopID()) )
+					costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, null, null);
 				if( costVect != null && c.getDataType().isMatrix() )
 					costVect.addInputSize(c.getHopID(), getSize(c));
 			}
 		}
 		
 		//add costs for opened fused operator
-		if( part.getPartition().contains(current.getHopID()) ) {
-			if( opened ) {
-				if( LOG.isTraceEnabled() ) {
-					String type = (best !=null) ? best.type.name() : "HOP";
-					LOG.trace("Cost vector ("+type+" "+current.getHopID()+"): "+costVect);
-				}
-				double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH //time for output write
-					+ Math.max(costVect.getSumInputSizes() * 8 / READ_BANDWIDTH,
-					costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH);
-				//sparsity correction for outer-product template (and sparse-safe cell)
-				if( best != null && best.type == TemplateType.OUTER ) {
-					Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
-					tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
-				}
-				costs += tmpCosts;
+		if( opened ) {
+			if( LOG.isTraceEnabled() ) {
+				String type = (best !=null) ? best.type.name() : "HOP";
+				LOG.trace("Cost vector ("+type+" "+current.getHopID()+"): "+costVect);
 			}
-			//add costs for non-partition read in the middle of fused operator
-			else if( part.getExtConsumed().contains(current.getHopID()) ) {
-				costs += rGetPlanCosts(memo, current, visited,
-					part, matPoints, plan, computeCosts, null, null);
+			double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH //time for output write
+				+ Math.max(costVect.getSumInputSizes() * 8 / READ_BANDWIDTH,
+				costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH);
+			//sparsity correction for outer-product template (and sparse-safe cell)
+			if( best != null && best.type == TemplateType.OUTER ) {
+				Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
+				tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
 			}
+			costs += tmpCosts;
+		}
+		//add costs for non-partition read in the middle of fused operator
+		else if( part.getExtConsumed().contains(current.getHopID()) ) {
+			costs += rGetPlanCosts(memo, current, visited,
+				part, matPoints, plan, computeCosts, null, null);
 		}
 		
 		//sanity check non-negative costs

@@ -43,7 +43,8 @@ import threading, time
 _loadedSystemML = False
 def _get_spark_context():
     """
-    Internal method to get already initialized SparkContext.
+    Internal method to get already initialized SparkContext.  Developers should always use
+    _get_spark_context() instead of SparkContext._active_spark_context to ensure SystemML loaded.
 
     Returns
     -------

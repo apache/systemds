@@ -195,8 +195,6 @@ public abstract class AutomatedTestBase
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 
 	protected static final boolean DEBUG = false;
-	protected static final boolean VISUALIZE = false;
-	protected static final boolean RUNNETEZZA = false;
 
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;
@@ -1174,8 +1172,6 @@ public abstract class AutomatedTestBase
 			}
 		}
 		// program-independent parameters
-		if(VISUALIZE)
-			args.add("-v");
 		args.add("-exec");
 		if(rtplatform == RUNTIME_PLATFORM.HADOOP)
 			args.add("hadoop");

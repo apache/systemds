@@ -26,9 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 
-/**
- * Created by Fei Hu on 8/8/17.
- */
 public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
         protected static final Log LOG = LogFactory.getLog(ReaderSubBinaryBlackParallel.class.getName());
 

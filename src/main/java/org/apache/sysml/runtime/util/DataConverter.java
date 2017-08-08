@@ -265,7 +265,7 @@ public class DataConverter
           MatrixBlock ret = null;
           try {
             MatrixReader reader = MatrixReaderFactory.createSubMatrixReader(prop);
-            ret = reader.readSubMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.brlen, prop.bclen, estnnz, ixRange);
+            ret = reader.readSubsetMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.brlen, prop.bclen, estnnz, ixRange);
           }
           catch(DMLRuntimeException rex)
           {

@@ -798,7 +798,25 @@ class MLContext(object):
         """
         self._ml.setConfigProperty(propertyName, propertyValue)
         return self
-    
+
+    def setConfig(self, configFilePath):
+        """
+        Set SystemML configuration based on a configuration file.
+
+        Parameters
+        ----------
+        configFilePath: String
+        """
+        self._ml.setConfig(configFilePath)
+        return self
+
+    def resetConfig(self):
+        """
+        Reset configuration settings to default values.
+        """
+        self._ml.resetConfig()
+        return self
+
     def version(self):
         """Display the project version."""
         return self._ml.version()
@@ -818,6 +836,14 @@ class MLContext(object):
     def isStatistics(self):
         """Returns True if program execution statistics should be output, False otherwise."""
         return self._ml.isStatistics()
+
+    def isGPU(self):
+        """Returns True if GPU mode is enabled, False otherwise."""
+        return self._ml.isGPU()
+
+    def isForceGPU(self):
+        """Returns True if "force" GPU mode is enabled, False otherwise."""
+        return self._ml.isForceGPU()
 
     def close(self):
         """

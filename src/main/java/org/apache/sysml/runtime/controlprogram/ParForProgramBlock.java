@@ -549,7 +549,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	@Override	
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException
-	{	
+	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
 		// add the iterable predicate variable to the variable set

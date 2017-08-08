@@ -122,10 +122,9 @@ parfor(i3 in 1:nrow(feature_indices), check=0){
 			[pVal, contingencyTable, rowMarginals, colMarginals] = bivar_cc(labels, feature)
 			stats[feature_index2,1] = pVal
 			
-			sz3=1
-			if(1==1){
-				sz3 = nrow(contingencyTable)*ncol(contingencyTable)
-			}
+			sz3 = nrow(contingencyTable)*ncol(contingencyTable)
+			while(FALSE){}
+			
 			contingencyTableLabelValues = matrix(0, rows=1, cols=sz3)
 			contingencyTableFeatureValues = matrix(0, rows=1, cols=sz3)
 			

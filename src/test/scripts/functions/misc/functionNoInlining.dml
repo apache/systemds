@@ -22,16 +22,14 @@
 
 foo = function(Double input) return (Double out)
 {
-   if( 1==1 ){ #prevent inlining
-      out = input + input;
-   }
+   while(FALSE){} #prevent inlining
+   out = input + input;
 }
 
 foo2 = function(Integer input) return (Double out)
 { 
-   if( 1==1 ){ #prevent inlining
-      out = input + input;
-   }
+   while(FALSE){} #prevent inlining
+   out = input + input;
 }
 
 x = $1;

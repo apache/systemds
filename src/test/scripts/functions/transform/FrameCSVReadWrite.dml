@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($1, data_type="frame", format="csv");
-if(1==1){}
+while(FALSE){}
 
 print(toString(X));
 write(X, $2, format="csv");

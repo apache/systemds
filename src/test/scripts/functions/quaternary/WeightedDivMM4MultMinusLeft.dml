@@ -26,7 +26,7 @@ U = read($2);
 V = read($3);
 
 X = W/0.7;
-if(1==1){}
+while(FALSE){}
 R = t(t(U) %*% (W*(U%*%t(V)-X)));
 
 write(R, $4);

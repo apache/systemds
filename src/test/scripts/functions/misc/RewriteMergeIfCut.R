@@ -20,11 +20,16 @@
 #-------------------------------------------------------------
 
 
-A = 7;
-write(A, $1);
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
 
-while(FALSE){}
+X = matrix(0.5, 600, 10);
+ssX_V = matrix(0.9, 10, 1);
+P = matrix(0.7, 600, 2);
 
-B = read($2);
-print(B);
+Q = P[,1:1] * (X %*% ssX_V);
+R = t(X) %*% (Q - P[,1:1] * rowSums(Q));
 
+writeMM(as(R, "CsparseMatrix"), paste(args[1], "R", sep="")); 

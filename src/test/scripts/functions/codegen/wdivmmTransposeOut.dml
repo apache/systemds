@@ -23,7 +23,7 @@ X = matrix( 3, rows=4000, cols=2000)
 U = matrix( 4, rows=4000, cols=10)
 V = matrix( 5, rows=10, cols=2000)
 
-if(1==1){}
+while(FALSE){}
 
 eps = 0.1
 S= (t(U) %*% (X/((U%*%V)+eps)))

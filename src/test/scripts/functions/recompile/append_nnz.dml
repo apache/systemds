@@ -32,12 +32,13 @@ zero_cell = matrix (0, rows = 1, cols = 1);
 
 shift_X_cols = matrix (0, rows = 1, cols = m);
 
+while(FALSE){}
 if (intercept_status == 2) {
     X = (X + ones_n %*% shift_X_cols);
 }
 
 X = cbind (X, ones_n);
 
-if(1==1){ }
+while(FALSE){}
 
 print("sum="+sum(X)) 

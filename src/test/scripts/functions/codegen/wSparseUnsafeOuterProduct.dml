@@ -24,7 +24,7 @@ X[100:900,] = matrix(0, rows=801, cols=2000)
 U = matrix( 4, rows=1000, cols=10)
 V = matrix( 5, rows=2000, cols=10)
 
-if(1==1){}
+while(FALSE){}
 
 S = X+1/(U%*%t(V));
 write(S,$1)

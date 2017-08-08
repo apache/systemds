@@ -93,9 +93,9 @@
 id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes, Double minsplit) return (Matrix[Double] nodes, Matrix[Double] edges){
 	hist_labels = aggregate(target=X_subset, groups=y, fn="sum")
 	
-	if (1==1) {
-	  print(" ");
-	}
+	print(" ");
+	while(FALSE){}
+	
 	#go through the histogram to compute the number of labels
 	#with non-zero samples
 	#and to pull out the most popular label
@@ -182,20 +182,17 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		
 		attr_vals = X[,best_attr]
 		attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
-		if (1==1) {
-	  		print(" ");
-		}
+		print(" ");
+		while(FALSE){}
 
 		new_attributes = attributes
 		new_attributes[best_attr, 1] = 0
 		
 		max_sz_subtree = 2*sum(X_subset)
-		sz1 = 0
-		sz2 = 0
-		if(1==1){
-			sz2 = nrow(attr_domain)
-			sz1 = sz2*max_sz_subtree
-		}
+		sz2 = nrow(attr_domain)
+		sz1 = sz2*max_sz_subtree
+		while(FALSE){}
+		
 		tempNodeStore = matrix(0, rows=2, cols=sz1)
 		tempEdgeStore = matrix(0, rows=3, cols=sz1)
 		numSubtreeNodes = matrix(0, rows=sz2, cols=1)
@@ -225,17 +222,17 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		num_edges_in_subtrees = sum(numSubtreeEdges)
 		
 		#creating root node
-		if(1==1){
-			sz = 1+num_nodes_in_subtrees
-		}
+		sz = 1+num_nodes_in_subtrees
+		while(FALSE){}
+		
 		nodes = matrix(0, rows=sz, cols=2)
 		nodes[1,1] = best_attr
 		numNodes = 1
 		
 		#edges from root to children
-		if(1==1){
-			sz = sum(numSubtreeNodes > 0) + num_edges_in_subtrees
-		}
+		sz = sum(numSubtreeNodes > 0) + num_edges_in_subtrees
+		while(FALSE){}
+		
 		edges = matrix(1, rows=sz, cols=3)
 		numEdges = 0
 		for(i6 in 1:nrow(attr_domain)){

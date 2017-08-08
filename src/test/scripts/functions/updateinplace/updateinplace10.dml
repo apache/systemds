@@ -28,11 +28,11 @@ parfor (j in 1:m, log=DEBUG){
   for (i in 1:n){
   		print("i = " + i + " j = " + j + " Sum(B) = " + sum(B));
 		A[i,1] = j*2+i;
-		if(1 == 1)
-			B = A
+		while(FALSE){}
+		B = A
 		A[i,2] = j*3+i;
-		if(1 == 1)
-			B = A
+		while(FALSE){}
+		B = A
 		A[i,3] = j*4+i;
 	}
 }

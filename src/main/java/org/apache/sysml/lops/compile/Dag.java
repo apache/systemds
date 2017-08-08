@@ -3157,17 +3157,21 @@ public class Dag<N extends Lop>
 						MRJobLineNumbers.add(node._beginLine);
 					}
 					nodeIndexMapping.put(node, output_index);
-					return output_index;
 				}
 
 				return output_index;
 			}
-			else if (inputIndices.size() == 4) {
+			else if (inputIndices.size() == 4 || inputIndices.size() == 5) {
 				int output_index = start_index[0];
 				start_index[0]++;
-				otherInstructionsReducer.add(node.getInstructions(
-						inputIndices.get(0), inputIndices.get(1),
-						inputIndices.get(2), inputIndices.get(3), output_index));
+				if( inputIndices.size() == 4 )
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1),
+							inputIndices.get(2), inputIndices.get(3), output_index));
+				else
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1), inputIndices.get(2), 
+							inputIndices.get(3), inputIndices.get(4), output_index));
 				if(DMLScript.ENABLE_DEBUG_MODE) {
 					MRJobLineNumbers.add(node._beginLine);
 				}

@@ -30,7 +30,7 @@ R = matrix(0,rows=m,cols=n);
 parfor( i in 1:m )
 {
    col = V[i,];
-   if(1==1){}
+   while(FALSE){}
    R[i,] = col; 
 }   
 

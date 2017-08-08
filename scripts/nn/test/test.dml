@@ -599,7 +599,7 @@ max_pool2d = function() {
   for (padh in 0:3) {
     for (padw in 0:3) {
       print(" - Testing w/ padh="+padh+" & padw="+padw+".")
-      #if (1==1) {}  # force correct printing
+      #while(FALSE){}  # force correct printing
       #print("   - Testing forward")
       [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
       [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,

@@ -24,7 +24,7 @@ jspec = "{\"ids\": true, \"recode\": [1,2,3]}";
 
 [X, M] = transformencode(target=F1, spec=jspec);
 
-if(1==1){}
+while(FALSE){}
 
 F2 = transformdecode(target=X, spec=jspec, meta=M);
 

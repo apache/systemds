@@ -23,7 +23,7 @@
 X = matrix(seq(1,3000), 60, 50);
 Y = seq(1,60);
 Xw = seq(2,61);
-if(1==1){}
+while(FALSE){}
 
 out = 1 - Y * Xw
 sv = (out > 0)
@@ -31,7 +31,7 @@ out = sv * out
 obj = 0.5 * sum(out * out)
 g_new = t(X) %*% (out * Y)
 
-if(1==1){}
+while(FALSE){}
 R = as.matrix(obj + sum(g_new));
 
 write(R, $1)

@@ -2652,7 +2652,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testFunctionNoReturnValueForceFunctionCallDML() {
 		System.out.println("MLContextTest - function with no return value, force function call DML");
 
-		String s = "hello=function(){\nif(1==1){};\nprint('no return value, force function call');\n}\nhello();";
+		String s = "hello=function(){\nwhile(FALSE){};\nprint('no return value, force function call');\n}\nhello();";
 		Script script = dml(s);
 		setExpectedStdOut("no return value, force function call");
 		ml.execute(script);

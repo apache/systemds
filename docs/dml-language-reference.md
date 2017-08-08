@@ -1782,7 +1782,7 @@ The following DML utilizes the `transformencode()` function.
     jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
     [X, M] = transformencode(target=F1, spec=jspec);
     print(toString(X));
-    if(1==1){}
+    while(FALSE){}
     print(toString(M));
 
 The transformed matrix X and output M are as follows.

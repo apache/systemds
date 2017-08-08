@@ -1337,8 +1337,7 @@ public class DMLTranslator
 						Hop.OpOp1 op = Hop.OpOp1.PRINT;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
-						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
-								ae);
+						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
 						printHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
 								current.getEndColumn());
 						output.add(printHop);
@@ -1346,11 +1345,11 @@ public class DMLTranslator
 						Hop.OpOp1 op = Hop.OpOp1.STOP;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
-						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
-								ae);
+						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
 						stopHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
 								current.getEndColumn());
 						output.add(stopHop);
+						sb.setSplitDag(true); //avoid merge
 					} else if (ptype == PRINTTYPE.PRINTF) {
 						List<Expression> expressions = ps.getExpressions();
 						Hop[] inHops = new Hop[expressions.size()];

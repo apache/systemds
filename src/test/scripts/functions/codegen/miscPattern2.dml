@@ -22,7 +22,7 @@
 X = matrix(1, 2340, 7);
 Y = matrix(2, 2340, 7);
 
-if(1==1){}
+while(FALSE){}
 
 Z = abs(exp((log(exp(X + Y))+7)/7));
 

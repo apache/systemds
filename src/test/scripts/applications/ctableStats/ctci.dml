@@ -88,9 +88,9 @@ iBlock = 0;
 for (iLabel in 1:numLabels)
 {
     if (iLabel != nullLabel) {
-        if (1==1) {
-            print ("Processing label " + iLabel + ":");
-        }
+        print ("Processing label " + iLabel + ":");
+        while(FALSE){}
+        
         fCol = 1 + iBlock * 100;
         HeadMtx [iLabel, 1] = fCol + zero;
         cntPartitionsWithLabel = CT [, iLabel];

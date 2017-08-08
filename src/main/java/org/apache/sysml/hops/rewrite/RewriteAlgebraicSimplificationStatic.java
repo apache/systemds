@@ -1647,11 +1647,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				inputargs.put("cast", new LiteralOp(false));
 			
 				//create new hop
-				ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, 
-						ParamBuiltinOp.REXPAND, inputargs);
-				pbop.setOutputBlocksizes(hi.getRowsInBlock(), hi.getColsInBlock());
-				pbop.refreshSizeInformation();
-		
+				ParameterizedBuiltinOp pbop = HopRewriteUtils
+					.createParameterizedBuiltinOp(trgt, inputargs, ParamBuiltinOp.REXPAND);
+				
 				//relink new hop into original position
 				HopRewriteUtils.replaceChildReference(parent, hi, pbop, pos);
 				hi = pbop;

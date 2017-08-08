@@ -314,9 +314,9 @@ printFoldStatistics = function (Matrix[double] stats ) return( Integer err )
     print ("     Precision %:  Min = " + as.scalar (stats_min [1, 15]) + ",  Avg = " + as.scalar (stats_avg [1, 15]) + ",  Max = " + as.scalar (stats_max [1, 15]));
 
     print (" ");
-    if (1==1) {
-      print(" ")
-    }
+    print(" ")
+    while(FALSE){}
+    
     print ("TEST Data, Label comparison statistics:");
     print ("    True Matches:  Min = " + as.scalar (stats_min [1, 31]) + ",  Avg = " + as.scalar (stats_avg [1, 31]) + ",  Max = " + as.scalar (stats_max [1, 31]));
     print ("   False Matches:  Min = " + as.scalar (stats_min [1, 32]) + ",  Avg = " + as.scalar (stats_avg [1, 32]) + ",  Max = " + as.scalar (stats_max [1, 32]));

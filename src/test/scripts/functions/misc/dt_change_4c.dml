@@ -22,7 +22,7 @@
 
 foo = function(Matrix[Double] input) return (Double out) 
 {
-   if( 1==1 ){} #prevent inlining
+   while(FALSE){} #prevent inlining
   
    out = as.scalar(input[1,1]);
 }

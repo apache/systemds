@@ -1080,7 +1080,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//set output characteristics
 			output.setDataType(id.getDataType());
 			output.setDimensions(id.getDim1(), id2.getDim2());
-			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
+			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			break;
 		
 		case BIAS_ADD:

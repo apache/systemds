@@ -26,7 +26,6 @@ library("Matrix")
 X = matrix(1, 1002, 23);
 Y = seq(1, 1002);
 X[100:900,] = matrix(0, 801, 23); 
-if(1==1){}
 
 R = X * ((X + 7.7) * (Y%*%matrix(1,1,23)));
 

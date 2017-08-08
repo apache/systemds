@@ -77,6 +77,7 @@ public class Statistics
 	private static final LongAdder codegenClassCompileTime = new LongAdder(); //in nano
 	private static final LongAdder codegenHopCompile = new LongAdder(); //count
 	private static final LongAdder codegenFPlanCompile = new LongAdder(); //count
+	private static final LongAdder codegenFPlanPartialCompile = new LongAdder(); //count
 	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenClassCompile = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
@@ -260,6 +261,9 @@ public class Statistics
 	public static void incrementCodegenFPlanCompile(long delta) {
 		codegenFPlanCompile.add(delta);
 	}
+	public static void incrementCodegenFPlanPartialCompile(long delta) {
+		codegenFPlanPartialCompile.add(delta);
+	}
 	
 	public static void incrementCodegenClassCompile() {
 		codegenClassCompile.increment();
@@ -291,6 +295,9 @@ public class Statistics
 	
 	public static long getCodegenFPlanCompile() {
 		return codegenFPlanCompile.longValue();
+	}
+	public static long getCodegenFPlanPartialCompile() {
+		return codegenFPlanPartialCompile.longValue();
 	}
 	
 	public static long getCodegenClassCompile() {
@@ -387,6 +394,7 @@ public class Statistics
 		
 		codegenHopCompile.reset();
 		codegenFPlanCompile.reset();
+		codegenFPlanPartialCompile.reset();
 		codegenCPlanCompile.reset();
 		codegenClassCompile.reset();
 		codegenCompileTime.reset();
@@ -774,7 +782,8 @@ public class Statistics
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,FP,CP,JC):\t" + getCodegenDAGCompile() + "/" + getCodegenFPlanCompile() 
-					+ "/" + getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
+					+"[p"+getCodegenFPlanPartialCompile()
+						+ "]/" + getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
 				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");

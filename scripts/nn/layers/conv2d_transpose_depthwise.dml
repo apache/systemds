@@ -85,7 +85,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
   Wout = stridew*(Win-1) - 2*padw + Wf + out_padw
 
   # create output volume
-  out = matrix(0, rows=N, cols=C/M*Hout*Wout)
+  out = matrix(1, rows=N, cols=C/M*Hout*Wout)
 
   # depthwise transpose convolution
   # TODO: Explore usage of parfor loops more to determine if they can provide a performance
@@ -146,9 +146,9 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   F = nrow(W)
 
   # create gradient volumes
-  dX = matrix(0, rows=N, cols=C*Hin*Win)
-  dW = matrix(0, rows=C/M, cols=M*Hf*Wf)
-  db = matrix(0, rows=C/M, cols=1)
+  dX = matrix(1, rows=N, cols=C*Hin*Win)
+  dW = matrix(1, rows=C/M, cols=M*Hf*Wf)
+  db = matrix(1, rows=C/M, cols=1)
 
   # depthwise transpose convolution
   for (f in 1:F) {

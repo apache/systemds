@@ -613,7 +613,7 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
 	  
 	  val lossLayers = getLossLayers(net)
 	  val lastLayerShape = estimator.getOutputShapeOfLastLayer
-	  assign(tabDMLScript, "Prob", matrix("0", Caffe2DML.numImages, (lastLayerShape._1*lastLayerShape._2*lastLayerShape._3).toString))
+	  assign(tabDMLScript, "Prob", matrix("1", Caffe2DML.numImages, (lastLayerShape._1*lastLayerShape._2*lastLayerShape._3).toString))
 	  estimator.getTestAlgo.toLowerCase match {
       case "minibatch" => {
         ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)

@@ -139,8 +139,6 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
           SequenceFile.Reader reader = new SequenceFile.Reader(_fs, _path, _job);
 
           try {
-            System.out.println("****** SubMatrix Path is " + this._path.toString() + String
-                .format(" row length %d; column length %d ", _rlen, _clen));
             //note: next(key, value) does not yet exploit the given serialization classes, record reader does but is generally slower.
             while (reader.next(key)) {
               int row_offset = (int) (key.getRowIndex() - 1) * _brlen;
@@ -148,6 +146,9 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               int row_end = (int) Math.min(row_offset + _brlen - 1, _rlen);
               int col_end = (int) Math.min(col_offset + _bclen - 1, _clen);
 
+              //judge whether this key is overlapped with the input index range; if they are overlapped,
+              // min_row and max_row will be the start and end point for the row index of the overlapped matrix, min_col and max_col
+              // will be the start and end point for the column index of the overlapped matrix
               int min_row = (int) Math.max(row_offset, _ixRange.rowStart);
               int min_col = (int) Math.max(col_offset, _ixRange.colStart);
               int max_row = (int) Math.min(row_end, _ixRange.rowEnd);
@@ -155,8 +156,8 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
 
               boolean isOverlapped = !((min_row > max_row) || (min_col > max_col));
 
-              if (!isOverlapped) {
-                LOG.trace("Filter out the MatricBlock " + key.toString());
+              if (LOG.isTraceEnabled()) {
+                LOG.trace("the MatricBlock " + key.toString() + " is filtered out ? " + isOverlapped );
                 continue;
               }
 
@@ -164,6 +165,7 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               int rows = value.getNumRows();
               int cols = value.getNumColumns();
 
+              //compute the relative location of the overlapped matrix in the result matrix
               int row_offset_ret = (int) (min_row - _ixRange.rowStart);
               int col_offset_ret = (int) (min_col - _ixRange.colStart);
               int row_end_ret = (int) (max_row - _ixRange.rowStart);

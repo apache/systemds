@@ -497,6 +497,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
               //get object from cache
               if( _data == null )
                 getCache();
+
+              if ( _data != null)
                 _data = (T) _data.sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd, (int) ixrange.colStart, (int) ixrange.colEnd, _data);
 
               //call acquireHostRead if gpuHandle is set as well as is allocated

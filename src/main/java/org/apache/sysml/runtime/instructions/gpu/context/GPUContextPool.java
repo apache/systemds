@@ -130,7 +130,7 @@ public class GPUContextPool {
 		// initially available memory is set to the GPU with the lowest memory
 		// This is because at runtime, we wouldn't know which GPU a certain
 		// operation gets scheduled on
-		long minAvailableMemory = Integer.MAX_VALUE;
+		long minAvailableMemory = Long.MAX_VALUE;
 		for (GPUContext gCtx : pool) {
 			gCtx.initializeThread();
 			minAvailableMemory = Math.min(minAvailableMemory, gCtx.getAvailableMemory());

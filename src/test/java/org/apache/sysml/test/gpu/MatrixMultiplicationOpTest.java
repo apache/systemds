@@ -153,6 +153,7 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 			for (int j = 0; j < sparsities.length; j++) {
 				int side = sizes[i];
 				double sparsity = sparsities[j];
+				System.out.println("Transpose Self matrix multiply, size = " + side + ", sparsity = " + sparsity);
 				Matrix X = generateInputMatrix(spark, side, side, sparsity, seed);
 				HashMap<String, Object> inputs = new HashMap<>();
 				inputs.put("X", X);

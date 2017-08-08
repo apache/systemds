@@ -140,10 +140,14 @@ public class GPUContext {
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
 
-		long start = System.nanoTime();
+		long start = -1;
+		if (DMLScript.STATISTICS)
+			start = System.nanoTime();
 		initializeCudaLibraryHandles();
 
-		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		if (DMLScript.STATISTICS)
+			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 

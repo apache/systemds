@@ -15,7 +15,6 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.IndexRange;
-import org.apache.sysml.udf.Matrix;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               checkValidInputFile(fs, path);
 
               //core read
-              readSubBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, ixRange);
+              readSubsetBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, ixRange);
 
               //finally check if change of sparse/dense block representation required
               if (!AGGREGATE_BLOCK_NNZ)
@@ -64,9 +63,9 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               return ret;
         }
 
-        private static void readSubBinaryBlockMatrixFromHDFS(Path path, JobConf job, FileSystem fs,
-                                                             MatrixBlock dest, long rlen, long clen,
-                                                             int brlen, int bclen, IndexRange ixRange)
+        private static void readSubsetBinaryBlockMatrixFromHDFS(Path path, JobConf job, FileSystem fs,
+                                                                MatrixBlock dest, long rlen, long clen,
+                                                                int brlen, int bclen, IndexRange ixRange)
             throws IOException, DMLRuntimeException {
               //set up preferred custom serialization framework for binary block format
               if (MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION)
@@ -154,10 +153,13 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               int max_row = (int) Math.min(row_end, _ixRange.rowEnd);
               int max_col = (int) Math.min(col_end, _ixRange.colEnd);
 
-              boolean isOverlapped = !((min_row > max_row) || (min_col > max_col));
+              boolean isOverlapped = !((min_row >= max_row) || (min_col >= max_col));
 
               if (LOG.isTraceEnabled()) {
                 LOG.trace("the MatricBlock " + key.toString() + " is filtered out ? " + isOverlapped );
+              }
+
+              if (!isOverlapped) {
                 continue;
               }
 
@@ -170,6 +172,10 @@ public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
               int col_offset_ret = (int) (min_col - _ixRange.colStart);
               int row_end_ret = (int) (max_row - _ixRange.rowStart);
               int col_end_ret = (int) (max_col - _ixRange.colStart);
+
+              if (max_row < row_offset) {
+                System.out.println("max_row < row_offset");
+              }
 
               MatrixBlock sub_value = value.sliceOperations(min_row - row_offset, max_row - row_offset, min_col - col_offset, max_col - col_offset, new MatrixBlock());
 

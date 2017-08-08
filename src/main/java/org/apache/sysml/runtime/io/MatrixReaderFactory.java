@@ -102,4 +102,43 @@ public class MatrixReaderFactory
 		
 		return reader;
 	}
+
+        public static MatrixReader createSubMatrixReader(ReadProperties props)
+            throws DMLRuntimeException
+        {
+                //check valid read properties
+                if( props == null )
+                  throw new DMLRuntimeException("Failed to create matrix reader with empty properties.");
+
+                MatrixReader reader = null;
+                InputInfo iinfo = props.inputInfo;
+
+                //TODO: add the subset Reader for other matrices in format textcell, matrixmarket, and binarycell
+                if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
+                  if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
+                    reader = new ReaderTextCellParallel( iinfo );
+                  else
+                    reader = new ReaderTextCell( iinfo );
+                }
+                else if( iinfo == InputInfo.CSVInputInfo ) {
+                  if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
+                    reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
+                  else
+                    reader = new ReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
+                }
+                else if( iinfo == InputInfo.BinaryCellInputInfo )
+                  reader = new ReaderBinaryCell();
+                else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
+                  if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
+                    reader = new ReaderSubsetBinaryBlackParallel( props.localFS);
+                  else
+                    reader = new ReaderBinaryBlock( props.localFS );
+                }
+                else {
+                  throw new DMLRuntimeException("Failed to create matrix reader for unknown input info: "
+                                                + InputInfo.inputInfoToString(iinfo));
+                }
+
+                return reader;
+              }
 }

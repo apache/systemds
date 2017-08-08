@@ -518,6 +518,37 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return mb;
 	}
+
+        @Override
+        protected MatrixBlock subsetBlobFromHDFS(String fname, long rlen, long clen, IndexRange ixRange)
+            throws IOException
+        {
+                MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+                MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+                long begin = 0;
+
+                if( LOG.isTraceEnabled() ) {
+                  LOG.trace("Reading matrix from HDFS...  " + getVarName() + "  Path: " + fname
+                            + ", dimensions: [" + mc.getRows() + ", " + mc.getCols() + ", " + mc.getNonZeros() + "]");
+                  begin = System.currentTimeMillis();
+                }
+
+                //read matrix and maintain meta data
+                double sparsity = (mc.getNonZeros() >= 0 ? ((double)mc.getNonZeros())/(mc.getRows()*mc.getCols()) : 1.0d);
+                MatrixBlock newData = DataConverter.subsetMatrixFromHDFS(fname, iimd.getInputInfo(), rlen, clen,
+                                                                      mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, getFileFormatProperties(),
+                                                                      ixRange);
+                setHDFSFileExists(true);
+
+                //sanity check correct output
+                if( newData == null )
+                  throw new IOException("Unable to load matrix from file: "+fname);
+
+                if( LOG.isTraceEnabled() )
+                  LOG.trace("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
+
+                return newData;
+        }
 	
 	/**
 	 * Writes in-memory matrix to HDFS in a specified format.

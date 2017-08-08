@@ -62,7 +62,9 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			{
 				//execute right indexing operation
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-				resultBlock = matBlock.sliceOperations(ixrange, new MatrixBlock());	
+				//resultBlock = matBlock.sliceOperations(ixrange, new MatrixBlock());
+                                resultBlock = ec.subsetMatrixInput(input1.getName(), getExtendedOpcode(), ixrange);
+
 				
 				//unpin rhs input
 				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

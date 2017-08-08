@@ -175,7 +175,7 @@ public class ReachabilityGraph
 		for( CutSet cs : _cutSets )
 			if( isCutSet(cs, plan) ) {
 				int pos = cs.posCut[cs.posCut.length-1];				
-				return (long) Math.pow(2, plan.length-pos-1);
+				return 1L << plan.length-pos-1;
 			}
 		throw new RuntimeException("Failed to compute "
 			+ "number of skip plans for plan without cutset.");
@@ -258,6 +258,15 @@ public class ReachabilityGraph
 		}
 		
 		return cutSets;
+	}
+
+	public void permute(int[] sortIndices) {
+		_searchSpace = Arrays.stream(sortIndices).mapToObj(i -> _searchSpace[i]).toArray(InterestingPoint[]::new);
+		for (CutSet cs : _cutSets) {
+			cs.posCut = Arrays.stream(cs.posCut).map(i -> sortIndices[i]).toArray();
+			cs.posLeft = Arrays.stream(cs.posLeft).map(i -> sortIndices[i]).toArray();
+			cs.posRight = Arrays.stream(cs.posRight).map(i -> sortIndices[i]).toArray();
+		}
 	}
 		
 	public static class SubProblem {

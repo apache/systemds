@@ -108,27 +108,27 @@ public class GPUContext {
 	/**
 	 * cudnnHandle for Deep Neural Network operations on the GPU
 	 */
-	private cudnnHandle cudnnHandle;
+	private final ThreadLocal<cudnnHandle> cudnnHandle = new ThreadLocal<>();
 	/**
 	 * cublasHandle for BLAS operations on the GPU
 	 */
-	private cublasHandle cublasHandle;
+	private final ThreadLocal<cublasHandle> cublasHandle = new ThreadLocal<>();
 	/**
 	 * cusparseHandle for certain sparse BLAS operations on the GPU
 	 */
-	private cusparseHandle cusparseHandle;
+	private final ThreadLocal<cusparseHandle> cusparseHandle = new ThreadLocal<>();
 	/**
 	 * cusolverDnHandle for invoking solve() function on dense matrices on the GPU
 	 */
-	private cusolverDnHandle cusolverDnHandle;
+	private final ThreadLocal<cusolverDnHandle> cusolverDnHandle = new ThreadLocal<>();
 	/**
 	 * cusolverSpHandle for invoking solve() function on sparse matrices on the GPU
 	 */
-	private cusolverSpHandle cusolverSpHandle;
+	private final ThreadLocal<cusolverSpHandle> cusolverSpHandle = new ThreadLocal<>();
 	/**
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
-	private JCudaKernels kernels;
+	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
@@ -140,28 +140,51 @@ public class GPUContext {
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
 
-		long start = System.nanoTime();
-		cudnnHandle = new cudnnHandle();
-		cudnnCreate(cudnnHandle);
-		cublasHandle = new cublasHandle();
-		cublasCreate(cublasHandle);
-		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
-		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
-		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
-		cusparseHandle = new cusparseHandle();
-		cusparseCreate(cusparseHandle);
+		long start = -1;
+		if (DMLScript.STATISTICS)
+			start = System.nanoTime();
+		initializeCudaLibraryHandles();
 
-		cusolverDnHandle = new cusolverDnHandle();
-		cusolverDnCreate(cusolverDnHandle);
-		cusolverSpHandle = new cusolverSpHandle();
-		cusolverSpCreate(cusolverSpHandle);
-
-		kernels = new JCudaKernels(deviceNum);
-
-		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		if (DMLScript.STATISTICS)
+			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
+	}
+
+	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
+		if (cudnnHandle.get() == null) {
+			cudnnHandle.set(new cudnnHandle());
+			cudnnCreate(cudnnHandle.get());
+		}
+
+		if (cublasHandle.get() == null) {
+			cublasHandle.set(new cublasHandle());
+			cublasCreate(cublasHandle.get());
+		}
+		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
+		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
+		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
+
+		if (cusparseHandle.get() == null) {
+			cusparseHandle.set(new cusparseHandle());
+			cusparseCreate(cusparseHandle.get());
+		}
+
+		if (cusolverDnHandle.get() == null) {
+			cusolverDnHandle.set(new cusolverDnHandle());
+			cusolverDnCreate(cusolverDnHandle.get());
+		}
+
+		if (cusolverSpHandle.get() == null) {
+			cusolverSpHandle.set(new cusolverSpHandle());
+			cusolverSpCreate(cusolverSpHandle.get());
+		}
+
+		if (kernels.get() == null) {
+			kernels.set(new JCudaKernels());
+		}
 	}
 
 	public static int cudaGetDevice() {
@@ -181,8 +204,9 @@ public class GPUContext {
 	 * If in a multi-threaded env like parfor, this method must be called when in the
 	 * appropriate thread
 	 */
-	public void initializeThread() {
+	public void initializeThread() throws DMLRuntimeException {
 		cudaSetDevice(deviceNum);
+		initializeCudaLibraryHandles();
 	}
 
 	/**
@@ -595,27 +619,27 @@ public class GPUContext {
 	}
 
 	public cudnnHandle getCudnnHandle() {
-		return cudnnHandle;
+		return cudnnHandle.get();
 	}
 
 	public cublasHandle getCublasHandle() {
-		return cublasHandle;
+		return cublasHandle.get();
 	}
 
 	public cusparseHandle getCusparseHandle() {
-		return cusparseHandle;
+		return cusparseHandle.get();
 	}
 
 	public cusolverDnHandle getCusolverDnHandle() {
-		return cusolverDnHandle;
+		return cusolverDnHandle.get();
 	}
 
 	public cusolverSpHandle getCusolverSpHandle() {
-		return cusolverSpHandle;
+		return cusolverSpHandle.get();
 	}
 
 	public JCudaKernels getKernels() {
-		return kernels;
+		return kernels.get();
 	}
 
 	/**
@@ -626,15 +650,11 @@ public class GPUContext {
 	public void destroy() throws DMLRuntimeException {
 		LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 		clearMemory();
-		cudnnDestroy(cudnnHandle);
-		cublasDestroy(cublasHandle);
-		cusparseDestroy(cusparseHandle);
-		cusolverDnDestroy(cusolverDnHandle);
-		cusolverSpDestroy(cusolverSpHandle);
-		cudnnHandle = null;
-		cublasHandle = null;
-		cusparseHandle = null;
-
+		cudnnDestroy(cudnnHandle.get());
+		cublasDestroy(cublasHandle.get());
+		cusparseDestroy(cusparseHandle.get());
+		cusolverDnDestroy(cusolverDnHandle.get());
+		cusolverSpDestroy(cusolverSpHandle.get());
 	}
 
 	/**

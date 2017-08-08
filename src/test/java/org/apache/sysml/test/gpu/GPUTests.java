@@ -98,6 +98,24 @@ public abstract class GPUTests extends AutomatedTestBase {
 	}
 
 	/**
+	 * Generates an input matrix which is a sequence of integers
+	 * @param spark valid instance of {@link SparkSession}
+	 * @param m number of rows
+	 * @param n number of columns
+	 * @return a matrix with a sequence of integers
+	 */
+	protected Matrix generateIntegerSequenceMatrix(SparkSession spark, int m, int n) {
+		MLContext genMLC = new MLContext(spark);
+		String scriptStr;
+		scriptStr = "temp = seq(1, " + (m*n) + ")" +
+				    "in1 = matrix(temp, rows=" + m + ", cols=" + n + ")";
+		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
+		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
+		genMLC.close();
+		return in1;
+	}
+
+	/**
 	 * Generates a random input matrix with a given size and sparsity
 	 *
 	 * @param spark    valid instance of {@link SparkSession}

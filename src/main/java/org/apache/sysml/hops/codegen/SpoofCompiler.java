@@ -704,15 +704,18 @@ public class SpoofCompiler
 					}
 			}
 			
-			//remove spurious lookups on main input of cell template
-			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				rFindAndRemoveLookup(tpl.getOutput(), in1);
-			}
-			else if( tpl instanceof CNodeMultiAgg ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			//remove invalid lookups on main input (all templates)
+			CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			if( tpl instanceof CNodeMultiAgg )
 				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
-			}
+			else
+				rFindAndRemoveLookup(tpl.getOutput(), in1);
+			
+			//remove invalid row templates (e.g., due to partial unknowns)
+			if( tpl instanceof CNodeRow && (in1.getNumCols() == 1
+				|| (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+					&& tpl.getOutput().getDataType().isScalar())) )
+				cplans2.remove(e.getKey());
 			
 			//remove cplan w/ single op and w/o agg
 			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG

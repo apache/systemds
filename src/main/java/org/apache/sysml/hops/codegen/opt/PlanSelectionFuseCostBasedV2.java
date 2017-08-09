@@ -224,8 +224,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		long len = 1L << matPoints.length-off;
 		boolean[] bestPlan = null;
 		int numEvalPlans = 0, numEvalPartialPlans = 0;
-		// for counting the number of Hops visited during costing
-		final long[] partialHopsVisitedCount = DMLScript.STATISTICS ? new long[] {0} : null;
 
 		for( long i=0; i<len; i++ ) {
 			//construct assignment
@@ -267,8 +265,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			
 			//cost assignment on hops. Stop early if exceeds bestC.
-			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts,
-					bestC, partialHopsVisitedCount);
+			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts, bestC);
 			if( C == Double.POSITIVE_INFINITY ) {
 				numEvalPartialPlans++;
 				if( LOG.isTraceEnabled() )
@@ -295,9 +292,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		if( DMLScript.STATISTICS ) {
 			Statistics.incrementCodegenFPlanCompile(numEvalPlans);
 			Statistics.incrementCodegenFPlanPartialCompile(numEvalPartialPlans);
-			assert partialHopsVisitedCount != null;
-			Statistics.incrementCodegenFPlanPartialCompileHopsCosted(partialHopsVisitedCount[0]);
-			Statistics.incrementCodegenFPlanPartialCompileHopsTotal(numEvalPartialPlans*part.getPartition().size());
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
@@ -741,7 +735,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	
 	private static double getPlanCost(CPlanMemoTable memo, PlanPartition part, 
 			InterestingPoint[] matPoints,boolean[] plan, HashMap<Long, Double> computeCosts,
-			final double bestC, final long[] partialHopsVisitedCount)
+			final double bestC)
 	{
 		//high level heuristic: every hop or fused operator has the following cost: 
 		//WRITE + max(COMPUTE, READ), where WRITE costs are given by the output size, 
@@ -761,9 +755,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				break;
 			}
 		}
-		// Statistics: track how many hops we visited, if we didn't visit all of them
-		if( partialHopsVisitedCount != null && costs == Double.POSITIVE_INFINITY )
-			partialHopsVisitedCount[0] += visited.size();
 		return costs;
 	}
 	

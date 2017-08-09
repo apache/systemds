@@ -78,8 +78,6 @@ public class Statistics
 	private static final LongAdder codegenHopCompile = new LongAdder(); //count
 	private static final LongAdder codegenFPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenFPlanPartialCompile = new LongAdder(); //count
-	private static final LongAdder codegenFPlanPartialCompileHopsCosted = new LongAdder(); //count
-	private static final LongAdder codegenFPlanPartialCompileHopsTotal = new LongAdder(); //count
 	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenClassCompile = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
@@ -266,12 +264,6 @@ public class Statistics
 	public static void incrementCodegenFPlanPartialCompile(long delta) {
 		codegenFPlanPartialCompile.add(delta);
 	}
-	public static void incrementCodegenFPlanPartialCompileHopsCosted(long delta) {
-		codegenFPlanPartialCompileHopsCosted.add(delta);
-	}
-	public static void incrementCodegenFPlanPartialCompileHopsTotal(long delta) {
-		codegenFPlanPartialCompileHopsTotal.add(delta);
-	}
 	
 	public static void incrementCodegenClassCompile() {
 		codegenClassCompile.increment();
@@ -306,12 +298,6 @@ public class Statistics
 	}
 	public static long getCodegenFPlanPartialCompile() {
 		return codegenFPlanPartialCompile.longValue();
-	}
-	public static long getCodegenFPlanPartialCompileHopsCosted() {
-		return codegenFPlanPartialCompileHopsCosted.longValue();
-	}
-	public static long getCodegenFPlanPartialCompileHopsTotal() {
-		return codegenFPlanPartialCompileHopsTotal.longValue();
 	}
 	
 	public static long getCodegenClassCompile() {
@@ -409,8 +395,6 @@ public class Statistics
 		codegenHopCompile.reset();
 		codegenFPlanCompile.reset();
 		codegenFPlanPartialCompile.reset();
-		codegenFPlanPartialCompileHopsCosted.reset();
-		codegenFPlanPartialCompileHopsTotal.reset();
 		codegenCPlanCompile.reset();
 		codegenClassCompile.reset();
 		codegenCompileTime.reset();
@@ -798,8 +782,7 @@ public class Statistics
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,FP,CP,JC):\t" + getCodegenDAGCompile() + "/" + getCodegenFPlanCompile()
-					+"[partial:"+getCodegenFPlanPartialCompile()
-						+ "@"+getCodegenFPlanPartialCompileHopsCosted()+"/"+getCodegenFPlanPartialCompileHopsTotal()+"]/"
+					+"[partial:"+getCodegenFPlanPartialCompile() + "]/"
 						+ getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");

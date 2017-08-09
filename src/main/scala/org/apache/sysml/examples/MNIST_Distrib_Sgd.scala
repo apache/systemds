@@ -3,7 +3,7 @@ package org.apache.sysml.examples
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.sysml.api.mlcontext.ScriptFactory.dml
 import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.scripts.nn.examples.Mnist_lenet_distrib_sgd
+import org.apache.sysml.scripts.nn.examples.{Mnist_lenet_distrib_sgd, Mnist_lenet_distrib_sgd_optimize}
 
 object MNIST_Distrib_Sgd {
 
@@ -35,15 +35,7 @@ object MNIST_Distrib_Sgd {
     writeMatrix(dummyVal.Y, Y_val_file)
   }
 
-  def setSparkConf(): SparkConf = {
-    val conf = new SparkConf().setAppName("SystemML-MNIST-Distrib").setMaster("local[4]").set("spark.driver.memory", "2g")
-    /*conf.set("spark.driver.memory", "2g")
-    conf.set("spark.executor.memory", "2g")*/
-
-    /*val memSize = 20 * 1024 * 1024 * 1024L
-    conf.set("spark.testing.memory", memSize.toString)*/
-    conf
-  }
+  def setSparkConf(): SparkConf = new SparkConf().setAppName("SystemML-MNIST-Distrib").setMaster("local[4]").set("spark.driver.memory", "2g")
 
   def configMLContext(ml: MLContext): Unit = {
     ml.setStatistics(true)
@@ -66,7 +58,7 @@ object MNIST_Distrib_Sgd {
 
     org.apache.sysml.api.DMLScript.rtplatform = org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK
 
-    val clf = new Mnist_lenet_distrib_sgd()
+    val clf = new Mnist_lenet_distrib_sgd_optimize()
 
     val N = 3200
     val Nval = 32
@@ -90,9 +82,6 @@ object MNIST_Distrib_Sgd {
     val Y = readMatrix(Y_file, ml)
     val X_val = readMatrix(X_val_file, ml)
     val Y_val = readMatrix(Y_val_file, ml)
-
-    //X.toMatrixObject
-    //println(X.getMatrixMetadata)
 
     val params = clf.train(X, Y, X_val, Y_val, C, Hin, Win, batchSize, paralellBatches, epochs)
     println(params.toString)

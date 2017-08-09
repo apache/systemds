@@ -64,10 +64,6 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 				//MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 				//resultBlock = matBlock.sliceOperations(ixrange, new MatrixBlock());
                                 resultBlock = ec.subsetMatrixInput(input1.getName(), getExtendedOpcode(), ixrange);
-
-				
-				//unpin rhs input
-				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 				
 				//ensure correct sparse/dense output representation
 				//(memory guarded by release of input)

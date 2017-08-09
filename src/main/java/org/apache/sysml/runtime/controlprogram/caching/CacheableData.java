@@ -471,8 +471,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 
         /**
-         * Acquires a shared "read-only" lock, produces the subsetting reference to the cache block,
-         * restores the cache block to main memory, reads from HDFS if needed.
+         * Acquires a shared "read-only" lock, produces the subsetting reference to the cache block
+         * from cache or HDFS
          *
          * Synchronized because there might be parallel threads (parfor local) that
          * access the same object (in case it was created before the loop).
@@ -488,8 +488,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
             throws DMLRuntimeException
         {
               if( LOG.isTraceEnabled() )
-                LOG.trace("Acquire read "+getVarName());
+                LOG.trace("Acquire subset "+getVarName() + " with the input index range " + ixrange);
               long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+              T subsetResult = null;
 
               if ( !isAvailableToRead() )
                 throw new CacheException ("MatrixObject not available to read.");
@@ -497,14 +499,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
               //get object from cache
               if( _data == null ) {
                 getCache();
-                if ( _data != null)
-                  _data = (T) _data.sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd, (int) ixrange.colStart, (int) ixrange.colEnd, null);
               }
 
+              if ( _data != null) {
+                  subsetResult = (T) _data.sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd,
+                                                           (int) ixrange.colStart, (int) ixrange.colEnd, subsetResult);
+                  return subsetResult;
+              }
 
-
+               //TODO: update the GPU part
               //call acquireHostRead if gpuHandle is set as well as is allocated
-              //TODO: update the GPU part
               boolean copiedFromGPU = false;
               for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
                 GPUObject gObj = kv.getValue();
@@ -523,43 +527,37 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
               if( isEmpty(true) && _data==null )
               {
                 try
-                {
-                  if( DMLScript.STATISTICS )
-                    CacheStatistics.incrementHDFSHits();
+                    {
+                      if( DMLScript.STATISTICS )
+                        CacheStatistics.incrementHDFSHits();
 
-                  if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-                  {
-                    //check filename
-                    if( _hdfsFileName == null )
-                      throw new CacheException("Cannot read matrix for empty filename.");
+                      if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+                      {
+                        //check filename
+                        if( _hdfsFileName == null )
+                          throw new CacheException("Cannot read matrix for empty filename.");
 
-                    //read cacheable data from hdfs
-                    _data = subsetBlobFromHDFS(_hdfsFileName, ixrange);
-
-                    //mark for initial local write despite read operation
-                    _requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
-                  }
-                  else
-                  {
-                    //read matrix from rdd (incl execute pending rdd operations)
-                    MutableBoolean writeStatus = new MutableBoolean();
-                    _data = readBlobFromRDD( getRDDHandle(), writeStatus );
-                    _data = (T) _data.sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd, (int) ixrange.colStart, (int) ixrange.colEnd, _data);
-
-                    //mark for initial local write (prevent repeated execution of rdd operations)
-                    _requiresLocalWrite = writeStatus.booleanValue() ?
-                                          CACHING_WRITE_CACHE_ON_READ : true;
-                  }
-
-                  setDirty(false);
-                }
+                        //read cacheable data from hdfs
+                        subsetResult = subsetBlobFromHDFS(_hdfsFileName, ixrange);
+                        return subsetResult;
+                      }
+                      else
+                      {
+                        //read matrix from rdd (incl execute pending rdd operations)
+                        MutableBoolean writeStatus = new MutableBoolean();
+                        subsetResult = (T) readBlobFromRDD( getRDDHandle(), writeStatus )
+                            .sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd,
+                                             (int) ixrange.colStart, (int) ixrange.colEnd,
+                                             subsetResult);
+                        return subsetResult;
+                      }
+                    }
                 catch (IOException e) {
                   throw new CacheException("SubReading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
                 } catch (DMLRuntimeException e) {
                   e.printStackTrace();
                 }
 
-                _isAcquireFromEmpty = true;
               }
               else if( DMLScript.STATISTICS )
               {
@@ -567,16 +565,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                   CacheStatistics.incrementMemHits();
               }
 
-              //cache status maintenance
-              acquire( false, _data==null );
-              updateStatusPinned(true);
-
               if( DMLScript.STATISTICS ){
                 long t1 = System.nanoTime();
                 CacheStatistics.incrementAcquireRTime(t1-t0);
               }
 
-              return _data;
+              return subsetResult;
         }
 
 
@@ -1117,7 +1111,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
         protected T subsetBlobFromHDFS(String fname, long rlen, long clen, IndexRange ixRange)
             throws IOException, DMLRuntimeException
         {
-          return (T) readBlobFromHDFS(fname).sliceOperations((int) ixRange.rowStart, (int) ixRange.rowEnd, (int) ixRange.colStart, (int) ixRange.colEnd, new MatrixBlock());
+              return (T) readBlobFromHDFS(fname).sliceOperations((int) ixRange.rowStart, (int) ixRange.rowEnd,
+                                                                 (int) ixRange.colStart, (int) ixRange.colEnd, new MatrixBlock());
         }
 
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)

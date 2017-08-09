@@ -60,7 +60,7 @@ public abstract class MatrixReader
         public MatrixBlock readSubsetMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz, IndexRange ixRange)
             throws IOException, DMLRuntimeException {
           MatrixBlock ret = readMatrixFromHDFS(fname, rlen, clen, brlen, bclen, estnnz);
-          return ret.sliceOperations(ixRange, ret);
+          return ret.sliceOperations(ixRange, new MatrixBlock());
         }
 	
 	/**

@@ -841,4 +841,29 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.visualize_called = True
         return self
     
-    
+"""
+class Keras2DML(BaseSystemMLClassifier):
+  
+    Peforms training/prediction for a given caffe network
+
+
+    Examples
+    --------
+
+
+   
+    def __init__(self, sparkSession, model, input_shape, transferUsingDF=false,
+                 tesnorboard_log_dir=None):
+       
+        Performs training/prediction for a given caffe network.
+
+        Parameters
+        ----------
+        parkSession: PySpark SparkSession
+        model: keras hdf5 model file path
+        input_shape: 3-element list (number of channels, input height, input width)
+        transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
+        tensorboard_log_dir: directory to store the event logs (default: None,
+        we use a temporary directory)
+        """
+      

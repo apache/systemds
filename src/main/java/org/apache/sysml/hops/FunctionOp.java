@@ -40,7 +40,7 @@ public class FunctionOp extends Hop
 {
 	
 	public static String OPSTRING = "extfunct";
-	
+	public static boolean isSingleFunctionInvoked = false;
 	public enum FunctionType{
 		DML,
 		EXTERNAL_MEM,
@@ -223,8 +223,14 @@ public class FunctionOp extends Hop
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
 		
+		// TODO find the condition for isSingleFunctionInvoked
 		//construct function call
-		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
+                if ( isSingleFunctionInvoked ) {
+                	FunctionCallCP1out fcall = new FunctionCallCP1out( tmp, _fnamespace, _fname, _outputs, et);
+                }
+		else {
+			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
+		}
 		setLineNumbers( fcall );
 		setLops( fcall );
 	

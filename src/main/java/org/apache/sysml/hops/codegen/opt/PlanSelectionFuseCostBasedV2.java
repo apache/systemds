@@ -224,7 +224,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		long len = 1L << matPoints.length-off;
 		boolean[] bestPlan = null;
 		int numEvalPlans = 0, numEvalPartialPlans = 0;
-		
+		// for counting the number of Hops visited during costing
+		final long[] partialHopsVisitedCount = DMLScript.STATISTICS ? new long[] {0} : null;
+
 		for( long i=0; i<len; i++ ) {
 			//construct assignment
 			boolean[] plan = createAssignment(matPoints.length-off, off, i);
@@ -265,7 +267,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			
 			//cost assignment on hops. Stop early if exceeds bestC.
-			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts, bestC);
+			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts,
+					bestC, partialHopsVisitedCount);
 			if( C == Double.POSITIVE_INFINITY ) {
 				numEvalPartialPlans++;
 				if( LOG.isTraceEnabled() )
@@ -292,11 +295,15 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		if( DMLScript.STATISTICS ) {
 			Statistics.incrementCodegenFPlanCompile(numEvalPlans);
 			Statistics.incrementCodegenFPlanPartialCompile(numEvalPartialPlans);
+			assert partialHopsVisitedCount != null;
+			Statistics.incrementCodegenFPlanPartialCompileHopsCosted(partialHopsVisitedCount[0]);
+			Statistics.incrementCodegenFPlanPartialCompileHopsTotal(numEvalPartialPlans*part.getPartition().size());
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
 		
 		//copy best plan w/o fixed offset plan
+		assert bestPlan != null;
 		return Arrays.copyOfRange(bestPlan, off, bestPlan.length);
 	}
 	
@@ -733,7 +740,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	//////////
 	
 	private static double getPlanCost(CPlanMemoTable memo, PlanPartition part, 
-		InterestingPoint[] matPoints,boolean[] plan, HashMap<Long, Double> computeCosts, double bestC)
+			InterestingPoint[] matPoints,boolean[] plan, HashMap<Long, Double> computeCosts,
+			final double bestC, final long[] partialHopsVisitedCount)
 	{
 		//high level heuristic: every hop or fused operator has the following cost: 
 		//WRITE + max(COMPUTE, READ), where WRITE costs are given by the output size, 
@@ -748,20 +756,26 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				visited, part, matPoints, plan, computeCosts, null, null, bestC - costs);
 			rem--;
 			// stop early if we exceed bestC
-			if( costs >= bestC && rem > 0 )
-				return Double.POSITIVE_INFINITY;
+			if( costs >= bestC && rem > 0 ) {
+				costs = Double.POSITIVE_INFINITY;
+				break;
+			}
 		}
+		// Statistics: track how many hops we visited, if we didn't visit all of them
+		if( partialHopsVisitedCount != null && costs == Double.POSITIVE_INFINITY )
+			partialHopsVisitedCount[0] += visited.size();
 		return costs;
 	}
 	
-	private static double rGetPlanCosts(CPlanMemoTable memo, Hop current, HashSet<VisitMarkCost> visited,
+	private static double rGetPlanCosts(CPlanMemoTable memo, final Hop current, HashSet<VisitMarkCost> visited,
 			PlanPartition part, InterestingPoint[] matPoints, boolean[] plan, HashMap<Long, Double> computeCosts,
 			CostVector costsCurrent, TemplateType currentType, final double costBudget)
 	{
+		final long currentHopId = current.getHopID();
 		//memoization per hop id and cost vector to account for redundant
 		//computation without double counting materialized results or compute
 		//costs of complex operation DAGs within a single fused operator
-		VisitMarkCost tag = new VisitMarkCost(current.getHopID(), 
+		VisitMarkCost tag = new VisitMarkCost(currentHopId,
 			(costsCurrent==null || currentType==TemplateType.MAGG)?0:costsCurrent.ID);
 		if( visited.contains(tag) )
 			return 0;
@@ -771,21 +785,20 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//under awareness of current plan choice
 		MemoTableEntry best = null;
 		boolean opened = false;
-		if( memo.contains(current.getHopID()) ) {
+		if( memo.contains(currentHopId) ) {
 			//note: this is the inner loop of plan enumeration and hence, we do not 
 			//use streams, lambda expressions, etc to avoid unnecessary overhead
-			long hopID = current.getHopID();
 			if( currentType == null ) {
-				for( MemoTableEntry me : memo.get(hopID) )
+				for( MemoTableEntry me : memo.get(currentHopId) )
 					best = isValid(me, current) 
-						&& hasNoRefToMatPoint(hopID, me, matPoints, plan) 
+						&& hasNoRefToMatPoint(currentHopId, me, matPoints, plan)
 						&& BasicPlanComparator.icompare(me, best)<0 ? me : best;
 				opened = true;
 			}
 			else {
-				for( MemoTableEntry me : memo.get(hopID) )
+				for( MemoTableEntry me : memo.get(currentHopId) )
 					best = (me.type == currentType || me.type==TemplateType.CELL)
-						&& hasNoRefToMatPoint(hopID, me, matPoints, plan) 
+						&& hasNoRefToMatPoint(currentHopId, me, matPoints, plan)
 						&& TypedPlanComparator.icompare(me, best, currentType)<0 ? me : best;
 			}
 		}
@@ -797,7 +810,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//add other roots for multi-agg template to account for shared costs
 		if( opened && best != null && best.type == TemplateType.MAGG ) {
 			//account costs to first multi-agg root 
-			if( best.input1 == current.getHopID() )
+			if( best.input1 == currentHopId )
 				for( int i=1; i<3; i++ ) {
 					if( !best.isPlanRef(i) ) continue;
 					costs += rGetPlanCosts(memo, memo.getHopRefs().get(best.input(i)), visited, 
@@ -811,8 +824,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//add compute costs of current operator to costs vector
-		if( part.getPartition().contains(current.getHopID()) )
-			costVect.computeCosts += computeCosts.get(current.getHopID());
+		if( part.getPartition().contains(currentHopId) )
+			costVect.computeCosts += computeCosts.get(currentHopId);
 		
 		//process children recursively
 		for( int i=0; i< current.getInput().size(); i++ ) {
@@ -833,11 +846,11 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//add costs for opened fused operator
-		if( part.getPartition().contains(current.getHopID()) ) {
+		if( part.getPartition().contains(currentHopId) ) {
 			if( opened ) {
 				if( LOG.isTraceEnabled() ) {
 					String type = (best !=null) ? best.type.name() : "HOP";
-					LOG.trace("Cost vector ("+type+" "+current.getHopID()+"): "+costVect);
+					LOG.trace("Cost vector ("+type+" "+currentHopId+"): "+costVect);
 				}
 				double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH //time for output write
 					+ Math.max(costVect.getSumInputSizes() * 8 / READ_BANDWIDTH,
@@ -850,7 +863,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				costs += tmpCosts;
 			}
 			//add costs for non-partition read in the middle of fused operator
-			else if( part.getExtConsumed().contains(current.getHopID()) ) {
+			else if( part.getExtConsumed().contains(currentHopId) ) {
 				costs += rGetPlanCosts(memo, current, visited, part, matPoints, plan,
 						computeCosts, null, null, costBudget - costs);
 			}
@@ -865,7 +878,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	
 	private static void rGetComputeCosts(Hop current, HashSet<Long> partition, HashMap<Long, Double> computeCosts) 
 	{
-		if( computeCosts.containsKey(current.getHopID()) 
+		if( computeCosts.containsKey(current.getHopID())
 			|| !partition.contains(current.getHopID()) )
 			return;
 		

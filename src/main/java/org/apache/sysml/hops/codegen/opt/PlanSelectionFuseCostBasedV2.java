@@ -222,7 +222,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//bestC is monotonically non-increasing and serves as the upper bound
 		long len = 1L << matPoints.length-off;
 		boolean[] bestPlan = null;
-		int numEvalPlans = 0, numEvalPartialPlans = 0;
+		long numEvalPlans = 0, numEvalPartialPlans = 0, numSkipPlans = 0;
 
 		for( long i=0; i<len; i++ ) {
 			//construct assignment
@@ -259,6 +259,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Enum: Skip "+skip+" plans (by cost).");
 					i += skip - 1;
+					numSkipPlans += skip;
 					continue;
 				}
 			}
@@ -284,13 +285,15 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 
 			//post skipping
 			i += pskip;
+			numSkipPlans += pskip;
 			if( pskip !=0 && LOG.isTraceEnabled() )
 				LOG.trace("Enum: Skip "+pskip+" plans (by structure).");
 		}
 		
 		if( DMLScript.STATISTICS ) {
 			Statistics.incrementCodegenFPlanCompile(numEvalPlans);
-			Statistics.incrementCodegenFPlanPartialCompile(numEvalPartialPlans);
+			Statistics.incrementCodegenFPlanPartialCost(numEvalPartialPlans);
+			Statistics.incrementCodegenFPlanSkip(numSkipPlans);
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));

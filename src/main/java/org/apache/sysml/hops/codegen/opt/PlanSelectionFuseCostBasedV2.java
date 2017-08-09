@@ -177,38 +177,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					memo.pruneRedundant(hopID, true, part.getMatPointsExt());
 			}
 
-//			// vector of materialization costs for each individual materialization point
-//			final InterestingPoint[] matPoints0 = part.getMatPointsExt();
-//			if( matPoints0.length > 1 ) {
-//				final double[] matPointsCostLb0 = new double[matPoints0.length];
-//				final boolean[] plan = new boolean[matPoints0.length];
-//				for (int i = 0; i < matPointsCostLb0.length; i++) {
-//					plan[i] = true;
-//					final double lbC = Math.max(costs._read, costs._compute) + costs._write +
-//							getMaterializationCost(part, matPoints0, memo, plan);
-//					matPointsCostLb0[i] = lbC;
-//					plan[i] = false;
-//				}
-//				// sort interesting points from least cost to greatest cost
-//				int[] sortIndices = IntStream.range(0, matPointsCostLb0.length).boxed().sorted(Comparator.comparingDouble(i -> -matPointsCostLb0[i])).mapToInt(i -> i).toArray();
-//				boolean differ = false;
-//				for (int i = 0; i < sortIndices.length; i++) {
-//					if (sortIndices[i] != i) {
-//						differ = true;
-//						break;
-//					}
-//				}
-//				if (differ) {
-//					final double[] matPointsCostLb = Arrays.stream(sortIndices).mapToDouble(i -> matPointsCostLb0[i]).toArray();
-//					LOG.warn("New Sort order by indices: " + Arrays.toString(sortIndices)+" to "+Arrays.toString(matPointsCostLb));
-//				} else {
-//					LOG.warn("Identical sort order; costs: " + Arrays.toString(matPointsCostLb0));
-//				}
-//				final InterestingPoint[] matPoints = Arrays.stream(sortIndices).mapToObj(i -> matPoints0[i]).toArray(InterestingPoint[]::new);
-//				part.setMatPointsExt(matPoints);
-//				rgraph.permute(sortIndices);
-//			}
-
 			//enumerate and cost plans, returns optional plan
 			boolean[] bestPlan = enumPlans(memo, part, costs, rgraph, 
 					part.getMatPointsExt(), 0, Double.MAX_VALUE);
@@ -249,7 +217,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	 */
 	private static boolean[] enumPlans(CPlanMemoTable memo, PlanPartition part, StaticCosts costs, 
 		ReachabilityGraph rgraph, InterestingPoint[] matPoints, int off, double bestC)
-			//double[] matPointsCostLb)
 	{
 		//scan linearized search space, w/ skips for branch and bound pruning
 		//and structural pruning (where we solve conditionally independent problems)
@@ -285,13 +252,13 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				//the default code path; hence we postpone the skip after costing
 			}
 			//skip plans with branch and bound pruning (cost)
-			else if( USE_COST_PRUNING && bestPlan != null ) {
+			else if( USE_COST_PRUNING ) {
 				double lbC = Math.max(costs._read, costs._compute) + costs._write
 						+ getMaterializationCost(part, matPoints, memo, plan);
 				if( lbC >= bestC ) {
 					long skip = getNumSkipPlans(plan);
-					//					if( LOG.isTraceEnabled() )
-					LOG.warn("Enum: Skip "+skip+" plans (by cost).");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Enum: Skip "+skip+" plans (by cost).");
 					i += skip - 1;
 					continue;
 				}
@@ -340,11 +307,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		for( int i=0; i<len; i++ ) {
 			long mask = 1L << len-i-1;
 			ret[off+i] = tmp >= mask;
-//			if( ret[off+i] && matPointsCostLb[off+i] > bestC )
-//				return null;
-			tmp %= mask; // Math.pow(2, len-i-1);
+			tmp %= mask;
 		}
-//		LOG.warn(Long.bitCount(pos)+Arrays.toString(ret));
 		return ret;	
 	}
 	
@@ -790,8 +754,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		return costs;
 	}
 	
-	private static double rGetPlanCosts(CPlanMemoTable memo, Hop current, HashSet<VisitMarkCost> visited, PlanPartition part, InterestingPoint[] matPoints, boolean[] plan, HashMap<Long, Double> computeCosts,
-			CostVector costsCurrent, TemplateType currentType, double costBudget)
+	private static double rGetPlanCosts(CPlanMemoTable memo, Hop current, HashSet<VisitMarkCost> visited,
+			PlanPartition part, InterestingPoint[] matPoints, boolean[] plan, HashMap<Long, Double> computeCosts,
+			CostVector costsCurrent, TemplateType currentType, final double costBudget)
 	{
 		//memoization per hop id and cost vector to account for redundant
 		//computation without double counting materialized results or compute
@@ -853,12 +818,13 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		for( int i=0; i< current.getInput().size(); i++ ) {
 			Hop c = current.getInput().get(i);
 			if( best!=null && best.isPlanRef(i) )
-				costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, costVect, best.type,
-						costBudget - costs);
+				costs += rGetPlanCosts(memo, c, visited, part, matPoints,
+						plan, computeCosts, costVect, best.type, costBudget - costs);
 			else if( best!=null && isImplicitlyFused(current, i, best.type) )
 				costVect.addInputSize(c.getInput().get(0).getHopID(), getSize(c));
 			else { //include children and I/O costs
-				costs += rGetPlanCosts(memo, c, visited, part, matPoints, plan, computeCosts, null, null, costBudget - costs);
+				costs += rGetPlanCosts(memo, c, visited, part, matPoints,
+						plan, computeCosts, null, null, costBudget - costs);
 				if( costVect != null && c.getDataType().isMatrix() )
 					costVect.addInputSize(c.getHopID(), getSize(c));
 			}
@@ -885,8 +851,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			//add costs for non-partition read in the middle of fused operator
 			else if( part.getExtConsumed().contains(current.getHopID()) ) {
-				costs += rGetPlanCosts(memo, current, visited,
-					part, matPoints, plan, computeCosts, null, null, costBudget - costs);
+				costs += rGetPlanCosts(memo, current, visited, part, matPoints, plan,
+						computeCosts, null, null, costBudget - costs);
 			}
 		}
 		

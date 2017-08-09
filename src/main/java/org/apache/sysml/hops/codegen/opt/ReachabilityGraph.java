@@ -240,11 +240,11 @@ public class ReachabilityGraph
 			if( !CollectionUtils.containsAny(part1, part2) 
 				&& !part1.isEmpty() && !part2.isEmpty()) {
 				//score cutsets (smaller is better)
-				double base = Math.pow(2, _matPoints.size());
-				double numComb = Math.pow(2, cand.size());
+				double base = 1L << _matPoints.size();
+				double numComb = 1L << cand.size();
 				double score = (numComb-1)/numComb * base
-					+ 1/numComb * Math.pow(2, part1.size())
-					+ 1/numComb * Math.pow(2, part2.size());
+					+ 1/numComb * (1L << part1.size())
+					+ 1/numComb * (1L << part2.size());
 				
 				//construct cutset
 				cutSets.add(Pair.of(new CutSet(
@@ -258,15 +258,6 @@ public class ReachabilityGraph
 		}
 		
 		return cutSets;
-	}
-
-	public void permute(int[] sortIndices) {
-		_searchSpace = Arrays.stream(sortIndices).mapToObj(i -> _searchSpace[i]).toArray(InterestingPoint[]::new);
-		for (CutSet cs : _cutSets) {
-			cs.posCut = Arrays.stream(cs.posCut).map(i -> sortIndices[i]).toArray();
-			cs.posLeft = Arrays.stream(cs.posLeft).map(i -> sortIndices[i]).toArray();
-			cs.posRight = Arrays.stream(cs.posRight).map(i -> sortIndices[i]).toArray();
-		}
 	}
 		
 	public static class SubProblem {

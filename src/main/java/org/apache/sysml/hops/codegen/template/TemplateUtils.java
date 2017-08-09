@@ -229,6 +229,7 @@ public class TemplateUtils
 			return OutProdType.CELLWISE_OUTER_PRODUCT;
 		
 		//should never come here
+		// TODO - this gets hit in StratStats script
 		throw new RuntimeException("Undefined outer product type for hop "+out.getHopID());
 	}
 	

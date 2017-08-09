@@ -3,7 +3,7 @@ package org.apache.sysml.examples
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.sysml.api.mlcontext.ScriptFactory.dml
 import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.scripts.nn.examples.{Mnist_lenet_distrib_sgd, Mnist_lenet_distrib_sgd_optimize}
+import org.apache.sysml.scripts.nn.examples.Mnist_lenet_distrib_sgd
 
 object MNIST_Distrib_Sgd {
 
@@ -66,7 +66,7 @@ object MNIST_Distrib_Sgd {
 
     org.apache.sysml.api.DMLScript.rtplatform = org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK
 
-    val clf = new Mnist_lenet_distrib_sgd_optimize()
+    val clf = new Mnist_lenet_distrib_sgd()
 
     val N = 3200
     val Nval = 32
@@ -84,16 +84,15 @@ object MNIST_Distrib_Sgd {
     val X_val_file = "scratch_space/X_val_input"
     val Y_val_file = "scratch_space/Y_val_input"
 
-    createMNISTDummyData(X_file, Y_file, X_val_file, Y_val_file, N, Nval, Ntest, C, Hin, Win, K)
+    //createMNISTDummyData(X_file, Y_file, X_val_file, Y_val_file, N, Nval, Ntest, C, Hin, Win, K)
 
     val X = readMatrix(X_file, ml)
     val Y = readMatrix(Y_file, ml)
     val X_val = readMatrix(X_val_file, ml)
     val Y_val = readMatrix(Y_val_file, ml)
 
-    X.toMatrixObject
-
-    println(X.getMatrixMetadata)
+    //X.toMatrixObject
+    //println(X.getMatrixMetadata)
 
     val params = clf.train(X, Y, X_val, Y_val, C, Hin, Win, batchSize, paralellBatches, epochs)
     println(params.toString)

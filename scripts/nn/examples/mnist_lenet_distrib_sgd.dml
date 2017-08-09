@@ -134,7 +134,7 @@ train = function(matrix[double] X, matrix[double] Y,
       db4_agg = matrix(0, rows=parallel_batches, cols=nrow(b4)*ncol(b4))
 
       # Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
-      parfor (j in 1:parallel_batches) {
+      parfor (j in 1:parallel_batches, mode=REMOTE_SPARK, opt=CONSTRAINED, resultmerge=REMOTE_SPARK) {
         # Get a mini-batch in this group
         beg = ((j-1) * batch_size) %% nrow(X_group_batch) + 1
         end = min(nrow(X_group_batch), beg + batch_size - 1)

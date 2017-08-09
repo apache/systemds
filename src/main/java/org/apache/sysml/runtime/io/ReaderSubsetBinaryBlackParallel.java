@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 
 
 public class ReaderSubsetBinaryBlackParallel extends ReaderBinaryBlock {
-        protected static final Log LOG = LogFactory.getLog(ReaderSubBinaryBlackParallel.class.getName());
+        protected static final Log LOG = LogFactory.getLog(ReaderSubsetBinaryBlackParallel.class.getName());
 
         private static int _numThreads = 1;
 

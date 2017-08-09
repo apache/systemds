@@ -79,6 +79,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
   Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
 
   # create output volume
+  # NOTE: We initialize to 1s vs. 0s to avoid conversions between sparse and dense formats. 
+  # This is a complete hack until the engine is improved.
   out = matrix(1, rows=N, cols=C*M*Hout*Wout)
 
   # depthwise convolution
@@ -137,6 +139,8 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   C = nrow(W)
 
   # create gradient volumes
+  # NOTE: We initialize to 1s vs. 0s to avoid conversions between sparse and dense formats. 
+  # This is a complete hack until the engine is improved.
   dX = matrix(1, rows=N, cols=C*Hin*Win)
   dW = matrix(1, rows=C, cols=M*Hf*Wf)
   db = matrix(1, rows=C*M, cols=1)

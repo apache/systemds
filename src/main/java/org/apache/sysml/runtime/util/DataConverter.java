@@ -840,9 +840,7 @@ public class DataConverter
 					IJV ijv = sbi.next();
 					int row = ijv.getI();
 					int col = ijv.getJ();
-					Double value = ijv.getV();
-					if (value.equals(-0.0d))
-						value = 0.0;
+					double value = ijv.getV();
 					if (row < rowLength && col < colLength) {
 						// Print (row+1) and (col+1) since for a DML user, everything is 1-indexed
 						sb.append(row+1).append(separator).append(col+1).append(separator);
@@ -852,7 +850,7 @@ public class DataConverter
 			} else {	// Block is in dense format
 				for (int i=0; i<rowLength; i++){
 					for (int j=0; j<colLength; j++){
-						Double value = mb.getValue(i, j);
+						double value = mb.getValue(i, j);
 						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);
 							sb.append(dfFormat(df, value)).append(lineseparator);

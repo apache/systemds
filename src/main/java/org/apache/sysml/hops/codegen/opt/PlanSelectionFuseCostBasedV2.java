@@ -25,12 +25,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -51,11 +50,11 @@ import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.opt.ReachabilityGraph.SubProblem;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.TemplateOuterProduct;
 import org.apache.sysml.hops.codegen.template.TemplateRow;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
-import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -855,8 +854,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			//add costs for non-partition read in the middle of fused operator
 			else if( part.getExtConsumed().contains(currentHopId) ) {
-				costs += rGetPlanCosts(memo, current, visited, part, matPoints, plan,
-						computeCosts, null, null, costBudget - costs);
+				costs += rGetPlanCosts(memo, current, visited, part, matPoints,
+						plan, computeCosts, null, null, costBudget - costs);
 			}
 		}
 		

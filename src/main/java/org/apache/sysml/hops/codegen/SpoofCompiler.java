@@ -565,7 +565,8 @@ public class SpoofCompiler
 		//generate cplan for existing memo table entry
 		if( memo.containsTopLevel(hop.getHopID()) ) {
 			try {
-				cplans.put(hop.getHopID(), TemplateUtils.createTemplate(memo.getBest(hop.getHopID()).type)
+				cplans.put(hop.getHopID(), TemplateUtils
+						.createTemplate(memo.getBest(hop.getHopID()).type)
 						.constructCplan(hop, memo, compileLiterals));
 				if (DMLScript.STATISTICS)
 					Statistics.incrementCodegenCPlanCompile(1);

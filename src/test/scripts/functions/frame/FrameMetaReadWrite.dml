@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 A = read($1, data_type="frame", rows=$2, cols=$3, format=$4);
-if(1==1){}
+while(FALSE){}
 
 B = A;
 write(B, $5, format=$4);

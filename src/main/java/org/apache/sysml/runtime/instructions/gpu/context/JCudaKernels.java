@@ -49,17 +49,14 @@ public class JCudaKernels {
 	private final static String ptxFileName = "/kernels/SystemML.ptx";
 	private HashMap<String, CUfunction> kernels = new HashMap<String, CUfunction>();
 	private CUmodule module;
-	//	private final int deviceNum;
 
 	/**
 	 * Loads the kernels in the file ptxFileName. Though cubin files are also supported, we will stick with
 	 * ptx file as they are target-independent similar to Java's .class files.
 	 *
-	 * @param deviceNum the device number for which to initiate the driver API
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	JCudaKernels(int deviceNum) throws DMLRuntimeException {
-		//		this.deviceNum = deviceNum;
+	JCudaKernels() throws DMLRuntimeException {
 		module = new CUmodule();
 		// Load the kernels specified in the ptxFileName file
 		checkResult(cuModuleLoadDataEx(module, initKernels(ptxFileName), 0, new int[0], Pointer.to(new int[0])));

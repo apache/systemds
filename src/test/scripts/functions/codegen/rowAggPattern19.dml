@@ -21,7 +21,7 @@
 
 LT = matrix(1, 1500, 2);
 Y = matrix(2, 1500, 2);
-if(1==1) {}
+while(FALSE){}
   
 LT = LT - rowMaxs (LT);
 exp_LT = exp (LT);

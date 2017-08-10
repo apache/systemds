@@ -77,7 +77,8 @@ public class CPlanMemoTable
 	}
 	
 	public boolean contains(long hopID) {
-		return _plans.containsKey(hopID);
+		return _plans.containsKey(hopID)
+			&& !_plans.get(hopID).isEmpty();
 	}
 	
 	public boolean contains(long hopID, TemplateType type) {
@@ -149,6 +150,17 @@ public class CPlanMemoTable
 	public void remove(Hop hop, Set<MemoTableEntry> blackList) {
 		_plans.get(hop.getHopID())
 			.removeIf(p -> blackList.contains(p));
+	}
+	
+	public void removeAllRefTo(long hopID) {
+		//recursive removal of references
+		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() ) {
+			if( !e.getValue().isEmpty() ) {
+				e.getValue().removeIf(p -> p.hasPlanRefTo(hopID));
+				if( e.getValue().isEmpty() )
+					removeAllRefTo(e.getKey());
+			}
+		}
 	}
 	
 	public void setDistinct(long hopID, List<MemoTableEntry> plans) {
@@ -353,6 +365,9 @@ public class CPlanMemoTable
 		}
 		public boolean hasPlanRef() {
 			return isPlanRef(0) || isPlanRef(1) || isPlanRef(2);
+		}
+		public boolean hasPlanRefTo(long hopID) {
+			return (input1==hopID || input2==hopID || input3==hopID); 
 		}
 		public int countPlanRefs() {
 			return ((input1 >= 0) ? 1 : 0)

@@ -123,6 +123,66 @@ public class AlgorithmGLM extends AutomatedTestBase
 		runGLMTest(GLMType.BINOMIAL_PROBIT, false, true, ExecType.CP);
 	}
 	
+	@Test
+	public void testGLMPoissonDenseRewritesSP() {
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMPoissonSparseRewritesSP() {
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMPoissonDenseSP() {
+		runGLMTest(GLMType.POISSON_LOG, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMPoissonSparseSP() {
+		runGLMTest(GLMType.POISSON_LOG, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMGammaDenseRewritesSP() {
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMGammaSparseRewritesSP() {
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMGammaDenseSP() {
+		runGLMTest(GLMType.GAMMA_LOG, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMGammaSparseSP() {
+		runGLMTest(GLMType.GAMMA_LOG, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMBinomialDenseRewritesSP() {
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMBinomialSparseRewritesSP() {
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMBinomialDenseSP() {
+		runGLMTest(GLMType.BINOMIAL_PROBIT, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGLMBinomialSparseSP() {
+		runGLMTest(GLMType.BINOMIAL_PROBIT, false, true, ExecType.SPARK);
+	}
+	
 	private void runGLMTest( GLMType type, boolean rewrites, boolean sparse, ExecType instType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

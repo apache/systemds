@@ -72,6 +72,7 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 		if (scriptType == ScriptType.PYDML) {
 			proArgs.add("-python");
 		}
+		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(Integer.toString(label_index));

@@ -93,9 +93,13 @@ public abstract class SpoofOperator implements Serializable
 			if( denseOnly && (in.isInSparseFormat() || !in.isAllocated()) ) {
 				//convert empty or sparse to dense temporary block (note: we don't do
 				//this in place because this block might be used by multiple threads)
-				b[i-offset] = new SideInput(DataConverter.convertToDoubleVector(in), null, clen);
-				LOG.warn(getClass().getName()+": Converted "+in.getNumRows()+"x"+in.getNumColumns()+
-					", nnz="+in.getNonZeros()+" sideways input matrix from sparse to dense.");	
+				if( in.getNumColumns()==1 && in.isEmptyBlock(false) ) //dense empty
+					b[i-offset] = new SideInput(null, null, clen);
+				else {
+					b[i-offset] = new SideInput(DataConverter.convertToDoubleVector(in), null, clen);
+					LOG.warn(getClass().getName()+": Converted "+in.getNumRows()+"x"+in.getNumColumns()+
+						", nnz="+in.getNonZeros()+" sideways input matrix from sparse to dense.");	
+				}
 			}
 			else if( in.isInSparseFormat() && in.isAllocated() ) {
 				b[i-offset] = new SideInput(null, in, clen);

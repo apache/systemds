@@ -101,19 +101,19 @@ args <- commandArgs(TRUE)
 library(Matrix)
 
 # input data set
-D = readMM(paste(args[1], "X.mtx", sep=""));
+D = as.matrix(readMM(paste(args[1], "X.mtx", sep="")));
 
 # label attr id (must be a valid index > 0)  
 label_index = as.integer(args[2])
 
 # feature attributes, column vector of indices
-feature_indices = readMM(paste(args[1], "feature_indices.mtx", sep="")) 
+feature_indices = as.matrix(readMM(paste(args[1], "feature_indices.mtx", sep=""))) 
 
 # can be either 1 (scale) or 0 (categorical)
 label_measurement_level = as.integer(args[3]) 
 
 # measurement levels for features, 0/1 column vector
-feature_measurement_levels = readMM(paste(args[1], "feature_measurement_levels.mtx", sep="")) 
+feature_measurement_levels = as.matrix(readMM(paste(args[1], "feature_measurement_levels.mtx", sep=""))) 
 
 sz = ncol(D)
 
@@ -180,9 +180,7 @@ featureSTDs = matrix(0, sz, maxNumberOfGroups)
 
 if(label_measurement_level == 0){
 	featureCounts[label_index,1:length(distinct_label_values)] = distinct_label_values
-	for(i2 in 1:length(distinct_label_values)){
-		featureValues[label_index,i2] = i2-labelCorrection
-	}
+	featureValues[label_index,1:length(distinct_label_values)] = t(seq(1,length(distinct_label_values))-labelCorrection);
 }
 
 for(i3 in 1:nrow(feature_indices)){
@@ -209,28 +207,19 @@ for(i3 in 1:nrow(feature_indices)){
 			
 		  sz3 = nrow(contingencyTable)*ncol(contingencyTable)
 			
-		  contingencyTableCounts = matrix(0, 1, sz3)
-		  contingencyTableLabelValues = matrix(0, 1, sz3)
-		  contingencyTableFeatureValues = matrix(0, 1, sz3)
+			tmpLV = (seq(1,nrow(contingencyTable)) %*% matrix(1,1,ncol(contingencyTable))) - labelCorrection;
+			tmpFV = (matrix(1,nrow(contingencyTable),1) %*% t(seq(1,ncol(contingencyTable)))) - featureCorrection;
+			contingencyTableLabelValues = matrix(tmpLV, 1, sz3, byrow=TRUE);
+			contingencyTableFeatureValues = matrix(tmpFV, 1, sz3, byrow=TRUE);
 			
-            	  for(i4 in 1:nrow(contingencyTable)){
-		  	 for(j in 1:ncol(contingencyTable)){
-					#get rid of this, see *1 below
-					contingencyTableCounts[1, ncol(contingencyTable)*(i4-1)+j] = contingencyTable[i4,j]
-					
-					contingencyTableLabelValues[1, ncol(contingencyTable)*(i4-1)+j] = i4-labelCorrection
-					contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
-				}
-			}
+			contingencyTableCounts = matrix(contingencyTable, 1, sz3, byrow=TRUE);
 			contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
             
 			contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues
 			contingencyTablesFeatureValues[feature_index2,1:sz3] = contingencyTableFeatureValues
 			
 			featureCounts[feature_index2,1:length(colMarginals)] = colMarginals
-			for(i5 in 1:length(colMarginals)){
-				featureValues[feature_index2,i5] = i5-featureCorrection
-			}
+			featureValues[feature_index2,1:length(colMarginals)] = t(seq(1,length(colMarginals)) - featureCorrection);
 		}else{
 			# label is scale, feature is categorical
 			tests[feature_index2,1] = 2
@@ -243,9 +232,7 @@ for(i3 in 1:nrow(feature_indices)){
 
 			stats[feature_index2,1] = pVal
 			featureCounts[feature_index2,1:nrow(frequencies)] = t(frequencies)
-			for(i6 in 1:nrow(frequencies)){
-				featureValues[feature_index2,i6] = i6 - featureCorrection
-			}
+			featureValues[feature_index2,1:nrow(frequencies)] = t(seq(1,nrow(frequencies)) - featureCorrection)
 			featureMeans[feature_index2,1:nrow(means)] = t(means)
 			featureSTDs[feature_index2,1:nrow(variances)] = t(sqrt(variances))
 		}

@@ -19,48 +19,37 @@
 
 package org.apache.sysml.parser;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
 public class VariableSet 
 {
-	
 	private HashMap<String,DataIdentifier> _variables;
 	
-	public VariableSet(){
+	public VariableSet() {
 		_variables = new HashMap<String,DataIdentifier>();
 	}
 	
-	public VariableSet( VariableSet vs )
-	{
+	public VariableSet( VariableSet vs ) {
 		_variables = new HashMap<String,DataIdentifier>();
-		
-		if (vs != null) {
-			HashMap<String,DataIdentifier> vars = vs.getVariables();
-			_variables.putAll(vars);
-		}		
+		if (vs != null)
+			_variables.putAll(vs.getVariables());
 	}
 	
-	public void addVariable(String name, DataIdentifier id)
-	{
+	public void addVariable(String name, DataIdentifier id) {
 		_variables.put(name,id);
 	}
 	
-	public void addVariables(VariableSet vs)
-	{
-		if (vs != null) {
-			HashMap<String,DataIdentifier> vars = vs.getVariables();
-			_variables.putAll(vars);
-		}
+	public void addVariables(VariableSet vs) {
+		if (vs != null)
+			_variables.putAll(vs.getVariables());
 	}
 	
-	public void removeVariables(VariableSet vs)
-	{
-		if( vs != null ){
-			Set<String> vars = vs.getVariables().keySet();
-			for (String var : vars)
+	public void removeVariables(VariableSet vs) {
+		if( vs != null )
+			for( String var : vs.getVariables().keySet() )
 				_variables.remove(var);
-		}
 	}
 
 	public boolean containsVariable(String name){
@@ -79,12 +68,20 @@ public class VariableSet
 		return _variables;
 	}
 	
-	public String toString(){
-		StringBuilder sb = new StringBuilder();
-		for (String var : _variables.keySet()){
-			sb.append(var + ",");
-		}
-		return sb.toString();
+	public String toString() {
+		return Arrays.toString(
+			_variables.keySet().toArray());
 	}
 	
+	public static VariableSet union(VariableSet vs1, VariableSet vs2) {
+		VariableSet ret = new VariableSet(vs1);
+		ret.addVariables(vs2);
+		return ret;
+	}
+	
+	public static VariableSet minus(VariableSet vs1, VariableSet vs2) {
+		VariableSet ret = new VariableSet(vs1);
+		ret.removeVariables(vs2);
+		return ret;
+	}
 }

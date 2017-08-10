@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -44,14 +45,13 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
  */
 public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 {
-
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
 		//DAG splits not required for forced single node
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return new ArrayList<StatementBlock>(Arrays.asList(sb));
+			return Arrays.asList(sb);
 		
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 		
@@ -121,6 +121,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 				sb1.updateRecompilationFlag();
 				ret.add(sb1); //statement block with csv reblocks
 				ret.add(sb); //statement block with remaining hops
+				sb.setSplitDag(true); //avoid later merge by other rewrites
 			}
 			catch(Exception ex)
 			{
@@ -137,8 +138,13 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private void collectCSVReadHopsUnknownSize( ArrayList<Hop> roots, ArrayList<Hop> cand )
-	{
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
+			ProgramRewriteStatus sate) throws HopsException {
+		return sbs;
+	}
+	
+	private void collectCSVReadHopsUnknownSize( ArrayList<Hop> roots, ArrayList<Hop> cand ) {
 		if( roots == null )
 			return;
 		

@@ -98,8 +98,7 @@ public abstract class PlanSelection
 				return Integer.compare(o1.type.getRank(), o2.type.getRank());
 			
 			//for same type, prefer plan with more refs
-			return Integer.compare(
-				3-o1.countPlanRefs(), 3-o2.countPlanRefs());
+			return Integer.compare(-o1.countPlanRefs(), -o2.countPlanRefs());
 		}
 	}
 	

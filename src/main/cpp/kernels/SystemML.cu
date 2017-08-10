@@ -35,12 +35,13 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  */
 extern "C"
 __global__ void copy_u2l_dense(double* ret, int dim, int N) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / dim;
+	int iy = tid % dim;
 	int id_dest = iy * dim + ix;
 	if(iy > ix && id_dest < N) {
 		// TODO: Potential to reduce the number of threads by half
-		int id_src = ix * dim + iy;
+		int id_src = tid;
 		ret[id_dest] = ret[id_src];
 	}
 }
@@ -104,8 +105,9 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
 
 extern "C"
 __global__ void relu(double* A,  double* ret, int rlen, int clen) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		ret[index] = max(0.0, A[index]);
@@ -115,8 +117,9 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 // This method computes the backpropagation errors for previous layer of relu operation
 extern "C"
 __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, int clen) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		ret[index] = X[index] > 0 ?  dout[index] : 0;
@@ -129,8 +132,9 @@ __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, i
 // This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 extern "C"
 __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		int biasIndex = iy / PQ;
@@ -141,8 +145,9 @@ __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, in
 // Performs the operation "ret <- A + alpha*B", where B is a vector
 extern "C"
 __global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clenA;
+	int iy = tid % clenA;
 	if(ix < rlenA && iy < clenA) {
 		int index = ix * clenA + iy;
 		if(rlenB == 1) {
@@ -157,8 +162,9 @@ __global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double*
 // Performs similar operation as bias_add except elementwise multiplication instead of add
 extern "C"
 __global__ void bias_multiply(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		int biasIndex = iy / PQ;
@@ -169,8 +175,9 @@ __global__ void bias_multiply(double* input,  double* bias, double* ret, int rle
 // Compares the value and set
 extern "C"
 __global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
 	int index = ix * clen + iy;
 	if(ix < rlen && iy < clen) {
 		if(abs(A[index]-compareVal) < tol)
@@ -199,8 +206,9 @@ __global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, dou
 extern "C"
 __global__ void matrix_matrix_cellwise_op(double* A, double* B, double* C,
 	int maxRlen, int maxClen, int vectorAStatus, int vectorBStatus, int op) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / maxClen;
+	int iy = tid % maxClen;
 
 	if(ix < maxRlen && iy < maxClen) {
 		int outIndex = ix * maxClen + iy;
@@ -273,8 +281,10 @@ __global__ void fill(double* A, double scalar, int lenA) {
  */
 extern "C"
 __global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int maxClen = max(colsA, colsB);
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / maxClen;
+	int iy = tid % maxClen;
 
 	int colsC = colsA + colsB;
 	int rowsC = rowsA;
@@ -310,8 +320,10 @@ __global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int
  */
 extern "C"
 __global__ void rbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	int maxClen = max(colsA, colsB);
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / maxClen;
+	int iy = tid % maxClen;
 
 	int rowsC = rowsA + rowsB;
 	int colsC = colsA;

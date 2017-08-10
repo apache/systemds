@@ -22,7 +22,7 @@
 
 A = read($1);
 
-if(1==1){} #for recompilation rewrites
+while(FALSE){} #for recompilation rewrites
 
 desc = (sum(A)>100)
 ixret = (sum(A)>200)

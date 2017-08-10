@@ -967,7 +967,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
 			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
-			for( int i=0; i<ret._coldata.length; i++ )
+			for( int i=0; i<ret.getNumColumns(); i++ )
 				ret._coldata[i] = ret._coldata[i].clone();
 		}
 		else //ROW APPEND
@@ -984,10 +984,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._numRows = _numRows;
 			ret._schema = _schema.clone();
 			ret._colnames = (_colnames!=null) ? _colnames.clone() : null;
+			ret._colmeta = new ColumnMetadata[getNumColumns()];
+			for( int j=0; j<_schema.length; j++ )
+				ret._colmeta[j] = new ColumnMetadata(0);
 			
 			//concatenate data (deep copy first, append second)
-			ret._coldata = new Array[_coldata.length];
-			for( int j=0; j<_coldata.length; j++ )
+			ret._coldata = new Array[getNumColumns()];
+			for( int j=0; j<getNumColumns(); j++ )
 				ret._coldata[j] = _coldata[j].clone();
 			Iterator<Object[]> iter = that.getObjectRowIterator();
 			while( iter.hasNext() )

@@ -25,7 +25,7 @@ B = matrix(1, rows=1000, cols=2);
 C = matrix(7, rows=1000, cols=1);
 D = matrix(3, rows=1000, cols=1);
 
-if(1==1){}
+while(FALSE){}
 
 tmp = cbind(X [, 1 : 2], B) * (C * (1 - D));
 E = removeEmpty (target = tmp, margin = "rows");
@@ -33,7 +33,7 @@ E = removeEmpty (target = tmp, margin = "rows");
 X = removeEmpty (target = X * C, margin = "rows");
 n = nrow (X);
 
-if(1==1){} 
+while(FALSE){} 
 
 R = X + sum(E) + n;
 

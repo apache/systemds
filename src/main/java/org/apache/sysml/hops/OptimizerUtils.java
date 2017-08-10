@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
@@ -767,6 +768,12 @@ public class OptimizerUtils
 		
 		//unknown output info
 		return bsize;
+	}
+	
+	public static double getTotalMemEstimate(Hop[] in, Hop out) {
+		return Arrays.stream(in)
+			.mapToDouble(h -> h.getOutputMemEstimate()).sum()
+			+ out.getOutputMemEstimate();
 	}
 	
 	/**

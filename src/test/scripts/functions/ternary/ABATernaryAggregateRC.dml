@@ -22,7 +22,7 @@
 A = read($1);
 B = A * 2;
 
-if(1==1){}
+while(FALSE){}
 
 s = sum(A * B * A);
 R = as.matrix(s);

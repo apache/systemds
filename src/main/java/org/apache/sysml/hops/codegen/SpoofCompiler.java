@@ -35,6 +35,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
@@ -354,13 +355,26 @@ public class SpoofCompiler
 			//context-sensitive literal replacement (only integers during recompile)
 			boolean compileLiterals = (PLAN_CACHE_POLICY==PlanCachePolicy.CONSTANT) || !recompile;
 			
-			//construct codegen plans
-			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
+			//candidate exploration of valid partial fusion plans
+			CPlanMemoTable memo = new CPlanMemoTable();
+			for( Hop hop : roots )
+				rExploreCPlans(hop, memo, compileLiterals);
+			
+			//candidate selection of optimal fusion plan
+			memo.pruneSuboptimal(roots);
+			
+			//construct actual cplan representations
+			//note: we do not use the hop visit status due to jumps over fused operators which would
+			//corrupt subsequent resets, leaving partial hops dags in visited status
+			HashMap<Long, Pair<Hop[],CNodeTpl>> cplans = new LinkedHashMap<>();
+			HashSet<Long> visited = new HashSet<Long>();
+			for( Hop hop : roots )
+				rConstructCPlans(hop, memo, cplans, compileLiterals, visited);
 			
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
 			//remove empty templates with single cnodedata input, remove spurious lookups,
 			//perform common subexpression elimination)
-			cplans = cleanupCPlans(cplans);
+			cplans = cleanupCPlans(memo, cplans);
 			
 			//explain before modification
 			if( LOG.isTraceEnabled() && !cplans.isEmpty() ) { //existing cplans
@@ -476,27 +490,6 @@ public class SpoofCompiler
 	
 	////////////////////
 	// Codegen plan construction
-
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> constructCPlans(ArrayList<Hop> roots, boolean compileLiterals) throws DMLException
-	{
-		//explore cplan candidates
-		CPlanMemoTable memo = new CPlanMemoTable();
-		for( Hop hop : roots )
-			rExploreCPlans(hop, memo, compileLiterals);
-		
-		//select optimal cplan candidates
-		memo.pruneSuboptimal(roots);
-		
-		//construct actual cplan representations
-		//note: we do not use the hop visit status due to jumps over fused operators which would
-		//corrupt subsequent resets, leaving partial hops dags in visited status
-		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
-		HashSet<Long> visited = new HashSet<Long>();
-		for( Hop hop : roots )
-			rConstructCPlans(hop, memo, ret, compileLiterals, visited);
-		
-		return ret;
-	}
 	
 	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 		throws DMLException
@@ -664,9 +657,10 @@ public class SpoofCompiler
 	 * during incremental construction. This is important as it avoids unnecessary 
 	 * redundant computation. 
 	 * 
+	 * @param memo memoization table
 	 * @param cplans set of cplans
 	 */
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
+	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
 	{
 		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<Long, Pair<Hop[],CNodeTpl>>();
 		CPlanCSERewriter cse = new CPlanCSERewriter();
@@ -704,28 +698,58 @@ public class SpoofCompiler
 					}
 			}
 			
-			//remove spurious lookups on main input of cell template
-			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				rFindAndRemoveLookup(tpl.getOutput(), in1);
-			}
-			else if( tpl instanceof CNodeMultiAgg ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			//remove invalid lookups on main input (all templates)
+			CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			if( tpl instanceof CNodeMultiAgg )
 				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
+			else
+				rFindAndRemoveLookup(tpl.getOutput(), in1);
+			
+			//remove invalid row templates (e.g., unsatisfied blocksize constraint)
+			if( tpl instanceof CNodeRow ) {
+				//check for invalid row cplan over column vector
+				if(in1.getNumCols() == 1 || (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+					&& tpl.getOutput().getDataType().isScalar()) ) {
+					cplans2.remove(e.getKey());
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed invalid row cplan w/o agg on column vector.");
+				}
+				else if( OptimizerUtils.isSparkExecutionMode() ) {
+					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+						|| OptimizerUtils.getTotalMemEstimate(inHops, memo.getHopRefs().get(e.getKey()))
+							> OptimizerUtils.getLocalMemBudget();
+					boolean invalidNcol = false;
+					for( Hop in : inHops )
+						invalidNcol |= (in.getDataType().isMatrix() 
+							&& in.getDim2() > in.getColsInBlock());
+					if( isSpark && invalidNcol ) {
+						cplans2.remove(e.getKey());
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");		
+					}
+				}
 			}
 			
 			//remove cplan w/ single op and w/o agg
 			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
 					&& TemplateUtils.hasSingleOperation(tpl) )
 				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
-					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1)
+					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
+					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
 					&& TemplateUtils.hasSingleOperation(tpl))
 				|| TemplateUtils.hasNoOperation(tpl) ) 
+			{	
 				cplans2.remove(e.getKey());
-				
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Removed cplan with single operation.");
+			}
+			
 			//remove cplan if empty
-			if( tpl.getOutput() instanceof CNodeData )
+			if( tpl.getOutput() instanceof CNodeData ) {
 				cplans2.remove(e.getKey());
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Removed empty cplan.");
+			}
 			
 			//rename inputs (for codegen and plan caching)
 			tpl.renameInputs();

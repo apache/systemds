@@ -275,7 +275,7 @@ public class TemplateCell extends TemplateBase
 	}
 	
 	protected static boolean isValidOperation(Hop hop) 
-	{	
+	{
 		//prepare indicators for binary operations
 		boolean isBinaryMatrixScalar = false;
 		boolean isBinaryMatrixVector = false;

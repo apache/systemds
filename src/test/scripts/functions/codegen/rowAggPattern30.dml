@@ -25,7 +25,7 @@ ssX_V = matrix(seq(1,40), 10, 4)/40;
 P = matrix(seq(1,3000), 600, 5)/3000;
 K = 4;
 
-if(1==1){}
+while(FALSE){}
 Q = P[,1:K] * (X %*% ssX_V);
 R = t(X) %*% (Q - P[,1:K] * rowSums(Q));
 

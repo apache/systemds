@@ -19,7 +19,8 @@
 
 package org.apache.sysml.hops.rewrite;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -49,17 +50,14 @@ import org.apache.sysml.parser.Expression.DataType;
  */
 public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 {
-
 	private static final OpOp2[] MAP_SCALAR_AGGREGATE_SOURCE_OPS = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT, OpOp2.MIN, OpOp2.MAX};
 	private static final AggOp[] MAP_SCALAR_AGGREGATE_TARGET_OPS = new AggOp[]{AggOp.SUM,  AggOp.PROD, AggOp.MIN, AggOp.MAX};
 	
 	
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
-		
 		if( sb instanceof ForStatementBlock )
 		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
@@ -96,9 +94,13 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		
 		//if no rewrite applied sb is the original for loop otherwise a last level statement block
 		//that includes the equivalent vectorized operations.
-		ret.add( sb );
-		
-		return ret;
+		return Arrays.asList(sb);
+	}
+	
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
+			ProgramRewriteStatus sate) throws HopsException {
+		return sbs;
 	}
 	
 	private StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 

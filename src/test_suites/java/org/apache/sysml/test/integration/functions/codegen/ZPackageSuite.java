@@ -26,10 +26,12 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	AlgorithmARIMA.class,
 	AlgorithmGLM.class,
 	AlgorithmKMeans.class,
 	AlgorithmL2SVM.class,
 	AlgorithmLinregCG.class,
+	AlgorithmMDABivar.class,
 	AlgorithmMLogreg.class,
 	AlgorithmMSVM.class,
 	AlgorithmPNMF.class,

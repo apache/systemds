@@ -19,7 +19,7 @@
 
 package org.apache.sysml.hops.rewrite;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,19 +34,31 @@ import org.apache.sysml.parser.StatementBlock;
  */
 public abstract class StatementBlockRewriteRule 
 {
-
 	protected static final Log LOG = LogFactory.getLog(StatementBlockRewriteRule.class.getName());
-		
+	
 	/**
 	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
-	 * within the individual rewrites.
+	 * within the individual rewrites. If a rewrite does not apply to individual blocks, it 
+	 * should simply return the input block.
 	 * 
 	 * @param sb statement block
 	 * @param sate program rewrite status
 	 * @return list of statement blocks
 	 * @throws HopsException if HopsException occurs
 	 */
-	public abstract ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus sate ) 
+	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate) 
 		throws HopsException;
 	
+	/**
+	 * Handle a list of statement blocks. Specific type constraints have to be ensured
+	 * within the individual rewrites. If a rewrite does not require sequence access, it 
+	 * should simply return the input list of statement blocks.
+	 * 
+	 * @param sbs list of statement blocks
+	 * @param sate program rewrite status
+	 * @return list of statement blocks
+	 * @throws HopsException if HopsException occurs
+	 */
+	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) 
+		throws HopsException;
 }

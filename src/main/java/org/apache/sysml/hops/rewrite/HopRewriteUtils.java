@@ -622,6 +622,14 @@ public class HopRewriteUtils
 		return ternOp;
 	}
 	
+	public static DataOp createDataOp(String name, Hop input, DataOpTypes type) {
+		DataOp dop = new DataOp(name, input.getDataType(), input.getValueType(), input, type, null);
+		dop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, dop);
+		dop.refreshSizeInformation();
+		return dop;
+	}
+	
 	public static void setOutputParameters( Hop hop, long rlen, long clen, long brlen, long bclen, long nnz ) {
 		hop.setDim1( rlen );
 		hop.setDim2( clen );
@@ -844,6 +852,11 @@ public class HopRewriteUtils
 		ret |= (current == probe);
 		memo.add(current.getHopID());
 		return ret;
+	}
+	
+	public static boolean isData(Hop hop, DataOpTypes type) {
+		return hop instanceof DataOp
+			&& ((DataOp)hop).getDataOpType()==type;
 	}
 	
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {

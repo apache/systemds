@@ -25,6 +25,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.StatisticMonitor;
@@ -82,8 +83,15 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}
 
 		// Initialize this GPUContext to this thread
-		if (DMLScript.USE_ACCELERATOR)
-			_ec.getGPUContext(0).initializeThread();
+		if (DMLScript.USE_ACCELERATOR) {
+			try {
+				_ec.getGPUContext(0).initializeThread();
+			} catch(DMLRuntimeException e) {
+				LOG.error("Error executing task because of failure in GPU backend: ",e);
+				LOG.error("Stopping LocalParWorker.");
+				return;
+			}
+		}
 		
 		//setup compiler config for worker thread
 		ConfigurationManager.setLocalConfig(_cconf);

@@ -75,10 +75,6 @@ public abstract class CNode
 		return _genVar; 
 	}
 	
-	protected static String getCurrentVarName() {
-		return "TMP"+(_seqVar.getCurrentID()-1);
-	}
-	
 	public String getVarname() {
 		return _genVar;
 	}

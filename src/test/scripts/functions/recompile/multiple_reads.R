@@ -25,11 +25,6 @@ options(digits=22)
 
 library("Matrix")
 
-X <- readMM(paste(args[1], "X1.mtx", sep=""))
+X <- readMM(paste(args[1], "X2.mtx", sep=""))
 
-if( 1==1 )
-{
-   X <- readMM(paste(args[1], "X2.mtx", sep=""))
-}
-
-writeMM(as(X, "CsparseMatrix"), paste(args[2], "X", sep="")); 
+writeMM(as(X, "CsparseMatrix"), paste(args[2], "X", sep=""));

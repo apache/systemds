@@ -83,7 +83,7 @@ public class CNodeOuterProduct extends CNodeTpl
 		else {
 			tmp = tmp.replace("%BODY_dense%", "");
 			tmp = tmp.replace("%BODY_cellwise%", tmpDense);
-			tmp = tmp.replace("%OUT_cellwise%", getCurrentVarName());
+			tmp = tmp.replace("%OUT_cellwise%", _output.getVarname());
 		}
 		//replace size information
 		tmp = tmp.replace("%LEN%", "len");

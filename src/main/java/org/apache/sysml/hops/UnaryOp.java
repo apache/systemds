@@ -618,8 +618,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				|| _op == OpOp1.CUMMAX  );
 	}
 
-	public boolean isCastUnaryOperation() 
-	{
+	public boolean isCastUnaryOperation() {
 		return (   _op == OpOp1.CAST_AS_MATRIX
 				|| _op == OpOp1.CAST_AS_SCALAR
 				|| _op == OpOp1.CAST_AS_FRAME
@@ -695,7 +694,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		{
 			//do nothing always known
 		}
-		else if( _op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR )
+		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME)
+			&& getInput().get(0).getDataType()==DataType.SCALAR )
 		{
 			//prevent propagating 0 from scalar (which would be interpreted as unknown)
 			setDim1( 1 );

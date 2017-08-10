@@ -25,11 +25,11 @@ U = matrix(3, 1100, 10);
 V = matrix(4, 2200, 10)
 X[4:900,3:1000] = matrix(0, 897, 998);
 
-if(1==1){}
+while(FALSE){}
 
 R1 = Y + (X * U%*%t(V));
 
-if(1==1){}
+while(FALSE){}
 
 R2 = as.matrix(sum(R1));
 write(R2, $1)

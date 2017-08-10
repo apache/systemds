@@ -22,6 +22,7 @@ package org.apache.sysml.hops.ipa;
 
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
+import org.apache.sysml.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.LanguageException;
 
@@ -43,7 +44,11 @@ public class IPAPassApplyStaticHopRewrites extends IPAPass
 		throws HopsException
 	{
 		try {
+			//construct rewriter w/o checkpoint injection to avoid redundancy
 			ProgramRewriter rewriter = new ProgramRewriter(true, false);
+			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
+			
+			//rewrite program hop dags and statement blocks
 			rewriter.rewriteProgramHopDAGs(prog);
 		} 
 		catch (LanguageException ex) {

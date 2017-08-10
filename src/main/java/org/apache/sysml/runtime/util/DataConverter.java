@@ -862,11 +862,15 @@ public class DataConverter
 		else {	// Dense Print Format
 			for (int i=0; i<rowLength; i++){
 				for (int j=0; j<colLength-1; j++){
-					double value = mb.quickGetValue(i, j);
+					Double value = mb.quickGetValue(i, j);
+					if (value.equals(-0.0d))
+						value = 0.0;
 					sb.append(dfFormat(df, value));
 					sb.append(separator);
 				}
-				double value = mb.quickGetValue(i, colLength-1);
+				Double value = mb.quickGetValue(i, colLength-1);
+				if (value.equals(-0.0d))
+					value = 0.0;
 				sb.append(dfFormat(df, value));	// Do not put separator after last element
 				sb.append(lineseparator);
 			}

@@ -21,7 +21,7 @@
 
 A = read($1);
 
-if(1==1){}
+while(FALSE){}
 
 s = sum(A * A * A);
 R = as.matrix(s);

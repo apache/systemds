@@ -1,0 +1,305 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Implements the k-Means clustering algorithm
+#
+# Main functions in script: update_assignments(X, C)
+#                           update_centers(X, C, a)
+#                           lloyd_iteration(X, C)
+#                           kmeans_cluster(X, k, init_type, num_restarts)
+#                           Returns centroids and cluster assignments
+#
+#
+
+print ("BEGIN K-MEANS SCRIPT")
+print ("Reading X...")
+
+all_equal = function(matrix[double] X1, matrix[double] X2)
+    return(boolean equivalent) {
+  /*
+   * Determine if two matrices are equivalent.
+   *
+   * Inputs:
+   *  - X1: Inputs, of shape (any, any).
+   *  - X2: Inputs, of same shape as X1.
+   *
+   * Outputs:
+   *  - equivalent: Whether or not the two matrices are equivalent.
+   */
+  equivalent = as.logical(prod(X1 == X2))
+}
+
+swap = function(double a, double b) return(double a, double b){
+    temp = b
+    b = a
+    a = temp
+}
+
+shuffle = function(matrix[double] mat) return(matrix[double] mat){
+    mat = mat
+    max_rand_val = nrow(mat)
+    for(i in 1:nrow(mat)){
+        r = as.integer(as.scalar(round(rand(rows = 1, cols = 1, min = 0, max = max_rand_val))))
+        if(r==0){
+            r=1
+        }
+        a = as.scalar(mat[i,1])
+        b = as.scalar(mat[r,1])
+        [a,b] = swap(a,b)
+        mat[i,1] = a
+        mat[r,1] = b
+    }
+}
+
+l2_norm = function(matrix[double] mat) return(double result){
+    result = 0.00
+    mat_sq = mat^2
+    sum_mat_sq = sum(mat_sq)
+    result = sum_mat_sq^.5
+}
+
+discrete_sample = function(matrix[double] weights) return(integer ix){
+    # Input:
+        #   weights (n,1)
+    # Output:
+        #   ix (int)
+    tot = sum(weights)
+    ix = 0
+    t = as.scalar(rand()*tot)
+    #print("t: " + t)
+    p = 0.00
+    max_val = nrow(weights)
+    flag = 1
+    for(i in 1:max_val){
+
+        p =  p + as.scalar(weights[i,])
+        #print("p: " + p + " t: " + t)
+
+        if((p>t) & (flag==1)){
+            #print("made it to cond: " + p)
+            ix = i
+            flag = 0
+        }
+    }
+    #print("yo: " + ix)
+
+}
+
+
+kmpp_init = function(matrix[double] X, double k) return(matrix[double] C){
+     # Input:
+              #   X is the data matrix (n, d)
+              #   k is the number of cluster (double)
+     # Output:
+              #   C is the cluster centers (k,d)
+    n = nrow(X)
+    sq_distances = matrix(1, rows = n, cols =1)
+    C = matrix(0, rows = k, cols = ncol(X))
+    center_ixs = matrix(0,rows =k, cols =1)
+
+    for(i in 1:k){
+        ix = discrete_sample(sq_distances)
+        delta = X - X[ix,]
+        #print("Deltas: " + toString(delta[i,]))
+        #print("IX: " + ix)
+
+
+        parfor(j in 1:n){
+            sq_dist_to_ix = l2_norm(delta[j,])
+            sq_dist_to_ix = sq_dist_to_ix^2
+            #print("j: " + sq_dist_to_ix)
+            sq_distances[j,] = min(as.scalar(sq_distances[j,]),sq_dist_to_ix)
+        }
+        center_ixs[i,] = ix
+        temp_idx = as.scalar(center_ixs[i,])
+        #print("temp index: " + temp_idx)
+        #print("center: " X[temp_idx)
+        C[i,] = X[temp_idx,]
+    }
+        #print("center_ixs: " +toString(center_ixs))
+
+}
+
+
+
+update_assignments = function(matrix[double] X, matrix[double] C) return (matrix[double] a) {
+    # Input:
+        # X is the data matrix (n, d)
+        # C is the cluster centers (k, d)
+    # Output:
+        # a is the cluster assignments (n,)
+
+    a = matrix(0, rows = nrow(X), cols =1)
+
+    # dist_array should be the size of the number of clusters since we're comparing the distance from cluster c, to each example Xi
+    dist_array = matrix(0,rows = 1, cols = nrow(C))
+
+    # loop in range of examples
+    for (i in 1:nrow(X)) {
+        # Iterate through each cluster c, and compute euclidean dist. with example i
+        for(c in 1:nrow(C)){
+            diff = X[i,]-C[c,]
+            sq_diff = diff^2
+            sum_sq_diff = rowSums(sq_diff)
+            sqrt_sum_sq_diff = (sum_sq_diff)^0.5
+            dist_array[,c] = sqrt_sum_sq_diff
+        }
+        # Find min distance of example i and each cluster, c, and return the index of that min.
+        #a[i,] = colMins(dist_array)
+        a[i,] =rowIndexMin(dist_array)
+        #print("Real distance array i.e. vector: " + toString(dist_array))
+    }
+    #print("cluster assignments: "+ toString(a))
+
+
+
+}
+
+update_centroids = function(matrix[double] X, matrix[double] C, matrix[double] a) return(matrix[double] C) {
+
+    # Input(s):
+        # X is the data matrix
+        # C is the cluster centers
+        # a is the cluster assignments
+    # Output(s):
+        # C is the new cluster centers
+
+    # K is a dxc matrix where c is the number of cluster centers and d is the number of features in the data, X
+    # The K matrix will include the sum of each dimension with it's associated cluster value
+    K = matrix(0, rows = ncol(X), cols = nrow(C))
+    counter = matrix(0, rows = ncol(X), cols = nrow(C))
+    #print("counter up top: " + toString(counter))
+    for (k in 1:nrow(X)){
+        # iterate through the features (dimensions) in the data, X
+        parfor (i in 1:ncol(X)){
+            colum_val = as.scalar(a[k,])
+            K[i,colum_val] = K[i,colum_val]+ X[k,i]
+            counter[i,colum_val] = counter[i,colum_val]+ 1
+        }
+    }
+    K = (1/counter)*K
+    #print("K matrix: " + toString(K))
+    #print("Counter matrix: " + toString(counter))
+    C = t(K)
+    #print("C matrix: " + toString(C))
+}
+
+lloyd_iteration = function(matrix[double] X, matrix[double] C) return(matrix[double] C, matrix[double] a) {
+
+    a = matrix(0, rows = nrow(X), cols = 1)
+    a_new = matrix(1, rows = nrow(X), cols = 1)
+    i = 1
+    while(i==1){
+        a = update_assignments(X,C)
+        C = update_centroids(X,C,a)
+        b = all_equal(a,a_new)
+        if(b){
+            i =0
+        }
+        a_new = a
+    }
+}
+
+# Residual Sum of squares objective function
+kmeans_obj = function(matrix[double] X, matrix[double] C, matrix[double] a) return(double obj) {
+
+    obj =0.00
+    for(k in 1:nrow(X)){
+        colum_val = as.scalar(a[k,])
+        obj = obj +sum((X[k,]-C[colum_val,])^2)
+    }
+}
+
+
+kmeans_cluster = function(matrix[double] X, double k, integer init_type, integer num_restarts) return(matrix[double] best_C, matrix[double] best_a, double best_obj){
+    # Input(s):
+            # X is the data matrix (n,d)
+            # k is the number of clusters (double)
+            # init_type is the initialization type (integer)
+            # num_restarts is the number of restarts to run the algorithm (integer)
+    # Output(s):
+            # best_c is the new cluster centers (k,d)
+            # best_a is the new cluster assignments (n,)
+            # best_obj is the best objective (double)
+
+    best_C = matrix(0, rows = k, cols = ncol(X))
+    best_a = matrix(0,rows = nrow(X), cols = 1)
+
+    # Since we want the min best_obj, we initialize best_obj to infinity by doing 0/0
+    best_obj = 1/0
+
+    n = nrow(X)
+
+    # create an array for permutation and shuffling later
+    arr = matrix(0, rows = n, cols =1)
+    # Populate array with values from 1 to n
+    parfor (i in 1:n){
+        arr[i,1] = i
+    }
+
+    C = matrix(0, rows = k, cols = ncol(X))
+
+    for (i in 1:num_restarts){
+        # Random points initialization
+        if(init_type==1){
+            # shuffle the array (perm aka permutation)
+            print("Reached Random init")
+
+            perm = shuffle(arr)
+            # the first index variable is used for collecting elements in the shuffled array to use them as indexes later
+            idx_1 = perm[1:k,]
+
+            parfor(j in 1:nrow(idx_1)){
+                idx_2 = as.scalar(idx_1[j,1])
+                #print("idx " + idx_2)
+                C[j,] = X[idx_2,]
+                #print(" Center : " + toString(C[j,]))
+            }
+        }
+        # kmeans++ initialization
+        else if(init_type==2){
+            C = kmpp_init(X,k)
+            print("Reached kmeans++")
+        }
+        # Fixed initialization
+        else if(init_type==3){
+            C = X[1:k,]
+            print("Reached fixed")
+        }
+        else{
+            print("Initialization type does not exist.")
+        }
+        [C,a] = lloyd_iteration(X, C)
+        obj = kmeans_obj(X, C, a)
+        #print("obj: " + obj + "best_obj: " + best_obj)
+        if(obj < best_obj){
+            print("obj is less than best obj. ")
+            best_C = C
+            best_a = a
+            best_obj = obj
+        }
+    }
+
+}
+
+#print(toString(data))
+print("Finished")

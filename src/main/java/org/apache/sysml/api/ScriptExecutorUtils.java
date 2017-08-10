@@ -80,6 +80,8 @@ public class ScriptExecutorUtils {
 		DMLScript.FINEGRAINED_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 
+		boolean exceptionThrown = false;
+
 		Statistics.startRunTimer();
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
@@ -93,6 +95,9 @@ public class ScriptExecutorUtils {
 				ec.setGPUContexts(gCtxs);
 			}
 			rtprog.execute(ec);
+		} catch (Exception e) {
+			exceptionThrown = true;
+			throw e;
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
 				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
@@ -104,10 +109,13 @@ public class ScriptExecutorUtils {
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 
-			if(statisticsMaxHeavyHitters > 0)
-				System.out.println(Statistics.display(statisticsMaxHeavyHitters));
-			else
-				System.out.println(Statistics.display());
+			if (!exceptionThrown) {
+				if (statisticsMaxHeavyHitters > 0)
+					System.out.println(Statistics.display(statisticsMaxHeavyHitters));
+				else
+					System.out.println(Statistics.display());
+			}
+
 		}
 	}
 

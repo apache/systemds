@@ -203,8 +203,13 @@ public class SpoofSPInstruction extends SPInstruction
 			}
 		}
 		else if( _class.getSuperclass() == SpoofRowwise.class ) { //row aggregate operator
+			if( mcIn.getCols() > mcIn.getColsPerBlock() ) {
+				throw new DMLRuntimeException("Invalid spark rowwise operator w/ ncol=" + 
+					mcIn.getCols()+", ncolpb="+mcIn.getColsPerBlock()+".");
+			}
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class); 	
-			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars, (int)mcIn.getCols());
+			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(),
+				_classBytes, bcMatrices, scalars, (int)mcIn.getCols());
 			out = in.mapPartitionsToPair(fmmc, op.getRowType()==RowType.ROW_AGG
 					|| op.getRowType() == RowType.NO_AGG);
 			

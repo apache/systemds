@@ -79,17 +79,25 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 		runLinregCGTest(TEST_NAME1, false, true, ExecType.CP);
 	}
 
-	/*
+	@Test
+	public void testLinregCGDenseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCGSparseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
 	@Test
 	public void testLinregCGDenseSP() {
-		runGDFOTest(TEST_NAME1, false, ExecType.SPARK);
+		runLinregCGTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testLinregCGSparseSP() {
-		runGDFOTest(TEST_NAME1, true, ExecType.SPARK);
+		runLinregCGTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
-	*/
 	
 	private void runLinregCGTest( String testname, boolean rewrites, boolean sparse, ExecType instType)
 	{

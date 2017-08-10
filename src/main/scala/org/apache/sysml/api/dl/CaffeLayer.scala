@@ -552,6 +552,14 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
   override def weightShape():Array[Int] = null
   override def biasShape():Array[Int] = null
   // -------------------------------------------------
+  override def bottomLayerOutputShape:(String, String, String) = {
+    if(computedBottomLayerOutputShape == null) {
+      val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).filter(l => !l.isInstanceOf[Data]).toList
+      if(ret.size != 1) throw new LanguageException("Expected exactly 1 bottom non-Data layer for " + param.getName)
+      computedBottomLayerOutputShape = ret(0).outputShape
+    }
+    computedBottomLayerOutputShape
+  }
 }
 
 class ReLU(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {

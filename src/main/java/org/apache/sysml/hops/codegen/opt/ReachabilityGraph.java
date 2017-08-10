@@ -175,7 +175,7 @@ public class ReachabilityGraph
 		for( CutSet cs : _cutSets )
 			if( isCutSet(cs, plan) ) {
 				int pos = cs.posCut[cs.posCut.length-1];				
-				return (long) Math.pow(2, plan.length-pos-1);
+				return 1L << plan.length-pos-1;
 			}
 		throw new RuntimeException("Failed to compute "
 			+ "number of skip plans for plan without cutset.");
@@ -240,11 +240,11 @@ public class ReachabilityGraph
 			if( !CollectionUtils.containsAny(part1, part2) 
 				&& !part1.isEmpty() && !part2.isEmpty()) {
 				//score cutsets (smaller is better)
-				double base = Math.pow(2, _matPoints.size());
-				double numComb = Math.pow(2, cand.size());
+				double base = 1L << _matPoints.size();
+				double numComb = 1L << cand.size();
 				double score = (numComb-1)/numComb * base
-					+ 1/numComb * Math.pow(2, part1.size())
-					+ 1/numComb * Math.pow(2, part2.size());
+					+ 1/numComb * (1L << part1.size())
+					+ 1/numComb * (1L << part2.size());
 				
 				//construct cutset
 				cutSets.add(Pair.of(new CutSet(

@@ -266,14 +266,12 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			
 			//cost assignment on hops. Stop early if exceeds bestC.
 			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts, bestC);
+			if (LOG.isTraceEnabled())
+				LOG.trace("Enum: " + Arrays.toString(plan) + " -> " + C);
 			if( C == Double.POSITIVE_INFINITY ) {
 				numEvalPartialPlans++;
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Enum: stop costing early (exceed upper bound)");
 			} else {
 				numEvalPlans++;
-				if (LOG.isTraceEnabled())
-					LOG.trace("Enum: " + Arrays.toString(plan) + " -> " + C);
 				//cost comparisons
 				if( C < bestC ) {
 					bestC = C;

@@ -1170,7 +1170,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//drop correction if necessary
 		if(op.aggOp.correctionExists && inCP)
-			ret.dropLastRowsOrColums(op.aggOp.correctionLocation);
+			ret.dropLastRowsOrColumns(op.aggOp.correctionLocation);
 	
 		//post-processing
 		ret.recomputeNonZeros();

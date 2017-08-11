@@ -116,7 +116,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, 
 					                            ((AggregateUnaryOperator)_op), _brlen, _bclen);
 			if( ((AggregateUnaryOperator)_op).aggOp.correctionExists )
-				blkOut.dropLastRowsOrColums(((AggregateUnaryOperator)_op).aggOp.correctionLocation);
+				blkOut.dropLastRowsOrColumns(((AggregateUnaryOperator)_op).aggOp.correctionLocation);
 			
 			//cumsum expand partial aggregates
 			long rlenOut = (long)Math.ceil((double)_rlen/_brlen);

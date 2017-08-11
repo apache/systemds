@@ -4235,7 +4235,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			denseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		
 		if(op.aggOp.correctionExists && inCP)
-			((MatrixBlock)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
+			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correctionLocation);
 		
 		return ret;
 	}
@@ -4384,57 +4384,28 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			result.quickSetValue(row, column, newvalue);
 		}
 	}
-
-	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) 
+	
+	public void dropLastRowsOrColumns(CorrectionLocationType correctionLocation) 
 	{
-		//do nothing 
-		if(   correctionLocation==CorrectionLocationType.NONE 
-	       || correctionLocation==CorrectionLocationType.INVALID )
-		{
-			return;
-		}
-		
 		//determine number of rows/cols to be removed
-		int step;
-		switch (correctionLocation) {
-			case LASTROW:
-			case LASTCOLUMN:
-				step = 1;
-				break;
-			case LASTTWOROWS:
-			case LASTTWOCOLUMNS:
-				step = 2;
-				break;
-			case LASTFOURROWS:
-			case LASTFOURCOLUMNS:
-				step = 4;
-				break;
-			default:
-				step = 0;
-		}
-
+		int step = correctionLocation.getNumRemovedRowsColumns();
+		if( step <= 0 )
+			return; 
 		
 		//e.g., colSums, colMeans, colMaxs, colMeans, colVars
 		if(   correctionLocation==CorrectionLocationType.LASTROW
 		   || correctionLocation==CorrectionLocationType.LASTTWOROWS
 		   || correctionLocation==CorrectionLocationType.LASTFOURROWS )
 		{
-			if( sparse ) //SPARSE
-			{
-				if(sparseBlock!=null)
-					for(int i=1; i<=step; i++)
-						if(!sparseBlock.isEmpty(rlen-i))
-							this.nonZeros-=sparseBlock.size(rlen-i);
+			if( sparse && sparseBlock!=null ) { //SPARSE
+				nonZeros -= recomputeNonZeros(1, rlen-1, 0, clen-1);
+				sparseBlock = SparseBlockFactory
+					.createSparseBlock(DEFAULT_SPARSEBLOCK, sparseBlock.get(0));
 			}
-			else //DENSE
-			{
-				if(denseBlock!=null)
-					for(int i=(rlen-step)*clen; i<rlen*clen; i++)
-						if(denseBlock[i]!=0)
-							this.nonZeros--;
+			else if( !sparse && denseBlock!=null ) { //DENSE
+				nonZeros -= recomputeNonZeros(1, rlen-1, 0, clen-1);
+				denseBlock = Arrays.copyOfRange(denseBlock, 0, clen);
 			}
-			
-			//just need to shrink the dimension, the deleted rows won't be accessed
 			rlen -= step;
 		}
 		
@@ -4443,51 +4414,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		        || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS
 		        || correctionLocation==CorrectionLocationType.LASTFOURCOLUMNS )
 		{
-			if(sparse) //SPARSE
-			{
-				if(sparseBlock!=null)
-				{
-					for(int r=0; r<Math.min(rlen, sparseBlock.numRows()); r++)
-						if(!sparseBlock.isEmpty(r))
-						{
-							int newSize=sparseBlock.posFIndexGTE(r, clen-step);
-							if(newSize >= 0)
-							{
-								this.nonZeros-=sparseBlock.size(r)-newSize;
-								int pos = sparseBlock.pos(r);
-								int cl = sparseBlock.indexes(r)[pos+newSize-1];
-								sparseBlock.deleteIndexRange(r, cl+1, clen);
-								//TODO perf sparse block: truncate replaced by deleteIndexRange
-							}
-						}
-				}
+			if( sparse && sparseBlock!=null ) { //SPARSE
+				//sparse blocks are converted to a dense representation
+				//because column vectors are always smaller in dense
+				double[] tmp = new double[rlen];
+				int lnnz = 0;
+				for( int i=0; i<rlen; i++ )
+					lnnz += ((tmp[i] = sparseBlock.get(i, 0))!=0)? 1 : 0;
+				cleanupBlock(true, true);
+				sparse = false;
+				denseBlock = tmp;
+				nonZeros = lnnz;
 			}
-			else //DENSE
-			{
-				if(this.denseBlock!=null)
-				{
-					//the first row doesn't need to be copied
-					int targetIndex=clen-step;
-					int sourceOffset=clen;
-					this.nonZeros=0;
-					for(int i=0; i<targetIndex; i++)
-						if(denseBlock[i]!=0)
-							this.nonZeros++;
-					
-					//start from the 2nd row
-					for(int r=1; r<rlen; r++)
-					{
-						for(int c=0; c<clen-step; c++)
-						{
-							if((denseBlock[targetIndex]=denseBlock[sourceOffset+c])!=0)
-								this.nonZeros++;
-							targetIndex++;
-						}
-						sourceOffset+=clen;
-					}
-				}
+			else if( !sparse && denseBlock!=null ) { //DENSE
+				double[] tmp = new double[rlen];
+				int lnnz = 0;
+				for( int i=0, aix=0; i<rlen; i++, aix+=clen )
+					lnnz += ((tmp[i] = denseBlock[aix])!=0)? 1 : 0;
+				denseBlock = tmp;
+				nonZeros = lnnz;
 			}
-			
 			clen -= step;
 		}
 	}
@@ -4980,7 +4926,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret = LibMatrixAgg.aggregateTernary(m1, m2, m3, ret, op);
 		
 		if(op.aggOp.correctionExists && inCP)
-			ret.dropLastRowsOrColums(op.aggOp.correctionLocation);
+			ret.dropLastRowsOrColumns(op.aggOp.correctionLocation);
 		return ret;
 	}
 

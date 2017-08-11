@@ -102,7 +102,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
 			
 			//drop correction after aggregation
-			out3.dropLastRowsOrColums(aggop.correctionLocation);
+			out3.dropLastRowsOrColumns(aggop.correctionLocation);
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
@@ -222,7 +222,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			arg0.aggregateUnaryOperations(_op, blkOut, _brlen, _bclen, _ix);
 			
 			//always drop correction since no aggregation
-			blkOut.dropLastRowsOrColums(_op.aggOp.correctionLocation);
+			blkOut.dropLastRowsOrColumns(_op.aggOp.correctionLocation);
 			
 			//output new tuple
 			return blkOut;

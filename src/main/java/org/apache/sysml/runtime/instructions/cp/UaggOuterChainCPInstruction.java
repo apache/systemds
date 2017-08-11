@@ -102,7 +102,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		if( _uaggOp.aggOp.correctionExists )
-			mbOut.dropLastRowsOrColums(_uaggOp.aggOp.correctionLocation);
+			mbOut.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
 		
 		String output_name = output.getName();
 		//final aggregation if required

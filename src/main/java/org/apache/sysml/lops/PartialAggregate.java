@@ -50,8 +50,15 @@ public class PartialAggregate extends Lop
 		LASTTWOCOLUMNS,
 		LASTFOURROWS,
 		LASTFOURCOLUMNS,
-		INVALID
-	};
+		INVALID;
+		
+		public int getNumRemovedRowsColumns() {
+			return (this==LASTROW || this==LASTCOLUMN) ? 1 :
+				(this==LASTTWOROWS || this==LASTTWOCOLUMNS) ? 2 :
+				(this==LASTFOURROWS || this==LASTFOURCOLUMNS) ? 4 : 0;
+		}
+		
+	}
 	
 	private Aggregate.OperationTypes operation;
 	private DirectionTypes direction;

@@ -163,7 +163,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			MatrixBlock tmp = RDDAggregateUtils.aggStable(out, _aggOp);
 			
 			//drop correction after aggregation
-			tmp.dropLastRowsOrColums(_aggOp.correctionLocation);
+			tmp.dropLastRowsOrColumns(_aggOp.correctionLocation);
 
 			//put output block into symbol table (no lineage because single block)
 			sec.setMatrixOutput(output.getName(), tmp, getExtendedOpcode());

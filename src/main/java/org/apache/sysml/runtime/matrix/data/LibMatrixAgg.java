@@ -358,7 +358,7 @@ public class LibMatrixAgg
 			for( int i=0; i<tasks.size(); i++ ) {
 				MatrixBlock row = tasks.get(i).getResult();
 				if( uaop.aggOp.correctionExists )
-					row.dropLastRowsOrColums(uaop.aggOp.correctionLocation);
+					row.dropLastRowsOrColumns(uaop.aggOp.correctionLocation);
 				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, UpdateType.INPLACE_PINNED);
 			}
 			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);

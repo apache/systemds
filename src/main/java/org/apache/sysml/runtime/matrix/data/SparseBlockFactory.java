@@ -27,7 +27,7 @@ public abstract class SparseBlockFactory
 		return createSparseBlock(MatrixBlock.DEFAULT_SPARSEBLOCK, rlen);
 	}
 
-	public static SparseBlock createSparseBlock( SparseBlock.Type type, int rlen ) {
+	public static SparseBlock createSparseBlock(SparseBlock.Type type, int rlen) {
 		switch( type ) {
 			case MCSR: return new SparseBlockMCSR(rlen, -1);
 			case CSR: return new SparseBlockCSR(rlen);
@@ -35,6 +35,12 @@ public abstract class SparseBlockFactory
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
+	}
+	
+	public static SparseBlock createSparseBlock(SparseBlock.Type type, SparseRow row) {
+		SparseBlock ret = createSparseBlock(type, 1);
+		ret.set(0, row, true);
+		return ret;
 	}
 
 	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )

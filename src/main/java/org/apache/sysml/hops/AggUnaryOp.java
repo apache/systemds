@@ -360,16 +360,16 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			case SUM_SQ:
 				//worst-case correction LASTROW / LASTCOLUMN
 				if( _direction == Direction.Col ) //(potentially sparse)
-					val = OptimizerUtils.estimateSizeExactSparsity(1, dim2, sparsity);
+					val = OptimizerUtils.estimateSizeExactSparsity(2, dim2, sparsity);
 				else if( _direction == Direction.Row ) //(always dense)
-					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
 				break;
 			case MEAN:
 				//worst-case correction LASTTWOROWS / LASTTWOCOLUMNS
 				if( _direction == Direction.Col ) //(potentially sparse)
-					val = OptimizerUtils.estimateSizeExactSparsity(2, dim2, sparsity);
+					val = OptimizerUtils.estimateSizeExactSparsity(3, dim2, sparsity);
 				else if( _direction == Direction.Row ) //(always dense)
-					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 3, 1.0);
 				break;
 			case VAR:
 				//worst-case correction LASTFOURROWS / LASTFOURCOLUMNS
@@ -394,9 +394,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					}
 
 				} else if( _direction == Direction.Col ) { //(potentially sparse)
-					val = OptimizerUtils.estimateSizeExactSparsity(4, dim2, sparsity);
+					val = OptimizerUtils.estimateSizeExactSparsity(5, dim2, sparsity);
 				} else if( _direction == Direction.Row ) { //(always dense)
-					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 4, 1.0);
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 5, 1.0);
 				}
 				break;
 			case MAXINDEX:
@@ -406,7 +406,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					val = 3 * OptimizerUtils.estimateSizeExactSparsity(1, hop._dim2, 1.0);
 				else
 					//worst-case correction LASTCOLUMN 
-					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
 				break;
 			default:
 				//no intermediate memory consumption

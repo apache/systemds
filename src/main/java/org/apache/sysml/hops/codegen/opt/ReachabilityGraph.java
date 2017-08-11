@@ -33,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.hops.codegen.opt.PlanSelection.VisitMarkCost;
 
 /**
@@ -175,7 +176,7 @@ public class ReachabilityGraph
 		for( CutSet cs : _cutSets )
 			if( isCutSet(cs, plan) ) {
 				int pos = cs.posCut[cs.posCut.length-1];				
-				return 1L << plan.length-pos-1;
+				return UtilFunctions.pow(2, plan.length-pos-1);
 			}
 		throw new RuntimeException("Failed to compute "
 			+ "number of skip plans for plan without cutset.");
@@ -240,11 +241,11 @@ public class ReachabilityGraph
 			if( !CollectionUtils.containsAny(part1, part2) 
 				&& !part1.isEmpty() && !part2.isEmpty()) {
 				//score cutsets (smaller is better)
-				double base = 1L << _matPoints.size();
-				double numComb = 1L << cand.size();
+				double base = UtilFunctions.pow(2, _matPoints.size());
+				double numComb = UtilFunctions.pow(2, cand.size());
 				double score = (numComb-1)/numComb * base
-					+ 1/numComb * (1L << part1.size())
-					+ 1/numComb * (1L << part2.size());
+					+ 1/numComb * UtilFunctions.pow(2, part1.size())
+					+ 1/numComb * UtilFunctions.pow(2, part2.size());
 				
 				//construct cutset
 				cutSets.add(Pair.of(new CutSet(

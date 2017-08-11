@@ -76,11 +76,11 @@ public class Statistics
 	private static final LongAdder codegenCompileTime = new LongAdder(); //in nano
 	private static final LongAdder codegenClassCompileTime = new LongAdder(); //in nano
 	private static final LongAdder codegenHopCompile = new LongAdder(); //count
-	private static final LongAdder codegenFPlanCompile = new LongAdder(); //count
-	private static final LongAdder codegenFPlanPartialCost = new LongAdder(); //count
-	private static final LongAdder codegenFPlanSkip = new LongAdder(); //count
 	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenClassCompile = new LongAdder(); //count
+	private static final LongAdder codegenEnumAll = new LongAdder(); //count
+	private static final LongAdder codegenEnumEval = new LongAdder(); //count
+	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
 	
@@ -259,14 +259,14 @@ public class Statistics
 		codegenCPlanCompile.add(delta);
 	}
 	
-	public static void incrementCodegenFPlanCompile(long delta) {
-		codegenFPlanCompile.add(delta);
+	public static void incrementCodegenEnumAll(long delta) {
+		codegenEnumAll.add(delta);
 	}
-	public static void incrementCodegenFPlanPartialCost(long delta) {
-		codegenFPlanPartialCost.add(delta);
+	public static void incrementCodegenEnumEval(long delta) {
+		codegenEnumEval.add(delta);
 	}
-	public static void incrementCodegenFPlanSkip(long delta) {
-		codegenFPlanSkip.add(delta);
+	public static void incrementCodegenEnumEvalP(long delta) {
+		codegenEnumEvalP.add(delta);
 	}
 	
 	public static void incrementCodegenClassCompile() {
@@ -297,14 +297,14 @@ public class Statistics
 		return codegenCPlanCompile.longValue();
 	}
 	
-	public static long getCodegenFPlanCompile() {
-		return codegenFPlanCompile.longValue();
+	public static long getCodegenEnumAll() {
+		return codegenEnumAll.longValue();
 	}
-	public static long getCodegenFPlanPartialCost() {
-		return codegenFPlanPartialCost.longValue();
+	public static long getCodegenEnumEval() {
+		return codegenEnumEval.longValue();
 	}
-	public static long getCodegenFPlanSkip() {
-		return codegenFPlanSkip.longValue();
+	public static long getCodegenEnumEvalP() {
+		return codegenEnumEvalP.longValue();
 	}
 	
 	public static long getCodegenClassCompile() {
@@ -400,11 +400,11 @@ public class Statistics
 		funRecompileTime.reset();
 		
 		codegenHopCompile.reset();
-		codegenFPlanCompile.reset();
-		codegenFPlanPartialCost.reset();
-		codegenFPlanSkip.reset();
 		codegenCPlanCompile.reset();
 		codegenClassCompile.reset();
+		codegenEnumAll.reset();
+		codegenEnumEval.reset();
+		codegenEnumEvalP.reset();
 		codegenCompileTime.reset();
 		codegenClassCompileTime.reset();
 		
@@ -741,10 +741,10 @@ public class Statistics
 		
 		sb.append("SystemML Statistics:\n");
 		if( DMLScript.STATISTICS ) {
-			sb.append("Total elapsed time:\t\t\t\t" + String.format("%.3f", (getCompileTime()+getRunTime())*1e-9) + " sec.\n"); // nanoSec --> sec
-			sb.append("Total compilation time:\t\t\t" + String.format("%.3f", getCompileTime()*1e-9) + " sec.\n"); // nanoSec --> sec
+			sb.append("Total elapsed time:\t\t" + String.format("%.3f", (getCompileTime()+getRunTime())*1e-9) + " sec.\n"); // nanoSec --> sec
+			sb.append("Total compilation time:\t\t" + String.format("%.3f", getCompileTime()*1e-9) + " sec.\n"); // nanoSec --> sec
 		}
-		sb.append("Total execution time:\t\t\t" + String.format("%.3f", getRunTime()*1e-9) + " sec.\n"); // nanoSec --> sec
+		sb.append("Total execution time:\t\t" + String.format("%.3f", getRunTime()*1e-9) + " sec.\n"); // nanoSec --> sec
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");
@@ -780,29 +780,28 @@ public class Statistics
 			}
 			
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
-			sb.append("Cache writes (WB, FS, HDFS):   \t" + CacheStatistics.displayWrites() + ".\n");
+			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
-			sb.append("HOP DAGs recompile time:       \t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
 			if( getFunRecompiles()>0 ) {
 				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
 				sb.append("Functions recompile time:\t" + String.format("%.3f", ((double)getFunRecompileTime())/1000000000) + " sec.\n");	
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
-				sb.append("Codegen compile    (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
+				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
 						+ getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
-				sb.append("Codegen enum  (full,part,skip):\t" + getCodegenFPlanCompile() + "/"
-						+ getCodegenFPlanPartialCost() + "/"
-						+ getCodegenFPlanSkip() + ".\n");
+				sb.append("Codegen enum (All,Eval,EvalP):\t" + getCodegenEnumAll() + "/"
+						+ getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
-				sb.append("Codegen plan cache hits:       \t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
+				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
 			}
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+
 						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
-				sb.append("Spark trans counts(par,bc,col):\t" +
+				sb.append("Spark trans counts (par,bc,col):" +
 						String.format("%d/%d/%d.\n", sparkParallelizeCount.longValue(), 
 								sparkBroadcastCount.longValue(), sparkCollectCount.longValue()));
 				sb.append("Spark trans times (par,bc,col):\t" +
@@ -819,9 +818,9 @@ public class Statistics
 				sb.append("ParFor total update in-place:\t" + lTotalUIPVar + "/" + lTotalLixUIP + "/" + lTotalLix + "\n");
 			}
 
-			sb.append("Total JIT compile time:\t\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
-			sb.append("Total JVM GC count:\t\t\t\t" + getJVMgcCount() + ".\n");
-			sb.append("Total JVM GC time:\t\t\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
+			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
+			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
+			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
 		}

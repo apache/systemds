@@ -376,8 +376,6 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				
 				//cost assignment on hops
 				double C = getPlanCost(memo, partition, R, M, plan, computeCosts);
-				if( DMLScript.STATISTICS )
-					Statistics.incrementCodegenFPlanCompile(1);
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Enum: "+Arrays.toString(plan)+" -> "+C);
 				
@@ -388,6 +386,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Enum: Found new best plan.");
 				}
+			}
+			
+			if( DMLScript.STATISTICS ) {
+				Statistics.incrementCodegenEnumAll(len);
+				Statistics.incrementCodegenEnumEval(len);
 			}
 			
 			//prune memo table wrt best plan and select plans

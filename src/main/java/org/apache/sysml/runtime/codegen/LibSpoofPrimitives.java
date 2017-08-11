@@ -20,8 +20,6 @@
 package org.apache.sysml.runtime.codegen;
 
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
@@ -42,8 +40,8 @@ public class LibSpoofPrimitives
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
-	private static ThreadLocal<LinkedList<double[]>> memPool = new ThreadLocal<LinkedList<double[]>>() {
-		@Override protected LinkedList<double[]> initialValue() { return new LinkedList<double[]>(); }
+	private static ThreadLocal<VectorBuffer> memPool = new ThreadLocal<VectorBuffer>() {
+		@Override protected VectorBuffer initialValue() { return new VectorBuffer(0,0,0); }
 	};
 	
 	// forwarded calls to LibMatrixMult
@@ -1444,13 +1442,7 @@ public class LibSpoofPrimitives
 	}
 	
 	public static void setupThreadLocalMemory(int numVectors, int len, int len2) {
-		LinkedList<double[]> list = new LinkedList<double[]>();
-		if( len2 >= 0 ) 
-			for( int i=0; i<numVectors; i++ )
-				list.addLast(new double[len2]);
-		for( int i=0; i<numVectors; i++ )
-			list.addLast(new double[len]);
-		memPool.set(list);
+		memPool.set(new VectorBuffer(numVectors, len, len2));
 	}
 	
 	public static void cleanupThreadLocalMemory() {
@@ -1462,29 +1454,52 @@ public class LibSpoofPrimitives
 	}
 	
 	protected static double[] allocVector(int len, boolean reset, double resetVal) {
-		LinkedList<double[]> list = memPool.get(); 
+		VectorBuffer buff = memPool.get(); 
 		
-		//find and remove vector with matching len 
-		double[] vect = null;
-		Iterator<double[]> iter = list.iterator();
-		while( iter.hasNext() ) {
-			double[] tmp = iter.next();
-			if( tmp.length == len ) {
-				vect = tmp;
-				iter.remove();
-				break;
-			}
-		}
-		
-		//allocate new vector or re-queue if required
+		//find next matching vector in ring buffer or
+		//allocate new vector if required
+		double[] vect = buff.next(len);
 		if( vect == null )
 			vect = new double[len];
-		else 
-			list.addLast(vect);
 		
 		//reset vector if required
 		if( reset )
 			Arrays.fill(vect, resetVal);
 		return vect;
+	}
+	
+	/**
+	 * Simple ring buffer of allocated vectors, where
+	 * vectors of different sizes are interspersed.
+	 */
+	private static class VectorBuffer {
+		private final double[][] _data;
+		private int _pos;
+		private int _len1;
+		private int _len2;
+		
+		public VectorBuffer(int num, int len1, int len2) {
+			int lnum = (len2 > 0) ? 2*num : num;
+			_data = new double[lnum][];
+			for( int i=0; i<num; i++ )
+				if( lnum > num ) {
+					_data[2*i] = new double[len1];
+					_data[2*i+1] = new double[len2];
+				}
+				else {
+					_data[i] = new double[len1];
+				}
+			_pos = -1;
+			_len1 = len1;
+			_len2 = len2;
+		}
+		public double[] next(int len) {
+			if( _len1!=len && _len2!=len )
+				return null;
+			do {
+				_pos = (_pos+1>=_data.length) ? 0 : _pos+1;
+			} while( _data[_pos].length!=len );
+			return _data[_pos];
+		}
 	}
 }

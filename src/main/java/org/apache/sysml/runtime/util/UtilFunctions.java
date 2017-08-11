@@ -87,8 +87,13 @@ public class UtilFunctions
 	
 	public static int nextIntPow2( int in ) {
 		int expon = (in==0) ? 0 : 32-Integer.numberOfLeadingZeros(in-1);
-		long pow2 = (long) Math.pow(2, expon);
+		long pow2 = pow(2, expon);
 		return (int)((pow2>Integer.MAX_VALUE)?Integer.MAX_VALUE : pow2);	
+	}
+	
+	public static long pow(int base, int exp) {
+		return (base==2 && 0 <= exp && exp < 63) ?
+			1L << exp : (long)Math.pow(base, exp);
 	}
 	
 	/**

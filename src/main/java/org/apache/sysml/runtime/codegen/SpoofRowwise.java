@@ -122,7 +122,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() ?
+		final int n2 = _type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		if( !aggIncr || !out.isAllocated() )
 			allocateOutputMatrix(m, n, n2, out);
@@ -170,7 +170,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() ?
+		final int n2 = _type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		allocateOutputMatrix(m, n, n2, out);
 		
@@ -215,6 +215,12 @@ public abstract class SpoofRowwise extends SpoofOperator
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+	
+	public static boolean hasMatrixSideInput(ArrayList<MatrixBlock> inputs) {
+		return IntStream.range(1, inputs.size())
+			.mapToObj(i -> inputs.get(i))
+			.anyMatch(in -> in.getNumColumns()>1);
 	}
 	
 	private static int getMinColsMatrixSideInputs(ArrayList<MatrixBlock> inputs) {

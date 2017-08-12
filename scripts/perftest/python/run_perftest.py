@@ -114,7 +114,6 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     Current location of hdfs / local temp being processed
     """
     config_data = config_reader(config_path + '.json')
-    out_log_file_name = config_path.split('/')[-1]
 
     if isinstance(config_data, dict):
         dict_args = ' '.join([str(key) + '=' + str(val) for key, val in config_data.items()])

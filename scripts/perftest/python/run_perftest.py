@@ -134,7 +134,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     if exit_flag_success:
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, config_path)
         write_success(time, temp_cwd)
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))

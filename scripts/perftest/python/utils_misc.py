@@ -166,7 +166,7 @@ def config_reader(read_path):
     return conf_file
 
 
-def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict):
+def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, log_file_name=None):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -185,6 +185,9 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
 
     sup_args_dict: Dictionary
     Supplementary arguments required by the script
+
+    log_file_name: String
+    Path to write the logfile
 
     return: String
     The value of time parsed from the logs / error
@@ -207,10 +210,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
         cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
-    # Debug
-    # print(cmd_string)
-
-    time = subprocess_exec(cmd_string, 'time')
+    time = subprocess_exec(cmd_string, log_file_name, 'time')
 
     return time
 

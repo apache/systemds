@@ -27,7 +27,7 @@ import re
 # Subprocess and log parsing related functions
 
 
-def subprocess_exec(cmd_string, extract=None):
+def subprocess_exec(cmd_string, log_file_name=None, extract=None):
     """
     Execute the input string as subprocess
 
@@ -38,17 +38,24 @@ def subprocess_exec(cmd_string, extract=None):
     Based on extract as time/dir we extract this information from
     the logs accordingly
 
+    out_file_name: String
+    Path to write the log file
+
     return: String
     Based on extract we return the relevant string
     """
     # Debug
-    # print(cmd_string)
-    proc1 = subprocess.Popen(shlex.split(cmd_string), stdout=subprocess.PIPE,
+
+    exec_command = shlex.split(cmd_string)
+    proc1 = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
     error_arr, out_arr = get_all_logs(proc1)
     std_outs = out_arr + error_arr
     return_code = proc1.returncode
+
+    if log_file_name is not None:
+        write_logs(std_outs, log_file_name + '.log')
 
     if return_code == 0:
         if extract == 'time':
@@ -63,6 +70,14 @@ def subprocess_exec(cmd_string, extract=None):
         print('sub-process failed, return code {}'.format(return_code))
 
     return return_data
+
+
+def write_logs(std_outs, file_name):
+    """
+    Write all logs to the specified location
+    """
+    with open(file_name, 'w')as log:
+        log.write("\n".join(std_outs))
 
 
 def get_all_logs(process):

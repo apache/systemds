@@ -114,6 +114,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     Current location of hdfs / local temp being processed
     """
     config_data = config_reader(config_path + '.json')
+    out_log_file_name = config_path.split('/')[-1]
 
     if isinstance(config_data, dict):
         dict_args = ' '.join([str(key) + '=' + str(val) for key, val in config_data.items()])
@@ -134,7 +135,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     if exit_flag_success:
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, config_path)
         write_success(time, temp_cwd)
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))

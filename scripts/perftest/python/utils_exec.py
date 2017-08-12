@@ -45,7 +45,7 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
     Based on extract we return the relevant string
     """
     # Debug
-
+    # print(cmd_string)
     exec_command = shlex.split(cmd_string)
     proc1 = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)

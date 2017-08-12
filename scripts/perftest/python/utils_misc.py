@@ -166,7 +166,7 @@ def config_reader(read_path):
     return conf_file
 
 
-def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, log_file_name):
+def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, log_file_name=None):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -209,9 +209,6 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
         cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
-
-    # Debug
-    # print(cmd_string)
 
     time = subprocess_exec(cmd_string, log_file_name, 'time')
 
@@ -259,7 +256,7 @@ def exec_test_data(exec_type, spark_args_dict, sup_args_dict, datagen_path, conf
     X_test = join(path, 'X_test.data')
     Y_test = join(path, 'Y_test.data')
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
-    exec_dml_and_parse_time(exec_type, test_split_script, args, spark_args_dict, sup_args_dict, None)
+    exec_dml_and_parse_time(exec_type, test_split_script, args, spark_args_dict, sup_args_dict)
 
 
 def check_predict(current_algo, ml_predict):

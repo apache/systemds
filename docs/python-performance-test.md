@@ -177,7 +177,20 @@ In the example above `--tag` can be a major/minor systemml version and `--auth` 
 Currently we only support time difference between algorithms in different versions. This can be obtained by running the script below
 `./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0`
 
-Note: Please pip install `https://github.com/burnash/gspread` to use google docs client.
+We pass different `matrix shapes` using `--mat-shape` argument.
+
+Matrix Shape | Approximate Data Size 
+--- | --- |
+10k_1k|80MB
+100k_1k|800MB
+1M_1k|8GB
+10M_1k|80GB
+100M_1k|800GB
+
+For example the command below runs performance test for all data sizes described above
+`run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --mat-shape 10k_1k 100k_1k 1M_1k 10M_1k 100M_1k --master yarn-client  --temp-dir hdfs://spark-06.softlayer.com:8020/user/systemml`
+
+Note: Please use this command `pip3 install -r requirements.txt` before using the perftest scripts.
 
 
 ## Troubleshooting

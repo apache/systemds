@@ -26,11 +26,12 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
+import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class MLContextGLMTest extends MLContextTestBase {
-        protected static Logger log = logger.getLogger(MLContextGLMTest.class);
+        protected static Logger log = Logger.getLogger(MLContextGLMTest.class);
         
         protected final static String TEST_SCRIPT = "scripts/algorithms/GLM.dml";
 	
@@ -79,7 +80,7 @@ public class MLContextGLMTest extends MLContextTestBase {
 		String param4Name = "$lpow=";
                                         
                 double[][] X = getRandomMatrix(10, 3, 0, 1, sparse?sparsity2:sparsity1, -1);
-                double[][] Y = TestUtils.round(getRandomMatrix(10, 1, 0, 1, sparsity, -1);
+                double[][] Y = TestUtils.round(getRandomMatrix(10, 1, 0, 1, sparse?sparsity2:sparsity1, -1));
                 
 		switch(type) {
 			case POISSON_LOG: //dfam, vpow, link, lpow

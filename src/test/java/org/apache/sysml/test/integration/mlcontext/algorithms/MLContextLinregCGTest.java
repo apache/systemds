@@ -38,12 +38,12 @@ public class MLContextLinregCGTest extends MLContextTestBase {
   
   @Test
   public void testLinregCGSparse() {
-          runLinregTestMLC();
+          runLinregTestMLC(true);
   }
   
   @Test
   public void testLinregCGDense() {
-          runLinregTestMLC();
+          runLinregTestMLC(false);
   }
   
   private void runLinregTestMLC(boolean sparse) {

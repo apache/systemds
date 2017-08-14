@@ -392,13 +392,17 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         """
         if self.model != None:
             self.model.save(self.sc._jsc, outputDir, format, sep)
-            if self.le is not None:
+
+            labelMapping = None
+            if hasattr(self, 'le') and self.le is not None:
                 labelMapping = dict(enumerate(list(self.le.classes_), 1))
-            else:
+            elif hasattr(self, 'labelMap') and self.labelMap is not None:
                 labelMapping = self.labelMap
-            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
-            df = self.sparkSession.createDataFrame(lStr)
-            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
+
+            if labelMapping is not None:
+                lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
+                df = self.sparkSession.createDataFrame(lStr)
+                df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
         return self

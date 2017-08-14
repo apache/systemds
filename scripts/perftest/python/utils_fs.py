@@ -134,12 +134,12 @@ def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
                 if mode == 'data-gen':
                     sub_folder_name = '.'.join([family, current_matrix_type, current_matrix_shape])
                     cmd = ['hdfs', 'dfs', '-ls', path]
-                    path_subdir = subprocess_exec(' '.join(cmd), 'dir')
+                    path_subdir = subprocess_exec(' '.join(cmd), extract='dir')
 
                 if mode == 'train':
                     sub_folder_name = '.'.join([algo, family, current_matrix_type, current_matrix_shape])
                     cmd = ['hdfs', 'dfs', '-ls', path]
-                    path_subdir = subprocess_exec(' '.join(cmd), 'dir')
+                    path_subdir = subprocess_exec(' '.join(cmd), extract='dir')
 
                 path_folders = list(filter(lambda x: contains_dir(x, sub_folder_name), path_subdir))
 

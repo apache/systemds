@@ -736,7 +736,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					int len = b.size(i);
 					int[] ix = b.indexes(i);
 					double[] val = b.values(i);
-					sparseBlock.allocate(aix, sparseBlock.size(aix)+len);
+					if( estimatedNNzsPerRow > 0 )
+						sparseBlock.allocate(aix, Math.max(estimatedNNzsPerRow, sparseBlock.size(aix)+len), clen);
+					else
+						sparseBlock.allocate(aix, sparseBlock.size(aix)+len);
 					for( int j=pos; j<pos+len; j++ )
 						sparseBlock.append(aix, coloffset+ix[j], val[j]);	
 				}
@@ -1894,39 +1897,36 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 		}
 	}
-
+	
 	private void readSparseBlock(DataInput in) 
 		throws IOException 
 	{			
-		allocateSparseRowsBlock(false); 
-		resetSparse(); //reset all sparse rows
+		allocateSparseRowsBlock(false);
+		resetSparse();
 		
-		if( in instanceof MatrixBlockDataInput ) //fast deserialize
-		{
+		if( in instanceof MatrixBlockDataInput ) { //fast deserialize
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
-			nonZeros = mbin.readSparseRows(rlen, sparseBlock);
+			nonZeros = mbin.readSparseRows(rlen, nonZeros, sparseBlock);
 		}
-		else if( in instanceof DataInputBuffer  && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) 
-		{
+		else if( in instanceof DataInputBuffer && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) {
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
 			FastBufferedDataInputStream mbin = null;
 			try {
 				mbin = new FastBufferedDataInputStream(din);
-				nonZeros = mbin.readSparseRows(rlen, sparseBlock);	
+				nonZeros = mbin.readSparseRows(rlen, nonZeros, sparseBlock);
 			}
 			finally {
 				IOUtilFunctions.closeSilently(mbin);
 			}
 		}
-		else //default deserialize
-		{
+		else { //default deserialize
 			for(int r=0; r<rlen; r++) {
 				int rnnz = in.readInt(); //row nnz
 				if( rnnz > 0 ) {
 					sparseBlock.reset(r, rnnz, clen);
 					for(int j=0; j<rnnz; j++) //col index/value pairs
-						sparseBlock.append(r, in.readInt(), in.readDouble());		
+						sparseBlock.append(r, in.readInt(), in.readDouble());
 				}
 			}
 		}

@@ -118,10 +118,11 @@ public abstract class MatrixReader
 	protected static void sortSparseRowsParallel(MatrixBlock dest, long rlen, int k, ExecutorService pool) 
 		throws InterruptedException, ExecutionException
 	{
-		//create sort tasks
+		//create sort tasks (increase number of tasks for better load balance)
 		ArrayList<SortRowsTask> tasks = new ArrayList<SortRowsTask>();
-		int blklen = (int)(Math.ceil((double)rlen/k));
-		for( int i=0; i<k & i*blklen<rlen; i++ )
+		int k2 = (int) Math.min(8*k, rlen); 
+		int blklen = (int)(Math.ceil((double)rlen/k2));
+		for( int i=0; i<k2 & i*blklen<rlen; i++ )
 			tasks.add(new SortRowsTask(dest, i*blklen, Math.min((i+1)*blklen, (int)rlen)));
 		
 		//execute parallel sort and check for errors

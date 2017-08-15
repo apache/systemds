@@ -176,13 +176,9 @@ public class SparseBlockCSR extends SparseBlock
 	public void initUltraSparse(int nnz, DataInput in) 
 		throws IOException 
 	{
-		//ensure empty block before init
-		if( _size > 0 )
-			reset();
-			
 		//allocate space if necessary
 		if( _values.length < nnz )
-			resize(nnz);
+			resize(newCapacity(nnz));
 		
 		//read ijv triples, append and update pointers
 		int rlast = 0;
@@ -195,6 +191,37 @@ public class SparseBlockCSR extends SparseBlock
 			_values[i] = in.readDouble();
 		}
 		Arrays.fill(_ptr, rlast+1, numRows()+1, nnz);
+		
+		//update meta data
+		_size = nnz;
+	}
+	
+	/**
+	 * Initializes the CSR sparse block from an ordered input
+	 * stream of sparse rows (rownnz, jv-pairs*). 
+	 * 
+	 * @param rlen number of rows
+	 * @param nnz number of non-zeros to read
+	 * @param in data input stream of sparse rows, ordered by i
+	 * @throws IOException if deserialization error occurs
+	 */
+	public void initSparse(int rlen, int nnz, DataInput in) 
+		throws IOException
+	{
+		//allocate space if necessary
+		if( _values.length < nnz )
+			resize(newCapacity(nnz));
+		
+		//read sparse rows, append and update pointers
+		_ptr[0] = 0;
+		for( int r=0, pos=0; r<rlen; r++ ) {
+			int lnnz = in.readInt();
+			for( int j=0; j<lnnz; j++, pos++ ) {
+				_indexes[pos] = in.readInt();
+				_values[pos] = in.readDouble();
+			}
+			_ptr[r+1] = pos;
+		}
 		
 		//update meta data
 		_size = nnz;
@@ -402,14 +429,14 @@ public class SparseBlockCSR extends SparseBlock
 			if( _size==_values.length )
 				resize();
 			insert(_size, c, v);		
-		}		
+		}
 		else {
 			//resize, shift and insert
 			if( _size==_values.length )
 				resizeAndInsert(pos+len, c, v);
 			else
 				shiftRightAndInsert(pos+len, c, v);
-		}			
+		}
 		incrPtr(r+1);
 	}
 

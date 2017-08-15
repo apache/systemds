@@ -27,6 +27,7 @@ import java.io.InputStream;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 
 public class FastBufferedDataInputStream extends FilterInputStream implements DataInput, MatrixBlockDataInput
 {
@@ -34,22 +35,18 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	protected byte[] _buff;
 	protected int _bufflen;
 	
-	public FastBufferedDataInputStream( InputStream in )
-	{
+	public FastBufferedDataInputStream( InputStream in ) {
 		this(in, 8192);
 	}
 	
-	public FastBufferedDataInputStream( InputStream in, int size )
-	{
+	public FastBufferedDataInputStream( InputStream in, int size ) {
 		super(in);
 		
 		if (size <= 0) 
 	    	throw new IllegalArgumentException("Buffer size <= 0");
-		
 		_buff = new byte[ size ];
 		_bufflen = size;
 	}
-
 
 	/////////////////////////////
 	// DataInput Implementation
@@ -169,8 +166,8 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	public long readDoubleArray(int len, double[] varr) 
 		throws IOException 
 	{
-		//if( len<=0 || len != varr.length )
-		//	throw new IndexOutOfBoundsException("len="+len+", varr.length="+varr.length);
+		if( len<=0 || len > varr.length )
+			throw new IndexOutOfBoundsException("len="+len+", varr.length="+varr.length);
 		
 		//counter for non-zero elements
 		long nnz = 0;
@@ -198,11 +195,17 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	}
 
 	@Override
-	public long readSparseRows(int rlen, SparseBlock rows) 
+	public long readSparseRows(int rlen, long nnz, SparseBlock rows) 
 		throws IOException 
 	{
+		//check for CSR quick-path
+		if( rows instanceof SparseBlockCSR ) {
+			((SparseBlockCSR) rows).initSparse(rlen, (int)nnz, this);
+			return nnz;
+		}
+		
 		//counter for non-zero elements
-		long nnz = 0;
+		long gnnz = 0;
 		
 		//read all individual sparse rows from input
 		for( int i=0; i<rlen; i++ )
@@ -241,9 +244,13 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 					}
 				}
 				
-				nnz += lnnz;	
+				gnnz += lnnz;	
 			}
 		}
+		
+		//sanity check valid number of read nnz
+		if( gnnz != nnz )
+			throw new IOException("Invalid number of read nnz: "+gnnz+" vs "+nnz);
 		
 		return nnz;
 	}

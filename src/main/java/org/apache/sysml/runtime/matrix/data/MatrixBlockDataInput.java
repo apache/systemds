@@ -50,11 +50,12 @@ public interface MatrixBlockDataInput
 	 * Reads the sparse rows array from the data input into a sparse block
 	 * and returns the number of non-zeros.
 	 * 
-	 * @param rlen ?
+	 * @param rlen number of rows
+	 * @param nnz number of non-zeros
 	 * @param rows sparse block
 	 * @return number of non-zeros
 	 * @throws IOException if IOExcepton occurs
 	 */
-	public long readSparseRows(int rlen, SparseBlock rows) 
+	public long readSparseRows(int rlen, long nnz, SparseBlock rows) 
 		throws IOException;
 }

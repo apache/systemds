@@ -90,7 +90,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
-				ReadFileTask t = new ReadFileTask(lpath, job, fs, dest, rlen, clen, brlen, bclen);
+				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen);
 				tasks.add(t);
 			}
 
@@ -118,17 +118,15 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 	{
 		private Path _path = null;
 		private JobConf _job = null;
-		private FileSystem _fs = null;
 		private MatrixBlock _dest = null;
 		private long _rlen = -1;
 		private long _clen = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public ReadFileTask(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen)
+		public ReadFileTask(Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen)
 		{
 			_path = path;
-			_fs = fs;
 			_job = job;
 			_dest = dest;
 			_rlen = rlen;
@@ -138,16 +136,16 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		}
 
 		@Override
-		@SuppressWarnings({ "deprecation" })
 		public Object call() throws Exception 
 		{
 			boolean sparse = _dest.isInSparseFormat();
 			MatrixIndexes key = new MatrixIndexes(); 
-			MatrixBlock value = new MatrixBlock();
+			MatrixBlock value = getReuseBlock(_brlen, _bclen, sparse);
 			long lnnz = 0; //aggregate block nnz
 			
 			//directly read from sequence files (individual partfiles)
-			SequenceFile.Reader reader = new SequenceFile.Reader(_fs,_path,_job);
+			SequenceFile.Reader reader = new SequenceFile
+				.Reader(_job, SequenceFile.Reader.file(_path));
 			
 			try
 			{
@@ -205,8 +203,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 					lnnz += value.getNonZeros();
 				}
 			}
-			finally
-			{
+			finally {
 				IOUtilFunctions.closeSilently(reader);
 			}
 			

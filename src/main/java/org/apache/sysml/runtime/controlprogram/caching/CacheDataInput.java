@@ -163,11 +163,11 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	}
 
 	@Override
-	public long readSparseRows(int rlen, SparseBlock rows) 
+	public long readSparseRows(int rlen, long nnz, SparseBlock rows) 
 		throws IOException 
 	{
 		//counter for non-zero elements
-		long nnz = 0;
+		long gnnz = 0;
 		
 		//read all individual sparse rows from input
 		for( int i=0; i<rlen; i++ )
@@ -189,9 +189,13 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 					_count+=12;
 				}
 				
-				nnz += lnnz;	
+				gnnz += lnnz;	
 			}
 		}
+		
+		//sanity check valid number of read nnz
+		if( gnnz != nnz )
+			throw new IOException("Invalid number of read nnz: "+gnnz+" vs "+nnz);
 		
 		return nnz;
 	}

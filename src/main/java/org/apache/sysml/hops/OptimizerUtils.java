@@ -24,6 +24,8 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig;
@@ -931,6 +933,11 @@ public class OptimizerUtils
 		}
 			
 		return ret;
+	}
+	
+	public static Level getDefaultLogLevel() {
+		Level log = Logger.getRootLogger().getLevel();
+		return (log != null) ? log : Level.INFO;
 	}
 	
 	////////////////////////

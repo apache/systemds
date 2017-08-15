@@ -128,18 +128,18 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
 		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.RULEBASED) );
 		_paramDefaults.put( PROFILE,           "0" );
-		_paramDefaults.put( OPT_LOG,           Logger.getRootLogger().getLevel().toString() );
+		_paramDefaults.put( OPT_LOG,           OptimizerUtils.getDefaultLogLevel().toString() );
 		
 		_paramDefaults2 = new HashMap<String, String>(); //OPT_MODE always specified
-		_paramDefaults2.put( CHECK,             "1" );
-		_paramDefaults2.put( PAR,               "-1" );
-		_paramDefaults2.put( TASK_PARTITIONER,  String.valueOf(PTaskPartitioner.UNSPECIFIED) );
-		_paramDefaults2.put( TASK_SIZE,         "-1" );
-		_paramDefaults2.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.UNSPECIFIED) );
-		_paramDefaults2.put( RESULT_MERGE,      String.valueOf(PResultMerge.UNSPECIFIED) );
-		_paramDefaults2.put( EXEC_MODE,         String.valueOf(PExecMode.UNSPECIFIED) );
-		_paramDefaults2.put( PROFILE,           "0" );
-		_paramDefaults2.put( OPT_LOG,           Logger.getRootLogger().getLevel().toString() );
+		_paramDefaults2.put( CHECK,            "1" );
+		_paramDefaults2.put( PAR,              "-1" );
+		_paramDefaults2.put( TASK_PARTITIONER, String.valueOf(PTaskPartitioner.UNSPECIFIED) );
+		_paramDefaults2.put( TASK_SIZE,        "-1" );
+		_paramDefaults2.put( DATA_PARTITIONER, String.valueOf(PDataPartitioner.UNSPECIFIED) );
+		_paramDefaults2.put( RESULT_MERGE,     String.valueOf(PResultMerge.UNSPECIFIED) );
+		_paramDefaults2.put( EXEC_MODE,        String.valueOf(PExecMode.UNSPECIFIED) );
+		_paramDefaults2.put( PROFILE,          "0" );
+		_paramDefaults2.put( OPT_LOG,          OptimizerUtils.getDefaultLogLevel().toString() );
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();

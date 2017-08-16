@@ -735,21 +735,27 @@ public class GPUContext {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
 		HashMap<Pointer, Long> tmpCudaBlockSizeMap = new HashMap<>();
 		for (GPUObject o : allocatedGPUObjects) {
-			if (o.isSparse()) {
-				CSRPointer p = o.getSparseMatrixCudaPointer();
-				if (p.rowPtr != null && cudaBlockSizeMap.containsKey(p.rowPtr)) {
-					tmpCudaBlockSizeMap.put(p.rowPtr, cudaBlockSizeMap.get(p.rowPtr));
-				}
-				if (p.colInd != null && cudaBlockSizeMap.containsKey(p.colInd)) {
-					tmpCudaBlockSizeMap.put(p.colInd, cudaBlockSizeMap.get(p.colInd));
-				}
-				if (p.val != null && cudaBlockSizeMap.containsKey(p.val)) {
-					tmpCudaBlockSizeMap.put(p.val, cudaBlockSizeMap.get(p.val));
-				}
+			if (o.isDirty()) {
+				if (o.isSparse()) {
+					CSRPointer p = o.getSparseMatrixCudaPointer();
+					if (p == null)
+						throw new RuntimeException("CSRPointer is null in clearTemporaryMemory");
+					if (p.rowPtr != null && cudaBlockSizeMap.containsKey(p.rowPtr)) {
+						tmpCudaBlockSizeMap.put(p.rowPtr, cudaBlockSizeMap.get(p.rowPtr));
+					}
+					if (p.colInd != null && cudaBlockSizeMap.containsKey(p.colInd)) {
+						tmpCudaBlockSizeMap.put(p.colInd, cudaBlockSizeMap.get(p.colInd));
+					}
+					if (p.val != null && cudaBlockSizeMap.containsKey(p.val)) {
+						tmpCudaBlockSizeMap.put(p.val, cudaBlockSizeMap.get(p.val));
+					}
 
-			} else {
-				Pointer p = o.getJcudaDenseMatrixPtr();
-				tmpCudaBlockSizeMap.put(p, cudaBlockSizeMap.get(p));
+				} else {
+					Pointer p = o.getJcudaDenseMatrixPtr();
+					if (p == null)
+						throw new RuntimeException("Pointer is null in clearTemporaryMemory");
+					tmpCudaBlockSizeMap.put(p, cudaBlockSizeMap.get(p));
+				}
 			}
 		}
 

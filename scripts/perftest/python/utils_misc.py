@@ -211,20 +211,18 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, s
     """
 
     algorithm = dml_file_name + '.dml'
-
-    sup_args = ''.join(['{} {}'.format(k, v) for k, v in systemml_args_dict.items()])
-
+    sup_args = ' '.join(['{} {}'.format(k, v) for k, v in systemml_args_dict.items()])
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
-        singlenode_pre_args = ''.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
-        args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
+        singlenode_pre_args = ' '.join(['{} {}'.format(k, v) for k, v in backend_args_dict.items()])
+        args = ' '.join(['{} {}'.format(k, v) for k, v in args.items()])
         cmd = [exec_script, singlenode_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
-        spark_pre_args = ''.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
-        args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
+        spark_pre_args = ' '.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
+        args = ' '.join(['{} {}'.format(k, v) for k, v in args.items()])
         cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 

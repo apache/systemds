@@ -30,7 +30,7 @@ from utils_exec import subprocess_exec
 # This file contains all misc utility functions required by performance test module
 
 
-def get_config_args(config_dict, spark_dict, exec_type):
+def get_config_args(config_dict, spark_dict, singlenode_dict, exec_type):
     """
     Based on configuration parameters passed build configuration dictionary used by subprocess
 
@@ -39,6 +39,9 @@ def get_config_args(config_dict, spark_dict, exec_type):
 
     spark_dict: Dictionary
     Spark configuration options
+
+    singlenode_dict : Dictionary
+    Singlnode configuration options
 
     exec_type: String
     Contains the execution type singlenode / hybrid_spark
@@ -59,24 +62,27 @@ def get_config_args(config_dict, spark_dict, exec_type):
     if config_dict['config'] is not None:
         sup_args_dict['-config'] = config_dict['config']
 
-    spark_args_dict = {}
+    backend_args_dict = {}
     if exec_type == 'hybrid_spark':
         if spark_dict['master'] is not None:
-            spark_args_dict['--master'] = spark_dict['master']
+            backend_args_dict['--master'] = spark_dict['master']
 
         if spark_dict['num_executors'] is not None:
-            spark_args_dict['--num-executors'] = spark_dict['num_executors']
+            backend_args_dict['--num-executors'] = spark_dict['num_executors']
 
         if spark_dict['driver_memory'] is not None:
-            spark_args_dict['--driver-memory'] = spark_dict['driver_memory']
+            backend_args_dict['--driver-memory'] = spark_dict['driver_memory']
 
         if spark_dict['executor_cores'] is not None:
-            spark_args_dict['--executor-cores'] = spark_dict['executor_cores']
+            backend_args_dict['--executor-cores'] = spark_dict['executor_cores']
 
         if spark_dict['conf'] is not None:
-            spark_args_dict['--conf'] = ' '.join(spark_dict['conf'])
+            backend_args_dict['--conf'] = ' '.join(spark_dict['conf'])
+    elif exec_type == 'singlenode':
+        if singlenode_dict['heap-mem'] is not None:
+            backend_args_dict['--heap-mem'] = singlenode_dict['heap-mem']
 
-    return sup_args_dict, spark_args_dict
+    return sup_args_dict, backend_args_dict
 
 
 def args_dict_split(all_arguments):
@@ -87,13 +93,14 @@ def args_dict_split(all_arguments):
     All input arguments parsed
 
     return: Dictionary, Dictionary, Dictionary
-    We return three dictionaries for init, script, spark arguments
+    We return four dictionaries for init, script, spark arguments, singlenode arguments
     """
     args_dict = dict(list(all_arguments.items())[0:9])
     config_dict = dict(list(all_arguments.items())[9:12])
-    spark_dict = dict(list(all_arguments.items())[12:])
+    spark_dict = dict(list(all_arguments.items())[12:18])
+    singlenode_dict = dict(list(all_arguments.items())[18:])
 
-    return args_dict, config_dict, spark_dict
+    return args_dict, config_dict, spark_dict, singlenode_dict
 
 
 def get_families(current_algo, ml_algo):
@@ -166,7 +173,7 @@ def config_reader(read_path):
     return conf_file
 
 
-def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, log_file_name=None):
+def exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, sup_args_dict, log_file_name=None):
     """
     This function is responsible of execution of input arguments via python sub process,
     We also extract time obtained from the output of this subprocess
@@ -180,8 +187,8 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
     args: Dictionary
     Key values pairs depending on the arg type
 
-    spark_args_dict: Dictionary
-    Spark configuration arguments
+    backend_args_dict: Dictionary
+    Spark configuration arguments / singlenode config arguments
 
     sup_args_dict: Dictionary
     Supplementary arguments required by the script
@@ -198,14 +205,14 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup
     sup_args = ''.join(['{} {}'.format(k, v) for k, v in sup_args_dict.items()])
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
-
+        singlenode_pre_args = ''.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
-        cmd = [exec_script, '-f', algorithm, args, sup_args]
+        cmd = [exec_script, singlenode_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
     if exec_type == 'hybrid_spark':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
-        spark_pre_args = ''.join([' {} {} '.format(k, v) for k, v in spark_args_dict.items()])
+        spark_pre_args = ''.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
         args = ''.join(['{} {}'.format(k, v) for k, v in args.items()])
         cmd = [exec_script, spark_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
@@ -238,7 +245,7 @@ def parse_time(raw_logs):
     return 'time_not_found'
 
 
-def exec_test_data(exec_type, spark_args_dict, sup_args_dict, datagen_path, config):
+def exec_test_data(exec_type, backend_args_dict, sup_args_dict, datagen_path, config):
     """
     Creates the test data split from the given input path
 
@@ -256,7 +263,7 @@ def exec_test_data(exec_type, spark_args_dict, sup_args_dict, datagen_path, conf
     X_test = join(path, 'X_test.data')
     Y_test = join(path, 'Y_test.data')
     args = {'-args': ' '.join([X, Y, X_test, Y_test, 'csv'])}
-    exec_dml_and_parse_time(exec_type, test_split_script, args, spark_args_dict, sup_args_dict)
+    exec_dml_and_parse_time(exec_type, test_split_script, args, backend_args_dict, sup_args_dict)
 
 
 def check_predict(current_algo, ml_predict):

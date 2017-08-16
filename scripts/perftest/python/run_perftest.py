@@ -84,8 +84,6 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
 
 DENSE_TYPE_ALGOS = ['clustering', 'stats1', 'stats2']
 
-sup_args_dict = {}
-
 
 # Responsible for execution and metric logging
 def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode, current_dir):
@@ -134,7 +132,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     if exit_flag_success:
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, spark_args_dict, sup_args_dict, config_path)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, sup_args_dict, config_path)
         write_success(time, temp_cwd)
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
@@ -222,7 +220,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
                 # Statistic family do not require to be split
                 if family_name not in ['stats1', 'stats2']:
                     if not success_file:
-                        exec_test_data(exec_type, spark_args_dict, sup_args_dict, data_gen_dir, config)
+                        exec_test_data(exec_type, backend_args_dict, sup_args_dict, data_gen_dir, config)
 
     if 'train' in mode:
         # Create config directories
@@ -338,15 +336,19 @@ if __name__ == '__main__':
     cparser.add_argument('--executor-cores', help='Number of cores', metavar='')
     cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
 
+    # Single node execution mode options
+    cparser.add_argument('-heap-mem', help='maximum JVM heap memory', metavar='', default='8g')
+
+
     # Args is a namespace
     args = cparser.parse_args()
     all_arg_dict = vars(args)
-    arg_dict, config_dict, spark_dict = args_dict_split(all_arg_dict)
+    arg_dict, config_dict, spark_dict, singlenode_dict = args_dict_split(all_arg_dict)
 
     create_dir_local(args.config_dir)
 
     # Global variables
-    sup_args_dict, spark_args_dict = get_config_args(config_dict, spark_dict, args.exec_type)
+    sup_args_dict, backend_args_dict = get_config_args(config_dict, spark_dict, singlenode_dict, args.exec_type)
 
     # Debug arguments
     # print(arg_dict)

@@ -52,6 +52,7 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
 
     error_arr, out_arr = get_all_logs(proc1)
     std_outs = out_arr + error_arr
+    std_outs.insert(0, exec_command)
     return_code = proc1.returncode
 
     if log_file_path is not None:

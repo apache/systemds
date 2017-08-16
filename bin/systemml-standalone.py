@@ -43,7 +43,7 @@ def default_classpath(systemml_home):
 
 #TODO
 # User dir, fix for SYSTEMML_1795
-def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu, f):
+def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu, heap_mem, f):
     """
     This function is responsible for the execution of arguments via
     subprocess call in singlenode mode
@@ -57,7 +57,7 @@ def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu,
     else:
         default_cp = ':'.join(default_classpath(systemml_home))
 
-    java_memory = '-Xmx8g -Xms4g -Xmn1g'
+    java_memory = '-Xmx' + heap_mem + ' -Xms4g -Xmn1g'
 
     # Log4j
     log4j = log4j_path(systemml_home)
@@ -93,7 +93,10 @@ def standalone_execution_entry(nvargs, args, config, explain, debug, stats, gpu,
            '-f', script_file, '-exec', 'singlenode', '-config', default_config,
            ' '.join(ml_options)]
 
-    return_code = os.system(' '.join(cmd))
+    cmd = ' '.join(cmd)
+    print(cmd)
+
+    return_code = os.system(cmd)
     return return_code
 
 
@@ -115,6 +118,7 @@ if __name__ == '__main__':
     cparser.add_argument('-gpu', help='uses CUDA instructions when reasonable, '
                                       'set <force> option to skip conservative memory estimates '
                                       'and use GPU wherever possible', nargs='?')
+    cparser.add_argument('-heap-mem', help='maximum JVM heap memory', metavar='', default='8g')
     cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; '
                                                    'path can be local/hdfs/gpfs', metavar='')
 

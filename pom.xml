@@ -1129,6 +1129,30 @@
 							</execution>
 						</executions>
 					</plugin>
+					<!-- Attach python artifact so it can be installed and deployed. -->
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<version>1.8</version>
+						<executions>
+							<execution>
+								<id>attach-python-artifact</id>
+								<phase>pre-integration-test</phase>
+								<goals>
+									<goal>attach-artifact</goal>
+								</goals>
+								<configuration>
+									<artifacts>
+										<artifact>
+											<file>${basedir}/target/${project.artifactId}-${project.version}-python.tgz</file>
+											<type>tgz</type>
+											<classifier>python</classifier>
+										</artifact>
+									</artifacts>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 				</plugins>
 			</build>
 		</profile>

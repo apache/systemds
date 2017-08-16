@@ -1787,6 +1787,7 @@ public abstract class Hop
 		_requiresRecompile = that._requiresRecompile;
 		_requiresReblock = that._requiresReblock;
 		_requiresCheckpoint = that._requiresCheckpoint;
+		_requiresCompression = that._requiresCompression;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;

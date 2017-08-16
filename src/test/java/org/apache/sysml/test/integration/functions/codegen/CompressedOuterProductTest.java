@@ -243,6 +243,8 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofOP", 4) 
 				|| heavyHittersContainsSubString("sp_spoofOP", 4));
+			Assert.assertTrue(heavyHittersContainsSubString("compress")
+				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {
 			rtplatform = platformOld;

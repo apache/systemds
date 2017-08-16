@@ -243,6 +243,8 @@ public class CompressedRowAggregateTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofRA", 2) 
 				|| heavyHittersContainsSubString("sp_spoofRA", 2));
+			Assert.assertTrue(heavyHittersContainsSubString("compress")
+				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {
 			rtplatform = platformOld;

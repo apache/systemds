@@ -308,6 +308,8 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
 				|| heavyHittersContainsSubString("sp_spoofCell"));
+			Assert.assertTrue(heavyHittersContainsSubString("compress")
+				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {
 			rtplatform = platformOld;

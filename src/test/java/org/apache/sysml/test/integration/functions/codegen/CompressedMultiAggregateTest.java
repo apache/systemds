@@ -308,6 +308,8 @@ public class CompressedMultiAggregateTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofMA") 
 				|| heavyHittersContainsSubString("sp_spoofMA"));
+			Assert.assertTrue(heavyHittersContainsSubString("compress")
+				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {
 			rtplatform = platformOld;

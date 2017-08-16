@@ -32,8 +32,7 @@ from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 from utils_misc import get_families, config_reader, \
-    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, args_dict_split, \
-    get_config_args
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, split_config_args
 from utils_fs import create_dir_local, write_success, check_SUCCESS_file_exists
 
 # A packet is a dictionary
@@ -132,7 +131,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     if exit_flag_success:
         time = 'data_exists'
     else:
-        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, sup_args_dict, config_path)
+        time = exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, systemml_args_dict, config_path)
         write_success(time, temp_cwd)
 
     print('{},{},{},{},{},{}'.format(algo, action_mode, intercept, mat_type, mat_shape, time))
@@ -220,7 +219,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
                 # Statistic family do not require to be split
                 if family_name not in ['stats1', 'stats2']:
                     if not success_file:
-                        exec_test_data(exec_type, backend_args_dict, sup_args_dict, data_gen_dir, config)
+                        exec_test_data(exec_type, backend_args_dict, systemml_args_dict, data_gen_dir, config)
 
     if 'train' in mode:
         # Create config directories
@@ -295,7 +294,7 @@ if __name__ == '__main__':
                                       description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='space separated list of classes of algorithms '
                          '(available : ' + ', '.join(sorted(all_families)) + ')',
-                         metavar='', choices=all_families, nargs='+')
+                         metavar='', choices=all_families, nargs='+', default=' '.join(all_families))
     cparser.add_argument('--algo', help='space separated list of algorithm to run '
                          '(Overrides --family, available : ' + ', '.join(sorted(all_algos)) + ')', metavar='',
                          choices=all_algos, nargs='+')
@@ -339,18 +338,17 @@ if __name__ == '__main__':
     cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
 
     # Single node execution mode options
-    cparser.add_argument('-heap-mem', help='maximum JVM heap memory', metavar='', default='8g')
+    cparser.add_argument('-heapmem', help='maximum JVM heap memory', metavar='', default='8g')
 
 
     # Args is a namespace
     args = cparser.parse_args()
     all_arg_dict = vars(args)
-    arg_dict, config_dict, spark_dict, singlenode_dict = args_dict_split(all_arg_dict)
 
     create_dir_local(args.config_dir)
 
     # Global variables
-    sup_args_dict, backend_args_dict = get_config_args(config_dict, spark_dict, singlenode_dict, args.exec_type)
+    perftest_args_dict, systemml_args_dict, backend_args_dict = split_config_args(all_arg_dict)
 
     # Debug arguments
     # print(arg_dict)
@@ -399,8 +397,8 @@ if __name__ == '__main__':
     logging.info('algorithm,run_type,intercept,matrix_type,data_shape,time_sec')
 
     # Remove filename item from dictionary as its already used to create the log above
-    del arg_dict['filename']
-    perf_test_entry(**arg_dict)
+    del perftest_args_dict['filename']
+    perf_test_entry(**perftest_args_dict)
 
     total_time = (time.time() - start_time)
     logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))

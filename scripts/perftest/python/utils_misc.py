@@ -62,6 +62,9 @@ def get_config_args(config_dict, spark_dict, singlenode_dict, exec_type):
     if config_dict['config'] is not None:
         sup_args_dict['-config'] = config_dict['config']
 
+    if config_dict['gpu'] is not None:
+        sup_args_dict['-gpu'] = config_dict['gpu']
+        
     backend_args_dict = {}
     if exec_type == 'hybrid_spark':
         if spark_dict['master'] is not None:
@@ -96,9 +99,9 @@ def args_dict_split(all_arguments):
     We return four dictionaries for init, script, spark arguments, singlenode arguments
     """
     args_dict = dict(list(all_arguments.items())[0:9])
-    config_dict = dict(list(all_arguments.items())[9:12])
-    spark_dict = dict(list(all_arguments.items())[12:18])
-    singlenode_dict = dict(list(all_arguments.items())[18:])
+    config_dict = dict(list(all_arguments.items())[9:13])
+    spark_dict = dict(list(all_arguments.items())[13:19])
+    singlenode_dict = dict(list(all_arguments.items())[19:])
 
     return args_dict, config_dict, spark_dict, singlenode_dict
 

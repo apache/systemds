@@ -327,7 +327,9 @@ if __name__ == '__main__':
     cparser.add_argument('-explain', help='explains plan levels can be hops, runtime, '
                                           'recompile_hops, recompile_runtime', nargs='?', const='runtime', metavar='')
     cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
-
+    cparser.add_argument('-gpu', help='uses CUDA instructions when reasonable, '
+                                      'set <force> option to skip conservative memory estimates '
+                                      'and use GPU wherever possible', nargs='?')
     # Spark Configuration Option
     cparser.add_argument('--master', help='local, yarn-client, yarn-cluster', metavar='')
     cparser.add_argument('--driver-memory', help='Memory for driver (e.g. 512M)', metavar='')

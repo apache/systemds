@@ -99,12 +99,12 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		//recursive invocation
 		boolean ret = true;
 		for( StatementBlock sb : sbs ) {
-			if( !sb.variablesRead().containsVariable(varname) )
+			if( !sb.variablesRead().containsVariable(varname)
+				&& !sb.variablesUpdated().containsVariable(varname) )
 				continue; //valid wrt update-in-place
 			
 			if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock ) {
-				ret &= sb.getUpdateInPlaceVars()
-						 .contains(varname);
+				ret &= sb.getUpdateInPlaceVars().contains(varname);
 			}
 			else if( sb instanceof IfStatementBlock ) {
 				IfStatementBlock isb = (IfStatementBlock) sb;

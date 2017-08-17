@@ -381,6 +381,7 @@ public class GPUObject {
 
 		Pointer tmp = transpose(getGPUContext(), getJcudaDenseMatrixPtr(), m, n, lda, ldc);
 		cudaFreeHelper(getJcudaDenseMatrixPtr());
+		jcudaDenseMatrixPtr = null;
 		setDenseMatrixCudaPointer(tmp);
 	}
 
@@ -402,6 +403,7 @@ public class GPUObject {
 
 		Pointer tmp = transpose(getGPUContext(), getJcudaDenseMatrixPtr(), m, n, lda, ldc);
 		cudaFreeHelper(getJcudaDenseMatrixPtr());
+		jcudaDenseMatrixPtr = null;
 		setDenseMatrixCudaPointer(tmp);
 	}
 

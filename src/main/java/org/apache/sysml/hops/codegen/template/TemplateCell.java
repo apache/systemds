@@ -135,7 +135,8 @@ public class TemplateCell extends TemplateBase
 		tpl.setCellType(TemplateUtils.getCellType(hop));
 		tpl.setAggOp(TemplateUtils.getAggOp(hop));
 		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops[0]))
-				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops[0]));
+				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops[0])
+				|| TemplateUtils.rIsBinaryOnly(tpl.getOutput(), BinType.MULT));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		tpl.setBeginLine(hop.getBeginLine());
 		
@@ -279,7 +280,7 @@ public class TemplateCell extends TemplateBase
 		//prepare indicators for binary operations
 		boolean isBinaryMatrixScalar = false;
 		boolean isBinaryMatrixVector = false;
-		boolean isBinaryMatrixMatrixDense = false;
+		boolean isBinaryMatrixMatrix = false;
 		if( hop instanceof BinaryOp && hop.getDataType().isMatrix() ) {
 			Hop left = hop.getInput().get(0);
 			Hop right = hop.getInput().get(1);
@@ -290,8 +291,8 @@ public class TemplateCell extends TemplateBase
 			isBinaryMatrixVector = hop.dimsKnown() 
 				&& ((ldt.isMatrix() && TemplateUtils.isVectorOrScalar(right)) 
 				|| (rdt.isMatrix() && TemplateUtils.isVectorOrScalar(left)) );
-			isBinaryMatrixMatrixDense = hop.dimsKnown() && HopRewriteUtils.isEqualSize(left, right)
-				&& ldt.isMatrix() && rdt.isMatrix() && !HopRewriteUtils.isSparse(left) && !HopRewriteUtils.isSparse(right);
+			isBinaryMatrixMatrix = hop.dimsKnown() && HopRewriteUtils.isEqualSize(left, right)
+				&& ldt.isMatrix() && rdt.isMatrix();
 		}
 				
 		//prepare indicators for ternary operations
@@ -309,7 +310,7 @@ public class TemplateCell extends TemplateBase
 		
 		//check supported unary, binary, ternary operations
 		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop) && (hop instanceof UnaryOp 
-				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrixDense 
+				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrix
 				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense
 				|| (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp()==ParamBuiltinOp.REPLACE));	
 	}

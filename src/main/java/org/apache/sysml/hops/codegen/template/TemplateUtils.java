@@ -247,6 +247,16 @@ public class TemplateUtils
 			&& ArrayUtils.contains(types, ((CNodeBinary)node).getType());
 	}
 	
+	public static boolean rIsBinaryOnly(CNode node, BinType...types) {
+		if( !(isBinary(node, types) || node instanceof CNodeData 
+			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isScalarLookup())) )
+			return false;
+		boolean ret = true;
+		for( CNode c : node.getInput() )
+			ret &= rIsBinaryOnly(c, types);
+		return ret;
+	}
+	
 	public static boolean isTernary(CNode node, TernaryType...types) {
 		return node instanceof CNodeTernary
 			&& ArrayUtils.contains(types, ((CNodeTernary)node).getType());

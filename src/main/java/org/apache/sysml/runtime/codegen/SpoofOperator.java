@@ -37,24 +37,24 @@ public abstract class SpoofOperator implements Serializable
 	private static final long serialVersionUID = 3834006998853573319L;
 	private static final Log LOG = LogFactory.getLog(SpoofOperator.class.getName());
 	
-	public abstract void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out) 
+	public abstract void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out)
 		throws DMLRuntimeException;
 	
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k) 
+	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k)
 		throws DMLRuntimeException 
 	{
 		//default implementation serial execution
 		execute(inputs, scalars, out);
 	}
 	
-	public abstract String getSpoofType(); 
+	public abstract String getSpoofType();
 	
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars) throws DMLRuntimeException {
 		throw new RuntimeException("Invalid invocation in base class.");
 	}
 	
-	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, int k) 
-		throws DMLRuntimeException 
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, int k)
+		throws DMLRuntimeException
 	{
 		//default implementation serial execution
 		return execute(inputs, scalars);
@@ -76,13 +76,13 @@ public abstract class SpoofOperator implements Serializable
 		return prepInputMatrices(inputs, 1, inputs.size()-1, denseOnly, tB1);
 	}
 	
-	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len, boolean denseOnly, boolean tB1) 
-		throws DMLRuntimeException 
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len, boolean denseOnly, boolean tB1)
+		throws DMLRuntimeException
 	{
-		SideInput[] b = new SideInput[len]; 
+		SideInput[] b = new SideInput[len];
 		for(int i=offset; i<offset+len; i++) {
 			//decompress if necessary
-			if( inputs.get(i) instanceof CompressedMatrixBlock ) 
+			if( inputs.get(i) instanceof CompressedMatrixBlock )
 				inputs.set(i, ((CompressedMatrixBlock)inputs.get(i)).decompress());
 			//transpose if necessary
 			int clen = inputs.get(i).getNumColumns();
@@ -113,6 +113,26 @@ public abstract class SpoofOperator implements Serializable
 		return b;
 	}
 	
+	protected SideInput[] createSparseSideInputs(SideInput[] input) {
+		//determine if there are sparse side inputs
+		boolean containsSparse = false;
+		for( int i=0; i<input.length; i++ ) {
+			SideInput tmp = input[i];
+			containsSparse |= (tmp.mdat != null && tmp.mdat.isInSparseFormat() 
+				&& !tmp.mdat.isEmptyBlock(false) && tmp.clen > 1);
+		}
+		if( !containsSparse )
+			return input;
+		SideInput[] ret = new SideInput[input.length];
+		for( int i=0; i<input.length; i++ ) {
+			SideInput tmp = input[i];
+			ret[i] = (tmp.mdat != null && tmp.mdat.isInSparseFormat()
+				&& !tmp.mdat.isEmptyBlock(false) && tmp.clen > 1) ?
+				new SideInputSparse(tmp) : tmp;
+		}
+		return ret;
+	}
+	
 	public double[][] getDenseMatrices(SideInput[] inputs) {
 		double[][] ret = new double[inputs.length][];
 		for( int i=0; i<inputs.length; i++ )
@@ -121,7 +141,7 @@ public abstract class SpoofOperator implements Serializable
 	}
 	
 	protected double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
-		double[] scalars = new double[scalarObjects.size()]; 
+		double[] scalars = new double[scalarObjects.size()];
 		for(int i=0; i < scalarObjects.size(); i++)
 			scalars[i] = scalarObjects.get(i).getDoubleValue();
 		return scalars;
@@ -156,7 +176,7 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(SideInput data, int rowIndex) {
 		//note: wrapper sideinput guaranteed to exist
-		return (data.ddat!=null) ? data.ddat[rowIndex] : 
+		return (data.ddat!=null) ? data.ddat[rowIndex] :
 			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, 0) : 0;
 	}
 	
@@ -169,6 +189,7 @@ public abstract class SpoofOperator implements Serializable
 	protected static double getValue(SideInput data, int n, int rowIndex, int colIndex) {
 		//note: wrapper sideinput guaranteed to exist
 		return (data.ddat!=null) ? data.ddat[rowIndex*n+colIndex] : 
+			(data instanceof SideInputSparse) ? ((SideInputSparse)data).next(rowIndex, colIndex) :
 			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, colIndex) : 0;
 	}
 	
@@ -194,6 +215,36 @@ public abstract class SpoofOperator implements Serializable
 			ddat = ddata;
 			mdat = mdata;
 			clen = clength;
+		}
+	}
+	
+	public static class SideInputSparse extends SideInput {
+		private int currRowIndex = -1;
+		private int currColPos = 0;
+		private int currLen = 0;
+		private int[] indexes;
+		private double[] values;
+		
+		public SideInputSparse(SideInput in) {
+			super(in.ddat, in.mdat, in.clen);
+		}
+		public double next(int rowIndex, int colIndex) {
+			if( mdat.getSparseBlock().isEmpty(rowIndex) )
+				return 0;
+			//move to next row if necessary
+			if( rowIndex > currRowIndex ) {
+				currRowIndex = rowIndex;
+				currColPos = mdat.getSparseBlock().pos(currRowIndex);
+				currLen = mdat.getSparseBlock().size(currRowIndex) + currColPos;
+				indexes = mdat.getSparseBlock().indexes(currRowIndex);
+				values = mdat.getSparseBlock().values(currRowIndex);
+			}
+			//move to next colpos if necessary
+			while( currColPos < currLen && indexes[currColPos]<colIndex )
+				currColPos ++;
+			//return current value or zero
+			return (currColPos < currLen && indexes[currColPos]==colIndex) ?
+				values[currColPos] : 0;
 		}
 	}
 }

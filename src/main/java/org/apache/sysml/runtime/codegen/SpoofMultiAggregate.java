@@ -136,11 +136,13 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	
 	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
 	{
+		SideInput[] lb = createSparseSideInputs(b);
+		
 		//core dense aggregation operation
 		for( int i=rl, ix=rl*n; i<ru; i++ ) { 
 			for( int j=0; j<n; j++, ix++ ) {
 				double in = (a != null) ? a[ix] : 0;
-				genexec( in, b, scalars, c, m, n, i, j );
+				genexec( in, lb, scalars, c, m, n, i, j );
 			}
 		}
 	}
@@ -148,11 +150,13 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	private void executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		SideInput[] lb = createSparseSideInputs(b);
+		
 		//core dense aggregation operation
 		for( int i=rl; i<ru; i++ )
 			for( int j=0; j<n; j++ ) {
 				double in = (sblock != null) ? sblock.get(i, j) : 0;
-				genexec( in, b, scalars, c, m, n, i, j );
+				genexec( in, lb, scalars, c, m, n, i, j );
 			}
 	}
 

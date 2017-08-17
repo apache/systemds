@@ -102,6 +102,8 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -629,9 +631,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			switch( _execMode )
 			{
 				case LOCAL: //create parworkers as local threads
-					if (DMLScript.USE_ACCELERATOR) {
-						setDegreeOfParallelism(ec.getNumGPUContexts());
-					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 					
@@ -1414,7 +1413,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
 			// and sets it in the ExecutionContext of the parfor
 			if (DMLScript.USE_ACCELERATOR){
-				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(index)));
+				int gpuIndex = index % ec.getNumGPUContexts();
+				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(gpuIndex)));
+				LOG.debug("In Parfor : GPU " + gpuIndex + " was assigned to thread " + index);
 			}
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)

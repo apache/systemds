@@ -314,7 +314,7 @@ public class ExecutionContext {
     {
         MatrixObject mo = allocateGPUMatrixObject(varName);
         mo.getMatrixCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
         return new Pair<MatrixObject, Boolean>(mo, allocated);
     } 
 
@@ -326,12 +326,14 @@ public class ExecutionContext {
 	 */
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
-		if( mo.getGPUObject(getGPUContext(0)) == null ) {
-			GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
-			// The lock is added here for an output block
-			// so that any block currently in use is not deallocated by eviction on the GPU
-			newGObj.addLock();
-			mo.setGPUObject(getGPUContext(0), newGObj);
+		synchronized (mo) {
+			if (mo.getGPUObject(getGPUContext(0)) == null) {
+				GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
+				// The lock is added here for an output block
+				// so that any block currently in use is not deallocated by eviction on the GPU
+				newGObj.addLock();
+				mo.setGPUObject(getGPUContext(0), newGObj);
+			}
 		}
 		return mo;
 	}
@@ -347,17 +349,19 @@ public class ExecutionContext {
 		}
 
 		boolean acquired = false;
-		if( mo.getGPUObject(gCtx) == null ) {
-			GPUObject newGObj = gCtx.createGPUObject(mo);
-			mo.setGPUObject(gCtx, newGObj);
-		} else if( !mo.getGPUObject(gCtx).isInputAllocated() ) {
-			mo.acquireRead();
-			acquired = true;
-		}
+		synchronized (mo) {
+			if (mo.getGPUObject(gCtx) == null) {
+				GPUObject newGObj = gCtx.createGPUObject(mo);
+				mo.setGPUObject(gCtx, newGObj);
+			} else if (!mo.getGPUObject(gCtx).isInputAllocated()) {
+				mo.acquireRead();
+				acquired = true;
+			}
 
-		copied = mo.getGPUObject(gCtx).acquireDeviceRead();
-		if(acquired) {
-			mo.release();
+			copied = mo.getGPUObject(gCtx).acquireDeviceRead();
+			if (acquired) {
+				mo.release();
+			}
 		}
 		return new Pair<MatrixObject, Boolean>(mo, copied);
 	}
@@ -382,7 +386,9 @@ public class ExecutionContext {
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = getMatrixObject(varName);
-		mo.getGPUObject(getGPUContext(0)).releaseInput();
+		synchronized (mo) {
+			mo.getGPUObject(getGPUContext(0)).releaseInput();
+		}
 	}
 	
 	/**
@@ -438,10 +444,12 @@ public class ExecutionContext {
 	
 	public void releaseMatrixOutputForGPUInstruction(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
-			throw new DMLRuntimeException("No output is allocated on GPU");
+		synchronized (mo) {
+			if (mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
+				throw new DMLRuntimeException("No output is allocated on GPU");
+			}
+			mo.getGPUObject(getGPUContext(0)).releaseOutput();
 		}
-		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	
 

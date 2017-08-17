@@ -147,7 +147,7 @@ public class GPUContext {
 
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
-		
+
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
@@ -204,7 +204,8 @@ public class GPUContext {
 	 * If in a multi-threaded env like parfor, this method must be called when in the
 	 * appropriate thread
 	 */
-	public void initializeThread() throws DMLRuntimeException {
+
+	public synchronized void initializeThread() throws DMLRuntimeException {
 		cudaSetDevice(deviceNum);
 		initializeCudaLibraryHandles();
 	}
@@ -216,7 +217,7 @@ public class GPUContext {
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Pointer allocate(long size) throws DMLRuntimeException {
+	public synchronized Pointer allocate(long size) throws DMLRuntimeException {
 		return allocate(null, size, 1);
 	}
 
@@ -228,7 +229,7 @@ public class GPUContext {
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
+	public synchronized Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
 		return allocate(instructionName, size, 1);
 	}
 
@@ -243,7 +244,7 @@ public class GPUContext {
 	 * @return jcuda Pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException {
+	public synchronized Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException {
 		long t0 = 0, t1 = 0, end = 0;
 		Pointer A;
 		if (freeCUDASpaceMap.containsKey(size)) {
@@ -299,7 +300,7 @@ public class GPUContext {
 	 *
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
-	public void cudaFreeHelper(final Pointer toFree) {
+	public synchronized void cudaFreeHelper(final Pointer toFree) {
 		cudaFreeHelper(null, toFree, false);
 	}
 
@@ -309,7 +310,7 @@ public class GPUContext {
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager  true if to be done eagerly
 	 */
-	public void cudaFreeHelper(final Pointer toFree, boolean eager) {
+	public synchronized void cudaFreeHelper(final Pointer toFree, boolean eager) {
 		cudaFreeHelper(null, toFree, eager);
 	}
 
@@ -319,7 +320,7 @@ public class GPUContext {
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree          {@link Pointer} instance to be freed
 	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree) {
+	public synchronized void cudaFreeHelper(String instructionName, final Pointer toFree) {
 		cudaFreeHelper(instructionName, toFree, false);
 	}
 
@@ -330,7 +331,7 @@ public class GPUContext {
 	 * @param toFree          {@link Pointer} instance to be freed
 	 * @param eager           true if to be done eagerly
 	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
+	public synchronized void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) // trying to free a null pointer
 			return;
@@ -371,7 +372,7 @@ public class GPUContext {
 	 * @param size size to check
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	void ensureFreeSpace(long size) throws DMLRuntimeException {
+	synchronized void ensureFreeSpace(long size) throws DMLRuntimeException {
 		ensureFreeSpace(null, size);
 	}
 
@@ -382,7 +383,7 @@ public class GPUContext {
 	 * @param size            size to check
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
+	synchronized void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
 		if (size >= getAvailableMemory()) {
 			evict(instructionName, size);
 		}
@@ -394,7 +395,7 @@ public class GPUContext {
 	 * @param GPUSize Desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.
 	 */
-	protected void evict(final long GPUSize) throws DMLRuntimeException {
+	protected synchronized void evict(final long GPUSize) throws DMLRuntimeException {
 		evict(null, GPUSize);
 	}
 
@@ -412,7 +413,7 @@ public class GPUContext {
 	 * @param neededSize      desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no reusable memory blocks to free up or if not enough matrix blocks with zero locks on them.
 	 */
-	protected void evict(String instructionName, final long neededSize) throws DMLRuntimeException {
+	protected synchronized void evict(String instructionName, final long neededSize) throws DMLRuntimeException {
 		LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
 		GPUStatistics.cudaEvictionCount.addAndGet(1);
 		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
@@ -497,7 +498,7 @@ public class GPUContext {
 	 * @param o the block
 	 * @return true if present, false otherwise
 	 */
-	public boolean isBlockRecorded(GPUObject o) {
+	public synchronized boolean isBlockRecorded(GPUObject o) {
 		return allocatedGPUObjects.contains(o);
 	}
 
@@ -506,7 +507,7 @@ public class GPUContext {
 	 * @see GPUContext#allocatedGPUObjects
 	 * Records the usage of a matrix block
 	 */
-	public void recordBlockUsage(GPUObject o) {
+	public synchronized void recordBlockUsage(GPUObject o) {
 		allocatedGPUObjects.add(o);
 	}
 
@@ -515,7 +516,7 @@ public class GPUContext {
 	 * @see GPUContext#allocatedGPUObjects
 	 * Records that a block is not used anymore
 	 */
-	public void removeRecordedUsage(GPUObject o) {
+	public synchronized void removeRecordedUsage(GPUObject o) {
 		allocatedGPUObjects.remove(o);
 	}
 
@@ -524,7 +525,7 @@ public class GPUContext {
 	 *
 	 * @return the available memory in bytes
 	 */
-	public long getAvailableMemory() {
+	public synchronized long getAvailableMemory() {
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
@@ -560,7 +561,7 @@ public class GPUContext {
 		}
 	}
 
-	public GPUObject createGPUObject(MatrixObject mo) {
+	public synchronized GPUObject createGPUObject(MatrixObject mo) {
 		return new GPUObject(this, mo);
 	}
 
@@ -647,7 +648,7 @@ public class GPUContext {
 	 *
 	 * @throws DMLRuntimeException if error
 	 */
-	public void destroy() throws DMLRuntimeException {
+	public synchronized void destroy() throws DMLRuntimeException {
 		LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 		clearMemory();
 		cudnnDestroy(cudnnHandle.get());
@@ -666,7 +667,7 @@ public class GPUContext {
 	 *
 	 * @throws DMLRuntimeException ?
 	 */
-	public void clearMemory() throws DMLRuntimeException {
+	public synchronized void clearMemory() throws DMLRuntimeException {
 		clearTemporaryMemory();
 		while (!allocatedGPUObjects.isEmpty()) {
 			GPUObject o = allocatedGPUObjects.get(0);
@@ -683,7 +684,7 @@ public class GPUContext {
 	/**
 	 * Clears up the memory used to optimize cudaMalloc/cudaFree calls
 	 */
-	public void clearTemporaryMemory() {
+	public synchronized void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
 		HashMap<Pointer, Long> tmpCudaBlockSizeMap = new HashMap<>();
 		for (GPUObject o : allocatedGPUObjects) {

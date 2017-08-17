@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.transform.encode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -101,11 +102,16 @@ public class EncoderFactory
 				if( !TfMetaUtils.isIDSpec(jSpec) && colnames!=null && colnames2!=null 
 					&& !ArrayUtils.isEquals(colnames, colnames2) ) 
 				{
+					HashMap<String, Integer> colPos = getColumnPositions(colnames2);
 					//create temporary meta frame block w/ shallow column copy
 					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);
 					meta2.setNumRows(meta.getNumRows());
 					for( int i=0; i<colnames.length; i++ ) {
-						int pos = Arrays.binarySearch(colnames2, colnames[i]);
+						if( !colPos.containsKey(colnames[i]) ) {
+							throw new DMLRuntimeException("Column name not found in meta data: "
+								+colnames[i]+" (meta: "+Arrays.toString(colnames2)+")");
+						}
+						int pos = colPos.get(colnames[i]);
 						meta2.setColumn(i, meta.getColumn(pos));
 						meta2.setColumnMetadata(i, meta.getColumnMetadata(pos));
 					}
@@ -119,5 +125,12 @@ public class EncoderFactory
 		}
 		
 		return encoder;
+	}
+	
+	private static HashMap<String, Integer> getColumnPositions(String[] colnames) {
+		HashMap<String, Integer> ret = new HashMap<>();
+		for(int i=0; i<colnames.length; i++)
+			ret.put(colnames[i], i);
+		return ret;
 	}
 }

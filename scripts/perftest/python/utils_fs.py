@@ -21,6 +21,7 @@
 #-------------------------------------------------------------
 
 import os
+import sys
 from os.path import join
 import glob
 from functools import reduce
@@ -99,6 +100,16 @@ def contains_dir(hdfs_dirs, sub_folder):
         # print('{}, {}'.format(sub_folder, hdfs_dirs))
         pass
     return False
+
+
+def check_hdfs_path(path):
+    """
+    Check if a path is present in HDFS
+    """
+    cmd = ['hdfs', 'dfs', '-test', '-e', path]
+    return_code = subprocess_exec(' '.join(cmd))
+    if return_code != 0:
+        return sys.exit('Please create {}'.format(path))
 
 
 def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):

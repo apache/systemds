@@ -20,6 +20,7 @@
 #
 #-------------------------------------------------------------
 
+import sys
 import subprocess
 import shlex
 import re
@@ -45,7 +46,7 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
     Based on extract we return the relevant string
     """
     # Debug
-    # print(cmd_string)
+    #print(cmd_string)
     exec_command = shlex.split(cmd_string)
     proc1 = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -63,6 +64,8 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
             return_data = parse_time(std_outs)
         if extract == 'dir':
             return_data = parse_hdfs_paths(std_outs)
+        if extract == 'hdfs_base':
+            return_data = parse_hdfs_base(std_outs)
         if extract is None:
             return_data = 0
 
@@ -71,6 +74,20 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
         print('sub-process failed, return code {}'.format(return_code))
 
     return return_data
+
+
+def parse_hdfs_base(std_outs):
+    """
+    return: String
+    hdfs base uri
+    """
+    hdfs_uri = None
+    for line in std_outs:
+        if line.startswith('hdfs://'):
+            hdfs_uri = line
+    if hdfs_uri is None:
+        sys.exit('HDFS URI not found')
+    return hdfs_uri
 
 
 def write_logs(std_outs, log_file_path):

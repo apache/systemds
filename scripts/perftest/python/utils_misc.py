@@ -25,7 +25,9 @@ import os
 import json
 import re
 import sys
+import getpass
 from utils_exec import subprocess_exec
+from utils_fs import check_hdfs_path
 
 # This file contains all misc utility functions required by performance test module
 
@@ -361,3 +363,36 @@ def mat_type_check(current_family, matrix_types, dense_algos):
             current_type.append(current_matrix_type)
 
     return current_type
+
+
+def get_default_dir(temp_dir, exec_mode, config_dir):
+    """
+    temp_dir: String
+    exec_mode: String
+    config_dir: String
+
+    return: String
+    Local or HDFS home directory
+    """
+
+    if exec_mode == 'singlenode':
+        if temp_dir is None:
+            return config_dir
+        if temp_dir is not None:
+            return temp_dir
+
+    if exec_mode == 'hybrid_spark':
+        cmd = ['hdfs', 'getconf', '-confKey', 'fs.default.name']
+        hdfs_base = subprocess_exec(' '.join(cmd), extract='hdfs_base')
+
+        if temp_dir is None:
+            hdfs_home = join(hdfs_base, 'user', getpass.getuser())
+            check_hdfs_path(hdfs_home)
+            return hdfs_home
+
+        if temp_dir is not None:
+            if temp_dir.startswith('hdfs'):
+                return temp_dir
+            else:
+                hdfs_home = join(hdfs_base, 'user', getpass.getuser(), temp_dir)
+                return hdfs_home

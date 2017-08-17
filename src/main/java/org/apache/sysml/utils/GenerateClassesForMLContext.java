@@ -31,6 +31,9 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLResults;
@@ -89,6 +92,9 @@ public class GenerateClassesForMLContext {
 			source = args[0];
 		}
 		try {
+			BasicConfigurator.configure();
+			Logger.getRootLogger().setLevel(Level.WARN);
+
 			DMLScript.VALIDATOR_IGNORE_ISSUES = true;
 			System.out.println("************************************");
 			System.out.println("**** MLContext Class Generation ****");

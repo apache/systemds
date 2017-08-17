@@ -75,12 +75,12 @@ def find_dml_file(systemml_home, script_file):
     """
     scripts_dir = join(systemml_home, 'scripts')
     if not (exists(script_file)):
-        script_file = find_file(script_file, scripts_dir)
-        if script_file is None:
+        script_file_search = find_file(script_file, scripts_dir)
+        if script_file_search is None:
             print('Could not find DML script: ' + script_file)
             sys.exit()
 
-    return script_file
+    return script_file_search
 
 
 def log4j_path(systemml_home):

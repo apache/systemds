@@ -32,7 +32,8 @@ from datagen import config_packets_datagen
 from train import config_packets_train
 from predict import config_packets_predict
 from utils_misc import get_families, config_reader, \
-    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, split_config_args
+    exec_dml_and_parse_time, exec_test_data, check_predict, get_folder_metrics, split_config_args, \
+    get_default_dir
 from utils_fs import create_dir_local, write_success, check_SUCCESS_file_exists
 
 # A packet is a dictionary
@@ -275,7 +276,7 @@ if __name__ == '__main__':
     default_mat_shape = ['10k_100']
 
     # Default temp directory, contains everything generated in perftest
-    default_temp_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
+    default_config_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
 
     # Initialize time
     start_time = time.time()
@@ -308,7 +309,7 @@ if __name__ == '__main__':
     cparser.add_argument('--mat-shape', default=default_mat_shape, help='space separated list of shapes of matrices '
                          'to generate (e.g 10k_1k, 20M_4k)', metavar='', nargs='+')
 
-    cparser.add_argument('--config-dir', default=default_temp_dir, help='temporary directory '
+    cparser.add_argument('--config-dir', default=default_config_dir, help='temporary directory '
                          'where generated, training and prediction data is put', metavar='')
     cparser.add_argument('--filename', default='perf_test', help='name of the output file for the perf'
                          ' metrics', metavar='')
@@ -316,8 +317,7 @@ if __name__ == '__main__':
                          help='space separated list of types of workloads to run (available: data-gen, train, predict)',
                          metavar='', choices=workload, nargs='+')
     # Change this to temp-dir
-    cparser.add_argument('--temp-dir', default=default_temp_dir,
-                         help='define the file system to work on', metavar='')
+    cparser.add_argument('--temp-dir', help='define the file system to work on', metavar='')
 
     # Configuration Options
     cparser.add_argument('-stats', help='Monitor and report caching/recompilation statistics, '
@@ -350,8 +350,8 @@ if __name__ == '__main__':
     # Global variables
     perftest_args_dict, systemml_args_dict, backend_args_dict = split_config_args(all_arg_dict)
 
-    # Debug arguments
-    # print(arg_dict)
+    # temp_dir hdfs / local path check
+    perftest_args_dict['temp_dir'] = get_default_dir(args.temp_dir, args.exec_type, default_config_dir)
 
     # default_mat_type validity
     if len(args.mat_type) > 2:
@@ -401,4 +401,5 @@ if __name__ == '__main__':
     perf_test_entry(**perftest_args_dict)
 
     total_time = (time.time() - start_time)
-    logging.info('Performance tests complete {0:.3f} secs \n'.format(total_time))
+    logging.info('total_time,none,none,none,none,{}'.format(total_time))
+    logging.info('Performance tests complete')

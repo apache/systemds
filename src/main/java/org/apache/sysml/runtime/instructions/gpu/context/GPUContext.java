@@ -528,7 +528,7 @@ public class GPUContext {
 	 * Records that a block is not used anymore
 	 */
 	public void removeRecordedUsage(GPUObject o) {
-		allocatedGPUObjects.remove(o);
+		allocatedGPUObjects.removeIf(a -> a.equals(o));
 	}
 
 	/**

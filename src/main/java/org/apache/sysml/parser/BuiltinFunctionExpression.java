@@ -203,6 +203,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case SVD:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
+			
+			long minMN = Math.min(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 
 			// setup output properties
 			DataIdentifier svdOut1 = (DataIdentifier) getOutputs()[0];
@@ -212,19 +214,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// Output 1
 			svdOut1.setDataType(DataType.MATRIX);
 			svdOut1.setValueType(ValueType.DOUBLE);
-			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim1());
+			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			svdOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			// Output 2
 			svdOut2.setDataType(DataType.MATRIX);
 			svdOut2.setValueType(ValueType.DOUBLE);
-			svdOut2.setDimensions(getFirstExpr().getOutput().getDim1(), 1);
+			svdOut2.setDimensions(minMN, minMN);
 			svdOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			// Output 3
 			svdOut3.setDataType(DataType.MATRIX);
 			svdOut3.setValueType(ValueType.DOUBLE);
-			svdOut3.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			svdOut3.setDimensions(getFirstExpr().getOutput().getDim2(), minMN);
 			svdOut3.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			break;

@@ -227,8 +227,9 @@ public class LibCommonsMath
 	 * U is the left singular matrix, Sigma is the singular values matrix returned as a
 	 * column matrix and Vt is the transpose of the right singular matrix V.
 	 * However, the returned array has  { U, Sigma, V}
-	 * @param in	Input matrix
-	 * @return 		An array containing U, Sigma & V
+	 * 
+	 * @param in Input matrix
+	 * @return An array containing U, Sigma & V
 	 * @throws DMLRuntimeException
 	 */
 	private static MatrixBlock[] computeSvd(MatrixObject in) throws DMLRuntimeException {
@@ -239,7 +240,8 @@ public class LibCommonsMath
 		RealMatrix u = svd.getU();
 		RealMatrix v = svd.getV();
 		MatrixBlock U = DataConverter.convertToMatrixBlock(u.getData());
-		MatrixBlock Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(sigma.rlen, sigma.rlen, true));
+	        MatrixBlock Sigma = DataConverter.convertToMatrixBlock(sigma, true);
+	        Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(Sigma.rlen, Sigma.rlen, true));
 		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
 
 		return new MatrixBlock[] { U, Sigma, V };

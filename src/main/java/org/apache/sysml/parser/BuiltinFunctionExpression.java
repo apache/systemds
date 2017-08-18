@@ -214,7 +214,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// Output 1
 			svdOut1.setDataType(DataType.MATRIX);
 			svdOut1.setValueType(ValueType.DOUBLE);
-			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), minMN);
 			svdOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			// Output 2

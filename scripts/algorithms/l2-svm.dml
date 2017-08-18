@@ -121,7 +121,7 @@ while(continue == 1 & iter < maxiterations)  {
 
     #update weights
     w = w + step_sz*s
-	  Xw = Xw + step_sz*Xd
+    Xw = Xw + step_sz*Xd
 	
     out = 1 - Y * Xw
     sv = (out > 0)
@@ -154,8 +154,8 @@ extra_model_params[4,1] = dimensions
 weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
-write(extra_model_params, " ", format=cmdLine_fmt)
-write(weights, " ", format=cmdLine_fmt)
+# write(extra_model_params, " ", format=cmdLine_fmt)
+# write(weights, " ", format=cmdLine_fmt)
 
 logFile = $Log
 if(logFile != " ") {

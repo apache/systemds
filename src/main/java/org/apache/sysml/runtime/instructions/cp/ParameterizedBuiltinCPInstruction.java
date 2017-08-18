@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.Lop;
@@ -276,6 +277,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//compute transformdecode
 			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), colnames, null, meta);
 			FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
+			fbout.setColumnNames(Arrays.copyOfRange(colnames, 0, fbout.getNumColumns()));
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), fbout);

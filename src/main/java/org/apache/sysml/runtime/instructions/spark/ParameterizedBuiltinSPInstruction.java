@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -844,8 +845,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			throws Exception 
 		{
 			long rix = UtilFunctions.computeCellIndex(in._1().getRowIndex(), _brlen, 0);
-			return new Tuple2<Long, FrameBlock>(rix, 
-					_decoder.decode(in._2(), new FrameBlock(_decoder.getSchema())));
+			FrameBlock fbout = _decoder.decode(in._2(), new FrameBlock(_decoder.getSchema()));
+			fbout.setColumnNames(Arrays.copyOfRange(_decoder.getColnames(), 0, fbout.getNumColumns()));
+			return new Tuple2<Long, FrameBlock>(rix, fbout);
 		}
 	}
 	

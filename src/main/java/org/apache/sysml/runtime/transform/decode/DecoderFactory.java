@@ -82,6 +82,7 @@ public class DecoderFactory
 			//create composite decoder of all created decoders
 			//and initialize with given meta data (recode, dummy, bin)
 			decoder = new DecoderComposite(schema, ldecoders);
+			decoder.setColnames(colnames);
 			if( meta != null )
 				decoder.initMetaData(meta);
 		}

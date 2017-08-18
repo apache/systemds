@@ -39,7 +39,7 @@ public class CNodeCell extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 
 			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %AGG_OP%, %SPARSE_SAFE%);\n"
+			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %AGG_OP%);\n"
 			+ "  }\n"
 			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"

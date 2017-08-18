@@ -257,6 +257,15 @@ public class TemplateUtils
 		return ret;
 	}
 	
+	public static boolean rContainsInput(CNode node, long hopID) {
+		boolean ret = false;
+		for( CNode c : node.getInput() )
+			ret |= rContainsInput(c, hopID);
+		if( node instanceof CNodeData )
+			ret |= (((CNodeData)node).getHopID()==hopID);
+		return ret;
+	}
+	
 	public static boolean isTernary(CNode node, TernaryType...types) {
 		return node instanceof CNodeTernary
 			&& ArrayUtils.contains(types, ((CNodeTernary)node).getType());

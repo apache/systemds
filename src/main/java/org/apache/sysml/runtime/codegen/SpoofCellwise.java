@@ -72,7 +72,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
 	
-	public SpoofCellwise(CellType type, AggOp aggOp, boolean sparseSafe) {
+	public SpoofCellwise(CellType type, boolean sparseSafe, AggOp aggOp) {
 		_type = type;
 		_aggOp = aggOp;
 		_sparseSafe = sparseSafe;

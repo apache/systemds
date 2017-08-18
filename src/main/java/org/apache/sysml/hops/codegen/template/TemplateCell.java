@@ -20,9 +20,11 @@
 package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -134,9 +136,8 @@ public class TemplateCell extends TemplateBase
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
 		tpl.setAggOp(TemplateUtils.getAggOp(hop));
-		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops[0]))
-				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops[0])
-				|| TemplateUtils.rIsBinaryOnly(tpl.getOutput(), BinType.MULT));
+		tpl.setSparseSafe(isSparseSafe(Arrays.asList(hop), sinHops[0], 
+			Arrays.asList(tpl.getOutput()), Arrays.asList(tpl.getAggOp()), false));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		tpl.setBeginLine(hop.getBeginLine());
 		
@@ -313,6 +314,21 @@ public class TemplateCell extends TemplateBase
 				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrix
 				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense
 				|| (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp()==ParamBuiltinOp.REPLACE));	
+	}
+	
+	protected boolean isSparseSafe(List<Hop> roots, Hop mainInput, List<CNode> outputs, List<AggOp> aggOps, boolean onlySum) {
+		boolean ret = true;
+		for( int i=0; i<outputs.size() && ret; i++ ) {
+			ret &= (HopRewriteUtils.isBinary(roots.get(i), OpOp2.MULT) 
+					&& roots.get(i).getInput().contains(mainInput))
+				|| (HopRewriteUtils.isBinary(roots.get(i), OpOp2.DIV) 
+					&& roots.get(i).getInput().get(0) == mainInput)
+				|| (TemplateUtils.rIsBinaryOnly(outputs.get(i), BinType.MULT)
+					&& TemplateUtils.rContainsInput(outputs.get(i), mainInput.getHopID()));
+			if( onlySum )
+				ret &= (aggOps.get(i)==AggOp.SUM || aggOps.get(i)==AggOp.SUM_SQ);
+		}
+		return ret;
 	}
 	
 	/**

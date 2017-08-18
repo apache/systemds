@@ -107,6 +107,8 @@ public class TemplateMultiAgg extends TemplateCell
 		}
 		CNodeMultiAgg tpl = new CNodeMultiAgg(inputs, outputs);
 		tpl.setAggOps(aggOps);
+		tpl.setSparseSafe(isSparseSafe(roots, sinHops[0], 
+			tpl.getOutputs(), tpl.getAggOps(), true));
 		tpl.setRootNodes(roots);
 		tpl.setBeginLine(hop.getBeginLine());
 		

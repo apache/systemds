@@ -188,11 +188,25 @@ public class EncoderRecode extends Encoder
 	
 	/**
 	 * Returns the Recode map entry which consists of concatenation of code, delimiter and token. 
+	 * 
 	 * @param token	is part of Recode map
-	 * @param code  is code for token 
-	 * @return the concatenation of code and token with delimiter in between
+	 * @param code  is code for token
+	 * @return the concatenation of token and code with delimiter in between
 	 */
 	public static String constructRecodeMapEntry(String token, Long code) {
 		return token + Lop.DATATYPE_PREFIX + code.toString();
+	}
+	
+	/**
+	 * Splits a Recode map entry into its token and code.
+	 * 
+	 * @param value concatenation of token and code with delimiter in between
+	 * @return string array of token and code
+	 */
+	public static String[] splitRecodeMapEntry(String value) {
+		// Instead of using splitCSV which is forcing string with RFC-4180 format, 
+		// using Lop.DATATYPE_PREFIX separator to split token and code 
+		int pos = value.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
+		return new String[] {value.substring(0, pos), value.substring(pos+1)};
 	}
 }

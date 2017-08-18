@@ -35,11 +35,11 @@ import java.util.Map;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
-import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.transform.encode.EncoderRecode;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -1049,12 +1049,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				// Instead of using splitCSV which is forcing string with RFC-4180 format, 
-				// using Lop.DATATYPE_PREFIX separator to split token and code 
-				String[] tmp = 	new String[2];
-				int pos = val.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
-				tmp[0] = val.toString().substring(0, pos);
-				tmp[1] = val.toString().substring(pos+1);
+				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}

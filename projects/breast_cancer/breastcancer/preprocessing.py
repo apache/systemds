@@ -32,6 +32,7 @@ import os
 
 import numpy as np
 import openslide
+from openslide import OpenSlideError
 from openslide.deepzoom import DeepZoomGenerator
 import pandas as pd
 from pyspark.ml.linalg import Vectors
@@ -66,7 +67,10 @@ def open_slide(slide_num, folder, training):
     # Testing images
     filename = os.path.join(folder, "testing_image_data",
                             "TUPAC-TE-{}.svs".format(str(slide_num).zfill(3)))
-  slide = openslide.open_slide(filename)
+  try:
+    slide = openslide.open_slide(filename)
+  except OpenSlideError:
+    slide = None
   return slide
 
 
@@ -235,7 +239,7 @@ def keep_tile(tile_tuple, tile_size, tissue_threshold):
   Args:
     tile_tuple: A (slide_num, tile) tuple, where slide_num is an
       integer, and tile is a 3D NumPy array of shape
-      (tile_size, tile_size, channels) in RGB format.
+      (tile_size, tile_size, channels).
     tile_size: The width and height of a square tile to be generated.
     tissue_threshold: Tissue percentage threshold.
 
@@ -485,7 +489,7 @@ def flatten_sample(sample_tuple):
 
 # Get Ground Truth Labels
 
-def get_labels_df(folder):
+def get_labels_df(folder, filename="training_ground_truth.csv"):
   """
   Create a DataFrame with the ground truth labels for each slide.
 
@@ -498,7 +502,7 @@ def get_labels_df(folder):
     A Pandas DataFrame containing the ground truth labels for each
     slide.
   """
-  filepath = os.path.join(folder, "training_ground_truth.csv")
+  filepath = os.path.join(folder, filename)
   labels_df = pd.read_csv(filepath, names=["tumor_score", "molecular_score"], header=None)
   labels_df["slide_num"] = labels_df.index + 1  # slide numbering starts at 1
   labels_df.set_index("slide_num", drop=False, inplace=True)  # use the slide num as index
@@ -546,7 +550,13 @@ def preprocess(spark, slide_nums, folder="data", training=True, tile_size=1024, 
     A Spark DataFrame in which each row contains the slide number, tumor
     score, molecular score, and the sample stretched out into a Vector.
   """
-  slides = spark.sparkContext.parallelize(slide_nums)
+  # Filter out broken slides
+  # Note: "Broken" here is due to a "version of OpenJPEG with broken support for chroma-subsampled
+  # images".
+  slides = (spark.sparkContext
+      .parallelize(slide_nums)
+      .filter(lambda slide: open_slide(slide, folder, training) is not None))
+
   # Create DataFrame of all tile locations and increase number of partitions
   # to avoid OOM during subsequent processing.
   tile_indices = (slides.flatMap(
@@ -561,7 +571,8 @@ def preprocess(spark, slide_nums, folder="data", training=True, tile_size=1024, 
   #num_parts = rows / rows_per_part
   tile_indices = tile_indices.repartition(num_partitions)
   tile_indices.cache()
-  # Extract all tiles into a DataFrame, filter, cut into smaller samples, apply stain
+
+  # Extract all tiles into an RDD, filter, cut into smaller samples, apply stain
   # normalization, and flatten.
   tiles = tile_indices.map(lambda tile_index: process_tile_index(tile_index, folder, training))
   filtered_tiles = tiles.filter(lambda tile: keep_tile(tile, tile_size, tissue_threshold))
@@ -569,6 +580,8 @@ def preprocess(spark, slide_nums, folder="data", training=True, tile_size=1024, 
   if normalize_stains:
     samples = samples.map(lambda sample: normalize_staining(sample))
   samples = samples.map(lambda sample: flatten_sample(sample))
+
+  # Convert to a DataFrame
   if training:
     # Append labels
     labels_df = get_labels_df(folder)
@@ -582,87 +595,6 @@ def preprocess(spark, slide_nums, folder="data", training=True, tile_size=1024, 
     df = samples.toDF(["slide_num", "sample"])
     df = df.select(df.slide_num.astype("int"), df["sample"])
   return df
-
-
-# Split Into Separate Train & Validation DataFrames Based On Slide Number
-
-def train_val_split(spark, df, slide_nums, folder, train_frac=0.8, add_row_indices=True, seed=None,
-                    debug=False):
-  """
-  Split a DataFrame of slide samples into training and validation sets.
-
-  Args:
-    spark: SparkSession.
-    df: A Spark DataFrame in which each row contains the slide number,
-    tumor score, molecular score, and the sample stretched out into
-    a Vector.
-    slide_nums: A list of slide numbers to sample from.
-    folder: Directory containing a `training_ground_truth.csv` file
-      containing the ground truth "tumor_score" and "molecular_score"
-      labels for each slide.
-    train_frac: Fraction of the data to assign to the training set, with
-      `1-frac` assigned to the valiation set.
-    add_row_indices: Boolean for whether or not to prepend an index
-      column contain the row index for use downstream by SystemML.
-      The column name will be "__INDEX".
-
-  Returns:
-    A Spark DataFrame in which each row contains the slide number, tumor
-    score, molecular score, and the sample stretched out into a Vector.
-  """
-  # Create DataFrame of labels for the given slide numbers.
-  labels_df = get_labels_df(folder)
-  labels_df = labels_df.loc[slide_nums]
-
-  # Randomly split slides 80%/20% into train and validation sets.
-  train_nums_df = labels_df.sample(frac=train_frac, random_state=seed)
-  val_nums_df = labels_df.drop(train_nums_df.index)
-
-  train_nums = (spark.createDataFrame(train_nums_df)
-                     .selectExpr("cast(slide_num as int)")
-                     .coalesce(1))
-  val_nums = (spark.createDataFrame(val_nums_df)
-                   .selectExpr("cast(slide_num as int)")
-                   .coalesce(1))
-
-  # Note: Explicitly mark the smaller DataFrames as able to be broadcasted
-  # in order to have Catalyst choose the more efficient BroadcastHashJoin,
-  # rather than the costly SortMergeJoin.
-  train = df.join(F.broadcast(train_nums), on="slide_num")
-  val = df.join(F.broadcast(val_nums), on="slide_num")
-
-  if debug:
-    # DEBUG: Sanity checks.
-    assert len(pd.merge(train_nums_df, val_nums_df, on="slide_num")) == 0
-    assert train_nums.join(val_nums, on="slide_num").count() == 0
-    assert train.join(val, on="slide_num").count() == 0
-    #  - Check distributions.
-    for pdf in train_nums_df, val_nums_df:
-      print(pdf.count())
-      print(pdf["tumor_score"].value_counts(sort=False))
-      print(pdf["tumor_score"].value_counts(normalize=True, sort=False), "\n")
-    #  - Check total number of examples in each.
-    print(train.count(), val.count())
-    #  - Check physical plans for broadcast join.
-    print(train.explain(), val.explain())
-
-  # Add row indices for use with SystemML.
-  if add_row_indices:
-    train = (train.rdd
-                  .zipWithIndex()
-                  .map(lambda r: (r[1] + 1, *r[0]))  # flatten & convert index to 1-based indexing
-                  .toDF(['__INDEX', 'slide_num', 'tumor_score', 'molecular_score', 'sample']))
-    train = train.select(train["__INDEX"].astype("int"), train.slide_num.astype("int"),
-                         train.tumor_score.astype("int"), train.molecular_score, train["sample"])
-
-    val = (val.rdd
-              .zipWithIndex()
-              .map(lambda r: (r[1] + 1, *r[0]))  # flatten & convert index to 1-based indexing
-              .toDF(['__INDEX', 'slide_num', 'tumor_score', 'molecular_score', 'sample']))
-    val = val.select(val["__INDEX"].astype("int"), val.slide_num.astype("int"),
-                     val.tumor_score.astype("int"), val.molecular_score, val["sample"])
-
-  return train, val
 
 
 # Save DataFrame
@@ -693,4 +625,51 @@ def save(df, filepath, sample_size, grayscale, mode="error", format="parquet", f
   row_mb = sample_size * sample_size * channels * 8 / 1024 / 1024  # size of one row in MB
   rows_per_file = round(file_size / row_mb)
   df.write.option("maxRecordsPerFile", rows_per_file).mode(mode).save(filepath, format=format)
+
+
+# Utilities
+
+def add_row_indices(df, training=True):
+  """
+  Add a row index column for faster data ingestion times with SystemML.
+
+  Args:
+    df: A Spark DataFrame in which each row contains the slide number,
+      tumor score, molecular score, and the sample stretched out into a
+      Vector.
+    training: Boolean for training or testing datasets.
+
+  Returns:
+    The Spark DataFrame with a row index column called "__INDEX".
+  """
+  rdd = (df.rdd
+           .zipWithIndex()
+           .map(lambda r: (r[1] + 1, *r[0])))  # flatten & convert index to 1-based indexing
+  if training:
+    df = rdd.toDF(['__INDEX', 'slide_num', 'tumor_score', 'molecular_score', 'sample'])
+    df = df.select(df["__INDEX"].astype("int"), df.slide_num.astype("int"),
+                   df.tumor_score.astype("int"), df.molecular_score, df["sample"])
+  else:  # testing data -- no labels
+    df = rdd.toDF(["__INDEX", "slide_num", "sample"])
+    df = df.select(df["__INDEX"].astype("int"), df.slide_num.astype("int"), df["sample"])
+  return df
+
+
+def sample(df, frac, training=True, seed=None):
+  """
+  Sample the DataFrame, stratified on the class.
+
+  Args:
+    df: A Spark DataFrame in which each row contains the slide number,
+      tumor score, molecular score, and the sample stretched out into a
+      Vector.
+    frac: Fraction of rows to keep.
+    training: Boolean for training or testing datasets.
+    seed: Random seed used for the sampling.
+
+  Returns:
+    A stratified sample of the original Spark DataFrame.
+  """
+  df_sample = df.sampleBy("tumor_score", fractions={1: frac, 2: frac, 3: frac}, seed=seed)
+  return df_sample
 

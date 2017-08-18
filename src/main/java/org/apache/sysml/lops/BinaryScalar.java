@@ -30,10 +30,8 @@ import org.apache.sysml.parser.Expression.*;
  * Lop to perform binary scalar operations. Both inputs must be scalars.
  * Example i = j + k, i = i + 1. 
  */
-
 public class BinaryScalar extends Lop 
-{	
-	
+{
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
@@ -42,7 +40,7 @@ public class BinaryScalar extends Lop
 		IQSIZE,
 	}
 	
-	OperationTypes operation;
+	private final OperationTypes operation;
 	
 	/**
 	 * Constructor to perform a scalar operation
@@ -66,7 +64,7 @@ public class BinaryScalar extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -74,23 +72,19 @@ public class BinaryScalar extends Lop
 		return "Operation: " + operation;
 	}
 	
-	public OperationTypes getOperationType(){
+	public OperationTypes getOperationType() {
 		return operation;
 	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		String opString = getOpcode( operation );
-		
-		
-		
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		
-		sb.append( opString );
+		sb.append( getOpcode(operation) );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( getInputs().get(0).prepScalarInputOperand(getExecType()) );
@@ -105,17 +99,15 @@ public class BinaryScalar extends Lop
 	}
 	
 	@Override
-	public Lop.SimpleInstType getSimpleInstructionType()
-	{
-		switch (operation){
- 
-		default:
-			return SimpleInstType.Scalar;
-		}
+	public Lop.SimpleInstType getSimpleInstructionType() {
+		return SimpleInstType.Scalar;
 	}
 	
 	public static String getOpcode( OperationTypes op )
 	{
+		if( op == null )
+			throw new UnsupportedOperationException("Unable to get opcode for 'null'.");
+		
 		switch ( op ) 
 		{
 			/* Arithmetic */
@@ -169,7 +161,8 @@ public class BinaryScalar extends Lop
 				return "iqsize"; 
 				
 			default:
-				throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + op);
+				throw new UnsupportedOperationException("Instruction "
+					+ "is not defined for BinaryScalar operator: " + op);
 		}
 	}
 }

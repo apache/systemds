@@ -65,12 +65,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationStatic.class.getName());
 	
 	//valid aggregation operation types for rowOp to colOp conversions and vice versa
-	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
+	private static final AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[] {
+		AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
 	
 	//valid binary operations for distributive and associate reorderings
-	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
-	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 
-		
+	private static final OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[] {OpOp2.PLUS, OpOp2.MINUS}; 
+	private static final OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[] {OpOp2.PLUS, OpOp2.MULT};
+	
+	//valid binary operations for scalar operations
+	private static final OpOp2[] LOOKUP_VALID_SCALAR_BINARY = new OpOp2[] {OpOp2.AND, OpOp2.DIV, 
+		OpOp2.EQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL, OpOp2.INTDIV, OpOp2.LESS, OpOp2.LESSEQUAL, 
+		OpOp2.LOG, OpOp2.MAX, OpOp2.MIN, OpOp2.MINUS, OpOp2.MODULUS, OpOp2.MULT, OpOp2.NOTEQUAL, 
+		OpOp2.OR, OpOp2.PLUS, OpOp2.POW};
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
@@ -852,8 +859,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		if( HopRewriteUtils.isUnary(hi, OpOp1.CAST_AS_SCALAR)  
 			&& hi.getInput().get(0) instanceof BinaryOp
-			&& !HopRewriteUtils.isBinary(hi.getInput().get(0), OpOp2.QUANTILE, 
-			OpOp2.CENTRALMOMENT, OpOp2.MINUS1_MULT, OpOp2.MINUS_NZ, OpOp2.LOG_NZ)) 
+			&& HopRewriteUtils.isBinary(hi.getInput().get(0), LOOKUP_VALID_SCALAR_BINARY)) 
 		{
 			BinaryOp bin = (BinaryOp) hi.getInput().get(0);
 			BinaryOp bout = null;

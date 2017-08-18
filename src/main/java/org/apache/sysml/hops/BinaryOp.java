@@ -557,12 +557,10 @@ public class BinaryOp extends Hop
 		DataType dt2 = getInput().get(1).getDataType();
 		
 		if (dt1 == dt2 && dt1 == DataType.SCALAR) {
-
 			// Both operands scalar
 			BinaryScalar binScalar1 = new BinaryScalar(getInput().get(0)
-					.constructLops(),
-					getInput().get(1).constructLops(), HopsOpOp2LopsBS
-							.get(op), getDataType(), getValueType());
+				.constructLops(),getInput().get(1).constructLops(),
+				HopsOpOp2LopsBS.get(op), getDataType(), getValueType());
 			binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			setLineNumbers(binScalar1);
 			setLops(binScalar1);

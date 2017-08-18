@@ -165,8 +165,8 @@ extra_model_params[2, 1] = dimensions
 weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
-write(extra_model_params, " ", format=cmdLine_fmt)
-write(weights, " ", format=cmdLine_fmt)
+# write(extra_model_params, " ", format=cmdLine_fmt)
+# write(weights, " ", format=cmdLine_fmt)
 
 debug_str = "# Class, Iter, Obj"
 for(iter_class in 1:ncol(debug_mat)){

@@ -116,9 +116,6 @@ while(continue == 1 & iter < maxiterations)  {
       	g = wd + step_sz*dd - sum(out * Y * Xd)
       	h = dd + sum(Xd * sv * Xd)
       	step_sz = step_sz - g/h
-#	if (g*g/h < 0.0000000001){
-#       	continue1 = 0
-#      	}
 	continue1 = (gg/h >= 0.0000000001);
     }
 
@@ -136,9 +133,6 @@ while(continue == 1 & iter < maxiterations)  {
 	  debug_str = append(debug_str, iter + "," + obj)
 	
     tmp = sum(s * g_old)
-#    if(step_sz*tmp < epsilon*obj){
-#    	continue = 0
-#    }
     continue = (step_sztmp >= epsilon*obj & sum(s^2) != 0);
 
     #non-linear CG step

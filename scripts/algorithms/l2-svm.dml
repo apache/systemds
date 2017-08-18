@@ -102,23 +102,24 @@ Xw = matrix(0, rows=nrow(X), cols=1)
 debug_str = "# Iter, Obj"
 iter = 0
 while(continue == 1 & iter < maxiterations)  {
-	# minimizing primal obj along direction s
+    # minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s
     wd = lambda * sum(w * s)
     dd = lambda * sum(s * s)
     continue1 = 1
     while(continue1 == 1){
-		tmp_Xw = Xw + step_sz*Xd
+	tmp_Xw = Xw + step_sz*Xd
       	out = 1 - Y * (tmp_Xw)
       	sv = (out > 0)
       	out = out * sv
       	g = wd + step_sz*dd - sum(out * Y * Xd)
       	h = dd + sum(Xd * sv * Xd)
       	step_sz = step_sz - g/h
-      	if (g*g/h < 0.0000000001){
-        	continue1 = 0
-      	}
+#	if (g*g/h < 0.0000000001){
+#       	continue1 = 0
+#      	}
+	continue1 = (gg/h >= 0.0000000001);
     }
 
     #update weights
@@ -135,17 +136,18 @@ while(continue == 1 & iter < maxiterations)  {
 	  debug_str = append(debug_str, iter + "," + obj)
 	
     tmp = sum(s * g_old)
-    if(step_sz*tmp < epsilon*obj){
-    	continue = 0
-    }
+#    if(step_sz*tmp < epsilon*obj){
+#    	continue = 0
+#    }
+    continue = (step_sztmp >= epsilon*obj & sum(s^2) != 0);
 
     #non-linear CG step
     be = sum(g_new * g_new)/sum(g_old * g_old)
     s = be * s + g_new
     g_old = g_new
-		if(sum(s^2) == 0){
-			continue = 0
-		}
+    if(sum(s^2) == 0){
+	continue = 0
+    }
     iter = iter + 1
 }
 

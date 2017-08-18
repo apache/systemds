@@ -456,6 +456,11 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	public static boolean isDataGenOp(Hop hop, DataGenMethod... ops) {
+		return (hop instanceof DataGenOp 
+			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
+	}
+	
 	public static boolean isDataGenOpWithConstantValue(Hop hop, double value) {
 		return hop instanceof DataGenOp
 			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
@@ -989,17 +994,13 @@ public class HopRewriteUtils
 		return ret;
 	}
 
-	public static LiteralOp getBasic1NSequenceMaxLiteral(Hop hop) 
+	public static Hop getBasic1NSequenceMax(Hop hop) 
 		throws HopsException
 	{
-		if( hop instanceof DataGenOp )
-		{
+		if( isDataGenOp(hop, DataGenMethod.SEQ) ) {
 			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == DataGenMethod.SEQ ){
-				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
-				if( to instanceof LiteralOp )
-					return (LiteralOp)to;
-			}
+			return dgop.getInput()
+				.get(dgop.getParamIndex(Statement.SEQ_TO));
 		}
 		
 		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");

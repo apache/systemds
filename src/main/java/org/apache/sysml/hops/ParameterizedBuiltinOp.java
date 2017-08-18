@@ -1025,15 +1025,15 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			//but very good sparsity estimate possible (number of non-zeros in input)
 			Hop max = getInput().get(_paramIndexMap.get("max"));
 			Hop dir = getInput().get(_paramIndexMap.get("dir"));
-			double maxVal = HopRewriteUtils.getDoubleValueSafe((LiteralOp)max);
+			long maxVal = computeDimParameterInformation(max, memo);
 			String dirVal = ((LiteralOp)dir).getStringValue();
 			if( mc.dimsKnown() ) {
 				long lnnz = mc.nnzKnown() ? mc.getNonZeros() : mc.getRows();
 				if( "cols".equals(dirVal) ) { //expand horizontally
-					ret = new long[]{mc.getRows(), UtilFunctions.toLong(maxVal), lnnz};
+					ret = new long[]{mc.getRows(), maxVal, lnnz};
 				}
 				else if( "rows".equals(dirVal) ){ //expand vertically
-					ret = new long[]{UtilFunctions.toLong(maxVal), mc.getRows(), lnnz};
+					ret = new long[]{maxVal, mc.getRows(), lnnz};
 				}	
 			}
 		}
@@ -1156,7 +1156,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				if( isNonZeroReplaceArguments() )
 					setNnz( target.getNnz() );
 				
-				break;	
+				break;
 			}
 			case REXPAND: {
 				//dimensions are exactly known from input, sparsity unknown but upper bounded by nrow(v)
@@ -1164,7 +1164,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				Hop max = getInput().get(_paramIndexMap.get("max"));
 				Hop dir = getInput().get(_paramIndexMap.get("dir"));
-				double maxVal = HopRewriteUtils.getDoubleValueSafe((LiteralOp)max);
+				double maxVal = computeSizeInformation(max);
 				String dirVal = ((LiteralOp)dir).getStringValue();
 				
 				if( "cols".equals(dirVal) ) { //expand horizontally

@@ -1641,7 +1641,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//setup input parameter hops
 				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
 				inputargs.put("target", trgt);
-				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMaxLiteral(seq));
+				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMax(seq));
 				inputargs.put("dir", new LiteralOp(direction));
 				inputargs.put("ignore", new LiteralOp(true));
 				inputargs.put("cast", new LiteralOp(false));

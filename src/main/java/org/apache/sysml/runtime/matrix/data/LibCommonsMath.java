@@ -239,7 +239,7 @@ public class LibCommonsMath
 		RealMatrix u = svd.getU();
 		RealMatrix v = svd.getV();
 		MatrixBlock U = DataConverter.convertToMatrixBlock(u.getData());
-		MatrixBlock Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(Sigma.rlen, Sigma.rlen, true));
+		MatrixBlock Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(sigma.rlen, sigma.rlen, true));
 		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
 
 		return new MatrixBlock[] { U, Sigma, V };

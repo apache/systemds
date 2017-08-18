@@ -54,7 +54,7 @@ def load_weights_to_model(model,filepath):
 
 
 #Currently can only generate a Dense model
-def generate_caffe_model(kModel):
+def generate_caffe_model(kModel, input_shape=None, phases=None):
     n = caffe.NetSpec()
     layers = kModel.layers
 
@@ -86,18 +86,55 @@ def generate_caffe_model(kModel):
             print(in_names[0].name)
             n[name] = L.InnerProduct(n[in_names[0].name], num_output=layer.units) #TODO: Assert only 1
             if layer.activation is not None:
-                name_act = name + "_activation" + layer.activation.__name__ #get function string
+                name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
                 
-        #elif type(layer) == keras.Layers.Flatten:
-            
-        #elif type(layer) == keras.Layers.Dropout:
-            
+        elif type(layer) == keras.Layers.Flatten:
+            name = layer.name
+            in_names[0]= getInboundLayers(layer)
+            n[name] = L.Flatten(n[in_name[0].name])
+
+        elif type(layer) == keras.Layers.Dropout:#TODO Random seed will be lost
+            name = layer.name
+            in_names[0]= getInboundLayers(layer)
+            n[name] = L.Dropout(n[in_name[0].name], dropout_ratio= layer.rate, in_place=True)
         #elif type(layer) == keras.Layers.LSTM:
 
-        #elif type(layer) == keras.Layers.Conv1D:
+        elif type(layer) == keras.Layers.Conv1D:
+            name = layer.name
+            in_names[0]= getInboundLayers(layer)
+            n[name] = L.Convolution()
+        elif type(layer) == keras.Layers.Conv2D:
+            name = layer.name
+            in_names[0]= getInboundLayers(layer)
+            #Padding
+            #TODO if layer.padding=''
+            #TODO The rest of the arguements including bias, regulizers, dilatin,
+            
+            n[name] = L.Convolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
+                                    kernel_w=layer.kernel_size[1],stride_h=layer.strides[0],
+                                    stride_w= layer.strides[-1],num_output=layer.units,)
+            if layer.activation is not None:
+                name_act = name + "_activation_" + layer.activation.__name__ #get function string
+                n[name_act] = getActivation(layer,n[name])
+        #elif type(layer) == keras.Layers.MaxPooling1D:
 
-        #elif type(layer) == keras.Layers.Conv2D:
+        elif type(layer) == keras.Layers.MaxPooling2D:
+            name = layer.name
+            in_names[0]= getInboundLayers(layer)
+            #Padding
+            #TODO if layer.padding=''
+            #TODO The rest of the arguements including bias, regulizers, dilatin,
+            if layer.stride is None:
+                stride = (1,1)
+            else:
+                stride= layer.strides
+            n[name] = L.Pooling(n[in_names[0].name],kernel_h=layer.pool_size[0],
+                                    kernel_w=layer.pool_size[1],stride_h=stride[0],
+                                    stride_w= stride[-1],)
+            if layer.activation is not None:
+                name_act = name + "_activation_" + layer.activation.__name__ #get function string
+                n[name_act] = getActivation(layer,n[name])
         #Activation (wrapper for activations) and Advanced Activation Layers
         elif type(layer) == keras.layers.Activation:
             name = layer.name
@@ -117,7 +154,28 @@ def generate_caffe_model(kModel):
             name = layer.name
             in_names = getInboundLayers(layer)
             n[name] = L.ELU(n[in_names[0].name],layer.alpha)
+        else:
+            RaiseError("Cannot convert model. " +layer.name + " is not supported.")
 
+    #Determine the loss needed to be added
+    for output in kModels.outputs:
+        if kModel.loss == 'categorical_crossentropy' and output.activation == 'softmax':
+            n[output.name] = L.SoftmaxWithLoss(n[getInboundLayers(output)[0].name])
+        elif kModel.loss == 'binary_crossentropy' and output.activation == 'sigmoid':
+            n[output.name] = L.SigmoidCrossEntropyLoss(n[getInboundLayers(output)[0].name])
+
+        else: #Map the rest of the loss functions to the end of the output layer in Keras
+            if kModel.loss == 'hinge':
+                name = model.name + 'hinge'
+                n[name] = L.HingeLoss(n[output.name])
+            elif kModel.loss == 'categorical_crossentropy':
+                name = model.name + 'categorical_crossentropy'
+                n[name] = L.MultinomialLogisticLoss(n[output.name])
+                #TODO Post warning to use softmax before this loss
+            elif kModel.loss == 'mean_squared_error':
+                name = model.name + 'mean_squared_error'
+                n[name] = L.EuclideanLoss(n[output.name])
+            #TODO implement Infogain Loss 
     return n
 
 

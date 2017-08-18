@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,6 +21,7 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -36,6 +36,8 @@ public class SVDFactorizeTest extends AutomatedTestBase
 
 	private final static int rows1 = 500;
 	private final static int rows2 = 2500;
+	private final static int cols1 = 400;
+	private final static int cols2 = 2200;
 	private final static double sparsity = 0.9;
 	
 	@Override
@@ -50,57 +52,59 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	@Test
 	public void testSVDFactorizeDenseCP() 
 	{
-		runTestSVDFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testSVDFactorizeDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestSVDFactorize( rows1, RUNTIME_PLATFORM.SPARK );
+		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
 	public void testSVDFactorizeDenseMR() 
 	{
-		runTestSVDFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
+		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
 	public void testSVDFactorizeDenseHybrid() 
 	{
-		runTestSVDFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
+		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseCP() 
 	{
-		runTestSVDFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestSVDFactorize( rows2, RUNTIME_PLATFORM.SPARK );
+		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseMR() 
 	{
-		runTestSVDFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
+		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseHybrid() 
 	{
-		runTestSVDFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
+		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HYBRID );
 	}
 	
-	private void runTestSVDFactorize( int rows, RUNTIME_PLATFORM rt)
+	private void runTestSVDFactorize( int rows, int cols, RUNTIME_PLATFORM rt)
 	{		
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        if( rtplatform == RUNTIME_PLATFORM.SPARK )
+	              DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -110,8 +114,8 @@ public class SVDFactorizeTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args", input("A"), output("D") };
 			
-			double[][] A = getRandomMatrix(rows, rows, 0, 1, sparsity, 10);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1, -1);
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
 			// Expected matrix = 1x1 zero matrix 

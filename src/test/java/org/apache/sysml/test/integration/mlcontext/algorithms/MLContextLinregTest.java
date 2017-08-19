@@ -32,27 +32,55 @@ import org.junit.Test;
 public class MLContextLinregCGTest extends MLContextTestBase {
 	protected static Logger log = Logger.getLogger(MLContextLinregCGTest.class);
 
-	protected final static String TEST_SCRIPT = "scripts/algorithms/LinearRegCG.dml";
-  private final static double sparsity1 = 0.7; //dense
+	protected final static String TEST_SCRIPT_CG = "scripts/algorithms/LinearRegCG.dml";
+	protected final static String TEST_SCRIPT_DS = "scripts/algorithms/LinearRegDS.dml";
+        private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
+	
+	public enum LinregType {
+	        CG,
+	        DS,
+	}
   
   @Test
   public void testLinregCGSparse() {
-          runLinregTestMLC(true);
+          runLinregTestMLC(LinregType.CG, true );
   }
   
   @Test
   public void testLinregCGDense() {
-          runLinregTestMLC(false);
+          runLinregTestMLC(LinregType.CG, false);
   }
   
-  private void runLinregTestMLC(boolean sparse) {
+  @Test 
+  public void testLinregDSSparse() {
+          runLinregTestMLC(LinregType.DS, true);
+  }
+  
+  @Test 
+  public void testLinregDSDense() {
+          runLinregTestMLC(LinregType.DS, false);
+  }
+  
+  private void runLinregTestMLC(LinregType type, boolean sparse) {
   
            double[][] X = getRandomMatrix(10, 3, 0, 1, sparse?sparsity2:sparsity1, 7);
            double[][] Y = getRandomMatrix(10, 1, 0, 10, 1.0, 3);
            
-           Script lrcg = dmlFromFile(TEST_SCRIPT);
-           lrcg.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001").out("B");
-           ml.execute(lrcg);
+           switch(type) {
+               case CG:
+                       Script lrcg = dmlFromFile(TEST_SCRIPT_CG);
+                       lrcg.in("$X", X).in("$Y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001").out("$B");
+                       ml.execute(lrcg);
+                       
+                       break;
+                       
+               case DS:
+                       Script lrds = dmlFromFile(TEST_SCRIPT_DS);
+                       lrds.in("$X", X).in("$Y", Y).in("$icpt", "0").in("$reg", "0.000001").out("$B");
+                       ml.execute(lrds);
+                       
+                       break;
+           }
   }
 }

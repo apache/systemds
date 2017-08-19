@@ -29,8 +29,8 @@ import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class MLContextLinregCGTest extends MLContextTestBase {
-	protected static Logger log = Logger.getLogger(MLContextLinregCGTest.class);
+public class MLContextLinregTest extends MLContextTestBase {
+	protected static Logger log = Logger.getLogger(MLContextLinregTest.class);
 
 	protected final static String TEST_SCRIPT_CG = "scripts/algorithms/LinearRegCG.dml";
 	protected final static String TEST_SCRIPT_DS = "scripts/algorithms/LinearRegDS.dml";

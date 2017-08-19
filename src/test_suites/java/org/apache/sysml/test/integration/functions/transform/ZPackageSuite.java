@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	FrameCSVReadWriteTest.class,
+	TransformApplyEmptyRecodeMapTest.class,
 	TransformCSVFrameEncodeDecodeTest.class,
 	TransformCSVFrameEncodeReadTest.class,
 	TransformEncodeDecodeTest.class,

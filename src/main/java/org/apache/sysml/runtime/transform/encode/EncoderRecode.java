@@ -59,6 +59,8 @@ public class EncoderRecode extends Encoder
 	}
 	
 	private long lookupRCDMap(int colID, String key) {
+		if( !_rcdMaps.containsKey(colID) )
+			return -1; //empty recode map
 		Long tmp = _rcdMaps.get(colID).get(key);
 		return (tmp!=null) ? tmp : -1;
 	}
@@ -130,7 +132,7 @@ public class EncoderRecode extends Encoder
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object okey = in.get(i, colID-1);
 				String key = (okey!=null) ? okey.toString() : null;
-				long code = lookupRCDMap(colID, key);			
+				long code = lookupRCDMap(colID, key);
 				out.quickSetValue(i, colID-1,
 					(code >= 0) ? code : Double.NaN);
 			}

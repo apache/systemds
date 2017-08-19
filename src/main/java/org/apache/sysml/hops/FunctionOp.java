@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.FunctionCallCP;
+import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -225,14 +226,19 @@ public class FunctionOp extends Hop
 		
 		// TODO find the condition for isSingleFunctionInvoked
 		//construct function call
-                if ( isSingleFunctionInvoked ) {
-                	FunctionCallCP1out fcall = new FunctionCallCP1out( tmp, _fnamespace, _fname, _outputs, et);
-                }
-		else {
+		//FunctionCallCP fcall = null;
+		//FunctionCallCPSingle fcall = null;
+		if (!isSingleFunctionInvoked) {
 			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
-		}
-		setLineNumbers( fcall );
-		setLops( fcall );
+			setLineNumbers( fcall );
+		    setLops( fcall );
+			
+		} else {
+			FunctionCallCPSingle fcall = new FunctionCallCPSingle( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
+			setLineNumbers( fcall );
+		    setLops( fcall );
+		}		
+		
 	
 		//note: no reblock lop because outputs directly bound
 		

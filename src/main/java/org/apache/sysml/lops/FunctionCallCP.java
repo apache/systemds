@@ -131,20 +131,15 @@ public class FunctionCallCP extends Lop
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_outputs.length);
-		inst.append(outputs.length);
 		
 		for(int i=0; i<inputs.length; i++) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
 
+		// TODO function output dataops (phase 3) - take 'outputs' into account
 		for( String out : _outputs ) {
 			inst.append(Lop.OPERAND_DELIMITOR);
-			inst.append(out);
-		}
-		
-		for( String out : outputs ) {
-		        inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
 		}
 

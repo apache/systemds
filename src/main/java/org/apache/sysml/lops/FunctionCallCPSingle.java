@@ -31,32 +31,32 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-public class FunctionCallCP1out extends Lop  
+public class FunctionCallCPSingle extends Lop  
 {	
 	private String _fnamespace;
 	private String _fname;
-	private String[] _outputs;
+	private String[] _output;
 	private ArrayList<Lop> _outputLops = null;
 
-      /*public FunctionCallCP1out(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ArrayList<Hop> outputHops, ExecType et) 
+       public FunctionCallCPSingle(ArrayList<Lop> inputs, String fnamespace, String fname, String[] output, ArrayList<Hop> outputHops, ExecType et) 
 		throws HopsException, LopsException 
 	{
-		this(inputs, fnamespace, fname, outputs, et);
+		this(inputs, fnamespace, fname, output, et);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<Lop>();
 			for(Hop h : outputHops)
 				_outputLops.add( h.constructLops() );
 		}
-	} */
+	} 
 	
-        public FunctionCallCP1out(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ExecType et) 
+       public FunctionCallCPSingle(ArrayList<Lop> inputs, String fnamespace, String fname, String[] output, ExecType et) 
 	{
-		super(Lop.Type.FunctionCallCP1out, DataType.UNKNOWN, ValueType.UNKNOWN);	
+		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
 		//note: data scalar in order to prevent generation of redundant createvar, rmvar
 		
 		_fnamespace = fnamespace;
 		_fname = fname;
-		_outputs = outputs;
+		_output = output;
 		
 		//wire inputs
 		for( Lop in : inputs ) {
@@ -85,7 +85,7 @@ public class FunctionCallCP1out extends Lop
 	 * Method to generate instructions for external functions with multiple returns.
 	 */
 	@Override
-	public String getInstructions(String[] inputs, String[] outputs) throws LopsException
+	public String getInstructions(String[] inputs, String[] output) throws LopsException
 	{		
 		
 		//Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]:::[list of delimited ouput params]
@@ -105,24 +105,24 @@ public class FunctionCallCP1out extends Lop
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
-		inst.append(_outputs.length);
+		inst.append(_output.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
-		inst.append(outputs.length);
+//		inst.append(outputs.length);
 		
 		for(int i=0; i<inputs.length; i++) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
 
-		for( String out : _outputs ) {
+		for( String out : _output ) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
 		}
 		
-		for( String out : outputs ) {
-		        inst.append(Lop.OPERAND_DELIMITOR);
+	/*	for( String out : outputs ) {
+		    inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
-		}
+		}*/
 
 		return inst.toString();		
 	}

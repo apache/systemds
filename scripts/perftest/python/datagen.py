@@ -243,6 +243,7 @@ def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir,
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
     """
+
     config_bundle = {}
     distinct_families = set(map(lambda x: x[1], algo_payload))
 

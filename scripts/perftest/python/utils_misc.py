@@ -55,8 +55,6 @@ def split_config_args(args):
     perftest_args_dict['mode'] = args['mode']
     perftest_args_dict['temp_dir'] = args['temp_dir']
 
-
-
     systemml_args_dict = {}
 
     if args['stats'] is not None:
@@ -88,7 +86,8 @@ def split_config_args(args):
             backend_args_dict['--executor-cores'] = args['executor_cores']
 
         if args['conf'] is not None:
-            backend_args_dict['--conf'] = ' '.join(args['conf'])
+            backend_args_dict['--conf'] = ''.join(args['conf'])
+
     elif exec_type == 'singlenode':
         if args['heapmem'] is not None:
             backend_args_dict['-heapmem'] = args['heapmem']
@@ -214,6 +213,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, s
     algorithm = dml_file_name + '.dml'
 
     sup_args = ''.join(['{} {}'.format(k, v) for k, v in systemml_args_dict.items()])
+
     if exec_type == 'singlenode':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-standalone.py')
         singlenode_pre_args = ''.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])

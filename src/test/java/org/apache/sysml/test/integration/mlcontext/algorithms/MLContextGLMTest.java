@@ -95,7 +95,7 @@ public class MLContextGLMTest extends MLContextTestBase {
 		}
                 
                 Script glm = dmlFromFile(TEST_SCRIPT);
-                glm.in("$X", X).in("$Y", Y).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("$B");
+                glm.in("X", X).in("Y", Y).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("B");
                 ml.execute(glm);
         }
                        

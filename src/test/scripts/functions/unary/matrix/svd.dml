@@ -38,15 +38,14 @@ Vrows = nrow(V);
 Vcols = ncol(V);
 
 # check for, whether the U and V are square or not.
-if ( Urows == Ucols & Vrows == Vcols) {
+#if ( Urows == Ucols & Vrows == Vcols) {
   a = sum(I1) / Urows;
   b = sum(I2) / Vrows;
-}
+#}
 
 D = matrix(1,1,1);
 
 # if ( abs(1-a)<10e-4 & abs(1-b)<10e-4 ) {
-if (1) {
 
   # Multiplying U, S and t(V), we must get back original A
   B = U %*% S %*% t(V);

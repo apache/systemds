@@ -89,52 +89,68 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
                 
-        elif type(layer) == keras.Layers.Flatten:
+        elif type(layer) == keras.layers.Flatten:
             name = layer.name
-            in_names[0]= getInboundLayers(layer)
-            n[name] = L.Flatten(n[in_name[0].name])
+            in_names= getInboundLayers(layer)
+            n[name] = L.Flatten(n[in_names[0].name])
 
-        elif type(layer) == keras.Layers.Dropout:#TODO Random seed will be lost
+        elif type(layer) == keras.layers.Dropout:#TODO Random seed will be lost
             name = layer.name
-            in_names[0]= getInboundLayers(layer)
-            n[name] = L.Dropout(n[in_name[0].name], dropout_ratio= layer.rate, in_place=True)
+            in_names= getInboundLayers(layer)
+            n[name] = L.Dropout(n[in_names[0].name], dropout_ratio= layer.rate, in_place=True)
         #elif type(layer) == keras.Layers.LSTM:
 
-        elif type(layer) == keras.Layers.Conv1D:
+        elif type(layer) == keras.layers.Conv1D:
             name = layer.name
             in_names[0]= getInboundLayers(layer)
             n[name] = L.Convolution()
-        elif type(layer) == keras.Layers.Conv2D:
+        elif type(layer) == keras.layers.Conv2D:
             name = layer.name
-            in_names[0]= getInboundLayers(layer)
+            in_names= getInboundLayers(layer)
+            #Stride
+            if layer.strides is None:
+                stride = (1,1)
+            else:
+                stride= layer.strides
             #Padding
+            padding = [0,0] #If padding is valid(aka no padding)
+            if layer.padding == 'same': #Calculate the padding for 'same'
+                padding[0] = (layer.input_shape[0]*(stride[0] -1) + layer.kernel_size[0] - stride[0]) / 2
+
+                padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
             #TODO if layer.padding=''
             #TODO The rest of the arguements including bias, regulizers, dilatin,
             
             n[name] = L.Convolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
-                                    kernel_w=layer.kernel_size[1],stride_h=layer.strides[0],
-                                    stride_w= layer.strides[-1],num_output=layer.units,)
+                                    kernel_w=layer.kernel_size[1],stride_h=stride[0],
+                                    stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
             if layer.activation is not None:
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         #elif type(layer) == keras.Layers.MaxPooling1D:
 
-        elif type(layer) == keras.Layers.MaxPooling2D:
+        elif type(layer) == keras.layers.MaxPooling2D:
             name = layer.name
-            in_names[0]= getInboundLayers(layer)
+            in_names= getInboundLayers(layer)
             #Padding
             #TODO if layer.padding=''
             #TODO The rest of the arguements including bias, regulizers, dilatin,
-            if layer.stride is None:
+            if layer.strides is None:
                 stride = (1,1)
             else:
                 stride= layer.strides
+            #Padding
+            padding = [0,0] #If padding is valid(aka no padding)
+            if layer.padding == 'same': #Calculate the padding for 'same'
+                padding[0] = (layer.input_shape[0]*(stride[0] -1) + layer.pool_size[0] - stride[0]) / 2
+
+                padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.pool_size[1] - stride[1]) / 2
             n[name] = L.Pooling(n[in_names[0].name],kernel_h=layer.pool_size[0],
                                     kernel_w=layer.pool_size[1],stride_h=stride[0],
-                                    stride_w= stride[-1],)
-            if layer.activation is not None:
-                name_act = name + "_activation_" + layer.activation.__name__ #get function string
-                n[name_act] = getActivation(layer,n[name])
+                                    stride_w= stride[-1],pad_h = padding[0],pad_w= padding[1])
+            #if layer.activation is not None:
+                #name_act = name + "_activation_" + layer.activation.__name__ #get function string
+                #n[name_act] = getActivation(layer,n[name])
         #Activation (wrapper for activations) and Advanced Activation Layers
         elif type(layer) == keras.layers.Activation:
             name = layer.name
@@ -158,22 +174,23 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             RaiseError("Cannot convert model. " +layer.name + " is not supported.")
 
     #Determine the loss needed to be added
-    for output in kModels.outputs:
-        if kModel.loss == 'categorical_crossentropy' and output.activation == 'softmax':
-            n[output.name] = L.SoftmaxWithLoss(n[getInboundLayers(output)[0].name])
-        elif kModel.loss == 'binary_crossentropy' and output.activation == 'sigmoid':
-            n[output.name] = L.SigmoidCrossEntropyLoss(n[getInboundLayers(output)[0].name])
-
+    for output in kModel.output_layers:
+        if kModel.loss == 'categorical_crossentropy' and output.activation.__name__ == 'softmax':
+            name = output.name + "_activation_" + output.activation.__name__
+            n[name] = L.SoftmaxWithLoss(n[output.name])
+        elif kModel.loss == 'binary_crossentropy' and output.activation.__name__ == 'sigmoid':
+            name = output.name + "_activation_" + output.activation.__name__
+            n[name] = L.SigmoidCrossEntropyLoss(n[output.name])
         else: #Map the rest of the loss functions to the end of the output layer in Keras
             if kModel.loss == 'hinge':
-                name = model.name + 'hinge'
+                name = kModel.name + 'hinge'
                 n[name] = L.HingeLoss(n[output.name])
             elif kModel.loss == 'categorical_crossentropy':
-                name = model.name + 'categorical_crossentropy'
+                name = kModel.name + 'categorical_crossentropy'
                 n[name] = L.MultinomialLogisticLoss(n[output.name])
                 #TODO Post warning to use softmax before this loss
             elif kModel.loss == 'mean_squared_error':
-                name = model.name + 'mean_squared_error'
+                name = kModel.name + 'mean_squared_error'
                 n[name] = L.EuclideanLoss(n[output.name])
             #TODO implement Infogain Loss 
     return n
@@ -260,8 +277,10 @@ class CaffeSolver:
         # important, but rare:
         self.sp['gamma'] = '0.1'
         self.sp['weight_decay'] = '0.0005'
-        self.sp['train_net'] = '"' + trainnet_prototxt_path + '"'
-        self.sp['test_net'] = '"' + testnet_prototxt_path + '"'
+        #self.sp['train_net'] = '"' + trainnet_prototxt_path + '"'
+        #self.sp['test_net'] = '"' + testnet_prototxt_path + '"'
+
+        self.sp['net'] = '"' + testnet_prototxt_path + '"'
 
         # pretty much never change these.
         self.sp['max_iter'] = '100000'

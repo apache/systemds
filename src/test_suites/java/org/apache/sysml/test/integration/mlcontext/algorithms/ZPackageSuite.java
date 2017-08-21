@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
   
   MLContextUnivariateStatisticsTest.class,
   MLContextGLMTest.class,
-  MLContextLinregTest.class
+  MLContextLinregTest.class,
+  MLContextSVMTest.class
     
 })
 

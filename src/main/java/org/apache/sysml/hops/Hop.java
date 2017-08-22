@@ -847,6 +847,8 @@ public abstract class Hop
 		throws HopsException;
 	
 	public abstract String getOpString();
+	
+	public abstract boolean isGPUEnabled();
 
 	/**
 	 * In memory-based optimizer mode (see OptimizerUtils.isMemoryBasedOptLevel()), 

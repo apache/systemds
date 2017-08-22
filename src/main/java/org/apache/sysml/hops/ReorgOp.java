@@ -159,6 +159,35 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		switch( op ) {
+			case TRANSPOSE: {
+				Lop lin;
+				try {
+					lin = getInput().get(0).constructLops();
+				} catch (HopsException | LopsException e) {
+					throw new RuntimeException("Unable to create child lop", e);
+				}
+				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
+					return false; //if input is already a transpose, avoid redundant transpose ops
+				else if( getDim1()==1 && getDim2()==1 )
+					return false; //if input of size 1x1, avoid unnecessary transpose
+				else
+					return true;
+			}
+			case DIAG:
+			case REV:
+			case RESHAPE:
+			case SORT:
+				return false;
+			default:
+				throw new RuntimeException("Unsupported operator:" + op.name());
+		}
+	}
+	
+	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{

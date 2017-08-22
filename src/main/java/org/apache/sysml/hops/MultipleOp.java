@@ -86,6 +86,12 @@ public class MultipleOp extends Hop {
 		return false;
 	}
 
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
+	
 	/**
 	 * Construct the corresponding Lops for this Hop
 	 */

@@ -83,16 +83,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     //get inputs
     MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
-    int rlen = (int)in1.getNumRows();
-    int clen = (int)in1.getNumColumns();
-
     IndexFunction indexFunction = ((AggregateUnaryOperator) _optr).indexFn;
-    if (indexFunction instanceof ReduceRow){  // COL{SUM, MAX...}
-      ec.setMetaData(_output.getName(), 1, clen);
-    } else if (indexFunction instanceof ReduceCol) { // ROW{SUM, MAX,...}
-      ec.setMetaData(_output.getName(), rlen, 1);
-    }
-
     LibMatrixCUDA.unaryAggregate(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, _output.getName(), (AggregateUnaryOperator)_optr);
 
     //release inputs/outputs

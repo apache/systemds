@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.Group;
@@ -96,6 +97,26 @@ public class LeftIndexingOp  extends Hop
 	
 	public void setColLowerEqualsUpper(boolean passed) {
 		_colLowerEqualsUpper = passed;
+	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+//		if(!DMLScript.USE_ACCELERATOR)
+//			return false;
+//		DataType dataType = getDataType();
+//		if(dataType == DataType.MATRIX) {
+//			Lop lhsInput;
+//			try {
+//				lhsInput = getInput().get(0).constructLops();
+//			} catch (HopsException | LopsException e) {
+//				throw new RuntimeException("Unable to create child lop", e);
+//			}
+//			// Only perform left indexing operation if left hand side is on GPU
+//			return lhsInput.getExecType() == ExecType.GPU;
+//		} 
+//		else
+//			return false;
 	}
 	
 	@Override
@@ -212,12 +233,15 @@ public class LeftIndexingOp  extends Hop
 				setLineNumbers(leftIndexLop);
 				setLops(leftIndexLop);
 			}
-			else 
+			else // CP or GPU
 			{
+				// Only construct a GPU Lop if the input datatype is a "matrix"
+				DataType dataType = getDataType();
+				checkAndModifyRecompilationStatus();
 				LeftIndex left = new LeftIndex(
 						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
 						getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-						getDataType(), getValueType(), et);
+						dataType, getValueType(), et);
 				
 				setOutputDimensions(left);
 				setLineNumbers(left);
@@ -378,7 +402,6 @@ public class LeftIndexingOp  extends Hop
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
-				checkAndModifyRecompilationStatus();
 			}
 			else if ( getInput().get(0).areDimsBelowThreshold() )
 			{

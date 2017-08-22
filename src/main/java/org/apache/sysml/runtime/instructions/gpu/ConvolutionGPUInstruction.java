@@ -182,9 +182,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
-		
-		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), input.getNumRows(), input.getNumColumns());
 		if(instOpcode.equalsIgnoreCase("bias_add"))
 			LibMatrixCUDA.biasAdd(ec.getGPUContext(0), getExtendedOpcode(), input, bias, out);
 		else if(instOpcode.equalsIgnoreCase("bias_multiply"))
@@ -195,13 +193,13 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 
+	// (X > 0) * dout
 	public void processReLUBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), input.getNumRows(), input.getNumColumns());
 		LibMatrixCUDA.reluBackward(ec.getGPUContext(0), getExtendedOpcode(), input, dout, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
@@ -250,9 +248,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 				throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
-			
-			ec.setMetaData(_output.getName(), N, K * P * Q);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
 			LibMatrixCUDA.conv2d(ec.getGPUContext(0), getExtendedOpcode(), image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
@@ -265,9 +261,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 				throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
-			
-			ec.setMetaData(_output.getName(), N, K * P * Q);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
 			LibMatrixCUDA.conv2dBiasAdd(ec.getGPUContext(0), getExtendedOpcode(), image, bias, filter, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
@@ -280,9 +274,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
 				throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_filter: " + 
 						dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
-			
-			ec.setMetaData(_output.getName(), K, C * R * S);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), K, C * R * S);
 			LibMatrixCUDA.conv2dBackwardFilter(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 			// TODO: For now always copy the device data to host
@@ -297,9 +289,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
 				throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_data: " + 
 						dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
-			
-			ec.setMetaData(_output.getName(), N, C * H * W);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			LibMatrixCUDA.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
@@ -309,9 +299,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling: " + 
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + C*H*W);
-			
-			ec.setMetaData(_output.getName(), N, C * P * Q);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * P * Q);
 			if(instOpcode.equalsIgnoreCase("maxpooling"))
 				LibMatrixCUDA.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
@@ -325,9 +313,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling_backward: " + 
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + K*P*Q);
-			
-			ec.setMetaData(_output.getName(), N, C * H * W);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			LibMatrixCUDA.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}

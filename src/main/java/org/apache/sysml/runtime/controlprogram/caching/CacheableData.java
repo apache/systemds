@@ -248,6 +248,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _cleanupFlag;
 	}
 
+	/**
+	 * @return collection of GPU Objects
+	 */
+	public HashMap<GPUContext, GPUObject> getGPUObjects() {
+		return _gpuObjects;
+	}
+
 	public void setVarName(String s) {
 		_varName = s;
 	}
@@ -357,9 +364,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) throws DMLRuntimeException {
-		GPUObject old = _gpuObjects.put(gCtx, gObj);
-		if (old != null)
-				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
+		_gpuObjects.put(gCtx, gObj);
 	}
 	
 	// *********************************************
@@ -383,6 +388,29 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @throws CacheException if CacheException occurs
 	 */
 	public synchronized T acquireRead()
+			throws CacheException
+	{
+		return acquireRead(null);
+	}
+	
+	/**
+	 * Acquires a shared "read-only" lock, produces the reference to the cache block,
+	 * restores the cache block to main memory, reads from HDFS if needed.
+	 * 
+	 * Synchronized because there might be parallel threads (parfor local) that
+	 * access the same object (in case it was created before the loop).
+	 * 
+	 * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
+	 * Out-Status: READ(+1).
+	 * 
+	 * Since GPUContext is associated with a GPU, passing a GPUContext instead of null
+	 * only acquires the MatrixBlock from the corresponding GPU.
+	 * 
+	 * @param gpuContext GPUContext (can be null)
+	 * @return cacheable data
+	 * @throws CacheException
+	 */
+	public synchronized T acquireRead(GPUContext gpuContext)
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
@@ -396,19 +424,50 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data == null )
 			getCache();
 			
+		boolean copiedFromGPU = false;
 		//call acquireHostRead if gpuHandle is set as well as is allocated
-        boolean copiedFromGPU = false;
-        for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
-            GPUObject gObj = kv.getValue();
-            if (gObj != null && copiedFromGPU && gObj.isDirty()) {
-                LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
-                throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
-            } else if (gObj != null){
-                copiedFromGPU = gObj.acquireHostRead();
-                if( _data == null )
-                    getCache();
-            }
-        }
+		if(gpuContext != null) {
+			// Since GPUContext is associated with a GPU, passing a GPUContext instead of null
+			// only acquires the MatrixBlock from the corresponding GPU.
+			GPUObject gObj = _gpuObjects.get(gpuContext);
+			if(gObj == null) {
+				LOG.error("Inconsistent internal state - no GPU object available for the given GPUContext");
+                throw new CacheException("Internal Error : Inconsistent internal state, no GPU object available for the given GPUContext");
+			}
+			// This will ensure that we eagerly acquire host read since data is not available on CP
+			boolean eager = _data == null; 
+			copiedFromGPU = gObj.acquireHostRead(eager);
+            if( _data == null )
+                getCache();
+		}
+		else {
+	        for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
+	            GPUObject gObj = kv.getValue();
+	            if(gObj != null) {
+	            	if (copiedFromGPU && gObj.isDirty()) {
+		        		LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
+		                throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
+		        	}
+	            	else if (copiedFromGPU && !gObj.isDirty()) {
+		        		LOG.trace("Skipping the copy from current GPUContext as it was already copied and is not dirty");
+		        	}
+		        	else {
+		        		// This will ensure that we eagerly acquire host read since data is not available on CP
+		        		boolean eager = _data == null;
+		                copiedFromGPU = gObj.acquireHostRead(eager);
+		                if( _data == null )
+		                    getCache();
+		            }
+	            }
+	            else {
+	            	LOG.trace("No GPU object available for the given GPUContext"); 
+	            }
+	        }
+		}
+		if(copiedFromGPU && _data == null) {
+			LOG.error("Inconsistent internal state - data is null after acquireHostRead.");
+            throw new CacheException("Inconsistent internal state - data is null after acquireHostRead.");
+		}
 
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)  
@@ -787,7 +846,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                 LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
                 throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
             } else if (gObj != null){
-                copiedFromGPU = gObj.acquireHostRead();
+                copiedFromGPU = gObj.acquireHostRead(false);
                 if( _data == null )
                     getCache();
             }

@@ -284,17 +284,35 @@ public class ExecutionContext {
 				((MatrixFormatMetaData)oldMetaData).getOutputInfo(),
 				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
 	}
+	
+	/**
+	 * Compares two potential dimensions d1 and d2 and return the one which is not -1.
+	 * This method is useful when the dimensions are not known at compile time, but are known at runtime.
+	 *  
+	 * @param d1 dimension1
+	 * @param d2 dimension1
+	 * @return valid d1 or d2
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	private long validateDimensions(long d1, long d2) throws DMLRuntimeException {
+		if(d1 >= 0 && d2 >= 0 && d1 != d2) {
+			throw new DMLRuntimeException("Incorrect dimensions:" + d1 + " != " + d2);
+		}
+		return Math.max(d1, d2);
+	}
 
 	/**
 	 * Allocates a dense matrix on the GPU (for output)
 	 * @param varName	name of the output matrix (known by this {@link ExecutionContext})
+	 * @param numRows number of rows of matrix object
+	 * @param numCols number of columns of matrix object
 	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
 	 * @throws DMLRuntimeException
 	 */
-	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName)
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols)
 		throws DMLRuntimeException 
 	{	
-		MatrixObject mo = allocateGPUMatrixObject(varName);
+		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return new Pair<MatrixObject, Boolean>(mo, allocated);
@@ -305,34 +323,58 @@ public class ExecutionContext {
      * Assumes that mat.getNumRows() returns a valid number
      * 
      * @param varName variable name
+     * @param numRows number of rows of matrix object
+	 * @param numCols number of columns of matrix object
      * @param nnz number of non zeroes
      * @return matrix object
      * @throws DMLRuntimeException if DMLRuntimeException occurs
      */
-    public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
+    public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz)
         throws DMLRuntimeException
     {
-        MatrixObject mo = allocateGPUMatrixObject(varName);
+        MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
         mo.getMatrixCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
         return new Pair<MatrixObject, Boolean>(mo, allocated);
     } 
 
 	/**
 	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
 	 * @param varName variable name
+	 * @param numRows number of rows of matrix object
+	 * @param numCols number of columns of matrix object
 	 * @return matrix object
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
+	public MatrixObject allocateGPUMatrixObject(String varName, long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
+		long dim1 = -1; long dim2 = -1;
+		DMLRuntimeException e = null;
+		try {
+			dim1 = validateDimensions(mo.getNumRows(), numRows);
+		} catch(DMLRuntimeException e1) {
+			e = e1;
+		}
+		try {
+			dim2 = validateDimensions(mo.getNumColumns(), numCols);
+		} catch(DMLRuntimeException e1) {
+			e = e1;
+		}
+		if(e != null) {
+			throw new DMLRuntimeException("Incorrect dimensions given to allocateGPUMatrixObject: [" + numRows + "," + numCols + "], "
+					+ "[" + mo.getNumRows() + "," + mo.getNumColumns() + "]", e);
+		}
+		if(dim1 != mo.getNumRows() || dim2 != mo.getNumColumns()) {
+			// Set unknown dimensions
+			mo.getMatrixCharacteristics().setDimension(dim1, dim2);
+		}
 		if( mo.getGPUObject(getGPUContext(0)) == null ) {
 			GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
-			// The lock is added here for an output block
-			// so that any block currently in use is not deallocated by eviction on the GPU
-			newGObj.addLock();
 			mo.setGPUObject(getGPUContext(0), newGObj);
 		}
+		// The lock is added here for an output block
+		// so that any block currently in use is not deallocated by eviction on the GPU
+		mo.getGPUObject(getGPUContext(0)).addLock();
 		return mo;
 	}
 
@@ -371,6 +413,8 @@ public class ExecutionContext {
 	public void releaseMatrixInput(String varName, String opcode) throws DMLRuntimeException {
 		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		MatrixObject mo = getMatrixObject(varName);
+		if(LOG.isTraceEnabled())
+			LOG.trace("Released input matrix " + varName + " " + opcode + " : [rows=" + mo.getNumRows() + ", cols=" + mo.getNumColumns() + ", nnz=" + mo.getNnz() + "]");
 		mo.release(opcode);
 		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
 			long t2 = System.nanoTime();
@@ -382,6 +426,8 @@ public class ExecutionContext {
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = getMatrixObject(varName);
+		if(LOG.isTraceEnabled())
+			LOG.trace("Released input matrix for GPU instruction " + varName + " : [rows=" + mo.getNumRows() + ", cols=" + mo.getNumColumns() + ", nnz=" + mo.getNnz() + "]");
 		mo.getGPUObject(getGPUContext(0)).releaseInput();
 	}
 	
@@ -441,6 +487,8 @@ public class ExecutionContext {
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
+		if(LOG.isTraceEnabled())
+			LOG.trace("Released output matrix for GPU instruction " + varName + " : [rows=" + mo.getNumRows() + ", cols=" + mo.getNumColumns() + ", nnz=" + mo.getNnz() + "]");
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	
@@ -450,6 +498,8 @@ public class ExecutionContext {
 	{
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData, opcode);
+		if(LOG.isTraceEnabled())
+			LOG.trace("Released output matrix " + varName + " " + opcode + " : [rows=" + mo.getNumRows() + ", cols=" + mo.getNumColumns() + ", nnz=" + mo.getNnz() + "]");
 	    mo.release(opcode);
 	    setVariable(varName, mo);
 	}

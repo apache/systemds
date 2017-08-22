@@ -102,11 +102,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
                
                 boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
 
-                int rlen = (int) (isLeftTransposed? mat.getNumColumns() : mat.getNumRows());
-                int clen = rlen;
-
                 //execute operations 
-                ec.setMetaData(_output.getName(), rlen, clen);
                 LibMatrixCUDA.matmultTSMM(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
                 
                 ec.releaseMatrixInputForGPUInstruction(_input.getName());

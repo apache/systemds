@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-
-
 # LSTM Replicate Sequence
 #
 # This script replicates a sequence of integer numbers. 

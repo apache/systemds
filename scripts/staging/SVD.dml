@@ -21,9 +21,6 @@
 
 # This script performs Singular Value Decomposition of matrix X of shape
 # (m x n) with m >> n
-#
-#
-#
 # 
 # Reference: 
 # "RECURSIVE CALCULATION OF DOMINANT SINGULAR SUBSPACES"
@@ -34,7 +31,6 @@
 # NAME   TYPE   DEFAULT  MEANING
 # -----------------------------------------------------------------------------
 # X      matrix   ---    input matrix to be factorized
-#
 # -----------------------------------------------------------------------------
 
 # OUTPUT:
@@ -46,30 +42,28 @@
 # V      matrix  right singular matrix
 # -----------------------------------------------------------------------------
 
-import ("staging/scalable_linalg/qr.dml") as qr
+source("staging/scalable_linalg/qr.dml") as qr
 
-X = read($INPUT)
-
-# outdir = ifdef($OUTDIR, "hdfs://rr-dense1/user/j143/data/")
-ofmt = ifdef($OFMT, "CSV")
+X = read($1);
 
 SingularValueDecomposition = function(matrix[double] X, int nb)
-  return (matrix[double] U, matrix[double] S, matrix[double] V) {
-  Xt = t(X)
-  c = ncol(Xt)
-  r = nrow(Xt)
+  return (matrix[double] U, matrix[double] S, matrix[double] temp) {
+
+#  Xt = t(X)
+#  c = ncol(Xt)
+#  r = nrow(Xt)
   
-  Ni = as.integer(c/nb)
-  if (Ni < r) {
-    # TODO figure out optimal value of nb
-    print("nb too small")
-  }
+# Ni = as.integer(c/nb)
+# if (Ni < r) {
+#   # TODO figure out optimal value of nb
+#   print("nb too small")
+#  }
   
-  [Q, R] = qr::QR(X, nb);
+  [Q, R] = qr::QR(X, nb); //scalable qr decomposition
   
-  [V, S, temp] = svd(R);
+  [V, S, temp] = svd(R); //computes svd locally
   
 }
 
-# write(S, outdir + "singular_values.csv", ofmt)
-# write(V, outdir + "right_singular_matrix.csv", ofmt)
+write(V, $2);
+write(S, $3);

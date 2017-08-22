@@ -848,6 +848,16 @@ public abstract class Hop
 	
 	public abstract String getOpString();
 
+	/**
+	 * In memory-based optimizer mode (see OptimizerUtils.isMemoryBasedOptLevel()), 
+	 * the exectype is determined by checking this method as well as memory budget of this Hop. 
+	 * Please see findExecTypeByMemEstimate for more detail. 
+	 * 
+	 * This method is necessary because not all operator are supported efficiently
+	 * on GPU (for example: operations on frames and scalar as well as operations such as table). 
+	 * 
+	 * @return true if the Hop is eligible for GPU Exectype.
+	 */
 	public abstract boolean isGPUEnabled();
 	
 	protected boolean isVector() {

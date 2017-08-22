@@ -213,7 +213,6 @@ public class GPUContext {
 	 * {@link org.apache.sysml.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
 	 * If in a multi-threaded environment like parfor, this method must be called when in the
 	 * appropriate thread.
-	 * 
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void initializeThread() throws DMLRuntimeException {
@@ -721,7 +720,7 @@ public class GPUContext {
 			if (o.isDirty()) {
 				LOG.warn("Attempted to free GPU Memory when a block[" + o
 						+ "] is still on GPU memory, copying it back to host.");
-				o.acquireHostRead();
+				o.acquireHostRead(false);
 			}
 			o.clearData(true);
 		}

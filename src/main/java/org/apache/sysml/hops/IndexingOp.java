@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -97,7 +98,10 @@ public class IndexingOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		DataType dataType = getDataType();
+		return (dataType == DataType.MATRIX); // only matrix indexing is supported on GPU
 	}
 
 	@Override
@@ -172,13 +176,17 @@ public class IndexingOp extends Hop
 					setLineNumbers(reindex);
 					setLops(reindex);
 				}
-				else //CP
+				else //CP or GPU
 				{
+					// Only construct a GPU Lop if the input datatype is a "matrix"
+					Lop inputLop = input.constructLops();
+					DataType dataType = getDataType();
+					
 					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							inputLop, getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							getDataType(), getValueType(), et);
+							dataType, getValueType(), _etype);
 					
 					setOutputDimensions(reindex);
 					setLineNumbers(reindex);

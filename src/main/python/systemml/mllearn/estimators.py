@@ -100,6 +100,20 @@ class BaseSystemMLEstimator(Estimator):
         self.estimator.setExplain(explain)
         return self
             
+    def setExplainLevel(self, explainLevel):
+        """
+        Set explain level.
+
+        Parameters
+        ----------
+        explainLevel: string
+            Can be one of "hops", "runtime", "recompile_hops", "recompile_runtime"
+            or in the above in upper case.
+        """
+        self.estimator.setExplain(True)
+        self.estimator.setExplainLevel(explainLevel)
+        return self
+        
     def setStatistics(self, statistics):
         """
         Whether or not to output statistics (such as execution time, elapsed time)

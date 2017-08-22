@@ -76,11 +76,7 @@ public class ReorgGPUInstruction extends GPUInstruction
 		//acquire input
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
 
-		int rlen = (int) mat.getNumColumns();
-		int clen = (int) mat.getNumRows();
-		
 		//execute operation
-		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCUDA.transpose(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName());
 		
 		//release inputs/outputs

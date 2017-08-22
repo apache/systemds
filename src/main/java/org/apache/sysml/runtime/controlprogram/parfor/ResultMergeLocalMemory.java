@@ -20,12 +20,15 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -79,6 +82,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			
 			//serial merge all inputs
 			boolean flagMerged = false;
+			
 			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
@@ -87,10 +91,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 					LOG.trace("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 					
 					//read/pin input_i
-					MatrixBlock inMB = in.acquireRead();	
-					
-					//core merge 
-					merge( outMBNew, inMB, appendOnly );
+					merge( outMBNew, in, appendOnly );
 					
 					//unpin and clear in-memory input_i
 					in.release();
@@ -263,24 +264,46 @@ public class ResultMergeLocalMemory extends ResultMerge
 
 	
 	/**
-	 * Merges <code>in</code> into <code>out</code> by inserting all non-zeros of <code>in</code>
+	 * Merges the input matrix block associated with <code>in</code> matrix object 
+	 * into <code>out</code> by inserting all non-zeros
 	 * into <code>out</code> at their given positions. This is an update-in-place.
 	 * 
 	 * NOTE: similar to converters, but not directly applicable as we are interested in combining
 	 * two objects with each other; not unary transformation.
 	 * 
 	 * @param out output matrix block
-	 * @param in input matrix block
+	 * @param in input matrix object
 	 * @param appendOnly ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
+	private void merge( MatrixBlock out, MatrixObject in, boolean appendOnly ) 
 		throws DMLRuntimeException
 	{
-		if( _compare == null )
-			mergeWithoutComp(out, in, appendOnly);
-		else
-			mergeWithComp(out, in, _compare);
+		HashMap<GPUContext, GPUObject> gpuObjects = in.getGPUObjects();
+		if(gpuObjects != null && gpuObjects.size() > 0) {
+			// Merge when the output resides on multiple GPUs:
+			double[][] compare = _compare;
+			for(GPUContext gputCtx : gpuObjects.keySet()) {
+				MatrixBlock inMB = in.acquireRead(gputCtx);
+				//core merge 
+				if( compare == null ) {
+					compare = createCompareMatrix(inMB);
+					mergeWithoutComp(out, inMB, false);
+				}
+				else
+					mergeWithComp(out, inMB, compare);
+			}
+		}
+		else {
+			// All other cases:
+			//read/pin input_i
+			MatrixBlock inMB = in.acquireRead();
+			//core merge 
+			if( _compare == null )
+				mergeWithoutComp(out, inMB, appendOnly);
+			else
+				mergeWithComp(out, inMB, _compare);
+		}
 	}
 	
 	/**
@@ -324,8 +347,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			{
 				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.getVarName()+" (fname="+_inMO.getFileName()+")");
 				
-				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
-				merge( _outMB, inMB, false );
+				merge( _outMB, _inMO, false ); //incl. implicit read from HDFS
 				_inMO.release();
 				_inMO.clearData();
 			}

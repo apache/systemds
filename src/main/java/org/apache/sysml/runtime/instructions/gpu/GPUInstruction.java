@@ -43,7 +43,8 @@ public abstract class GPUInstruction extends Instruction
 		ArithmeticBinary,
 		BuiltinUnary,
 		BuiltinBinary,
-		Builtin
+		Builtin,
+		MatrixIndexing
 	};
 
 	// Memory/conversions
@@ -208,12 +209,14 @@ public abstract class GPUInstruction extends Instruction
 	 * Also records performance information into {@link Statistics}
 	 * @param ec		active {@link ExecutionContext}
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
+	 * @param numRows number of rows of matrix object
+	 * @param numCols number of columns of matrix object
 	 * @return	the matrix object
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
-	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
 		long t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name);
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
 		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}

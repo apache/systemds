@@ -23,6 +23,7 @@ source("test_inverse.dml") as test1
 source("test_LU.dml") as test2
 source("test_QR.dml") as test3
 source("test_Cholesky.dml") as test4
+source("test_SVD.dml") as test5
 
 print("Testing Scalable Linalg")
 
@@ -30,3 +31,4 @@ tmp = test1::test_inverse()
 tmp = test2::test_LU()
 #tmp = test3::test_QR()
 tmp = test4::test_Cholesky()
+tmp = test5::test_SVD()

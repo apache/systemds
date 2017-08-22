@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -85,8 +87,13 @@ public class UtilFunctions
 	
 	public static int nextIntPow2( int in ) {
 		int expon = (in==0) ? 0 : 32-Integer.numberOfLeadingZeros(in-1);
-		long pow2 = (long) Math.pow(2, expon);
+		long pow2 = pow(2, expon);
 		return (int)((pow2>Integer.MAX_VALUE)?Integer.MAX_VALUE : pow2);	
+	}
+	
+	public static long pow(int base, int exp) {
+		return (base==2 && 0 <= exp && exp < 63) ?
+			1L << exp : (long)Math.pow(base, exp);
 	}
 	
 	/**
@@ -314,6 +321,37 @@ public class UtilFunctions
 		return 1L + (long) Math.floor(to/incr - from/incr);
 	}
 	
+	/**
+	 * Obtain sequence list
+	 * 
+	 * @param low   lower bound (inclusive)
+	 * @param up    upper bound (inclusive)
+	 * @param incr  increment 
+	 * @return list of integers
+	 */
+	public static List<Integer> getSeqList(int low, int up, int incr) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+		for( int i=low; i<=up; i+=incr )
+			ret.add(i);
+		return ret;
+	}
+	
+	/**
+	 * Obtain sequence array
+	 * 
+	 * @param low   lower bound (inclusive)
+	 * @param up    upper bound (inclusive)
+	 * @param incr  increment 
+	 * @return array of integers
+	 */
+	public static int[] getSeqArray(int low, int up, int incr) {
+		int len = (int) getSeqLength(low, up, incr);
+		int[] ret = new int[len];
+		for( int i=0, val=low; i<len; i++, val+=incr )
+			ret[i] = val;
+		return ret;
+	}
+	
  	public static int roundToNext(int val, int factor) {
 		//round up to next non-zero multiple of factor
 		int pval = Math.max(val, factor);
@@ -506,21 +544,6 @@ public class UtilFunctions
 		else
 			return String.format("%d", arg);
 	}
-	
-	/**
-	 * Obtain sequence list
-	 * 
-	 * @param low   lower bound (inclusive)
-	 * @param up    upper bound (inclusive)
-	 * @param incr  increment 
-	 * @return list of integers
-	 */
-	public static List<Integer> getSequenceList(int low, int up, int incr) {
-		ArrayList<Integer> ret = new ArrayList<Integer>();
-		for( int i=low; i<=up; i+=incr )
-			ret.add(i);
-		return ret;
-	}
 
 	public static double getDouble(Object obj) {
 		return (obj instanceof Double) ? (Double)obj :
@@ -566,5 +589,14 @@ public class UtilFunctions
 			if( data[i] == 0 )
 				return true;
 		return false;
+	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(T[]... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( T[] input : inputs )
+			for( T element : input )
+				ret.add(element);
+		return ret;
 	}
 }

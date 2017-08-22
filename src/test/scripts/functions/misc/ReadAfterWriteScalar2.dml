@@ -23,7 +23,7 @@
 A = 7;
 write(A, $1);
 
-if(1==1){}
+while(FALSE){}
 
 B = read($2);
 print(B);

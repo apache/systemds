@@ -77,7 +77,8 @@ public class FrameWriterTextCSV extends FrameWriter
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//sequential write to single text file
-		writeCSVFrameToFile(path, job, fs, src, 0, (int)rlen, csvprops);	
+		writeCSVFrameToFile(path, job, fs, src, 0, (int)rlen, csvprops);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	protected final void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, CSVFileFormatProperties props )

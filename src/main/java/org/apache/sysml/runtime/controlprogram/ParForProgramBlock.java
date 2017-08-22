@@ -549,7 +549,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	@Override	
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException
-	{	
+	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
 		// add the iterable predicate variable to the variable set
@@ -802,17 +802,17 @@ public class ParForProgramBlock extends ForProgramBlock
 				
 				
 			// Step 4) collecting results from each parallel worker
-			//obtain results
+			//obtain results and cleanup other intermediates before result merge
 			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
-			for( int i=0; i<_numThreads; i++ )
-			{
+			for( int i=0; i<_numThreads; i++ ) {
 				localVariables[i] = workers[i].getVariables();
+				localVariables[i].removeAllNotIn(new HashSet<String>(_resultVars));
 				numExecutedTasks += workers[i].getExecutedTasks();
 				numExecutedIterations += workers[i].getExecutedIterations();			
 			}
 			//consolidate results into global symbol table
-			consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
-					                    localVariables );
+			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
+				numExecutedIterations, numExecutedTasks, localVariables );
 			
 			// Step 5) cleanup local parworkers (e.g., remove created functions)
 			for( int i=0; i<_numThreads; i++ )
@@ -828,9 +828,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			// Frees up the GPUContexts used in the threaded Parfor and sets
 			// the main thread to use the GPUContext
 			if (DMLScript.USE_ACCELERATOR) {
-				for (int i = 0; i < _numThreads; i++) {
-					workers[i].getExecutionContext().setGPUContexts(null);
-				}
 				ec.getGPUContext(0).initializeThread();
 			}
 		}
@@ -1734,7 +1731,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			//execute result merge sequentially for all result vars
 			for( String var : _resultVars ) //foreach non-local write
-			{			
+			{
 				Data dat = ec.getVariable(var);
 				if( dat instanceof MatrixObject ) //robustness scalars
 				{

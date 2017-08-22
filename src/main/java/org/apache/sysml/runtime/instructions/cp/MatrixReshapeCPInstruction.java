@@ -68,7 +68,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock in = ec.getMatrixInput(input1.getName());
+		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int rows = (int)ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue(); //save cast
 		int cols = (int)ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue(); //save cast
 		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
@@ -78,8 +78,8 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 		out = LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
 		
 		//set output and release inputs
-		ec.setMatrixOutput(output.getName(), out);
-		ec.releaseMatrixInput(input1.getName());
+		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 	}
 	
 }

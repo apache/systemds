@@ -307,24 +307,27 @@ public class DataConverter
 		return ret;
 	}
 
-	public static double[] convertToDoubleVector( MatrixBlock mb )
+	public static double[] convertToDoubleVector( MatrixBlock mb ) {
+		return convertToDoubleVector(mb, true);
+	}
+	
+	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep )
 	{
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		double[] ret = new double[rows*cols]; //0-initialized 
+		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+			mb.getDenseBlock() : new double[rows*cols]; //0-initialized
 		
-		if( mb.getNonZeros() > 0 )
+		if( !mb.isEmptyBlock(false) )
 		{
-			if( mb.isInSparseFormat() )
-			{
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
 					ret[cell.getI()*cols+cell.getJ()] = cell.getV();
 				}
 			}
-			else
-			{
+			else if( deep ) {
 				//memcopy row major representation if at least 1 non-zero
 				System.arraycopy(mb.getDenseBlock(), 0, ret, 0, rows*cols);
 			}
@@ -525,7 +528,7 @@ public class DataConverter
 			double[][] a = new double[n][];
 			double[] c = mb.getDenseBlock();
 			for( int j=0; j<n; j++ )
-				a[j] = (double[])frame.getColumn(j);			
+				a[j] = (double[])frame.getColumnData(j);			
 			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
 			for( int bi=0; bi<m; bi+=blocksizeIJ )
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
@@ -859,11 +862,15 @@ public class DataConverter
 		else {	// Dense Print Format
 			for (int i=0; i<rowLength; i++){
 				for (int j=0; j<colLength-1; j++){
-					double value = mb.quickGetValue(i, j);
+					Double value = mb.quickGetValue(i, j);
+					if (value.equals(-0.0d))
+						value = 0.0;
 					sb.append(dfFormat(df, value));
 					sb.append(separator);
 				}
-				double value = mb.quickGetValue(i, colLength-1);
+				Double value = mb.quickGetValue(i, colLength-1);
+				if (value.equals(-0.0d))
+					value = 0.0;
 				sb.append(dfFormat(df, value));	// Do not put separator after last element
 				sb.append(lineseparator);
 			}

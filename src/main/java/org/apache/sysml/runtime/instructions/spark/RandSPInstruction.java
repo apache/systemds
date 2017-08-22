@@ -345,7 +345,7 @@ public class RandSPInstruction extends UnarySPInstruction
 					sparsity, minValue, maxValue, pdfParams);
 			MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
 			
-			sec.setMatrixOutput(output.getName(), mb);
+			sec.setMatrixOutput(output.getName(), mb, getExtendedOpcode());
 			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}

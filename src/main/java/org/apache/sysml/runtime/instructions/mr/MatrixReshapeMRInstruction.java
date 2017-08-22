@@ -33,12 +33,10 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class MatrixReshapeMRInstruction extends UnaryInstruction
 {	
-	
-	private long _rows = -1;
-	private long _cols = -1;
 	private boolean _byrow = false;
 	
 	private MatrixCharacteristics _mcIn = null;
+	private MatrixCharacteristics _mcOut = null;
 	
 	//MB: cache should be integrated with tempValues, but for n blocks
 	private ArrayList<IndexedMatrixValue> _cache = null;
@@ -48,9 +46,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 		super(op, in, out, istr);
 		mrtype = MRINSTRUCTION_TYPE.MMTSJ;
 		instString = istr;
-		
-		_rows = rows;
-		_cols = cols;
+		_mcOut = new MatrixCharacteristics(rows, cols, -1, -1);
 		_byrow = byrow;
 	}
 	
@@ -95,8 +91,8 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 				ArrayList<IndexedMatrixValue> out = _cache;
 	
 				//process instruction
-				out = LibMatrixReorg.reshape(imv, _mcIn.getRows(), _mcIn.getCols(), brlen, bclen,
-						                     out, _rows, _cols, brlen, bclen, _byrow);
+				_mcOut.setBlockSize(brlen, bclen);
+				out = LibMatrixReorg.reshape(imv, _mcIn, out, _mcOut, _byrow);
 				
 				//put the output values in the output cache
 				for( IndexedMatrixValue outBlk : out )
@@ -108,13 +104,11 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 			}
 	}
 	
-	public long getNumRows()
-	{
-		return _rows;
+	public long getNumRows() {
+		return _mcOut.getRows();
 	}
 	
-	public long getNumColunms()
-	{
-		return _cols;
+	public long getNumColunms() {
+		return _mcOut.getCols();
 	}
 }

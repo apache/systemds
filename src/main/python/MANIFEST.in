@@ -20,4 +20,5 @@
 #-------------------------------------------------------------
 include LICENSE
 include NOTICE
+include README.txt
 recursive-include systemml/systemml-java *

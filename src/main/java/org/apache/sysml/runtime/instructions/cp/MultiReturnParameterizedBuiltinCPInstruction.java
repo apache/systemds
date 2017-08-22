@@ -85,7 +85,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		
 		//release input and outputs
 		ec.releaseFrameInput(input1.getName());
-		ec.setMatrixOutput(getOutput(0).getName(), data);
+		ec.setMatrixOutput(getOutput(0).getName(), data, getExtendedOpcode());
 		ec.setFrameOutput(getOutput(1).getName(), meta);
 	}
 }

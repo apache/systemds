@@ -22,21 +22,26 @@ package org.apache.sysml.runtime.controlprogram.context;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 
 public class ExecutionContextFactory 
 {
-	public static ExecutionContext createContext()
-	{
+	public static ExecutionContext createContext() {
 		return createContext( null );
 	}
 	
-	public static ExecutionContext createContext( Program prog )
-	{
+	public static ExecutionContext createContext(Program prog) {
 		return createContext(true, prog);
 	}
+	
+	public static ExecutionContext createContext(LocalVariableMap vars, Program prog) {
+		ExecutionContext ec = createContext(false, prog);
+		ec.setVariables(vars);
+		return ec;
+	}
 
-	public static ExecutionContext createContext( boolean allocateVars, Program prog )
+	public static ExecutionContext createContext(boolean allocateVars, Program prog)
 	{
 		ExecutionContext ec = null;
 		

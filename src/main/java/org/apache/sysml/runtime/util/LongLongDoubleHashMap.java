@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.util;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * This native long long - double hashmap is specifically designed for
@@ -73,20 +73,8 @@ public class LongLongDoubleHashMap
 			resize();
 	}
 
-	public ArrayList<LLDoubleEntry> extractValues()
-	{
-		ArrayList<LLDoubleEntry> ret = new ArrayList<LLDoubleEntry>();
-		for( LLDoubleEntry e : data ) {
-			if( e != null ) {
-				while( e.next!=null ) {
-					ret.add(e);
-					e = e.next;
-				}
-				ret.add(e);	
-			}
-		}
-
-		return ret;
+	public Iterator<LLDoubleEntry> getIterator() {
+		return new LLDoubleEntryIterator();
 	}
 
 	private void resize() {
@@ -136,6 +124,44 @@ public class LongLongDoubleHashMap
 			key2 = k2;
 			value = val;
 			next = null;
+		}
+	}
+	
+	private class LLDoubleEntryIterator implements Iterator<LLDoubleEntry> {
+		private LLDoubleEntry _curr;
+		private int _currPos;
+		
+		public LLDoubleEntryIterator() {
+			_curr = null;
+			_currPos = -1;
+			findNext();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_curr != null);
+		}
+
+		@Override
+		public LLDoubleEntry next() {
+			LLDoubleEntry ret = _curr;
+			findNext();
+			return ret;
+		}
+		
+		private void findNext() {
+			if( _curr != null && _curr.next != null ) {
+				_curr = _curr.next;
+				return;
+			}
+			_currPos++;
+			while( _currPos < data.length  ) {
+				_curr = data[_currPos];
+				if( _curr != null ) 
+					return;
+				_currPos++;
+			}
+			_curr = null;
 		}
 	}
 }

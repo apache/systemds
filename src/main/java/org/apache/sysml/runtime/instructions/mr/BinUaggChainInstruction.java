@@ -98,7 +98,7 @@ public class BinUaggChainInstruction extends UnaryInstruction
 			
 			//process instruction
 			OperationsOnMatrixValues.performAggregateUnary( inIx, inVal, _tmpIx, _tmpVal, _uaggOp, blockRowFactor, blockColFactor);
-			((MatrixBlock)_tmpVal).dropLastRowsOrColums(_uaggOp.aggOp.correctionLocation);
+			((MatrixBlock)_tmpVal).dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
 			OperationsOnMatrixValues.performBinaryIgnoreIndexes(inVal, _tmpVal, outVal, _bOp);
 			outIx.setIndexes(inIx);
 		}

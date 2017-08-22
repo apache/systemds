@@ -29,9 +29,11 @@ import os
 import shutil
 
 import numpy as np
-
-from breastcancer.preprocessing import preprocess, save, train_val_split
+import pandas as pd
+from sklearn.model_selection import train_test_split
 from pyspark.sql import SparkSession
+
+from breastcancer.preprocessing import add_row_indices, get_labels_df, preprocess, save
 
 
 # Create new SparkSession
@@ -56,93 +58,58 @@ spark.sparkContext.addPyFile(zipname)
 # procedure of the paper.  Look into simply selecting tiles of the
 # desired size to begin with.
 
-# Get list of image numbers, minus the broken ones.
-broken = {2, 45, 91, 112, 242, 256, 280, 313, 329, 467}
-slide_nums = sorted(set(range(1,501)) - broken)
-
 # Settings
-training = True
+# TODO: Convert this to a set of parsed command line arguments
 tile_size = 256
 sample_size = 256
 grayscale = False
 num_partitions = 20000
-add_row_indices = True
+training = True
+row_indices = False
 train_frac = 0.8
-split_seed = 24
-folder = "/home/MDM/breast_cancer/data"
+sample_frac=0.01
+seed = 42
+folder = "data"  # Linux-filesystem directory to read raw WSI data
 save_folder = "data"  # Hadoop-supported directory in which to save DataFrames
-df_path = os.path.join(save_folder, "samples_{}_{}{}.parquet".format(
-    "labels" if training else "testing", sample_size, "_grayscale" if grayscale else ""))
 train_df_path = os.path.join(save_folder, "train_{}{}.parquet".format(sample_size,
     "_grayscale" if grayscale else ""))
 val_df_path = os.path.join(save_folder, "val_{}{}.parquet".format(sample_size,
     "_grayscale" if grayscale else ""))
+train_sample_path = os.path.join(save_folder, "train_{}_sample_{}{}.parquet".format(sample_frac,
+    sample_size, "_grayscale" if grayscale else ""))
+val_sample_path = os.path.join(save_folder, "val_{}_sample_{}{}.parquet".format(sample_frac,
+    sample_size, "_grayscale" if grayscale else ""))
 
-# Process all slides.
-df = preprocess(spark, slide_nums, tile_size=tile_size, sample_size=sample_size,
-                grayscale=grayscale, training=training, num_partitions=num_partitions,
-                folder=folder)
+# Get labels
+labels_df = get_labels_df(folder)
 
-# Save DataFrame of samples.
-save(df, df_path, sample_size, grayscale)
+# Split into train and validation sets based on slide number, stratified by class
+train, val = train_test_split(labels_df, train_size=train_frac, stratify=labels_df['tumor_score'],
+                              random_state=seed)
 
-# Load full DataFrame from disk.
-df = spark.read.load(df_path)
+# Process train & val slides
+train_df = preprocess(spark, train.index, tile_size=tile_size, sample_size=sample_size,
+                      grayscale=grayscale, num_partitions=num_partitions, folder=folder)
+val_df = preprocess(spark, val.index, tile_size=tile_size, sample_size=sample_size,
+                    grayscale=grayscale, num_partitions=num_partitions, folder=folder)
 
-# Split into train and validation DataFrames based On slide number
-train, val = train_val_split(spark, df, slide_nums, folder, train_frac, add_row_indices,
-                             seed=split_seed)
+if row_indices:
+  # Add row indices
+  train_df = add_row_indices(train_df)
+  val_df = add_row_indices(val_df)
 
-# Save train and validation DataFrames.
-save(train, train_df_path, sample_size, grayscale)
-save(val, val_df_path, sample_size, grayscale)
+# Save train & val DataFrames
+save(train_df, train_df_path, sample_size, grayscale)
+save(val_df, val_df_path, sample_size, grayscale)
 
+if sample_frac > 0:
+  # Sample Data
+  train_df = spark.read.load(train_df_path)
+  val_df = spark.read.load(val_df_path)
+  train_sample = sample(train_df, sample_frac, seed)
+  val_sample = sample(val_df, sample_frac, seed)
 
-# ---
-#
-# Sample Data
-## TODO: Wrap this in a function with appropriate default arguments
-
-# Load train and validation DataFrames from disk.
-train = spark.read.load(train_df_path)
-val = spark.read.load(val_df_path)
-
-# Take a stratified sample.
-p=0.01
-train_sample = train.drop("__INDEX").sampleBy("tumor_score", fractions={1: p, 2: p, 3: p}, seed=42)
-val_sample = val.drop("__INDEX").sampleBy("tumor_score", fractions={1: p, 2: p, 3: p}, seed=42)
-
-# Reassign row indices.
-# TODO: Wrap this in a function with appropriate default arguments.
-train_sample = (
-  train_sample.rdd
-              .zipWithIndex()
-              .map(lambda r: (r[1] + 1, *r[0]))
-              .toDF(['__INDEX', 'slide_num', 'tumor_score', 'molecular_score', 'sample']))
-train_sample = train_sample.select(train_sample["__INDEX"].astype("int"),
-                                   train_sample.slide_num.astype("int"),
-                                   train_sample.tumor_score.astype("int"),
-                                   train_sample.molecular_score,
-                                   train_sample["sample"])
-
-val_sample = (
-  val_sample.rdd
-            .zipWithIndex()
-            .map(lambda r: (r[1] + 1, *r[0]))
-            .toDF(['__INDEX', 'slide_num', 'tumor_score', 'molecular_score', 'sample']))
-val_sample = val_sample.select(val_sample["__INDEX"].astype("int"),
-                               val_sample.slide_num.astype("int"),
-                               val_sample.tumor_score.astype("int"),
-                               val_sample.molecular_score,
-                               val_sample["sample"])
-
-# Save train and validation DataFrames.
-tr_sample_filename = "train_{}_sample_{}{}.parquet".format(p, sample_size,
-    "_grayscale" if grayscale else "")
-val_sample_filename = "val_{}_sample_{}{}.parquet".format(p, sample_size,
-    "_grayscale" if grayscale else "")
-train_sample_path = os.path.join(save_folder, tr_sample_filename)
-val_sample_path = os.path.join(save_folder, val_sample_filename)
-save(train_sample, train_sample_path, sample_size, grayscale)
-save(val_sample, val_sample_path, sample_size, grayscale)
+  # Save sampled DataFrames.
+  save(train_sample, train_sample_path, sample_size, grayscale)
+  save(val_sample, val_sample_path, sample_size, grayscale)
 

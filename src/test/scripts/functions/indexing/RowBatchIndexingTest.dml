@@ -24,7 +24,7 @@ A = read($1)
 s = 0;
 for( i in 1:nrow(A)/500 ) {
   Xi = A[((i-1)*500+1):(i*500),]
-  if(1==1){}
+  while(FALSE){}
   s = s + sum(Xi);
 }
 

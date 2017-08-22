@@ -105,7 +105,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 			case VALUEPICK: 
 				if( _inmem ) //INMEM VALUEPICK
 				{
-					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+					MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 
 					if ( input2.getDataType() == DataType.SCALAR ) {
 						ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
@@ -113,13 +113,13 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					} 
 					else {
-						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
+						MatrixBlock quantiles = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 						MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
 						quantiles = null;
-						ec.releaseMatrixInput(input2.getName());
-						ec.setMatrixOutput(output.getName(), resultBlock);
+						ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+						ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 					}
-					ec.releaseMatrixInput(input1.getName());										
+					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());										
 				}
 				else //MR VALUEPICK
 				{
@@ -145,9 +145,9 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 			case MEDIAN:
 				if( _inmem ) //INMEM MEDIAN
 				{
-					double picked = ec.getMatrixInput(input1.getName()).median();
+					double picked = ec.getMatrixInput(input1.getName(), getExtendedOpcode()).median();
 					ec.setScalarOutput(output.getName(), new DoubleObject(picked));
-					ec.releaseMatrixInput(input1.getName());
+					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 					break;
 				}
 				else //MR MEDIAN
@@ -173,9 +173,9 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 			case IQM:
 				if( _inmem ) //INMEM IQM
 				{
-					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 					double iqm = matBlock1.interQuartileMean();
-					ec.releaseMatrixInput(input1.getName());
+					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 					ec.setScalarOutput(output.getName(), new DoubleObject(iqm));
 				}
 				else //MR IQM

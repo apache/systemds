@@ -28,17 +28,8 @@ library("Matrix")
 numrows = as.integer(args[1]);
 numcols = as.integer(args[2]);
 
-if( 1==1 ){}
-
 numrows2 = numrows;
 numcols2 = numcols;
-
-if( 1!=1 )
-{
-   numrows2 = numrows + 1;
-   numcols2 = numcols + 2;
-}  
-
 
 X = matrix(1, numrows2, numcols2);
 

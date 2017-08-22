@@ -237,8 +237,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	}
 	
 	private Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) throws DMLRuntimeException {
-		MatrixBlock mb = sec.getMatrixInput( name );
-		sec.releaseMatrixInput(name);
+		MatrixBlock mb = sec.getMatrixInput( name, getExtendedOpcode() );
+		sec.releaseMatrixInput(name, getExtendedOpcode());
 		return sec.getSparkContext().broadcast(mb);
 	}
 

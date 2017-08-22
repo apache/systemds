@@ -38,6 +38,7 @@ import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -118,7 +119,7 @@ public class SparkExecutionContext extends ExecutionContext
 		super( allocateVars, prog );
 
 		//spark context creation via internal initializer
-		if( !(LAZY_SPARKCTX_CREATION && OptimizerUtils.isHybridExecutionMode()) ) {
+		if( !LAZY_SPARKCTX_CREATION || DMLScript.rtplatform==RUNTIME_PLATFORM.SPARK ) {
 			initSparkContext();
 		}
 	}
@@ -1377,7 +1378,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * degree of parallelism. This configuration abstracts legacy (< Spark 1.6) and current
 	 * configurations and provides a unified view.
 	 */
-	private static class SparkClusterConfig
+	public static class SparkClusterConfig
 	{
 		//broadcasts are stored in mem-and-disk in data space, this config
 		//defines the fraction of data space to be used as broadcast budget

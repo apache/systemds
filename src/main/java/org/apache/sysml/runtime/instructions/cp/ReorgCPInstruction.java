@@ -117,7 +117,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			throws DMLRuntimeException 
 	{
 		//acquire inputs
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());		
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());		
 		ReorgOperator r_op = (ReorgOperator) _optr;
 		if( r_op.fn instanceof SortIndex ) {
 			//additional attributes for sort
@@ -131,8 +131,8 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
         
 		//release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.setMatrixOutput(output.getName(), soresBlock);
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
 	}
 	
 }

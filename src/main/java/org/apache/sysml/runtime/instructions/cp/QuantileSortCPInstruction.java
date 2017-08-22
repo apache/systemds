@@ -86,21 +86,21 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction
 			throws DMLRuntimeException 
 	{
 		//acquire inputs matrices
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock wtBlock = null;
  		if (input2 != null) {
-			wtBlock = ec.getMatrixInput(input2.getName());
+			wtBlock = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		}
 		
  		//process core instruction
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
 		
 		//release inputs
-		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		if (input2 != null)
-			ec.releaseMatrixInput(input2.getName());
+			ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		//set and release output
-		ec.setMatrixOutput(output.getName(), resultBlock);
+		ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 	}
 }

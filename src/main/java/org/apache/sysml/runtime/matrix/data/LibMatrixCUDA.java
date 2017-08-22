@@ -355,17 +355,41 @@ public class LibMatrixCUDA {
 			throw new DMLRuntimeException("Error status returned by CuDNN:" + jcuda.jcudnn.cudnnStatus.stringFor(status));
 	}
 
-	public static void conv2dBiasAdd(GPUContext gCtx, String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
+	/**
+	 * Does a 2D convolution followed by a bias_add
+	 *
+	 * @param gCtx     a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param image    input image matrix object
+	 * @param bias     bias matrix object
+	 * @param filter   filter matrix object
+	 * @param output   output matrix object
+	 * @param N        number of input images
+	 * @param C        number of channels
+	 * @param H        height of each image
+	 * @param W        width of each image
+	 * @param K        number of output "channels"
+	 * @param R        height of filter
+	 * @param S        width of filter
+	 * @param pad_h    padding height
+	 * @param pad_w    padding width
+	 * @param stride_h stride height
+	 * @param stride_w string width
+	 * @param P        output height
+	 * @param Q        output width
+	 * @throws DMLRuntimeException if error
+	 */
+	public static void conv2dBiasAdd(GPUContext gCtx, String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject output, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
 		/*
-		int rows = (int) outputBlock.getNumRows();
-		int cols = (int) outputBlock.getNumColumns();
+		int rows = (int) output.getNumRows();
+		int cols = (int) output.getNumColumns();
 		long size  = rows * cols * Sizeof.DOUBLE;
 
 		Pointer imagePointer = getDensePointer(image, instName);
 		Pointer biasPointer = getDensePointer(bias, instName);
-		Pointer outputPointer = getDensePointer(outputBlock, instName);
+		Pointer outputPointer = getDensePointer(output, instName);
 		Pointer filterPointer = getDensePointer(filter, instName);
 
 		Pointer tmp = allocate(size);
@@ -377,15 +401,15 @@ public class LibMatrixCUDA {
 		if(k1 != bias.getNumColumns() || bias.getNumColumns() != 1 || cols % k1 != 0) {
 			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
-		// biasAdd(instName, outputBlock, bias, outputBlock);
+		// biasAdd(instName, output, bias, output);
 		biasAdd(instName, tmp, biasPointer, outputPointer, rows, cols, (int)k1);
 
 		cudaFreeHelper(tmp);
 		*/
 		LOG.trace("GPU : conv2dBiasAdd" + ", GPUContext=" + gCtx);
-		conv2d(gCtx, instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		conv2d(gCtx, instName, image, filter, output, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		//cudaDeviceSynchronize;
-		biasAdd(gCtx, instName, outputBlock, bias, outputBlock);
+		biasAdd(gCtx, instName, output, bias, output);
 	}
 
 	public static void conv2d(GPUContext gCtx, String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
@@ -398,6 +422,31 @@ public class LibMatrixCUDA {
 		conv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 	}
 
+	/**
+	 * Performs 2D convolution
+	 * Takes up an insignificant amount of intermediate space when CONVOLUTION_PREFERENCE is set to CUDNN_CONVOLUTION_FWD_NO_WORKSPACE
+	 * Intermediate space is required by the filter descriptor and convolution descriptor which are metadata structures and don't scale with the size of the input
+	 *
+	 * @param gCtx     a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param image    the input matrix (or image) allocated on the GPU
+	 * @param filter   the filter allocated on the GPU
+	 * @param output   the output matrix allocated on the GPU
+	 * @param N        number of input images
+	 * @param C        number of channels
+	 * @param H        height of each image
+	 * @param W        width of each image
+	 * @param K        number of output "channels"
+	 * @param R        height of filter
+	 * @param S        width of filter
+	 * @param pad_h    padding height
+	 * @param pad_w    padding width
+	 * @param stride_h stride height
+	 * @param stride_w string width
+	 * @param P        output height
+	 * @param Q        output width
+	 * @throws DMLRuntimeException if error
+	 */
 	public static void conv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, int N,
 														 int C, int H, int W, int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
@@ -1225,12 +1274,15 @@ public class LibMatrixCUDA {
 
 	/**
 	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...)
+	 * <p>
+	 * Memory Usage - If dense, input space - rows * cols, no intermediate memory, output - Max(rows*rows, cols*cols)
+	 * If sparse, calls matmult
 	 *
-	 * @param ec execution context
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param left input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
-	 * @param outputName output matrix name
+	 * @param ec               execution context
+	 * @param gCtx             a valid {@link GPUContext}
+	 * @param instName         the invoking instruction's name for record {@link Statistics}.
+	 * @param left             input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
+	 * @param outputName       output matrix name
 	 * @param isLeftTransposed if true, left transposed
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
@@ -1285,9 +1337,10 @@ public class LibMatrixCUDA {
 	 * Used for all version of TSMM where the result is known to be symmetric.
 	 * Hence, we compute only the upper triangular matrix and copy this partial
 	 * result down to lower triangular matrix once.
-	 * @param gCtx   a valid {@link GPUContext}
+	 *
+	 * @param gCtx     a valid {@link GPUContext}
 	 * @param instName instruction name
-	 * @param ret upper triangular matrix
+	 * @param ret      upper triangular matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void copyUpperToLowerTriangle(GPUContext gCtx, String instName, MatrixObject ret) throws DMLRuntimeException {
@@ -1319,16 +1372,22 @@ public class LibMatrixCUDA {
 	 * Examines sparsity and shapes and routes call to appropriate method
 	 * from cuBLAS or cuSparse
 	 * C = op(A) x op(B)
-	 * @param ec                    Current {@link ExecutionContext} instance
-	 * @param gCtx                  a valid {@link GPUContext}
-	 * @param instName              name of the invoking instruction to record{@link Statistics}.
-	 * @param left                  Matrix A
-	 * @param right                 Matrix B
-	 * @param outputName            Name of the output matrix C (in code generated after LOP layer)
-	 * @param isLeftTransposed      op for A, transposed or not
-	 * @param isRightTransposed     op for B, tranposed or not
-	 * @return	output of matrix multiply
+	 * <p>
+	 * Memory Requirements -
+	 * Both dense - inputs, output, no intermediate
+	 * Both sparse - inputs, output, no intermediate
+	 * One sparse, one dense - inputs, output, intermediates - (input_dim1 * input_dim2) OR (input_dim1 * input_dim2 + input in sparse format)
+	 *
+	 * @param ec                Current {@link ExecutionContext} instance
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          name of the invoking instruction to record{@link Statistics}.
+	 * @param left              Matrix A
+	 * @param right             Matrix B
+	 * @param outputName        Name of the output matrix C (in code generated after LOP layer)
+	 * @param isLeftTransposed  op for A, transposed or not
+	 * @param isRightTransposed op for B, tranposed or not
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @return output of matrix multiply
 	 */
 	public static MatrixObject matmult(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left, MatrixObject right, String outputName,
 																		 boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
@@ -1364,6 +1423,7 @@ public class LibMatrixCUDA {
 	/**
 	 * One of the matrices is sparse, the other dense
 	 * C = op(A) x op(B)
+	 *
 	 * @param gCtx              a valid {@link GPUContext}
 	 * @param instName          the invoking instruction's name for record {@link Statistics}.
 	 * @param output            allocated output object for C on host to which GPU output will be attached
@@ -1400,16 +1460,17 @@ public class LibMatrixCUDA {
 	 * C = op(A) * op(B) where A is dense and B is sparse
 	 * If B is ultrasparse, A is converted to a sparse matrix and {@code sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
 	 * otherwise B is converted to a dense matrix and {@code denseDenseMatmult(Pointer, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param left {@link MatrixObject} of A
-	 * @param right {@link MatrixObject} of B
-	 * @param output {@link MatrixObject} of the output matrix C
-	 * @param isLeftTransposed whether matrix A needs to be transposed
+	 *
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param left              {@link MatrixObject} of A
+	 * @param right             {@link MatrixObject} of B
+	 * @param output            {@link MatrixObject} of the output matrix C
+	 * @param isLeftTransposed  whether matrix A needs to be transposed
 	 * @param isRightTransposed whether matrix B needs to be transposed
-	 * @param m ?
-	 * @param n ?
-	 * @param k ?
+	 * @param m                 ?
+	 * @param n                 ?
+	 * @param k                 ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void denseSparseMatmult(GPUContext gCtx, String instName, MatrixObject left, MatrixObject right, MatrixObject output,
@@ -1473,16 +1534,17 @@ public class LibMatrixCUDA {
 	 * * C = op(A) * op(B) where A is sparse and B is dense
 	 * If A is ultrasparse, B is converted to a sparse matrix and {@code sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
 	 * otherwise A is converted to a dense matrix and {@code denseDenseMatmult(Pointer, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output the output matrix object
-	 * @param left matrix A
-	 * @param right matrix B
-	 * @param isLeftTransposed if A needs to be transposed
+	 *
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param output            the output matrix object
+	 * @param left              matrix A
+	 * @param right             matrix B
+	 * @param isLeftTransposed  if A needs to be transposed
 	 * @param isRightTransposed if B needs to be transposed
-	 * @param m ?
-	 * @param n ?
-	 * @param k ?
+	 * @param m                 ?
+	 * @param n                 ?
+	 * @param k                 ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void sparseDenseMatmult(GPUContext gCtx, String instName, MatrixObject output, MatrixObject left, MatrixObject right,
@@ -1553,14 +1615,15 @@ public class LibMatrixCUDA {
 	/**
 	 * C = op(A) x B
 	 * A is a sparse matrix, B is a dense vector
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output	allocated output on the host, to which the GPU output C will be attached
-	 * @param A			sparse matrix A on the GPU
-	 * @param B_dense	dense matrix/vector B on the GPU
-	 * @param isATranposed	op for A, tranposed or not
-	 * @param m			number of rows in A (not op(A))
-	 * @param k			number of cols in A or number of rows in B (not op(A) or op(B))
+	 *
+	 * @param gCtx         a valid {@link GPUContext}
+	 * @param instName     the invoking instruction's name for record {@link Statistics}.
+	 * @param output       allocated output on the host, to which the GPU output C will be attached
+	 * @param A            sparse matrix A on the GPU
+	 * @param B_dense      dense matrix/vector B on the GPU
+	 * @param isATranposed op for A, tranposed or not
+	 * @param m            number of rows in A (not op(A))
+	 * @param k            number of cols in A or number of rows in B (not op(A) or op(B))
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void sparseMatrixDenseVectorMult(GPUContext gCtx, String instName, MatrixObject output, CSRPointer A, Pointer B_dense, boolean isATranposed,
@@ -1585,13 +1648,14 @@ public class LibMatrixCUDA {
 	/**
 	 * Sparse C = Sparse op(A) * Sparse op(B)
 	 * Reroutes call to sparse matrix-vector mult if needed
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output ?
-	 * @param instName name of the invoking instruction to record{@link Statistics}.
-	 * @param left ?
-	 * @param right ?
-	 * @param isLeftTransposed ?
+	 *
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param output            ?
+	 * @param instName          name of the invoking instruction to record{@link Statistics}.
+	 * @param left              ?
+	 * @param right             ?
+	 * @param isLeftTransposed  ?
 	 * @param isRightTransposed ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
@@ -1622,15 +1686,16 @@ public class LibMatrixCUDA {
 	/**
 	 * Does a sparse matrix-vector multiply.
 	 * C = op(A) x B, A is a sparse matrix, B is a sparse vector with numCols = 1.
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName      the invoking instruction's name for record {@link Statistics}.
-	 * @param output        allocated output object C to which the GPU output matrix will be attached
-	 * @param isATranposed  if A is to be transposed or not (the op in op(A))
-	 * @param m             number of rows in A (not op(A))
-	 * @param n             number of cols in A (not op(A))
-	 * @param k             number of rows in B, (cols in B is assumed to be 1)
-	 * @param A             left sparse matrix on GPU
-	 * @param B             right sparse vector on GPU
+	 *
+	 * @param gCtx         a valid {@link GPUContext}
+	 * @param instName     the invoking instruction's name for record {@link Statistics}.
+	 * @param output       allocated output object C to which the GPU output matrix will be attached
+	 * @param isATranposed if A is to be transposed or not (the op in op(A))
+	 * @param m            number of rows in A (not op(A))
+	 * @param n            number of cols in A (not op(A))
+	 * @param k            number of rows in B, (cols in B is assumed to be 1)
+	 * @param A            left sparse matrix on GPU
+	 * @param B            right sparse vector on GPU
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void sparseMatrixVectorMult(GPUContext gCtx, String instName, MatrixObject output, boolean isATranposed, int m, int n, int k,
@@ -1645,6 +1710,7 @@ public class LibMatrixCUDA {
 	/**
 	 * Does a sparse-sparse Matrix multiply
 	 * C = op(A) x op(B), A, B are sparse matrices
+	 *
 	 * @param gCtx              a valid {@link GPUContext}
 	 * @param instName          the invoking instruction's name for record {@link Statistics}.
 	 * @param A                 left sparse matrix on GPU
@@ -1683,6 +1749,7 @@ public class LibMatrixCUDA {
 	/**
 	 * Dense dense matrix multiply
 	 * C = op(A) * op(B), A and B are dense matrices
+	 *
 	 * @param gCtx              a valid {@link GPUContext}
 	 * @param instName          name of the invoking instruction to record{@link Statistics}.
 	 * @param output            output object C on host with GPU data allocated
@@ -1715,6 +1782,7 @@ public class LibMatrixCUDA {
 	 * We do t(B) %*% t(A) to get t(C);
 	 * If we were to calculate t(t(C), we would get the resultant matrix C, but this would be in column-major format.
 	 * What we really want is t(C). This we already have as the result of t(B) %*% t(A).
+	 *
 	 * @param gCtx               a valid {@link GPUContext}
 	 * @param instName           name of the invoking instruction to record{@link Statistics}.
 	 * @param output             output allocated on GPU in column major format
@@ -1809,16 +1877,16 @@ public class LibMatrixCUDA {
 	//****************  UNARY AGGREGATE Functions ************************/
 	//********************************************************************/
 
-
 	/**
 	 * Entry point to perform Unary aggregate operations on the GPU.
 	 * The execution context object is used to allocate memory for the GPU.
-	 * @param ec			Instance of {@link ExecutionContext}, from which the output variable will be allocated
-	 * @param gCtx    a valid {@link GPUContext}
+	 *
+	 * @param ec       Instance of {@link ExecutionContext}, from which the output variable will be allocated
+	 * @param gCtx     a valid {@link GPUContext}
 	 * @param instName name of the invoking instruction to record{@link Statistics}.
-	 * @param in1			input matrix
-	 * @param output	output matrix/scalar name
-	 * @param op			Instance of {@link AggregateUnaryOperator} which encapsulates the direction of reduction/aggregation and the reduction operation.
+	 * @param in1      input matrix
+	 * @param output   output matrix/scalar name
+	 * @param op       Instance of {@link AggregateUnaryOperator} which encapsulates the direction of reduction/aggregation and the reduction operation.
 	 * @throws DMLRuntimeException if {@link DMLRuntimeException} occurs
 	 */
 	public static void unaryAggregate(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String output, AggregateUnaryOperator op)
@@ -1852,7 +1920,7 @@ public class LibMatrixCUDA {
 		IndexFunction indexFn = op.indexFn;
 		AggregateOperator aggOp = op.aggOp;
 
-		// Convert Reduction direction to a number to pass to CUDA kernel
+		// Convert Reduction direction to a number
 		int reductionDirection = -1;
 		if (indexFn instanceof ReduceAll){
 			reductionDirection = REDUCTION_ALL;
@@ -1867,7 +1935,7 @@ public class LibMatrixCUDA {
 		}
 		assert reductionDirection !=-1 : "Internal Error - Incorrect type of reduction direction set for aggregate unary GPU instruction";
 
-		// Convert function type to a number to pass to the CUDA Kernel
+		// Convert function type to a number
 		int opIndex = -1;
 		if (aggOp.increOp.fn instanceof KahanPlus) {
 			opIndex = OP_PLUS;
@@ -2466,15 +2534,15 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs elementwise arithmetic operation specified by op of two input matrices in1 and in2
 	 *
-	 * @param ec execution context
-	 * @param gCtx a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param in1 input matrix 1
-	 * @param in2 input matrix 2
-	 * @param outputName output matrix name
-	 * @param isLeftTransposed true if left-transposed
+	 * @param ec                execution context
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param in1               input matrix 1
+	 * @param in2               input matrix 2
+	 * @param outputName        output matrix name
+	 * @param isLeftTransposed  true if left-transposed
 	 * @param isRightTransposed true if right-transposed
-	 * @param op binary operator
+	 * @param op                binary operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixMatrixArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
@@ -2506,13 +2574,14 @@ public class LibMatrixCUDA {
 
 	/**
 	 * Utility to do matrix-scalar operation kernel
-	 * @param gCtx a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param ec execution context
-	 * @param in input matrix
-	 * @param outputName output variable name
+	 *
+	 * @param gCtx              a valid {@link GPUContext}
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param ec                execution context
+	 * @param in                input matrix
+	 * @param outputName        output variable name
 	 * @param isInputTransposed true if input is transposed
-	 * @param op operator
+	 * @param op                operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
@@ -2703,9 +2772,9 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs a deep device copy of a matrix on the GPU
 	 *
-	 * @param ec execution context
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param src source matrix
+	 * @param ec         execution context
+	 * @param instName   the invoking instruction's name for record {@link Statistics}.
+	 * @param src        source matrix
 	 * @param outputName destination variable name
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
@@ -2751,7 +2820,7 @@ public class LibMatrixCUDA {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(constant == 0) {
-			MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, 0, instName, outputName);
+			getSparseMatrixOutputForGPUInstruction(ec, 0, instName, outputName);
 		} else {
 			//MatrixObject out = ec.getMatrixObject(outputName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);    // Allocated the dense output matrix
@@ -2973,6 +3042,80 @@ public class LibMatrixCUDA {
 	//******************* End of Re-org Functions ************************/
 	//********************************************************************/
 
+
+	//********************************************************************/
+	//**************** Matrix Manipulation Functions *********************/
+	//********************************************************************/
+
+
+	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		LOG.trace("GPU : cbind" + ", GPUContext=" + gCtx);
+
+		long t1 = 0;
+
+		// only Dense supported
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
+		Pointer C = getDensePointer(gCtx, out, instName);
+		Pointer A = getDensePointer(gCtx, in1, instName);
+		Pointer B = getDensePointer(gCtx, in2, instName);
+
+		int rowsA = (int) in1.getNumRows();
+		int colsA = (int) in1.getNumColumns();
+		int rowsB = (int) in2.getNumRows();
+		int colsB = (int) in2.getNumColumns();
+
+		if (rowsA != rowsB){
+			throw new DMLRuntimeException("GPU : Invalid internal state - the rows must match up for a cbind operation");
+		}
+		int maxRows = Math.max(rowsA, rowsB);
+		int maxCols = Math.max(colsA, colsB);
+
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		getCudaKernels(gCtx)
+				.launchKernel("cbind", ExecutionConfig.getConfigForSimpleMatrixOperations(maxRows, maxCols), A, B, C,
+						rowsA, colsA, rowsB, colsB);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CBIND_KERNEL, System.nanoTime() - t1);
+
+	}
+
+	public static void rbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		LOG.trace("GPU : rbind" + ", GPUContext=" + gCtx);
+
+		long t1 = 0;
+
+		// only Dense supported
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
+		Pointer C = getDensePointer(gCtx, out, instName);
+		Pointer A = getDensePointer(gCtx, in1, instName);
+		Pointer B = getDensePointer(gCtx, in2, instName);
+
+		int rowsA = (int) in1.getNumRows();
+		int colsA = (int) in1.getNumColumns();
+		int rowsB = (int) in2.getNumRows();
+		int colsB = (int) in2.getNumColumns();
+
+		if (colsA != colsB){
+			throw new DMLRuntimeException("GPU : Invalid internal state - the columns must match up for a rbind operation");
+		}
+		int maxRows = Math.max(rowsA, rowsB);
+		int maxCols = Math.max(colsA, colsB);
+
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		getCudaKernels(gCtx)
+				.launchKernel("rbind", ExecutionConfig.getConfigForSimpleMatrixOperations(maxRows, maxCols), A, B, C,
+						rowsA, colsA, rowsB, colsB);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RBIND_KERNEL, System.nanoTime() - t1);
+
+	}
+
+
+	//********************************************************************/
+	//*********** End of Matrix Manipulation Functions *******************/
+	//********************************************************************/
 
 
 	//********************************************************************/

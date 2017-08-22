@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -376,8 +375,7 @@ public class IndexingOp extends Hop
 		}
 
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
+		setRequiresRecompileIfNecessary();
 		
 		return _etype;
 	}

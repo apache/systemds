@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -365,7 +366,7 @@ public class Dag<N extends Lop>
 		for (String varName : sb.liveIn().getVariableNames()) {
 			if (!sb.liveOut().containsVariable(varName)) {
 				inst = VariableCPInstruction.prepareRemoveInstruction(varName);
-				inst.setLocation(sb.getEndLine(), sb.getEndLine(), -1, -1);
+				inst.setLocation(sb.getFilename(), sb.getEndLine(), sb.getEndLine(), -1, -1);
 				
 				deleteInst.add(inst);
 
@@ -3156,17 +3157,21 @@ public class Dag<N extends Lop>
 						MRJobLineNumbers.add(node._beginLine);
 					}
 					nodeIndexMapping.put(node, output_index);
-					return output_index;
 				}
 
 				return output_index;
 			}
-			else if (inputIndices.size() == 4) {
+			else if (inputIndices.size() == 4 || inputIndices.size() == 5) {
 				int output_index = start_index[0];
 				start_index[0]++;
-				otherInstructionsReducer.add(node.getInstructions(
-						inputIndices.get(0), inputIndices.get(1),
-						inputIndices.get(2), inputIndices.get(3), output_index));
+				if( inputIndices.size() == 4 )
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1),
+							inputIndices.get(2), inputIndices.get(3), output_index));
+				else
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1), inputIndices.get(2), 
+							inputIndices.get(3), inputIndices.get(4), output_index));
 				if(DMLScript.ENABLE_DEBUG_MODE) {
 					MRJobLineNumbers.add(node._beginLine);
 				}
@@ -3816,7 +3821,57 @@ public class Dag<N extends Lop>
 		return false;
 	}
 	
+	/**
+	 * Performs various cleanups on the list of instructions in order to reduce the
+	 * number of instructions to simply debugging and reduce interpretation overhead. 
+	 * 
+	 * @param insts list of instructions
+	 * @return new list of potentially modified instructions
+	 * @throws DMLRuntimeException in case of instruction parsing errors
+	 */
 	private static ArrayList<Instruction> cleanupInstructions(ArrayList<Instruction> insts) 
+		throws DMLRuntimeException 
+	{
+		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2
+		ArrayList<Instruction> tmp1 = collapseAssignvarAndRmvarInstructions(insts);
+		
+		//step 2: create packed rmvar instructions: rmvar m1, rmvar m2 -> rmvar m1 m2
+		ArrayList<Instruction> tmp2 = createPackedRmvarInstructions(tmp1);
+		
+		return tmp2;
+	}
+	
+	private static ArrayList<Instruction> collapseAssignvarAndRmvarInstructions(ArrayList<Instruction> insts) 
+		throws DMLRuntimeException 
+	{
+		ArrayList<Instruction> ret = new ArrayList<Instruction>();
+		Iterator<Instruction> iter = insts.iterator();
+		while( iter.hasNext() ) {
+			Instruction inst = iter.next();
+			if( iter.hasNext() && inst instanceof VariableCPInstruction
+				&& ((VariableCPInstruction)inst).isAssignVariable() ) {
+				VariableCPInstruction inst1 = (VariableCPInstruction) inst;
+				Instruction inst2 = iter.next();
+				if( inst2 instanceof VariableCPInstruction
+					&& ((VariableCPInstruction)inst2).isRemoveVariableNoFile()
+					&& inst1.getInput1().getName().equals(
+						((VariableCPInstruction)inst2).getInput1().getName()) ) {
+					ret.add(VariableCPInstruction.prepareMoveInstruction(
+						inst1.getInput1().getName(), inst1.getInput2().getName()));
+				}
+				else {
+					ret.add(inst1);
+					ret.add(inst2);
+				}
+			}
+			else {
+				ret.add(inst);
+			}
+		}
+		return ret;
+	}
+	
+	private static ArrayList<Instruction> createPackedRmvarInstructions(ArrayList<Instruction> insts) 
 		throws DMLRuntimeException 
 	{
 		ArrayList<Instruction> ret = new ArrayList<Instruction>();

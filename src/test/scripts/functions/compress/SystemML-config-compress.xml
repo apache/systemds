@@ -48,11 +48,11 @@
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
    
-   <!-- enables multi-threaded matrix multiplications in singlenode control program -->
-   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   <!-- enables multi-threaded matrix operations in singlenode control program -->
+   <cp.parallel.ops>true</cp.parallel.ops>
    
-   <!-- enables multi-threaded read/write of text formats in singlenode control program -->
-   <cp.parallel.textio>true</cp.parallel.textio>
+   <!-- enables multi-threaded read/write in singlenode control program -->
+   <cp.parallel.io>true</cp.parallel.io>
 
    <!-- enables compressed linear algebra for cp/spark -->
    <compressed.linalg>true</compressed.linalg>

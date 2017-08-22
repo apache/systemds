@@ -48,11 +48,11 @@
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
    
-   <!-- enables multi-threaded matrix multiplications in singlenode control program -->
-   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   <!-- enables multi-threaded operations in singlenode control program -->
+   <cp.parallel.ops>true</cp.parallel.ops>
    
-   <!-- enables multi-threaded read/write of text formats in singlenode control program -->
-   <cp.parallel.textio>true</cp.parallel.textio>
+   <!-- enables multi-threaded read/write in singlenode control program -->
+   <cp.parallel.io>true</cp.parallel.io>
    
    <!-- enables compressed linear algebra, experimental feature -->
    <compressed.linalg>false</compressed.linalg>
@@ -69,12 +69,18 @@
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
    <native.blas>none</native.blas>
 
+   <!-- prints finegrained statistics information -->
+   <systemml.stats.finegrained>false</systemml.stats.finegrained>
+   
    <!-- prints extra statistics information for GPU -->
    <systemml.stats.extraGPU>false</systemml.stats.extraGPU>
 
    <!-- prints extra statistics information for Deep Neural Networks done in CP mode -->
    <systemml.stats.extraDNN>false</systemml.stats.extraDNN>
 
-   <!-- sets the maximum number of GPUs per process, -1 for all GPUs -->
-   <systemml.gpu.perProcessMax>-1</systemml.gpu.perProcessMax>
+    <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
+    <systemml.gpu.availableGPUs>-1</systemml.gpu.availableGPUs>
+    
+    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
+   <systemml.stats.maxWrapLength>30</systemml.stats.maxWrapLength>
 </root>

@@ -21,6 +21,7 @@ package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,8 +35,12 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
+import org.apache.sysml.hops.codegen.opt.InterestingPoint;
+import org.apache.sysml.hops.codegen.opt.PlanSelection;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CPlanMemoTable 
 {
@@ -51,6 +56,18 @@ public class CPlanMemoTable
 		_plansBlacklist = new HashSet<Long>();
 	}
 	
+	public HashMap<Long, List<MemoTableEntry>> getPlans() {
+		return _plans;
+	}
+	
+	public HashSet<Long> getPlansBlacklisted() {
+		return _plansBlacklist;
+	}
+	
+	public HashMap<Long, Hop> getHopRefs() {
+		return _hopRefs;
+	}
+	
 	public void addHop(Hop hop) {
 		_hopRefs.put(hop.getHopID(), hop);
 	}
@@ -60,12 +77,29 @@ public class CPlanMemoTable
 	}
 	
 	public boolean contains(long hopID) {
-		return _plans.containsKey(hopID);
+		return _plans.containsKey(hopID)
+			&& !_plans.get(hopID).isEmpty();
 	}
 	
 	public boolean contains(long hopID, TemplateType type) {
-		return contains(hopID) && get(hopID)
-			.stream().anyMatch(p -> p.type==type);
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> p.type==type);
+	}
+	
+	public boolean contains(long hopID, boolean checkClose, TemplateType... type) {
+		if( !checkClose && type.length==1 )
+			return contains(hopID, type[0]);
+		Set<TemplateType> probe = UtilFunctions.asSet(type);
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> (!checkClose||!p.closed) && probe.contains(p.type));
+	}
+	
+	public boolean containsNotIn(long hopID, Collection<TemplateType> types, 
+		boolean checkChildRefs, boolean excludeCell) {
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> (!checkChildRefs || p.hasPlanRef()) 
+				&& (!excludeCell || p.type!=TemplateType.CELL)
+				&& !types.contains(p.type));
 	}
 	
 	public int countEntries(long hopID) {
@@ -75,7 +109,7 @@ public class CPlanMemoTable
 	public int countEntries(long hopID, TemplateType type) {
 		return (int) get(hopID).stream()
 			.filter(p -> p.type==type).count();
-	} 
+	}
 	
 	public boolean containsTopLevel(long hopID) {
 		return !_plansBlacklist.contains(hopID)
@@ -95,7 +129,8 @@ public class CPlanMemoTable
 	}
 	
 	public void add(Hop hop, TemplateType type, long in1, long in2, long in3) {
-		add(hop, new MemoTableEntry(type, in1, in2, in3));
+		int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
+		add(hop, new MemoTableEntry(type, in1, in2, in3, size));
 	}
 	
 	public void add(Hop hop, MemoTableEntry me) {
@@ -117,37 +152,57 @@ public class CPlanMemoTable
 			.removeIf(p -> blackList.contains(p));
 	}
 	
+	public void removeAllRefTo(long hopID) {
+		//recursive removal of references
+		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() ) {
+			if( !e.getValue().isEmpty() ) {
+				e.getValue().removeIf(p -> p.hasPlanRefTo(hopID));
+				if( e.getValue().isEmpty() )
+					removeAllRefTo(e.getKey());
+			}
+		}
+	}
+	
 	public void setDistinct(long hopID, List<MemoTableEntry> plans) {
 		_plans.put(hopID, plans.stream()
 			.distinct().collect(Collectors.toList()));
 	}
 
-	public void pruneRedundant(long hopID) {
+	public void pruneRedundant(long hopID, boolean pruneDominated, InterestingPoint[] matPoints) {
 		if( !contains(hopID) )
 			return;
 		
 		//prune redundant plans (i.e., equivalent) 
 		setDistinct(hopID, _plans.get(hopID));
 		
-		//prune dominated plans (e.g., opened plan subsumed
-		//by fused plan if single consumer of input)
-		HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
-		List<MemoTableEntry> list = _plans.get(hopID);
-		Hop hop = _hopRefs.get(hopID);
-		for( MemoTableEntry e1 : list )
-			for( MemoTableEntry e2 : list )
-				if( e1 != e2 && e1.subsumes(e2) ) {
-					//check that childs don't have multiple consumers
-					boolean rmSafe = true; 
-					for( int i=0; i<=2; i++ )
-						rmSafe &= (e1.isPlanRef(i) && !e2.isPlanRef(i)) ?
-							hop.getInput().get(i).getParent().size()==1 : true;
-					if( rmSafe )
-						rmList.add(e2);
-				}
+		//prune closed templates without group references
+		_plans.get(hopID).removeIf(p -> p.closed && !p.hasPlanRef());
 		
-		//update current entry list, by removing rmList
-		remove(hop, rmList);
+		//prune dominated plans (e.g., opened plan subsumed by fused plan 
+		//if single consumer of input; however this only applies to fusion
+		//heuristic that only consider materialization points)
+		if( pruneDominated ) {
+			HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
+			List<MemoTableEntry> list = _plans.get(hopID);
+			Hop hop = _hopRefs.get(hopID);
+			for( MemoTableEntry e1 : list )
+				for( MemoTableEntry e2 : list )
+					if( e1 != e2 && e1.subsumes(e2) ) {
+						//check that childs don't have multiple consumers
+						boolean rmSafe = true; 
+						for( int i=0; i<=2; i++ ) {
+							rmSafe &= (e1.isPlanRef(i) && !e2.isPlanRef(i)) ?
+								(matPoints!=null && !InterestingPoint.isMatPoint(
+									matPoints, hopID, e1.input(i)))
+								|| hop.getInput().get(i).getParent().size()==1 : true;
+						}
+						if( rmSafe )
+							rmList.add(e2);
+					}
+			
+			//update current entry list, by removing rmList
+			remove(hop, rmList);
+		}
 	}
 
 	public void pruneSuboptimal(ArrayList<Hop> roots) {
@@ -177,12 +232,14 @@ public class CPlanMemoTable
 		//prune dominated plans (e.g., plan referenced by other plan and this
 		//other plan is single consumer) by marking it as blacklisted because
 		//the chain of entries is still required for cplan construction
-		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
-			for( MemoTableEntry me : e.getValue() ) {
-				for( int i=0; i<=2; i++ )
-					if( me.isPlanRef(i) && _hopRefs.get(me.input(i)).getParent().size()==1 )
-						_plansBlacklist.add(me.input(i));
-			}
+		if( SpoofCompiler.PLAN_SEL_POLICY.isHeuristic() ) {
+			for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
+				for( MemoTableEntry me : e.getValue() ) {
+					for( int i=0; i<=2; i++ )
+						if( me.isPlanRef(i) && _hopRefs.get(me.input(i)).getParent().size()==1 )
+							_plansBlacklist.add(me.input(i));
+				}
+		}
 		
 		//core plan selection
 		PlanSelection selector = SpoofCompiler.createPlanSelector();
@@ -202,9 +259,26 @@ public class CPlanMemoTable
 	}
 	
 	public List<MemoTableEntry> getDistinct(long hopID) {
+		return _plans.get(hopID).stream()
+			.distinct().collect(Collectors.toList());
+	}
+	
+	public List<TemplateBase> getDistinctTemplates(long hopID) {
+		if(!contains(hopID))
+			return Collections.emptyList();
 		//return distinct entries wrt type and closed attributes
 		return _plans.get(hopID).stream()
-			.map(p -> new MemoTableEntry(p.type,-1,-1,-1,p.closed))
+			.map(p -> TemplateUtils.createTemplate(p.type, p.closed))
+			.distinct().collect(Collectors.toList());
+	}
+	
+	public List<TemplateType> getDistinctTemplateTypes(long hopID, int refAt) {
+		if(!contains(hopID))
+			return Collections.emptyList();
+		//return distinct template types with reference at given position
+		return _plans.get(hopID).stream()
+			.filter(p -> p.isPlanRef(refAt))
+			.map(p -> p.type) //extract type
 			.distinct().collect(Collectors.toList());
 	}
 	
@@ -271,15 +345,17 @@ public class CPlanMemoTable
 		public final long input1; 
 		public final long input2;
 		public final long input3;
+		public final int size;
 		public boolean closed = false;
-		public MemoTableEntry(TemplateType t, long in1, long in2, long in3) {
-			this(t, in1, in2, in3, false);
+		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, int inlen) {
+			this(t, in1, in2, in3, inlen, false);
 		}
-		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, boolean close) {
+		public MemoTableEntry(TemplateType t, long in1, long in2, long in3, int inlen, boolean close) {
 			type = t;
 			input1 = in1;
 			input2 = in2;
 			input3 = in3;
+			size = inlen;
 			closed = close;
 		}
 		public boolean isPlanRef(int index) {
@@ -289,6 +365,9 @@ public class CPlanMemoTable
 		}
 		public boolean hasPlanRef() {
 			return isPlanRef(0) || isPlanRef(1) || isPlanRef(2);
+		}
+		public boolean hasPlanRefTo(long hopID) {
+			return (input1==hopID || input2==hopID || input3==hopID); 
 		}
 		public int countPlanRefs() {
 			return ((input1 >= 0) ? 1 : 0)
@@ -308,11 +387,14 @@ public class CPlanMemoTable
 				&& !(!isPlanRef(1) && that.isPlanRef(1))
 				&& !(!isPlanRef(2) && that.isPlanRef(2)));
 		}
-		
 		@Override
 		public int hashCode() {
-			return Arrays.hashCode(
-				new long[]{(long)type.ordinal(), input1, input2, input3});
+			int h = UtilFunctions.intHashCode(type.ordinal(), Long.hashCode(input1));
+			h = UtilFunctions.intHashCode(h, Long.hashCode(input2));
+			h = UtilFunctions.intHashCode(h, Long.hashCode(input3));
+			h = UtilFunctions.intHashCode(h, size);
+			h = UtilFunctions.intHashCode(h, Boolean.hashCode(closed));
+			return h;
 		}
 		@Override
 		public boolean equals(Object obj) {
@@ -320,11 +402,21 @@ public class CPlanMemoTable
 				return false;
 			MemoTableEntry that = (MemoTableEntry)obj;
 			return type == that.type && input1 == that.input1
-				&& input2 == that.input2 && input3 == that.input3;
+				&& input2 == that.input2 && input3 == that.input3
+				&& size == that.size && closed == that.closed;
 		}
 		@Override
 		public String toString() {
-			return type.name()+"("+input1+","+input2+","+input3+")";
+			StringBuilder sb = new StringBuilder();
+			sb.append(type.name());
+			sb.append("(");
+			for( int i=0; i<size; i++ ) {
+				if( i > 0 )
+					sb.append(",");
+				sb.append(input(i));
+			}
+			sb.append(")");
+			return sb.toString();
 		}
 	}
 	
@@ -332,21 +424,21 @@ public class CPlanMemoTable
 	{
 		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
 		
-		public MemoTableEntrySet(TemplateType type, boolean close) {
-			plans.add(new MemoTableEntry(type, -1, -1, -1, close));
-		}
-		
-		public MemoTableEntrySet(TemplateType type, int pos, long hopID, boolean close) {
-			plans.add(new MemoTableEntry(type, (pos==0)?hopID:-1, 
-					(pos==1)?hopID:-1, (pos==2)?hopID:-1));
+		public MemoTableEntrySet(Hop hop, Hop c, TemplateBase tpl) {
+			int pos = (c != null) ? hop.getInput().indexOf(c) : -1;
+			int size = (hop instanceof IndexingOp) ? 1 : hop.getInput().size();
+			plans.add(new MemoTableEntry(tpl.getType(), (pos==0)?c.getHopID():-1,
+				(pos==1)?c.getHopID():-1, (pos==2)?c.getHopID():-1, size, tpl.isClosed()));
 		}
 		
 		public void crossProduct(int pos, Long... refs) {
+			if( refs.length==1 && refs[0] == -1 )
+				return; //unmodified plan set
 			ArrayList<MemoTableEntry> tmp = new ArrayList<MemoTableEntry>();
 			for( MemoTableEntry me : plans )
 				for( Long ref : refs )
 					tmp.add(new MemoTableEntry(me.type, (pos==0)?ref:me.input1, 
-						(pos==1)?ref:me.input2, (pos==2)?ref:me.input3));
+						(pos==1)?ref:me.input2, (pos==2)?ref:me.input3, me.size));
 			plans = tmp;
 		}
 		

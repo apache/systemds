@@ -65,12 +65,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationStatic.class.getName());
 	
 	//valid aggregation operation types for rowOp to colOp conversions and vice versa
-	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
+	private static final AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[] {
+		AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
 	
 	//valid binary operations for distributive and associate reorderings
-	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
-	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 
-		
+	private static final OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[] {OpOp2.PLUS, OpOp2.MINUS}; 
+	private static final OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[] {OpOp2.PLUS, OpOp2.MULT};
+	
+	//valid binary operations for scalar operations
+	private static final OpOp2[] LOOKUP_VALID_SCALAR_BINARY = new OpOp2[] {OpOp2.AND, OpOp2.DIV, 
+		OpOp2.EQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL, OpOp2.INTDIV, OpOp2.LESS, OpOp2.LESSEQUAL, 
+		OpOp2.LOG, OpOp2.MAX, OpOp2.MIN, OpOp2.MINUS, OpOp2.MODULUS, OpOp2.MULT, OpOp2.NOTEQUAL, 
+		OpOp2.OR, OpOp2.PLUS, OpOp2.POW};
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
@@ -846,8 +853,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private Hop simplifyBinaryMatrixScalarOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
 	{
+		// Note: This rewrite is not applicable for all binary operations because some of them 
+		// are undefined over scalars. We explicitly exclude potential conflicting matrix-scalar binary
+		// operations; other operations like cbind/rbind will never occur as matrix-scalar operations.
+		
 		if( HopRewriteUtils.isUnary(hi, OpOp1.CAST_AS_SCALAR)  
-		   && hi.getInput().get(0) instanceof BinaryOp ) 
+			&& hi.getInput().get(0) instanceof BinaryOp
+			&& HopRewriteUtils.isBinary(hi.getInput().get(0), LOOKUP_VALID_SCALAR_BINARY)) 
 		{
 			BinaryOp bin = (BinaryOp) hi.getInput().get(0);
 			BinaryOp bout = null;
@@ -1635,17 +1647,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//setup input parameter hops
 				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
 				inputargs.put("target", trgt);
-				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMaxLiteral(seq));
+				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMax(seq));
 				inputargs.put("dir", new LiteralOp(direction));
 				inputargs.put("ignore", new LiteralOp(true));
 				inputargs.put("cast", new LiteralOp(false));
 			
 				//create new hop
-				ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, 
-						ParamBuiltinOp.REXPAND, inputargs);
-				pbop.setOutputBlocksizes(hi.getRowsInBlock(), hi.getColsInBlock());
-				pbop.refreshSizeInformation();
-		
+				ParameterizedBuiltinOp pbop = HopRewriteUtils
+					.createParameterizedBuiltinOp(trgt, inputargs, ParamBuiltinOp.REXPAND);
+				
 				//relink new hop into original position
 				HopRewriteUtils.replaceChildReference(parent, hi, pbop, pos);
 				hi = pbop;

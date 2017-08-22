@@ -26,6 +26,23 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume epsilon = 0.001, lambda = 1, maxiterations = 100
 #
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME      TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X         String  ---         Location to read the matrix X of feature vectors
+# Y         String  ---         Location to read response matrix Y
+# icpt      Int     0           Intercept presence
+#                               0 = no intercept
+#                               1 = add intercept;
+# tol       Double  0.001       Tolerance (epsilon);
+# reg       Double  1.0         Regularization parameter (lambda) for L2 regularization
+# maxiter   Int     100         Maximum number of conjugate gradient iterations
+# model     String  ---         Location to write model
+# fmt       String  "text"      The output format of the output, such as "text" or "csv"
+# Log       String  ---         [OPTIONAL] Location to write the log file
+# ---------------------------------------------------------------------------------------------
+
 # hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y icpt=0 tol=0.001 reg=1 maxiter=100 model=$OUPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 # Note about inputs: 

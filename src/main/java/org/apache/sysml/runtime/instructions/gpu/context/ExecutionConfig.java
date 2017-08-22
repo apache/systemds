@@ -89,15 +89,33 @@ public class ExecutionConfig {
 	 * @return execution configuration
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
+	public static ExecutionConfig getConfigForMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
 		int deviceNumber = 0;
 		int maxBlockDim = getMaxBlockDim(deviceNumber);
 		int blockDimX = (int) Math.min(maxBlockDim, rlen);
 		int gridDimX = (int) Math.ceil((double) rlen / blockDimX);
 		int blockDimY = (int) Math.min(Math.floor(((double) maxBlockDim) / blockDimX), clen);
 		int gridDimY = (int) Math.ceil((double) clen / blockDimY);
+		if (gridDimY > 65535)
+			throw new DMLRuntimeException("Internal Error: gridDimY must be less than 65535 for all supported CUDA compute capabilites!");
 		return new ExecutionConfig(gridDimX, gridDimY, blockDimX, blockDimY);
 	}
+
+	/**
+	 * Use this for simple vector operations and use following in the kernel
+	 * <code>
+	 * int index = blockIdx.x * blockDim.x + threadIdx.x
+	 * </code>
+	 * <p>
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @return execution configuration
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
+		return getConfigForSimpleVectorOperations(rlen * clen);
+	}
+
 
 	public ExecutionConfig(int gridDimX, int blockDimX) {
 		this.gridDimX = gridDimX;
@@ -134,4 +152,10 @@ public class ExecutionConfig {
 		return ret;
 	}
 
+	@Override
+	public String toString() {
+		return "ExecutionConfig{" + "gridDimX=" + gridDimX + ", gridDimY=" + gridDimY + ", gridDimZ=" + gridDimZ
+				+ ", blockDimX=" + blockDimX + ", blockDimY=" + blockDimY + ", blockDimZ=" + blockDimZ
+				+ ", sharedMemBytes=" + sharedMemBytes + '}';
+	}
 }

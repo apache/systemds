@@ -27,8 +27,8 @@
 # --------------------------------------------------------------------------------------------
 # X     String  ---     Location (on HDFS) to read the 1-column matrix of x values knots
 # Y     String  ---     Location (on HDFS) to read the 1-column matrix of corresponding y values knots
-# K String --- Location to store the $k_{i}$ -file for the calculated k vectors. the default is to print it to the standard output
-# O String --- Location to store the output predicted y the default is to print it to the standard output
+# K     String  ---     Location to store the $k_{i}$ -file for the calculated k vectors. the default is to print it to the standard output
+# O     String  ---     Location to store the output predicted y the default is to print it to the standard output
 # inp_x Double  ---     the given input x, for which the cspline will find predicted y.
 # Log   String  " "     Location to store iteration-specific variables for monitoring and debugging purposes
 #

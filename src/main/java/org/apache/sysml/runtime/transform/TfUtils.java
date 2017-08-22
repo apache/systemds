@@ -54,7 +54,6 @@ public class TfUtils implements Serializable
 	public static final String TXMETHOD_DUMMYCODE = "dummycode";
 	public static final String TXMETHOD_SCALE     = "scale";
 	public static final String TXMETHOD_OMIT      = "omit";
-	public static final String TXMETHOD_MVRCD     = "mvrcd";
 		
 	//transform meta data constants (frame-based transform)
 	public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";

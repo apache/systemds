@@ -26,8 +26,8 @@ parfor (j in 1:m, log=DEBUG){
   A = matrix(3, rows=n, cols=1);
   i = 1
   while (i <= n){
-		if (1 == 1)
-			print("i = " + i + " j = " + j + " Sum(A) = " + sum(A));
+		print("i = " + i + " j = " + j + " Sum(A) = " + sum(A));
+		while(FALSE){}
 		A[i,1] = j*7+i;
 		i = i + 1
 	}

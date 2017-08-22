@@ -58,44 +58,6 @@ public class EncoderDummycode extends Encoder
 		//do nothing
 	}
 	
-	/**
-	 * Method to apply transformations.
-	 * 
-	 * @param words array of strings
-	 * @return array of transformed strings
-	 */
-	@Override
-	public String[] apply(String[] words) 
-	{
-		if( !isApplicable() )
-			return words;
-		
-		String[] nwords = new String[(int)_dummycodedLength];
-		int rcdVal = 0;
-		
-		for(int colID=1, idx=0, ncolID=1; colID <= words.length; colID++) {
-			if(idx < _colList.length && colID==_colList[idx]) {
-				// dummycoded columns
-				try {
-					rcdVal = UtilFunctions.parseToInt(UtilFunctions.unquote(words[colID-1]));
-					nwords[ ncolID-1+rcdVal-1 ] = "1";
-					ncolID += _domainSizes[idx];
-					idx++;
-				} 
-				catch (Exception e) {
-					throw new RuntimeException("Error in dummycoding: colID="+colID + ", rcdVal=" + rcdVal+", word="+words[colID-1] 
-							+ ", domainSize=" + _domainSizes[idx] + ", dummyCodedLength=" + _dummycodedLength);
-				}
-			}
-			else {
-				nwords[ncolID-1] = words[colID-1];
-				ncolID++;
-			}
-		}
-		
-		return nwords;
-	}
-	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
 	{

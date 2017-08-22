@@ -46,7 +46,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.MLContextProxy;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -147,9 +146,6 @@ public class ProgramBlock
 			{
 				tmp = Recompiler.recompileHopsDag(
 					_sb, _sb.get_hops(), ec.getVariables(), null, false, true, _tid);
-
-				if( MLContextProxy.isActive() )
-					tmp = MLContextProxy.performCleanupAfterRecompilation(tmp);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
@@ -413,21 +409,25 @@ public class ProgramBlock
 	// store position information for program blocks
 	///////////////////////////////////////////////////////////////////////////
 
+	public String _filename;
 	public int _beginLine, _beginColumn;
 	public int _endLine, _endColumn;
 
+	public void setFilename(String passed)    { _filename = passed;   }
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 
-	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
+		_filename = filename;
 		_beginLine	 = blp;
 		_beginColumn = bcp;
 		_endLine 	 = elp;
 		_endColumn 	 = ecp;
 	}
 
+	public String getFilename()	{ return _filename;   }
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }

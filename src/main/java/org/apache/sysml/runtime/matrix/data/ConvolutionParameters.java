@@ -103,8 +103,14 @@ public class ConvolutionParameters implements Serializable {
 		this.stride_w = stride_w;
 		this.pad_h = pad_h;
 		this.pad_w = pad_w;
-		P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-		Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+		if(H <= 0 || R <= 0 || stride_h < 0 || pad_h < 0)
+			P = -1;
+		else
+			P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
+		if(W <= 0 || S <= 0 || stride_w < 0 || pad_w < 0)
+			Q = -1;
+		else
+			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		this.numThreads = numThreads;
 	}
 	

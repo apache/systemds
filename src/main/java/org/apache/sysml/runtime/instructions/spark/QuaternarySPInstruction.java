@@ -23,7 +23,6 @@ package org.apache.sysml.runtime.instructions.spark;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -53,6 +52,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.ReplicateBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -251,12 +251,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 
 			//preparation of transposed and replicated U
 			if( inU != null )
-				inU = inU.flatMapToPair(new ReplicateBlocksFunction(clen, bclen, true));
+				inU = inU.flatMapToPair(new ReplicateBlockFunction(clen, bclen, true));
 
 			//preparation of transposed and replicated V
 			if( inV != null )
 				inV = inV.mapToPair(new TransposeFactorIndexesFunction())
-				         .flatMapToPair(new ReplicateBlocksFunction(rlen, brlen, false));
+				         .flatMapToPair(new ReplicateBlockFunction(rlen, brlen, false));
 			
 			//functions calls w/ two rdd inputs		
 			if( inU != null && inV == null && inW == null )
@@ -528,58 +528,6 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut);
-		}
-		
-	}
-
-	private static class ReplicateBlocksFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
-	{
-		private static final long serialVersionUID = -1184696764516975609L;
-		
-		private long _len = -1;
-		private long _blen = -1;
-		private boolean _left = false;
-		
-		public ReplicateBlocksFunction(long len, long blen, boolean left)
-		{
-			_len = len;
-			_blen = blen;
-			_left = left;
-		}
-		
-		@Override
-		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
-			LinkedList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<MatrixIndexes, MatrixBlock>>();
-			MatrixIndexes ixIn = arg0._1();
-			MatrixBlock blkIn = arg0._2();
-			
-			long numBlocks = (long) Math.ceil((double)_len/_blen); 
-			
-			if( _left ) //LHS MATRIX
-			{
-				//replicate wrt # column blocks in RHS
-				long i = ixIn.getRowIndex();
-				for( long j=1; j<=numBlocks; j++ ) {
-					MatrixIndexes tmpix = new MatrixIndexes(i, j);
-					MatrixBlock tmpblk = new MatrixBlock(blkIn);
-					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(tmpix, tmpblk) );
-				}
-			} 
-			else // RHS MATRIX
-			{
-				//replicate wrt # row blocks in LHS
-				long j = ixIn.getColumnIndex();
-				for( long i=1; i<=numBlocks; i++ ) {
-					MatrixIndexes tmpix = new MatrixIndexes(i, j);
-					MatrixBlock tmpblk = new MatrixBlock(blkIn);
-					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(tmpix, tmpblk) );
-				}
-			}
-			
-			//output list of new tuples
-			return ret.iterator();
 		}
 	}
 }

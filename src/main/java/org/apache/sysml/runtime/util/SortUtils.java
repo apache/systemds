@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Utilities for sorting, primarily used for SparseRows.
@@ -31,26 +32,23 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 public class SortUtils 
 {
 
-	public static boolean isSorted(int start, int end, int[] indexes)
-	{
+	public static boolean isSorted(int start, int end, int[] indexes) {
 		boolean ret = true;
-		for( int i=start+1; i<end; i++ )
-    		if( indexes[i]<indexes[i-1] ){
-    			ret = false;
-    			break;
-    		}
+		for( int i=start+1; i<end && ret; i++ )
+    		ret &= (indexes[i]<indexes[i-1]);
 		return ret;
 	}
 
-	public static boolean isSorted(int iStart, int iEnd, double[] dVals)
-	{
+	public static boolean isSorted(int start, int end, double[] values) {
 		boolean ret = true;
-		for( int i=iStart+1; i<iEnd; i++ )
-    		if( dVals[i]<dVals[i-1] ){
-    			ret = false;
-    			break;
-    		}
+		for( int i=start+1; i<end && ret; i++ )
+    		ret &= (values[i]<values[i-1]);
 		return ret;
+	}
+	
+	public static boolean isSorted(MatrixBlock in) {
+		return in.isInSparseFormat() ? false : !in.isAllocated() ? true :
+			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlock());
 	}
 	
 	/**

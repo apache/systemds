@@ -22,7 +22,7 @@
 X = matrix(seq(1,1500), rows=150, cols=10);
 y = seq(1,150);
 
-Z = max(floor(round(abs(min(sign(X+y),1)))),7)
+Z = max(floor(round(abs(min(sign(X+y),rowSums(X))))),7)
 R = colSums(Z); 
 
 write(R, $1)

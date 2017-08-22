@@ -22,6 +22,7 @@ package org.apache.sysml.api;
 import java.util.List;
 
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -76,10 +77,9 @@ public class ScriptExecutorUtils {
 		// in digging into performance problems are recorded and displayed
 		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
 		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
+		DMLScript.FINEGRAINED_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 
-		// Sets the maximum number of GPUs per process, -1 for all available
-		// GPUs
-		GPUContextPool.PER_PROCESS_MAX_GPUS = dmlconf.getIntValue(DMLConfig.MAX_GPUS_PER_PROCESS);
 		Statistics.startRunTimer();
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
@@ -98,9 +98,9 @@ public class ScriptExecutorUtils {
 				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
 				GPUContextPool.freeAllGPUContexts();
 			}
-			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
+			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();
-
+			
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 

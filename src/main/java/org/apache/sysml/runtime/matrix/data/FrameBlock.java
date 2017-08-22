@@ -35,11 +35,11 @@ import java.util.Map;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
-import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.transform.encode.EncoderRecode;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -67,13 +67,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/** The data frame data as an ordered list of columns */
 	private Array[] _coldata = null;
 	
-	/** Cache for recode maps from frame meta data, indexed by column 0-based */
-	private Map<Integer, SoftReference<HashMap<String,Long>>> _rcdMapCache = null;
-	
 	public FrameBlock() {
 		_numRows = 0;
-		if( REUSE_RECODE_MAPS )
-			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -120,8 +115,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_colmeta[j] = new ColumnMetadata(0);
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
-		if( REUSE_RECODE_MAPS )
-			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -360,7 +353,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		if(_coldata != null) {
 			for( int i=0; i < _coldata.length; i++ )
-				_coldata[i]._size = nrow;
+				_coldata[i].reset(nrow);
 		}
 	}
 
@@ -484,7 +477,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_numRows = cols[0].length;
 	}
 
-	public Object getColumn(int c) {
+	public Object getColumnData(int c) {
 		switch(_schema[c]) {
 			case STRING:  return ((StringArray)_coldata[c])._data; 
 			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
@@ -492,6 +485,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			case DOUBLE:  return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
+	}
+	
+	public Array getColumn(int c) {
+		return _coldata[c]; 
+	}
+	
+	public void setColumn(int c, Array column) {
+		if( _coldata == null )
+			_coldata = new Array[getNumColumns()];
+		_coldata[c] = column; 
 	}
 	
 	/**
@@ -502,6 +505,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public Iterator<String[]> getStringRowIterator() {
 		return new StringRowIterator(0, _numRows);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as strings independent of their value types.  
+	 * 
+	 * @param cols column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int[] cols) {
+		return new StringRowIterator(0, _numRows, cols);
 	}
 	
 	/**
@@ -517,6 +531,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as strings independent of their value types.  
+	 * 
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param cols column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int[] cols) {
+		return new StringRowIterator(rl, ru, cols);
+	}
+	
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.  
 	 * 
@@ -524,6 +551,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public Iterator<Object[]> getObjectRowIterator() {
 		return new ObjectRowIterator(0, _numRows);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as boxed objects according to their value types.  
+	 * 
+	 * @param cols column selection, 1-based
+	 * @return object array iterator
+	 */
+	public Iterator<Object[]> getObjectRowIterator(int[] cols) {
+		return new ObjectRowIterator(0, _numRows, cols);
 	}
 	
 	/**
@@ -536,6 +574,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public Iterator<Object[]> getObjectRowIterator(int rl, int ru) {
 		return new ObjectRowIterator(rl, ru);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all selected fields are 
+	 * encoded as boxed objects according to their value types.  
+	 * 
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param cols column selection, 1-based
+	 * @return object array iterator
+	 */
+	public Iterator<Object[]> getObjectRowIterator(int rl, int ru, int[] cols) {
+		return new ObjectRowIterator(rl, ru, cols);
 	}
 
 	///////
@@ -824,16 +875,25 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				ret._colnames[j-cl] = getColumnName(j);
 		}	
 		ret._numRows = ru-rl+1;
-
-		//copy output data
-		if(ret._coldata == null ) { 
+		if(ret._coldata == null )
 			ret._coldata = new Array[numCols];
+		
+		//fast-path: shallow copy column indexing 
+		if( ret._numRows == _numRows ) {
+			//this shallow copy does not only avoid an array copy, but
+			//also allows for bi-directional reuses of recodemaps 
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata[j-cl] = _coldata[j].slice(rl,ru);
+				ret._coldata[j-cl] = _coldata[j];
 		}
-		else
-			for( int j=cl; j<=cu; j++ )
-				ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);	
+		//copy output data
+		else {
+			for( int j=cl; j<=cu; j++ ) {
+				if( ret._coldata[j-cl] == null )
+					ret._coldata[j-cl] = _coldata[j].slice(rl,ru);
+				else
+					ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);
+			}
+		}
 		
 		return ret;
 	}
@@ -907,7 +967,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
 			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
-			for( int i=0; i<ret._coldata.length; i++ )
+			for( int i=0; i<ret.getNumColumns(); i++ )
 				ret._coldata[i] = ret._coldata[i].clone();
 		}
 		else //ROW APPEND
@@ -924,10 +984,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._numRows = _numRows;
 			ret._schema = _schema.clone();
 			ret._colnames = (_colnames!=null) ? _colnames.clone() : null;
+			ret._colmeta = new ColumnMetadata[getNumColumns()];
+			for( int j=0; j<_schema.length; j++ )
+				ret._colmeta[j] = new ColumnMetadata(0);
 			
 			//concatenate data (deep copy first, append second)
-			ret._coldata = new Array[_coldata.length];
-			for( int j=0; j<_coldata.length; j++ )
+			ret._coldata = new Array[getNumColumns()];
+			for( int j=0; j<getNumColumns(); j++ )
 				ret._coldata[j] = _coldata[j].clone();
 			Iterator<Object[]> iter = that.getObjectRowIterator();
 			while( iter.hasNext() )
@@ -975,7 +1038,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public HashMap<String,Long> getRecodeMap(int col) {
 		//probe cache for existing map
 		if( REUSE_RECODE_MAPS ) {
-			SoftReference<HashMap<String,Long>> tmp = _rcdMapCache.get(col);
+			SoftReference<HashMap<String,Long>> tmp = _coldata[col]._rcdMapCache;
 			HashMap<String,Long> map = (tmp!=null) ? tmp.get() : null;
 			if( map != null ) return map;
 		}
@@ -986,22 +1049,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-//				String[] tmp = IOUtilFunctions.splitCSV(
-//						val.toString(), Lop.DATATYPE_PREFIX);
-
-				// Instead of using splitCSV which is forcing string with RFC-4180 format, using Lop.DATATYPE_PREFIX separator to split token and code 
-				String[] tmp = 	new String[2];
-				int pos = val.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
-				tmp[0] = val.toString().substring(0, pos);
-				tmp[1] = val.toString().substring(pos+1);
+				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}
 		
 		//put created map into cache
-		if( REUSE_RECODE_MAPS ) {
-			_rcdMapCache.put(col, new SoftReference<HashMap<String,Long>>(map));
-		}
+		if( REUSE_RECODE_MAPS )
+			_coldata[col]._rcdMapCache = new SoftReference<>(map);
 		
 		return map;
 	}
@@ -1111,14 +1166,20 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	// row iterators (over strings and boxed objects)
 
 	private abstract class RowIterator<T> implements Iterator<T[]> {
-		protected T[] _curRow = null;
+		protected final int[] _cols;
+		protected final T[] _curRow;
+		protected final int _maxPos;
 		protected int _curPos = -1;
-		protected int _maxPos = -1;
 		
 		protected RowIterator(int rl, int ru) {
-			_curPos = rl;
+			this(rl, ru, UtilFunctions.getSeqArray(1, getNumColumns(), 1));
+		}
+		
+		protected RowIterator(int rl, int ru, int[] cols) {
+			_curRow = createRow(cols.length);
+			_cols = cols;
 			_maxPos = ru;
-			_curRow = createRow(getNumColumns());
+			_curPos = rl;
 		}
 		
 		@Override
@@ -1139,6 +1200,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			super(rl, ru);
 		}
 		
+		public StringRowIterator(int rl, int ru, int[] cols) {
+			super(rl, ru, cols);
+		}
+		
 		@Override
 		protected String[] createRow(int size) {
 			return new String[size];
@@ -1146,11 +1211,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		@Override
 		public String[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ ) {
-				Object tmp = get(_curPos, j);
+			for( int j=0; j<_cols.length; j++ ) {
+				Object tmp = get(_curPos, _cols[j]-1);
 				_curRow[j] = (tmp!=null) ? tmp.toString() : null;
 			}
-			_curPos++;			
+			_curPos++;
 			return _curRow;
 		}
 	}
@@ -1160,6 +1225,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			super(rl, ru);
 		}
 		
+		public ObjectRowIterator(int rl, int ru, int[] cols) {
+			super(rl, ru, cols);
+		}
+		
 		@Override
 		protected Object[] createRow(int size) {
 			return new Object[size];
@@ -1167,9 +1236,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		@Override
 		public Object[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ )
-				_curRow[j] = get(_curPos, j);
-			_curPos++;			
+			for( int j=0; j<_cols.length; j++ )
+				_curRow[j] = get(_curPos, _cols[j]-1);
+			_curPos++;
 			return _curRow;
 		}
 	}
@@ -1183,6 +1252,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * in order to avoid unnecessary dependencies.
 	 */
 	private abstract static class Array<T> implements Writable {
+		protected SoftReference<HashMap<String,Long>> _rcdMapCache = null;
+		
 		protected int _size = 0;
 		protected int newSize() {
 			return (int) Math.max(_size*2, 4); 
@@ -1196,6 +1267,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public abstract void append(T value);
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
+		public abstract void reset(int size); 
 	}
 
 	private static class StringArray extends Array<String> {
@@ -1244,6 +1316,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public Array slice(int rl, int ru) {
 			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new String[size];
+			_size = size;
 		}
 	}
 
@@ -1295,6 +1372,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public Array slice(int rl, int ru) {
 			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new boolean[size];
+			_size = size;
+		}
 	}
 
 	private static class LongArray extends Array<Long> {
@@ -1345,6 +1427,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public Array slice(int rl, int ru) {
 			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new long[size];
+			_size = size;
+		}
 	}
 
 	private static class DoubleArray extends Array<Double> {
@@ -1394,6 +1481,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public Array slice(int rl, int ru) {
 			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new double[size];
+			_size = size;
 		}
 	}
 

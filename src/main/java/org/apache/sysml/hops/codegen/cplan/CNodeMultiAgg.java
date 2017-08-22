@@ -41,7 +41,7 @@ public class CNodeMultiAgg extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofMultiAggregate { \n"
 			+ "  public %TMP%() {\n"
-			+ "    super(%AGG_OP%);\n"
+			+ "    super(%SPARSE_SAFE%, %AGG_OP%);\n"
 			+ "  }\n"
 			+ "  protected void genexec(double a, SideInput[] b, double[] scalars, double[] c, "
 					+ "int m, int n, int rowIndex, int colIndex) { \n"
@@ -56,6 +56,7 @@ public class CNodeMultiAgg extends CNodeTpl
 	private ArrayList<CNode> _outputs = null; 
 	private ArrayList<AggOp> _aggOps = null;
 	private ArrayList<Hop> _roots = null;
+	private boolean _sparseSafe = false;
 	
 	public CNodeMultiAgg(ArrayList<CNode> inputs, ArrayList<CNode> outputs) {
 		super(inputs, null);
@@ -87,6 +88,14 @@ public class CNodeMultiAgg extends CNodeTpl
 	
 	public ArrayList<Hop> getRootNodes() {
 		return _roots;
+	}
+	
+	public void setSparseSafe(boolean flag) {
+		_sparseSafe = flag;
+	}
+	
+	public boolean isSparseSafe() {
+		return _sparseSafe;
 	}
 	
 	@Override
@@ -130,7 +139,9 @@ public class CNodeMultiAgg extends CNodeTpl
 			aggList += "AggOp."+aggOp.name();
 		}
 		tmp = tmp.replace("%AGG_OP%", aggList);
-
+		tmp = tmp.replace("%SPARSE_SAFE%",
+			String.valueOf(isSparseSafe()));
+		
 		return tmp;
 	}
 

@@ -39,7 +39,7 @@ public class CNodeCell extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 
 			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %AGG_OP%, %SPARSE_SAFE%);\n"
+			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %AGG_OP%);\n"
 			+ "  }\n"
 			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
@@ -118,7 +118,7 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP
-		tmp = tmp.replace("%OUT%", getCurrentVarName());
+		tmp = tmp.replace("%OUT%", _output.getVarname());
 		
 		//replace meta data information
 		tmp = tmp.replace("%TYPE%", getCellType().name());
@@ -148,6 +148,7 @@ public class CNodeCell extends CNodeTpl
 		switch( _type ) {
 			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
 			case ROW_AGG: return SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS;
 			case FULL_AGG: return SpoofOutputDimsType.SCALAR;
 			default:
 				throw new RuntimeException("Unsupported cell type: "+_type.toString());

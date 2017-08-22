@@ -21,7 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
@@ -290,7 +290,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 
 			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
 			
-			lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			lit.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
             			
 			PickByCount pick = new PickByCount(
 					sort, lit, DataType.MATRIX, getValueType(),
@@ -537,7 +537,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	{
 		//overwrites default hops behavior
 		super.computeMemEstimate(memo);
-		
+
 		if( _op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL ) //specific case for meta data ops
 		{
 			_memEstimate = OptimizerUtils.INT_SIZE;
@@ -548,8 +548,13 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+	{
+		double sparsity = -1;
+		if (DMLScript.USE_ACCELERATOR) {
+			sparsity = 1.0; // Output is always dense (for now) on the GPU
+		} else {
+			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		}
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -562,6 +567,10 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 
+		}
+
+		if (DMLScript.USE_ACCELERATOR) {
+			OptimizerUtils.estimateSize(dim1, dim2); // Intermediate memory required to convert sparse to dense
 		}
 		
 		return ret;
@@ -609,8 +618,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				|| _op == OpOp1.CUMMAX  );
 	}
 
-	public boolean isCastUnaryOperation() 
-	{
+	public boolean isCastUnaryOperation() {
 		return (   _op == OpOp1.CAST_AS_MATRIX
 				|| _op == OpOp1.CAST_AS_SCALAR
 				|| _op == OpOp1.CAST_AS_FRAME
@@ -667,9 +675,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
-
+		setRequiresRecompileIfNecessary();
+		
 		//ensure cp exec type for single-node operations
 		if( _op == OpOp1.PRINT || _op == OpOp1.STOP 
 			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY )
@@ -687,7 +694,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		{
 			//do nothing always known
 		}
-		else if( _op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR )
+		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME)
+			&& getInput().get(0).getDataType()==DataType.SCALAR )
 		{
 			//prevent propagating 0 from scalar (which would be interpreted as unknown)
 			setDim1( 1 );

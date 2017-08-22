@@ -101,9 +101,7 @@ featureSTDs = matrix(0, rows=sz, cols=maxNumberOfGroups)
 
 if(label_measurement_level == 0){
 	featureCounts[label_index,1:nrow(distinct_label_values)] = t(distinct_label_values)
-	parfor(i2 in 1:nrow(distinct_label_values)){
-		featureValues[label_index,i2] = i2-labelCorrection
-	}
+	featureValues[label_index,1:nrow(distinct_label_values)] = t(seq(1,nrow(distinct_label_values))-labelCorrection);
 }
 
 parfor(i3 in 1:nrow(feature_indices), check=0){
@@ -122,38 +120,29 @@ parfor(i3 in 1:nrow(feature_indices), check=0){
 			[pVal, contingencyTable, rowMarginals, colMarginals] = bivar_cc(labels, feature)
 			stats[feature_index2,1] = pVal
 			
-			sz3=1
-			if(1==1){
-				sz3 = nrow(contingencyTable)*ncol(contingencyTable)
-			}
-			contingencyTableLabelValues = matrix(0, rows=1, cols=sz3)
-			contingencyTableFeatureValues = matrix(0, rows=1, cols=sz3)
+			sz3 = nrow(contingencyTable)*ncol(contingencyTable)
+			while(FALSE){}
 			
-            parfor(i4 in 1:nrow(contingencyTable), check=0){
-				parfor(j in 1:ncol(contingencyTable), check=0){
-					contingencyTableLabelValues[1, ncol(contingencyTable)*(i4-1)+j] = i4-labelCorrection
-					contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
-				}
-			}
+			tmpLV = (seq(1,nrow(contingencyTable)) %*% matrix(1,1,ncol(contingencyTable))) - labelCorrection;
+			tmpFV = (matrix(1,nrow(contingencyTable),1) %*% t(seq(1,ncol(contingencyTable)))) - featureCorrection;
+			contingencyTableLabelValues = matrix(tmpLV, rows=1, cols=sz3)
+			contingencyTableFeatureValues = matrix(tmpFV, rows=1, cols=sz3)
+			
 			contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=TRUE)
-            contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
+			contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
             
 			contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues
 			contingencyTablesFeatureValues[feature_index2,1:sz3] = contingencyTableFeatureValues
 			
 			featureCounts[feature_index2,1:ncol(colMarginals)] = colMarginals
-			parfor(i5 in 1:ncol(colMarginals), check=0){
-				featureValues[feature_index2,i5] = i5-featureCorrection
-			}
+			featureValues[feature_index2,1:ncol(colMarginals)] = t(seq(1,ncol(colMarginals)) - featureCorrection);
 		}else{
 			# label is scale, feature is categorical
 			tests[feature_index2,1] = 2
 			[pVal, frequencies, means, variances] = bivar_sc(labels, feature)
 			stats[feature_index2,1] = pVal
 			featureCounts[feature_index2,1:nrow(frequencies)] = t(frequencies)
-			parfor(i6 in 1:nrow(frequencies), check=0){
-				featureValues[feature_index2,i6] = i6 - featureCorrection
-			}
+			featureValues[feature_index2,1:nrow(frequencies)] = t(seq(1,nrow(frequencies)) - featureCorrection)
 			featureMeans[feature_index2,1:nrow(means)] = t(means)
 			featureSTDs[feature_index2,1:nrow(variances)] = t(sqrt(variances))
 		}
@@ -222,7 +211,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double pval, Mat
     r = rowSums(F)
     c = colSums(F)
     E = (r %*% c)/W
-    E = ppred(E, 0, "==")*0.0001 + E
+    E = (E == 0)*0.0001 + E
     T = (F-E)^2/E
     chi_squared = sum(T)
 
@@ -250,7 +239,7 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double pVal, Mat
 
     # category-wise (frequencies, means, variances)
     CFreqs1 = aggregate(target=Y, groups=A, fn="count")
-    present_domain_vals_mat = removeEmpty(target=diag(1-ppred(CFreqs1, 0, "==")), margin="rows")
+    present_domain_vals_mat = removeEmpty(target=diag(1-(CFreqs1 == 0)), margin="rows")
     CFreqs = present_domain_vals_mat %*% CFreqs1
 
     CMeans = present_domain_vals_mat %*% aggregate(target=Y, groups=A, fn="mean")

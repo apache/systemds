@@ -22,6 +22,7 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -70,7 +71,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	private static IDSequence _seq = new IDSequence();
 	
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
 		//DAG splits not required for forced single node
@@ -184,21 +185,23 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
 					sb.liveIn().addVariable(varname, new DataIdentifier(diVar));
 				}
-		
+				
 				//ensure disjoint operators across DAGs (prevent replicated operations)
 				handleReplicatedOperators( sb1hops, sb.get_hops(), sb1.liveOut(), sb.liveIn() );
 				
 				//deep copy new dag (in order to prevent any dangling references)
 				sb1.set_hops(Recompiler.deepCopyHopsDag(sb1hops));
 				sb1.updateRecompilationFlag();
+				sb1.setSplitDag(true); //avoid later merge by other rewrites
 				
 				//recursive application of rewrite rule (in case of multiple data dependent operators
 				//with data dependencies in between each other)
-				ArrayList<StatementBlock> tmp = rewriteStatementBlock( sb1, state);
+				List<StatementBlock> tmp = rewriteStatementBlock(sb1, state);
 				
 				//add new statement blocks to output
 				ret.addAll(tmp); //statement block with data dependent hops
 				ret.add(sb); //statement block with remaining hops
+				sb.setSplitDag(true); //avoid later merge by other rewrites
 			}
 			catch(Exception ex)
 			{
@@ -465,5 +468,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		}
 		
 		hop.setVisited();
+	}
+	
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
+			ProgramRewriteStatus sate) throws HopsException {
+		return sbs;
 	}
 }

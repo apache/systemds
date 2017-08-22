@@ -23,10 +23,10 @@ X = matrix(seq(1,1500), 150, 10);
 P = matrix(2, nrow(X), 2);
 Y0 = matrix(1, nrow(X), 1);
 max_y = max(Y0)+1;
-if(1==1){}
+while(FALSE){}
 Y = table(seq(1,nrow(Y0)), Y0, nrow(Y0), max_y);
 
-if(1==1){} #recompile w/o knowing K
+while(FALSE){} #recompile w/o knowing K
 K = ncol(Y)-1;
 R = t(X) %*% (P [, 1:K] - Y [, 1:K]);
 

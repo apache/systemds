@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
@@ -335,8 +334,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
 		
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
+		setRequiresRecompileIfNecessary();
 		
 		return _etype;
 	}

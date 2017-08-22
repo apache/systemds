@@ -51,7 +51,7 @@ dWc1_agg = matrix(0, rows=num_batches, cols=nrow(Wc1)*ncol(Wc1))
 # Imagine that a loop over mini-batches would go here, but for this test, we will
 # hardcode to the first iteration.
 j = 1
-if (1==1) {print("HI")}  # cut DAG!
+while(FALSE){}  # cut DAG!
 
 # Get a mini-batch in this group
 beg = ((j-1) * batch_size) + 1
@@ -86,5 +86,5 @@ doutc1_agg[j,] = matrix(doutc1, rows=1, cols=batch_size*F1*Hin*Win)
 dWc1_agg[j,] = matrix(dWc1, rows=1, cols=nrow(Wc1)*ncol(Wc1))
 
 # Print outputs to force execution
-if (1==1) {print("HI")}  # cut DAG!
+while(FALSE){}  # cut DAG!
 print(sum(doutc1_agg) + " " + sum(dWc1_agg))

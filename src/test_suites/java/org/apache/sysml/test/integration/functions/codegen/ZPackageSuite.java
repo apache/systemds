@@ -26,13 +26,16 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	AlgorithmARIMA.class,
 	AlgorithmGLM.class,
 	AlgorithmKMeans.class,
 	AlgorithmL2SVM.class,
 	AlgorithmLinregCG.class,
+	AlgorithmMDABivar.class,
 	AlgorithmMLogreg.class,
 	AlgorithmMSVM.class,
 	AlgorithmPNMF.class,
+	APICodegenTest.class,
 	CellwiseTmplTest.class,
 	CompressedCellwiseTest.class,
 	CompressedMultiAggregateTest.class,
@@ -41,6 +44,7 @@ import org.junit.runners.Suite;
 	CPlanComparisonTest.class,
 	CPlanVectorPrimitivesTest.class,
 	DAGCellwiseTmplTest.class,
+	MiscPatternTest.class,
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,
 	RowAggTmplTest.class,

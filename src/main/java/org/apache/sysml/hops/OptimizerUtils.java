@@ -19,10 +19,13 @@
 
 package org.apache.sysml.hops;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig;
@@ -356,7 +359,7 @@ public class OptimizerUtils
 		}
 		
 		//handle parallel text io (incl awareness of thread contention in <jdk8)
-		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_IO)) {
 			cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
@@ -371,7 +374,7 @@ public class OptimizerUtils
 		}
 
 		//handle parallel matrix mult / rand configuration
-		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_OPS)) {
 			cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
 		}	
 		
@@ -769,6 +772,12 @@ public class OptimizerUtils
 		return bsize;
 	}
 	
+	public static double getTotalMemEstimate(Hop[] in, Hop out) {
+		return Arrays.stream(in)
+			.mapToDouble(h -> h.getOutputMemEstimate()).sum()
+			+ out.getOutputMemEstimate();
+	}
+	
 	/**
 	 * Indicates if the given indexing range is block aligned, i.e., it does not require
 	 * global aggregation of blocks.
@@ -924,6 +933,11 @@ public class OptimizerUtils
 		}
 			
 		return ret;
+	}
+	
+	public static Level getDefaultLogLevel() {
+		Level log = Logger.getRootLogger().getLevel();
+		return (log != null) ? log : Level.INFO;
 	}
 	
 	////////////////////////

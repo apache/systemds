@@ -33,6 +33,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
@@ -89,19 +90,30 @@ public class ReaderBinaryBlock extends MatrixReader
 		ArrayList<IndexedMatrixValue> ret = new ArrayList<IndexedMatrixValue>();
 		
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		Path path = new Path( (_localFS ? "file:///" : "") + fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
-		checkValidInputFile(fs, path); 
+		checkValidInputFile(fs, path);
 	
 		//core read 
 		readBinaryBlockMatrixBlocksFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
 		
 		return ret;
 	}
-
+	
+	protected static MatrixBlock getReuseBlock(int brlen, int bclen, boolean sparse) {
+		//note: we allocate the reuse block in CSR because this avoids unnecessary
+		//reallocations in the presence of a mix of sparse and ultra-sparse blocks,
+		//where ultra-sparse deserialization only reuses CSR blocks
+		MatrixBlock value = new MatrixBlock(brlen, bclen, sparse);
+		if( sparse ) {
+			value.allocateAndResetSparseRowsBlock(true, SparseBlock.Type.CSR);
+			value.getSparseBlock().allocate(0, 1024);
+		}
+		return value;
+	}
 
 	
 	/**
@@ -125,13 +137,12 @@ public class ReaderBinaryBlock extends MatrixReader
 	 * @throws IOException if IOException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	@SuppressWarnings("deprecation")
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException
 	{
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 
-		MatrixBlock value = new MatrixBlock();
+		MatrixBlock value = getReuseBlock(brlen, bclen, sparse);
 		long lnnz = 0; //aggregate block nnz
 		
 		//set up preferred custom serialization framework for binary block format
@@ -141,7 +152,8 @@ public class ReaderBinaryBlock extends MatrixReader
 		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
+			SequenceFile.Reader reader = new SequenceFile
+				.Reader(job, SequenceFile.Reader.file(lpath));
 			
 			try
 			{
@@ -195,8 +207,7 @@ public class ReaderBinaryBlock extends MatrixReader
 			dest.sortSparseRows();
 		}
 	}
-
-	@SuppressWarnings("deprecation")
+	
 	private void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
@@ -210,7 +221,8 @@ public class ReaderBinaryBlock extends MatrixReader
 		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
+			SequenceFile.Reader reader = new SequenceFile
+				.Reader(job, SequenceFile.Reader.file(lpath));
 			
 			try
 			{

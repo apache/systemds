@@ -44,21 +44,16 @@ public class ConvolutionUtils {
 	}
 	
 	public static long getP(long H, long R, long verticalStride, long heightPadding) {
-		long ret = (H + 2 * heightPadding - R) / verticalStride + 1;
-		if(ret <= 0) {
-			throw new RuntimeException("Incorrect output patch size: "
-					+ "(image_height + 2 * pad_h - filter_height) / verticalStride + 1) needs to be positive, but is " + ret
-					+ " (" + H + " + 2 * " + heightPadding + " - " + R + ") / " + verticalStride + " + 1))");
+		if(H <= 0 || R <= 0 || heightPadding < 0 || verticalStride < 0) {
+			throw new RuntimeException("Incorrect parameters: height=" + H + " filter_height=" + R + " stride=" + verticalStride + " pad=" + heightPadding);
 		}
-		return ret;
+		return (H + 2 * heightPadding - R) / verticalStride + 1;
 	}
 	public static long getQ(long W, long S, long horizontalStride, long widthPadding) {
-		long ret = (W + 2 * widthPadding - S) / horizontalStride + 1;
-		if(ret <= 0) {
-			throw new RuntimeException("Incorrect output patch size: (image_width + 2 * pad_w - filter_width) / horizontalStride + 1) needs to be positive, but is " + ret
-					+ " (" + W + " + 2 * " + widthPadding + " - " + S + ") / " + horizontalStride + " + 1))");
+		if(W <= 0 || S <= 0 || widthPadding < 0 || horizontalStride < 0) {
+			throw new RuntimeException("Incorrect parameters: width=" + W + " filter_width=" + S + " stride=" + horizontalStride + " pad=" + widthPadding);
 		}
-		return ret;
+		return (W + 2 * widthPadding - S) / horizontalStride + 1;
 	}
 
 	
@@ -97,7 +92,7 @@ public class ConvolutionUtils {
 						int prevDestIndex = 0;
 						for(int j = apos; j < apos+alen; j++) {
 							// Multiplication by zero. Assumption: aix is sorted.
-							Arrays.fill(dest, cix+prevDestIndex, aix[j], 0);
+							Arrays.fill(dest, cix+prevDestIndex, cix+aix[j], 0);
 							prevDestIndex = aix[j]+1;
 							dest[ cix+aix[j] ] *= avals[j];
 						}

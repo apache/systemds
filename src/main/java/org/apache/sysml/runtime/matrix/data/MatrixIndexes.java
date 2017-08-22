@@ -70,14 +70,16 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 		return _col;
 	}
 	
-	public void setIndexes(long r, long c) {
+	public MatrixIndexes setIndexes(long r, long c) {
 		_row = r;
 		_col = c;
+		return this;
 	}
 	
-	public void setIndexes(MatrixIndexes that) {
+	public MatrixIndexes setIndexes(MatrixIndexes that) {
 		_row = that._row;
 		_col = that._col;
+		return this;
 	}
 	
 	@Override

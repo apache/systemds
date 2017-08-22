@@ -21,12 +21,12 @@ package org.apache.sysml.runtime.transform.decode;
 
 import java.util.HashMap;
 
-import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.transform.encode.EncoderRecode;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -82,9 +82,9 @@ public class DecoderRecode extends Decoder
 			for( int i=0; i<meta.getNumRows(); i++ ) {
 				if( meta.get(i, _colList[j]-1)==null )
 					break; //reached end of recode map
-				String[] tmp = meta.get(i, _colList[j]-1).toString().split(Lop.DATATYPE_PREFIX);				
+				String[] tmp = EncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
 				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
-				map.put(Long.parseLong(tmp[1]), obj);				
+				map.put(Long.parseLong(tmp[1]), obj);
 			}
 			_rcMaps[j] = map;
 		}

@@ -92,9 +92,8 @@ g2 = (wt^2*(wt+1)*m4-3*m2^2*wt^2*(wt-1))/((wt-1)*(wt-2)*(wt-3)*std_dev^4)
 # Standard error of Kurtosis
 se_g2= sqrt( (4*(wt^2-1)*se_g1^2)/((wt+5)*(wt-3)) )
 
-# outliers use ppred to describe it
-out_minus = ppred(V, mu-5*std_dev, "<")*V 
-out_plus = ppred(V, mu+5*std_dev, ">")*V
+out_minus = (V < (mu-5*std_dev))*V 
+out_plus = (V > (mu+5*std_dev))*V
 
 # median
 md = median(V,W); #quantile(V, W, 0.5)

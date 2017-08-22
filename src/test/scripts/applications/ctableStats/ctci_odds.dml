@@ -82,9 +82,8 @@ for (iLabel in 1:numLabels)
 {
     if (iLabel != nullLabel)
     {
-        if (1==1) {
-            print ("Processing label " + iLabel + ":");
-        }
+        print ("Processing label " + iLabel + ":");
+        
         for (iPartition in 1:numPartitions)
         {
             idx = idx + 1;
@@ -172,7 +171,7 @@ gaussian_probability = function (Matrix[double] vector_of_points)
                  + t_gp * ( 1.421413741 # U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299
                  + t_gp * (-1.453152027 
                  + t_gp *   1.061405429)))) * exp (- vector_of_points * vector_of_points / 2.0);
-    erf_gp = erf_gp * 2.0 * (ppred (vector_of_points, 0.0, ">") - 0.5);
+    erf_gp = erf_gp * 2.0 * ((vector_of_points > 0.0) - 0.5);
     vector_of_probabilities = 0.5 + 0.5 * erf_gp;
 }
 

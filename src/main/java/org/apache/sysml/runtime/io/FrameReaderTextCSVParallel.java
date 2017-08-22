@@ -67,7 +67,8 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+			ExecutorService pool = Executors.newFixedThreadPool(
+				Math.min(numThreads, splits.length));
 			
 			//compute num rows per split
 			ArrayList<CountRowsTask> tasks = new ArrayList<CountRowsTask>();
@@ -125,6 +126,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);
+		}
+		finally {
+			pool.shutdown();
 		}
 		
 		return new Pair<Integer,Integer>(nrow, ncol);

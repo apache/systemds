@@ -71,11 +71,6 @@ public class EncoderOmit extends Encoder
 	}
 	
 	@Override
-	public String[] apply(String[] words) {
-		return null;
-	}
-	
-	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
 	{
 		//determine output size

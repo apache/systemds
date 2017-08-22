@@ -82,11 +82,11 @@ public class LeftIndexingOp  extends Hop
 		HopsException.check(_input.size() == 6, this, "should have 6 inputs but has %d inputs", 6);
 	}
 
-	public boolean getRowLowerEqualsUpper(){
+	public boolean isRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}
 	
-	public boolean getColLowerEqualsUpper() {
+	public boolean isColLowerEqualsUpper() {
 		return _colLowerEqualsUpper;
 	}
 	
@@ -389,9 +389,8 @@ public class LeftIndexingOp  extends Hop
 		}
 		
 		//mark for recompile (forever)
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
-			setRequiresRecompile();
-	
+		setRequiresRecompileIfNecessary();
+		
 		return _etype;
 	}
 

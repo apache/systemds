@@ -358,7 +358,7 @@ public class LibMatrixAgg
 			for( int i=0; i<tasks.size(); i++ ) {
 				MatrixBlock row = tasks.get(i).getResult();
 				if( uaop.aggOp.correctionExists )
-					row.dropLastRowsOrColums(uaop.aggOp.correctionLocation);
+					row.dropLastRowsOrColumns(uaop.aggOp.correctionLocation);
 				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, UpdateType.INPLACE_PINNED);
 			}
 			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);
@@ -367,7 +367,7 @@ public class LibMatrixAgg
 			ArrayList<CumAggTask> tasks2 = new ArrayList<CumAggTask>();
 			for( int i=0; i<k & i*blklen<m; i++ ) {
 				double[] agg = (i==0)? null : 
-					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()));
+					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()), false);
 				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
 			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);	

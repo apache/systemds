@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,28 +50,26 @@ import org.apache.sysml.parser.WhileStatementBlock;
  * program. 
  * 
  */
-public class ProgramRewriter 
+public class ProgramRewriter
 {
 	private static final Log LOG = LogFactory.getLog(ProgramRewriter.class.getName());
 	
 	//internal local debug level
-	private static final boolean LDEBUG = false; 
+	private static final boolean LDEBUG = false;
 	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
 	
-	static{
+	static {
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.apache.sysml.hops.rewrite")
 				  .setLevel((Level) Level.DEBUG);
 		}
-		
 	}
 	
-	public ProgramRewriter()
-	{
+	public ProgramRewriter() {
 		// by default which is used during initial compile 
 		// apply all (static and dynamic) rewrites
 		this( true, true );
@@ -96,8 +95,6 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
-			//if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
-			//	_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()   ); //dependency: cse
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
@@ -109,12 +106,14 @@ public class ProgramRewriter
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
 			//add statement block rewrite rules
- 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
+ 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL ) {
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
+				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
+ 			}
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
- 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock	
+ 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks	
  			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
- 				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
+ 				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
  			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
@@ -125,7 +124,9 @@ public class ProgramRewriter
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
 		{
-			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse 
+			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse
+			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
+				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()    ); //dependency: cse
 			
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 			{
@@ -146,8 +147,7 @@ public class ProgramRewriter
 	 * 
 	 * @param rewrites the HOP rewrite rules
 	 */
-	public ProgramRewriter( HopRewriteRule... rewrites )
-	{
+	public ProgramRewriter( HopRewriteRule... rewrites ) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 		for( HopRewriteRule rewrite : rewrites )
@@ -161,8 +161,7 @@ public class ProgramRewriter
 	 * 
 	 * @param rewrites the statement block rewrite rules
 	 */
-	public ProgramRewriter( StatementBlockRewriteRule... rewrites )
-	{
+	public ProgramRewriter( StatementBlockRewriteRule... rewrites ) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 		
@@ -177,14 +176,21 @@ public class ProgramRewriter
 	 * @param hRewrites HOP rewrite rules
 	 * @param sbRewrites statement block rewrite rules
 	 */
-	public ProgramRewriter( ArrayList<HopRewriteRule> hRewrites, ArrayList<StatementBlockRewriteRule> sbRewrites )
-	{
+	public ProgramRewriter(ArrayList<HopRewriteRule> hRewrites, ArrayList<StatementBlockRewriteRule> sbRewrites) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 		_dagRuleSet.addAll( hRewrites );
 		
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
 		_sbRuleSet.addAll( sbRewrites );
+	}
+	
+	public void removeHopRewrite(Class<? extends HopRewriteRule> clazz) {
+		_dagRuleSet.removeIf(r -> r.getClass().equals(clazz));
+	}
+	
+	public void removeStatementBlockRewrite(Class<? extends StatementBlockRewriteRule> clazz) {
+		_sbRuleSet.removeIf(r -> r.getClass().equals(clazz));
 	}
 	
 	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) 
@@ -301,21 +307,23 @@ public class ProgramRewriter
 		return root;
 	}
 	
-	public ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs, ProgramRewriteStatus state ) 
+	public ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs, ProgramRewriteStatus status ) 
 		throws HopsException
 	{
 		//ensure robustness for calls from outside
-		if( state == null )
-			state = new ProgramRewriteStatus();
-				
+		if( status == null )
+			status = new ProgramRewriteStatus();
 		
-		ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();
+		//apply rewrite rules to list of statement blocks
+		List<StatementBlock> sbList = sbs; 
+		for( StatementBlockRewriteRule r : _sbRuleSet ) {
+			sbList = r.rewriteStatementBlocks(sbList, status);
+		}
 		
 		//rewrite statement blocks (with potential expansion)
-		for( StatementBlock sb : sbs )
-			tmp.addAll( rewriteStatementBlock(sb, state) );
-		
-		//copy results into original collection
+		ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();
+		for( StatementBlock sb : sbList )
+			tmp.addAll( rewriteStatementBlock(sb, status) );
 		sbs.clear();
 		sbs.addAll( tmp );
 		
@@ -362,9 +370,8 @@ public class ProgramRewriter
 			status.setInParforContext(prestatus);
 		}
 		
-		//apply rewrite rules
-		for( StatementBlockRewriteRule r : _sbRuleSet )
-		{
+		//apply rewrite rules to individual statement blocks
+		for( StatementBlockRewriteRule r : _sbRuleSet ) {
 			ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();			
 			for( StatementBlock sbc : ret )
 				tmp.addAll( r.rewriteStatementBlock(sbc, status) );

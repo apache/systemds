@@ -1427,7 +1427,7 @@ public class ProgramConverter
 		throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
-		String tmpdata = in.substring(PARFOR_PBS_BEGIN.length(),in.length()-PARFOR_PBS_END.length()); ;
+		String tmpdata = in.substring(PARFOR_PBS_BEGIN.length(),in.length()-PARFOR_PBS_END.length());
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(tmpdata, ELEMENT_DELIM);
 		
 		while( st.hasMoreTokens() )

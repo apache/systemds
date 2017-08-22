@@ -20,8 +20,6 @@
 package org.apache.sysml.runtime.codegen;
 
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
@@ -42,8 +40,8 @@ public class LibSpoofPrimitives
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
-	private static ThreadLocal<LinkedList<double[]>> memPool = new ThreadLocal<LinkedList<double[]>>() {
-		@Override protected LinkedList<double[]> initialValue() { return new LinkedList<double[]>(); }
+	private static ThreadLocal<VectorBuffer> memPool = new ThreadLocal<VectorBuffer>() {
+		@Override protected VectorBuffer initialValue() { return new VectorBuffer(0,0,0); }
 	};
 	
 	// forwarded calls to LibMatrixMult
@@ -77,29 +75,47 @@ public class LibSpoofPrimitives
 	}
 	
 	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int ai, int bi, int ci, int len1, int len2) {
-		//rest, not aligned to 4-blocks
-		final int bn = len1%4;
-		for( int i=0, cix=ci; i < bn; i++, cix+=len2 )
-			if( a[ai+i] != 0 )
-				LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, cix, len2);
-		
-		//unrolled 4-block (for fewer L1-dcache loads)
-		for( int i=bn, cix=ci+bn*len2; i < len1; i+=4, cix+=4*len2 ) {
-			final int cix1=cix, cix2=cix+len2, cix3=cix+2*len2, cix4=cix+3*len2;
-			final double aval1=a[ai+i], aval2=a[ai+i+1], aval3=a[ai+i+2], aval4=a[ai+i+3];
-			for( int j=0; j<len2; j++ ) {
-				final double bval = b[bi+j];
-				c[cix1 + j] += aval1 * bval;
-				c[cix2 + j] += aval2 * bval;
-				c[cix3 + j] += aval3 * bval;
-				c[cix4 + j] += aval4 * bval;
+		if( isFlipOuter(len1, len2) ) {
+			for( int i=0, cix=ci; i < len2; i++, cix+=len1 ) {
+				final double val = b[bi+i];
+				if( val != 0 )
+					LibMatrixMult.vectMultiplyAdd(val, a, c, ai, cix, len1);
 			}
+		}
+		else {
+			//rest, not aligned to 4-blocks
+			final int bn = len1%4;
+			for( int i=0, cix=ci; i < bn; i++, cix+=len2 )
+				if( a[ai+i] != 0 )
+					LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, cix, len2);
+			
+			//unrolled 4-block (for fewer L1-dcache loads)
+			for( int i=bn, cix=ci+bn*len2; i < len1; i+=4, cix+=4*len2 ) {
+				final int cix1=cix, cix2=cix+len2, cix3=cix+2*len2, cix4=cix+3*len2;
+				final double aval1=a[ai+i], aval2=a[ai+i+1], aval3=a[ai+i+2], aval4=a[ai+i+3];
+				for( int j=0; j<len2; j++ ) {
+					final double bval = b[bi+j];
+					c[cix1 + j] += aval1 * bval;
+					c[cix2 + j] += aval2 * bval;
+					c[cix3 + j] += aval3 * bval;
+					c[cix4 + j] += aval4 * bval;
+				}
+			}	
 		}	
 	}
 	
 	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int[] aix, int ai, int bi, int ci, int alen, int len1, int len2) {
-		for( int i=0; i < alen; i++ )
-			LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, ci+aix[ai+i]*len2, len2);
+		if( isFlipOuter(len1, len2) ) {
+			for( int i=0, cix=ci; i < len2; i++, cix+=len1 ) {
+				final double val = b[bi+i];
+				if( val != 0 )
+					LibMatrixMult.vectMultiplyAdd(val, a, c, aix, ai, cix, alen);
+			}
+		}
+		else {
+			for( int i=0; i < alen; i++ )
+				LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bi, ci+aix[ai+i]*len2, len2);
+		}
 	}
 	
 	public static void vectMultAdd(double[] a, double bval, double[] c, int bi, int ci, int len) {
@@ -170,6 +186,12 @@ public class LibSpoofPrimitives
 	public static void vectWrite(double[] a, double[] c, int ci, int len) {
 		if( a == null ) return;
 		System.arraycopy(a, 0, c, ci, len);
+	}
+	
+	public static void vectWrite(boolean[] a, boolean[] c, int[] aix) {
+		if( a == null ) return;
+		for( int i=0; i<aix.length; i++ )
+			c[aix[i]] = a[i];
 	}
 
 	// custom vector sums, mins, maxs
@@ -1430,6 +1452,9 @@ public class LibSpoofPrimitives
 		return mod.execute(in1, in2);
 	}
 	
+	public static boolean isFlipOuter(int len1, int len2) {
+		return (len1 > 64 * len2);
+	}
 	
 	//dynamic memory management
 	
@@ -1438,47 +1463,64 @@ public class LibSpoofPrimitives
 	}
 	
 	public static void setupThreadLocalMemory(int numVectors, int len, int len2) {
-		LinkedList<double[]> list = new LinkedList<double[]>();
-		if( len2 >= 0 ) 
-			for( int i=0; i<numVectors; i++ )
-				list.addLast(new double[len2]);
-		for( int i=0; i<numVectors; i++ )
-			list.addLast(new double[len]);
-		memPool.set(list);
+		memPool.set(new VectorBuffer(numVectors, len, len2));
 	}
 	
 	public static void cleanupThreadLocalMemory() {
 		memPool.remove();
 	}
 	
-	private static double[] allocVector(int len, boolean reset) {
+	protected static double[] allocVector(int len, boolean reset) {
 		return allocVector(len, reset, 0);
 	}
 	
-	private static double[] allocVector(int len, boolean reset, double resetVal) {
-		LinkedList<double[]> list = memPool.get(); 
+	protected static double[] allocVector(int len, boolean reset, double resetVal) {
+		VectorBuffer buff = memPool.get(); 
 		
-		//find and remove vector with matching len 
-		double[] vect = null;
-		Iterator<double[]> iter = list.iterator();
-		while( iter.hasNext() ) {
-			double[] tmp = iter.next();
-			if( tmp.length == len ) {
-				vect = tmp;
-				iter.remove();
-				break;
-			}
-		}
-		
-		//allocate new vector or re-queue if required
+		//find next matching vector in ring buffer or
+		//allocate new vector if required
+		double[] vect = buff.next(len);
 		if( vect == null )
 			vect = new double[len];
-		else 
-			list.addLast(vect);
 		
 		//reset vector if required
 		if( reset )
 			Arrays.fill(vect, resetVal);
 		return vect;
+	}
+	
+	/**
+	 * Simple ring buffer of allocated vectors, where
+	 * vectors of different sizes are interspersed.
+	 */
+	private static class VectorBuffer {
+		private final double[][] _data;
+		private int _pos;
+		private int _len1;
+		private int _len2;
+		
+		public VectorBuffer(int num, int len1, int len2) {
+			int lnum = (len2 > 0) ? 2*num : num;
+			_data = new double[lnum][];
+			for( int i=0; i<num; i++ )
+				if( lnum > num ) {
+					_data[2*i] = new double[len1];
+					_data[2*i+1] = new double[len2];
+				}
+				else {
+					_data[i] = new double[len1];
+				}
+			_pos = -1;
+			_len1 = len1;
+			_len2 = len2;
+		}
+		public double[] next(int len) {
+			if( _len1!=len && _len2!=len )
+				return null;
+			do {
+				_pos = (_pos+1>=_data.length) ? 0 : _pos+1;
+			} while( _data[_pos].length!=len );
+			return _data[_pos];
+		}
 	}
 }

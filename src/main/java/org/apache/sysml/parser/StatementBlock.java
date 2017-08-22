@@ -56,6 +56,7 @@ public class StatementBlock extends LiveVariableAnalysis
 
 	private ArrayList<String> _updateInPlaceVars = null;
 	private boolean _requiresRecompile = false;
+	private boolean _splitDag = false;
 
 	public StatementBlock() {
 		_dmlProg = null;
@@ -145,6 +146,14 @@ public class StatementBlock extends LiveVariableAnalysis
 				return false;
 		}
 		return true;
+	}
+	
+	public void setSplitDag(boolean flag) {
+		_splitDag = flag;
+	}
+	
+	public boolean isSplitDag() {
+		return _splitDag;
 	}
 
 

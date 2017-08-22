@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap;
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
@@ -43,15 +43,12 @@ public class CTableMap
 		_maxCol = -1;
 	}
 
-	public int size() 
-	{
+	public int size() {
 		return _map.size();
 	}
-
-	@Deprecated
-	public ArrayList<LLDoubleEntry> entrySet()
-	{
-		return _map.extractValues();
+	
+	public Iterator<LLDoubleEntry> getIterator() {
+		return _map.getIterator();
 	}
 
 	public long getMaxRow() {
@@ -83,8 +80,9 @@ public class CTableMap
 		if( sparse ) //SPARSE <- cells
 		{
 			//append cells to sparse target (prevent shifting)
-			for( LLDoubleEntry e : _map.extractValues() ) 
-			{
+			Iterator<LLDoubleEntry> iter2 = _map.getIterator();
+			while( iter2.hasNext() ) {
+				LLDoubleEntry e = iter2.next();
 				double value = e.value;
 				int rix = (int)e.key1;
 				int cix = (int)e.key2;
@@ -98,8 +96,9 @@ public class CTableMap
 		else  //DENSE <- cells
 		{
 			//directly insert cells into dense target 
-			for( LLDoubleEntry e : _map.extractValues() ) 
-			{
+			Iterator<LLDoubleEntry> iter = _map.getIterator();
+			while( iter.hasNext() ) {
+				LLDoubleEntry e = iter.next();
 				double value = e.value;
 				int rix = (int)e.key1;
 				int cix = (int)e.key2;

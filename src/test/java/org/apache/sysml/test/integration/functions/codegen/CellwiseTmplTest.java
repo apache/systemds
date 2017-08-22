@@ -50,6 +50,9 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME12 = TEST_NAME+12; //((X/3) %% 0.6) + ((X/3) %/% 0.6)
 	private static final String TEST_NAME13 = TEST_NAME+13; //min(X + 7 * Y) large
 	private static final String TEST_NAME14 = TEST_NAME+14; //-2 * X + t(Y); t(Y) is rowvector
+	private static final String TEST_NAME15 = TEST_NAME+15; //colMins(2*log(X))
+	private static final String TEST_NAME16 = TEST_NAME+16; //colSums(2*log(X)); 
+	
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -62,7 +65,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=14; i++ ) {
+		for( int i=1; i<=16; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -255,6 +258,37 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME14, true, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenCellwiseRewrite15() {
+		testCodegenIntegration( TEST_NAME15, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenCellwise15() {
+		testCodegenIntegration( TEST_NAME15, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite15_sp() {
+		testCodegenIntegration( TEST_NAME15, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite16() {
+		testCodegenIntegration( TEST_NAME16, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenCellwise16() {
+		testCodegenIntegration( TEST_NAME16, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite16_sp() {
+		testCodegenIntegration( TEST_NAME16, true, ExecType.SPARK );
+	}
+	
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{			
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -281,7 +315,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "runtime", "-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "hops", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
@@ -313,7 +347,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("uamin","uamax"));
 			else if( testname.equals(TEST_NAME11) ) //ensure replace is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("replace"));	
+				Assert.assertTrue(!heavyHittersContainsSubString("replace"));
+			else if( testname.equals(TEST_NAME15) )
+				Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
+			else if( testname.equals(TEST_NAME16) )
+				Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
 		}
 		finally {
 			rtplatform = platformOld;

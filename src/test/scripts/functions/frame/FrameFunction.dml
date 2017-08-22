@@ -23,7 +23,7 @@ foo = function(Frame[String] F, String jspec)
   return (Matrix[Double] RX, Frame[String] RM) 
 {
   #prevent function inlining
-  if( 1==1 ){}
+  while(FALSE){}
 
   [RX, RM] = transformencode(target=F, spec=jspec);
 }

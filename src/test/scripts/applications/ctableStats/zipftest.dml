@@ -58,7 +58,7 @@ avg_density_records = rowSums (Probs);
 avg_density_features = colSums (Probs);
 
 Tosses = Rand (rows = num_records, cols = num_features, min = 0.0, max = 1.0);
-Data = ppred (Tosses, Probs, "<=");
+Data = (Tosses <= Probs);
 
 write (avg_density_records,  "Zipf.AvgDensity.Rows", format="text");
 write (avg_density_features, "Zipf.AvgDensity.Cols", format="text");

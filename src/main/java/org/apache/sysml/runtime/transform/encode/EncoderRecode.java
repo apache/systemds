@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -37,40 +36,17 @@ public class EncoderRecode extends Encoder
 {	
 	private static final long serialVersionUID = 8213163881283341874L;
 
-	private int[] _mvrcdList = null;
-	private int[] _fullrcdList = null;
-	
 	//recode maps and custom map for partial recode maps 
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
-	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	
 	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen)
 		throws JSONException 
 	{
 		super(null, clen);
-		int rcdCount = 0;
 		
 		if( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
-			rcdCount = initColList(collist);
-		}
-		
-		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) {
-			_mvrcdList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_MVRCD);
-			rcdCount += _mvrcdList.length;
-		}
-		
-		if ( rcdCount > 0 ) {
-			_fullrcdList = new int[rcdCount];
-			int idx = -1;
-			if(_colList != null)
-				for(int i=0; i < _colList.length; i++)
-					_fullrcdList[++idx] = _colList[i]; 
-			
-			if(_mvrcdList != null)
-				for(int i=0; i < _mvrcdList.length; i++)
-					_fullrcdList[++idx] = _mvrcdList[i]; 
+			_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
 		}
 	}
 	
@@ -82,17 +58,11 @@ public class EncoderRecode extends Encoder
 		return _rcdMapsPart; 
 	}
 	
-	public HashMap<Integer, HashMap<String,String>> getRecodeMaps() {
-		return _finalMaps;
-	}
-	
-	private String lookupRCDMap(int colID, String key) {
-		if( _finalMaps!=null )
-			return _finalMaps.get(colID).get(key);
-		else { //used for cp
-			Long tmp = _rcdMaps.get(colID).get(key);
-			return (tmp!=null) ? Long.toString(tmp) : null;
-		}
+	private long lookupRCDMap(int colID, String key) {
+		if( !_rcdMaps.containsKey(colID) )
+			return -1; //empty recode map
+		Long tmp = _rcdMaps.get(colID).get(key);
+		return (tmp!=null) ? tmp : -1;
 	}
 	
 	@Override
@@ -112,7 +82,7 @@ public class EncoderRecode extends Encoder
 		if( !isApplicable() )
 			return;		
 
-		Iterator<String[]> iter = in.getStringRowIterator();
+		Iterator<String[]> iter = in.getStringRowIterator(_colList);
 		while( iter.hasNext() ) {
 			String[] row = iter.next(); 
 			for( int j=0; j<_colList.length; j++ ) {
@@ -122,7 +92,7 @@ public class EncoderRecode extends Encoder
 					_rcdMaps.put(colID, new HashMap<String,Long>());
 				//probe and build column map
 				HashMap<String,Long> map = _rcdMaps.get(colID);
-				String key = row[colID-1];
+				String key = row[j];
 				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
 					map.put(key, Long.valueOf(map.size()+1));
 			}
@@ -154,28 +124,6 @@ public class EncoderRecode extends Encoder
 		}
 	}
 	
-	/**
-	 * Method to apply transformations.
-	 */
-	@Override
-	public String[] apply(String[] words) 
-	{
-		if( !isApplicable() )
-			return words;
-		
-		//apply recode maps on relevant columns of given row
-		for(int i=0; i < _colList.length; i++) {
-			//prepare input and get code
-			int colID = _colList[i];
-			String key = UtilFunctions.unquote(words[colID-1].trim());
-			String val = lookupRCDMap(colID, key);			
-			// replace unseen keys with NaN 
-			words[colID-1] = (val!=null) ? val : "NaN";
-		}
-			
-		return words;
-	}
-	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		//apply recode maps column wise
@@ -184,9 +132,9 @@ public class EncoderRecode extends Encoder
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object okey = in.get(i, colID-1);
 				String key = (okey!=null) ? okey.toString() : null;
-				String val = lookupRCDMap(colID, key);			
-				out.quickSetValue(i, colID-1, (val!=null) ? 
-						Double.parseDouble(val) : Double.NaN);
+				long code = lookupRCDMap(colID, key);
+				out.quickSetValue(i, colID-1,
+					(code >= 0) ? code : Double.NaN);
 			}
 		}
 		
@@ -242,12 +190,25 @@ public class EncoderRecode extends Encoder
 	
 	/**
 	 * Returns the Recode map entry which consists of concatenation of code, delimiter and token. 
+	 * 
 	 * @param token	is part of Recode map
-	 * @param code  is code for token 
-	 * @return the concatenation of code and token with delimiter in between
+	 * @param code  is code for token
+	 * @return the concatenation of token and code with delimiter in between
 	 */
 	public static String constructRecodeMapEntry(String token, Long code) {
 		return token + Lop.DATATYPE_PREFIX + code.toString();
 	}
+	
+	/**
+	 * Splits a Recode map entry into its token and code.
+	 * 
+	 * @param value concatenation of token and code with delimiter in between
+	 * @return string array of token and code
+	 */
+	public static String[] splitRecodeMapEntry(String value) {
+		// Instead of using splitCSV which is forcing string with RFC-4180 format, 
+		// using Lop.DATATYPE_PREFIX separator to split token and code 
+		int pos = value.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
+		return new String[] {value.substring(0, pos), value.substring(pos+1)};
+	}
 }
- 

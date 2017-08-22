@@ -35,7 +35,7 @@ import org.apache.sysml.parser.Expression.ValueType;
  *
  */
 public class MultipleOp extends Hop {
-	protected MultiInputOp multipleOperandOperation = null;
+	protected MultiInputOp _op = null;
 
 	protected MultipleOp() {
 	}
@@ -60,15 +60,12 @@ public class MultipleOp extends Hop {
 	public MultipleOp(String name, DataType dataType, ValueType valueType,
 			MultiInputOp multipleOperandOperation, Hop... inputs) throws HopsException {
 		super(name, dataType, valueType);
-		this.multipleOperandOperation = multipleOperandOperation;
+		_op = multipleOperandOperation;
 
 		for (int i = 0; i < inputs.length; i++) {
 			getInput().add(i, inputs[i]);
 			inputs[i].getParent().add(this);
 		}
-
-		// compute unknown dims and nnz
-		refreshSizeInformation();
 	}
 
 	/** MultipleOp may have any number of inputs. */
@@ -76,12 +73,12 @@ public class MultipleOp extends Hop {
 	public void checkArity() throws HopsException {}
 
 	public MultiInputOp getOp() {
-		return multipleOperandOperation;
+		return _op;
 	}
 
 	@Override
 	public String getOpString() {
-		return "m(" + multipleOperandOperation.toString().toLowerCase() + ")";
+		return "m(" + _op.name().toLowerCase() + ")";
 	}
 
 	/**
@@ -102,10 +99,10 @@ public class MultipleOp extends Hop {
 				inLops[i] = inLop;
 			}
 
-			MultipleCP.OperationType opType = MultipleOperandOperationHopTypeToLopType.get(multipleOperandOperation);
+			MultipleCP.OperationType opType = MultipleOperandOperationHopTypeToLopType.get(_op);
 			if (opType == null) {
-				throw new HopsException("Unknown MultipleCP Lop operation type for MultipleOperandOperation Hop type '"
-						+ multipleOperandOperation + "'");
+				throw new HopsException("Unknown MultipleCP Lop operation type for "
+						+ "MultipleOperandOperation Hop type '" + _op + "'");
 			}
 
 			MultipleCP multipleCPLop = new MultipleCP(opType, getDataType(), getValueType(), inLops);
@@ -130,12 +127,11 @@ public class MultipleOp extends Hop {
 
 	@Override
 	public boolean allowsAllExecTypes() {
-		return false; // true?
+		return false;
 	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		checkAndSetForcedPlatform(); // ?
 		return ExecType.CP;
 	}
 
@@ -152,7 +148,7 @@ public class MultipleOp extends Hop {
 		multipleOp.clone(this, false);
 
 		// copy specific attributes
-		multipleOp.multipleOperandOperation = multipleOperandOperation;
+		multipleOp._op = _op;
 
 		return multipleOp;
 	}
@@ -162,14 +158,14 @@ public class MultipleOp extends Hop {
 		if (!(that instanceof MultipleOp))
 			return false;
 
-		if (multipleOperandOperation == MultiInputOp.PRINTF) {
+		if (_op == MultiInputOp.PRINTF) {
 			return false;
 		}
 
 		// if add new multiple operand types in addition to PRINTF,
 		// probably need to modify this.
 		MultipleOp mo = (MultipleOp) that;
-		return (multipleOperandOperation == mo.multipleOperandOperation);
+		return (_op == mo._op);
 	}
 
 	@Override

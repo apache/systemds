@@ -33,11 +33,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
@@ -50,10 +52,12 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.GPUStatistics;
 
 
 /**
@@ -521,6 +525,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _data;
 	}
 	
+	public T acquireModify(T newData) throws DMLRuntimeException {
+		return acquireModify(newData, null);
+	}
+	
 	/**
 	 * Acquires the exclusive "write" lock for a thread that wants to throw away the
 	 * old cache block data and link up with new cache block data. Abandons the old data
@@ -530,10 +538,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: MODIFY.
 	 * 
 	 * @param newData new data
+	 * @param opcode extended instruction opcode
 	 * @return cacheable data
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public synchronized T acquireModify(T newData)
+	public synchronized T acquireModify(T newData, String opcode)
 		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
@@ -561,9 +570,22 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireMTime(t1-t0);
+			if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
+				if(_data instanceof MatrixBlock) {
+					MatrixBlock currObject = (MatrixBlock)_data;
+					if(currObject.isInSparseFormat())
+						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_SPARSE_MB, t1-t0);
+					else
+						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_DENSE_MB, t1-t0);
+				}
+			}
 		}
 		
 		return _data;
+	}
+	
+	public void release() throws CacheException {
+		release(null);
 	}
 	
 	/**
@@ -578,7 +600,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @throws CacheException if CacheException occurs
 	 */
-	public synchronized void release() 
+	public synchronized void release(String opcode) 
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
@@ -595,7 +617,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//update meta data
 			refreshMetaData();
 		}
-
+		
 		//compact empty in-memory block 
 		_data.compactEmptyBlock();
 		
@@ -612,7 +634,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
-					LazyWriteBuffer.writeBlock(filePath, _data);
+					LazyWriteBuffer.writeBlock(filePath, _data, opcode);
 				}
 				catch (Exception e)
 				{
@@ -720,6 +742,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
+			throws CacheException
+	{
+		exportData(fName, outputFormat, replication, formatProperties, null);
+	}
+	
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same object (in case it was created before the loop).
@@ -735,9 +763,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param outputFormat format
 	 * @param replication ?
 	 * @param formatProperties file format properties
+	 * @param opcode instruction opcode if available
 	 * @throws CacheException if CacheException occurs
 	 */
-	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties, String opcode)
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
@@ -815,7 +844,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			}
 			finally
 			{
-				release();
+				release(opcode);
 			}
 		}
 		else if( pWrite ) // pwrite with same output format
@@ -1242,11 +1271,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	protected void updateStatusPinned(boolean add) {
-		if( _data != null ) { //data should never be null
-			long size = sizePinned.get();
-			size += (add ? 1 : -1) * _data.getInMemorySize();
-			sizePinned.set( Math.max(size,0) );
-		}
+		if( _data == null || !OptimizerUtils.isHybridExecutionMode() )
+			return; //avoid size computation for string frames
+		long size = sizePinned.get();
+		size += (add ? 1 : -1) * _data.getInMemorySize();
+		sizePinned.set( Math.max(size,0) );
 	}
 
 	protected long getPinnedSize() {

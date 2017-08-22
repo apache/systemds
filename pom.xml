@@ -303,7 +303,7 @@
 							<outputDirectory>${basedir}/target/lib/hadoop/bin</outputDirectory>
 						</configuration>
 					</execution>
-					
+
 					<execution>
 						<id>copy-resources-filtered</id>
 						<phase>compile</phase>
@@ -344,7 +344,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 			    <groupId>com.github.os72</groupId>
 			    <artifactId>protoc-jar-maven-plugin</artifactId>
@@ -463,6 +463,7 @@
 						<include>**/integration/functions/sparse/*Suite.java</include>
 						<include>**/integration/functions/**/*Test*.java</include>
 						<include>**/integration/mlcontext/*Suite.java</include>
+						<include>**/integration/mlcontext/algorithms/*Suite.java</include>
 						<include>**/integration/scripts/nn/*Suite.java</include>
 						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
@@ -870,6 +871,7 @@
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
+ 								<exclude>**/*.svg</exclude>
 								<!-- Jupyter Notebooks -->
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->
@@ -1124,6 +1126,30 @@
 									<arguments>
 										<argument>post_setup.py</argument>
 									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Attach python artifact so it can be installed and deployed. -->
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<version>1.8</version>
+						<executions>
+							<execution>
+								<id>attach-python-artifact</id>
+								<phase>pre-integration-test</phase>
+								<goals>
+									<goal>attach-artifact</goal>
+								</goals>
+								<configuration>
+									<artifacts>
+										<artifact>
+											<file>${basedir}/target/${project.artifactId}-${project.version}-python.tgz</file>
+											<type>tgz</type>
+											<classifier>python</classifier>
+										</artifact>
+									</artifacts>
 								</configuration>
 							</execution>
 						</executions>

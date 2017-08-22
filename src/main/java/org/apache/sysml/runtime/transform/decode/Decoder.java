@@ -34,16 +34,25 @@ public abstract class Decoder implements Serializable
 {	
 	private static final long serialVersionUID = -1732411001366177787L;
 	
-	protected ValueType[] _schema = null;
-	protected int[] _colList = null;
-		
-	protected Decoder( ValueType[] schema, int[] colList ) {
+	protected final ValueType[] _schema;
+	protected final int[] _colList;
+	protected String[] _colnames = null;
+	
+	protected Decoder(ValueType[] schema, int[] colList) {
 		_schema = schema;
 		_colList = colList;
 	}
 
 	public ValueType[] getSchema() {
 		return _schema;
+	}
+	
+	public void setColnames(String[] colnames) {
+		_colnames = colnames;
+	}
+	
+	public String[] getColnames() {
+		return _colnames;
 	}
 	
 	/**

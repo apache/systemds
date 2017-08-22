@@ -117,16 +117,6 @@ public abstract class Encoder implements Serializable
 	 * @return output matrix block
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
-	
-	/**
-	 * Encode input data according to existing transform meta
-	 * data (transform apply).
-	 * TODO remove once file-based transform removed
-	 * 
-	 * @param in input data as string array
-	 * @return encoded data as string array
-	 */
-	public abstract String[] apply(String[] in);
 
 	/**
 	 * Construct a frame block out of the transform meta data.

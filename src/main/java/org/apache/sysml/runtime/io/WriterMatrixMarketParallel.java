@@ -71,7 +71,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 			ArrayList<WriteMMTask> tasks = new ArrayList<WriteMMTask>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
-				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
 				tasks.add(new WriteMMTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
 			}
 
@@ -82,18 +82,16 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 			//check for exceptions 
 			for( Future<Object> task : rt )
 				task.get();
+			
+			// delete crc files if written to local file system
+			if (fs instanceof LocalFileSystem) {
+				for(int i=0; i<numThreads & i*blklen<rlen; i++) 
+					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs,
+						new Path(path, IOUtilFunctions.getPartFileName(i)));
+			}
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of text output.", e);
-		}
-
-		// delete crc files if written to local file system
-		if (fs instanceof LocalFileSystem) {
-			int blklen = (int)Math.ceil((double)rlen / numThreads);
-			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
-				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, newPath);
-			}
 		}
 	}
 

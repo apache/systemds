@@ -719,6 +719,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				//Note: no need to handle empty result
 			}
 			finally {
+				IOUtilFunctions.closeSilently(fkeyMap);
 				IOUtilFunctions.closeSilently(twriter);
 				IOUtilFunctions.closeSilently(bwriter);
 			}

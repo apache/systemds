@@ -366,7 +366,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
                 self.labelMap[int(keys[i])] = values[i]
             # self.encode(classes) # Giving incorrect results
         
-    def load(self, weights, sep='/'):
+    def load(self, weights, sep='/', eager=False):
         """
         Load a pretrained model. 
 
@@ -374,9 +374,10 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         ----------
         weights: directory whether learned weights are stored
         sep: seperator to use (default: '/')
+        eager: load the model eagerly. This flag should be only used for debugging purposes. (default: False)
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, sep)
+        self.model.load(self.sc._jsc, weights, sep, eager)
         self.loadLabels(weights + '/labels.txt')
         
     def save(self, outputDir, format='binary', sep='/'):
@@ -391,13 +392,17 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         """
         if self.model != None:
             self.model.save(self.sc._jsc, outputDir, format, sep)
-            if self.le is not None:
+
+            labelMapping = None
+            if hasattr(self, 'le') and self.le is not None:
                 labelMapping = dict(enumerate(list(self.le.classes_), 1))
-            else:
+            elif hasattr(self, 'labelMap') and self.labelMap is not None:
                 labelMapping = self.labelMap
-            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
-            df = self.sparkSession.createDataFrame(lStr)
-            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
+
+            if labelMapping is not None:
+                lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
+                df = self.sparkSession.createDataFrame(lStr)
+                df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
         return self
@@ -421,7 +426,7 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         """
         return r2_score(y, self.predict(X), multioutput='variance_weighted')
         
-    def load(self, weights=None, sep='/'):
+    def load(self, weights=None, sep='/', eager=False):
         """
         Load a pretrained model. 
 
@@ -429,9 +434,10 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         ----------
         weights: directory whether learned weights are stored (default: None)
         sep: seperator to use (default: '/')
+        eager: load the model eagerly (default: False)
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, sep)
+        self.model.load(self.sc._jsc, weights, sep, eager)
 
     def save(self, outputDir, format='binary', sep='/'):
         """
@@ -764,7 +770,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if tensorboard_log_dir is not None:
             self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
 
-    def load(self, weights=None, sep='/', ignore_weights=None):
+    def load(self, weights=None, sep='/', ignore_weights=None, eager=False):
         """
         Load a pretrained model. 
 
@@ -773,11 +779,12 @@ class Caffe2DML(BaseSystemMLClassifier):
         weights: directory whether learned weights are stored (default: None)
         sep: seperator to use (default: '/')
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
+        eager: load the model eagerly (default: False)
         """
         self.weights = weights
         self.estimator.setInput("$weights", str(weights))
         self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
-        self.model.load(self.sc._jsc, weights, sep)
+        self.model.load(self.sc._jsc, weights, sep, eager)
         self.loadLabels(weights + '/labels.txt')
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)

@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -143,6 +144,12 @@ public class CNodeUnary extends CNode
 			String [] tmp = this.name().split("_");
 			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
+		public boolean isScalarLookup() {
+			return this == LOOKUP0 
+				|| this == UnaryType.LOOKUP_R
+				|| this == UnaryType.LOOKUP_C
+				|| this == UnaryType.LOOKUP_RC;
+		}
 	}
 	
 	private UnaryType _type;
@@ -172,7 +179,9 @@ public class CNodeUnary extends CNode
 		sb.append(_inputs.get(0).codegen(sparse));
 		
 		//generate unary operation
-		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
+			&& !_inputs.get(0).getVarname().startsWith("b")
+			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replace("%TMP%", var);
@@ -182,12 +191,14 @@ public class CNodeUnary extends CNode
 		//replace sparse and dense inputs
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
-		tmp = tmp.replace("%IN1%", varj );
+		tmp = tmp.replace("%IN1%", varj.startsWith("b") && !_type.isScalarLookup()
+			&& TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".ddat" : varj );
 		
 		//replace start position of main input
-		String spos = (!varj.startsWith("b") 
-			&& _inputs.get(0) instanceof CNodeData 
-			&& _inputs.get(0).getDataType().isMatrix()) ? varj+"i" : "0";
+		String spos = (_inputs.get(0) instanceof CNodeData 
+			&& _inputs.get(0).getDataType().isMatrix()) ? !varj.startsWith("b") ? 
+			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? "rowIndex*%LEN%" : "0" : "0";
+		
 		tmp = tmp.replace("%POS1%", spos);
 		tmp = tmp.replace("%POS2%", spos);
 		

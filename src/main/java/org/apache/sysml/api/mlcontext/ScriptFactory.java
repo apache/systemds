@@ -351,20 +351,20 @@ public class ScriptFactory {
 			throw new MLContextException("Script file path is null");
 		}
 		try {
-			if (scriptFilePath.startsWith("hdfs:") || scriptFilePath.startsWith("gpfs:")) {
+			if (   scriptFilePath.startsWith("hdfs:") || scriptFilePath.startsWith("gpfs:")
+				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(scriptFilePath))) {
 				Path path = new Path(scriptFilePath);
 				FileSystem fs = IOUtilFunctions.getFileSystem(path);
-				FSDataInputStream fsdis = fs.open(path);
-				return IOUtils.toString(fsdis);
+				try( FSDataInputStream fsdis = fs.open(path) ) {
+					return IOUtils.toString(fsdis);
+				}
 			} else {// from local file system
 				File scriptFile = new File(scriptFilePath);
 				return FileUtils.readFileToString(scriptFile);
 			}
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException | IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + scriptFilePath, e);
-		} catch (IOException e) {
-			throw new MLContextException("Error trying to read script string from file: " + scriptFilePath, e);
-		}
+		} 
 	}
 
 	/**

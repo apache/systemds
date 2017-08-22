@@ -334,8 +334,8 @@ The console output should show the accuracy of the trained model in percent, i.e
     15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.appmaster.mem with value 2048
     15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.mapreduce.mem with value 2048
     15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.app.queue with value default
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.matrixmult with value true
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.textio with value true
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.ops with value true
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.io with value true
     Accuracy (%): 74.14965986394557
     15/09/01 01:32:52 INFO api.DMLScript: SystemML Statistics:
     Total execution time:		0.130 sec.

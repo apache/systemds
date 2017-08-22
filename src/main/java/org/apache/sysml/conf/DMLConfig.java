@@ -45,6 +45,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -68,16 +69,18 @@ public class DMLConfig
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
 	public static final String YARN_APPQUEUE        = "dml.yarn.app.queue"; 
-	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
-	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
+	public static final String CP_PARALLEL_OPS      = "cp.parallel.ops";
+	public static final String CP_PARALLEL_IO       = "cp.parallel.io";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
-	public static final String NATIVE_BLAS    			= "native.blas";
+	public static final String NATIVE_BLAS          = "native.blas";
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
-	public static final String EXTRA_GPU_STATS			= "systemml.stats.extraGPU"; //boolean
-	public static final String EXTRA_DNN_STATS			= "systemml.stats.extraDNN"; //boolean
-	public static final String MAX_GPUS_PER_PROCESS = "systemml.gpu.perProcessMax"; // boolean, maximum number of gpus to use, -1 for all
+	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
+	public static final String STATS_MAX_WRAP_LEN = "systemml.stats.maxWrapLength"; //int
+	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
+	public static final String EXTRA_DNN_STATS      = "systemml.stats.extraDNN"; //boolean
+	public static final String AVAILABLE_GPUS       = "systemml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -96,6 +99,8 @@ public class DMLConfig
 
     private String _fileName = null;
 	private Element _xmlRoot = null;
+	private DocumentBuilder _documentBuilder = null;
+	private Document _document = null;
 	
 	static
 	{
@@ -110,26 +115,27 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPMASTERMEM,      "2048" );
 		_defaultVals.put(YARN_MAPREDUCEMEM,      "-1" );
 		_defaultVals.put(YARN_APPQUEUE,    	     "default" );
-		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
-		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
+		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
+		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
-		_defaultVals.put(NATIVE_BLAS,      			 "none" );
-
-		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
-		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
+		_defaultVals.put(NATIVE_BLAS,            "none" );
+		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
+		_defaultVals.put(STATS_MAX_WRAP_LEN,"30" );
+		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
+		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(MAX_GPUS_PER_PROCESS,	"-1");
+		_defaultVals.put(AVAILABLE_GPUS,   "-1");
 	}
 	
 	public DMLConfig()
 	{
 		
 	}
-	
+
 	public DMLConfig(String fileName) 
 		throws ParseException, FileNotFoundException
 	{
@@ -168,25 +174,32 @@ public class DMLConfig
 	 */
 	private void parseConfig () throws ParserConfigurationException, SAXException, IOException 
 	{
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		factory.setIgnoringComments(true); //ignore XML comments
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document domTree = null;
-		if (_fileName.startsWith("hdfs:") ||
-		    _fileName.startsWith("gpfs:") )  // config file from DFS
+		DocumentBuilder builder = getDocumentBuilder();
+		_document = null;
+		if( _fileName.startsWith("hdfs:") || _fileName.startsWith("gpfs:")
+			|| IOUtilFunctions.isObjectStoreFileScheme(new Path(_fileName)) )
 		{
 			Path configFilePath = new Path(_fileName);
 			FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath);
-            domTree = builder.parse(DFS.open(configFilePath));  
+			_document = builder.parse(DFS.open(configFilePath));
 		}
 		else  // config from local file system
 		{
-			domTree = builder.parse(_fileName);
+			_document = builder.parse(_fileName);
 		}
-		
-		_xmlRoot = domTree.getDocumentElement();		
+
+		_xmlRoot = _document.getDocumentElement();
 	}
-	
+
+	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+		if (_documentBuilder == null) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setIgnoringComments(true); //ignore XML comments
+			_documentBuilder = factory.newDocumentBuilder();
+		}
+		return _documentBuilder;
+	}
+
 	/**
 	 * Method to get string value of a configuration parameter
 	 * Handles processing of configuration parameters 
@@ -241,21 +254,7 @@ public class DMLConfig
 		return textVal;
 	}
 	
-	/**
-	 * Method to update the string value of an element identified by a tag name
-	 * @param element the DOM element
-	 * @param tagName the tag name
-	 * @param newTextValue the new string value
-	 */
-	private static void setTextValue(Element element, String tagName, String newTextValue) {
-		
-		NodeList list = element.getElementsByTagName(tagName);
-		if (list != null && list.getLength() > 0) {
-			Element elem = (Element) list.item(0);
-			elem.getFirstChild().setNodeValue(newTextValue);	
-		}
-	}
-	
+
 	/**
 	 * Method to update the key value
 	 * @param paramName parameter name
@@ -263,17 +262,23 @@ public class DMLConfig
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void setTextValue(String paramName, String paramValue) throws DMLRuntimeException {
-		if(_xmlRoot != null)
-			DMLConfig.setTextValue(_xmlRoot, paramName, paramValue);
-		else {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			factory.setIgnoringComments(true); //ignore XML comments
-			DocumentBuilder builder;
+		if(_xmlRoot != null) {
+			NodeList list = _xmlRoot.getElementsByTagName(paramName);
+			if (list != null && list.getLength() > 0) {
+				Element elem = (Element) list.item(0);
+				elem.getFirstChild().setNodeValue(paramValue);
+			} else {
+				Node value = _document.createTextNode(paramValue);
+				Node element = _document.createElement(paramName);
+				element.appendChild(value);
+				_xmlRoot.appendChild(element);
+			}
+		} else {
 			try {
-				builder = factory.newDocumentBuilder();
+				DocumentBuilder builder = getDocumentBuilder();
 				String configString = "<root><" + paramName + ">"+paramValue+"</" + paramName + "></root>";
-				Document domTree = builder.parse(new ByteArrayInputStream(configString.getBytes("UTF-8")));
-				_xmlRoot = domTree.getDocumentElement();
+				_document = builder.parse(new ByteArrayInputStream(configString.getBytes("UTF-8")));
+				_xmlRoot = _document.getDocumentElement();
 			} catch (Exception e) {
 				throw new DMLRuntimeException("Unable to set config value", e);
 			}
@@ -402,9 +407,10 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO, NATIVE_BLAS,
+				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
-				EXTRA_GPU_STATS, EXTRA_DNN_STATS
+				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
+				AVAILABLE_GPUS
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

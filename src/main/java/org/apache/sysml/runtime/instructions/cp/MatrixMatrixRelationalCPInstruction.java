@@ -42,22 +42,22 @@ public class MatrixMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
-        MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName());
+        MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+        MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		String output_name = output.getName();
 		BinaryOperator bop = (BinaryOperator) _optr;
 		
 		MatrixBlock retBlock = (MatrixBlock) inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
 
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock) ) {
  			retBlock.examSparsity();
  		}
 		
-		ec.setMatrixOutput(output_name, retBlock);
+		ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 	}
 }

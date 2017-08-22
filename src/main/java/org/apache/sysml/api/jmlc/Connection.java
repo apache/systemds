@@ -25,6 +25,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,11 +39,13 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
@@ -60,6 +63,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -117,6 +121,7 @@ public class Connection implements Closeable
 		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
 		cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		cconf.set(ConfigType.CODEGEN_ENABLED, false);
 		ConfigurationManager.setLocalConfig(cconf);
 		
 		//disable caching globally 
@@ -125,6 +130,23 @@ public class Connection implements Closeable
 		//create thread-local default configuration
 		_dmlconf = new DMLConfig();
 		ConfigurationManager.setLocalConfig(_dmlconf);
+	}
+	
+	/**
+	 * Connection constructor, the starting point for any other JMLC API calls.
+	 * This variant allows to enable a set of boolean compiler configurations.
+	 * 
+	 * @param configs one or many boolean compiler configurations to enable.
+	 */
+	public Connection(CompilerConfig.ConfigType... configs) {
+		//basic constructor, which also constructs the compiler config
+		this();
+		
+		//set optional compiler configurations in current config
+		CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
+		for( ConfigType configType : configs )
+			cconf.set(configType, true);
+		ConfigurationManager.setLocalConfig(cconf);
 	}
 	
 	/**
@@ -159,12 +181,21 @@ public class Connection implements Closeable
 	{
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
 
-		//prepare arguments
+		//check for valid names of passed arguments
+		String[] invalidArgs = args.keySet().stream()
+			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
+		if( invalidArgs.length > 0 )
+			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
+		
+		//check for valid names of input and output variables
+		String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
+			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
+		if( invalidVars.length > 0 )
+			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
 		
 		//simplified compilation chain
 		Program rtprog = null;
-		try
-		{
+		try {
 			//parsing
 			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
@@ -185,12 +216,14 @@ public class Connection implements Closeable
 			
 			//lop construct and runtime prog generation
 			dmlt.constructLops(prog);
-			rtprog = prog.getRuntimeProgram(_dmlconf);
+			rtprog = dmlt.getRuntimeProgram(prog, _dmlconf);
 			
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
 			
-			//System.out.println(Explain.explain(rtprog));
+			//activate thread-local proxy for dynamic recompilation
+			if( ConfigurationManager.isDynamicRecompilation() )
+				JMLCProxy.setActive(outputs);
 		}
 		catch(ParseException pe) {
 			// don't chain ParseException (for cleaner error output)
@@ -212,6 +245,10 @@ public class Connection implements Closeable
 	public void close() {
 		//clear thread-local dml / compiler configs
 		ConfigurationManager.clearLocalConfigs();
+		if( ConfigurationManager.isDynamicRecompilation() )
+			JMLCProxy.setActive(null);
+		if( ConfigurationManager.isCodegenEnabled() )
+			SpoofCompiler.cleanupCodeGenerator();
 	}
 	
 	/**
@@ -229,8 +266,8 @@ public class Connection implements Closeable
 		try 
 		{
 			//read from hdfs or gpfs file system
-			if(    fname.startsWith("hdfs:") 
-				|| fname.startsWith("gpfs:") ) 
+			if(    fname.startsWith("hdfs:") || fname.startsWith("gpfs:")
+				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fname)) ) 
 			{ 
 				Path scriptPath = new Path(fname);
 				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);

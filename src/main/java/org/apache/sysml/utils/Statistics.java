@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -48,7 +47,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
  * This class captures all statistics.
  */
 public class Statistics 
-{
+{	
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
 	
@@ -79,6 +78,9 @@ public class Statistics
 	private static final LongAdder codegenHopCompile = new LongAdder(); //count
 	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenClassCompile = new LongAdder(); //count
+	private static final LongAdder codegenEnumAll = new LongAdder(); //count
+	private static final LongAdder codegenEnumEval = new LongAdder(); //count
+	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
 	
@@ -257,6 +259,16 @@ public class Statistics
 		codegenCPlanCompile.add(delta);
 	}
 	
+	public static void incrementCodegenEnumAll(long delta) {
+		codegenEnumAll.add(delta);
+	}
+	public static void incrementCodegenEnumEval(long delta) {
+		codegenEnumEval.add(delta);
+	}
+	public static void incrementCodegenEnumEvalP(long delta) {
+		codegenEnumEvalP.add(delta);
+	}
+	
 	public static void incrementCodegenClassCompile() {
 		codegenClassCompile.increment();
 	}
@@ -283,6 +295,16 @@ public class Statistics
 	
 	public static long getCodegenCPlanCompile() {
 		return codegenCPlanCompile.longValue();
+	}
+	
+	public static long getCodegenEnumAll() {
+		return codegenEnumAll.longValue();
+	}
+	public static long getCodegenEnumEval() {
+		return codegenEnumEval.longValue();
+	}
+	public static long getCodegenEnumEvalP() {
+		return codegenEnumEvalP.longValue();
 	}
 	
 	public static long getCodegenClassCompile() {
@@ -376,6 +398,15 @@ public class Statistics
 		
 		funRecompiles.reset();
 		funRecompileTime.reset();
+		
+		codegenHopCompile.reset();
+		codegenCPlanCompile.reset();
+		codegenClassCompile.reset();
+		codegenEnumAll.reset();
+		codegenEnumEval.reset();
+		codegenEnumEvalP.reset();
+		codegenCompileTime.reset();
+		codegenClassCompileTime.reset();
 		
 		parforOptCount = 0;
 		parforOptTime = 0;
@@ -533,7 +564,7 @@ public class Statistics
 		final String instCol = "Instruction";
 		final String timeSCol = "Time(s)";
 		final String countCol = "Count";
-		final String gpuCol = "GPU";
+		final String gpuCol = "Misc Timers";
 		StringBuilder sb = new StringBuilder();
 		int numHittersToDisplay = Math.min(num, len);
 		int maxNumLen = String.valueOf(numHittersToDisplay).length();
@@ -554,32 +585,49 @@ public class Statistics
 
 			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
 		}
+		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
-		if (GPUStatistics.DISPLAY_STATISTICS) {
+		if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
 			sb.append("  ");
 			sb.append(gpuCol);
 		}
 		sb.append("\n");
 		for (int i = 0; i < numHittersToDisplay; i++) {
 			String instruction = tmp[len - 1 - i].getKey();
+			String [] wrappedInstruction = wrap(instruction, maxInstLen);
 
 			Long timeNs = tmp[len - 1 - i].getValue();
 			double timeS = (double) timeNs / 1000000000.0;
 			String timeSString = sFormat.format(timeS);
 
 			Long count = _cpInstCounts.get(instruction);
-			sb.append(String.format(
-					" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
-					(i + 1), instruction, timeSString, count));
-
-			// Add the miscellaneous timer info
-			if (GPUStatistics.DISPLAY_STATISTICS) {
-				sb.append("  ");
-				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction));
+			int numLines = wrappedInstruction.length;
+			String [] miscTimers = null;
+			
+			if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
+				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
+				numLines = Math.max(numLines, miscTimers.length);
 			}
-			sb.append("\n");
+			
+			String miscFormatString = (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
+				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
+				String miscTimerStr = ( (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
+				if(wrapIter == 0) {
+					// Display instruction count
+					sb.append(String.format(
+							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d" + miscFormatString,
+							(i + 1), instStr, timeSString, count, miscTimerStr));
+				}
+				else {
+					sb.append(String.format(
+							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s" + miscFormatString,
+							"", instStr, "", "", miscTimerStr));
+				}
+				sb.append("\n");
+			}
 		}
 
 		return sb.toString();
@@ -670,6 +718,17 @@ public class Statistics
 	public static String display() {
 		return display(DMLScript.STATISTICS_COUNT);
 	}
+	
+	
+	private static String [] wrap(String str, int wrapLength) {
+		int numLines = (int) Math.ceil( ((double)str.length()) / wrapLength);
+		int len = str.length();
+		String [] ret = new String[numLines];
+		for(int i = 0; i < numLines; i++) {
+			ret[i] = str.substring(i*wrapLength, Math.min((i+1)*wrapLength, len));
+		}
+		return ret;
+	}
 
 	/**
 	 * Returns statistics as a string
@@ -729,8 +788,11 @@ public class Statistics
 				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
 				sb.append("Functions recompile time:\t" + String.format("%.3f", ((double)getFunRecompileTime())/1000000000) + " sec.\n");	
 			}
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) ) {
-				sb.append("Codegen compile (DAG, CP, JC):\t" + getCodegenDAGCompile() + "/" + getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
+			if( ConfigurationManager.isCodegenEnabled() ) {
+				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
+						+ getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
+				sb.append("Codegen enum (All,Eval,EvalP):\t" + getCodegenEnumAll() + "/"
+						+ getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
 				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");

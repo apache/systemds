@@ -20,6 +20,8 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -47,16 +49,14 @@ import org.apache.sysml.parser.Expression.DataType;
 public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewriteRule
 {
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 		throws HopsException 
 	{
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
-		
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
 			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
 		{
-			ret.add(sb); // nothing to do here
-			return ret; //return original statement block
+			// nothing to do here, return original statement block
+			return Arrays.asList(sb);
 		}
 		
 		if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock ) //incl parfor 
@@ -86,8 +86,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		}
 			
 		//return modified statement block
-		ret.add(sb);
-		return ret;
+		return Arrays.asList(sb);
 	}
 	
 	private boolean rIsApplicableForUpdateInPlace( ArrayList<StatementBlock> sbs, String varname ) 
@@ -100,12 +99,12 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		//recursive invocation
 		boolean ret = true;
 		for( StatementBlock sb : sbs ) {
-			if( !sb.variablesRead().containsVariable(varname) )
+			if( !sb.variablesRead().containsVariable(varname)
+				&& !sb.variablesUpdated().containsVariable(varname) )
 				continue; //valid wrt update-in-place
 			
 			if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock ) {
-				ret &= sb.getUpdateInPlaceVars()
-						 .contains(varname);
+				ret &= sb.getUpdateInPlaceVars().contains(varname);
 			}
 			else if( sb instanceof IfStatementBlock ) {
 				IfStatementBlock isb = (IfStatementBlock) sb;
@@ -149,5 +148,11 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		}
 		
 		return validLix;
+	}
+	
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
+			ProgramRewriteStatus sate) throws HopsException {
+		return sbs;
 	}
 }

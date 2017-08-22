@@ -28,7 +28,7 @@ library("matrixStats")
 X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
 y = seq(1,150);
 
-Z = pmax(floor(round(abs(pmin(sign(X+y),1)))),7);
+Z = pmax(floor(round(abs(pmin(sign(X+y),rowSums(X)%*%matrix(1,1,10))))),7);
 R = t(colSums(Z));
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

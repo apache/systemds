@@ -109,7 +109,7 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction
 			arg0.aggregateUnaryOperations(_uaggOp, out1, brlen, bclen, null);
 			
 			//strip-off correction
-			out1.dropLastRowsOrColums(_uaggOp.aggOp.correctionLocation);
+			out1.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
 		
 			//perform binary operation
 			MatrixBlock out2 = new MatrixBlock();

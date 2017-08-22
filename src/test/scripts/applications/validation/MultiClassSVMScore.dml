@@ -48,6 +48,6 @@ write(predicted_y, $7, format="text");
 
 if ($2 == 1) {
 	y = read($3);
-    correct_percentage = sum(ppred(predicted_y - y, 0, "==")) / Nt * 100;
+    correct_percentage = sum((predicted_y - y) == 0) / Nt * 100;
 	write(correct_percentage, $8);
 	}

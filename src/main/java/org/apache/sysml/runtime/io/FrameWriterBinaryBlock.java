@@ -67,7 +67,8 @@ public class FrameWriterBinaryBlock extends FrameWriter
 		int blen = ConfigurationManager.getBlocksize();
 		
 		//sequential write to single file
-		writeBinaryBlockFrameToSequenceFile(path, job, fs, src, blen, 0, (int)rlen);		
+		writeBinaryBlockFrameToSequenceFile(path, job, fs, src, blen, 0, (int)rlen);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	/**

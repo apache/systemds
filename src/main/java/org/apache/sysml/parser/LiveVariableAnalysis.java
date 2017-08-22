@@ -22,8 +22,6 @@ package org.apache.sysml.parser;
 
 public abstract class LiveVariableAnalysis 
 {
-
-		
 	VariableSet _read;
 	VariableSet _updated;
 	VariableSet _gen;
@@ -59,12 +57,24 @@ public abstract class LiveVariableAnalysis
 		return _kill;
 	}
 	
-	public void setLiveOut(VariableSet lo){
+	public VariableSet getGen(){
+		return _gen;
+	}
+	
+	public void setLiveOut(VariableSet lo) {
 		_liveOut = lo;
 	}
 	
-	public void setLiveIn(VariableSet li){
+	public void setLiveIn(VariableSet li) {
 		_liveIn = li;
+	}
+	
+	public void setKill(VariableSet ki) {
+		_kill = ki;
+	}
+	
+	public void setGen(VariableSet ge) {
+		_gen = ge;
 	}
 	
 	public void setUpdatedVariables( VariableSet vars ){

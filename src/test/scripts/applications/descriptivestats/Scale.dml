@@ -90,9 +90,8 @@ Q = quantile(V, P)
 # inter-quartile mean
 iqm = interQuartileMean(V)
 
-# outliers use ppred to describe it
-out_minus = ppred(V, mu-5*std_dev, "<")*V 
-out_plus = ppred(V, mu+5*std_dev, ">")*V
+out_minus = (V < (mu-5*std_dev))*V 
+out_plus = (V > (mu+5*std_dev))*V
 
 write(mu, $5);
 write(std_dev, $6);

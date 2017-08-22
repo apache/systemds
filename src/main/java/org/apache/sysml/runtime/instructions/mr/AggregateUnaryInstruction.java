@@ -98,7 +98,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 					OperationsOnMatrixValues.performAggregateUnary( inix, in.getValue(), out.getIndexes(), out.getValue(), 
 							                            auop, blockRowFactor, blockColFactor);
 					if( _dropCorr )
-						((MatrixBlock)out.getValue()).dropLastRowsOrColums(auop.aggOp.correctionLocation);
+						((MatrixBlock)out.getValue()).dropLastRowsOrColumns(auop.aggOp.correctionLocation);
 				}
 				
 				//put the output value in the cache

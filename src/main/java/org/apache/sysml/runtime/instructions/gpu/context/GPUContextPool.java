@@ -22,6 +22,7 @@ import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,9 +43,9 @@ public class GPUContextPool {
 	protected static final Log LOG = LogFactory.getLog(GPUContextPool.class.getName());
 
 	/**
-	 * Maximum number of gpus to use, -1 for all
+	 * GPUs to use, can specify -1 to use all, comma separated list of GPU numbers, a specific GPU or a range
 	 */
-	public static int PER_PROCESS_MAX_GPUS = -1;
+	public static String AVAILABLE_GPUS;
 
 
 	private static long INITIAL_GPU_MEMORY_BUDGET = -1;
@@ -98,28 +99,38 @@ public class GPUContextPool {
 		deviceCount = deviceCountArray[0];
 		deviceProperties = new cudaDeviceProp[deviceCount];
 
-		if (PER_PROCESS_MAX_GPUS > 0)
-			deviceCount = Math.min(PER_PROCESS_MAX_GPUS, deviceCount);
+		try {
+			ArrayList<Integer> listOfGPUs = parseListString(AVAILABLE_GPUS, deviceCount);
 
-		// Initialize the list of devices
-		for (int i = 0; i < deviceCount; i++) {
-			cudaDeviceProp properties = new cudaDeviceProp();
-			cudaGetDeviceProperties(properties, i);
-			deviceProperties[i] = properties;
+			// Initialize the list of devices & the pool of GPUContexts
+			for (int i : listOfGPUs) {
+				cudaDeviceProp properties = new cudaDeviceProp();
+				cudaGetDeviceProperties(properties, i);
+				deviceProperties[i] = properties;
+				GPUContext gCtx = new GPUContext(i);
+				pool.add(gCtx);
+			}
+
+		} catch (IllegalArgumentException e) {
+			LOG.warn("Invalid setting for setting systemml.gpu.availableGPUs, defaulting to use ALL GPUs");
+
+			// Initialize the list of devices & the pool of GPUContexts
+			for (int i = 0; i < deviceCount; i++) {
+				cudaDeviceProp properties = new cudaDeviceProp();
+				cudaGetDeviceProperties(properties, i);
+				deviceProperties[i] = properties;
+				GPUContext gCtx = new GPUContext(i);
+				pool.add(gCtx);
+			}
 		}
 
-		// Initialize the pool of GPUContexts
-		for (int i = 0; i < deviceCount; i++) {
-			GPUContext gCtx = new GPUContext(i);
-			pool.add(gCtx);
-		}
 
 		// Initialize the initial memory budget
 		// If there are heterogeneous GPUs on the machine (different memory sizes)
 		// initially available memory is set to the GPU with the lowest memory
 		// This is because at runtime, we wouldn't know which GPU a certain
 		// operation gets scheduled on
-		long minAvailableMemory = Integer.MAX_VALUE;
+		long minAvailableMemory = Long.MAX_VALUE;
 		for (GPUContext gCtx : pool) {
 			gCtx.initializeThread();
 			minAvailableMemory = Math.min(minAvailableMemory, gCtx.getAvailableMemory());
@@ -128,6 +139,7 @@ public class GPUContextPool {
 
 
 		GPUContext.LOG.info("Total number of GPUs on the machine: " + deviceCount);
+		GPUContext.LOG.info("GPUs being used: " + AVAILABLE_GPUS);
 		GPUContext.LOG.info("Initial GPU memory: " + initialGPUMemBudget());
 
 		//int[] device = {-1};
@@ -139,6 +151,56 @@ public class GPUContextPool {
 		//LOG.debug("Active CUDA device number : " + device[0]);
 		//LOG.debug("Max Blocks/Threads/SharedMem on active device: " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
+	}
+
+	/**
+	 * Parses a string into a list. The string can be of these forms:
+	 * 1. "-1" : all integers from range 0 to max - [0,1,2,3....max]
+	 * 2. "2,3,0" : comma separated list of integers - [0,2,3]
+	 * 3. "4" : a specific integer - [4]
+	 * 4. "0-4" : a range of integers - [0,1,2,3,4]
+	 * In ranges and comma separated lists, all values must be positive. Anything else is invalid.
+	 * @param str input string
+	 * @param max maximum range of integers
+	 * @return the list of integers in the parsed string
+	 */
+	public static ArrayList<Integer> parseListString(String str, int max) {
+		ArrayList<Integer> result = new ArrayList<>();
+		str = str.trim();
+		if (str.equalsIgnoreCase("-1")) {  // all
+			for (int i=0; i<max; i++){
+				result.add(i);
+			}
+		} else if (str.contains("-")){  // range
+			String[] numbersStr = str.split("-");
+			if (numbersStr.length != 2) {
+				throw new IllegalArgumentException("Invalid string to parse to a list of numbers : " + str);
+			}
+			String beginStr = numbersStr[0];
+			String endStr = numbersStr[1];
+			int begin = Integer.parseInt(beginStr);
+			int end = Integer.parseInt(endStr);
+
+			for (int i=begin; i<=end; i++){
+				result.add(i);
+			}
+		} else if (str.contains(",")) { // comma separated list
+			String[] numbers = str.split(",");
+			for (int i = 0; i < numbers.length; i++) {
+				int n = Integer.parseInt(numbers[i].trim());
+				result.add(n);
+			}
+		} else {  // single number
+			int number = Integer.parseInt(str);
+			result.add(number);
+		}
+		// Check if all numbers between 0 and max
+		for (int n : result){
+			if (n < 0 || n >= max) {
+				throw new IllegalArgumentException("Invalid string (" + str + ") parsed to a list of numbers (" + result + ") which exceeds the maximum range : ");
+			}
+		}
+		return result;
 	}
 
 	/**

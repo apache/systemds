@@ -26,6 +26,7 @@ import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.wink.json4j.JSONObject;
 
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
@@ -244,7 +245,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Unsupported parameterized function "+ getOpCode(), 
 						false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
-		return;
 	}
 
 	@Override
@@ -277,8 +277,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			default: //always unconditional (because unsupported operation)
 				raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-		
-		return;
 	}
 	
 	// example: A = transformapply(target=X, meta=M, spec=s)
@@ -291,6 +289,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//validate specification
 		checkDataValueType("transformapply", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 		
 		//set output dimensions
 		output.setDataType(DataType.MATRIX);
@@ -307,6 +306,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//validate specification
 		checkDataValueType("transformdecode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 		
 		//set output dimensions
 		output.setDataType(DataType.FRAME);
@@ -319,6 +319,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	{
 		//validate specification
 		checkDataValueType("transformmeta", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 		
 		//validate meta data path 
 		checkDataValueType("transformmeta", TF_FN_PARAM_MTD, DataType.SCALAR, ValueType.STRING, conditional);
@@ -337,6 +338,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//validate specification
 		checkDataValueType("transformencode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 		
 		//set output dimensions 
 		output1.setDataType(DataType.MATRIX);
@@ -345,6 +347,20 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output2.setDataType(DataType.FRAME);
 		output2.setValueType(ValueType.STRING);
 		output2.setDimensions(-1, -1);
+	}
+	
+	private void validateTransformSpec(String pname, boolean conditional) throws LanguageException {
+		Expression data = getVarParam(pname);
+		if( data instanceof StringIdentifier ) {
+			try {
+				StringIdentifier spec = (StringIdentifier)data;
+				new JSONObject(spec.getValue());
+			}
+			catch(Exception ex) {
+				raiseValidateError("Transform specification parsing issue: ", 
+					conditional, ex.getMessage());
+			}
+		}
 	}
 	
 	private void validateReplace(DataIdentifier output, boolean conditional) throws LanguageException {
@@ -645,7 +661,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.SCALAR);
 		output.setValueType(ValueType.DOUBLE);
 		output.setDimensions(0, 0);
-		return;
 	}
 	
 	private void validateCastAsString(DataIdentifier output, boolean conditional) 
@@ -725,11 +740,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	@Override
 	public boolean multipleReturns() {
-		switch(_opcode) {
-			case TRANSFORMENCODE:
-				return true;
-			default:
-				return false;
-		}
+		return (_opcode == ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
 	}
 }

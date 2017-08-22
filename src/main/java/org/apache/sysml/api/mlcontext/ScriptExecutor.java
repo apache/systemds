@@ -25,9 +25,10 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.DMLScript.DMLOptions;
+import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
+import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -50,6 +51,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -125,6 +127,7 @@ public class ScriptExecutor {
 	protected boolean statistics = false;
 	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
+	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
 	protected boolean maintainSymbolTable = false;
 
@@ -167,7 +170,7 @@ public class ScriptExecutor {
 	protected void rewriteHops() {
 		try {
 			dmlTranslator.rewriteHopsDAG(dmlProgram);
-		} catch (LanguageException | HopsException | ParseException e) {
+		} catch (LanguageException | HopsException | ParseException | DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
 		}
 	}
@@ -180,10 +183,8 @@ public class ScriptExecutor {
 			return;
 
 		try {
-			ExplainType explainType = (explainLevel != null) ? 
-				explainLevel.getExplainType() : ExplainType.RUNTIME;
-			System.out.println(Explain.display(
-				dmlProgram, runtimeProgram, explainType, null));
+			ExplainType explainType = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
+			System.out.println(Explain.display(dmlProgram, runtimeProgram, explainType, null));
 		} catch (Exception e) {
 			throw new MLContextException("Exception occurred while explaining dml program", e);
 		}
@@ -208,8 +209,8 @@ public class ScriptExecutor {
 	 */
 	protected void generateRuntimeProgram() {
 		try {
-			runtimeProgram = dmlProgram.getRuntimeProgram(config);
-		} catch (LanguageException | DMLRuntimeException | LopsException | IOException e) {
+			runtimeProgram = dmlTranslator.getRuntimeProgram(dmlProgram, config);
+		} catch (LanguageException | DMLRuntimeException | LopsException | IOException | HopsException e) {
 			throw new MLContextException("Exception occurred while generating runtime program", e);
 		}
 	}
@@ -247,6 +248,9 @@ public class ScriptExecutor {
 		oldGPU = DMLScript.USE_ACCELERATOR;
 		DMLScript.USE_ACCELERATOR = gpu;
 		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
+
+		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
+		GPUContextPool.AVAILABLE_GPUS = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.AVAILABLE_GPUS);
 	}
 
 	/**
@@ -259,9 +263,16 @@ public class ScriptExecutor {
 		DMLScript.USE_ACCELERATOR = oldGPU;
 		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
 	}
-
+	
+	public void compile(Script script) {
+		compile(script, true);
+	}
+	
 	/**
-	 * Execute a DML or PYDML script. This is broken down into the following
+	 * Compile a DML or PYDML script. This will help analysis of DML programs
+	 * that have dynamic recompilation flag set to false without actually executing it. 
+	 * 
+	 * This is broken down into the following
 	 * primary methods:
 	 *
 	 * <ol>
@@ -279,6 +290,46 @@ public class ScriptExecutor {
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
 	 * <li>{@link #cleanupRuntimeProgram()}</li>
+	 * </ol>
+	 *
+	 * @param script
+	 *            the DML or PYDML script to compile
+	 * @param performHOPRewrites
+	 *            should perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
+	 */
+	public void compile(Script script, boolean performHOPRewrites) {
+
+		// main steps in script execution
+		setup(script);
+		if (statistics) {
+			Statistics.startCompileTimer();
+		}
+		parseScript();
+		liveVariableAnalysis();
+		validateScript();
+		constructHops();
+		if(performHOPRewrites)
+			rewriteHops();
+		rewritePersistentReadsAndWrites();
+		constructLops();
+		generateRuntimeProgram();
+		showExplanation();
+		globalDataFlowOptimization();
+		countCompiledMRJobsAndSparkInstructions();
+		initializeCachingAndScratchSpace();
+		cleanupRuntimeProgram();
+		if (statistics) {
+			Statistics.stopCompileTimer();
+		}
+	}
+
+
+	/**
+	 * Execute a DML or PYDML script. This is broken down into the following
+	 * primary methods:
+	 *
+	 * <ol>
+	 * <li>{@link #compile(Script)}</li>
 	 * <li>{@link #createAndInitializeExecutionContext()}</li>
 	 * <li>{@link #executeRuntimeProgram()}</li>
 	 * <li>{@link #cleanupAfterExecution()}</li>
@@ -291,20 +342,7 @@ public class ScriptExecutor {
 	public MLResults execute(Script script) {
 
 		// main steps in script execution
-		setup(script);
-		parseScript();
-		liveVariableAnalysis();
-		validateScript();
-		constructHops();
-		rewriteHops();
-		rewritePersistentReadsAndWrites();
-		constructLops();
-		generateRuntimeProgram();
-		showExplanation();
-		globalDataFlowOptimization();
-		countCompiledMRJobsAndSparkInstructions();
-		initializeCachingAndScratchSpace();
-		cleanupRuntimeProgram();
+		compile(script);
 
 		try {
 			createAndInitializeExecutionContext();
@@ -336,9 +374,9 @@ public class ScriptExecutor {
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
-		//reset all relevant summary statistics 
+		// reset all relevant summary statistics
 		Statistics.resetNoOfExecutedJobs();
-		if( statistics ) {
+		if (statistics) {
 			CacheStatistics.reset();
 			Statistics.reset();
 		}
@@ -692,5 +730,25 @@ public class ScriptExecutor {
 	 */
 	public DMLConfig getConfig() {
 		return config;
+	}
+
+	/**
+	 * Obtain the current execution environment.
+	 * 
+	 * @return the execution environment
+	 */
+	public ExecutionType getExecutionType() {
+		return executionType;
+	}
+
+	/**
+	 * Set the execution environment.
+	 * 
+	 * @param executionType
+	 *            the execution environment
+	 */
+	public void setExecutionType(ExecutionType executionType) {
+		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		this.executionType = executionType;
 	}
 }

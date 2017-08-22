@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.matrix.mapred;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.Reporter;
@@ -105,7 +106,6 @@ public class GMRCtableBuffer
 		return _blockBuffer;
 	}
 
-	@SuppressWarnings("deprecation")
 	public void flushBuffer( Reporter reporter ) 
 		throws RuntimeException 
 	{
@@ -129,12 +129,13 @@ public class GMRCtableBuffer
 					}
 					
 					//output result data 
-					for(LLDoubleEntry e: resultMap.entrySet()) {
+					Iterator<LLDoubleEntry> iter = resultMap.getIterator();
+					while( iter.hasNext() ) {
+						LLDoubleEntry e = iter.next();
 						key = new MatrixIndexes(e.key1, e.key2);
 						value.setValue(e.value);
-						for(Integer i: resultIDs) {
+						for(Integer i: resultIDs)
 							_collector.collectOutput(key, value, i, reporter);
-						}
 					}
 				}
 			}

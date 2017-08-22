@@ -22,26 +22,31 @@ package org.apache.sysml.hops.codegen.template;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class TemplateMultiAgg extends TemplateCell 
 {	
 	public TemplateMultiAgg() {
-		super(TemplateType.MultiAggTpl, false);
+		super(TemplateType.MAGG, false);
 	}
 	
 	public TemplateMultiAgg(boolean closed) {
-		super(TemplateType.MultiAggTpl, closed);
+		super(TemplateType.MAGG, closed);
 	}
 
 	@Override
@@ -69,7 +74,7 @@ public class TemplateMultiAgg extends TemplateCell
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//get all root nodes for multi aggregation
-		MemoTableEntry multiAgg = memo.getBest(hop.getHopID(), TemplateType.MultiAggTpl);
+		MemoTableEntry multiAgg = memo.getBest(hop.getHopID(), TemplateType.MAGG);
 		ArrayList<Hop> roots = new ArrayList<Hop>();
 		for( int i=0; i<3; i++ )
 			if( multiAgg.isPlanRef(i) )
@@ -86,9 +91,10 @@ public class TemplateMultiAgg extends TemplateCell
 		//reorder inputs (ensure matrices/vectors come first) and prune literals
 		//note: we order by number of cells and subsequently sparsity to ensure
 		//that sparse inputs are used as the main input w/o unnecessary conversion
+		Hop shared = getSparseSafeSharedInput(roots, inHops);
 		Hop[] sinHops = inHops.stream()
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
-			.sorted(new HopInputComparator()).toArray(Hop[]::new);
+			.sorted(new HopInputComparator(shared)).toArray(Hop[]::new);
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -107,10 +113,44 @@ public class TemplateMultiAgg extends TemplateCell
 		}
 		CNodeMultiAgg tpl = new CNodeMultiAgg(inputs, outputs);
 		tpl.setAggOps(aggOps);
+		tpl.setSparseSafe(isSparseSafe(roots, sinHops[0], 
+			tpl.getOutputs(), tpl.getAggOps(), true));
 		tpl.setRootNodes(roots);
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
+	}
+	
+	private Hop getSparseSafeSharedInput(ArrayList<Hop> roots, HashSet<Hop> inHops) {
+		Set<Hop> tmp = inHops.stream()
+			.filter(h -> h.getDataType().isMatrix())
+			.collect(Collectors.toSet());
+		for( Hop root : roots ) {
+			root.resetVisitStatus();
+			HashSet<Hop> inputs = new HashSet<>();
+			rCollectSparseSafeInputs(root, inHops, inputs);
+			tmp.removeIf(h -> !inputs.contains(h));
+		}
+		Hop.resetVisitStatus(roots);
+		return tmp.isEmpty() ? null : 
+			tmp.toArray(new Hop[0])[0];
+	}
+	
+	private void rCollectSparseSafeInputs(Hop current, HashSet<Hop> inHops, HashSet<Hop> sparseInputs) {
+		if( current.isVisited() || !(HopRewriteUtils.isBinary(current, OpOp2.MULT)
+			|| HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ))) {
+			return;
+		}
+		
+		for( Hop c : current.getInput() ) {
+			if( !inHops.contains(c) )
+				rCollectSparseSafeInputs(c, inHops, sparseInputs);
+			else if( c.dimsKnown(true) && MatrixBlock.evalSparseFormatInMemory(
+				c.getDim1(), c.getDim2(), c.getNnz()) )
+				sparseInputs.add(c);
+		}
+		
+		current.setVisited();
 	}
 }

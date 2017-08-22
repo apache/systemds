@@ -106,7 +106,7 @@ public class DistributedCacheInput
 		
 		for( int j=0; j<_clen; j+=_bclen ) {
 			MatrixBlock mb = (MatrixBlock) getDataBlock(1, (int)Math.ceil((double)(j+1)/_bclen)).getValue(); 
-			double[] mbtmp = DataConverter.convertToDoubleVector(mb);
+			double[] mbtmp = DataConverter.convertToDoubleVector(mb, false);
 			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
 		}
 		
@@ -120,7 +120,7 @@ public class DistributedCacheInput
 		
 		for( int j=0; j<_rlen; j+=_brlen ) {
 			MatrixBlock mb = (MatrixBlock) getDataBlock((int)Math.ceil((double)(j+1)/_brlen),1).getValue(); 
-			double[] mbtmp = DataConverter.convertToDoubleVector(mb);
+			double[] mbtmp = DataConverter.convertToDoubleVector(mb, false);
 			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
 		}
 		

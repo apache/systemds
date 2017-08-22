@@ -26,7 +26,7 @@ import org.apache.sysml.parser.Expression.*;
 
 
 /**
- * Lop to perform tertiary operation. All inputs must be matrices or vectors. 
+ * Lop to perform ternary operation. All inputs must be matrices or vectors. 
  * For example, this lop is used in evaluating A = ctable(B,C,W)
  * 
  * Currently, this lop is used only in case of CTABLE functionality.

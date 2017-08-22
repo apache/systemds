@@ -86,46 +86,41 @@ public class OperationsOnMatrixValues
 	}
 	
 	// ------------- Ternary Operations -------------
-	// tertiary where all three inputs are matrices
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
 	}
 	
-	// tertiary where first two inputs are matrices, and third input is a scalar (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op) 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
 	}
 	
-	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
 	}
 	
-	// tertiary where first input is a matrix, and second is scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
 			int brlen, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
 	}
 	
-	// tertiary where first and third inputs are matrices, and second is a scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);

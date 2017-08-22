@@ -394,7 +394,7 @@ public class TernaryOp extends Hop
 		DataType dt1 = getInput().get(0).getDataType(); 
 		DataType dt2 = getInput().get(1).getDataType(); 
 		DataType dt3 = getInput().get(2).getDataType(); 
-		Ternary.OperationTypes tertiaryOpOrig = Ternary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+		Ternary.OperationTypes ternaryOpOrig = Ternary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
  		
 		// Compute lops for all inputs
 		Lop[] inputLops = new Lop[getInput().size()];
@@ -410,7 +410,8 @@ public class TernaryOp extends Hop
 		if ( et == ExecType.CP  || et == ExecType.SPARK) 
 		{	
 			//for CP we support only ctable expand left
-			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			Ternary.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
+				Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
 			boolean ignoreZeros = false;
 			
 			if( isMatrixIgnoreZeroRewriteApplicable() ) { 
@@ -419,39 +420,39 @@ public class TernaryOp extends Hop
 				inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
 			}
 			
-			Ternary tertiary = new Ternary(inputLops, tertiaryOp, getDataType(), getValueType(), ignoreZeros, et);
+			Ternary ternary = new Ternary(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
 			
-			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
-			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+			setLineNumbers(ternary);
 			
 			//force blocked output in CP (see below), otherwise binarycell
 			if ( et == ExecType.SPARK ) {
-				tertiary.getOutputParameters().setDimensions(_dim1, _dim2, -1, -1, -1);
+				ternary.getOutputParameters().setDimensions(_dim1, _dim2, -1, -1, -1);
 				setRequiresReblock( true );
 			}
 			else
-				tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+				ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			
-			//tertiary opt, w/o reblock in CP
-			setLops(tertiary);
+			//ternary opt, w/o reblock in CP
+			setLops(ternary);
 			
 			
 		}
 		else //MR
 		{
 			//for MR we support both ctable expand left and right
-			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable() ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			Ternary.OperationTypes ternaryOp = isSequenceRewriteApplicable() ? 
+				Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
 			
 			Group group1 = null, group2 = null, group3 = null, group4 = null;
 			group1 = new Group(inputLops[0], Group.OperationTypes.Sort, getDataType(), getValueType());
 			group1.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setLineNumbers(group1);
 			
-			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-			Ternary tertiary = null;
+			Ternary ternary = null;
 			// create "group" lops for MATRIX inputs
-			switch (tertiaryOp) 
+			switch (ternaryOp) 
 			{
 				case CTABLE_TRANSFORM:
 					// F = ctable(A,B,W)
@@ -462,7 +463,7 @@ public class TernaryOp extends Hop
 					group2.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setLineNumbers(group2);
 					
 					group3 = new Group(
 							inputLops[2],
@@ -471,19 +472,17 @@ public class TernaryOp extends Hop
 					group3.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setLineNumbers(group3);
 					
 					if ( inputLops.length == 3 )
-						tertiary = new Ternary(
-								new Lop[] {group1, group2, group3},
-								tertiaryOp,
-								getDataType(), getValueType(), et);	
+						ternary = new Ternary(
+							new Lop[] {group1, group2, group3}, ternaryOp,
+							getDataType(), getValueType(), et);	
 					else 
 						// output dimensions are given
-						tertiary = new Ternary(
-								new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
-								tertiaryOp,
-								getDataType(), getValueType(), et);	
+						ternary = new Ternary(
+							new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
+							ternaryOp, getDataType(), getValueType(), et);	
 					break;
 	
 				case CTABLE_TRANSFORM_SCALAR_WEIGHT:
@@ -495,18 +494,16 @@ public class TernaryOp extends Hop
 					group2.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setLineNumbers(group2);
 					
 					if ( inputLops.length == 3)
-						tertiary = new Ternary(
+						ternary = new Ternary(
 								new Lop[] {group1,group2,inputLops[2]},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+								ternaryOp, getDataType(), getValueType(), et);
 					else
-						tertiary = new Ternary(
+						ternary = new Ternary(
 								new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+								ternaryOp, getDataType(), getValueType(), et);
 						
 					break;
 			
@@ -524,50 +521,40 @@ public class TernaryOp extends Hop
 					//TODO remove group, whenever we push it into the map task
 					
 					if (inputLops.length == 3)
-						tertiary = new Ternary(
-								new Lop[] {					
-										group, //matrix
-										getInput().get(2).constructLops(), //weight
-										new LiteralOp(left).constructLops() //left
+						ternary = new Ternary(
+								new Lop[] {group, //matrix
+									getInput().get(2).constructLops(), //weight
+									new LiteralOp(left).constructLops() //left
 								},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+								ternaryOp, getDataType(), getValueType(), et);
 					else
-						tertiary = new Ternary(
-								new Lop[] {					
-										group,//getInput().get(1).constructLops(), //matrix
-										getInput().get(2).constructLops(), //weight
-										new LiteralOp(left).constructLops(), //left
-										inputLops[3],
-										inputLops[4]
+						ternary = new Ternary(
+								new Lop[] {group, //matrix
+									getInput().get(2).constructLops(), //weight
+									new LiteralOp(left).constructLops(), //left
+									inputLops[3], inputLops[4]
 								},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
-					
+								ternaryOp, getDataType(), getValueType(), et);
 					break;
 					
 				case CTABLE_TRANSFORM_HISTOGRAM:
 					// F=ctable(A,1) or F = ctable(A,1,1)
 					if ( inputLops.length == 3 )
-						tertiary = new Ternary(
-								new Lop[] {
-										group1, 
-										getInput().get(1).constructLops(),
-										getInput().get(2).constructLops()
+						ternary = new Ternary(
+								new Lop[] {group1, 
+									getInput().get(1).constructLops(),
+									getInput().get(2).constructLops()
 								},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+								ternaryOp, getDataType(), getValueType(), et);
 					else
-						tertiary = new Ternary(
-								new Lop[] {
-										group1, 
-										getInput().get(1).constructLops(),
-										getInput().get(2).constructLops(),
-										inputLops[3],
-										inputLops[4]
+						ternary = new Ternary(
+								new Lop[] {group1, 
+									getInput().get(1).constructLops(),
+									getInput().get(2).constructLops(),
+									inputLops[3],
+									inputLops[4]
 								},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+								ternaryOp, getDataType(), getValueType(), et);
 						
 					break;
 				case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
@@ -579,24 +566,20 @@ public class TernaryOp extends Hop
 					group3.getOutputParameters().setDimensions(getDim1(),
 							getDim2(), getRowsInBlock(),
 							getColsInBlock(), getNnz());
-					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setLineNumbers(group3);
 					
 					if ( inputLops.length == 3)
-						tertiary = new Ternary(
-								new Lop[] {
-										group1,
-										getInput().get(1).constructLops(),
-										group3},
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+						ternary = new Ternary(
+								new Lop[] {group1,
+									getInput().get(1).constructLops(),
+									group3},
+								ternaryOp, getDataType(), getValueType(), et);
 					else
-						tertiary = new Ternary(
-								new Lop[] {
-										group1,
-										getInput().get(1).constructLops(),
-										group3, inputLops[3], inputLops[4] },
-								tertiaryOp,
-								getDataType(), getValueType(), et);
+						ternary = new Ternary(
+								new Lop[] {group1,
+									getInput().get(1).constructLops(),
+									group3, inputLops[3], inputLops[4] },
+								ternaryOp, getDataType(), getValueType(), et);
 						
 					break;
 				
@@ -605,28 +588,27 @@ public class TernaryOp extends Hop
 			}
 
 			// output dimensions are not known at compilation time
-			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-			setLineNumbers(tertiary);
+			ternary.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
+			setLineNumbers(ternary);
 			
-			Lop lctable = tertiary;
+			Lop lctable = ternary;
 			
-			if( !(_disjointInputs || tertiaryOp == Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
+			if( !(_disjointInputs || ternaryOp == Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
 			{ 
 				//no need for aggregation if (1) input indexed disjoint	or one side is sequence	w/ 1 increment
 				
 				group4 = new Group(
-						tertiary, Group.OperationTypes.Sort, getDataType(),
+						ternary, Group.OperationTypes.Sort, getDataType(),
 						getValueType());
 				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-				group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
+				setLineNumbers(group4);
+				
 				Aggregate agg1 = new Aggregate(
 						group4, HopsAgg2Lops.get(AggOp.SUM), getDataType(),
 						getValueType(), ExecType.MR);
 				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-	
-				agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+				setLineNumbers(agg1);
+				
 				// kahamSum is used for aggregation but inputs do not have
 				// correction values
 				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
@@ -650,11 +632,12 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = null;
-		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < GPUContextPool
-				.initialGPUMemBudget()) )
+		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
+				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
 			et = ExecType.GPU;
-		else
+		} else {
 			et = optFindExecType();
+		}
 		PlusMult plusmult = null;
 		
 		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
@@ -727,9 +710,15 @@ public class TernaryOp extends Hop
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
-			case MINUS_MULT:
-				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz); 
+			case MINUS_MULT: {
+				if (DMLScript.USE_ACCELERATOR) {
+					// For the GPU, the input is converted to dense
+					sparsity = 1.0;
+				} else {
+					sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+				}
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+			}
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
@@ -849,12 +838,12 @@ public class TernaryOp extends Hop
 		}
 
 		//mark for recompile (forever)
-		// Necessary condition for recompilation is unknown dimensions.
-		// When execType=CP, it is marked for recompilation only when additional
-		// dimension inputs are provided (and those values are unknown at initial compile time).
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) ) {
-			if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
-				setRequiresRecompile();
+		// additional condition: when execType=CP and additional dimension inputs 
+		// are provided (and those values are unknown at initial compile time).
+		setRequiresRecompileIfNecessary();
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) 
+			&& _etype == ExecType.CP && _dimInputsPresent) {
+			setRequiresRecompile();
 		}
 		
 		return _etype;
@@ -877,20 +866,16 @@ public class TernaryOp extends Hop
 					Hop input2 = getInput().get(1);
 					Hop input3 = getInput().get(2);
 					
-					
 					if ( _dim1 == -1 || _dim2 == -1 ) { 
 						//for ctable_expand at least one dimension is known
-						if( isSequenceRewriteApplicable() )
-						{
-							if( input1 instanceof DataGenOp && ((DataGenOp)input1).getOp()==DataGenMethod.SEQ )
-								setDim1( input1._dim1 );
-							else //if( input2 instanceof DataGenOp && ((DataGenOp)input2).getDataGenMethod()==DataGenMethod.SEQ )
-								setDim2( input2._dim1 );
-						}
+						if( isSequenceRewriteApplicable(true) )
+							setDim1( input1._dim1 );
+						else if( isSequenceRewriteApplicable(false) )
+							setDim2( input2._dim1 );
 						//for ctable_histogram also one dimension is known
-						Ternary.OperationTypes tertiaryOp = Ternary.findCtableOperationByInputDataTypes(
+						Ternary.OperationTypes ternaryOp = Ternary.findCtableOperationByInputDataTypes(
 																input1.getDataType(), input2.getDataType(), input3.getDataType());
-						if(  tertiaryOp==Ternary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
+						if(  ternaryOp==Ternary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
 							&& input2 instanceof LiteralOp )
 						{
 							setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input2) );
@@ -1079,10 +1064,8 @@ public class TernaryOp extends Hop
 				}			
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
-			//ret = false;
 		}
 		
 		return ret;

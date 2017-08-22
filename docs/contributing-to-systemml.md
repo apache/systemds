@@ -179,9 +179,10 @@ the Pull Request, and the issue can be resolved and closed.
 
 Documentation is one useful way to become involved with SystemML. SystemML online documentation
 is generated from markdown using Jekyll. For more information, please see GitHub's
-[Using Jekyll with Pages](https://help.github.com/articles/using-jekyll-with-pages/).
+[Using Jekyll as a static site generator with GitHub Pages](https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/).
 
-After installing Jekyll, Jekyll can be run from the `docs` folder via:
+After installing Jekyll locally (see [Setting up your GitHub Pages site locally with Jekyll](https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/)),
+Jekyll can be run from the `docs` folder via:
 
 	bundle exec jekyll serve
 
@@ -209,9 +210,10 @@ branch and perform the `subtree` command again.
 ### Java Code Format
 
 Java in SystemML should be formatted using a standard format. The "SystemML Format" at
-`dev/code-style/systemml-style-eclipse.xml` can be imported into Eclipse and
-`dev/code-style/systemml-style-intellij.xml` can be imported into IntelliJ
-for this purpose.
+[`dev/code-style/systemml-style-eclipse.xml`](https://github.com/apache/systemml/blob/master/dev/code-style/systemml-style-eclipse.xml)
+can be imported into Eclipse and
+[`dev/code-style/systemml-style-intellij.xml`](https://github.com/apache/systemml/blob/master/dev/code-style/systemml-style-intellij.xml)
+can be imported into IntelliJ for this purpose.
 
 No trailing whitespace is preferred. IDEs such as Eclipse and IntelliJ can be configured
 for this option.

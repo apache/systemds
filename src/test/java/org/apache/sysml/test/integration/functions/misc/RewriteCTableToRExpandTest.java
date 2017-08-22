@@ -124,7 +124,7 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 		checkDMLMetaDataFile("R", new MatrixCharacteristics(rrows, rcols, 1, 1));
 		
 		//check for applied rewrite
-		Assert.assertEquals(new Boolean(testname.equals(TEST_NAME1)||testname.equals(TEST_NAME2)), 
-				new Boolean(heavyHittersContainsSubString("rexpand")));
+		Assert.assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2)),
+				Boolean.valueOf(heavyHittersContainsSubString("rexpand")));
 	}
 }

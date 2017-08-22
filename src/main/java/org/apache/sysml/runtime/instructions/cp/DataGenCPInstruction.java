@@ -327,6 +327,6 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		}
 		
 		//release created output
-		ec.setMatrixOutput(output.getName(), soresBlock);
+		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
 	}
 }

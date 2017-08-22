@@ -63,14 +63,14 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 
 		//execute operations 
 		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type, _numThreads );
 		
 		//set output and release inputs
-		ec.setMatrixOutput(output.getName(), ret);
-		ec.releaseMatrixInput(input1.getName());
+		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 	}
 	
 	public MMTSJType getMMTSJType()

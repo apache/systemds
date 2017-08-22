@@ -28,17 +28,13 @@ import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
@@ -55,19 +51,16 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class GNMFTest extends AutomatedTestBase 
+public class GNMFTest extends MLContextTestBase
 {
 	private final static String TEST_DIR = "applications/gnmf/";
 	private final static String TEST_NAME = "GNMF";
@@ -76,20 +69,9 @@ public class GNMFTest extends AutomatedTestBase
 	int numRegisteredInputs;
 	int numRegisteredOutputs;
 
-	private static SparkSession spark;
-	private static JavaSparkContext sc;
-	private static MLContext ml;
-
 	public GNMFTest(int in, int out) {
 		numRegisteredInputs = in;
 		numRegisteredOutputs = out;
-	}
-
-	@BeforeClass
-	public static void setUpClass() {
-		spark = createSystemMLSparkSession("GNMFTest", "local");
-		ml = new MLContext(spark);
-		sc = MLContextUtil.getJavaSparkContext(ml);
 	}
 
 	@Parameters
@@ -200,14 +182,14 @@ public class GNMFTest extends AutomatedTestBase
 			
 			if(numRegisteredOutputs >= 2) {
 				script.out("W");
-				ml.setConfigProperty("cp.parallel.matrixmult", "false");
+				ml.setConfigProperty("cp.parallel.ops", "false");
 			}
 			
 			MLResults results = ml.execute(script);
 			
 			if(numRegisteredOutputs >= 2) {
 				String configStr = ConfigurationManager.getDMLConfig().getConfigInfo();
-				if(configStr.contains("cp.parallel.matrixmult: true"))
+				if(configStr.contains("cp.parallel.ops: true"))
 					Assert.fail("Configuration not updated via setConfig");
 			}
 			
@@ -256,25 +238,7 @@ public class GNMFTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}
-	
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
 
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		sc = null;
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
-	}
-	
 	public static class StringToMatrixEntry implements Function<String, MatrixEntry> {
 
 		private static final long serialVersionUID = 7456391906436606324L;

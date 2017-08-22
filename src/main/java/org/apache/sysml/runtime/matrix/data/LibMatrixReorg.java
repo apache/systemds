@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -468,25 +469,19 @@ public class LibMatrixReorg
 
 
 	/**
-	 * MR reshape interface - for reshape we cannot view blocks independently, and hence,
+	 * MR/SPARK reshape interface - for reshape we cannot view blocks independently, and hence,
 	 * there are different CP and MR interfaces.
 	 * 
 	 * @param in indexed matrix value
-	 * @param rows1 number of rows 1
-	 * @param cols1 number of columns 1
-	 * @param brlen1 number of rows in a block 1
-	 * @param bclen1 number of columns in a block 1
+	 * @param mcIn input matrix characteristics
 	 * @param out list of indexed matrix values
-	 * @param rows2 number of rows 2
-	 * @param cols2 number of columns 2
-	 * @param brlen2 number of rows in a block 2
-	 * @param bclen2 number of columns in a block 2
+	 * @param mcOut output matrix characteristics
 	 * @param rowwise if true, reshape by row
 	 * @return list of indexed matrix values
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, long rows1, long cols1, int brlen1, int bclen1, 
-			                      ArrayList<IndexedMatrixValue> out, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise ) 	
+	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, MatrixCharacteristics mcIn, 
+			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise ) 	
 		throws DMLRuntimeException
 	{
 		//prepare inputs
@@ -494,16 +489,16 @@ public class LibMatrixReorg
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
 		
 		//prepare result blocks (no reuse in order to guarantee mem constraints)
-		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, rows1, cols1, brlen1, bclen1, rows2, cols2, brlen2, bclen2, rowwise);
-		HashMap<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, rows1, cols1, brlen1, bclen1, rows2, cols2, brlen2, bclen2, rowwise, out);
+		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, mcIn, mcOut, rowwise);
+		HashMap<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, mcIn, mcOut, rowwise, out);
 		
 		//basic algorithm
-		long row_offset = (ixIn.getRowIndex()-1)*brlen1;
-		long col_offset = (ixIn.getColumnIndex()-1)*bclen1;
+		long row_offset = (ixIn.getRowIndex()-1)*mcIn.getRowsPerBlock();
+		long col_offset = (ixIn.getColumnIndex()-1)*mcIn.getColsPerBlock();
 		if( mbIn.sparse )
-			reshapeSparse(mbIn, row_offset, col_offset, rblk, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+			reshapeSparse(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 		else //dense
-			reshapeDense(mbIn, row_offset, col_offset, rblk, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+			reshapeDense(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 
 		//prepare output
 		out = new ArrayList<IndexedMatrixValue>();
@@ -1409,22 +1404,18 @@ public class LibMatrixReorg
 	///////////////////////////////
 
 	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
-            long rows1, long cols1, int brlen1, int bclen1,
-            long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
+		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
 		HashSet<MatrixIndexes> ret = new HashSet<MatrixIndexes>();
 		
-		long nrblk2 = rows2/brlen2 + ((rows2%brlen2!=0)?1:0);
-		long ncblk2 = cols2/bclen2 + ((cols2%bclen2!=0)?1:0);
+		long row_offset = (ixin.getRowIndex()-1)*mcOut.getRowsPerBlock();
+		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
 		
-		long row_offset = (ixin.getRowIndex()-1)*brlen1;
-		long col_offset = (ixin.getColumnIndex()-1)*bclen1;
-		
-		if( rowwise ){
-			for( long i=row_offset; i<Math.min(rows1,row_offset+brlen1); i++ )
+		if( rowwise ) {
+			for( long i=row_offset; i<Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock()); i++ )
 			{
-				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, Math.min(cols1,col_offset+bclen1)-1, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1, mcIn, mcOut, rowwise);
 
 				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
 					throw new RuntimeException("Invalid computed first index: "+first.toString());
@@ -1435,26 +1426,23 @@ public class LibMatrixReorg
 				ret.add(first);
 				
 				//add blocks in between first and last
-				for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ )
-				{
-					long k2_start = ((k1==first.getRowIndex()) ? first.getColumnIndex()+1 : 1);
-					long k2_end = ((k1==last.getRowIndex()) ? last.getColumnIndex()-1 : ncblk2);
-					
-					for( long k2=k2_start; k2<=k2_end; k2++ ) {
-						ret.add(new MatrixIndexes(k1,k2));
+				if( !first.equals(last) ) {
+					for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
+						long k2_start = ((k1==first.getRowIndex()) ? first.getColumnIndex()+1 : 1);
+						long k2_end = ((k1==last.getRowIndex() && first.getRowIndex()!=last.getRowIndex()) ?
+							last.getColumnIndex()-1 : mcOut.getNumColBlocks());
+						for( long k2=k2_start; k2<=k2_end; k2++ )
+							ret.add(new MatrixIndexes(k1,k2));
 					}
+					ret.add(last);
 				}
-				
-				//add last row block
-				ret.add(last);
-				
 			}
 		}
 		else{ //colwise
-			for( long j=col_offset; j<Math.min(cols1,col_offset+bclen1); j++ )
+			for( long j=col_offset; j<Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock()); j++ )
 			{
-				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), Math.min(rows1,row_offset+brlen1)-1, j, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1, j, mcIn, mcOut, rowwise);
 
 				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
 					throw new RuntimeException("Invalid computed first index: "+first.toString());
@@ -1463,19 +1451,18 @@ public class LibMatrixReorg
 				
 				//add first row block
 				ret.add(first);
-				//add blocks in between first and last
-				for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ )
-				{
-					long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
-					long k2_end = ((k1==last.getColumnIndex()) ? last.getRowIndex()-1 : nrblk2);
-					
-					for( long k2=k2_start; k2<=k2_end; k2++ ) {
-						ret.add(new MatrixIndexes(k1,k2));
-					}
-				}
 				
-				//add last row block
-				ret.add(last);
+				//add blocks in between first and last
+				if( !first.equals(last) ) {
+					for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
+						long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
+						long k2_end = ((k1==last.getColumnIndex() && first.getRowIndex()!=last.getRowIndex()) ? 
+							last.getRowIndex()-1 : mcOut.getNumRowBlocks());
+						for( long k2=k2_start; k2<=k2_end; k2++ )
+							ret.add(new MatrixIndexes(k1,k2));
+					}
+					ret.add(last);
+				}
 			}
 		}
 		
@@ -1483,23 +1470,21 @@ public class LibMatrixReorg
 	}
 
 	@SuppressWarnings("unused")
-	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix,
-            long nnz, long rows1, long cols1, int brlen1, int bclen1,
-            long rows2, long cols2, int brlen2, int bclen2, boolean rowwise, ArrayList<IndexedMatrixValue> reuse )
+	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix, 
+			long nnz, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut,
+			boolean rowwise, ArrayList<IndexedMatrixValue> reuse )
 	{
 		HashMap<MatrixIndexes, MatrixBlock> ret = new HashMap<MatrixIndexes,MatrixBlock>();
 		long nBlocks = rix.size();
 		int count = 0;
-		
-		//System.out.println("Reuse "+((reuse!=null)?reuse.size():0)+"/"+nBlocks);
 		
 		for( MatrixIndexes ix : rix )
 		{
 			//compute indexes
 			long bi = ix.getRowIndex();
 			long bj = ix.getColumnIndex();
-			int lbrlen = (int) Math.min(brlen2, rows2-(bi-1)*brlen2);
-			int lbclen = (int) Math.min(bclen2, cols2-(bj-1)*bclen2);
+			int lbrlen = UtilFunctions.computeBlockSize(mcOut.getRows(), bi, mcOut.getRowsPerBlock());
+			int lbclen = UtilFunctions.computeBlockSize(mcOut.getCols(), bj, mcOut.getColsPerBlock());
 			
 			//create result block
 			int estnnz = (int) (nnz/nBlocks); //force initialcapacity per row to 1, for many blocks
@@ -1512,7 +1497,6 @@ public class LibMatrixReorg
 			else
 				block = new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
 			
-			//System.out.println("create block ("+bi+","+bj+"): "+lbrlen+" "+lbclen);
 			if( lbrlen<1 || lbclen<1 )
 				throw new RuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
 			
@@ -1524,8 +1508,8 @@ public class LibMatrixReorg
 
 	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix,
-            long rows1, long cols1, 
-            long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
+			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
+		throws DMLRuntimeException
     {
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1544,17 +1528,18 @@ public class LibMatrixReorg
 				double val = a[ aix+j ];
 				if( val !=0 ) {
 					long aj = col_offset+j;
-					computeResultBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+					ixtmp = computeResultBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
 					MatrixBlock out = rix.get(ixtmp);
-					computeInBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+					if( out == null )
+						throw new DMLRuntimeException("Missing result block: "+ixtmp);
+					ixtmp = computeInBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
 					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), val);
 				}
 			}
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise )
-		{
+		if( !rowwise ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
@@ -1562,9 +1547,9 @@ public class LibMatrixReorg
     }
 
 	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
-			HashMap<MatrixIndexes,MatrixBlock> rix,
-            long rows1, long cols1,
-            long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
+			HashMap<MatrixIndexes,MatrixBlock> rix, 
+			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
+		throws DMLRuntimeException
     {
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1585,17 +1570,18 @@ public class LibMatrixReorg
 				
 				for( int j=apos; j<apos+alen; j++ )  {
 					long aj = col_offset+aix[j];
-					computeResultBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+					ixtmp = computeResultBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
 					MatrixBlock out = rix.get(ixtmp);
-					computeInBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
+					if( out == null )
+						throw new DMLRuntimeException("Missing result block: "+ixtmp);
+					ixtmp = computeInBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
 					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
 				}
 			}
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise )
-		{
+		if( !rowwise ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
@@ -1605,63 +1591,36 @@ public class LibMatrixReorg
 	/**
 	 * Assumes internal (0-begin) indices ai, aj as input; computes external block indexes (1-begin) 
 	 * 
-	 * @param ixout matrix indexes
-	 * @param ai ?
-	 * @param aj ?
-	 * @param rows1 ?
-	 * @param cols1 ?
-	 * @param rows2 ?
-	 * @param cols2 ?
-	 * @param brlen2 ?
-	 * @param bclen2 ?
-	 * @param rowwise ?
+	 * @param ixout matrix indexes for reuse
+	 * @param ai row index
+	 * @param aj column index
+	 * @param mcIn input matrix characteristics
+	 * @param mcOut output matrix characteristics
+	 * @param rowwise row-wise extraction
 	 * @return matrix indexes
 	 */
 	private static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
-			            long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
+		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
-		long ci, cj, tempc;
-		long bci, bcj;
-		
-		if( rowwise ) {
-			tempc = ai*cols1+aj;
-			ci = tempc/cols2;
-			cj = tempc%cols2;
-			bci = ci/brlen2 + 1;
-			bcj = cj/bclen2 + 1;
-		}
-		else { //colwise
-			tempc = ai+rows1*aj;
-			ci = tempc%rows2;
-			cj = tempc/rows2;
-			bci = ci/brlen2 + 1;
-			bcj = cj/bclen2 + 1;			
-		}
-		
-		ixout.setIndexes(bci, bcj);	
-		return ixout;
+		long tempc = rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
+		long ci = rowwise ? tempc/mcOut.getCols() : tempc%mcOut.getRows();
+		long cj = rowwise ? tempc%mcOut.getCols() : tempc/mcOut.getRows();
+		long bci = ci/mcOut.getRowsPerBlock() + 1;
+		long bcj = cj/mcOut.getColsPerBlock() + 1; 
+		return (ixout != null) ? ixout.setIndexes(bci, bcj) :
+			new MatrixIndexes(bci, bcj);	
 	}
 
 	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
-            long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
+		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
-		long ci, cj, tempc;
-		
-		if( rowwise ) {
-			tempc = ai*cols1+aj;
-			ci = (tempc/cols2)%brlen2;
-			cj = (tempc%cols2)%bclen2;
-		}
-		else { //colwise
-			tempc = ai+rows1*aj; 
-			ci = (tempc%rows2)%brlen2;
-			cj = (tempc/rows2)%bclen2;
-		}
-		
-		//System.out.println("ai/aj: "+ai+"/"+aj+"  ->  ci/cj: "+ci+"/"+cj);
-
-		ixout.setIndexes(ci, cj);	
-		return ixout;
+		long tempc = rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
+		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getRowsPerBlock() : 
+			(tempc%mcOut.getRows())%mcOut.getRowsPerBlock();
+		long cj = rowwise ? (tempc%mcOut.getCols())%mcOut.getColsPerBlock() : 
+			(tempc/mcOut.getRows())%mcOut.getColsPerBlock();
+		return (ixout != null) ? ixout.setIndexes(ci, cj) :
+			new MatrixIndexes(ci, cj);
 	}
 
 	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
@@ -1710,7 +1669,14 @@ public class LibMatrixReorg
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( in.sparse ) //* <- SPARSE
+		if( SHALLOW_COPY_REORG && m == rlen2 ) {
+			ret.sparse = in.sparse;
+			if( ret.sparse )
+				ret.sparseBlock = in.sparseBlock;
+			else
+				ret.denseBlock = in.denseBlock;
+		}
+		else if( in.sparse ) //* <- SPARSE
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
@@ -1798,14 +1764,7 @@ public class LibMatrixReorg
 			clen2 += flags[j] ? 1 : 0;
 		}
 		
-		//Step 3: create mapping of flags to target indexes
-		int[] cix = new int[n];
-		for( int j=0, pos=0; j<n; j++ ) {
-			if( flags[j] )
-				cix[j] = pos++;	
-		}
-		
-		//Step 3: reset result and copy cols
+		//Step 3: reset result and copy columns
 		//dense stays dense if correct input representation (but robust for any input), 
 		// sparse might be dense/sparse
 		clen2 = Math.max(clen2, 1); //ensure valid output
@@ -1814,42 +1773,61 @@ public class LibMatrixReorg
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( in.sparse ) //* <- SPARSE 
-		{
-			//note: output dense or sparse
-			SparseBlock a = in.sparseBlock;
-			
-			for( int i=0; i<m; i++ ) 
-				if ( !a.isEmpty(i) ) {
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					for( int j=apos; j<apos+alen; j++ )
-						if( flags[aix[j]] )
-							ret.appendValue(i, cix[aix[j]], avals[j]);
-				}
+		if( SHALLOW_COPY_REORG && n == clen2 ) {
+			//quick path: shallow copy if unmodified
+			ret.sparse = in.sparse;
+			if( ret.sparse )
+				ret.sparseBlock = in.sparseBlock;
+			else
+				ret.denseBlock = in.denseBlock;
 		}
-		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+		else
 		{
-			ret.allocateDenseBlock();
-			double[] a = in.denseBlock;
-			double[] c = ret.denseBlock;
+			//create mapping of flags to target indexes
+			int[] cix = new int[n];
+			for( int j=0, pos=0; j<n; j++ ) {
+				if( flags[j] )
+					cix[j] = pos++;
+			}
 			
-			for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
-				for(int j=0; j<n; j++, aix++)
-					if( flags[j] )
-						 c[ lcix+cix[j] ] = a[aix];	
-		}
-		else //SPARSE <- DENSE
-		{
-			ret.allocateSparseRowsBlock();
-			double[] a = in.denseBlock;
-			
-			for(int i=0, aix=0; i<m; i++)
-				for(int j=0; j<n; j++, aix++)
-					if( flags[j] && a[aix]!=0 )
-						 ret.appendValue(i, cix[j], a[aix]);	
+			//deep copy of modified outputs
+			if( in.sparse ) //* <- SPARSE
+			{
+				//note: output dense or sparse
+				SparseBlock a = in.sparseBlock;
+				
+				for( int i=0; i<m; i++ )
+					if ( !a.isEmpty(i) ) {
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for( int j=apos; j<apos+alen; j++ )
+							if( flags[aix[j]] )
+								ret.appendValue(i, cix[aix[j]], avals[j]);
+					}
+			}
+			else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+			{
+				ret.allocateDenseBlock();
+				double[] a = in.denseBlock;
+				double[] c = ret.denseBlock;
+				
+				for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
+					for(int j=0; j<n; j++, aix++)
+						if( flags[j] )
+							 c[ lcix+cix[j] ] = a[aix];	
+			}
+			else //SPARSE <- DENSE
+			{
+				ret.allocateSparseRowsBlock();
+				double[] a = in.denseBlock;
+				
+				for(int i=0, aix=0; i<m; i++)
+					for(int j=0; j<n; j++, aix++)
+						if( flags[j] && a[aix]!=0 )
+							 ret.appendValue(i, cix[j], a[aix]);
+			}
 		}
 		
 		//check sparsity

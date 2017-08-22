@@ -19,7 +19,8 @@
 
 package org.apache.sysml.hops.rewrite;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -49,17 +50,14 @@ import org.apache.sysml.parser.Expression.DataType;
  */
 public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 {
-
 	private static final OpOp2[] MAP_SCALAR_AGGREGATE_SOURCE_OPS = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT, OpOp2.MIN, OpOp2.MAX};
 	private static final AggOp[] MAP_SCALAR_AGGREGATE_TARGET_OPS = new AggOp[]{AggOp.SUM,  AggOp.PROD, AggOp.MIN, AggOp.MAX};
 	
 	
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
-		
 		if( sb instanceof ForStatementBlock )
 		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
@@ -96,9 +94,13 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		
 		//if no rewrite applied sb is the original for loop otherwise a last level statement block
 		//that includes the equivalent vectorized operations.
-		ret.add( sb );
-		
-		return ret;
+		return Arrays.asList(sb);
+	}
+	
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
+			ProgramRewriteStatus sate) throws HopsException {
+		return sbs;
 	}
 	
 	private StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
@@ -236,7 +238,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					IndexingOp rix1 = (IndexingOp) lixrhs.getInput().get(1);
 					
 					//check for rowwise
-					if(    lix.getRowLowerEqualsUpper() && rix0.isRowLowerEqualsUpper() && rix1.isRowLowerEqualsUpper() 
+					if(    lix.isRowLowerEqualsUpper() && rix0.isRowLowerEqualsUpper() && rix1.isRowLowerEqualsUpper() 
 						&& lix.getInput().get(2).getName().equals(itervar)
 						&& rix0.getInput().get(1).getName().equals(itervar)
 						&& rix1.getInput().get(1).getName().equals(itervar))
@@ -245,7 +247,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 						rowIx = true;
 					}
 					//check for colwise
-					if(    lix.getColLowerEqualsUpper() && rix0.isColLowerEqualsUpper() && rix1.isColLowerEqualsUpper() 
+					if(    lix.isColLowerEqualsUpper() && rix0.isColLowerEqualsUpper() && rix1.isColLowerEqualsUpper() 
 						&& lix.getInput().get(4).getName().equals(itervar)
 						&& rix0.getInput().get(3).getName().equals(itervar)
 						&& rix1.getInput().get(3).getName().equals(itervar))
@@ -406,14 +408,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		boolean[] ret = new boolean[2]; //apply, rowIx
 		
 		//check for rowwise
-		if(    lix.getRowLowerEqualsUpper() && rix.isRowLowerEqualsUpper() 
+		if(    lix.isRowLowerEqualsUpper() && rix.isRowLowerEqualsUpper() 
 			&& lix.getInput().get(2).getName().equals(itervar)
 			&& rix.getInput().get(1).getName().equals(itervar) ) {
 			ret[0] = true;
 			ret[1] = true;
 		}
 		//check for colwise
-		if(    lix.getColLowerEqualsUpper() && rix.isColLowerEqualsUpper() 
+		if(    lix.isColLowerEqualsUpper() && rix.isColLowerEqualsUpper() 
 			&& lix.getInput().get(4).getName().equals(itervar)
 			&& rix.getInput().get(3).getName().equals(itervar) ) {
 			ret[0] = true;

@@ -32,8 +32,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.jmlc.JMLCProxy;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -105,6 +105,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.JSONHelper;
+import org.apache.sysml.utils.MLContextProxy;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -220,8 +221,8 @@ public class Recompiler
 			memo.extract(hops, status);
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
-					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
+			if( ConfigurationManager.isCodegenEnabled()
+				&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				Hop.resetVisitStatus(hops);
 				hops = SpoofCompiler.optimize(hops, 
 					(status==null || !status.isInitialCodegen()));
@@ -235,12 +236,18 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());	
+			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());
 		}
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+		
+		// remove writes if called through mlcontext or jmlc 
+		if( MLContextProxy.isActive() )
+			newInst = MLContextProxy.performCleanupAfterRecompilation(newInst);
+		else if( JMLCProxy.isActive() )
+			newInst = JMLCProxy.performCleanupAfterRecompilation(newInst);
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ){
@@ -329,8 +336,8 @@ public class Recompiler
 			hops.refreshMemEstimates(memo); 		
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
-					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
+			if( ConfigurationManager.isCodegenEnabled()
+				&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				hops.resetVisitStatus();
 				hops = SpoofCompiler.optimize(hops,
 					(status==null || !status.isInitialCodegen()));

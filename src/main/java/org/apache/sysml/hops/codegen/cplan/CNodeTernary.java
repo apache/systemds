@@ -28,7 +28,8 @@ public class CNodeTernary extends CNode
 	public enum TernaryType {
 		PLUS_MULT, MINUS_MULT,
 		REPLACE, REPLACE_NAN,
-		LOOKUP_RC1;
+		LOOKUP_RC1, LOOKUP_RVECT1;
+		
 		
 		public static boolean contains(String value) {
 			for( TernaryType tt : values()  )
@@ -53,13 +54,18 @@ public class CNodeTernary extends CNode
 					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
 					
 				case LOOKUP_RC1:
-					return sparse ?
-							"    double %TMP% = getValue(%IN1v%, %IN2%, rowIndex, %IN3%-1);\n" :	
-							"    double %TMP% = getValue(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";	
+					return "    double %TMP% = getValue(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";
+					
+				case LOOKUP_RVECT1:
+					return "    double[] %TMP% = getVector(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";
 					
 				default: 
 					throw new RuntimeException("Invalid ternary type: "+this.toString());
 			}
+		}
+		
+		public boolean isVectorPrimitive() {
+			return (this == LOOKUP_RVECT1);
 		}
 	}
 	
@@ -116,6 +122,8 @@ public class CNodeTernary extends CNode
 			case REPLACE: 
 			case REPLACE_NAN: return "t(rplc)";
 			case LOOKUP_RC1: return "u(ixrc1)";
+			case LOOKUP_RVECT1: return "u(ixrv1)";
+			
 			default:
 				return super.toString();	
 		}
@@ -132,6 +140,11 @@ public class CNodeTernary extends CNode
 				_rows = 0;
 				_cols = 0;
 				_dataType= DataType.SCALAR;
+				break;
+			case LOOKUP_RVECT1:
+				_rows = 1;
+				_cols = _inputs.get(0)._cols;
+				_dataType= DataType.MATRIX;
 				break;
 		}
 	}

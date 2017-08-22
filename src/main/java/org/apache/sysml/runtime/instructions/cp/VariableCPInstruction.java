@@ -228,6 +228,10 @@ public class VariableCPInstruction extends CPInstruction
 			|| opcode == VariableOperationCode.RemoveVariableAndFile);
 	}
 	
+	public boolean isAssignVariable() {
+		return (opcode == VariableOperationCode.AssignVariable);
+	}
+	
 	public FileFormatProperties getFormatProperties() {
 		return _formatProperties;
 	}
@@ -488,7 +492,7 @@ public class VariableCPInstruction extends CPInstruction
 				String fname = getInput2().getName();
 				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(getInput3().getName(), getInput3().getValueType(), true)).getBooleanValue();; //!(input1.getName().startsWith("p")); //    
+				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(getInput3().getName(), getInput3().getValueType(), true)).getBooleanValue();
 				if ( overrideFileName ) {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}
@@ -581,11 +585,11 @@ public class VariableCPInstruction extends CPInstruction
 						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
 			else { //assume DataType.MATRIX otherwise
-				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
+				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 				double value = mBlock.getValue(0,0);
-				ec.releaseMatrixInput(getInput1().getName());
+				ec.releaseMatrixInput(getInput1().getName(), getExtendedOpcode());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			}
 			break;
@@ -601,7 +605,7 @@ public class VariableCPInstruction extends CPInstruction
 				out = new MatrixBlock(1,1,false);
 				out.quickSetValue(0, 0, scalarInput.getDoubleValue());		
 			}
-			ec.setMatrixOutput(output.getName(), out);
+			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			break;
 		}
 		case CastAsFrameVariable:{
@@ -613,9 +617,9 @@ public class VariableCPInstruction extends CPInstruction
 				out.set(0, 0, scalarInput.getStringValue());	
 			}
 			else { //DataType.FRAME
-				MatrixBlock min = ec.getMatrixInput(getInput1().getName());
+				MatrixBlock min = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());
 				out = DataConverter.convertToFrameBlock(min);
-				ec.releaseMatrixInput(getInput1().getName());
+				ec.releaseMatrixInput(getInput1().getName(), getExtendedOpcode());
 			}
 			ec.setFrameOutput(output.getName(), out);
 			break;
@@ -707,15 +711,19 @@ public class VariableCPInstruction extends CPInstruction
 			// get source variable 
 			Data srcData = ec.getVariable(getInput1().getName());		
 				
-			if ( srcData == null ) 
-				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
-				
-			// remove existing variable bound to target name
-			Data tgt = ec.removeVariable(getInput2().getName());
-				
-			//cleanup matrix data on fs/hdfs (if necessary)
-			if ( tgt != null && tgt instanceof MatrixObject ) {
-				ec.cleanupMatrixObject((MatrixObject) tgt);
+			if ( srcData == null ) {
+				throw new DMLRuntimeException("Unexpected error: could not find a data object "
+					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
+			}
+			
+			if( getInput2().getDataType().isMatrix() ) {
+				// remove existing variable bound to target name
+				Data tgt = ec.removeVariable(getInput2().getName());
+					
+				//cleanup matrix data on fs/hdfs (if necessary)
+				if ( tgt != null && tgt instanceof MatrixObject ) {
+					ec.cleanupMatrixObject((MatrixObject) tgt);
+				}
 			}
 			
 			// do the actual move

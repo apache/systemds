@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.RelationalBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ReorgGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.MatrixAppendGPUInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
 {
@@ -52,12 +53,15 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "bias_multiply",          GPUINSTRUCTION_TYPE.Convolution);
 
 		// Matrix Multiply Operators
-		String2GPUInstructionType.put( "ba+*", GPUINSTRUCTION_TYPE.AggregateBinary);
-		String2GPUInstructionType.put( "tsmm", GPUINSTRUCTION_TYPE.MMTSJ);
+		String2GPUInstructionType.put( "ba+*",  GPUINSTRUCTION_TYPE.AggregateBinary);
+		String2GPUInstructionType.put( "tsmm",  GPUINSTRUCTION_TYPE.MMTSJ);
 
 		// Reorg/Transpose
-		String2GPUInstructionType.put( "r'",   GPUINSTRUCTION_TYPE.Reorg);
-	
+		String2GPUInstructionType.put( "r'",    GPUINSTRUCTION_TYPE.Reorg);
+
+		// Matrix Manipulation
+		String2GPUInstructionType.put( "append", GPUINSTRUCTION_TYPE.Append);
+
 		// Binary Cellwise
 		String2GPUInstructionType.put( "+",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "-",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
@@ -161,7 +165,10 @@ public class GPUInstructionParser  extends InstructionParser
 
 			case BuiltinBinary:
 				return BuiltinBinaryGPUInstruction.parseInstruction(str);
-			
+
+			case Append:
+				return MatrixAppendGPUInstruction.parseInstruction(str);
+
 			case Convolution:
 				return ConvolutionGPUInstruction.parseInstruction(str);
 				

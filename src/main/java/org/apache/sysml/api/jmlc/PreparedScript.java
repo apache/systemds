@@ -19,18 +19,22 @@
 
 package org.apache.sysml.api.jmlc;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ipa.FunctionCallGraph;
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -57,6 +61,8 @@ import org.apache.sysml.utils.Explain;
  */
 public class PreparedScript 
 {
+	private static final Log LOG = LogFactory.getLog(PreparedScript.class.getName());
+	
 	//input/output specification
 	private HashSet<String> _inVarnames = null;
 	private HashSet<String> _outVarnames = null;
@@ -378,28 +384,24 @@ public class PreparedScript
 		throws DMLException
 	{
 		//add reused variables
-		for( Entry<String,Data> e : _inVarReuse.entrySet() )
-			_vars.put(e.getKey(), e.getValue());
+		_vars.putAll(_inVarReuse);
 		
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_prog);	
-		ec.setVariables(_vars);
+		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);	
 		
 		//core execute runtime program	
-		_prog.execute( ec );  
+		_prog.execute(ec);  
 		
 		//cleanup unnecessary outputs
-		Collection<String> tmpVars = new ArrayList<String>(_vars.keySet());
-		for( String var :  tmpVars )
-			if( !_outVarnames.contains(var) )
-				_vars.remove(var);
+		_vars.removeAllNotIn(_outVarnames);
 		
 		//construct results
 		ResultVariables rvars = new ResultVariables();
-		for( String ovar : _outVarnames )
-			if( _vars.keySet().contains(ovar) )
-				rvars.addResult(ovar, _vars.get(ovar));
-			
+		for( String ovar : _outVarnames ) {
+			Data tmpVar = _vars.get(ovar);
+			if( tmpVar != null )
+				rvars.addResult(ovar, tmpVar);
+		}
 		return rvars;
 	}
 	
@@ -411,5 +413,51 @@ public class PreparedScript
 	 */
 	public String explain() throws DMLException {
 		return Explain.explain(_prog);
+	}
+	
+	/**
+	 * Enables function recompilation, selectively for the given functions. 
+	 * If dynamic recompilation is globally enabled this has no additional 
+	 * effect; otherwise the given functions are dynamically recompiled once
+	 * on every entry but not at the granularity of individually last-level 
+	 * program blocks. Use this fine-grained recompilation option for important
+	 * functions in small-data scenarios where dynamic recompilation overheads 
+	 * might not be amortized.  
+	 * 
+	 * @param fnamespace function namespace, null for default namespace
+	 * @param fnames function name
+	 * @throws DMLException if any compilation error occurs
+	 */
+	public void enableFunctionRecompile(String fnamespace, String... fnames) 
+		throws DMLException 
+	{
+		//handle default name space
+		if( fnamespace == null )
+			fnamespace = DMLProgram.DEFAULT_NAMESPACE;
+		
+		//enable dynamic recompilation (note that this does not globally enable
+		//dynamic recompilation because the program has been compiled already)
+		CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
+		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, true);
+		ConfigurationManager.setLocalConfig(cconf);
+		
+		//build function call graph (to probe for recursive functions)
+		FunctionCallGraph fgraph = _prog.getProgramBlocks().isEmpty() ? null :
+			new FunctionCallGraph(_prog.getProgramBlocks().get(0).getStatementBlock().getDMLProg());
+		
+		//enable requested functions for recompile once
+		for( String fname : fnames ) {
+			String fkey = DMLProgram.constructFunctionKey(fnamespace, fname);
+			if( !fgraph.isRecursiveFunction(fkey) ) {
+				FunctionProgramBlock fpb = _prog.getFunctionProgramBlock(fnamespace, fname);
+				if( fpb != null )
+					fpb.setRecompileOnce(true);
+				else
+					LOG.warn("Failed to enable function recompile for non-existing '"+fkey+"'.");		
+			}
+			else {
+				LOG.warn("Failed to enable function recompile for recursive '"+fkey+"'.");
+			}
+		}
 	}
 }

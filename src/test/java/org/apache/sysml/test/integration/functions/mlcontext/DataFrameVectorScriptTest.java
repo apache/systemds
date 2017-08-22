@@ -38,7 +38,6 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -49,15 +48,13 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 
-public class DataFrameVectorScriptTest extends AutomatedTestBase
+public class DataFrameVectorScriptTest extends MLContextTestBase
 {
 	private final static String TEST_DIR = "functions/mlcontext/";
 	private final static String TEST_NAME = "DataFrameConversion";
@@ -74,16 +71,6 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.9;
 	private final static double sparsity2 = 0.1;
 	private final static double eps=0.0000000001;
-
-	private static SparkSession spark;
-	private static MLContext ml;
-
-	@BeforeClass
-	public static void setUpClass() {
-		spark = createSystemMLSparkSession("DataFrameVectorScriptTest", "local");
-		ml = new MLContext(spark);
-		ml.setExplain(true);
-	}
 
 	@Override
 	public void setUp() {
@@ -312,7 +299,7 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 				}
 				else {
 					double[] tmp = DataConverter.convertToDoubleVector(
-							mb.sliceOperations(i, i, j, j+colsVector-1, new MatrixBlock()));
+							mb.sliceOperations(i, i, j, j+colsVector-1, new MatrixBlock()), false);
 					row[j2+off] = new DenseVector(tmp);
 					j += colsVector-1;
 				}
@@ -342,17 +329,5 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 		JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
 		JavaRDD<Row> rowRDD = sc.parallelize(list);
 		return sparkSession.createDataFrame(rowRDD, dfSchema);
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
 	}
 }

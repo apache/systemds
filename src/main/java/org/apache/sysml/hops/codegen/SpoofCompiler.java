@@ -35,6 +35,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
@@ -43,16 +44,17 @@ import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeRow;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysml.hops.codegen.opt.PlanSelection;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseAll;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBased;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
+import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
-import org.apache.sysml.hops.codegen.template.PlanSelection;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseCostBased;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseAll;
-import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
@@ -109,7 +111,7 @@ public class SpoofCompiler
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED; 
+	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED_V2; 
 
 	public enum CompilerType {
 		JAVAC,
@@ -125,6 +127,12 @@ public class SpoofCompiler
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
 		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
 		FUSE_COST_BASED,      //cost-based decision on materialization points
+		FUSE_COST_BASED_V2;   //cost-based decisions on materialization points per consumer, multi aggregates,
+		                      //sparsity exploitation, template types, local/distributed operations, constraints
+		public boolean isHeuristic() {
+			return this == FUSE_ALL
+				|| this == FUSE_NO_REDUNDANCY;
+		}
 	}
 
 	public enum PlanCachePolicy {
@@ -347,13 +355,26 @@ public class SpoofCompiler
 			//context-sensitive literal replacement (only integers during recompile)
 			boolean compileLiterals = (PLAN_CACHE_POLICY==PlanCachePolicy.CONSTANT) || !recompile;
 			
-			//construct codegen plans
-			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
+			//candidate exploration of valid partial fusion plans
+			CPlanMemoTable memo = new CPlanMemoTable();
+			for( Hop hop : roots )
+				rExploreCPlans(hop, memo, compileLiterals);
+			
+			//candidate selection of optimal fusion plan
+			memo.pruneSuboptimal(roots);
+			
+			//construct actual cplan representations
+			//note: we do not use the hop visit status due to jumps over fused operators which would
+			//corrupt subsequent resets, leaving partial hops dags in visited status
+			HashMap<Long, Pair<Hop[],CNodeTpl>> cplans = new LinkedHashMap<>();
+			HashSet<Long> visited = new HashSet<Long>();
+			for( Hop hop : roots )
+				rConstructCPlans(hop, memo, cplans, compileLiterals, visited);
 			
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
 			//remove empty templates with single cnodedata input, remove spurious lookups,
 			//perform common subexpression elimination)
-			cplans = cleanupCPlans(cplans);
+			cplans = cleanupCPlans(memo, cplans);
 			
 			//explain before modification
 			if( LOG.isTraceEnabled() && !cplans.isEmpty() ) { //existing cplans
@@ -454,6 +475,8 @@ public class SpoofCompiler
 				return new PlanSelectionFuseNoRedundancy();
 			case FUSE_COST_BASED:
 				return new PlanSelectionFuseCostBased();
+			case FUSE_COST_BASED_V2:
+				return new PlanSelectionFuseCostBasedV2();
 			default:	
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);
@@ -467,27 +490,6 @@ public class SpoofCompiler
 	
 	////////////////////
 	// Codegen plan construction
-
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> constructCPlans(ArrayList<Hop> roots, boolean compileLiterals) throws DMLException
-	{
-		//explore cplan candidates
-		CPlanMemoTable memo = new CPlanMemoTable();
-		for( Hop hop : roots )
-			rExploreCPlans(hop, memo, compileLiterals);
-		
-		//select optimal cplan candidates
-		memo.pruneSuboptimal(roots);
-		
-		//construct actual cplan representations
-		//note: we do not use the hop visit status due to jumps over fused operators which would
-		//corrupt subsequent resets, leaving partial hops dags in visited status
-		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
-		HashSet<Long> visited = new HashSet<Long>();
-		for( Hop hop : roots )
-			rConstructCPlans(hop, memo, ret, compileLiterals, visited);
-		
-		return ret;
-	}
 	
 	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 		throws DMLException
@@ -502,27 +504,14 @@ public class SpoofCompiler
 		
 		//open initial operator plans, if possible
 		for( TemplateBase tpl : TemplateUtils.TEMPLATES )
-			if( tpl.open(hop) ) {
-				MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), false);
-				memo.addAll(hop, enumPlans(hop, -1, P, tpl, memo));
-			}
+			if( tpl.open(hop) )
+				memo.addAll(hop, enumPlans(hop, null, tpl, memo));
 		
 		//fuse and merge operator plans
-		for( Hop c : hop.getInput() ) {
-			if( memo.contains(c.getHopID()) )
-				for( MemoTableEntry me : memo.getDistinct(c.getHopID()) ) {
-					TemplateBase tpl = TemplateUtils.createTemplate(me.type, me.closed);
-					if( tpl.fuse(hop, c) ) {
-						int pos = hop.getInput().indexOf(c);
-						MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), pos, c.getHopID(), tpl.isClosed());
-						memo.addAll(hop, enumPlans(hop, pos, P, tpl, memo));
-					}
-				}	
-		}
-		
-		//prune subsumed / redundant plans
-		if( PRUNE_REDUNDANT_PLANS )
-			memo.pruneRedundant(hop.getHopID());
+		for( Hop c : hop.getInput() )
+			for( TemplateBase tpl : memo.getDistinctTemplates(c.getHopID()) )
+				if( tpl.fuse(hop, c) )
+					memo.addAll(hop, enumPlans(hop, c, tpl, memo));
 		
 		//close operator plans, if required
 		if( memo.contains(hop.getHopID()) ) {
@@ -538,22 +527,24 @@ public class SpoofCompiler
 			}
 		}
 		
+		//prune subsumed / redundant plans
+		if( PRUNE_REDUNDANT_PLANS ) {
+			memo.pruneRedundant(hop.getHopID(),
+				PLAN_SEL_POLICY.isHeuristic(), null);
+		}
+		
 		//mark visited even if no plans found (e.g., unsupported ops)
 		memo.addHop(hop);
 	}
 	
-	private static MemoTableEntrySet enumPlans(Hop hop, int pos, MemoTableEntrySet P, TemplateBase tpl, CPlanMemoTable memo) {
-		for(int k=0; k<hop.getInput().size(); k++)
-			if( k != pos ) {
-				Hop input2 = hop.getInput().get(k);
-				if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
-					&& TemplateUtils.isType(memo.get(input2.getHopID()).get(0).type, tpl.getType(), TemplateType.CellTpl)
-					&& tpl.merge(hop, input2) && (tpl.getType()!=TemplateType.RowTpl || pos==-1 
-						|| TemplateUtils.hasCommonRowTemplateMatrixInput(hop.getInput().get(pos), input2, memo)))
-					P.crossProduct(k, -1L, input2.getHopID());
-				else
-					P.crossProduct(k, -1L);
-			}
+	private static MemoTableEntrySet enumPlans(Hop hop, Hop c, TemplateBase tpl, CPlanMemoTable memo) {
+		MemoTableEntrySet P = new MemoTableEntrySet(hop, c, tpl);
+		for(int k=0; k<hop.getInput().size(); k++) {
+			Hop input2 = hop.getInput().get(k);
+			if( input2 != c && tpl.merge(hop, input2) 
+				&& memo.contains(input2.getHopID(), true, tpl.getType(), TemplateType.CELL))
+				P.crossProduct(k, -1L, input2.getHopID());
+		}
 		return P;
 	}
 	
@@ -567,10 +558,10 @@ public class SpoofCompiler
 		//generate cplan for existing memo table entry
 		if( memo.containsTopLevel(hop.getHopID()) ) {
 			cplans.put(hop.getHopID(), TemplateUtils
-				.createTemplate(memo.getBest(hop.getHopID()).type)
-				.constructCplan(hop, memo, compileLiterals));
-			if( DMLScript.STATISTICS )
-				Statistics.incrementCodegenCPlanCompile(1); 
+					.createTemplate(memo.getBest(hop.getHopID()).type)
+					.constructCplan(hop, memo, compileLiterals));
+			if (DMLScript.STATISTICS)
+				Statistics.incrementCodegenCPlanCompile(1);
 		}
 		
 		//process children recursively, but skip compiled operator
@@ -666,9 +657,10 @@ public class SpoofCompiler
 	 * during incremental construction. This is important as it avoids unnecessary 
 	 * redundant computation. 
 	 * 
+	 * @param memo memoization table
 	 * @param cplans set of cplans
 	 */
-	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
+	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
 	{
 		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<Long, Pair<Hop[],CNodeTpl>>();
 		CPlanCSERewriter cse = new CPlanCSERewriter();
@@ -688,7 +680,7 @@ public class SpoofCompiler
 			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
 			
 			//remove invalid plans with column indexing on main input
-			if( tpl instanceof CNodeCell ) {
+			if( tpl instanceof CNodeCell || tpl instanceof CNodeRow ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				if( rHasLookupRC1(tpl.getOutput(), in1) || isLookupRC1(tpl.getOutput(), in1) ) {
 					cplans2.remove(e.getKey());
@@ -706,28 +698,58 @@ public class SpoofCompiler
 					}
 			}
 			
-			//remove spurious lookups on main input of cell template
-			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				rFindAndRemoveLookup(tpl.getOutput(), in1);
-			}
-			else if( tpl instanceof CNodeMultiAgg ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			//remove invalid lookups on main input (all templates)
+			CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+			if( tpl instanceof CNodeMultiAgg )
 				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
+			else
+				rFindAndRemoveLookup(tpl.getOutput(), in1);
+			
+			//remove invalid row templates (e.g., unsatisfied blocksize constraint)
+			if( tpl instanceof CNodeRow ) {
+				//check for invalid row cplan over column vector
+				if(in1.getNumCols() == 1 || (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+					&& tpl.getOutput().getDataType().isScalar()) ) {
+					cplans2.remove(e.getKey());
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed invalid row cplan w/o agg on column vector.");
+				}
+				else if( OptimizerUtils.isSparkExecutionMode() ) {
+					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+						|| OptimizerUtils.getTotalMemEstimate(inHops, memo.getHopRefs().get(e.getKey()))
+							> OptimizerUtils.getLocalMemBudget();
+					boolean invalidNcol = false;
+					for( Hop in : inHops )
+						invalidNcol |= (in.getDataType().isMatrix() 
+							&& in.getDim2() > in.getColsInBlock());
+					if( isSpark && invalidNcol ) {
+						cplans2.remove(e.getKey());
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");		
+					}
+				}
 			}
 			
 			//remove cplan w/ single op and w/o agg
 			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
 					&& TemplateUtils.hasSingleOperation(tpl) )
 				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
-					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1)
+					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
+					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
 					&& TemplateUtils.hasSingleOperation(tpl))
 				|| TemplateUtils.hasNoOperation(tpl) ) 
+			{	
 				cplans2.remove(e.getKey());
-				
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Removed cplan with single operation.");
+			}
+			
 			//remove cplan if empty
-			if( tpl.getOutput() instanceof CNodeData )
+			if( tpl.getOutput() instanceof CNodeData ) {
 				cplans2.remove(e.getKey());
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Removed empty cplan.");
+			}
 			
 			//rename inputs (for codegen and plan caching)
 			tpl.renameInputs();
@@ -776,7 +798,8 @@ public class SpoofCompiler
 	}
 	
 	private static boolean isLookupRC1(CNode node, CNodeData mainInput) {
-		return (node instanceof CNodeTernary && ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+		return (node instanceof CNodeTernary && (((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+				|| ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RVECT1 )
 				&& node.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)node.getInput().get(0)).getHopID() == mainInput.getHopID());
 	}

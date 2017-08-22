@@ -178,6 +178,11 @@ public class ConfigurationManager
 		return getCompilerConfigFlag(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
 	}
 	
+	public static boolean isCodegenEnabled() {
+		return getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
+			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED);
+	}
+	
 	
 	///////////////////////////////////////
 	// Thread-local classes

@@ -65,8 +65,8 @@ import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
 
 /**
- * Represents a context per GPU accessible through the same JVM
- * Each context holds cublas, cusparse, cudnn... handles which are separate for each GPU
+ * Represents a context per GPU accessible through the same JVM.
+ * Each context holds cublas, cusparse, cudnn... handles which are separate for each GPU.
  */
 public class GPUContext {
 
@@ -108,27 +108,27 @@ public class GPUContext {
 	/**
 	 * cudnnHandle for Deep Neural Network operations on the GPU
 	 */
-	private cudnnHandle cudnnHandle;
+	private final ThreadLocal<cudnnHandle> cudnnHandle = new ThreadLocal<>();
 	/**
 	 * cublasHandle for BLAS operations on the GPU
 	 */
-	private cublasHandle cublasHandle;
+	private final ThreadLocal<cublasHandle> cublasHandle = new ThreadLocal<>();
 	/**
 	 * cusparseHandle for certain sparse BLAS operations on the GPU
 	 */
-	private cusparseHandle cusparseHandle;
+	private final ThreadLocal<cusparseHandle> cusparseHandle = new ThreadLocal<>();
 	/**
 	 * cusolverDnHandle for invoking solve() function on dense matrices on the GPU
 	 */
-	private cusolverDnHandle cusolverDnHandle;
+	private final ThreadLocal<cusolverDnHandle> cusolverDnHandle = new ThreadLocal<>();
 	/**
 	 * cusolverSpHandle for invoking solve() function on sparse matrices on the GPU
 	 */
-	private cusolverSpHandle cusolverSpHandle;
+	private final ThreadLocal<cusolverSpHandle> cusolverSpHandle = new ThreadLocal<>();
 	/**
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
-	private JCudaKernels kernels;
+	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
@@ -140,36 +140,69 @@ public class GPUContext {
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
 
-		long start = System.nanoTime();
-		cudnnHandle = new cudnnHandle();
-		cudnnCreate(cudnnHandle);
-		cublasHandle = new cublasHandle();
-		cublasCreate(cublasHandle);
-		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
-		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
-		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
-		cusparseHandle = new cusparseHandle();
-		cusparseCreate(cusparseHandle);
+		long start = -1;
+		if (DMLScript.STATISTICS)
+			start = System.nanoTime();
+		initializeCudaLibraryHandles();
 
-		cusolverDnHandle = new cusolverDnHandle();
-		cusolverDnCreate(cusolverDnHandle);
-		cusolverSpHandle = new cusolverSpHandle();
-		cusolverSpCreate(cusolverSpHandle);
-
-		kernels = new JCudaKernels(deviceNum);
-
-		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		if (DMLScript.STATISTICS)
+			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
 	}
 
+	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
+		if (cudnnHandle.get() == null) {
+			cudnnHandle.set(new cudnnHandle());
+			cudnnCreate(cudnnHandle.get());
+		}
+
+		if (cublasHandle.get() == null) {
+			cublasHandle.set(new cublasHandle());
+			cublasCreate(cublasHandle.get());
+		}
+		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
+		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
+		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
+
+		if (cusparseHandle.get() == null) {
+			cusparseHandle.set(new cusparseHandle());
+			cusparseCreate(cusparseHandle.get());
+		}
+
+		if (cusolverDnHandle.get() == null) {
+			cusolverDnHandle.set(new cusolverDnHandle());
+			cusolverDnCreate(cusolverDnHandle.get());
+		}
+
+		if (cusolverSpHandle.get() == null) {
+			cusolverSpHandle.set(new cusolverSpHandle());
+			cusolverSpCreate(cusolverSpHandle.get());
+		}
+
+		if (kernels.get() == null) {
+			kernels.set(new JCudaKernels());
+		}
+	}
+
+	/**
+	 * Returns which device is currently being used.
+	 * 
+	 * @return the current device for the calling host thread
+	 */
 	public static int cudaGetDevice() {
 		int[] device = new int[1];
 		JCuda.cudaGetDevice(device);
 		return device[0];
 	}
 
+	/**
+	 * Returns which device is assigned to this GPUContext instance.
+	 * 
+	 * @return active device assigned to this GPUContext instance
+	 */
 	public int getDeviceNum() {
 		return deviceNum;
 	}
@@ -178,11 +211,14 @@ public class GPUContext {
 	 * Sets the device for the calling thread.
 	 * This method must be called after
 	 * {@link org.apache.sysml.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
-	 * If in a multi-threaded env like parfor, this method must be called when in the
-	 * appropriate thread
+	 * If in a multi-threaded environment like parfor, this method must be called when in the
+	 * appropriate thread.
+	 * 
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void initializeThread() {
+	public void initializeThread() throws DMLRuntimeException {
 		cudaSetDevice(deviceNum);
+		initializeCudaLibraryHandles();
 	}
 
 	/**
@@ -271,7 +307,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Does lazy cudaFree calls
+	 * Does lazy cudaFree calls.
 	 *
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
@@ -280,7 +316,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * does lazy/eager cudaFree calls
+	 * Does lazy/eager cudaFree calls.
 	 *
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager  true if to be done eagerly
@@ -290,7 +326,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Does lazy cudaFree calls
+	 * Does lazy cudaFree calls.
 	 *
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree          {@link Pointer} instance to be freed
@@ -300,7 +336,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Does cudaFree calls, lazily
+	 * Does cudaFree calls, lazily.
 	 *
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree          {@link Pointer} instance to be freed
@@ -342,7 +378,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Thin wrapper over {@link GPUContext#evict(long)}
+	 * Thin wrapper over {@link GPUContext#evict(long)}.
 	 *
 	 * @param size size to check
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -352,7 +388,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Thin wrapper over {@link GPUContext#evict(long)}
+	 * Thin wrapper over {@link GPUContext#evict(long)}.
 	 *
 	 * @param instructionName instructionName name of the instruction for which performance measurements are made
 	 * @param size            size to check
@@ -365,7 +401,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Convenience wrapper over {@link GPUContext#evict(String, long)}
+	 * Convenience wrapper over {@link GPUContext#evict(String, long)}.
 	 *
 	 * @param GPUSize Desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.
@@ -468,7 +504,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Whether the GPU associated with this {@link GPUContext} has recorded the usage of a certain block
+	 * Whether the GPU associated with this {@link GPUContext} has recorded the usage of a certain block.
 	 *
 	 * @param o the block
 	 * @return true if present, false otherwise
@@ -496,7 +532,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Gets the available memory on GPU that SystemML can use
+	 * Gets the available memory on GPU that SystemML can use.
 	 *
 	 * @return the available memory in bytes
 	 */
@@ -508,7 +544,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Makes sure that GPU that SystemML is trying to use has the minimum compute capability needed
+	 * Makes sure that GPU that SystemML is trying to use has the minimum compute capability needed.
 	 *
 	 * @throws DMLRuntimeException if the compute capability is less than what is required
 	 */
@@ -536,12 +572,18 @@ public class GPUContext {
 		}
 	}
 
+	/**
+	 * Instantiates a new {@link GPUObject} initialized with the given {@link org.apache.sysml.runtime.controlprogram.caching.MatrixObject MatrixObject}.
+	 * 
+	 * @param mo a {@link org.apache.sysml.runtime.controlprogram.caching.MatrixObject MatrixObject} that represents a matrix
+	 * @return a new {@link GPUObject} instance
+	 */
 	public GPUObject createGPUObject(MatrixObject mo) {
 		return new GPUObject(this, mo);
 	}
 
 	/**
-	 * Gets the device properties for the active GPU (set with cudaSetDevice())
+	 * Gets the device properties for the active GPU (set with cudaSetDevice()).
 	 *
 	 * @return the device properties
 	 * @throws DMLRuntimeException ?
@@ -551,7 +593,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Gets the maximum number of threads per block for "active" GPU
+	 * Gets the maximum number of threads per block for "active" GPU.
 	 *
 	 * @return the maximum number of threads per block
 	 * @throws DMLRuntimeException ?
@@ -562,7 +604,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Gets the maximum number of blocks supported by the active cuda device
+	 * Gets the maximum number of blocks supported by the active cuda device.
 	 *
 	 * @return the maximum number of blocks supported
 	 * @throws DMLRuntimeException ?
@@ -573,7 +615,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Gets the shared memory per block supported by the active cuda device
+	 * Gets the shared memory per block supported by the active cuda device.
 	 *
 	 * @return the shared memory per block
 	 * @throws DMLRuntimeException ?
@@ -584,7 +626,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Gets the warp size supported by the active cuda device
+	 * Gets the warp size supported by the active cuda device.
 	 *
 	 * @return the warp size
 	 * @throws DMLRuntimeException ?
@@ -594,52 +636,78 @@ public class GPUContext {
 		return deviceProp.warpSize;
 	}
 
+	/**
+	 * Returns the cudnnHandle for Deep Neural Network operations on the GPU.
+	 * 
+	 * @return cudnnHandle for current thread
+	 */
 	public cudnnHandle getCudnnHandle() {
-		return cudnnHandle;
-	}
-
-	public cublasHandle getCublasHandle() {
-		return cublasHandle;
-	}
-
-	public cusparseHandle getCusparseHandle() {
-		return cusparseHandle;
-	}
-
-	public cusolverDnHandle getCusolverDnHandle() {
-		return cusolverDnHandle;
-	}
-
-	public cusolverSpHandle getCusolverSpHandle() {
-		return cusolverSpHandle;
-	}
-
-	public JCudaKernels getKernels() {
-		return kernels;
+		return cudnnHandle.get();
 	}
 
 	/**
-	 * Destroys this GPUContext object
+	 * Returns cublasHandle for BLAS operations on the GPU.
+	 * 
+	 * @return cublasHandle for current thread
+	 */
+	public cublasHandle getCublasHandle() {
+		return cublasHandle.get();
+	}
+
+	/**
+	 * Returns cusparseHandle for certain sparse BLAS operations on the GPU.
+	 * 
+	 * @return cusparseHandle for current thread
+	 */
+	public cusparseHandle getCusparseHandle() {
+		return cusparseHandle.get();
+	}
+
+	/**
+	 * Returns cusolverDnHandle for invoking solve() function on dense matrices on the GPU.
+	 * 
+	 * @return cusolverDnHandle for current thread
+	 */
+	public cusolverDnHandle getCusolverDnHandle() {
+		return cusolverDnHandle.get();
+	}
+
+	/**
+	 * Returns cusolverSpHandle for invoking solve() function on sparse matrices on the GPU.
+	 * 
+	 * @return cusolverSpHandle for current thread
+	 */
+	public cusolverSpHandle getCusolverSpHandle() {
+		return cusolverSpHandle.get();
+	}
+
+	/**
+	 * Returns utility class used to launch custom CUDA kernel, specific to the active GPU for this GPUContext.
+	 * 
+	 * @return {@link JCudaKernels} for current thread
+	 */
+	public JCudaKernels getKernels() {
+		return kernels.get();
+	}
+
+	/**
+	 * Destroys this GPUContext object.
 	 *
 	 * @throws DMLRuntimeException if error
 	 */
 	public void destroy() throws DMLRuntimeException {
 		LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 		clearMemory();
-		cudnnDestroy(cudnnHandle);
-		cublasDestroy(cublasHandle);
-		cusparseDestroy(cusparseHandle);
-		cusolverDnDestroy(cusolverDnHandle);
-		cusolverSpDestroy(cusolverSpHandle);
-		cudnnHandle = null;
-		cublasHandle = null;
-		cusparseHandle = null;
-
+		cudnnDestroy(cudnnHandle.get());
+		cublasDestroy(cublasHandle.get());
+		cusparseDestroy(cusparseHandle.get());
+		cusolverDnDestroy(cusolverDnHandle.get());
+		cusolverSpDestroy(cusolverSpHandle.get());
 	}
 
 	/**
-	 * Clears all memory used by this {@link GPUContext}
-	 * Be careful to ensure that no memory is currently being used in the temporary memory before invoking this
+	 * Clears all memory used by this {@link GPUContext}.
+	 * Be careful to ensure that no memory is currently being used in the temporary memory before invoking this.
 	 * If memory is being used between MLContext invocations, they are pointed to by a {@link GPUObject} instance
 	 * which would be part of the {@link MatrixObject}. The cleanup of that {@link MatrixObject} instance will
 	 * cause the memory associated with that block on the GPU to be freed up.
@@ -661,7 +729,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Clears up the memory used to optimize cudaMalloc/cudaFree calls
+	 * Clears up the memory used to optimize cudaMalloc/cudaFree calls.
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
@@ -704,7 +772,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Eviction policies for {@link GPUContext#evict(long)}
+	 * Eviction policies for {@link GPUContext#evict(long)}.
 	 */
 	public enum EvictionPolicy {
 		LRU, LFU, MIN_EVICT

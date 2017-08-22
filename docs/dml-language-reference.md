@@ -257,21 +257,21 @@ An assignment statement consists of an expression, the result of which is assign
 
 The syntax for a while statement is as follows:
 
-    while (predicate){
+    while (predicate) {
         statement1
         statement2
         ...
     }
 
-The statements in the while statement body are evaluated repeatedly until the predicate evaluates to true. The while statement body must be surrounded by braces, even if the body only has a single statement.
+The statements in the while statement body are evaluated repeatedly until the predicate evaluates to TRUE. The while statement body must be surrounded by braces, even if the body only has a single statement.
 The predicate in the while statement consist of operations on scalar variables and literals. The body of a while statement may contain any sequence of statements.
 
 
 ##### Example
 
-    while( (i < 20) & (!converge) ) {
-        H = H * (t(W) %*% V) / ( t(W) %*% W %*% H);
-        W = W * (V %*% t(H) / (W %*% H %*% t(H));
+    while ((i < 20) & (!converge)) {
+        H = H * (t(W) %*% V) / (t(W) %*% W %*% H);
+        W = W * (V %*% t(H)) / (W %*% H %*% t(H));
         i = i + 1;
     }
 
@@ -284,7 +284,7 @@ The syntax for an if statement is as follows:
         statement1
         statement2
         ...
-    } [ else if (predicate2){
+    } [ else if (predicate2) {
         statement1
         statement2
         ...
@@ -295,27 +295,27 @@ The syntax for an if statement is as follows:
     } ]
 
 
-The If statement has three bodies: the `if` body (evaluated if predicate1 evaluates to true), the optional `else if` body (evaluated if predicate2 evaluates to true) and the optional `else` body (evaluated otherwise). There can be multiple `else if` bodies with different predicates but at most one `else` body. The bodies may contain any sequence of statements. If only a single statement is enclosed in a body, the braces surrounding the statement can be omitted.
+The If statement has three bodies: the `if` body (evaluated if predicate1 evaluates to TRUE), the optional `else if` body (evaluated if predicate2 evaluates to TRUE) and the optional `else` body (evaluated otherwise). There can be multiple `else if` bodies with different predicates but at most one `else` body. The bodies may contain any sequence of statements. If only a single statement is enclosed in a body, the braces surrounding the statement can be omitted.
 
 
 ##### Examples
 
     # example of if statement
-    if( i < 20 ) {
-        converge = false;
+    if (i < 20) {
+        converge = FALSE;
     } else {
-        converge = true;
+        converge = TRUE;
     }
     # example of nested control structures
-    while( !converge ) {
-        H = H * (t(W) %*% V) / ( t(W) %*% W %*% H);
-        W = W * (V %*% t(H) / (W %*% H %*% t(H));
+    while (!converge) {
+        H = H * (t(W) %*% V) / (t(W) %*% W %*% H);
+        W = W * (V %*% t(H)) / (W %*% H %*% t(H));
         i = i + 1;
         zerror = sum(z - W %*% H);
         if (zerror < maxError) {
-            converge = true;
+            converge = TRUE;
         } else {
-            converge = false;
+            converge = FALSE;
         }
     }
 
@@ -403,7 +403,7 @@ attempt to guarantee result correctness for parallel execution. For example, the
 the iterations do not act independently, so they are not parallelizable. The iterations incorrectly try to increment the same `sum` variable.
 
 	sum = 0
-	parfor(i in 1:3) {
+	parfor (i in 1:3) {
 	    sum = sum + i; # not parallelizable - generates error
 	}
 	print(sum)
@@ -490,8 +490,8 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
 
 A UDF invocation specifies the function identifier, variable identifiers for calling parameters, and the variables to be populated by the returned values from the function. The syntax for function calls is as follows.
 
-    returnVal = functionName( param1, param2, ….)
-    [returnVal1, returnVal2, ...] = functionName(param1, param2, ….)
+    returnVal = functionName(param1, param2, ...)
+    [returnVal1, returnVal2, ...] = functionName(param1, param2, ...)
 
 
 #### Examples
@@ -523,7 +523,7 @@ Note: The command-line parameters are treated as constants which are introduced 
     }
     print("A:" + A);
 
-This will result in parser warning, but the program will run to completion. If the expression in the "if" predicate would have evaluated to false, it would have resulted in runtime error. Also, functions need not be defined prior to its call. That is: following code will work without parser warning:
+This will result in parser warning, but the program will run to completion. If the expression in the "if" predicate would have evaluated to FALSE, it would have resulted in runtime error. Also, functions need not be defined prior to its call. That is: following code will work without parser warning:
 
     A = 2;
     C = foo(1, A)
@@ -673,7 +673,7 @@ ppred() | "parallel predicate".<br/> The relational operator specified in the th
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 as.scalar(), <br/> as.matrix() | A 1x1 matrix is cast as scalar (value type preserving), and a scalar is cast as 1x1 matrix with value type double | Input: (&lt;matrix&gt;), or (&lt;scalar&gt;) <br/> Output: &lt;scalar&gt;, or &lt;matrix&gt; | as.scalar(X) <br/> as.matrix(x)
-as.double(), <br/> as.integer(), <br/> as.logical() | A variable is cast as the respective value type, data type preserving. as.integer() performs a safe cast. For numerical inputs, as.logical() returns false if the input value is 0 or 0.0, and true otherwise. | Input: (&lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | as.double(X) <br/> as.integer(x) <br/> as.logical(y)
+as.double(), <br/> as.integer(), <br/> as.logical() | A variable is cast as the respective value type, data type preserving. as.integer() performs a safe cast. For numerical inputs, as.logical() returns FALSE if the input value is 0 or 0.0, and TRUE otherwise. | Input: (&lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | as.double(X) <br/> as.integer(x) <br/> as.logical(y)
 
 
 ### Statistical Built-In Functions
@@ -1508,15 +1508,15 @@ The images are assumed to be stored NCHW format, where N = batch size, C = #chan
 Hence, the images are internally represented as a matrix with dimension (N, C * H * W).
 
 
-| Function name          | Input matrices | Input Parameters                                                                                                                                                                            | Notes                                                                                    |
-|------------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| conv2d                 | input, filter  | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Performs 2D convolution operation                                                        |
-| conv2d_backward_filter | input, dout    | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Computes the gradients wrt filter of 2D convolution                                      |
-| conv2d_backward_data   | filter, dout   | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[numFilters, numChannels, height_filter, width_filter] | Computes the gradients wrt input of 2D convolution                                       |
-| max_pool               | input          | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                 | Performs max pooling operation                                                           |
-| max_pool_backward      | input, dout    | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                 | Computes the gradients wrt input of 2D maxpooling                                        |
-| bias_add               | input, bias    |                                                                                                                                                                                             | Adds the bias (row vector of size numChannels) to input with the given numChannels       |
-| bias_multiply          | input, bias    |                                                                                                                                                                                             | Multiplies the bias (row vector of size numChannels) to input with the given numChannels |
+| Function name              | Input matrices | Dimension of first input matrix                           | Dimension of second input matrix (if applicable)          | Dimension of output matrix                                 | Input Parameters                                                                                                                                                                              | Notes                                                                                                                                             |
+|----------------------------|----------------|-----------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| conv2d                     | input, filter  | [batch_size X num_channels* height_image* width_image]    | [num_filters X num_channels* height_filter* width_filter] | [batch_size X num_channels_out* height_out* width_out]     | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[num_filters, num_channels, height_filter, width_filter] | Performs 2D convolution operation                                                                                                                 |
+| conv2d_backward_filter     | input, dout    | [batch_size X num_channels* height_image* width_image]    | [batch_size X num_channels_out* height_out* width_out]    | [num_filters X num_channels* height_filter* width_filter]  | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[num_filters, num_channels, height_filter, width_filter] | Computes the gradients wrt filter of 2D convolution                                                                                               |
+| conv2d_backward_data       | filter, dout   | [num_filters X num_channels* height_filter* width_filter] | [batch_size X num_channels_out* height_out* width_out]    | [batch_size X num_channels* height_image* width_image]     | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], filter_shape=[num_filters, num_channels, height_filter, width_filter] | Computes the gradients wrt input of 2D convolution                                                                                                |
+| max_pool                   | input          | [batch_size X num_channels* height_image* width_image]    |                                                           | [batch_size X num_channels* height_out* width_out]         | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                   | Performs max pooling operation                                                                                                                    |
+| max_pool_backward          | input, dout    | [batch_size X num_channels* height_image* width_image]    | [batch_size X num_channels* height_out* width_out]        | [batch_size X num_channels* height_image* width_image]     | stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[batch_size, num_channels, height_image, width_image], pool_size=[height_pool, width_pool]                                   | Computes the gradients wrt input of 2D maxpooling                                                                                                 |
+| bias_add                   | input, bias    | [batch_size X num_channels* height_image* width_image]    | [num_channels X 1]                                        | [batch_size X num_channels* height_image* width_image]     |                                                                                                                                                                                               | Adds the bias (row vector of size num_channels) to input with the given num_channels                                                              |
+| bias_multiply              | input, bias    | [batch_size X num_channels* height_image* width_image]    | [num_channels X 1]                                        | [batch_size X num_channels* height_image* width_image]     |                                                                                                                                                                                               | Multiplies the bias (row vector of size num_channels) to input with the given num_channels                                                        |
 
 
 Examples:
@@ -1538,7 +1538,7 @@ Examples:
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
-toString() | Formats a Matrix or Frame object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print Matrix object in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt; or &lt;frame&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ") <br/><br/>F = as.frame(X)<br/>print(toString(F, rows=2, cols=2))
+toString() | Formats a Matrix or Frame object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to TRUE to print Matrix object in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt; or &lt;frame&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ") <br/><br/>F = as.frame(X)<br/>print(toString(F, rows=2, cols=2))
 print() | Prints a scalar variable. The print() function allows printf-style formatting by optionally allowing multiple arguments, where the first argument is the string that specifies the formatting and the additional arguments are the arguments to format. | Input: &lt;scalar&gt;<br/>or<br/>&lt;string, args...&gt; | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x ) <br/><br/>a='hello';<br/>b=3;<br/>c=4.5;<br/>d=TRUE;<br/>print('%s %d %f %b', a, b, c, d); <br/><br/>a='hello';<br/>b='goodbye';<br/>c=4;<br/>d=3;<br/>e=3.0;<br/>f=5.0;<br/>g=FALSE;<br/>print('%s %d %f %b', (a+b), (c-d), (e*f), !g);
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
@@ -1782,7 +1782,7 @@ The following DML utilizes the `transformencode()` function.
     jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
     [X, M] = transformencode(target=F1, spec=jspec);
     print(toString(X));
-    if(1==1){}
+    while(FALSE){}
     print(toString(M));
 
 The transformed matrix X and output M are as follows.

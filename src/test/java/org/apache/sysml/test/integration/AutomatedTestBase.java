@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.ParameterBuilder;
@@ -194,8 +195,6 @@ public abstract class AutomatedTestBase
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 
 	protected static final boolean DEBUG = false;
-	protected static final boolean VISUALIZE = false;
-	protected static final boolean RUNNETEZZA = false;
 
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;
@@ -1173,8 +1172,6 @@ public abstract class AutomatedTestBase
 			}
 		}
 		// program-independent parameters
-		if(VISUALIZE)
-			args.add("-v");
 		args.add("-exec");
 		if(rtplatform == RUNTIME_PLATFORM.HADOOP)
 			args.add("hadoop");
@@ -1851,5 +1848,13 @@ public abstract class AutomatedTestBase
 		builder.config("spark.locality.wait", "5s");
 		SparkSession spark = builder.getOrCreate();
 		return spark;
+	}
+
+	public static String getMatrixAsString(double[][] matrix) {
+		try {
+			return DataConverter.toString(DataConverter.convertToMatrixBlock(matrix));
+		} catch (DMLRuntimeException e) {
+			return "N/A";
+		}
 	}
 }

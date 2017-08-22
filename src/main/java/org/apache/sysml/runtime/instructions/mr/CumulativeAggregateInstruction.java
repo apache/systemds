@@ -87,7 +87,7 @@ public class CumulativeAggregateInstruction extends AggregateUnaryInstruction
 			OperationsOnMatrixValues.performAggregateUnary( inix, in1.getValue(), out.getIndexes(), out.getValue(), 
 					                            ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
 			if( ((AggregateUnaryOperator)optr).aggOp.correctionExists )
-				((MatrixBlock)out.getValue()).dropLastRowsOrColums(((AggregateUnaryOperator)optr).aggOp.correctionLocation);
+				((MatrixBlock)out.getValue()).dropLastRowsOrColumns(((AggregateUnaryOperator)optr).aggOp.correctionLocation);
 			
 			//cumsum expand partial aggregates
 			long rlenOut = (long)Math.ceil((double)_mcIn.getRows()/blockRowFactor);

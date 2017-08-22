@@ -19,41 +19,19 @@
 
 package org.apache.sysml.test.integration.scripts.nn;
 
-import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
+
+import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
+import org.junit.Test;
 
 /**
  * Test the SystemML deep learning library, `nn`.
  */
-public class NNTest extends AutomatedTestBase {
+public class NNTest extends MLContextTestBase {
 
-	private static final String TEST_NAME = "NNTest";
-	private static final String TEST_DIR = "scripts/";
 	private static final String TEST_SCRIPT = "scripts/nn/test/run_tests.dml";
 	private static final String ERROR_STRING = "ERROR:";
-
-	private static SparkSession spark;
-	private static MLContext ml;
-
-	@BeforeClass
-	public static void setUpClass() {
-		spark = createSystemMLSparkSession("MLContextTest", "local");
-		ml = new MLContext(spark);
-	}
-
-	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
-	}
 
 	@Test
 	public void testNNLibrary() {
@@ -62,20 +40,4 @@ public class NNTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
-	}
 }

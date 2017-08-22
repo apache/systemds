@@ -75,20 +75,20 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock X = ec.getMatrixInput(input1.getName());
-		MatrixBlock v = ec.getMatrixInput(input2.getName());
+		MatrixBlock X = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock v = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		MatrixBlock w = (_type==ChainType.XtwXv || _type==ChainType.XtXvy) ? 
-				ec.getMatrixInput(input3.getName()) : null;
+				ec.getMatrixInput(input3.getName(), getExtendedOpcode()) : null;
 
 		//execute mmchain operation 
 		 MatrixBlock out = (MatrixBlock) X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
 				
 		//set output and release inputs
-		ec.setMatrixOutput(output.getName(), out);
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		if( w !=null )
-			ec.releaseMatrixInput(input3.getName());
+			ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
 	}
 	
 	public ChainType getMMChainType()

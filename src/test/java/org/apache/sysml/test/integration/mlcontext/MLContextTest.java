@@ -45,7 +45,6 @@ import java.util.Map;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.VectorUDT;
@@ -54,14 +53,11 @@ import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextConversionUtil;
 import org.apache.sysml.api.mlcontext.MLContextException;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
@@ -73,11 +69,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import scala.Tuple2;
@@ -86,26 +78,7 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 
-public class MLContextTest extends AutomatedTestBase {
-	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
-	protected final static String TEST_NAME = "MLContext";
-
-	private static SparkSession spark;
-	private static JavaSparkContext sc;
-	private static MLContext ml;
-
-	@BeforeClass
-	public static void setUpClass() {
-		spark = createSystemMLSparkSession("MLContextTest", "local");
-		ml = new MLContext(spark);
-		sc = MLContextUtil.getJavaSparkContext(ml);
-	}
-
-	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
-	}
+public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testCreateDMLScriptBasedOnStringAndExecute() {
@@ -710,9 +683,12 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - DataFrame sum DML, mllib vector with ID column");
 
 		List<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> list = new ArrayList<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>>();
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(1.0, org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(2.0, org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(3.0, org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(1.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(2.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(3.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleMllibVectorRow());
@@ -734,9 +710,12 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - DataFrame sum PYDML, mllib vector with ID column");
 
 		List<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> list = new ArrayList<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>>();
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(1.0, org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(2.0, org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(3.0, org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(1.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(2.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(3.0,
+				org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleMllibVectorRow());
@@ -2576,7 +2555,8 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testPrintFormattingMultipleExpressions() {
 		System.out.println("MLContextTest - print formatting multiple expressions");
-		Script script = dml("a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
+		Script script = dml(
+				"a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
 		setExpectedStdOut("hellogoodbye 1 15.000000 true");
 		ml.execute(script);
 	}
@@ -2672,7 +2652,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testFunctionNoReturnValueForceFunctionCallDML() {
 		System.out.println("MLContextTest - function with no return value, force function call DML");
 
-		String s = "hello=function(){\nif(1==1){};\nprint('no return value, force function call');\n}\nhello();";
+		String s = "hello=function(){\nwhile(FALSE){};\nprint('no return value, force function call');\n}\nhello();";
 		Script script = dml(s);
 		setExpectedStdOut("no return value, force function call");
 		ml.execute(script);
@@ -2732,7 +2712,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputListDML() {
 		System.out.println("MLContextTest - output specified as List DML");
 
-		List<String> outputs = Arrays.asList("x","y");
+		List<String> outputs = Arrays.asList("x", "y");
 		Script script = dml("a=1;x=a+1;y=x+1").out(outputs);
 		MLResults results = ml.execute(script);
 		Assert.assertEquals(2, results.getLong("x"));
@@ -2743,7 +2723,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputListPYDML() {
 		System.out.println("MLContextTest - output specified as List PYDML");
 
-		List<String> outputs = Arrays.asList("x","y");
+		List<String> outputs = Arrays.asList("x", "y");
 		Script script = pydml("a=1\nx=a+1\ny=x+1").out(outputs);
 		MLResults results = ml.execute(script);
 		Assert.assertEquals(2, results.getLong("x"));
@@ -2755,7 +2735,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputScalaSeqDML() {
 		System.out.println("MLContextTest - output specified as Scala Seq DML");
 
-		List outputs = Arrays.asList("x","y");
+		List outputs = Arrays.asList("x", "y");
 		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
 		Script script = dml("a=1;x=a+1;y=x+1").out(seq);
 		MLResults results = ml.execute(script);
@@ -2768,7 +2748,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputScalaSeqPYDML() {
 		System.out.println("MLContextTest - output specified as Scala Seq PYDML");
 
-		List outputs = Arrays.asList("x","y");
+		List outputs = Arrays.asList("x", "y");
 		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
 		Script script = pydml("a=1\nx=a+1\ny=x+1").out(seq);
 		MLResults results = ml.execute(script);
@@ -2776,89 +2756,4 @@ public class MLContextTest extends AutomatedTestBase {
 		Assert.assertEquals(3, results.getLong("y"));
 	}
 
-	// NOTE: Uncomment these tests once they work
-
-	// @SuppressWarnings({ "rawtypes", "unchecked" })
-	// @Test
-	// public void testInputTupleSeqWithAndWithoutMetadataDML() {
-	// System.out.println("MLContextTest - Tuple sequence with and without
-	// metadata DML");
-	//
-	// List<String> list1 = new ArrayList<String>();
-	// list1.add("1,2");
-	// list1.add("3,4");
-	// JavaRDD<String> javaRDD1 = sc.parallelize(list1);
-	// RDD<String> rdd1 = JavaRDD.toRDD(javaRDD1);
-	//
-	// List<String> list2 = new ArrayList<String>();
-	// list2.add("5,6");
-	// list2.add("7,8");
-	// JavaRDD<String> javaRDD2 = sc.parallelize(list2);
-	// RDD<String> rdd2 = JavaRDD.toRDD(javaRDD2);
-	//
-	// MatrixMetadata mm1 = new MatrixMetadata(2, 2);
-	//
-	// Tuple3 tuple1 = new Tuple3("m1", rdd1, mm1);
-	// Tuple2 tuple2 = new Tuple2("m2", rdd2);
-	// List tupleList = new ArrayList();
-	// tupleList.add(tuple1);
-	// tupleList.add(tuple2);
-	// Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
-	//
-	// Script script =
-	// dml("print('sums: ' + sum(m1) + ' ' + sum(m2));").in(seq);
-	// setExpectedStdOut("sums: 10.0 26.0");
-	// ml.execute(script);
-	// }
-	//
-	// @SuppressWarnings({ "rawtypes", "unchecked" })
-	// @Test
-	// public void testInputTupleSeqWithAndWithoutMetadataPYDML() {
-	// System.out.println("MLContextTest - Tuple sequence with and without
-	// metadata PYDML");
-	//
-	// List<String> list1 = new ArrayList<String>();
-	// list1.add("1,2");
-	// list1.add("3,4");
-	// JavaRDD<String> javaRDD1 = sc.parallelize(list1);
-	// RDD<String> rdd1 = JavaRDD.toRDD(javaRDD1);
-	//
-	// List<String> list2 = new ArrayList<String>();
-	// list2.add("5,6");
-	// list2.add("7,8");
-	// JavaRDD<String> javaRDD2 = sc.parallelize(list2);
-	// RDD<String> rdd2 = JavaRDD.toRDD(javaRDD2);
-	//
-	// MatrixMetadata mm1 = new MatrixMetadata(2, 2);
-	//
-	// Tuple3 tuple1 = new Tuple3("m1", rdd1, mm1);
-	// Tuple2 tuple2 = new Tuple2("m2", rdd2);
-	// List tupleList = new ArrayList();
-	// tupleList.add(tuple1);
-	// tupleList.add(tuple2);
-	// Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
-	//
-	// Script script =
-	// pydml("print('sums: ' + sum(m1) + ' ' + sum(m2))").in(seq);
-	// setExpectedStdOut("sums: 10.0 26.0");
-	// ml.execute(script);
-	// }
-
-	@After
-	public void tearDown() {
-		super.tearDown();
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		// stop underlying spark context to allow single jvm tests (otherwise the
-		// next test that tries to create a SparkContext would fail)
-		spark.stop();
-		sc = null;
-		spark = null;
-
-		// clear status mlcontext and spark exec context
-		ml.close();
-		ml = null;
-	}
 }

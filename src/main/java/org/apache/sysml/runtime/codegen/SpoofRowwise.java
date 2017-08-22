@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
@@ -61,6 +62,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		public boolean isRowTypeB1() {
 			return (this == NO_AGG_B1) || (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
+		}
+		public boolean isRowTypeB1ColumnAgg() {
+			return (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
 		} 
 	}
 	
@@ -97,22 +101,20 @@ public abstract class SpoofRowwise extends SpoofOperator
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) 
 		throws DMLRuntimeException 
 	{
-		MatrixBlock out = new MatrixBlock(1, 1, false);
-		if( k > 1 )
-			execute(inputs, scalarObjects, out, k);
-		else
-			execute(inputs, scalarObjects, out);
+		MatrixBlock out = ( k > 1 ) ?
+			execute(inputs, scalarObjects, new MatrixBlock(1,1,false), k) :
+			execute(inputs, scalarObjects, new MatrixBlock(1,1,false));
 		return new DoubleObject(out.quickGetValue(0, 0));
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)	
 		throws DMLRuntimeException 
 	{
-		execute(inputs, scalarObjects, out, true, false);
+		return execute(inputs, scalarObjects, out, true, false);
 	}
 	
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) 
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) 
 		throws DMLRuntimeException	
 	{
 		//sanity check
@@ -127,6 +129,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( !aggIncr || !out.isAllocated() )
 			allocateOutputMatrix(m, n, n2, out);
 		double[] c = out.getDenseBlock();
+		final boolean flipOut = _type.isRowTypeB1ColumnAgg()
+			&& LibSpoofPrimitives.isFlipOuter(out.getNumRows(), out.getNumColumns());
 		
 		//input preparation
 		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, true, _tB1);
@@ -149,18 +153,23 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( allocTmp &&_reqVectMem > 0 )
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
 		out.recomputeNonZeros();
+		if( flipOut ) {
+			fixTransposeDimensions(out);
+			out = LibMatrixReorg.transpose(out, new MatrixBlock(
+				out.getNumColumns(), out.getNumRows(), false));
+		}
 		out.examSparsity();
+		return out;
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
 		throws DMLRuntimeException
 	{
 		//redirect to serial execution
 		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.checkParColumnAgg(inputs.get(0), k, false))
-			|| (long)inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
-			execute(inputs, scalarObjects, out);
-			return;
+			|| getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
+			return execute(inputs, scalarObjects, out);
 		}
 		
 		//sanity check
@@ -173,6 +182,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		final int n2 = _type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		allocateOutputMatrix(m, n, n2, out);
+		final boolean flipOut = _type.isRowTypeB1ColumnAgg()
+			&& LibSpoofPrimitives.isFlipOuter(out.getNumRows(), out.getNumColumns());
 		
 		//input preparation
 		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, true, _tB1);
@@ -210,11 +221,18 @@ public abstract class SpoofRowwise extends SpoofOperator
 			}
 			
 			pool.shutdown();
+			if( flipOut ) {
+				fixTransposeDimensions(out);
+				out = LibMatrixReorg.transpose(out, new MatrixBlock(
+					out.getNumColumns(), out.getNumRows(), false));
+			}
 			out.examSparsity();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+		
+		return out;
 	}
 	
 	public static boolean hasMatrixSideInput(ArrayList<MatrixBlock> inputs) {
@@ -244,6 +262,12 @@ public abstract class SpoofRowwise extends SpoofOperator
 			
 		}
 		out.allocateDenseBlock();
+	}
+	
+	private void fixTransposeDimensions(MatrixBlock out) {
+		int rlen = out.getNumRows();
+		out.setNumRows(out.getNumColumns());
+		out.setNumColumns(rlen);
 	}
 	
 	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 

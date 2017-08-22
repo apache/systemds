@@ -84,8 +84,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction
 		
 		// set the output dimensions to the hop node matrix dimensions
 		if( output.getDataType() == DataType.MATRIX) {
-			MatrixBlock out = new MatrixBlock();
-			_op.execute(inputs, scalars, out, _numThreads);
+			MatrixBlock out = _op.execute(inputs, scalars, new MatrixBlock(), _numThreads);
 			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 		}
 		else if (output.getDataType() == DataType.SCALAR) {

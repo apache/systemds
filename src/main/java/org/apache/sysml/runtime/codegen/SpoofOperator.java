@@ -37,14 +37,14 @@ public abstract class SpoofOperator implements Serializable
 	private static final long serialVersionUID = 3834006998853573319L;
 	private static final Log LOG = LogFactory.getLog(SpoofOperator.class.getName());
 	
-	public abstract void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out)
+	public abstract MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out)
 		throws DMLRuntimeException;
 	
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k)
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k)
 		throws DMLRuntimeException 
 	{
 		//default implementation serial execution
-		execute(inputs, scalars, out);
+		return execute(inputs, scalars, out);
 	}
 	
 	public abstract String getSpoofType();
@@ -113,7 +113,7 @@ public abstract class SpoofOperator implements Serializable
 		return b;
 	}
 	
-	protected SideInput[] createSparseSideInputs(SideInput[] input) {
+	protected static SideInput[] createSparseSideInputs(SideInput[] input) {
 		//determine if there are sparse side inputs
 		boolean containsSparse = false;
 		for( int i=0; i<input.length; i++ ) {
@@ -133,18 +133,22 @@ public abstract class SpoofOperator implements Serializable
 		return ret;
 	}
 	
-	public double[][] getDenseMatrices(SideInput[] inputs) {
+	public static double[][] getDenseMatrices(SideInput[] inputs) {
 		double[][] ret = new double[inputs.length][];
 		for( int i=0; i<inputs.length; i++ )
 			ret[i] = inputs[i].ddat;
 		return ret;
 	}
 	
-	protected double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
+	protected static double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
 		double[] scalars = new double[scalarObjects.size()];
 		for(int i=0; i < scalarObjects.size(); i++)
 			scalars[i] = scalarObjects.get(i).getDoubleValue();
 		return scalars;
+	}
+	
+	public static long getTotalInputNnz(ArrayList<MatrixBlock> inputs) {
+		return inputs.stream().mapToLong(in -> in.getNonZeros()).sum();
 	}
 	
 	//abstraction for safely accessing sideways matrices without the need 

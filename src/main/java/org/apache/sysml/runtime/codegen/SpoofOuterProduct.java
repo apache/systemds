@@ -147,7 +147,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		return new DoubleObject(sum);
 	}
 	
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
 		throws DMLRuntimeException
 	{
 		//sanity check
@@ -159,7 +159,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
 			|| inputs.get(0).isEmptyBlock(false) ) {  //X is empty
 			out.examSparsity(); //turn empty dense into sparse
-			return; 
+			return out;
 		}
 		
 		//input preparation and result allocation (Allocate the output that is set by Sigma2CPInstruction) 
@@ -177,7 +177,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		//check for empty inputs; otherwise allocate result
 		if( inputs.get(0).isEmptyBlock(false) )
-			return;
+			return out;
 		out.allocateDenseOrSparseBlock();
 		
 		//input preparation
@@ -223,10 +223,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			out.sortSparseRows();
 		out.recomputeNonZeros();
 		out.examSparsity();
+		return out;
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int numThreads)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int numThreads)	
 		throws DMLRuntimeException
 	{
 		//sanity check
@@ -238,7 +239,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT && inputs.get(2).isEmptyBlock(false)) //V is empty
 			|| inputs.get(0).isEmptyBlock(false) ) {  //X is empty
 			out.examSparsity(); //turn empty dense into sparse
-			return; 
+			return out; 
 		}
 		
 		//input preparation and result allocation (Allocate the output that is set by Sigma2CPInstruction) 
@@ -316,6 +317,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				out.recomputeNonZeros();
 		}
 		out.examSparsity();
+		return out;
 	}
 	
 	private void executeDense(double[] a, double[] u, double[] v, double[][] b, double[] scalars,

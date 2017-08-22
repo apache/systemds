@@ -339,15 +339,25 @@ public class TemplateCell extends TemplateBase
 	 */
 	public static class HopInputComparator implements Comparator<Hop> 
 	{
+		private final Hop _driver;
+		
+		public HopInputComparator() {
+			this(null);
+		}
+		
+		public HopInputComparator(Hop driver) {
+			_driver = driver;
+		}
+		
 		@Override
 		public int compare(Hop h1, Hop h2) {
 			long ncells1 = h1.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
 				h1.dimsKnown() ? h1.getDim1()*h1.getDim2() : Long.MAX_VALUE;
 			long ncells2 = h2.getDataType()==DataType.SCALAR ? Long.MIN_VALUE :
 				h2.dimsKnown() ? h2.getDim1()*h2.getDim2() : Long.MAX_VALUE;
-			if( ncells1 > ncells2 ) 
+			if( ncells1 > ncells2 || h1 == _driver )
 				return -1;
-			else if( ncells1 < ncells2) 
+			else if( ncells1 < ncells2 || h2 == _driver)
 				return 1;
 			return Long.compare(
 				h1.dimsKnown(true) ? h1.getNnz() : ncells1, 

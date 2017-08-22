@@ -72,21 +72,21 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) 
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) 
 		throws DMLRuntimeException
 	{
-		execute(inputs, scalarObjects, out, 1);
+		return execute(inputs, scalarObjects, out, 1);
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
 		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
+		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
 	
@@ -139,7 +139,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	
 		//post-processing
 		out.recomputeNonZeros();
-		out.examSparsity();	
+		out.examSparsity();
+		return out;
 	}
 	
 	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 

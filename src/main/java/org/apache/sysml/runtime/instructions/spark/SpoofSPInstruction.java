@@ -471,7 +471,7 @@ public class SpoofSPInstruction extends SPInstruction
 				//prepare output and execute single-threaded operator
 				ArrayList<MatrixBlock> inputs = getAllMatrixInputs(ixIn, blkIn);
 				blkOut = aggIncr ? blkOut : new MatrixBlock();
-				_op.execute(inputs, _scalars, blkOut, false, aggIncr);
+				blkOut = _op.execute(inputs, _scalars, blkOut, false, aggIncr);
 				if( !aggIncr ) {
 					MatrixIndexes ixOut = new MatrixIndexes(ixIn.getRowIndex(),
 						_op.getRowType()!=RowType.NO_AGG ? 1 : ixIn.getColumnIndex());
@@ -532,7 +532,7 @@ public class SpoofSPInstruction extends SPInstruction
 						ixOut = new MatrixIndexes(ixOut.getRowIndex(), 1);
 					else if(((SpoofCellwise)_op).getCellType()==CellType.COL_AGG)
 						ixOut = new MatrixIndexes(1, ixOut.getColumnIndex());
-					_op.execute(inputs, _scalars, blkOut);
+					blkOut = _op.execute(inputs, _scalars, blkOut);
 				}
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut));
 			}
@@ -566,7 +566,7 @@ public class SpoofSPInstruction extends SPInstruction
 			//execute core operation
 			ArrayList<MatrixBlock> inputs = getAllMatrixInputs(arg._1(), arg._2());
 			MatrixBlock blkOut = new MatrixBlock();
-			_op.execute(inputs, _scalars, blkOut);
+			blkOut = _op.execute(inputs, _scalars, blkOut);
 			
 			return new Tuple2<MatrixIndexes,MatrixBlock>(arg._1(), blkOut);
 		}
@@ -641,7 +641,7 @@ public class SpoofSPInstruction extends SPInstruction
 					blkOut.quickSetValue(0, 0, obj.getDoubleValue());
 				}
 				else {
-					_op.execute(inputs, _scalars, blkOut);
+					blkOut = _op.execute(inputs, _scalars, blkOut);
 				}
 				
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(createOutputIndexes(ixIn,_op), blkOut));				

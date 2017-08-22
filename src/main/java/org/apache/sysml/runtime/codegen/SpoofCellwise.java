@@ -115,7 +115,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
+		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
 		
@@ -180,21 +180,21 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	}
 
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
 		throws DMLRuntimeException
 	{
-		execute(inputs, scalarObjects, out, 1);
+		return execute(inputs, scalarObjects, out, 1);
 	}
 	
 	@Override
-	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)
 		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 1 || out==null )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( inputs.get(0).getNumRows()*inputs.get(0).getNumColumns()<PAR_NUMCELL_THRESHOLD ) {
+		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
 		
@@ -276,6 +276,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//post-processing
 		out.setNonZeros(lnnz);
 		out.examSparsity();
+		return out;
 	}
 	
 	/////////

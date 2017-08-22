@@ -185,11 +185,12 @@ public class TemplateUtils
 		Hop B1 = (inputs.length>1) ? inputs[1] : null;
 		if( (X!=null && HopRewriteUtils.isEqualSize(output, X)) || X==null )
 			return RowType.NO_AGG;
-		else if( (B1!=null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
+		else if( ((B1!=null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
 			|| (output instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)output)))
+			&& !(output instanceof AggBinaryOp && HopRewriteUtils.isTransposeOfItself(output.getInput().get(0),X)) )
 			return RowType.NO_AGG_B1;
 		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1 
-				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND)) 
+				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND))
 			&& !(output instanceof AggBinaryOp && HopRewriteUtils
 				.isTransposeOfItself(output.getInput().get(0),X)))
 			return RowType.ROW_AGG;

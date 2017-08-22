@@ -241,6 +241,11 @@ public class DataOp extends Hop
 	}
 	
 	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
+	
+	@Override
 	public Lop constructLops()
 			throws HopsException, LopsException 
 	{	

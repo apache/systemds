@@ -192,7 +192,9 @@ public abstract class Hop
 	
 	public void checkAndSetForcedPlatform()
 	{
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
+			_etypeForced = ExecType.GPU;
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			_etypeForced = ExecType.CP;
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
 			_etypeForced = ExecType.MR;
@@ -768,8 +770,12 @@ public abstract class Hop
 	protected ExecType findExecTypeByMemEstimate() {
 		ExecType et = null;
 		char c = ' ';
-		if ( getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
-			et = ExecType.CP;
+		double memEst = getMemEstimate();
+		if ( memEst < OptimizerUtils.getLocalMemBudget() ) {
+			if (DMLScript.USE_ACCELERATOR && isGPUEnabled() && memEst < GPUContextPool.initialGPUMemBudget())
+				et = ExecType.GPU;
+			else
+				et = ExecType.CP;
 		}
 		else {
 			if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID )
@@ -786,14 +792,6 @@ public abstract class Hop
 			LOG.debug(s);
 		}
 		
-		return et;
-	}
-	
-	protected ExecType findGPUExecTypeByMemEstimate(ExecType et) {
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
-			return ExecType.GPU;
-		}
 		return et;
 	}
 
@@ -850,6 +848,8 @@ public abstract class Hop
 	
 	public abstract String getOpString();
 
+	public abstract boolean isGPUEnabled();
+	
 	protected boolean isVector() {
 		return (dimsKnown() && (_dim1 == 1 || _dim2 == 1) );
 	}

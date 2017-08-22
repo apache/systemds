@@ -80,6 +80,11 @@ public class MultipleOp extends Hop {
 	public String getOpString() {
 		return "m(" + _op.name().toLowerCase() + ")";
 	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
 
 	/**
 	 * Construct the corresponding Lops for this Hop

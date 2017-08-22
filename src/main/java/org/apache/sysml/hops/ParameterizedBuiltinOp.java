@@ -175,6 +175,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
+	
+	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{		

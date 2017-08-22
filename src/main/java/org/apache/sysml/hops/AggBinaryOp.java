@@ -48,7 +48,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
@@ -143,6 +142,33 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return _method;
 	}
 	
+	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);
+		//matrix mult operation selection part 2 (specific pattern)
+		MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
+		ChainType chain = checkMapMultChain(); //determine mmchain pattern
+		
+		_method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
+			      input2.getDim1(), input2.getDim2(), mmtsj, chain, _hasLeftPMInput );
+		switch( _method ){
+			case TSMM: 
+				return true;
+			case MAPMM_CHAIN:
+				return false;
+			case PMM:
+				return false;
+			case MM:
+				return true;
+			default:
+				throw new RuntimeException("Unsupported method:" + _method);
+		}
+	}
+	
 	/**
 	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
 	 *       and existing mem estimate advantageous in terms of consistency hops/lops,
@@ -169,7 +195,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
 			ChainType chain = checkMapMultChain(); //determine mmchain pattern
 			
-			if( et == ExecType.CP ) 
+			if( et == ExecType.CP || et == ExecType.GPU ) 
 			{
 				//matrix mult operation selection part 3 (CP type)
 				_method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
@@ -178,7 +204,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				//dispatch CP lops construction 
 				switch( _method ){
 					case TSMM: 
-						constructCPLopsTSMM( mmtsj );
+						constructCPLopsTSMM( mmtsj, et );
 						break;
 					case MAPMM_CHAIN:
 						constructCPLopsMMChain( chain );
@@ -187,7 +213,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						constructCPLopsPMM();
 						break;
 					case MM:
-						constructCPLopsMM();
+						constructCPLopsMM(et);
 						break;
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing CP lops.");
@@ -344,7 +370,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{
 		double ret = 0;
 
-		if (DMLScript.USE_ACCELERATOR) {
+		if (isGPUEnabled()) {
 			// In GPU Mode, intermediate memory is only needed in case of one of the matrix blocks is sparse
 			// When sparse block is converted to dense and a dense MM takes place, we need (dim1 * dim2)
 			// When dense block is converted to sparse and a sparse MM takes place, we need (dim1 * dim2 * 2)
@@ -581,16 +607,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	// CP Lops generation
 	/////////////////////////
 	
-	private void constructCPLopsTSMM( MMTSJType mmtsj ) 
+	private void constructCPLopsTSMM( MMTSJType mmtsj, ExecType et ) 
 		throws HopsException, LopsException
 	{
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		
-		ExecType et = ExecType.CP;
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
-			et = ExecType.GPU;
-		}
 		
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
 				                 getDataType(), getValueType(), et, mmtsj, false, k);
@@ -662,13 +682,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		HopRewriteUtils.removeChildReference(pmInput, nrow);
 	}
 
-	private void constructCPLopsMM() 
+	private void constructCPLopsMM(ExecType et) 
 		throws HopsException, LopsException
 	{	
 		Lop matmultCP = null;
 
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
+		if (et == ExecType.GPU) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			Lop left; Lop right;
@@ -691,7 +710,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			}
 			
 			matmultCP = new Binary(left, right, 
-									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.GPU, isLeftTransposed, isRightTransposed);
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, isLeftTransposed, isRightTransposed);
 			setOutputDimensions(matmultCP);
 			setNnz(-1);
 		}
@@ -702,7 +721,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			else { 
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-										 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
+										 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, k);
 			}
 			setOutputDimensions(matmultCP);
 		}

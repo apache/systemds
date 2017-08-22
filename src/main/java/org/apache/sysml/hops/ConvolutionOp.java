@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
@@ -76,6 +77,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private boolean isEligibleForSpark() {
 		// return (op == ConvOp.DIRECT_CONV2D || op == ConvOp.MAX_POOLING) ? true : false;
 		return false;
+	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		return true;
 	}
 	
 	@Override
@@ -315,12 +323,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		if( _etypeForced != null ) 			
 		{
-			_etype = findGPUExecTypeByMemEstimate(_etypeForced);
+			_etype = _etypeForced;
 		}
 		else 
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-				_etype = findGPUExecTypeByMemEstimate(findExecTypeByMemEstimate());
+				_etype = findExecTypeByMemEstimate();
 			}
 			else {
 				_etype = REMOTE;

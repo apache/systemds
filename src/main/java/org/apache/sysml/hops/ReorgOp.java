@@ -34,7 +34,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.Transform.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
@@ -129,6 +128,35 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		s += "r(" + HopsTransf2String.get(op) + ")";
 		return s;
 	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		switch( op ) {
+			case TRANSPOSE: {
+				Lop lin;
+				try {
+					lin = getInput().get(0).constructLops();
+				} catch (HopsException | LopsException e) {
+					throw new RuntimeException("Unable to create child lop", e);
+				}
+				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
+					return false; //if input is already a transpose, avoid redundant transpose ops
+				else if( getDim1()==1 && getDim2()==1 )
+					return false; //if input of size 1x1, avoid unnecessary transpose
+				else
+					return true;
+			}
+			case DIAG:
+			case REV:
+			case RESHAPE:
+			case SORT:
+				return false;
+			default:
+				throw new RuntimeException("Unsupported operator:" + op.name());
+		}
+	}
 
 	@Override
 	public Lop constructLops()
@@ -151,10 +179,6 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-							|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
-						et = ExecType.GPU;
-					}
 					Transform transform1 = new Transform( lin, 
 							HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
 					setOutputDimensions(transform1);

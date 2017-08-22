@@ -53,7 +53,6 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 
@@ -131,6 +130,56 @@ public class BinaryOp extends Hop
 	
 	public boolean isOuterVectorOperator(){
 		return outer;
+	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		
+		switch(op) 
+		{
+			case IQM:
+			case CENTRALMOMENT:
+			case COVARIANCE:
+			case QUANTILE:
+			case INTERQUANTILE:
+			case MEDIAN:
+				return false;
+			case CBIND: 
+			case RBIND: {
+				DataType dt1 = getInput().get(0).getDataType();
+				return dt1 == DataType.MATRIX; // only matrix cbind, rbind supported on GPU
+			}
+			default: {
+				DataType dt1 = getInput().get(0).getDataType();
+				DataType dt2 = getInput().get(1).getDataType();
+				
+				boolean isMatrixScalar = (dt1 == DataType.MATRIX && dt2 == DataType.SCALAR) || (dt1 == DataType.SCALAR && dt2 == DataType.MATRIX);
+				boolean isMatrixMatrix = (dt1 == DataType.MATRIX && dt2 == DataType.MATRIX);
+				
+				OpOp2 [] supportedOps = { OpOp2.MULT, OpOp2.PLUS, OpOp2.MINUS, OpOp2.DIV, OpOp2.POW, OpOp2.MINUS1_MULT, 
+						OpOp2.MODULUS, OpOp2.INTDIV, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
+			
+				if(isMatrixScalar && op == OpOp2.MINUS_NZ) {
+					// Only supported for matrix scalar:
+					return true;
+				}
+				else if(isMatrixMatrix && op == OpOp2.SOLVE) {
+					// Only supported for matrix matrix:
+					return true;
+				}
+				else if(isMatrixScalar || isMatrixMatrix) {
+					for(OpOp2 supportedOp : supportedOps) {
+						if(op == supportedOp)
+							return true;
+					}
+					return false;
+				}
+				else
+					return false;
+			}
+		}
 	}
 	
 	@Override
@@ -527,11 +576,6 @@ public class BinaryOp extends Hop
 			}
 			else //CP
 			{
-				if (DMLScript.USE_ACCELERATOR && dt1 == DataType.MATRIX && (DMLScript.FORCE_ACCELERATOR
-						|| getMemEstimate() < GPUContextPool.initialGPUMemBudget())) {
-					et = ExecType.GPU;
-				}
-
 				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
 				append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind, et);
 				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
@@ -582,14 +626,6 @@ public class BinaryOp extends Hop
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
 
-			if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-					|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))
-					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
-					|| op == OpOp2.MINUS_NZ || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
-					|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
-					|| op == OpOp2.GREATER || op == OpOp2.GREATEREQUAL)) {
-				et = ExecType.GPU;
-			}
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
 						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
@@ -602,17 +638,8 @@ public class BinaryOp extends Hop
 		{
 			// Both operands are Matrixes
 			ExecType et = optFindExecType();
-			if ( et == ExecType.CP ) 
+			if ( et == ExecType.CP || et == ExecType.GPU ) 
 			{
-				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-						|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))
-						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW
-						|| op == OpOp2.SOLVE || op == OpOp2.MINUS1_MULT || op == OpOp2.MODULUS || op == OpOp2.INTDIV
-						|| op == OpOp2.LESS || op == OpOp2.LESSEQUAL || op == OpOp2.EQUAL || op == OpOp2.NOTEQUAL
-						|| op == OpOp2.GREATER || op == OpOp2.GREATEREQUAL)) {
-					et = ExecType.GPU;
-				}
-				
 				Lop binary = null;
 				
 				boolean isLeftXGt = (getInput().get(0) instanceof BinaryOp) && ((BinaryOp) getInput().get(0)).getOp() == OpOp2.GREATER;
@@ -827,7 +854,7 @@ public class BinaryOp extends Hop
 			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
 		else if ( op == OpOp2.SOLVE ) {
-			if (DMLScript.USE_ACCELERATOR) {
+			if (isGPUEnabled()) {
 				// Solve on the GPU takes an awful lot of intermediate space
 				// First the inputs are converted from row-major to column major
 				// Then a workspace and a temporary output (workSize, tauSize) are needed

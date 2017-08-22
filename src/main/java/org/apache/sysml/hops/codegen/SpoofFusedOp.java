@@ -283,4 +283,9 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		
 		return ret;
 	}
+
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
 }

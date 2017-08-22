@@ -42,7 +42,6 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /** Primary use cases for now, are
@@ -125,6 +124,25 @@ public class TernaryOp extends Hop
 	
 	public void setDisjointInputs(boolean flag){
 		_disjointInputs = flag;
+	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		switch( _op ) {
+			case CENTRALMOMENT:
+			case COVARIANCE:
+			case CTABLE:
+			case INTERQUANTILE:
+			case QUANTILE:
+				return false;
+			case MINUS_MULT:
+			case PLUS_MULT:
+				return true;
+			default:
+				throw new RuntimeException("Unsupported operator:" + _op.name());
+		}
 	}
 	
 	@Override
@@ -631,13 +649,7 @@ public class TernaryOp extends Hop
 		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
-		ExecType et = null;
-		if (DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR
-				|| getMemEstimate() < Math.min(GPUContextPool.initialGPUMemBudget(), OptimizerUtils.getLocalMemBudget()))) {
-			et = ExecType.GPU;
-		} else {
-			et = optFindExecType();
-		}
+		ExecType et = optFindExecType();
 		PlusMult plusmult = null;
 		
 		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
@@ -711,7 +723,7 @@ public class TernaryOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
 			case MINUS_MULT: {
-				if (DMLScript.USE_ACCELERATOR) {
+				if (isGPUEnabled()) {
 					// For the GPU, the input is converted to dense
 					sparsity = 1.0;
 				} else {

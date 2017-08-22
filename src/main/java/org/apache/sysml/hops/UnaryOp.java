@@ -99,6 +99,29 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isGPUEnabled() {
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		boolean isScalar = (    getDataType() == DataType.SCALAR //value type casts or matrix to scalar
+				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR)
+				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR));
+		if(!isScalar) {
+			switch(_op) {
+				case SELP:case EXP:case SQRT:case LOG:case ABS:
+				case ROUND:case FLOOR:case CEIL:
+				case SIN:case COS: case TAN:case ASIN:case ACOS:case ATAN:
+				case SIGN:
+					return true;
+				default:
+					return false;
+			}
+		}
+		else  {
+			return false;
+		}
+	}
+	
+	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{		
@@ -149,7 +172,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				ExecType et = optFindExecType();
 				
 				//special handling cumsum/cumprod/cummin/cumsum
-				if( isCumulativeUnaryOperation() && et != ExecType.CP )  
+				if( isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU) )  
 				{
 					//TODO additional physical operation if offsets fit in memory
 					Lop cumsumLop = null;
@@ -162,15 +185,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				else //default unary 
 				{
 					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
-					switch(_op) {
-						case SELP:case EXP:case SQRT:case LOG:case ABS:
-						case ROUND:case FLOOR:case CEIL:
-						case SIN:case COS: case TAN:case ASIN:case ACOS:case ATAN:
-						case SIGN:
-							et = findGPUExecTypeByMemEstimate(et);
-							break;
-						default:
-					}
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
 							                 getDataType(), getValueType(), et, k);
 					setOutputDimensions(unary1);
@@ -550,7 +564,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{
 		double sparsity = -1;
-		if (DMLScript.USE_ACCELERATOR) {
+		if (isGPUEnabled()) {
 			sparsity = 1.0; // Output is always dense (for now) on the GPU
 		} else {
 			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
@@ -569,7 +583,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
 
-		if (DMLScript.USE_ACCELERATOR) {
+		if (isGPUEnabled()) {
 			OptimizerUtils.estimateSize(dim1, dim2); // Intermediate memory required to convert sparse to dense
 		}
 		

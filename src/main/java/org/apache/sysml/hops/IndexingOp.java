@@ -94,6 +94,11 @@ public class IndexingOp extends Hop
 	public void setColLowerEqualsUpper(boolean passed) {
 		_colLowerEqualsUpper = passed;
 	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
 
 	@Override
 	public Lop constructLops()

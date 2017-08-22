@@ -189,6 +189,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
+	
+	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{	

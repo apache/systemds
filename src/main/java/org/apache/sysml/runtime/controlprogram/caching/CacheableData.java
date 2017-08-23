@@ -634,10 +634,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
-					LazyWriteBuffer.writeBlock(filePath, _data, opcode);
+					long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+					
+					int numEvicted = LazyWriteBuffer.writeBlock(filePath, _data);
+					
+					if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
+						long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t2-t1, numEvicted);
+					}
 				}
-				catch (Exception e)
-				{
+				catch (Exception e) {
 					throw new CacheException("Eviction to local path " + filePath + " ("+getVarName()+") failed.", e);
 				}
 				_requiresLocalWrite = false;

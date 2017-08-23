@@ -28,9 +28,7 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.util.LocalFileUtils;
-import org.apache.sysml.utils.GPUStatistics;
 
 public class LazyWriteBuffer 
 {
@@ -40,12 +38,12 @@ public class LazyWriteBuffer
 	}
 	
 	//global size limit in bytes
-	private static final long _limit; 
+	private static final long _limit;
 	
 	//current size in bytes
-	private static long _size;  
+	private static long _size;
 	
-	//eviction queue of <filename,buffer> pairs (implemented via linked hash map 
+	//eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
 	private static EvictionQueue _mQueue;
 	
@@ -57,29 +55,28 @@ public class LazyWriteBuffer
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
-
-	public static void writeBlock( String fname, CacheBlock cb, String opcode ) 
+	
+	public static int writeBlock(String fname, CacheBlock cb)
 		throws IOException
-	{	
+	{
 		//obtain basic meta data of cache block
 		long lSize = cb.isShallowSerialize() ?
 			cb.getInMemorySize() : cb.getExactSerializedSize();
 		boolean requiresWrite = (lSize > _limit        //global buffer limit
 			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
-	
+		int numEvicted = 0;
+		
 		//handle caching/eviction if it fits in writebuffer
 		if( !requiresWrite ) 
-		{			
+		{
 			//create byte buffer handle (no block allocation yet)
 			ByteBuffer bbuff = new ByteBuffer( lSize );
-			int numEvicted = 0;
 			
-			long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			//modify buffer pool
 			synchronized( _mQueue )
 			{
 				//evict matrices to make room (by default FIFO)
-				while( _size+lSize >= _limit )
+				while( _size+lSize > _limit && !_mQueue.isEmpty() )
 				{
 					//remove first entry from eviction queue
 					Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
@@ -93,46 +90,38 @@ public class LazyWriteBuffer
 						//evict matrix
 						tmp.evictBuffer(ftmp);
 						tmp.freeMemory();
-						_size-=tmp.getSize();
+						_size -= tmp.getSize();
 						numEvicted++;
 					}
 				}
 				
-				//put placeholder into buffer pool (reserve mem) 
+				//put placeholder into buffer pool (reserve mem)
 				_mQueue.addLast(fname, bbuff);
-				_size += lSize;	
+				_size += lSize;
 			}
-			long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			
 			//serialize matrix (outside synchronized critical path)
 			bbuff.serializeBlock(cb);
 			
 			if( DMLScript.STATISTICS ) {
-				if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
-					long t3 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_EVICTION, t2-t1, numEvicted);
-					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t3-t2, 1);
-				}
 				CacheStatistics.incrementFSBuffWrites();
 				CacheStatistics.incrementFSWrites(numEvicted);
 			}
-		}	
+		}
 		else
 		{
-			long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			//write directly to local FS (bypass buffer if too large)
 			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
 			if( DMLScript.STATISTICS ) {
-				if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
-					long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-					GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t2-t1, 1);
-				}
 				CacheStatistics.incrementFSWrites();
 			}
-		}	
+			numEvicted++;
+		}
+		
+		return numEvicted;
 	}
-
-	public static void deleteBlock( String fname )
+	
+	public static void deleteBlock(String fname)
 	{
 		boolean requiresDelete = true;
 		
@@ -141,7 +130,7 @@ public class LazyWriteBuffer
 			//remove queue entry 
 			ByteBuffer ldata = _mQueue.remove(fname);
 			if( ldata != null ) {
-				_size -= ldata.getSize(); 
+				_size -= ldata.getSize();
 				requiresDelete = false;
 				ldata.freeMemory(); //cleanup
 			}
@@ -151,8 +140,8 @@ public class LazyWriteBuffer
 		if( requiresDelete )
 			_fClean.deleteFile(fname);
 	}
-
-	public static CacheBlock readBlock( String fname, boolean matrix ) 
+	
+	public static CacheBlock readBlock(String fname, boolean matrix)
 		throws IOException
 	{
 		CacheBlock cb = null;
@@ -164,7 +153,7 @@ public class LazyWriteBuffer
 			ldata = _mQueue.get(fname);
 			
 			//modify eviction order (accordingly to access)
-			if(    CacheableData.CACHING_BUFFER_POLICY == RPolicy.LRU 
+			if(    CacheableData.CACHING_BUFFER_POLICY == RPolicy.LRU
 				&& ldata != null )
 			{
 				//reinsert entry at end of eviction queue
@@ -182,7 +171,7 @@ public class LazyWriteBuffer
 		}
 		else
 		{
-			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix); 
+			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix);
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSHits();
 		}
@@ -214,11 +203,11 @@ public class LazyWriteBuffer
 	
 	/**
 	 * Print current status of buffer pool, including all entries.
-	 * NOTE: use only for debugging or testing.  
+	 * NOTE: use only for debugging or testing.
 	 * 
 	 * @param position the position
 	 */
-	public static void printStatus( String position )
+	public static void printStatus(String position)
 	{
 		System.out.println("WRITE BUFFER STATUS ("+position+") --");
 		
@@ -241,12 +230,12 @@ public class LazyWriteBuffer
 	}
 	
 	/**
-	 * Evicts all buffer pool entries. 
+	 * Evicts all buffer pool entries.
 	 * NOTE: use only for debugging or testing.
 	 * 
 	 * @throws IOException if IOException occurs
 	 */
-	public static void forceEviction() 
+	public static void forceEviction()
 		throws IOException 
 	{
 		//evict all matrices and frames
@@ -268,7 +257,7 @@ public class LazyWriteBuffer
 	}
 	
 	/**
-	 * Extended LinkedHashMap with convenience methods for adding and removing 
+	 * Extended LinkedHashMap with convenience methods for adding and removing
 	 * last/first entries.
 	 * 
 	 */
@@ -281,7 +270,7 @@ public class LazyWriteBuffer
 			put(fname, bbuff);
 		}
 		
-		public Entry<String, ByteBuffer> removeFirst() 
+		public Entry<String, ByteBuffer> removeFirst()
 		{
 			//move iterator to first entry
 			Iterator<Entry<String, ByteBuffer>> iter = entrySet().iterator();
@@ -295,9 +284,9 @@ public class LazyWriteBuffer
 	}
 	
 	/**
-	 * File delete service for abstraction of synchronous and asynchronous 
+	 * File delete service for abstraction of synchronous and asynchronous
 	 * file cleanup on rmvar/cpvar. The threadpool for asynchronous cleanup
-	 * may increase the number of threads temporarily to the number of concurrent 
+	 * may increase the number of threads temporarily to the number of concurrent
 	 * delete tasks (which is bounded to the parfor degree of parallelism).
 	 */
 	private static class FileCleaner
@@ -334,7 +323,7 @@ public class LazyWriteBuffer
 			@Override
 			public void run() {
 				LocalFileUtils.deleteFileIfExists(_fname, true);
-			}			
+			}
 		}
 	}
 }

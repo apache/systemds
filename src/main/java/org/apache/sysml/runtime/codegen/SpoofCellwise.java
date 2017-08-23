@@ -51,7 +51,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public abstract class SpoofCellwise extends SpoofOperator implements Serializable
 {
 	private static final long serialVersionUID = 3442528770573293590L;
-	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	
 	public enum CellType {
 		NO_AGG,

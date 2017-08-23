@@ -37,6 +37,10 @@ public abstract class SpoofOperator implements Serializable
 	private static final long serialVersionUID = 3834006998853573319L;
 	private static final Log LOG = LogFactory.getLog(SpoofOperator.class.getName());
 	
+	protected static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
+	protected static final long PAR_MINFLOP_THRESHOLD = 2L*1024*1024; //MIN 2 MFLOP
+	
+	
 	public abstract MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out)
 		throws DMLRuntimeException;
 	

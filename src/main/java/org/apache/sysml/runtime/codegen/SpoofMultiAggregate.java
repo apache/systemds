@@ -48,7 +48,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public abstract class SpoofMultiAggregate extends SpoofOperator implements Serializable
 {
 	private static final long serialVersionUID = -6164871955591089349L;
-	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	
 	private final AggOp[] _aggOps;
 	private final boolean _sparseSafe;

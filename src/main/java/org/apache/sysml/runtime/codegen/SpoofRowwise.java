@@ -44,7 +44,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public abstract class SpoofRowwise extends SpoofOperator
 {
 	private static final long serialVersionUID = 6242910797139642998L;
-	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	
 	public enum RowType {
 		NO_AGG,    //no aggregation

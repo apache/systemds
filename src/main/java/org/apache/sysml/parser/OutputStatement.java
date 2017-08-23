@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.util.HashMap;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 import org.apache.sysml.parser.Expression.DataOp;
@@ -49,12 +50,15 @@ public class OutputStatement extends Statement
 	public void setIdentifier(DataIdentifier t) {
 		_id = t;
 	}
-	
-	public OutputStatement(DataIdentifier t, DataOp op, 
-			String filename, int blp, int bcp, int elp, int ecp){
+
+	public OutputStatement(ParserRuleContext ctx, DataIdentifier t, DataOp op, String filename) {
 		_id = t;
-		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
-				filename, blp, bcp, elp, ecp);
+		_paramsExpr = new DataExpression(ctx, op, new HashMap<String, Expression>(), filename);
+	}
+
+	public OutputStatement(DataIdentifier t, DataOp op, ParseInfo parseInfo) {
+		_id = t;
+		_paramsExpr = new DataExpression(op, new HashMap<String, Expression>(), parseInfo);
 	}
 
 	public static boolean isValidParamName(String key){
@@ -78,10 +82,9 @@ public class OutputStatement extends Statement
 	
 	// rewrites statement to support function inlining (create deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		
-		OutputStatement newStatement = new OutputStatement(null,Expression.DataOp.WRITE,
-				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
+
+		OutputStatement newStatement = new OutputStatement(null, Expression.DataOp.WRITE, this);
+
 		// rewrite outputStatement variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
 		
@@ -92,8 +95,7 @@ public class OutputStatement extends Statement
 			Expression newExpr = _paramsExpr.getVarParam(key).rewriteExpression(prefix);
 			newExprParams.put(key, newExpr);
 		}
-		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams,
-				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams, this);
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}

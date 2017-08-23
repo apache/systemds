@@ -146,16 +146,10 @@ public class IndexedIdentifier extends DataIdentifier
 					}	
 					
 					if (validRowLB) {
-						if (constValue instanceof IntIdentifier){
-							_rowLowerBound = new IntIdentifier((IntIdentifier)constValue,
-									constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), 
-									constValue.getEndLine(), constValue.getEndColumn());
-							
-						}
-						else{
-							_rowLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), 
-									constValue.getEndLine(), constValue.getEndColumn());
+						if (constValue instanceof IntIdentifier) {
+							_rowLowerBound = new IntIdentifier((IntIdentifier) constValue, constValue);
+						} else {
+							_rowLowerBound = new DoubleIdentifier((DoubleIdentifier) constValue, constValue);
 						}
 						isConst_rowLowerBound = true;
 					}
@@ -237,19 +231,12 @@ public class IndexedIdentifier extends DataIdentifier
 								+ rowLB_1 + " May cause runtime exception");
 						validRowUB = false;
 					}
-					
+
 					if (validRowUB) {
-						if (constValue instanceof IntIdentifier){
-							_rowUpperBound = new IntIdentifier((IntIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
-						}
-						else{
-							_rowUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
+						if (constValue instanceof IntIdentifier) {
+							_rowUpperBound = new IntIdentifier((IntIdentifier) constValue, constValue);
+						} else {
+							_rowUpperBound = new DoubleIdentifier((DoubleIdentifier) constValue, constValue);
 						}
 						isConst_rowUpperBound = true;
 					}
@@ -316,19 +303,12 @@ public class IndexedIdentifier extends DataIdentifier
 								+ ": " + this.getOrigDim2() +")");
 						validColLB = false;
 					}	
-					
+
 					if (validColLB) {
-						if (constValue instanceof IntIdentifier){
-							_colLowerBound = new IntIdentifier((IntIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
-						}
-						else{
-							_colLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
+						if (constValue instanceof IntIdentifier) {
+							_colLowerBound = new IntIdentifier((IntIdentifier) constValue, constValue);
+						} else {
+							_colLowerBound = new DoubleIdentifier((DoubleIdentifier) constValue, constValue);
 						}
 						isConst_colLowerBound = true;
 					}
@@ -420,19 +400,12 @@ public class IndexedIdentifier extends DataIdentifier
 					+ " May cause runtime exception");
 						validColUB = false;
 					}
-					
+
 					if (validColUB) {
-						if (constValue instanceof IntIdentifier){
-							_colUpperBound = new IntIdentifier((IntIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
-						}
-						else{
-							_colUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue, 
-									constValue.getFilename(), constValue.getBeginLine(), 
-									constValue.getBeginColumn(), constValue.getEndLine(), 
-									constValue.getEndColumn());
+						if (constValue instanceof IntIdentifier) {
+							_colUpperBound = new IntIdentifier((IntIdentifier) constValue, constValue);
+						} else {
+							_colUpperBound = new DoubleIdentifier((DoubleIdentifier) constValue, constValue);
 						}
 						isConst_colUpperBound = true;
 					}
@@ -557,12 +530,7 @@ public class IndexedIdentifier extends DataIdentifier
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
-		
-		newIndexedIdentifier.setFilename(getFilename());
-		newIndexedIdentifier.setBeginLine(this.getBeginLine());
-		newIndexedIdentifier.setBeginColumn(this.getBeginColumn());
-		newIndexedIdentifier.setEndLine(this.getEndLine());
-		newIndexedIdentifier.setEndColumn(this.getEndColumn());
+		newIndexedIdentifier.setParseInfo(this);
 			
 		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);

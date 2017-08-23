@@ -89,7 +89,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 			{
 				StatementBlock sb0 = new StatementBlock();
 				sb0.setDMLProg(sb.getDMLProg());
-				sb0.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+				sb0.setParseInfo(sb);
 				ArrayList<Hop> hops = new ArrayList<Hop>();
 				VariableSet livein = new VariableSet();
 				VariableSet liveout = new VariableSet();

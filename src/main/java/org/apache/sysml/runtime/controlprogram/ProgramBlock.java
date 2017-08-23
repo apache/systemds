@@ -30,6 +30,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParseInfo;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
@@ -50,7 +51,7 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 
-public class ProgramBlock
+public class ProgramBlock implements ParseInfo
 {
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	private static final boolean CHECK_MATRIX_SPARSITY = false;
@@ -412,28 +413,43 @@ public class ProgramBlock
 	public String _filename;
 	public int _beginLine, _beginColumn;
 	public int _endLine, _endColumn;
+	public String _text;
 
 	public void setFilename(String passed)    { _filename = passed;   }
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
-
-	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
-		_filename = filename;
-		_beginLine	 = blp;
-		_beginColumn = bcp;
-		_endLine 	 = elp;
-		_endColumn 	 = ecp;
-	}
+	public void setText(String text) { _text = text; }
 
 	public String getFilename()	{ return _filename;   }
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
+	public String getText() { return _text; }
 
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in program block generated from statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
+
+	/**
+	 * Set parse information.
+	 *
+	 * @param parseInfo
+	 *            parse information, such as beginning line position, beginning
+	 *            column position, ending line position, ending column position,
+	 *            text, and filename
+	 * @param filename
+	 *            the DML/PYDML filename (if it exists)
+	 */
+	public void setParseInfo(ParseInfo parseInfo) {
+		_beginLine = parseInfo.getBeginLine();
+		_beginColumn = parseInfo.getBeginColumn();
+		_endLine = parseInfo.getEndLine();
+		_endColumn = parseInfo.getEndColumn();
+		_text = parseInfo.getText();
+		_filename = parseInfo.getFilename();
+	}
+
 }

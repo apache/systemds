@@ -376,31 +376,24 @@ public class ForStatementBlock extends StatementBlock
 		if (expr instanceof DataIdentifier && !(expr instanceof IndexedIdentifier)) 
 		{	
 			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)expr).getName();
-			if (currConstVars.containsKey(identifierName))
-			{
+			String identifierName = ((DataIdentifier) expr).getName();
+			if (currConstVars.containsKey(identifierName)) {
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				//AUTO CASTING (using runtime operations for consistency)
-				switch( constValue.getValueType() ) 
-				{
-					case DOUBLE: 
-						ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier)constValue).getValue()).getLongValue(),
-								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
-								expr.getEndLine(), expr.getEndColumn());
-						break;
-					case INT:    
-						ret = new IntIdentifier((IntIdentifier)constValue,
-								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
-								expr.getEndLine(), expr.getEndColumn());
-						break;
-					case BOOLEAN: 
-						ret = new IntIdentifier(new BooleanObject(((BooleanIdentifier)constValue).getValue()).getLongValue(),
-								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
-								expr.getEndLine(), expr.getEndColumn());
-						break;
-						
-					default:
-						//do nothing
+				// AUTO CASTING (using runtime operations for consistency)
+				switch (constValue.getValueType()) {
+				case DOUBLE:
+					ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier) constValue).getValue()).getLongValue(),
+							expr);
+					break;
+				case INT:
+					ret = new IntIdentifier((IntIdentifier) constValue, expr);
+					break;
+				case BOOLEAN:
+					ret = new IntIdentifier(
+							new BooleanObject(((BooleanIdentifier) constValue).getValue()).getLongValue(), expr);
+					break;
+				default:
+					// do nothing
 				}
 			}
 		}

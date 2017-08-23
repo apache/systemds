@@ -19,24 +19,34 @@
 
 package org.apache.sysml.parser;
 
-
+import org.antlr.v4.runtime.ParserRuleContext;
 
 public class StringIdentifier extends ConstIdentifier 
 {
 	
 	private String _val;
-	
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+
+	public Expression rewriteExpression(String prefix) throws LanguageException {
 		return this;
 	}
-	
-	public StringIdentifier(String val, String filename, int blp, int bcp, int elp, int ecp){
+
+	public StringIdentifier(String val, ParseInfo parseInfo) {
 		super();
-		 _val = val;
-		setDimensions(0,0);
-        computeDataType();
-        setValueType(ValueType.STRING);
-        setAllPositions(filename, blp, bcp, elp, ecp);
+		setInfo(val);
+		setParseInfo(parseInfo);
+	}
+
+	public StringIdentifier(ParserRuleContext ctx, String val, String filename) {
+		super();
+		setInfo(val);
+		setCtxValuesAndFilename(ctx, filename);
+	}
+
+	private void setInfo(String val) {
+		_val = val;
+		setDimensions(0, 0);
+		computeDataType();
+		setValueType(ValueType.STRING);
 	}
 
 	public String getValue(){

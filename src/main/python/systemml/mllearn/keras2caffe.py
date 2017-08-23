@@ -63,6 +63,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             #Grab the batchsize from i 0, shift over channels to index 1, and place the rest into the dictionary
             #TODO determine when to transform for layer types/input shape
             num = len(layer.batch_input_shape) - 1 #Range from 1st index to second last
+            #TODO check for image_data_format to be channels_first or channels_last
             batch_list = [layer.batch_input_shape[0], layer.batch_input_shape[-1]]
             for i  in range(1 ,num):
                 batch_list.append(layer.batch_input_shape[i])
@@ -79,7 +80,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             #Pull name from Keras
             name = layer.name
             #Pull layer name of the layer passing to current layer
-            in_names = getInboundLayers(layer)            
+            in_names = getInboundLayers(layer)
             #Pipe names into caffe using unique Keras layer names
             print("Current Keras layer" + layer.name + " Input Layer:") #debug to assure there are a correct number of layer names (1)
             print(in_names)
@@ -88,7 +89,6 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             if layer.activation is not None:
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
-                
         elif type(layer) == keras.layers.Flatten:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -99,7 +99,69 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             in_names= getInboundLayers(layer)
             n[name] = L.Dropout(n[in_names[0].name], dropout_ratio= layer.rate, in_place=True)
         #elif type(layer) == keras.Layers.LSTM:
+        elif type(layer) == keras.layers.merge.Add:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #turn list of names into network layers
+            network_layers = []
+            for ref in in_names:
+                network_layers += n[ref.name]
+            #unpack the bottom layers
+            n[name] = L.Eltwise(*network_layers, operation=SUM)
+        elif type(layer) == keras.layers.merge.Multiply:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #turn list of names into network layers
+            network_layers = []
+            for ref in in_names:
+                network_layers += n[ref.name]
+            #unpack the bottom layers
+            n[name] = L.Eltwise(*network_layers, operation=PROD)
+        elif type(layer) == keras.layers.merge.Concatenate:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #turn list of names into network layers
+            network_layers = []
+            for ref in in_names:
+                network_layers += n[ref.name]
+            axis = getCompensatedAxis(layer)
+            n[name] = L.Concat(*network_layers, axis=axis)
+        elif type(layer) == keras.layers.merge.Maximum:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #turn list of names into network layers
+            network_layers = []
+            for ref in in_names:
+                network_layers += n[ref.name]
+            #unpack the bottom layers
+            n[name] = L.Eltwise(*network_layers, operation=MAX)
+        elif type(layer) == keras.layers.Conv2DTranspose:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #Stride
+            if layer.strides is None:
+                stride = (1,1)
+            else:
+                stride= layer.strides
+            #Padding
+            padding = [0,0] #If padding is valid(aka no padding)
+            if layer.padding == 'same': #Calculate the padding for 'same'
+                padding[0] = (layer.input_shape[0]*(stride[0] -1) + layer.kernel_size[0] - stride[0]) / 2
 
+                padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
+            
+            #TODO The rest of the arguements including bias, regulizers, dilation,
+            
+            n[name] = L.Deconvolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
+                                    kernel_w=layer.kernel_size[1],stride_h=stride[0],
+                                    stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
+            if layer.activation is not None:
+                name_act = name + "_activation_" + layer.activation.__name__ #get function string
+                n[name_act] = getActivation(layer,n[name])
+        elif type(layer) == keras.layers.BatchNormalization:
+            name = layer.name
+            in_names[0]=getInboundLayers(layer)
+            n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction= layer.momentum, eps = layer.epsilon)
         elif type(layer) == keras.layers.Conv1D:
             name = layer.name
             in_names[0]= getInboundLayers(layer)
@@ -118,8 +180,8 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 padding[0] = (layer.input_shape[0]*(stride[0] -1) + layer.kernel_size[0] - stride[0]) / 2
 
                 padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
-            #TODO if layer.padding=''
-            #TODO The rest of the arguements including bias, regulizers, dilatin,
+            
+            #TODO The rest of the arguements including bias, regulizers, dilation,
             
             n[name] = L.Convolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
@@ -133,7 +195,6 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             name = layer.name
             in_names= getInboundLayers(layer)
             #Padding
-            #TODO if layer.padding=''
             #TODO The rest of the arguements including bias, regulizers, dilatin,
             if layer.strides is None:
                 stride = (1,1)
@@ -192,7 +253,9 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             elif kModel.loss == 'mean_squared_error':
                 name = kModel.name + 'mean_squared_error'
                 n[name] = L.EuclideanLoss(n[output.name])
-            #TODO implement Infogain Loss 
+            #TODO implement Infogain Loss
+            else:
+                RaiseError(kModel.loss + "is not supported")
     return n
 
 
@@ -211,12 +274,12 @@ def getActivation(layer,bottom):
         return L.softmax(bottom) #Cannot extract axis from model, so default to -1
     elif keras.activations.serialize(layer.activation) == 'softsign':
         #Needs to be implemented in caffe2dml
-        return
+        RaiseError("softsign is not implemented")
     elif keras.activations.serialize(layer.activation) == 'elu':
         return L.ELU(bottom)
     elif keras.activations.serialize(layer.activation) == 'selu':
         #Needs to be implemented in caffe2dml 
-        return
+        RaiseError("SELU activation is not implemented")
     elif keras.activations.serialize(layer.activation) == 'sigmoid':
         return L.Sigmoid(bottom)
     elif keras.activations.serialize(layer.activation) == 'linear':
@@ -242,6 +305,19 @@ def write_caffe_model(cModel,filepath):
     with open(filepath, 'w') as f:
         f.write(str(cModel.to_proto()))
 
+
+#Get compensated axis since Caffe has n,c,h,w and Keras has n,h,w,c for tensor dimensions
+#Params: Current Keras layer
+def getCompensatedAxis(layer):
+    compensated_axis = layer.axis
+    #Cover all cases for anything accessing the 0th index or the last index
+    if layer.axis > 0 and layer.axis < layer.input[0].shape.ndims-1:
+        compensated_axis = layer.axis + 1
+    elif layer.axis < -1 and layer.axis > -(layer.input[0].shape.ndims):
+        compensated_axis = layer.axis + 1
+    elif layer.axis == -1 or layer.axis == layer.input[0].shape.ndims - 1:
+        compensated_axis = 1
+    return compensated_axis
 #Copied from caffe repo in examples/pycaffe/tools.py
 class CaffeSolver:
 

@@ -328,6 +328,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
+		if (this.getFirstExpr() == null) {
+			raiseValidateError("Function " + this + " has no arguments.", false);
+		}
 		Identifier id = this.getFirstExpr().getOutput();
 		output.setProperties(this.getFirstExpr().getOutput());
 		output.setNnz(-1); //conservatively, cannot use input nnz!
@@ -1330,10 +1333,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_opcode.toString() + "(" + _args[0].toString());
-		for(int i=1; i < _args.length; i++) {
-			sb.append(",");
-			sb.append(_args[i].toString());
+		StringBuilder sb = new StringBuilder(_opcode.toString() + "(");
+		if (_args != null) {
+			for (int i = 0; i < _args.length; i++) {
+				if (i > 0) {
+					sb.append(",");
+				}
+				sb.append(_args[i].toString());
+			}
 		}
 		sb.append(")");
 		return sb.toString();

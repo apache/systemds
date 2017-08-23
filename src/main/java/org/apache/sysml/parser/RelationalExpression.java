@@ -37,26 +37,21 @@ public class RelationalExpression extends Expression
 		setBeginColumn(0);
 		setEndLine(0);
 		setEndColumn(0);
+		setText(null);
 	}
-	
-	public RelationalExpression(RelationalOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn) {
+
+	public RelationalExpression(RelationalOp bop, ParseInfo parseInfo) {
 		_opcode = bop;
-		
-		setFilename(filename);
-		setBeginLine(beginLine);
-		setBeginColumn(beginColumn);
-		setEndLine(endLine);
-		setEndColumn(endColumn);
+		setParseInfo(parseInfo);
 	}
-	
-	public Expression rewriteExpression(String prefix) throws LanguageException{
-		
-		RelationalExpression newExpr = new RelationalExpression(this._opcode, getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
+
+	public Expression rewriteExpression(String prefix) throws LanguageException {
+		RelationalExpression newExpr = new RelationalExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
 	}
-	
+
 	public RelationalOp getOpCode(){
 		return _opcode;
 	}
@@ -65,22 +60,18 @@ public class RelationalExpression extends Expression
 		_left = l;
 		
 		// update script location information --> left expression is BEFORE in script
-		if (_left != null){
-			setFilename(_left.getFilename());
-			setBeginLine(_left.getBeginLine());
-			setBeginColumn(_left.getBeginColumn());
+		if (_left != null) {
+			setParseInfo(_left);
 		}
-		
+
 	}
 	
 	public void setRight(Expression r){
 		_right = r;
 		
 		// update script location information --> right expression is AFTER in script
-		if (_right != null){
-			setFilename(_right.getFilename());
-			setBeginLine(_right.getEndLine());
-			setBeginColumn(_right.getEndColumn());
+		if (_right != null) {
+			setParseInfo(_right);
 		}
 	}
 	
@@ -110,23 +101,24 @@ public class RelationalExpression extends Expression
 		}
 		
 		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
-		if ((_left != null && _left instanceof BooleanIdentifier) || (_right != null && _right instanceof BooleanIdentifier)){
-			if ((_left instanceof IntIdentifier || _left instanceof DoubleIdentifier) || _right instanceof IntIdentifier || _right instanceof DoubleIdentifier){
-				if (_left instanceof BooleanIdentifier){
+		if ((_left != null && _left instanceof BooleanIdentifier)
+				|| (_right != null && _right instanceof BooleanIdentifier)) {
+			if ((_left instanceof IntIdentifier || _left instanceof DoubleIdentifier) || _right instanceof IntIdentifier
+					|| _right instanceof DoubleIdentifier) {
+				if (_left instanceof BooleanIdentifier) {
 					if (((BooleanIdentifier) _left).getValue())
-						this.setLeft(new IntIdentifier(1, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
+						this.setLeft(new IntIdentifier(1, _left));
 					else
-						this.setLeft(new IntIdentifier(0, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
-				}
-				else if (_right instanceof BooleanIdentifier){
+						this.setLeft(new IntIdentifier(0, _left));
+				} else if (_right instanceof BooleanIdentifier) {
 					if (((BooleanIdentifier) _right).getValue())
-						this.setRight(new IntIdentifier(1, _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
+						this.setRight(new IntIdentifier(1, _right));
 					else
-						this.setRight(new IntIdentifier(0,  _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
+						this.setRight(new IntIdentifier(0, _right));
 				}
 			}
 		}
-		
+
 		//recursive validate
 		_left.validateExpression(ids, constVars, conditional);
 		if( _right !=null )
@@ -140,7 +132,7 @@ public class RelationalExpression extends Expression
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		output.setParseInfo(this);
 		
 		boolean isLeftMatrix = (_left.getOutput() != null && _left.getOutput().getDataType() == DataType.MATRIX);
 		boolean isRightMatrix = (_right.getOutput() != null && _right.getOutput().getDataType() == DataType.MATRIX); 

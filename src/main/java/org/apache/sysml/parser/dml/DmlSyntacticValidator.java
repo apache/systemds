@@ -354,14 +354,14 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	private void handleCommandlineArgumentExpression(DataIdentifierContext ctx)
 	{
 		String varName = ctx.getText().trim();
-		fillExpressionInfoCommandLineParameters(varName, ctx.dataInfo, ctx.start);
+		fillExpressionInfoCommandLineParameters(ctx, varName, ctx.dataInfo);
 
 		if(ctx.dataInfo.expr == null) {
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
 				String msg = "The parameter " + varName + " either needs to be passed "
 						+ "through commandline or initialized to default value.";
 				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_UNSPECIFIED_ARGS) ) {
-					ctx.dataInfo.expr = getConstIdFromString(" ", ctx.start);
+					ctx.dataInfo.expr = getConstIdFromString(ctx, " ");
 					if (!ConfigurationManager.getCompilerConfigFlag(ConfigType.MLCONTEXT)) {
 						raiseWarning(msg, ctx.start);
 					}
@@ -607,10 +607,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		IfStatement ifStmt = new IfStatement();
 		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		ifStmt.setConditionalPredicate(predicate);
-		String fileName = currentFile;
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
-		ifStmt.setAllPositions(fileName, line, col, line, col);
+		ifStmt.setCtxValuesAndFilename(ctx, currentFile);
 
 		if(ctx.ifBody.size() > 0) {
 			for(StatementContext stmtCtx : ctx.ifBody) {
@@ -635,9 +632,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		WhileStatement whileStmt = new WhileStatement();
 		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		whileStmt.setPredicate(predicate);
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
-		whileStmt.setAllPositions(currentFile, line, col, line, col);
+		whileStmt.setCtxValuesAndFilename(ctx, currentFile);
 
 		if(ctx.body.size() > 0) {
 			for(StatementContext stmtCtx : ctx.body) {
@@ -653,8 +648,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override
 	public void exitForStatement(ForStatementContext ctx) {
 		ForStatement forStmt = new ForStatement();
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = null;
@@ -662,7 +655,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		if(ctx.iterPred.info.increment != null) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(ctx, iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to,
+				incrementExpr, parForParamValues, currentFile);
 		forStmt.setPredicate(predicate);
 
 		if(ctx.body.size() > 0) {
@@ -672,14 +666,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			forStmt.mergeStatementBlocks();
 		}
 		ctx.info.stmt = forStmt;
-		setFileLineColumn(ctx.info.stmt, ctx);
 	}
 
 	@Override
 	public void exitParForStatement(ParForStatementContext ctx) {
 		ParForStatement parForStmt = new ParForStatement();
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
@@ -696,7 +687,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		if( ctx.iterPred.info.increment != null ) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(ctx, iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to,
+				incrementExpr, parForParamValues, currentFile);
 		parForStmt.setPredicate(predicate);
 		if(ctx.body.size() > 0) {
 			for(StatementContext stmtCtx : ctx.body) {
@@ -705,7 +697,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			parForStmt.mergeStatementBlocks();
 		}
 		ctx.info.stmt = parForStmt;
-		setFileLineColumn(ctx.info.stmt, ctx);
 	}
 
 	private ArrayList<DataIdentifier> getFunctionParameters(List<TypedArgNoAssignContext> ctx) {
@@ -913,11 +904,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				source = ctx.source.info.expr;
 			}
 
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
 			try {
-				ctx.info.stmt = new AssignmentStatement(target, source, line, col, line, col);
-				setFileLineColumn(ctx.info.stmt, ctx);
+				ctx.info.stmt = new AssignmentStatement(ctx, target, source, currentFile);
 			} catch (LanguageException e) {
 				notifyErrorListeners("invalid assignment for ifdef function", ctx.targetList.start);
 				return;

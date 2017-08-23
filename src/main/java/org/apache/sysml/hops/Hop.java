@@ -42,6 +42,7 @@ import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParseInfo;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -52,7 +53,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
-public abstract class Hop 
+public abstract class Hop implements ParseInfo
 {
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
@@ -1818,26 +1819,21 @@ public abstract class Hop
 	public int _beginLine, _beginColumn;
 	public int _endLine, _endColumn;
 	public String _filename;
+	public String _text;
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 	public void setFilename(String passed) { _filename = passed; }
-	
-	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
-		_filename = filename;
-		_beginLine	 = blp; 
-		_beginColumn = bcp; 
-		_endLine 	 = elp;
-		_endColumn 	 = ecp;
-	}
+	public void setText(String text) { _text = text; }
 
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
 	public String getFilename()	{ return _filename; }
+	public String getText() { return _text; }
 	
 	public String printErrorLocation(){
 		if(_filename != null)
@@ -1855,5 +1851,24 @@ public abstract class Hop
 	{
 		lop.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	}
-	
+
+	/**
+	 * Set parse information.
+	 *
+	 * @param parseInfo
+	 *            parse information, such as beginning line position, beginning
+	 *            column position, ending line position, ending column position,
+	 *            text, and filename
+	 * @param filename
+	 *            the DML/PYDML filename (if it exists)
+	 */
+	public void setParseInfo(ParseInfo parseInfo) {
+		_beginLine = parseInfo.getBeginLine();
+		_beginColumn = parseInfo.getBeginColumn();
+		_endLine = parseInfo.getEndLine();
+		_endColumn = parseInfo.getEndColumn();
+		_text = parseInfo.getText();
+		_filename = parseInfo.getFilename();
+	}
+
 } // end class

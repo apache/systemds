@@ -534,39 +534,27 @@ public class MLContext {
 				if (datatype.compareToIgnoreCase("frame") != 0) {
 					MatrixObject mo = getMatrixObject(target);
 					if (mo != null) {
-						int blp = source.getBeginLine();
-						int bcp = source.getBeginColumn();
-						int elp = source.getEndLine();
-						int ecp = source.getEndColumn();
-						exp.addVarParam(DataExpression.READROWPARAM,
-								new IntIdentifier(mo.getNumRows(), source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.READCOLPARAM,
-								new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.READNUMNONZEROPARAM,
-								new IntIdentifier(mo.getNnz(), source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.DATATYPEPARAM,
-								new StringIdentifier("matrix", source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.VALUETYPEPARAM,
-								new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));
+						exp.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(mo.getNumRows(), source));
+						exp.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(mo.getNumColumns(), source));
+						exp.addVarParam(DataExpression.READNUMNONZEROPARAM, new IntIdentifier(mo.getNnz(), source));
+						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source));
+						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source));
 
 						if (mo.getMetaData() instanceof MatrixFormatMetaData) {
 							MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
 							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(),
-												blp, bcp, elp, ecp));
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source));
 							} else if (metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT,
-												source.getFilename(), blp, bcp, elp, ecp));
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source));
 							} else if (metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
-								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM, new IntIdentifier(
-										mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
-								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM, new IntIdentifier(
-										mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM,
+										new IntIdentifier(mo.getNumRowsPerBlock(), source));
+								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM,
+										new IntIdentifier(mo.getNumColumnsPerBlock(), source));
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY,
-												source.getFilename(), blp, bcp, elp, ecp));
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source));
 							} else {
 								throw new MLContextException("Unsupported format through MLContext");
 							}

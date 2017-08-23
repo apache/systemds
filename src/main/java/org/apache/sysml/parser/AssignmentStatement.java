@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 
@@ -32,35 +33,39 @@ public class AssignmentStatement extends Statement
 	private Expression _source;
 	 
 	// rewrites statement to support function inlining (creates deep copy)
-	public Statement rewriteStatement(String prefix) throws LanguageException{
-				
+	public Statement rewriteStatement(String prefix) throws LanguageException {
+
 		// rewrite target (deep copy)
-		DataIdentifier newTarget = (DataIdentifier)_targetList.get(0).rewriteExpression(prefix);
-		
+		DataIdentifier newTarget = (DataIdentifier) _targetList.get(0).rewriteExpression(prefix);
+
 		// rewrite source (deep copy)
 		Expression newSource = _source.rewriteExpression(prefix);
-		
+
 		// create rewritten assignment statement (deep copy)
-		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource,this.getBeginLine(), 
-											this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
+		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource, this);
+
 		return retVal;
 	}
-	
-	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol) 
-		throws LanguageException
-	{	
+
+	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
 		_targetList = new ArrayList<DataIdentifier>();
-		_targetList.add(t);
-		_source = s;
-	
-		setBeginLine(beginLine);
-		setBeginColumn(beginCol);
-		setEndLine(endLine);
-		setEndColumn(endCol);
-		
+		_targetList.add(di);
+		_source = exp;
+		setParseInfo(parseInfo);
 	}
-	
+
+	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) throws LanguageException {
+		_targetList = new ArrayList<DataIdentifier>();
+		_targetList.add(di);
+		_source = exp;
+		setCtxValues(ctx);
+	}
+
+	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp, String filename) throws LanguageException {
+		this(ctx, di, exp);
+		setFilename(filename);
+	}
+
 	public DataIdentifier getTarget(){
 		return _targetList.get(0);
 	}

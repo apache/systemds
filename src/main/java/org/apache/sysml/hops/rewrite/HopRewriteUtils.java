@@ -656,11 +656,11 @@ public class HopRewriteUtils
 		hnew.setOutputBlocksizes(hold.getRowsInBlock(), hold.getColsInBlock());
 		hnew.refreshSizeInformation();
 	}
-	
-	public static void copyLineNumbers( Hop src, Hop dest ) {
-		dest.setAllPositions(src.getFilename(), src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
+
+	public static void copyLineNumbers(Hop src, Hop dest) {
+		dest.setParseInfo(src);
 	}
-	
+
 	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, Hop src )
 	{
 		updateHopCharacteristics(hop, brlen, bclen, new MemoTable(), src);

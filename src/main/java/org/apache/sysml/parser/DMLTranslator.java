@@ -548,7 +548,7 @@ public class DMLTranslator
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setParseInfo(sb);
 		}
 		
 		// process If Statement - add runtime program blocks to program
@@ -615,7 +615,7 @@ public class DMLTranslator
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setParseInfo(sb);
 		}
 		
 		// process For Statement - add runtime program blocks to program
@@ -693,7 +693,7 @@ public class DMLTranslator
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setParseInfo(sb);
 		}
 		
 		// process function statement block - add runtime program blocks to program
@@ -775,7 +775,7 @@ public class DMLTranslator
 			retPB = rtpb;
 			
 			// add location information
-			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setParseInfo(sb);
 		}
 		else {
 	
@@ -806,7 +806,7 @@ public class DMLTranslator
 			retPB.setStatementBlock(sb);
 			
 			// add location information
-			retPB.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+			retPB.setParseInfo(sb);
 		}
 		
 		return retPB;
@@ -1270,7 +1270,7 @@ public class DMLTranslator
 					long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
-					read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+					read.setParseInfo(var);
 					ids.put(varName, read);
 				}
 			}
@@ -1326,8 +1326,7 @@ public class DMLTranslator
 				DataIdentifier target = createTarget();
 				target.setDataType(DataType.SCALAR);
 				target.setValueType(ValueType.STRING);
-				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(),
-						current.getEndLine(), current.getEndColumn());
+				target.setParseInfo(current);
 
 				PrintStatement ps = (PrintStatement) current;
 				PRINTTYPE ptype = ps.getType();
@@ -1338,16 +1337,14 @@ public class DMLTranslator
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
 						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
-						printHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
-								current.getEndColumn());
+						printHop.setParseInfo(current);
 						output.add(printHop);
 					} else if (ptype == PRINTTYPE.STOP) {
 						Hop.OpOp1 op = Hop.OpOp1.STOP;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
 						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
-						stopHop.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
-								current.getEndColumn());
+						stopHop.setParseInfo(current);
 						output.add(stopHop);
 						sb.setSplitDag(true); //avoid merge
 					} else if (ptype == PRINTTYPE.PRINTF) {
@@ -1392,7 +1389,7 @@ public class DMLTranslator
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
-							transientwrite.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndLine());
+							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
@@ -1423,7 +1420,7 @@ public class DMLTranslator
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
-							transientwrite.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
@@ -1633,7 +1630,7 @@ public class DMLTranslator
 				
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
 						null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
-				read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+				read.setParseInfo(var);
 			}
 			_ids.put(varName, read);
 		}
@@ -1641,7 +1638,7 @@ public class DMLTranslator
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		target.setDataType(DataType.SCALAR);
 		target.setValueType(ValueType.BOOLEAN);
-		target.setAllPositions(passedSB.getFilename(), passedSB.getBeginLine(), passedSB.getBeginColumn(), passedSB.getEndLine(), passedSB.getEndColumn());
+		target.setParseInfo(passedSB);
 		Hop predicateHops = null;
 		Expression predicate = cp.getPredicate();
 		
@@ -1656,30 +1653,21 @@ public class DMLTranslator
 			// handle constant identifier
 			//  a) translate 0 --> FALSE; translate 1 --> TRUE
 			//	b) disallow string values
-			if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 0) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 0.0)) {
-				cp.setPredicate(new BooleanIdentifier(false, 
-						predicate.getFilename(),
-						predicate.getBeginLine(), predicate.getBeginColumn(),
-						predicate.getEndLine(), predicate.getEndColumn()));
-				
-			}
-			else if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 1) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 1.0)) {
-				cp.setPredicate(new BooleanIdentifier(true,
-						predicate.getFilename(),
-						predicate.getBeginLine(), predicate.getBeginColumn(),
-						predicate.getEndLine(), predicate.getEndColumn()));
-			}
-			else if (predicate instanceof IntIdentifier || predicate instanceof DoubleIdentifier){
-				cp.setPredicate(new BooleanIdentifier(true,
-						predicate.getFilename(),
-						predicate.getBeginLine(), predicate.getBeginColumn(),
-						predicate.getEndLine(), predicate.getEndColumn()));
-				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean TRUE by DML");
-			}
-			else if (predicate instanceof StringIdentifier) {
-				LOG.error(predicate.printErrorLocation() + "String value '" + predicate.toString() + "' is not allowed for iterable predicate");
-				throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString() + "' is not allowed for iterable predicate");
-
+			if ((predicate instanceof IntIdentifier && ((IntIdentifier) predicate).getValue() == 0)
+					|| (predicate instanceof DoubleIdentifier && ((DoubleIdentifier) predicate).getValue() == 0.0)) {
+				cp.setPredicate(new BooleanIdentifier(false, predicate));
+			} else if ((predicate instanceof IntIdentifier && ((IntIdentifier) predicate).getValue() == 1)
+					|| (predicate instanceof DoubleIdentifier && ((DoubleIdentifier) predicate).getValue() == 1.0)) {
+				cp.setPredicate(new BooleanIdentifier(true, predicate));
+			} else if (predicate instanceof IntIdentifier || predicate instanceof DoubleIdentifier) {
+				cp.setPredicate(new BooleanIdentifier(true, predicate));
+				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString()
+						+ "' (!= 0/1) is converted to boolean TRUE by DML");
+			} else if (predicate instanceof StringIdentifier) {
+				LOG.error(predicate.printErrorLocation() + "String value '" + predicate.toString()
+						+ "' is not allowed for iterable predicate");
+				throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString()
+						+ "' is not allowed for iterable predicate");
 			}
 			predicateHops = processExpression(cp.getPredicate(), null, _ids);
 		}
@@ -1731,7 +1719,7 @@ public class DMLTranslator
 						long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
 								null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
-						read.setAllPositions(var.getFilename(), var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+						read.setParseInfo(var);
 					}
 					_ids.put(varName, read);
 				}
@@ -1809,28 +1797,28 @@ public class DMLTranslator
 			else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceInt.getValue());
-				litop.setAllPositions(sourceInt.getFilename(), sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
+				litop.setParseInfo(sourceInt);
 				setIdentifierParams(litop, sourceInt);
 				return litop;
 			} 
 			else if (source instanceof DoubleIdentifier) {
 				DoubleIdentifier sourceDouble = (DoubleIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceDouble.getValue());
-				litop.setAllPositions(source.getFilename(), sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
+				litop.setParseInfo(sourceDouble);
 				setIdentifierParams(litop, sourceDouble);
 				return litop;
 			}
 			else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceBoolean.getValue());
-				litop.setAllPositions(sourceBoolean.getFilename(), sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
+				litop.setParseInfo(sourceBoolean);
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;
 			} 
 			else if (source instanceof StringIdentifier) {
 				StringIdentifier sourceString = (StringIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceString.getValue());
-				litop.setAllPositions(sourceString.getFilename(), sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
+				litop.setParseInfo(sourceString);
 				setIdentifierParams(litop, sourceString);
 				return litop;
 			} 
@@ -1897,7 +1885,7 @@ public class DMLTranslator
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
 			else {
 				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
-				rowUpperHops.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+				rowUpperHops.setParseInfo(target);
 			}
 		}
 		if (target.getColLowerBound() != null)
@@ -1934,7 +1922,7 @@ public class DMLTranslator
 		
 		setIdentifierParams(leftIndexOp, target);
 	
-		leftIndexOp.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+		leftIndexOp.setParseInfo(target);
 		leftIndexOp.setDim1(target.getOrigDim1());
 		leftIndexOp.setDim2(target.getOrigDim2());
 	
@@ -1961,7 +1949,7 @@ public class DMLTranslator
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
 			else {
 				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
-				rowUpperHops.setAllPositions(source.getFilename(), source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+				rowUpperHops.setParseInfo(source);
 			}
 		}
 		if (source.getColLowerBound() != null)
@@ -1990,7 +1978,7 @@ public class DMLTranslator
 				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
 				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
-		indexOp.setAllPositions(target.getFilename(), target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+		indexOp.setParseInfo(target);
 		setIdentifierParams(indexOp, target);
 		
 		return indexOp;
@@ -2048,7 +2036,7 @@ public class DMLTranslator
 			throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
 		}
 		setIdentifierParams(currBop, source.getOutput());
-		currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBop.setParseInfo(source);
 		return currBop;
 		
 	}
@@ -2092,7 +2080,7 @@ public class DMLTranslator
 			op = OpOp2.NOTEQUAL;
 		}
 		currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, left, right);
-		currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBop.setParseInfo(source);
 		return currBop;
 	}
 
@@ -2126,7 +2114,7 @@ public class DMLTranslator
 		
 		if (source.getRight() == null) {
 			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
-			currUop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			currUop.setParseInfo(source);
 			return currUop;
 		} 
 		else {
@@ -2142,7 +2130,7 @@ public class DMLTranslator
 				throw new RuntimeException(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
 			}
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, left, right);
-			currBop.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			currBop.setParseInfo(source);
 			// setIdentifierParams(currBop,source.getOutput());
 			return currBop;
 		}
@@ -2221,9 +2209,9 @@ public class DMLTranslator
 		// set properties for created hops based on outputs of source expression
 		for ( int i=0; i < source.getOutputs().length; i++ ) {
 			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
-			outputs.get(i).setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			outputs.get(i).setParseInfo(source);
 		}
-		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setParseInfo(source);
 
 		return currBuiltinOp;
 	}
@@ -2342,9 +2330,7 @@ public class DMLTranslator
 		}
 		
 		setIdentifierParams(currBuiltinOp, source.getOutput());
-		
-		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
-		
+		currBuiltinOp.setParseInfo(source);
 		return currBuiltinOp;
 	}
 	
@@ -2431,7 +2417,7 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		if( source.getOpCode()==DataExpression.DataOp.READ )
 			((DataOp)currBuiltinOp).setInputBlockSizes(target.getRowsInBlock(), target.getColumnsInBlock());
-		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setParseInfo(source);
 		
 		return currBuiltinOp;
 	}
@@ -2493,9 +2479,9 @@ public class DMLTranslator
 		// set properties for created hops based on outputs of source expression
 		for ( int i=0; i < source.getOutputs().length; i++ ) {
 			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
-			outputs.get(i).setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+			outputs.get(i).setParseInfo(source);
 		}
-		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setParseInfo(source);
 
 		return currBuiltinOp;
 	}
@@ -3168,7 +3154,7 @@ public class DMLTranslator
 			// Since the dimension of output doesnot match that of input variable for these operations
 			setIdentifierParams(currBuiltinOp, source.getOutput());
 		}
-		currBuiltinOp.setAllPositions(source.getFilename(), source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		currBuiltinOp.setParseInfo(source);
 		return currBuiltinOp;
 	}
 	
@@ -3229,20 +3215,17 @@ public class DMLTranslator
 			throw new ParseException("Unsupported skip");
 		}
 
-		for(int i = skip; i < allExpr.length; i++) {
-			if(i == numImgIndex) { // skip=1 ==> i==5  and skip=2 => i==6
+		for (int i = skip; i < allExpr.length; i++) {
+			if (i == numImgIndex) { // skip=1 ==> i==5 and skip=2 => i==6
 				Expression numImg = allExpr[numImgIndex];
-				Expression numChannels = allExpr[numImgIndex+1];
-				BinaryExpression tmp = new BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.MULT, 
-						numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), numImg.getEndLine(), numImg.getEndColumn());
+				Expression numChannels = allExpr[numImgIndex + 1];
+				BinaryExpression tmp = new BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.MULT, numImg);
 				tmp.setLeft(numImg);
 				tmp.setRight(numChannels);
 				ret.add(processTempIntExpression(tmp, hops));
-				ret.add(processExpression(new IntIdentifier(1, numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), 
-						numImg.getEndLine(), numImg.getEndColumn()), null, hops));
+				ret.add(processExpression(new IntIdentifier(1, numImg), null, hops));
 				i++;
-			}
-			else
+			} else
 				ret.add(processExpression(allExpr[i], null, hops));
 		}
 		return ret;
@@ -3338,22 +3321,24 @@ public class DMLTranslator
 						&& ((AssignmentStatement)s).getSource() instanceof DataExpression )
 				{
 					DataExpression dexpr = (DataExpression) ((AssignmentStatement)s).getSource();
-					if( dexpr.isRead() ){
+					if (dexpr.isRead()) {
 						String pfname = dexpr.getVarParam(DataExpression.IO_FILENAME).toString();
-						if( pWrites.containsKey(pfname) && !pfname.trim().isEmpty() ) //found read-after-write
-						{
-							//update read with essential write meta data
+						// found read-after-write
+						if (pWrites.containsKey(pfname) && !pfname.trim().isEmpty()) {
+							// update read with essential write meta data
 							DataIdentifier di = pWrites.get(pfname);
-							FormatType ft = (di.getFormatType()!=null) ? di.getFormatType() : FormatType.TEXT;
-							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));							
-							if( di.getDim1()>=0 )
-								dexpr.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(di.getDim1(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-							if( di.getDim2()>=0 )
-								dexpr.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(di.getDim2(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-							if( di.getValueType()!=ValueType.UNKNOWN )
-								dexpr.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier(di.getValueType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-							if( di.getDataType()!=DataType.UNKNOWN )
-								dexpr.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier(di.getDataType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+							FormatType ft = (di.getFormatType() != null) ? di.getFormatType() : FormatType.TEXT;
+							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(), di));
+							if (di.getDim1() >= 0)
+								dexpr.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(di.getDim1(), di));
+							if (di.getDim2() >= 0)
+								dexpr.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(di.getDim2(), di));
+							if (di.getValueType() != ValueType.UNKNOWN)
+								dexpr.addVarParam(DataExpression.VALUETYPEPARAM,
+										new StringIdentifier(di.getValueType().toString(), di));
+							if (di.getDataType() != DataType.UNKNOWN)
+								dexpr.addVarParam(DataExpression.DATATYPEPARAM,
+										new StringIdentifier(di.getDataType().toString(), di));
 							ret = true;
 						}
 					}

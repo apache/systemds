@@ -37,18 +37,14 @@ public class BooleanExpression extends Expression
 		setBeginColumn(0);
 		setEndLine(0);
 		setEndColumn(0);
+		setText(null);
 	}
-	
-	public BooleanExpression(BooleanOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn){
+
+	public BooleanExpression(BooleanOp bop, ParseInfo parseInfo) {
 		_opcode = bop;
-		
-		setFilename(filename);
-		setBeginLine(beginLine);
-		setBeginColumn(beginColumn);
-		setEndLine(endLine);
-		setEndColumn(endColumn);
+		setParseInfo(parseInfo);
 	}
-	
+
 	public BooleanOp getOpCode(){
 		return _opcode;
 	}
@@ -58,9 +54,7 @@ public class BooleanExpression extends Expression
 		
 		// update script location information --> left expression is BEFORE in script
 		if (_left != null){
-			this.setFilename(_left.getFilename());
-			this.setBeginLine(_left.getBeginLine());
-			this.setBeginColumn(_left.getBeginColumn());
+			this.setParseInfo(_left);
 		}
 	}
 	
@@ -69,9 +63,7 @@ public class BooleanExpression extends Expression
 		
 		// update script location information --> right expression is AFTER in script
 		if (_right != null){
-			this.setFilename(_right.getFilename());
-			this.setBeginLine(_right.getBeginLine());
-			this.setBeginColumn(_right.getBeginColumn());
+			this.setParseInfo(_right);
 		}
 	}
 	
@@ -84,9 +76,7 @@ public class BooleanExpression extends Expression
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException{
-		
-		
-		BooleanExpression newExpr = new BooleanExpression(this._opcode, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		BooleanExpression newExpr = new BooleanExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		if (_right != null)
 			newExpr.setRight(_right.rewriteExpression(prefix));
@@ -118,17 +108,20 @@ public class BooleanExpression extends Expression
 		}
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		output.setParseInfo(this);
 		
 		output.setBooleanProperties();
 		this.setOutput(output);
-		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) ||
-				(_opcode == Expression.BooleanOp.CONDITIONALOR)) 
-		{   //always unconditional (because unsupported operation)
-			raiseValidateError("Unsupported boolean operation " + _opcode.toString(), false, LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) || (_opcode == Expression.BooleanOp.CONDITIONALOR)) {
+			// always unconditional (because unsupported operation)
+			if (_opcode == Expression.BooleanOp.CONDITIONALAND) {
+				raiseValidateError("Conditional AND (&&) not supported.", false);
+			} else if (_opcode == Expression.BooleanOp.CONDITIONALOR) {
+				raiseValidateError("Conditional OR (||) not supported.", false);
+			}
 		}
-	}		
-	
+	}
+
 	public String toString(){
 		if (_opcode == BooleanOp.NOT) {
 			return "(" + _opcode.toString() + " " + _left.toString() + ")";

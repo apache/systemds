@@ -19,6 +19,7 @@
 
 package org.apache.sysml.parser;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -27,26 +28,39 @@ public class DoubleIdentifier extends ConstIdentifier
 {
 	
 	private double _val;
-	
-	
-	public DoubleIdentifier(double val, String filename, int blp, int bcp, int elp, int ecp){
+
+	public DoubleIdentifier(double val) {
 		super();
-		 _val = val;
-		setDimensions(0,0);
-        computeDataType();
-        setValueType(ValueType.DOUBLE);
-        setAllPositions(filename, blp, bcp, elp, ecp);
+		setInfo(val);
+		setBeginLine(-1);
+		setBeginColumn(-1);
+		setEndLine(-1);
+		setEndColumn(-1);
+		setText(null);
 	}
-	
-	public DoubleIdentifier(DoubleIdentifier d, String filename, int blp, int bcp, int elp, int ecp){
-		super();
-		 _val = d.getValue();
-		setDimensions(0,0);
-        computeDataType();
-        setValueType(ValueType.DOUBLE);
-        setAllPositions(filename, blp, bcp, elp, ecp);
+
+	public DoubleIdentifier(double val, ParseInfo parseInfo) {
+		this(val);
+		setParseInfo(parseInfo);
 	}
-	
+
+	public DoubleIdentifier(DoubleIdentifier d, ParseInfo parseInfo) {
+		this(d.getValue());
+		setParseInfo(parseInfo);
+	}
+
+	public DoubleIdentifier(ParserRuleContext ctx, double val, String filename) {
+		this(val);
+		setCtxValuesAndFilename(ctx, filename);
+	}
+
+	private void setInfo(double val) {
+		_val = val;
+		setDimensions(0, 0);
+		computeDataType();
+		setValueType(ValueType.DOUBLE);
+	}
+
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}

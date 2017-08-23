@@ -160,27 +160,11 @@ public abstract class CommonSyntacticValidator {
 	}
 
 	protected void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
-		String txt = ctx.getText();
-		expr.setFilename(currentFile);
-		expr.setBeginLine(ctx.start.getLine());
-		expr.setBeginColumn(ctx.start.getCharPositionInLine());
-		expr.setEndLine(ctx.stop.getLine());
-		expr.setEndColumn(ctx.stop.getCharPositionInLine());
-		if(expr.getBeginColumn() == expr.getEndColumn() && expr.getBeginLine() == expr.getEndLine() && txt.length() > 1) {
-			expr.setEndColumn(expr.getBeginColumn() + txt.length() - 1);
-		}
+		expr.setCtxValuesAndFilename(ctx, currentFile);
 	}
 
 	protected void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
-		String txt = ctx.getText();
-		stmt.setFilename(currentFile);
-		stmt.setBeginLine(ctx.start.getLine());
-		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
-		stmt.setEndLine(ctx.stop.getLine());
-		stmt.setEndColumn(ctx.stop.getCharPositionInLine());
-		if(stmt.getBeginColumn() == stmt.getEndColumn() && stmt.getBeginLine() == stmt.getEndLine() && txt.length() > 1) {
-			stmt.setEndColumn(stmt.getBeginColumn() + txt.length() - 1);
-		}
+		stmt.setCtxValuesAndFilename(ctx, currentFile);
 	}
 
 	// For String literal "True/TRUE"
@@ -234,11 +218,6 @@ public abstract class CommonSyntacticValidator {
 
 	protected void unaryExpressionHelper(ParserRuleContext ctx, ExpressionInfo left, ExpressionInfo me, String op) {
 		if(left.expr != null) {
-			Token start = ctx.start;
-			String fileName = currentFile;
-			int line = start.getLine();
-			int col = start.getCharPositionInLine();
-
 			if(left.expr instanceof IntIdentifier) {
 				if(op.equals("-")) {
 					((IntIdentifier) left.expr).multiplyByMinusOne();
@@ -252,9 +231,9 @@ public abstract class CommonSyntacticValidator {
 				me.expr = left.expr;
 			}
 			else {
-				Expression right = new IntIdentifier(1, fileName, line, col, line, col);
+				Expression right = new IntIdentifier(ctx, 1, currentFile);
 				if(op.equals("-")) {
-					right = new IntIdentifier(-1, fileName, line, col, line, col);
+					right = new IntIdentifier(ctx, -1, currentFile);
 				}
 
 				Expression.BinaryOp bop = Expression.getBinaryOp("*");
@@ -281,12 +260,8 @@ public abstract class CommonSyntacticValidator {
 
 	protected void constDoubleIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
 		try {
-			Token start = ctx.start;
 			double val = Double.parseDouble(ctx.getText());
-			int linePosition = start.getLine();
-			int charPosition = start.getCharPositionInLine();
-			me.expr = new DoubleIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
-			setFileLineColumn(me.expr, ctx);
+			me.expr = new DoubleIdentifier(ctx, val, currentFile);
 		}
 		catch(Exception e) {
 			notifyErrorListeners("cannot parse the float value: \'" +  ctx.getText() + "\'", ctx.getStart());
@@ -296,12 +271,8 @@ public abstract class CommonSyntacticValidator {
 
 	protected void constIntIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
 		try {
-			Token start = ctx.start;
 			long val = Long.parseLong(ctx.getText());
-			int linePosition = start.getLine();
-			int charPosition = start.getCharPositionInLine();
-			me.expr = new IntIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
-			setFileLineColumn(me.expr, ctx);
+			me.expr = new IntIdentifier(ctx, val, currentFile);
 		}
 		catch(Exception e) {
 			notifyErrorListeners("cannot parse the int value: \'" +  ctx.getText() + "\'", ctx.getStart());
@@ -348,16 +319,11 @@ public abstract class CommonSyntacticValidator {
 			return;
 		}
 
-		int linePosition = ctx.start.getLine();
-		int charPosition = ctx.start.getCharPositionInLine();
-		me.expr = new StringIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
-		setFileLineColumn(me.expr, ctx);
+		me.expr = new StringIdentifier(ctx, val, currentFile);
 	}
 
 	protected void booleanIdentifierHelper(ParserRuleContext ctx, boolean val, ExpressionInfo info) {
-		int linePosition = ctx.start.getLine();
-		int charPosition = ctx.start.getCharPositionInLine();
-		info.expr = new BooleanIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
+		info.expr = new BooleanIdentifier(ctx, val, currentFile);
 		setFileLineColumn(info.expr, ctx);
 	}
 
@@ -367,32 +333,25 @@ public abstract class CommonSyntacticValidator {
 		// error occurs, then dataInfo.expr is null which would cause a null pointer exception with the following code.
 		// Therefore, check for null so that parsing can continue so all parsing issues can be determined.
 		if (me.expr != null) {
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
-			me.expr.setAllPositions(currentFile, line, col, line, col);
-			setFileLineColumn(me.expr, ctx);
+			me.expr.setCtxValuesAndFilename(ctx, currentFile);
 		}
 	}
 
-	protected ConstIdentifier getConstIdFromString(String varValue, Token start) {
-
-		int linePosition = start.getLine();
-		int charPosition = start.getCharPositionInLine();
-
+	protected ConstIdentifier getConstIdFromString(ParserRuleContext ctx, String varValue) {
 		// Compare to "True/TRUE"
 		if(varValue.equals(trueStringLiteral()))
-			return new BooleanIdentifier(true, currentFile, linePosition, charPosition, linePosition, charPosition);
+			return new BooleanIdentifier(ctx, true, currentFile);
 
 		// Compare to "False/FALSE"
 		if(varValue.equals(falseStringLiteral()))
-			return new BooleanIdentifier(false, currentFile, linePosition, charPosition, linePosition, charPosition);
+			return new BooleanIdentifier(ctx, false, currentFile);
 
 		// Check for long literal
 		// NOTE: we use exception handling instead of Longs.tryParse for backwards compatibility with guava <14.1
 		// Also the alternative of Ints.tryParse and falling back to double would not be lossless in all cases. 
 		try {
 			long lval = Long.parseLong(varValue);
-			return new IntIdentifier(lval, currentFile, linePosition, charPosition, linePosition, charPosition);
+			return new IntIdentifier(ctx, lval, currentFile);
 		}
 		catch(Exception ex) {
 			//continue
@@ -402,7 +361,7 @@ public abstract class CommonSyntacticValidator {
 		// NOTE: we use exception handling instead of Doubles.tryParse for backwards compatibility with guava <14.0
 		try {
 			double dval = Double.parseDouble(varValue);
-			return new DoubleIdentifier(dval, currentFile, linePosition, charPosition, linePosition, charPosition);
+			return new DoubleIdentifier(ctx, dval, currentFile);
 		}
 		catch(Exception ex) {
 			//continue
@@ -420,14 +379,14 @@ public abstract class CommonSyntacticValidator {
 			// the commandline parameters can be passed without any quotes
 			val = extractStringInQuotes(text, false);
 		}
-		return new StringIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
+		return new StringIdentifier(ctx, val, currentFile);
 	}
 
 
-	protected void fillExpressionInfoCommandLineParameters(String varName, ExpressionInfo dataInfo, Token start) {
+	protected void fillExpressionInfoCommandLineParameters(ParserRuleContext ctx, String varName, ExpressionInfo dataInfo) {
 
 		if(!varName.startsWith("$")) {
-			notifyErrorListeners("commandline param doesnot start with $", start);
+			notifyErrorListeners("commandline param does not start with $", ctx.start);
 			return;
 		}
 
@@ -435,7 +394,7 @@ public abstract class CommonSyntacticValidator {
 		for(Map.Entry<String, String> arg : this.argVals.entrySet()) {
 			if(arg.getKey().equals(varName)) {
 				if(varValue != null) {
-					notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
+					notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", ctx.start);
 					return;
 				}
 				else {
@@ -453,7 +412,7 @@ public abstract class CommonSyntacticValidator {
 		if(varValue.equals(""))
 			return;
 
-		dataInfo.expr = getConstIdFromString(varValue, start);
+		dataInfo.expr = getConstIdFromString(ctx, varValue);
 	}
 
 	protected void exitAssignmentStatementHelper(ParserRuleContext ctx, String lhs, ExpressionInfo dataInfo,
@@ -467,12 +426,8 @@ public abstract class CommonSyntacticValidator {
 		if(dataInfo.expr instanceof DataIdentifier) {
 			target = (DataIdentifier) dataInfo.expr;
 			Expression source = rhs.expr;
-
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
 			try {
-				info.stmt = new AssignmentStatement(target, source, line, col, line, col);
-				setFileLineColumn(info.stmt, ctx);
+				info.stmt = new AssignmentStatement(ctx, target, source, currentFile);
 			} catch (LanguageException e) {
 				// TODO: extract more meaningful info from this exception.
 				notifyErrorListeners("invalid assignment", lhsStart);
@@ -494,11 +449,7 @@ public abstract class CommonSyntacticValidator {
 			ArrayList<ParameterExpression> paramExpression, StatementInfo thisinfo) {
 		if (DMLScript.VALIDATOR_IGNORE_ISSUES == true) { // create dummy print statement
 			try {
-				int line = ctx.start.getLine();
-				int col = ctx.start.getCharPositionInLine();
-				ArrayList<Expression> expList = new ArrayList<Expression>();
-				thisinfo.stmt = new PrintStatement(functionName, expList, line, col, line, col);
-				setFileLineColumn(thisinfo.stmt, ctx);
+				thisinfo.stmt = new PrintStatement(ctx, functionName, currentFile);
 			} catch (LanguageException e) {
 				e.printStackTrace();
 			}
@@ -515,12 +466,9 @@ public abstract class CommonSyntacticValidator {
 				return;
 			}
 			try {
-				int line = ctx.start.getLine();
-				int col = ctx.start.getCharPositionInLine();
-				ArrayList<Expression> expList = new ArrayList<Expression>();
+				List<Expression> expList = new ArrayList<Expression>();
 				expList.add(expr);
-				thisinfo.stmt = new PrintStatement(functionName, expList, line, col, line, col);
-				setFileLineColumn(thisinfo.stmt, ctx);
+				thisinfo.stmt = new PrintStatement(ctx, functionName, expList, currentFile);
 			} catch (LanguageException e) {
 				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 				return;
@@ -541,16 +489,12 @@ public abstract class CommonSyntacticValidator {
 				return;
 			}
 			try {
-				int line = ctx.start.getLine();
-				int col = ctx.start.getCharPositionInLine();
-
 				List<Expression> expressions = new ArrayList<Expression>();
 				for (ParameterExpression pe : paramExpression) {
 					Expression expression = pe.getExpr();
 					expressions.add(expression);
 				}
-				thisinfo.stmt = new PrintStatement(functionName, expressions, line, col, line, col);
-				setFileLineColumn(thisinfo.stmt, ctx);
+				thisinfo.stmt = new PrintStatement(ctx, functionName, expressions, currentFile);
 			} catch (LanguageException e) {
 				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 				return;
@@ -565,9 +509,6 @@ public abstract class CommonSyntacticValidator {
 			return;
 		}
 		if(paramExpression.get(0).getExpr() instanceof DataIdentifier) {
-			String fileName = currentFile;
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
 			HashMap<String, Expression> varParams = new HashMap<String, Expression>();
 			varParams.put(DataExpression.IO_FILENAME, paramExpression.get(1).getExpr());
 			for(int i = 2; i < paramExpression.size(); i++) {
@@ -575,9 +516,9 @@ public abstract class CommonSyntacticValidator {
 				varParams.put(paramExpression.get(i).getName(), paramExpression.get(i).getExpr());
 			}
 
-			DataExpression  dataExpression = new DataExpression(DataOp.WRITE, varParams, fileName, line, col, line, col);
-			info.stmt = new  OutputStatement((DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE, fileName, line, col, line, col);
-			setFileLineColumn(info.stmt, ctx);
+			DataExpression  dataExpression = new DataExpression(ctx, DataOp.WRITE, varParams, currentFile);
+			info.stmt = new OutputStatement(ctx, (DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE,
+					currentFile);
 			((OutputStatement)info.stmt).setExprParams(dataExpression);
 		}
 		else {
@@ -587,8 +528,7 @@ public abstract class CommonSyntacticValidator {
 
 	protected void setAssignmentStatement(ParserRuleContext ctx, StatementInfo info, DataIdentifier target, Expression expression) {
 		try {
-			info.stmt = new AssignmentStatement(target, expression, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-			setFileLineColumn(info.stmt, ctx);
+			info.stmt = new AssignmentStatement(ctx, target, expression, currentFile);
 		} catch (LanguageException e) {
 			// TODO: extract more meaningful info from this exception.
 			notifyErrorListeners("invalid function call", ctx.start);
@@ -651,9 +591,6 @@ public abstract class CommonSyntacticValidator {
 	protected boolean buildForBuiltInFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions, Action f) {
 		// In global namespace, so it can be a builtin function
 		// Double verification: verify passed function name is a (non-parameterized) built-in function.
-		String fileName = currentFile;
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
 		try {
 			if (functions.contains(functionName)) {
 				// It is a user function definition (which takes precedence if name same as built-in)
@@ -667,14 +604,15 @@ public abstract class CommonSyntacticValidator {
 				return true;
 			}
 
-			BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, paramExpressions, fileName, line, col, line, col);
+			BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(ctx, functionName, paramExpressions, currentFile);
 			if (bife != null){
 				// It is a builtin function
 				f.execute(bife);
 				return true;
 			}
 
-			ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, paramExpressions, fileName, line, col, line, col);
+			ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression
+					.getParamBuiltinFunctionExpression(ctx, functionName, paramExpressions, currentFile);
 			if (pbife != null){
 				// It is a parameterized builtin function
 				f.execute(pbife);
@@ -682,7 +620,7 @@ public abstract class CommonSyntacticValidator {
 			}
 
 			// built-in read, rand ...
-			DataExpression dbife = DataExpression.getDataExpression(functionName, paramExpressions, fileName, line, col, line, col, errorListener);
+			DataExpression dbife = DataExpression.getDataExpression(ctx, functionName, paramExpressions, currentFile, errorListener);
 			if (dbife != null){
 				f.execute(dbife);
 				return true;
@@ -748,7 +686,7 @@ public abstract class CommonSyntacticValidator {
 		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
 		functCall.setFunctionNamespace(inferNamespace);
 
-		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+		functCall.setCtxValuesAndFilename(ctx, currentFile);
 
 		setAssignmentStatement(ctx, info, target, functCall);
 	}
@@ -763,8 +701,7 @@ public abstract class CommonSyntacticValidator {
 
 	protected void setMultiAssignmentStatement(ArrayList<DataIdentifier> target, Expression expression, ParserRuleContext ctx, StatementInfo info) {
 		info.stmt = new MultiAssignmentStatement(target, expression);
-		info.stmt.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-		setFileLineColumn(info.stmt, ctx);
+		info.stmt.setCtxValuesAndFilename(ctx, currentFile);
 	}
 
 	// -----------------------------------------------------------------

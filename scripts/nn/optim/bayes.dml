@@ -1,0 +1,214 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Bayesian Optimizer
+ */
+ 
+Sobol = function (matrix [double] X)
+   return (matrix [double] out) {
+     n = nrow(X);
+     
+     /*
+      * code for sobol script generator
+      * 
+      * Reference:
+      * - Algorithm 659: Implementing Sobol’s Quasirandom Sequence Generator | Bratley & Fox
+      *   - This is a modified version of above algorithm by Joe & Kuo 
+      *      - doi>10.1145/641876.641879
+      *  
+      * Inputs:
+      * - N: no. of points 
+      * - D: dimension (to make sure that the file contains enough data!)
+      * - X: input file containing direction numbers
+      *
+      * Outputs:
+      *  A two dimesional array points, where
+      *
+      * POINTS [i][j] = the j-th component of the i-th point
+      * 
+      * with i indexed from 0 to N-1 and j indexed from 0 to D-1
+      *
+      */
+      
+      L = ceil (log(N) / log(2.0));
+      
+      for (i in 0:N-1) {
+        POINTS[i] = [D];
+      }
+      
+      for (i in 0:D-1) {
+        POINTS[0][j] = 0;
+      }
+     
+     # Computing first dimension
+     # Compute direction numbers V[1] to V[L], scaled by pow(2,32)
+     for (i in 1:N) {
+       V[i] = 1 << (32-i); # all m's 1
+     }
+    
+     # Evalulate X[0] to X[N-1], scaled by pow(2,32)
+     for (i in 1:N-1) {
+       X[i] = X[i-1] ^ V[C[i-1]];
+       POINTS[i][0] = X[i] / pow(2.0, 32); # actual points for first dimension.
+     }
+     
+     # Computing remaining dimensions
+     for (j in 1:D-1) {
+       if (L <= s) {
+         for (i in 1:L) V[i] = m[i] << (32-i); 
+       }
+       else {
+         for (i in 1:s) V[i] = m[i] << (32-i); 
+         for (i in s+1:L) {
+           V[i] = V[i-s] ^ (V[i-s] >> s); 
+	         for (k in 1:s-1) V[i] ^= (((a >> (s-1-k)) & 1) * V[i-k]); 
+         }
+       }
+       
+       for (i in 1:N-1) {
+         X[i] = X[i-1] ^ V[C[i-1]];
+         POINTS[i][j] = (double)X[i]/pow(2.0,32); # the actual points
+         //        ^ j for dimension (j+1)
+       }
+     }
+     
+    
+}
+ 
+
+samples = function (double N, double burn, logdist, xx, widths, step_out) 
+  return (matrix [double] out) {
+  
+  /* 
+   * Generate H Gaussian process hyperparameter samples
+   *
+   * Reference:
+   * - Slice sampling covariance hyperparameters of latent Gaussian models | Iain Murray, Ryan Prescott Adams.
+   *   - https://arxiv.org/pdf/1006.0868 
+   *
+   * Inputs:
+   * - N: No of samples to gather
+   * - burn: (1x1) after burning period of this length
+   * - logdist: (@fn) function logprobstar = logdist(xx)
+   * - xx: (Dx1) initial state (or array with D elements)
+   * - widths: (Dx1) set to true if widths may sometimes be far too small
+   * - step_out: (bool)
+   *
+   *
+   * Outputs:
+   * - out: matrix with samples
+   * 
+   */
+   
+   # Initialization
+   D = length(xx);
+   samples = matrix(0, rows=D, cols=N);
+   
+   if (length(widths) == 1) {
+     widths = repmat(widths, D, 1); #repmat?
+   }
+   
+   log_Px = logdist(xx);
+   
+   # main loop
+   for (i in 1:(N+burn)) {
+     log_uprime = log(rand) + log_Px;
+     
+     # sweep through the axes
+     for (d in 1:D) {
+       x_l = xx;
+       x_r = xx;
+       xprime = xx;   
+       
+       # create a horizontal interval (x_l, x_r) enclosing xx
+       r = rand(rows=1, cols=1, min=0, max=1, pdf=”uniform”, sparsity=0.2);
+       x_l = xx(d) - r*widths(d);
+       x_r = xx(d) + (1 -r)*widths(d);
+       
+       if (step_out) {
+         while (logdist(x_l) > log_uprime) {
+           x_l(d) = x_l(d) - widths(d);
+         }
+         
+         while (logdist(x_r) > log_uprime) {
+           x_r(d) = x_r(d) + widths(d);
+         }
+       }
+       
+       # Inner loop: Propose xprimes and shrink intervals until good one found.
+       s = 0;
+       while (1) {
+         s = s +1;
+         xprime = rand()*(x_r(d) - x_l(d)) + x_l(d);
+         log_Px = logdist(xprime);
+         
+         if (log_Px > log_uprime) break;
+         else {
+           # shrink in
+           if      (xprime(d) > xx(d)) x_r(d) = x_prime(d);
+           else if (xprime(d) < xx(d)) x_l(d) = x_prime(d);
+           else error;
+         }
+       }  
+       xx(d) = xprime(d);
+     }
+     
+     # Record samples
+     if (i > burn) {
+   #    samples(:, i -burn) = xx(:);# write to out matrix
+     }
+   }
+ }
+
+
+ next_val = function (matrix [double] X, matrix [double] y) 
+            return (double x_next) {
+   /*
+    * Selects the next point to evaluate
+    * 
+    * Reference:
+    *  - Practical Bayesian Optimization of Machine Learning Algorithms | Jasper, Hugo & Adams.
+    *    - https://arxiv.org/pdf/1206.2944
+    * 
+    * Inputs:
+    * - X: Observations
+    * - y: Observations 
+    *
+    * Outputs:
+    * - x_next: the next point to be evaluated
+    *
+    */
+    
+    X_cand = Sobol (M);
+    
+    for (h in 1:H) {
+      /*
+       * surrogate slice sample for theta(h)
+       */
+    }
+    
+    for (x_m in X_cand) {           # x_m in X_cand: evaluates to true if the x_m belongs to X_cand
+      x_m = max_x ( for (h in 1:H) a(x_m; {x(m), y(m)}, theta(h)); )             
+    }
+    
+    x_next = argmax_x ( for (h in 1:H) a(X_cand; {x(n), y(n)}, theta(h)); )
+}

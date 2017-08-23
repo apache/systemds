@@ -28,6 +28,27 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 
 
 /**
+ * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
+ * This function avoids unnecessary sparse to dense conversion of the input matrix.
+ */
+extern "C"
+__global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, double* ret, int rl, int ru, int cl, int cu) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int rowIndex = index + rl;
+    if (rowIndex <= ru){
+    	int retClen = cu - cl + 1;
+    	// Iterate over elements of the row 'rowIndex'.
+    	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {
+    		// Only slice if the index falls into the given range
+    		if(cl <= colInd[i] && colInd[i] <= cu) {
+    			ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
+    		}
+    	}
+    }
+}
+
+
+/**
  * Does a copy of upper to lower triangle of the given matrix
  * @param ret the input and output array allocated on the GPU
  * @param dim the number of rows of the square matrix ret

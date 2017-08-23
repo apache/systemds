@@ -112,6 +112,7 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
@@ -336,7 +337,6 @@ public class LibMatrixCUDA {
 	 * @return a sparse matrix pointer
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	@SuppressWarnings("unused")
 	private static CSRPointer getSparsePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
 		if(!isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).denseToSparse();
@@ -3086,6 +3086,59 @@ public class LibMatrixCUDA {
 	//**************** Matrix Manipulation Functions *********************/
 	//********************************************************************/
 
+	public static void sliceOperations(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1,
+			IndexRange ixrange, String outputName) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException(
+					"GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		LOG.trace("GPU : sliceOperations" + ", GPUContext=" + gCtx);
+
+		int rl = (int) ixrange.rowStart;
+		int ru = (int) ixrange.rowEnd;
+		int cl = (int) ixrange.colStart;
+		int cu = (int) ixrange.colEnd;
+		if (rl < 0 || rl >= in1.getNumRows() || ru < rl || ru >= in1.getNumRows() || cl < 0
+				|| cu >= in1.getNumColumns() || cu < cl || cu >= in1.getNumColumns()) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: [" + (rl + 1) + ":" + (ru + 1) + ","
+					+ (cl + 1) + ":" + (cu + 1) + "] " + "must be within matrix dimensions [" + in1.getNumRows() + ","
+					+ in1.getNumColumns() + "]");
+		}
+
+		int len1 = toInt(in1.getNumColumns());
+		int len2 = toInt(ec.getMatrixObject(outputName).getNumColumns());
+		if(isInSparseFormat(gCtx, in1)) {
+			// Input in1 is in sparse format and output is in dense format
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1);
+			CSRPointer inPointer = getSparsePointer(gCtx, in1, instName);
+			Pointer outPointer = getDensePointer(gCtx, out, instName);
+			int size = ru - rl + 1;
+			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			// Performs a slice operation where the input matrix is sparse and the output matrix is dense.
+			// This function avoids unnecessary sparse to dense conversion of the input matrix.
+			// We can generalize this later to output sparse matrix.
+			getCudaKernels(gCtx).launchKernel("slice_sparse_dense", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+					inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu);
+            if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP, System.nanoTime() - t0);
+		}
+		else {
+			// Input in1 is in dense format (see inPointer)
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1);
+	
+			Pointer inPointer = getDensePointer(gCtx, in1, instName);
+			Pointer outPointer = getDensePointer(gCtx, out, instName);
+			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			if (len1 == len2) {
+				cudaMemcpy(outPointer, inPointer.withByteOffset(rl * len1 * Sizeof.DOUBLE), (ru - rl + 1) * len1
+						* Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+			} else {
+				for (int i = rl, ix1 = rl * len1 + cl, ix2 = 0; i <= ru; i++, ix1 += len1, ix2 += len2) {
+					cudaMemcpy(outPointer.withByteOffset(ix2 * Sizeof.DOUBLE),
+							inPointer.withByteOffset(ix1 * Sizeof.DOUBLE), len2 * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+				}
+			}
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_DENSE_OP, System.nanoTime() - t0);
+		}
+	}
 
 	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
 		if (ec.getGPUContext(0) != gCtx)

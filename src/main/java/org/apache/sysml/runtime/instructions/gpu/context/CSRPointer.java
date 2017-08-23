@@ -49,6 +49,18 @@ import jcuda.jcusparse.cusparsePointerMode;
 /**
  * Compressed Sparse Row (CSR) format for CUDA
  * Generalized matrix multiply is implemented for CSR format in the cuSparse library among other operations
+ * 
+ * Since we assume that the matrix is stored with zero-based indexing (i.e. CUSPARSE_INDEX_BASE_ZERO),
+ * the matrix
+ * 1.0 4.0 0.0 0.0 0.0 
+ * 0.0 2.0 3.0 0.0 0.0 
+ * 5.0 0.0 0.0 7.0 8.0 
+ * 0.0 0.0 9.0 0.0 6.0
+ * 
+ * is stored as
+ * val = 1.0 4.0 2.0 3.0 5.0 7.0 8.0 9.0 6.0 
+ * rowPtr = 0.0 2.0 4.0 7.0 9.0 
+ * colInd = 0.0 1.0 1.0 2.0 0.0 3.0 4.0 2.0 4.0
  */
 public class CSRPointer {
 

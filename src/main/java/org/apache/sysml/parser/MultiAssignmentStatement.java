@@ -48,10 +48,7 @@ public class MultiAssignmentStatement extends Statement
 		
 		// create rewritten assignment statement (deep copy)
 		MultiAssignmentStatement retVal = new MultiAssignmentStatement(newTargetList, newSource);
-		retVal.setBeginLine(this.getBeginLine());
-		retVal.setBeginColumn(this.getBeginColumn());
-		retVal.setEndLine(this.getEndLine());
-		retVal.setEndColumn(this.getEndColumn());
+		retVal.setParseInfo(this);
 		
 		return retVal;
 	}

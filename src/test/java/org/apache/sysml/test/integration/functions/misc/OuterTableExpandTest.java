@@ -256,7 +256,7 @@ public class OuterTableExpandTest extends AutomatedTestBase
 			
 				//check compiled/executed jobs
 				if( rtplatform == RUNTIME_PLATFORM.HADOOP ) {
-					int expectedNumCompiled = 3; //reblock+gmr+gmr if rexpand; otherwise 3/5 
+					int expectedNumCompiled = 2; //reblock+gmr if rexpand; otherwise 3/5
 					int expectedNumExecuted = expectedNumCompiled; 
 					checkNumCompiledMRJobs(expectedNumCompiled); 
 					checkNumExecutedMRJobs(expectedNumExecuted); 	

@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.utils.MLContextProxy;
 
 
-public class StatementBlock extends LiveVariableAnalysis
+public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 {
 
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
@@ -188,14 +188,21 @@ public class StatementBlock extends LiveVariableAnalysis
 				|| (sourceExpr instanceof ParameterizedBuiltinFunctionExpression && ((ParameterizedBuiltinFunctionExpression)sourceExpr).multipleReturns()))
 				return false;
 
-			//function calls (only mergable if inlined dml-bodied function)
-			if (sourceExpr instanceof FunctionCallIdentifier){
+			// function calls (only mergable if inlined dml-bodied function)
+			if (sourceExpr instanceof FunctionCallIdentifier) {
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
-				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-				if (fblock == null){
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
+				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),
+						fcall.getName());
+				if (fblock == null) {
+					if (DMLProgram.DEFAULT_NAMESPACE.equals(fcall.getNamespace())) {
+						throw new LanguageException(
+								sourceExpr.printErrorLocation() + "Function " + fcall.getName() + "() is undefined.");
+					} else {
+						throw new LanguageException(sourceExpr.printErrorLocation() + "Function " + fcall.getName()
+								+ "() is undefined in namespace '" + fcall.getNamespace() + "'.");
+					}
 				}
-				if( !rIsInlineableFunction(fblock, dmlProg) )
+				if (!rIsInlineableFunction(fblock, dmlProg))
 					return false;
 			}
 		}
@@ -445,15 +452,15 @@ public class StatementBlock extends LiveVariableAnalysis
 
 					//auto casting of inputs on inlining (if required)
 					ValueType targetVT = newTarget.getValueType();
-					if( newTarget.getDataType()==DataType.SCALAR && currCallParam.getOutput() != null
-						&& targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING )
-					{
-						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT), new Expression[] {currCallParam},
-												newTarget.getFilename(), newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
+					if (newTarget.getDataType() == DataType.SCALAR && currCallParam.getOutput() != null
+							&& targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING) {
+						currCallParam = new BuiltinFunctionExpression(
+								BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
+								new Expression[] { currCallParam }, newTarget);
 					}
 
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
+					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget);
 					newStatements.add(binding);
 				}
 
@@ -512,13 +519,14 @@ public class StatementBlock extends LiveVariableAnalysis
 
 					//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites)
 					ValueType sourceVT = newSource.getValueType();
-					if( newSource.getDataType()==DataType.SCALAR && sourceVT != ValueType.STRING ){
-						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT), new Expression[] {newSource},
-								newTarget.getFilename(), newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
+					if (newSource.getDataType() == DataType.SCALAR && sourceVT != ValueType.STRING) {
+						newSource = new BuiltinFunctionExpression(
+								BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),
+								new Expression[] { newSource }, newTarget);
 					}
 
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
+					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget);
 
 					newStatements.add(binding);
 				}
@@ -618,12 +626,12 @@ public class StatementBlock extends LiveVariableAnalysis
 							bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 						IntIdentifier intid = null;
-						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){
-							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)?((IndexedIdentifier)currVal).getOrigDim1():currVal.getDim1(),
-									bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW) {
+							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
+									? ((IndexedIdentifier) currVal).getOrigDim1() : currVal.getDim1(), bife);
 						} else {
-							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)?((IndexedIdentifier)currVal).getOrigDim2():currVal.getDim2(),
-									bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
+									? ((IndexedIdentifier) currVal).getOrigDim2() : currVal.getDim2(), bife);
 						}
 
 						// handle case when nrow / ncol called on variable with size unknown (dims == -1)
@@ -766,10 +774,13 @@ public class StatementBlock extends LiveVariableAnalysis
 				for (Expression expression : expressions) {
 					expression.validateExpression(ids.getVariables(), currConstVars, conditional);
 					if (expression.getOutput().getDataType() != Expression.DataType.SCALAR) {
-						raiseValidateError("print statement can only print scalars", conditional);
+						if (expression.getOutput().getDataType() == Expression.DataType.MATRIX) {
+							pstmt.raiseValidateError("Print statements can only print scalars. To print a matrix, please wrap it in a toString() function.", conditional);
+						} else {
+							pstmt.raiseValidateError("Print statements can only print scalars.", conditional);
+						}
 					}
 				}
-
 			}
 
 			// no work to perform for PathStatement or ImportStatement
@@ -813,10 +824,8 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 		}
 		//case of unspecified format parameter, use default
-		else
-		{
-			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(),
-					s.getFilename(), s.getBeginLine(), s.getBeginColumn(), s.getEndLine(), s.getEndColumn()), true);
+		else {
+			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(), s), true);
 			s.getIdentifier().setFormatType(FormatType.TEXT);
 		}
 	}
@@ -850,8 +859,8 @@ public class StatementBlock extends LiveVariableAnalysis
 						+ " can only be a string with one of following values: binary, text, mm, csv", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
-			dataExpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(),
-					dataExpr.getFilename(), dataExpr.getBeginLine(), dataExpr.getBeginColumn(), dataExpr.getEndLine(), dataExpr.getEndColumn()));
+			dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
+					new StringIdentifier(FormatType.TEXT.toString(), dataExpr));
 			s.getTarget().setFormatType(FormatType.TEXT);
 		}
 	}
@@ -1001,19 +1010,32 @@ public class StatementBlock extends LiveVariableAnalysis
 	private String _filename = "MAIN SCRIPT";
 	private int _beginLine = 0, _beginColumn = 0;
 	private int _endLine = 0, _endColumn = 0;
+	private String _text;
 
 	public void setFilename (String fname)  { _filename = fname;	}
 	public void setBeginLine(int passed)    { _beginLine = passed;  }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	public void setText(String text) { _text = text; }
 
-	public void setAllPositions(String fname, int blp, int bcp, int elp, int ecp){
-		_filename    = fname;
-		_beginLine	 = blp;
-		_beginColumn = bcp;
-		_endLine 	 = elp;
-		_endColumn 	 = ecp;
+	/**
+	 * Set parse information.
+	 *
+	 * @param parseInfo
+	 *            parse information, such as beginning line position, beginning
+	 *            column position, ending line position, ending column position,
+	 *            text, and filename
+	 * @param filename
+	 *            the DML/PYDML filename (if it exists)
+	 */
+	public void setParseInfo(ParseInfo parseInfo) {
+		_beginLine = parseInfo.getBeginLine();
+		_beginColumn = parseInfo.getBeginColumn();
+		_endLine = parseInfo.getEndLine();
+		_endColumn = parseInfo.getEndColumn();
+		_text = parseInfo.getText();
+		_filename = parseInfo.getFilename();
 	}
 
 	public String getFilename() { return _filename;	   }
@@ -1021,6 +1043,7 @@ public class StatementBlock extends LiveVariableAnalysis
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
+	public String getText() { return _text; }
 
 	public String printErrorLocation(){
 		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";

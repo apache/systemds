@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 
@@ -43,7 +44,7 @@ public class PrintStatement extends Statement
 
 	private static PRINTTYPE getPrintType(String type, List<Expression> expressions) throws LanguageException {
 		if(type.equalsIgnoreCase("print")) {
-			if (expressions.size() == 1) {
+			if ((expressions == null) || (expressions.size() == 1)) {
 				return PRINTTYPE.PRINT;
 			} else {
 				return PRINTTYPE.PRINTF;
@@ -56,20 +57,28 @@ public class PrintStatement extends Statement
 			throw new LanguageException("Unknown statement type: " + type);
 	}
 
-	public PrintStatement(String type, List<Expression> expressions, int beginLine, int beginCol,
-			int endLine, int endCol) throws LanguageException {
-		this(getPrintType(type, expressions), expressions);
+	public PrintStatement(ParserRuleContext ctx, String type, String filename)
+			throws LanguageException {
+		this(getPrintType(type, null), null);
+		setCtxValues(ctx);
+		setFilename(filename);
+	}
 
-		setBeginLine(beginLine);
-		setBeginColumn(beginCol);
-		setEndLine(endLine);
-		setEndColumn(endCol);
+	public PrintStatement(ParserRuleContext ctx, String type, List<Expression> expressions, String filename)
+			throws LanguageException {
+		this(getPrintType(type, expressions), expressions);
+		setCtxValues(ctx);
+		setFilename(filename);
 	}
 
 	public PrintStatement(PRINTTYPE type, List<Expression> expressions)
 			throws LanguageException {
 		_type = type;
-		this.expressions = expressions;
+		if (expressions == null) {
+			this.expressions = new ArrayList<Expression>();
+		} else {
+			this.expressions = expressions;
+		}
 	}
 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
@@ -79,11 +88,7 @@ public class PrintStatement extends Statement
 			newExpressions.add(newExpression);
 		}
 		PrintStatement retVal = new PrintStatement(_type, newExpressions);
-		retVal.setBeginLine(this.getBeginLine());
-		retVal.setBeginColumn(this.getBeginColumn());
-		retVal.setEndLine(this.getEndLine());
-		retVal.setEndColumn(this.getEndColumn());
-		
+		retVal.setParseInfo(this);
 		return retVal;
 	}
 	

@@ -551,7 +551,7 @@ public class ProgramConverter
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
 				ret.setDMLProg(sb.getDMLProg());
-				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+				ret.setParseInfo(sb);
 				ret.setLiveIn( sb.liveIn() ); 
 				ret.setLiveOut( sb.liveOut() ); 
 				ret.setUpdatedVariables( sb.variablesUpdated() );
@@ -591,7 +591,7 @@ public class ProgramConverter
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new IfStatementBlock();
 				ret.setDMLProg(sb.getDMLProg());
-				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+				ret.setParseInfo(sb);
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
@@ -632,7 +632,7 @@ public class ProgramConverter
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new WhileStatementBlock();
 				ret.setDMLProg(sb.getDMLProg());
-				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+				ret.setParseInfo(sb);
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
@@ -678,7 +678,7 @@ public class ProgramConverter
 				
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret.setDMLProg(sb.getDMLProg());
-				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+				ret.setParseInfo(sb);
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );

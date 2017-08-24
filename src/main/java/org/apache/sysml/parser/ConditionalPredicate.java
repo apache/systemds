@@ -19,7 +19,7 @@
 
 package org.apache.sysml.parser;
 
-public class ConditionalPredicate 
+public class ConditionalPredicate implements ParseInfo
 {
 
 	
@@ -61,17 +61,20 @@ public class ConditionalPredicate
 	private String _filename;
 	private int _beginLine, _beginColumn;
 	private int _endLine, _endColumn;
+	private String _text;
 	
 	public void setFilename(String fname)   { _filename = fname;   }
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	public void setText(String text) { _text = text; }
 
 	public String getFilename()	{ return _filename;   }
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
+	public String getText() { return _text; }
 
 }

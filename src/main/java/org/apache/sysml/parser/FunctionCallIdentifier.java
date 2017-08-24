@@ -60,11 +60,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 		
 		// rewrite each output expression
 		FunctionCallIdentifier fci = new FunctionCallIdentifier(newParameterExpressions);
-		
-		fci.setBeginLine(this.getBeginLine());
-		fci.setBeginColumn(this.getBeginColumn());
-		fci.setEndLine(this.getEndLine());
-		fci.setEndColumn(this.getEndColumn());
+		fci.setParseInfo(this);
 			
 		fci._name = this._name;
 		fci._namespace = this._namespace;

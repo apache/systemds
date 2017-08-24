@@ -110,9 +110,8 @@ public class FunctionStatementBlock extends StatementBlock
 							if (curr.getValueType() == ValueType.INT){
 								IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
 								if (currIntValue != null){
-									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(), 
-											curr.getFilename(), curr.getBeginLine(), curr.getBeginColumn(), 
-											curr.getEndLine(), curr.getEndColumn());
+									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(),
+											curr);
 									constVars.put(curr.getName(), currDoubleValue);
 								}
 								LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() 

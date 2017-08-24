@@ -19,10 +19,12 @@
 
 package org.apache.sysml.parser;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class Statement 
+public abstract class Statement implements ParseInfo
 {
 
 	
@@ -87,19 +89,57 @@ public abstract class Statement
 	private String _filename;
 	private int _beginLine, _beginColumn;
 	private int _endLine,   _endColumn;
+	private String _text;
 	
 	public void setFilename(String passed)  { _filename = passed;	}
 	public void setBeginLine(int passed)    { _beginLine = passed;	}
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed;}
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
-	
-	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
-		_filename    = filename;
-		_beginLine	 = blp; 
-		_beginColumn = bcp; 
-		_endLine 	 = elp;
-		_endColumn 	 = ecp;
+
+	/**
+	 * Set ParserRuleContext values (begin line, begin column, end line, end
+	 * column, and text).
+	 *
+	 * @param ctx
+	 *            the antlr ParserRuleContext
+	 */
+	public void setCtxValues(ParserRuleContext ctx) {
+		setBeginLine(ctx.start.getLine());
+		setBeginColumn(ctx.start.getCharPositionInLine());
+		setEndLine(ctx.stop.getLine());
+		setEndColumn(ctx.stop.getCharPositionInLine());
+		// preserve whitespace if possible
+		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1)
+				&& (ctx.stop.getStopIndex() != -1) && (ctx.start.getStartIndex() <= ctx.stop.getStopIndex())
+				&& (ctx.start.getInputStream() != null)) {
+			String text = ctx.start.getInputStream()
+					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+			if (text != null) {
+				text = text.trim();
+			}
+			setText(text);
+		} else {
+			String text = ctx.getText();
+			if (text != null) {
+				text = text.trim();
+			}
+			setText(text);
+		}
+	}
+
+	/**
+	 * Set ParserRuleContext values (begin line, begin column, end line, end
+	 * column, and text) and file name.
+	 *
+	 * @param ctx
+	 *            the antlr ParserRuleContext
+	 * @param filename
+	 *            the filename (if it exists)
+	 */
+	public void setCtxValuesAndFilename(ParserRuleContext ctx, String filename) {
+		setCtxValues(ctx);
+		setFilename(filename);
 	}
 
 	public int getBeginLine()	{ return _beginLine;   }
@@ -107,37 +147,77 @@ public abstract class Statement
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
 	public String getFilename() { return _filename;  }
-		
-	public String printErrorLocation(){
-		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
-	}
-	
-	public String printWarningLocation(){
-		return "WARNING: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
+
+	public String printErrorLocation() {
+		String file = _filename;
+		if (file == null) {
+			file = "";
+		} else {
+			file = file + " ";
+		}
+		if (getText() != null) {
+			return "ERROR: " + file + "[line " + _beginLine + ":" + _beginColumn + "] -> " + getText() + " -- ";
+		} else {
+			return "ERROR: " + file + "[line " + _beginLine + ":" + _beginColumn + "] -- ";
+		}
 	}
 
-	public void raiseValidateError( String msg, boolean conditional ) throws LanguageException {
+	public String printWarningLocation() {
+		String file = _filename;
+		if (file == null) {
+			file = "";
+		} else {
+			file = file + " ";
+		}
+		if (getText() != null) {
+			return "WARNING: " + file + "[line " + _beginLine + ":" + _beginColumn + "] -> " + getText() + " -- ";
+		} else {
+			return "WARNING: " + file + "[line " + _beginLine + ":" + _beginColumn + "] -- ";
+		}
+	}
+
+	public void raiseValidateError(String msg, boolean conditional) throws LanguageException {
 		raiseValidateError(msg, conditional, null);
 	}
-	
-	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
-		throws LanguageException
-	{
-		if( conditional )  //warning if conditional
-		{
+
+	public void raiseValidateError(String msg, boolean conditional, String errorCode) throws LanguageException {
+		if (conditional) {// warning if conditional
 			String fullMsg = this.printWarningLocation() + msg;
-			
-			LOG.warn( fullMsg );
-		}
-		else  //error and exception if unconditional
-		{
+			LOG.warn(fullMsg);
+		} else {// error and exception if unconditional
 			String fullMsg = this.printErrorLocation() + msg;
-			
-			//LOG.error( fullMsg ); //no redundant error	
-			if( errorCode != null )
-				throw new LanguageException( fullMsg, errorCode );
-			else 
-				throw new LanguageException( fullMsg );
+			if (errorCode != null)
+				throw new LanguageException(fullMsg, errorCode);
+			else
+				throw new LanguageException(fullMsg);
 		}
-	}	
+	}
+
+	public String getText() {
+		return _text;
+	}
+
+	public void setText(String text) {
+		this._text = text;
+	}
+
+	/**
+	 * Set parse information.
+	 *
+	 * @param parseInfo
+	 *            parse information, such as beginning line position, beginning
+	 *            column position, ending line position, ending column position,
+	 *            text, and filename
+	 * @param filename
+	 *            the DML/PYDML filename (if it exists)
+	 */
+	public void setParseInfo(ParseInfo parseInfo) {
+		_beginLine = parseInfo.getBeginLine();
+		_beginColumn = parseInfo.getBeginColumn();
+		_endLine = parseInfo.getEndLine();
+		_endColumn = parseInfo.getEndColumn();
+		_text = parseInfo.getText();
+		_filename = parseInfo.getFilename();
+	}
+
 }

@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.util.HashMap;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.lops.Lop;
 
 
@@ -33,20 +34,17 @@ public class IterablePredicate extends Expression
 	private Expression _incrementExpr;
 	private HashMap<String,String> _parforParams;
 	
-	
-	public IterablePredicate(DataIdentifier iterVar, Expression fromExpr, Expression toExpr, 
-			Expression incrementExpr, HashMap<String,String> parForParamValues,
-			String filename, int blp, int bcp, int elp, int ecp)
-	{
+	public IterablePredicate(ParserRuleContext ctx, DataIdentifier iterVar, Expression fromExpr, Expression toExpr,
+			Expression incrementExpr, HashMap<String, String> parForParamValues, String filename) {
 		_iterVar = iterVar;
 		_fromExpr = fromExpr;
 		_toExpr = toExpr;
 		_incrementExpr = incrementExpr;
-		
+
 		_parforParams = parForParamValues;
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
+		this.setCtxValuesAndFilename(ctx, filename);
 	}
-		
+
 	public String toString()
 	{ 
 		StringBuilder sb = new StringBuilder();
@@ -133,14 +131,12 @@ public class IterablePredicate extends Expression
 		
 		//2) VALIDATE FOR PREDICATE in (from, to, increment)		
 		// handle default increment if unspecified
-		if( _incrementExpr == null && _fromExpr instanceof ConstIdentifier 
-			&& _toExpr instanceof ConstIdentifier ) {
+		if (_incrementExpr == null && _fromExpr instanceof ConstIdentifier && _toExpr instanceof ConstIdentifier) {
 			ConstIdentifier cFrom = (ConstIdentifier) _fromExpr;
 			ConstIdentifier cTo = (ConstIdentifier) _toExpr;
-			_incrementExpr = new IntIdentifier( (cFrom.getLongValue() <= cTo.getLongValue()) ? 1 : -1, 
-					getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
+			_incrementExpr = new IntIdentifier((cFrom.getLongValue() <= cTo.getLongValue()) ? 1 : -1, this);
 		}
-		
+
 		//recursively validate the individual expression
 		_fromExpr.validateExpression(ids, constVars, conditional);
 		_toExpr.validateExpression(ids, constVars, conditional);

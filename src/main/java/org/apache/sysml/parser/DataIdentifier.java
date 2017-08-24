@@ -31,11 +31,7 @@ public class DataIdentifier extends Identifier
 		_valueTypeString = passed.getValueType().toString();	
 		
 		// set location information
-		setFilename(passed.getFilename());
-		setBeginLine(passed.getBeginLine());
-		setBeginColumn(passed.getBeginColumn());
-		setEndLine(passed.getEndLine());
-		setEndColumn(passed.getEndColumn());
+		setParseInfo(passed);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

@@ -19,21 +19,39 @@
 
 package org.apache.sysml.parser;
 
-
+import org.antlr.v4.runtime.ParserRuleContext;
 
 public class BooleanIdentifier extends ConstIdentifier 
 {
 	private boolean _val;
-	
-	public BooleanIdentifier(boolean val, String filename, int blp, int bcp, int elp, int ecp){
+
+	public BooleanIdentifier(boolean val) {
 		super();
-		 _val = val;
-		setDimensions(0,0);
-        computeDataType();
-        setValueType(ValueType.BOOLEAN);
-        setAllPositions(filename, blp, bcp, elp, ecp);
+		setInfo(val);
+		setBeginLine(-1);
+		setBeginColumn(-1);
+		setEndLine(-1);
+		setEndColumn(-1);
+		setText(null);
 	}
-	
+
+	public BooleanIdentifier(boolean val, ParseInfo parseInfo) {
+		this(val);
+		setParseInfo(parseInfo);
+	}
+
+	public BooleanIdentifier(ParserRuleContext ctx, boolean val, String filename) {
+		this(val);
+		setCtxValuesAndFilename(ctx, filename);
+	}
+
+	private void setInfo(boolean val) {
+		_val = val;
+		setDimensions(0, 0);
+		computeDataType();
+		setValueType(ValueType.BOOLEAN);
+	}
+
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}

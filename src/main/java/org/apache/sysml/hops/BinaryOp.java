@@ -1058,7 +1058,10 @@ public class BinaryOp extends Hop
 		
 		//ensure cp exec type for single-node operations
 		if ( op == OpOp2.SOLVE ) {
-			_etype = ExecType.CP;
+			if (isGPUEnabled())
+				_etype = ExecType.GPU;
+			else
+				_etype = ExecType.CP;
 		}
 		
 		return _etype;

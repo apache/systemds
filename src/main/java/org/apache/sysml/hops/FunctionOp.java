@@ -41,7 +41,8 @@ public class FunctionOp extends Hop
 {
 	
 	public static String OPSTRING = "extfunct";
-	public static boolean isSingleFunctionInvoked = false;
+	public boolean isSingleFun = false;
+	
 	public enum FunctionType{
 		DML,
 		EXTERNAL_MEM,
@@ -168,6 +169,12 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("svd") ) {
+				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputSigma = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				long outputV = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
+				return outputU+outputSigma+outputV;
+			}
 			else
 				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
 		}
@@ -198,6 +205,10 @@ public class FunctionOp extends Hop
 				//System.out.println("EigenInter " + interOutput/1024/1024);
 				return interOutput;
 			}
+			else if ( getFunctionName().equalsIgnoreCase("svd")) {
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
+				return interOutput;
+			}
 			else
 				throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
 		}
@@ -207,6 +218,11 @@ public class FunctionOp extends Hop
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
 		throw new RuntimeException("Invalid call of inferOutputCharacteristics in FunctionOp.");
+	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
 	}
 	
 	@Override
@@ -223,23 +239,13 @@ public class FunctionOp extends Hop
 		ArrayList<Lop> tmp = new ArrayList<Lop>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
-		
-		// TODO find the condition for isSingleFunctionInvoked
-		//construct function call
-		//FunctionCallCP fcall = null;
-		//FunctionCallCPSingle fcall = null;
-		if (!isSingleFunctionInvoked) {
-			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
-			setLineNumbers( fcall );
-		    setLops( fcall );
-			
-		} else {
-			FunctionCallCPSingle fcall = new FunctionCallCPSingle( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
-			setLineNumbers( fcall );
-		    setLops( fcall );
-		}		
-		
-	
+		 
+		// TODO find the condition for isSingleFun
+	        //construct function call
+	        Lop fcall = isSingleFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) : new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
+		setLineNumbers(fcall);
+		setLops(fcall);
+        
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();

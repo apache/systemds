@@ -30,6 +30,15 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.
+ * 
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params colInd input col index pointer
+ * @params ret dense output pointer
+ * @param rl row lower
+ * @param ru row upper
+ * @param cl column lower
+ * @param cu column upper
  */
 extern "C"
 __global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, double* ret, int rl, int ru, int cl, int cu) {

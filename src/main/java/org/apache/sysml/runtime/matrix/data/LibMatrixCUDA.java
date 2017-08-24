@@ -3086,6 +3086,17 @@ public class LibMatrixCUDA {
 	//**************** Matrix Manipulation Functions *********************/
 	//********************************************************************/
 
+	/**
+	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
+	 *  
+	 * @param ec current execution context
+	 * @param gCtx current gpu context
+	 * @param instName name of the instruction for maintaining statistics
+	 * @param in1 input matrix object
+	 * @param ixrange index range (0-based)
+	 * @param outputName output matrix object
+	 * @throws DMLRuntimeException if error occurs
+	 */
 	public static void sliceOperations(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1,
 			IndexRange ixrange, String outputName) throws DMLRuntimeException {
 		if (ec.getGPUContext(0) != gCtx)

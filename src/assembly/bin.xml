@@ -98,6 +98,7 @@
 		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>
+				<include>*:avro*</include>
 				<include>*:commons-cli*</include>
 				<include>*:commons-collections*</include>
 				<include>*:commons-configuration*</include>

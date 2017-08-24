@@ -43,7 +43,8 @@ public abstract class GPUInstruction extends Instruction
 		ArithmeticBinary,
 		BuiltinUnary,
 		BuiltinBinary,
-		Builtin
+		Builtin,
+		MatrixIndexing
 	};
 
 	// Memory/conversions
@@ -112,6 +113,9 @@ public abstract class GPUInstruction extends Instruction
 	public final static String MISC_TIMER_REDUCE_ALL_KERNEL =                "rallk";  // time spent in reduce all kernel
 	public final static String MISC_TIMER_REDUCE_ROW_KERNEL =                "rrowk";  // time spent in reduce row kernel
 	public final static String MISC_TIMER_REDUCE_COL_KERNEL =                "rcolk";  // time spent in reduce column kernel
+	
+	public final static String MISC_TIMER_RIX_DENSE_OP =                     "drix";    // time spent in the right indexing dense kernel
+	public final static String MISC_TIMER_RIX_SPARSE_DENSE_OP =              "sdrix";   // time spent in the right indexing sparse dense kernel
 
 	// Deep learning operators
 	public final static String MISC_TIMER_ACTIVATION_FORWARD_LIB =         "nnaf";  // time spent in cudnnActivationForward

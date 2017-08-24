@@ -32,9 +32,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -100,12 +98,12 @@ public class GPUObject {
 	/**
 	 * number of read/write locks on this object (this GPUObject is being used in a current instruction)
 	 */
-	protected AtomicInteger locks = new AtomicInteger(0);
+	protected AtomicLong locks = new AtomicLong();
 
 	/**
 	 * Timestamp, needed by {@link GPUContext#evict(long)}
 	 */
-	AtomicLong timestamp = new AtomicLong(0);
+	AtomicLong timestamp = new AtomicLong();
 
 	/**
 	 * Whether this block is in sparse format
@@ -131,7 +129,7 @@ public class GPUObject {
 			that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
 		}
 		that.dirty = me.dirty;
-		that.locks = new AtomicInteger(me.locks.get());
+		that.locks = new AtomicLong(me.locks.get());
 		that.timestamp = new AtomicLong(me.timestamp.get());
 		that.isSparse = me.isSparse;
 
@@ -238,9 +236,9 @@ public class GPUObject {
 			t2 = System.nanoTime();
 		cudaMemcpy(Pointer.to(nnzC), nnzTotalDevHostPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevTime.addAndGet(System.nanoTime() - t2);
+			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t2);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevCount.addAndGet(1);
+			GPUStatistics.cudaFromDevCount.add(1);
 
 		if (nnzC[0] == -1) {
 			throw new DMLRuntimeException(
@@ -353,9 +351,9 @@ public class GPUObject {
 						cols));
 		// TODO: What if mat.getNnz() is -1 ?
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaDenseToSparseTime.addAndGet(System.nanoTime() - t0);
+			GPUStatistics.cudaDenseToSparseTime.add(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaDenseToSparseCount.addAndGet(1);
+			GPUStatistics.cudaDenseToSparseCount.add(1);
 	}
 
 	/**
@@ -430,9 +428,9 @@ public class GPUObject {
 		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, end - start);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaSparseToDenseTime.addAndGet(end - start);
+			GPUStatistics.cudaSparseToDenseTime.add(end - start);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaSparseToDenseCount.addAndGet(1);
+			GPUStatistics.cudaSparseToDenseCount.add(1);
 	}
 
 	/**
@@ -560,8 +558,8 @@ public class GPUObject {
 		// If the fill value is 0, no need to call the special kernel, the allocate memsets the allocated region to 0
 		if (v != 0)
 			getGPUContext().getKernels()
-					.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
-							getJcudaDenseMatrixPtr(), v, numElems);
+			.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
+					getJcudaDenseMatrixPtr(), v, numElems);
 	}
 
 	/**
@@ -657,12 +655,12 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
 	private void updateReleaseLocks(int l) throws DMLRuntimeException {
-		int newLocks = locks.addAndGet(l);
+		int newLocks = (int) locks.addAndGet(l);
 		if (newLocks < 0) {
 			throw new CacheException("Internal state error : Invalid number of locks on a GPUObject");
 		}
 
-		LOG.trace("GPU : updateReleaseLocks, new number of locks is " + locks.get() + ", on " + this + ", GPUContext="
+		LOG.trace("GPU : updateReleaseLocks, new number of locks is " + newLocks + ", on " + this + ", GPUContext="
 				+ getGPUContext());
 		GPUContext.EvictionPolicy evictionPolicy = getGPUContext().evictionPolicy;
 		switch (evictionPolicy) {
@@ -802,18 +800,18 @@ public class GPUObject {
 					csrBlock = new SparseBlockCSR(toIntExact(mat.getNumRows()), cooBlock.rowIndexes(),
 							cooBlock.indexes(), cooBlock.values());
 					if (DMLScript.STATISTICS)
-						GPUStatistics.cudaSparseConversionTime.addAndGet(System.nanoTime() - t0);
+						GPUStatistics.cudaSparseConversionTime.add(System.nanoTime() - t0);
 					if (DMLScript.STATISTICS)
-						GPUStatistics.cudaSparseConversionCount.incrementAndGet();
+						GPUStatistics.cudaSparseConversionCount.increment();
 				} else if (block instanceof SparseBlockMCSR) {
 					if (DMLScript.STATISTICS)
 						t0 = System.nanoTime();
 					SparseBlockMCSR mcsrBlock = (SparseBlockMCSR) block;
 					csrBlock = new SparseBlockCSR(mcsrBlock.getRows(), toIntExact(mcsrBlock.size()));
 					if (DMLScript.STATISTICS)
-						GPUStatistics.cudaSparseConversionTime.addAndGet(System.nanoTime() - t0);
+						GPUStatistics.cudaSparseConversionTime.add(System.nanoTime() - t0);
 					if (DMLScript.STATISTICS)
-						GPUStatistics.cudaSparseConversionCount.incrementAndGet();
+						GPUStatistics.cudaSparseConversionCount.increment();
 				} else {
 					throw new DMLRuntimeException("Unsupported sparse matrix format for CUDA operations");
 				}
@@ -848,9 +846,9 @@ public class GPUObject {
 		mat.release();
 
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevTime.addAndGet(System.nanoTime() - start);
+			GPUStatistics.cudaToDevTime.add(System.nanoTime() - start);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevCount.addAndGet(1);
+			GPUStatistics.cudaToDevCount.add(1);
 	}
 
 	public static int toIntExact(long l) throws DMLRuntimeException {
@@ -882,9 +880,9 @@ public class GPUObject {
 			mat.release();
 
 			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevTime.addAndGet(System.nanoTime() - start);
+				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
 			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevCount.addAndGet(1);
+				GPUStatistics.cudaFromDevCount.add(1);
 		} else if (getJcudaSparseMatrixPtr() != null) {
 			if (!LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat))
 				throw new DMLRuntimeException(
@@ -912,9 +910,9 @@ public class GPUObject {
 				mat.acquireModify(tmp);
 				mat.release();
 				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevTime.addAndGet(System.nanoTime() - start);
+					GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
 				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevCount.addAndGet(1);
+					GPUStatistics.cudaFromDevCount.add(1);
 			}
 		} else {
 			throw new DMLRuntimeException(

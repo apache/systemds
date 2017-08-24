@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.MatrixIndexingGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
@@ -128,6 +129,10 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( ">"    , GPUINSTRUCTION_TYPE.RelationalBinary);
 		String2GPUInstructionType.put( "<="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 		String2GPUInstructionType.put( ">="   , GPUINSTRUCTION_TYPE.RelationalBinary);
+		
+		// Indexing 
+		// right indexing: output = X[1:3, 4:5]
+		String2GPUInstructionType.put( "rangeReIndex", GPUINSTRUCTION_TYPE.MatrixIndexing); 
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 
@@ -187,6 +192,9 @@ public class GPUInstructionParser  extends InstructionParser
 			case RelationalBinary:
 				return RelationalBinaryGPUInstruction.parseInstruction(str);
 
+			case MatrixIndexing:
+				return MatrixIndexingGPUInstruction.parseInstruction(str);
+				
 			default: 
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );
 		}

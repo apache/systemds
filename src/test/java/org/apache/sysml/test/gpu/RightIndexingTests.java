@@ -45,7 +45,7 @@ public class RightIndexingTests extends GPUTests {
 	}
 
 	@Test
-	private void runRightIndexingTest() {
+	public void runRightIndexingTest() {
 		int dim1 = Arrays.stream(indexes1).max().getAsInt();
 		int dim2 = Arrays.stream(indexes2).max().getAsInt();
 		for(int i1 = 0; i1 < indexes1.length; i1++) {

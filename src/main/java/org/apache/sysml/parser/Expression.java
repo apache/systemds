@@ -125,6 +125,7 @@ public abstract class Expression
 		SOLVE,
 		SQRT,
 		SUM,
+		SVD,
 		TABLE,
 		TAN,
 		TRACE, 

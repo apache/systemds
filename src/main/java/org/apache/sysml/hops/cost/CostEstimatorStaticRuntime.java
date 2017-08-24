@@ -994,13 +994,15 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//note: should be invoked independently for multiple outputs
 					return d1m * d1n * d1s * DEFAULT_NFLOP_UNKNOWN;
 				
-				case MultiReturnBuiltin: //opcodes: qr, lu, eigen
+				case MultiReturnBuiltin: //opcodes: qr, lu, eigen, svd
 					//note: they all have cubic complexity, the scaling factor refers to commons.math
 					double xf = 2; //default e.g, qr
 					if( optype.equals("eigen") ) 
 						xf = 32;
 					else if ( optype.equals("lu") )
 						xf = 16;
+					else if ( optype.equals("svd"))
+						xf = 32;	// TODO - assuming worst case for now
 					return xf * d1m * d1n * d1n; //for 1kx1k ~ 2GFLOP -> 1s
 					
 				case ParameterizedBuiltin: //opcodes: cdf, invcdf, groupedagg, rmempty

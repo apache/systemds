@@ -168,8 +168,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if (_namespace != null && _namespace.length() > 0 && !_namespace.equals(".defaultNS")) 
-			sb.append(_namespace + "::"); 
+		if (_namespace != null && _namespace.length() > 0 && !_namespace.equals(DMLProgram.DEFAULT_NAMESPACE))
+			sb.append(_namespace + "::");
 		sb.append(_name);
 		sb.append(" ( ");		
 				

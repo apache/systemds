@@ -406,17 +406,17 @@ class matrix(object):
     3. A matrix object can either be evaluated or not.
        If evaluated, the attribute 'data' is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute 'op' is set to None.
        If not evaluated, the attribute 'op' which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute 'data' is set to None.
-    5. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp.
-    6. To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
+    4. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp.
+    5. To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
        As an example: 
        `m1 = sml.matrix(np.ones((3,3)))` creates a matrix object backed by 'data=(np.ones((3,3))'.
        `m1 = m1 * 2` will create a new matrix object which is now backed by 'op=DMLOp( ... )' whose input is earlier created matrix object.
-    7. Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
+    6. Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
        To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
        Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
        left-indexed-matrix = new-deep-copied-matrix
        left-indexed-matrix[index] = value
-    8. Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
+    7. Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
     
        >>> npm = np.ones((3,3))
        >>> m1 = sml.matrix(npm + 3)

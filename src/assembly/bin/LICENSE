@@ -204,6 +204,10 @@
 
 The following components come under the Apache Software License 2.0.
 
+avro-1.7.4.jar
+avro-ipc-1.7.7-tests.jar
+avro-ipc-1.7.7.jar
+avro-mapred-1.7.7-hadoop2.jar
 commons-cli-1.2.jar
 commons-collections-3.2.1.jar
 commons-configuration-1.6.jar

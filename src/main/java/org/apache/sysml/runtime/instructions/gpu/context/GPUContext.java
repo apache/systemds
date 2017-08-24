@@ -147,7 +147,7 @@ public class GPUContext {
 
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
-		
+
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
@@ -269,7 +269,7 @@ public class GPUContext {
 				freeCUDASpaceMap.remove(size);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
 				GPUStatistics
-						.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
+				.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
 		} else {
 			LOG.trace(
 					"GPU : in allocate from instruction " + instructionName + ", allocating new block of size " + (size
@@ -280,9 +280,9 @@ public class GPUContext {
 			A = new Pointer();
 			cudaMalloc(A, size);
 			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
+				GPUStatistics.cudaAllocTime.add(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
+				GPUStatistics.cudaAllocCount.add(statsCount);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE,
 						System.nanoTime() - t0);
@@ -298,9 +298,9 @@ public class GPUContext {
 		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
+			GPUStatistics.cudaMemSet0Time.add(end - t1);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaMemSet0Count.getAndAdd(1);
+			GPUStatistics.cudaMemSet0Count.add(1);
 		cudaBlockSizeMap.put(A, size);
 		return A;
 
@@ -349,32 +349,32 @@ public class GPUContext {
 		long t0 = 0;
 		assert cudaBlockSizeMap.containsKey(
 				toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
-		long size = cudaBlockSizeMap.get(toFree);
-		if (eager) {
-			LOG.trace("GPU : eagerly freeing cuda memory [ " + toFree + " ] for instruction " + instructionName + " on "
-					+ this);
-			if (DMLScript.STATISTICS)
-				t0 = System.nanoTime();
-			cudaFree(toFree);
-			cudaBlockSizeMap.remove(toFree);
-			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime() - t0);
-			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaDeAllocCount.addAndGet(1);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
-				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE,
-						System.nanoTime() - t0);
-		} else {
-			LOG.trace("GPU : lazily freeing cuda memory for instruction " + instructionName + " on " + this);
-			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
-			if (freeList == null) {
-				freeList = new LinkedList<Pointer>();
-				freeCUDASpaceMap.put(size, freeList);
-			}
-			if (freeList.contains(toFree))
-				throw new RuntimeException("GPU : Internal state corrupted, double free");
-			freeList.add(toFree);
-		}
+				long size = cudaBlockSizeMap.get(toFree);
+				if (eager) {
+					LOG.trace("GPU : eagerly freeing cuda memory [ " + toFree + " ] for instruction " + instructionName + " on "
+							+ this);
+					if (DMLScript.STATISTICS)
+						t0 = System.nanoTime();
+					cudaFree(toFree);
+					cudaBlockSizeMap.remove(toFree);
+					if (DMLScript.STATISTICS)
+						GPUStatistics.cudaDeAllocTime.add(System.nanoTime() - t0);
+					if (DMLScript.STATISTICS)
+						GPUStatistics.cudaDeAllocCount.add(1);
+					if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+						GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE,
+								System.nanoTime() - t0);
+				} else {
+					LOG.trace("GPU : lazily freeing cuda memory for instruction " + instructionName + " on " + this);
+					LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
+					if (freeList == null) {
+						freeList = new LinkedList<Pointer>();
+						freeCUDASpaceMap.put(size, freeList);
+					}
+					if (freeList.contains(toFree))
+						throw new RuntimeException("GPU : Internal state corrupted, double free");
+					freeList.add(toFree);
+				}
 	}
 
 	/**
@@ -426,7 +426,7 @@ public class GPUContext {
 	 */
 	protected void evict(String instructionName, final long neededSize) throws DMLRuntimeException {
 		LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
-		GPUStatistics.cudaEvictionCount.addAndGet(1);
+		GPUStatistics.cudaEvictionCount.add(1);
 		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
 		// to free up space
 		LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = freeCUDASpaceMap;

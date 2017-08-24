@@ -196,9 +196,9 @@ public class CSRPointer {
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.val, Pointer.to(values), getDoubleSizeOf(nnz), cudaMemcpyHostToDevice);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevTime.addAndGet(System.nanoTime() - t0);
+			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevCount.addAndGet(3);
+			GPUStatistics.cudaToDevCount.add(3);
 	}
 
 	/**
@@ -220,9 +220,9 @@ public class CSRPointer {
 		cudaMemcpy(Pointer.to(colInd), r.colInd, getIntSizeOf(nnz), cudaMemcpyDeviceToHost);
 		cudaMemcpy(Pointer.to(values), r.val, getDoubleSizeOf(nnz), cudaMemcpyDeviceToHost);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevTime.addAndGet(System.nanoTime() - t0);
+			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevCount.addAndGet(3);
+			GPUStatistics.cudaFromDevCount.add(3);
 	}
 
 	/**

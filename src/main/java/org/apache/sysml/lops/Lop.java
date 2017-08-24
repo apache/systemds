@@ -52,7 +52,7 @@ public abstract class Lop
 		CentralMoment, CoVariance, GroupedAgg, GroupedAggM,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
-		FunctionCallCP, 									//CP function calls 
+		FunctionCallCP, FunctionCallCPSingle,				//CP function calls 
 		CumulativePartialAggregate, CumulativeSplitAggregate, CumulativeOffsetBinary, //MR cumsum/cumprod/cummin/cummax
 		WeightedSquaredLoss, WeightedSigmoid, WeightedDivMM, WeightedCeMM, WeightedUMM,
 		SortKeys, PickValues,

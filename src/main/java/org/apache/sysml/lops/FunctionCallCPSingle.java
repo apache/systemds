@@ -35,28 +35,14 @@ public class FunctionCallCPSingle extends Lop
 {	
 	private String _fnamespace;
 	private String _fname;
-	private String[] _output;
-	private ArrayList<Lop> _outputLops = null;
-
-       public FunctionCallCPSingle(ArrayList<Lop> inputs, String fnamespace, String fname, String[] output, ArrayList<Hop> outputHops, ExecType et) 
-		throws HopsException, LopsException 
-	{
-		this(inputs, fnamespace, fname, output, et);
-		if(outputHops != null) {
-			_outputLops = new ArrayList<Lop>();
-			for(Hop h : outputHops)
-				_outputLops.add( h.constructLops() );
-		}
-	} 
 	
-       public FunctionCallCPSingle(ArrayList<Lop> inputs, String fnamespace, String fname, String[] output, ExecType et) 
+       public FunctionCallCPSingle(ArrayList<Lop> inputs, String fnamespace, String fname, ExecType et) 
 	{
-		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
+		super(Lop.Type.FunctionCallCPSingle, DataType.UNKNOWN, ValueType.UNKNOWN);	
 		//note: data scalar in order to prevent generation of redundant createvar, rmvar
 		
 		_fnamespace = fnamespace;
 		_fname = fname;
-		_output = output;
 		
 		//wire inputs
 		for( Lop in : inputs ) {
@@ -72,13 +58,50 @@ public class FunctionCallCPSingle extends Lop
 		lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
-	public ArrayList<Lop> getFunctionOutputs() {
-		return _outputLops;
-	}
 	
 	@Override
 	public String toString() {
 		return "function call: " + DMLProgram.constructFunctionKey(_fnamespace, _fname);
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
+		return getInstructions(new String[]{input1}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2, input3}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2, input3, input4}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2, input3, input4, input5}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2, input3, input4, input5, input6}, new String[]{output});	
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) throws LopsException {
+		return getInstructions(new String[]{input1, input2, input3, input4, input5, input6, input7}, new String[]{output});
+	}
+	
+	@Override
+	public String getInstructions(String[] inputs, String output) throws LopsException {
+		return getInstructions(inputs, new String[]{output});
 	}
 	
 	/**
@@ -86,7 +109,8 @@ public class FunctionCallCPSingle extends Lop
 	 */
 	@Override
 	public String getInstructions(String[] inputs, String[] output) throws LopsException
-	{		
+	{
+	
 		
 		//Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]:::[list of delimited ouput params]
 		//These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
@@ -105,24 +129,15 @@ public class FunctionCallCPSingle extends Lop
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
-		inst.append(_output.length);
-		inst.append(Lop.OPERAND_DELIMITOR);
-//		inst.append(outputs.length);
+		inst.append("1");
 		
 		for(int i=0; i<inputs.length; i++) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
-
-		for( String out : _output ) {
-			inst.append(Lop.OPERAND_DELIMITOR);
-			inst.append(out);
-		}
-		
-	/*	for( String out : outputs ) {
-		    inst.append(Lop.OPERAND_DELIMITOR);
-			inst.append(out);
-		}*/
+        
+		inst.append(Lop.OPERAND_DELIMITOR);
+		inst.append(output);
 
 		return inst.toString();		
 	}

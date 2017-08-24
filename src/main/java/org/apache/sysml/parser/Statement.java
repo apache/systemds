@@ -110,8 +110,11 @@ public abstract class Statement implements ParseInfo
 		setEndLine(ctx.stop.getLine());
 		setEndColumn(ctx.stop.getCharPositionInLine());
 		// preserve whitespace if possible
-		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1) && (ctx.stop.getStopIndex() != -1)) {
-			String text = ctx.start.getInputStream().getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1)
+				&& (ctx.stop.getStopIndex() != -1) && (ctx.start.getStartIndex() <= ctx.stop.getStopIndex())
+				&& (ctx.start.getInputStream() != null)) {
+			String text = ctx.start.getInputStream()
+					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
 			setText(text);
 		} else {
 			setText(ctx.getText());

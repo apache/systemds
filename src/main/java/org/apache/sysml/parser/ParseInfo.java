@@ -121,8 +121,11 @@ public interface ParseInfo {
 		pi.setEndLine(ctx.stop.getLine());
 		pi.setEndColumn(ctx.stop.getCharPositionInLine());
 		// preserve whitespace if possible
-		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1) && (ctx.stop.getStopIndex() != -1)) {
-			String text = ctx.start.getInputStream().getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1)
+				&& (ctx.stop.getStopIndex() != -1) && (ctx.start.getStartIndex() <= ctx.stop.getStopIndex())
+				&& (ctx.start.getInputStream() != null)) {
+			String text = ctx.start.getInputStream()
+					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
 			pi.setText(text);
 		} else {
 			pi.setText(ctx.getText());

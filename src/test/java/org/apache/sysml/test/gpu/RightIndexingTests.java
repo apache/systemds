@@ -49,9 +49,9 @@ public class RightIndexingTests extends GPUTests {
 		int dim1 = Arrays.stream(indexes1).max().getAsInt();
 		int dim2 = Arrays.stream(indexes2).max().getAsInt();
 		for(int i1 = 0; i1 < indexes1.length; i1++) {
-			for(int i2 = 0; i2 < indexes1.length; i2++) {
+			for(int i2 = i1; i2 < indexes1.length; i2++) {
 				for(int j1 = 0; j1 < indexes2.length; j1++) {
-					for(int j2 = 0; j2 < indexes2.length; j2++) {
+					for(int j2 = j1; j2 < indexes2.length; j2++) {
 						int rl = indexes1[i1]; int ru = indexes1[i2];
 						int cl = indexes2[j1]; int cu = indexes2[j2];
 						for (int k = 0; k < sparsities.length; k++) {

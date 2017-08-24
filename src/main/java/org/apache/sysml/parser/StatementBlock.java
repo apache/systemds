@@ -435,9 +435,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				}
 				StatementBlock sblock = fstmt.getBody().get(0);
 
-				if( fcall.getParamExprs().size() < fstmt.getInputParams().size() ) {
-					sourceExpr.raiseValidateError("Wrong number of function parameters: "+
-						fcall.getParamExprs().size() + ", but " + fstmt.getInputParams().size()+" expected.");
+				if( fcall.getParamExprs().size() != fstmt.getInputParams().size() ) {
+					sourceExpr.raiseValidateError("Wrong number of function input arguments: "+
+						fcall.getParamExprs().size() + " found, but " + fstmt.getInputParams().size()+" expected.");
 				}
 
 				for (int i =0; i < fstmt.getInputParams().size(); i++) {

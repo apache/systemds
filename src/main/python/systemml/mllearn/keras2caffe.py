@@ -70,23 +70,23 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             for i in range(len(batch_list)): #Set None dimensions to 0 for Caffe
                     if( batch_list[i] == None):
                         batch_list[i] = 0
-                        print("Batch size of InputLayer: ")
-                        print(batch_list[i])
+                        #print("Batch size of InputLayer: ")
+                        #print(batch_list[i])
             name = layer.name
             #TODO figure out having 2 tops, with n.label
             n[name] = L.Input(shape=[dict(dim=batch_list)])
-            print(name)
+            #print(name)
         elif type(layer) == keras.layers.Dense:
             #Pull name from Keras
             name = layer.name
             #Pull layer name of the layer passing to current layer
             in_names = getInboundLayers(layer)
             #Pipe names into caffe using unique Keras layer names
-            print("Current Keras layer" + layer.name + " Input Layer:") #debug to assure there are a correct number of layer names (1)
-            print(in_names)
-            print(in_names[0].name)
+            #print("Current Keras layer" + layer.name + " Input Layer:") #debug to assure there are a correct number of layer names (1)
+            #print(in_names)
+            #print(in_names[0].name)
             n[name] = L.InnerProduct(n[in_names[0].name], num_output=layer.units) #TODO: Assert only 1
-            if layer.activation is not None:
+            if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         elif type(layer) == keras.layers.Flatten:
@@ -99,7 +99,17 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             in_names= getInboundLayers(layer)
             n[name] = L.Dropout(n[in_names[0].name], dropout_ratio= layer.rate, in_place=True)
         #elif type(layer) == keras.Layers.LSTM:
-        elif type(layer) == keras.layers.merge.Add:
+        elif type(layer) == keras.layers.Add:
+            name = layer.name
+            in_names= getInboundLayers(layer)
+            #turn list of names into network layers
+            network_layers = []
+            for ref in in_names:
+                network_layers.append(n[ref.name])
+            print(network_layers)
+            #unpack the bottom layers
+            n[name] = L.Eltwise(*network_layers, operation=1) #1 is SUM
+        elif type(layer) == keras.layers.Multiply:
             name = layer.name
             in_names= getInboundLayers(layer)
             #turn list of names into network layers
@@ -107,17 +117,8 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             for ref in in_names:
                 network_layers += n[ref.name]
             #unpack the bottom layers
-            n[name] = L.Eltwise(*network_layers, operation=SUM)
-        elif type(layer) == keras.layers.merge.Multiply:
-            name = layer.name
-            in_names= getInboundLayers(layer)
-            #turn list of names into network layers
-            network_layers = []
-            for ref in in_names:
-                network_layers += n[ref.name]
-            #unpack the bottom layers
-            n[name] = L.Eltwise(*network_layers, operation=PROD)
-        elif type(layer) == keras.layers.merge.Concatenate:
+            n[name] = L.Eltwise(*network_layers, operation=0)
+        elif type(layer) == keras.layers.Concatenate:
             name = layer.name
             in_names= getInboundLayers(layer)
             #turn list of names into network layers
@@ -126,7 +127,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 network_layers += n[ref.name]
             axis = getCompensatedAxis(layer)
             n[name] = L.Concat(*network_layers, axis=axis)
-        elif type(layer) == keras.layers.merge.Maximum:
+        elif type(layer) == keras.layers.Maximum:
             name = layer.name
             in_names= getInboundLayers(layer)
             #turn list of names into network layers
@@ -134,7 +135,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             for ref in in_names:
                 network_layers += n[ref.name]
             #unpack the bottom layers
-            n[name] = L.Eltwise(*network_layers, operation=MAX)
+            n[name] = L.Eltwise(*network_layers, operation=2)
         elif type(layer) == keras.layers.Conv2DTranspose:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -155,7 +156,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             n[name] = L.Deconvolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
                                     stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
-            if layer.activation is not None:
+            if layer.activation is not None and layer.activation.__name__ !='linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         elif type(layer) == keras.layers.BatchNormalization:
@@ -186,7 +187,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             n[name] = L.Convolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
                                     stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
-            if layer.activation is not None:
+            if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         #elif type(layer) == keras.Layers.MaxPooling1D:
@@ -232,7 +233,7 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             in_names = getInboundLayers(layer)
             n[name] = L.ELU(n[in_names[0].name],layer.alpha)
         else:
-            RaiseError("Cannot convert model. " +layer.name + " is not supported.")
+            RaiseError("Cannot convert model. " + layer.name + " is not supported.")
 
     #Determine the loss needed to be added
     for output in kModel.output_layers:
@@ -274,17 +275,14 @@ def getActivation(layer,bottom):
         return L.softmax(bottom) #Cannot extract axis from model, so default to -1
     elif keras.activations.serialize(layer.activation) == 'softsign':
         #Needs to be implemented in caffe2dml
-        RaiseError("softsign is not implemented")
+        raise ValueError("softsign is not implemented")
     elif keras.activations.serialize(layer.activation) == 'elu':
         return L.ELU(bottom)
     elif keras.activations.serialize(layer.activation) == 'selu':
         #Needs to be implemented in caffe2dml 
-        RaiseError("SELU activation is not implemented")
+        raise ValueError("SELU activation is not implemented")
     elif keras.activations.serialize(layer.activation) == 'sigmoid':
         return L.Sigmoid(bottom)
-    elif keras.activations.serialize(layer.activation) == 'linear':
-        #TODO
-        return
     elif keras.activations.serialize(layer.activation) == 'tanh':
         return L.TanH(bottom)
     #To add more acitvaiton functions, add more elif statements with

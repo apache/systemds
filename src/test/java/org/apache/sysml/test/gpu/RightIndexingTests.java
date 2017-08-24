@@ -60,7 +60,8 @@ public class RightIndexingTests extends GPUTests {
 							Matrix Y = generateInputMatrix(spark, dim1, dim2, sparsity, seed);
 							HashMap<String, Object> inputs = new HashMap<>();
 							inputs.put("X", X);
-							String scriptStr = "O = X[" + rl + ":" + ru + "," +  cl + ":" + cu + "]";
+							String scriptStr = "O = X[" + rl + ":" + ru + "," +  cl + ":" + cu + "];";
+							System.out.println("Executing the script: " + scriptStr);
 							List<Object> cpuOut = runOnCPU(spark, scriptStr, inputs, Arrays.asList("O"));
 							List<Object> gpuOut = runOnGPU(spark, scriptStr, inputs, Arrays.asList("O"));
 							assertEqualObjects(cpuOut.get(0), gpuOut.get(0));

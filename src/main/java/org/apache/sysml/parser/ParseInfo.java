@@ -126,9 +126,16 @@ public interface ParseInfo {
 				&& (ctx.start.getInputStream() != null)) {
 			String text = ctx.start.getInputStream()
 					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+			if (text != null) {
+				text = text.trim();
+			}
 			pi.setText(text);
 		} else {
-			pi.setText(ctx.getText());
+			String text = ctx.getText();
+			if (text != null) {
+				text = text.trim();
+			}
+			pi.setText(text);
 		}
 		pi.setFilename(filename);
 		return pi;

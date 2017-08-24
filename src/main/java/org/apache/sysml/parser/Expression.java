@@ -637,9 +637,16 @@ public abstract class Expression implements ParseInfo
 				&& (ctx.start.getInputStream() != null)) {
 			String text = ctx.start.getInputStream()
 					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+			if (text != null) {
+				text = text.trim();
+			}
 			setText(text);
 		} else {
-			setText(ctx.getText());
+			String text = ctx.getText();
+			if (text != null) {
+				text = text.trim();
+			}
+			setText(text);
 		}
 	}
 

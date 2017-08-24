@@ -218,8 +218,8 @@ def convertToNumPyArr(sc, mb):
 # Returns the mean of a model if defined otherwise None
 def getDatasetMean(dataset_name):
     """
-    Input Parameters
-    ----------------
+    Parameters
+    ----------
     dataset_name: Name of the dataset used to train model. This name is artificial name based on dataset used to train the model.
 
     Returns

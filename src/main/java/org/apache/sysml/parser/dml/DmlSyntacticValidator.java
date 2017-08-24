@@ -852,13 +852,14 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				return;
 			}
 			otherParams.put(paramName, val);
-			if(paramName.equals("classname")) {
+			if (paramName.equals(ExternalFunctionStatement.CLASS_NAME)) {
 				atleastOneClassName = true;
 			}
 		}
 		functionStmt.setOtherParams(otherParams);
-		if(!atleastOneClassName) {
-			notifyErrorListeners("the parameter \'className\' needs to be passed for externalFunction", ctx.start);
+		if (!atleastOneClassName) {
+			notifyErrorListeners("The \'" + ExternalFunctionStatement.CLASS_NAME
+					+ "\' argument needs to be passed to the externalFunction 'implemented in' clause.", ctx.start);
 			return;
 		}
 

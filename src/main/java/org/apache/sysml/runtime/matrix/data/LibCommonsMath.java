@@ -26,6 +26,7 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -48,7 +49,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
-		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") );
+		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") || opcode.equals("svd") );
 	}
 	
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
@@ -75,6 +76,8 @@ public class LibCommonsMath
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
 			return computeEigen(in);
+		else if ( opcode.equals("svd"))
+			return computeSvd(in);
 		return null;
 	}
 	
@@ -215,6 +218,33 @@ public class LibCommonsMath
 		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
 
 		return new MatrixBlock[] { mbValues, mbVectors };
+	}
+
+
+	/**
+	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.
+	 * X = U * Sigma * Vt, where X is the input matrix,
+	 * U is the left singular matrix, Sigma is the singular values matrix returned as a
+	 * column matrix and Vt is the transpose of the right singular matrix V.
+	 * However, the returned array has  { U, Sigma, V}
+	 * 
+	 * @param in Input matrix
+	 * @return An array containing U, Sigma & V
+	 * @throws DMLRuntimeException
+	 */
+	private static MatrixBlock[] computeSvd(MatrixObject in) throws DMLRuntimeException {
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+
+		SingularValueDecomposition svd = new SingularValueDecomposition(matrixInput);
+		double[] sigma = svd.getSingularValues();
+		RealMatrix u = svd.getU();
+		RealMatrix v = svd.getV();
+		MatrixBlock U = DataConverter.convertToMatrixBlock(u.getData());
+	        MatrixBlock Sigma = DataConverter.convertToMatrixBlock(sigma, true);
+	        Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(Sigma.rlen, Sigma.rlen, true));
+		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
+
+		return new MatrixBlock[] { U, Sigma, V };
 	}
 	
 	/**

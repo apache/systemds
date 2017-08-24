@@ -90,6 +90,17 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
 		}
+		else if ( opcode.equalsIgnoreCase("svd") ) {
+			CPOperand in1 = new CPOperand(parts[1]);
+
+			// one input and three outputs
+			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[4], ValueType.DOUBLE, DataType.MATRIX) );
+			
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+
+		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}

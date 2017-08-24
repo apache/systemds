@@ -267,10 +267,12 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "qr",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
-		
+		String2CPInstructionType.put( "svd", 	 CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+
 		String2CPInstructionType.put( "partition", 	CPINSTRUCTION_TYPE.Partition);
 		String2CPInstructionType.put( "compress", 	CPINSTRUCTION_TYPE.Compression);
 		String2CPInstructionType.put( "spoof", 		CPINSTRUCTION_TYPE.SpoofFused);
+
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();

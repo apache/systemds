@@ -109,7 +109,7 @@ public class JMLCUtils
 	 * @param outputs registered output variables
 	 * @return list of instructions
 	 */
-	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String[] outputs ) {
+	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String... outputs ) {
 		return cleanupRuntimeInstructions(insts, new HashSet<String>(Arrays.asList(outputs)));
 	}
 	

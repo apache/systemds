@@ -25,7 +25,6 @@ import java.util.ArrayList;
 
 public class IfStatement extends Statement
 {
-	
 	private ConditionalPredicate _predicate;
 	private ArrayList<StatementBlock> _ifBody;
 	private ArrayList<StatementBlock> _elseBody;

@@ -155,7 +155,6 @@ public class OptimizerRuleBased extends Optimizer
 	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 7;    
 	public static final boolean ALLOW_REMOTE_NESTED_PARALLELISM = false;
-	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
 	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
@@ -285,14 +284,11 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 8: rewrite set partition replication factor
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 9: nested parallelism (incl exec types)	
-			boolean flagNested = rewriteNestedParallelism( pn, M1, flagLIX );
-			
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, flagNested );
+			rewriteSetDegreeOfParallelism( pn, M1, false );
 			
 			// rewrite 11: task partitioning 
-			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
+			rewriteSetTaskPartitioner( pn, false, flagLIX );
 			
 			// rewrite 12: fused data partitioning and execution
 			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables());
@@ -357,7 +353,7 @@ public class OptimizerRuleBased extends Optimizer
 
 	protected void analyzeProblemAndInfrastructure( OptNode pn )
 	{
-		_N       = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS)); 
+		_N       = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS));
 		_Nmax    = pn.getMaxProblemSize(); 
 		_lk      = InfrastructureAnalyzer.getLocalParallelism();
 		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
@@ -617,9 +613,9 @@ public class OptimizerRuleBased extends Optimizer
 		//determine if applicable
 		boolean apply = M < _rm   //ops fit in remote memory budget
 			&& !cand.isEmpty()    //at least one MR
-		    && isResultPartitionableAll(cand,pfpb.getResultVariables(), 
-		    		vars, pfpb.getIterablePredicateVars()[0]); // check candidates
-			
+			&& isResultPartitionableAll(cand,pfpb.getResultVariables(), 
+				vars, pfpb.getIterVar()); // check candidates
+		
 		//recompile LIX
 		if( apply )
 		{
@@ -1002,7 +998,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			//find all candidates matrices (at least one partitioned access via iterVar)
 			HashSet<String> cand = new HashSet<String>();
-			rFindDataColocationCandidates(n, cand, pfpb.getIterablePredicateVars()[0]);
+			rFindDataColocationCandidates(n, cand, pfpb.getIterVar());
 			
 			//select largest matrix for colocation (based on nnz to account for sparsity)
 			long nnzMax = Long.MIN_VALUE;
@@ -1016,7 +1012,7 @@ public class OptimizerRuleBased extends Optimizer
 						apply = true;
 					}
 				}
-			}		
+			}
 		}
 		
 		//modify the runtime plan (apply true if at least one candidate)
@@ -1093,7 +1089,7 @@ public class OptimizerRuleBased extends Optimizer
 		if(((n.getExecType()==ExecType.MR && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.name()))
 		    || (n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
 		    && n.hasNestedParallelism(false) 
-		    && n.hasNestedPartitionReads(false) )		
+		    && n.hasNestedPartitionReads(false) )
 		{
 			apply = true;
 			
@@ -1179,73 +1175,6 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set export replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
-
-	
-	///////
-	//REWRITE enable nested parallelism
-	///
-
-	@SuppressWarnings("all")
-	protected boolean rewriteNestedParallelism(OptNode n, double M, boolean flagLIX ) 
-		throws DMLRuntimeException
-	{
-		boolean nested = false;
-	
-		if( APPLY_REWRITE_NESTED_PARALLELISM
-			&& !flagLIX                      // if not applied left indexing rewrite	
-			&& _N >= _rnk 					 // at least exploit all nodes
-			&& !n.hasNestedParallelism(false)// only for 1D problems, otherwise potentially bad load balance
-			&& M * _lkmaxCP <= _rm  )        // only if we can exploit full local parallelism in the map task JVM memory
-		{
-			//modify tree
-			ArrayList<OptNode> tmpOld = n.getChilds();
-			OptNode nest = new OptNode(NodeType.PARFOR, ExecType.CP);
-			ArrayList<OptNode> tmpNew = new ArrayList<OptNode>();
-			tmpNew.add(nest);
-			n.setChilds(tmpNew);
-			nest.setChilds(tmpOld);
-			
-			//modify rtprog
-			long id = n.getID();
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-	                                    .getAbstractPlanMapping().getMappedProg(id)[1];
-			ArrayList<ProgramBlock> tmpPBOld = pfpb.getChildBlocks();
-			
-			//create new program block structure and modify parameters (from, to, incr, types,)
-			String[] iterVars = pfpb.getIterablePredicateVars(); //from, to stay original
-			String[] iterVars2 = iterVars.clone();  //itervar, incr stay original
-			int outIncr = (int)Math.ceil(((double)_N)/_rnk);
-			iterVars[ 0 ] = ParForStatementBlock.INTERAL_FN_INDEX_ROW; // already checked for uniqueness in ParForStatementBlock
-			iterVars[ 3 ] = String.valueOf(outIncr); 		
-			iterVars2[ 1 ] = ParForStatementBlock.INTERAL_FN_INDEX_ROW; //sub start
-			iterVars2[ 2 ] = null;
-			HashMap<String,String> params = pfpb.getParForParams();
-			HashMap<String,String> params2 = (HashMap<String,String>)params.clone();	
-			ParForProgramBlock pfpb2 = new ParForProgramBlock(pfpb.getProgram(),iterVars2, params2);
-			OptTreeConverter.getAbstractPlanMapping().putProgMapping(null, pfpb2, nest);
-			
-			ArrayList<ProgramBlock> tmpPBNew = new ArrayList<ProgramBlock>();
-			tmpPBNew.add(pfpb2);
-			pfpb.setChildBlocks(tmpPBNew);
-			pfpb.setIterablePredicateVars(iterVars);
-			pfpb.setIncrementInstructions(new ArrayList<Instruction>());
-			pfpb.setExecMode(PExecMode.REMOTE_MR);
-			pfpb2.setChildBlocks(tmpPBOld);
-			pfpb2.setResultVariables(pfpb.getResultVariables());
-			pfpb2.setFromInstructions(new ArrayList<Instruction>());
-			pfpb2.setToInstructions(ProgramRecompiler.createNestedParallelismToInstructionSet( ParForStatementBlock.INTERAL_FN_INDEX_ROW, String.valueOf(outIncr-1) ));
-			pfpb2.setIncrementInstructions(new ArrayList<Instruction>());
-			pfpb2.setExecMode(PExecMode.LOCAL);
-		
-			nested = true;
-		}
-
-		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'enable nested parallelism' - result="+nested );
-		
-		return nested;
-	}
-
 	
 	///////
 	//REWRITE set degree of parallelism
@@ -1526,10 +1455,7 @@ public class OptimizerRuleBased extends Optimizer
 			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
 			MatrixObject mo = (MatrixObject)vars.get(moVarname);
 			
-			//check if access via iteration variable and sizes match
-			String iterVarname = pfpb.getIterablePredicateVars()[0];
-			
-			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
+			if( rIsAccessByIterationVariable(pn, moVarname, pfpb.getIterVar()) &&
 			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
 				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N) ||
 				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||
@@ -1540,7 +1466,7 @@ public class OptimizerRuleBased extends Optimizer
 				pn.addParam(ParamType.DATA_PARTITIONER, REMOTE_DPE.toString()+"(fused)");
 				pn.setK( k );
 				
-				pfpb.setExecMode(REMOTE_DPE); //set fused exec type	
+				pfpb.setExecMode(REMOTE_DPE); //set fused exec type
 				pfpb.setDataPartitioner(PDataPartitioner.NONE);
 				pfpb.enableColocatedPartitionedMatrix( moVarname ); 
 				pfpb.setDegreeOfParallelism(k);
@@ -2815,7 +2741,7 @@ public class OptimizerRuleBased extends Optimizer
 
 		ArrayList<String> cleanedVars = new ArrayList<String>();
 		ArrayList<String> resultVars = pfpb.getResultVariables();
-		String itervar = pfpb.getIterablePredicateVars()[0]; 
+		String itervar = pfpb.getIterVar();
 		
 		for( String rvar : resultVars ) {
 			Data dat = ec.getVariable(rvar);

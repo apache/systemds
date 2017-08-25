@@ -34,7 +34,6 @@ import org.apache.sysml.parser.Expression.DataType;
 
 public class IfStatementBlock extends StatementBlock 
 {
-		
 	private Hop _predicateHops;
 	private Lop _predicateLops = null;
 	private boolean _requiresPredicateRecompile = false;

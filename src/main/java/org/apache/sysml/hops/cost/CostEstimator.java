@@ -28,6 +28,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -132,7 +133,7 @@ public abstract class CostEstimator
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
 					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			
-			ret *= getNumIterations(stats, tmp.getIterablePredicateVars());			
+			ret *= getNumIterations(stats, tmp);
 		}		
 		else if ( pb instanceof FunctionProgramBlock 
 				  && !(pb instanceof ExternalFunctionProgramBlock)) //see generic
@@ -631,29 +632,15 @@ public abstract class CostEstimator
 			if( tmp!=null )
 				tmp._inmem = false; //all MR job outptus on HDFS
 		}
-	}	
+	}
 	
-	// TODO use of vars - needed for recompilation w/o exception
-	private int getNumIterations(HashMap<String,VarStats> stats, String[] pred)
-	{
-		int N = DEFAULT_NUMITER;
-		if( pred != null && pred[1]!=null && pred[2]!=null && pred[3]!=null )
-		{
-			try 
-			{
-				int from = Integer.parseInt(pred[1]);
-				int to = Integer.parseInt(pred[2]);
-				int increment = Integer.parseInt(pred[3]);
-				N = (int)Math.ceil(((double)(to-from+1))/increment);
-			}
-			catch(Exception ex){}
-		}           
-		return N;              
+	private long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {
+		return OptimizerUtils.getNumIterations(pb, DEFAULT_NUMITER);
 	}
 
-	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
+	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
 		throws DMLRuntimeException;
 
-	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
+	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
 		throws DMLRuntimeException;
 }

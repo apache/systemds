@@ -67,7 +67,6 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
@@ -211,7 +210,7 @@ public class DMLTranslator
 				
 				for (DataIdentifier id : fstmt.getOutputParams())
 					currentLiveOut.addVariable(id.getName(), id);
-					
+				
 				fsb._liveOut = currentLiveOut;
 				fsb.analyze(currentLiveIn, currentLiveOut);	
 			}
@@ -505,18 +504,6 @@ public class DMLTranslator
 			// create while program block
 			WhileProgramBlock rtpb = new WhileProgramBlock(prog, pred_instruct);
 			
-			if (rtpb.getPredicateResultVar() == null) {
-				// e.g case : WHILE(continue)
-				if ( ((WhileStatementBlock) sb).get_predicateLops().getExecLocation() == LopProperties.ExecLocation.Data ) {
-					String resultVar = ((WhileStatementBlock) sb).get_predicateLops().getOutputParameters().getLabel();
-					rtpb.setPredicateResultVar( resultVar );
-				}
-				else {
-					LOG.error(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
-					throw new LopsException(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
-			
-				}
-			}			
 			//// process the body of the while statement block ////
 			
 			WhileStatementBlock wsb = (WhileStatementBlock)sb;
@@ -541,9 +528,6 @@ public class DMLTranslator
 			
 			retPB = rtpb;
 			
-			//post processing for generating missing instructions
-			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
-			
 			// add statement block
 			retPB.setStatementBlock(sb);
 			
@@ -567,18 +551,6 @@ public class DMLTranslator
 			
 			// create if program block
 			IfProgramBlock rtpb = new IfProgramBlock(prog, pred_instruct);
-			
-			if (rtpb.getPredicateResultVar() == null ) {
-				// e.g case : If(continue)
-				if ( ((IfStatementBlock) sb).get_predicateLops().getExecLocation() == LopProperties.ExecLocation.Data ) {
-					String resultVar = ((IfStatementBlock) sb).get_predicateLops().getOutputParameters().getLabel();
-					rtpb.setPredicateResultVar( resultVar );
-				}
-				else {
-					LOG.error(sb.printBlockErrorLocation() + "Error in translating the IF predicate."); 
-					throw new LopsException(sb.printBlockErrorLocation() + "Error in translating the IF predicate."); 
-				}
-			}
 			
 			// process the body of the if statement block
 			IfStatementBlock isb = (IfStatementBlock)sb;
@@ -621,7 +593,7 @@ public class DMLTranslator
 		// process For Statement - add runtime program blocks to program
 		// NOTE: applies to ForStatementBlock and ParForStatementBlock
 		else if (sb instanceof ForStatementBlock) 
-		{ 
+		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			
 			// create DAGs for loop predicates 
@@ -631,41 +603,36 @@ public class DMLTranslator
 			if( fsb.getFromHops()!=null )
 				fsb.getFromLops().addToDag(fromDag);
 			if( fsb.getToHops()!=null )
-				fsb.getToLops().addToDag(toDag);		
+				fsb.getToLops().addToDag(toDag);
 			if( fsb.getIncrementHops()!=null )
-				fsb.getIncrementLops().addToDag(incrementDag);		
-				
-			// create instructions for loop predicates			
+				fsb.getIncrementLops().addToDag(incrementDag);
+			
+			// create instructions for loop predicates
 			ArrayList<Instruction> fromInstructions = fromDag.getJobs(null, config);
 			ArrayList<Instruction> toInstructions = toDag.getJobs(null, config);
-			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(null, config);		
+			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(null, config);
 
 			// create for program block
 			String sbName = null;
 			ForProgramBlock rtpb = null;
 			IterablePredicate iterPred = fsb.getIterPredicate();
-			String [] iterPredData= IterablePredicate.createIterablePredicateVariables(iterPred.getIterVar().getName(),
-					                                                                   fsb.getFromLops(), fsb.getToLops(), fsb.getIncrementLops()); 
 			
 			if( sb instanceof ParForStatementBlock )
 			{
 				sbName = "ParForStatementBlock";
-				rtpb = new ParForProgramBlock(prog, iterPredData,iterPred.getParForParams());
+				rtpb = new ParForProgramBlock(prog, iterPred.getIterVar().getName(), iterPred.getParForParams());
 				ParForProgramBlock pfrtpb = (ParForProgramBlock)rtpb;
 				pfrtpb.setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
 				pfrtpb.setStatementBlock((ParForStatementBlock)sb); //used for optimization and creating unscoped variables
 			}
-			else //ForStatementBlock
-			{
+			else {//ForStatementBlock
 				sbName = "ForStatementBlock";
-				rtpb = new ForProgramBlock(prog, iterPredData);
+				rtpb = new ForProgramBlock(prog, iterPred.getIterVar().getName());
 			}
-			 
-			rtpb.setFromInstructions(      fromInstructions      );
-			rtpb.setToInstructions(        toInstructions        );
-			rtpb.setIncrementInstructions( incrementInstructions );
 			
-			rtpb.setIterablePredicateVars( iterPredData );
+			rtpb.setFromInstructions(fromInstructions);
+			rtpb.setToInstructions(toInstructions);
+			rtpb.setIncrementInstructions(incrementInstructions);
 			
 			// process the body of the for statement block
 			if (fsb.getNumStatements() > 1){
@@ -1213,7 +1180,7 @@ public class DMLTranslator
 			return;
 		}
 		
-		if (sb instanceof ForStatementBlock) { //NOTE: applies to ForStatementBlock and ParForStatementBlock
+		if (sb instanceof ForStatementBlock) { //incl ParForStatementBlock
 			constructHopsForForControlBlock((ForStatementBlock) sb);
 			return;
 		}
@@ -1222,7 +1189,6 @@ public class DMLTranslator
 			constructHopsForFunctionControlBlock((FunctionStatementBlock) sb);
 			return;
 		}
-		
 		
 		HashMap<String, Hop> ids = new HashMap<String, Hop>();
 		ArrayList<Hop> output = new ArrayList<Hop>();
@@ -1671,6 +1637,12 @@ public class DMLTranslator
 			}
 			predicateHops = processExpression(cp.getPredicate(), null, _ids);
 		}
+		
+		//create transient write to internal variable name on top of expression
+		//in order to ensure proper instruction generation
+		predicateHops = HopRewriteUtils.createDataOp(
+			ProgramBlock.PRED_VAR, predicateHops, DataOpTypes.TRANSIENTWRITE);
+		
 		if (passedSB instanceof WhileStatementBlock)
 			((WhileStatementBlock)passedSB).setPredicateHops(predicateHops);
 		else if (passedSB instanceof IfStatementBlock)
@@ -1691,20 +1663,16 @@ public class DMLTranslator
 		throws ParseException 
 	{
 		HashMap<String, Hop> _ids = new HashMap<String, Hop>();
-			
+		
 		// set iterable predicate 
 		ForStatement fs = (ForStatement) fsb.getStatement(0);
 		IterablePredicate ip = fs.getIterablePredicate();
 	
 		for(int i=0; i < 3; i++) {
-			VariableSet varsRead = null;
-			if (i==0)
-				varsRead = ip.getFromExpr().variablesRead();
-			else if (i==1)
-				varsRead = ip.getToExpr().variablesRead();
-			else if( ip.getIncrementExpr() != null )
-				varsRead = ip.getIncrementExpr().variablesRead();
-
+			Expression expr = (i == 0) ? ip.getFromExpr() : (i == 1) ? ip.getToExpr() :
+				( ip.getIncrementExpr() != null ) ? ip.getIncrementExpr() : null;
+			VariableSet varsRead = (expr != null) ? expr.variablesRead() : null;
+			
 			if(varsRead != null) {
 				for (String varName : varsRead.getVariables().keySet()) {
 					
@@ -1725,42 +1693,22 @@ public class DMLTranslator
 				}
 			}
 			
-			//construct hops for from, to, and increment expressions		
-			if(i==0)
-				fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
-			else if(i==1)
-				fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
-			else if( ip.getIncrementExpr() != null )
-				fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));					
-				
-		}
-		
-		/*VariableSet varsRead = ip.variablesRead();
-		
-		for (String varName : varsRead.getVariables().keySet()) {
+			//create transient write to internal variable name on top of expression
+			//in order to ensure proper instruction generation
+			Hop predicateHops = processTempIntExpression(expr, _ids);
+			if( predicateHops != null )
+				predicateHops = HopRewriteUtils.createDataOp(
+					ProgramBlock.PRED_VAR, predicateHops, DataOpTypes.TRANSIENTWRITE);
 			
-			DataIdentifier var = passedSB.liveIn().getVariable(varName);
-			DataOp read = null;
-			if (var == null) {
-				LOG.error(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
-				throw new ParseException(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
-			}
-			else {
-				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
-				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
-				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
-				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
-			}
-			_ids.put(varName, read);
+			//construct hops for from, to, and increment expressions		
+			if( i == 0 )
+				fsb.setFromHops( predicateHops );
+			else if( i == 1 )
+				fsb.setToHops( predicateHops );
+			else if( ip.getIncrementExpr() != null )
+				fsb.setIncrementHops( predicateHops );
 		}
-
-		//construct hops for from, to, and increment expressions		
-		fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
-		fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
-		fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));*/					
 	}
-	 
 	
 	/**
 	 * Construct Hops from parse tree : Process Expression in an assignment
@@ -1858,11 +1806,13 @@ public class DMLTranslator
 	private Hop processTempIntExpression( Expression source,  HashMap<String, Hop> hops ) 
 		throws ParseException
 	{
+		if( source == null )
+			return null;
+		
 		DataIdentifier tmpOut = createTarget();		
 		tmpOut.setDataType(DataType.SCALAR);
 		tmpOut.setValueType(ValueType.INT);		
 		source.setOutput(tmpOut);
-		
 		return processExpression(source, tmpOut, hops );	
 	}
 	

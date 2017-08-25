@@ -1126,23 +1126,18 @@ public class Recompiler
 	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
-		if( isb != null )
-		{
-			Hop hops = isb.getPredicateHops();
-			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(
-						hops, vars, status, true, false, tid);
-				ipb.setPredicate( tmp );
-				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
-					&& resetRecompile ) 
-				{
-					Hop.resetRecompilationFlag(hops, ExecType.CP);
-					isb.updatePredicateRecompilationFlag();
-				}
-
-				//update predicate vars (potentially after constant folding, e.g., in parfor)
-				if( hops instanceof LiteralOp )
-					ipb.setPredicateResultVar(((LiteralOp)hops).getName().toLowerCase());
+		if( isb == null )
+			return;
+		
+		Hop hops = isb.getPredicateHops();
+		if( hops != null ) {
+			ArrayList<Instruction> tmp = recompileHopsDag(
+				hops, vars, status, true, false, tid);
+			ipb.setPredicate( tmp );
+			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
+				&& resetRecompile ) {
+				Hop.resetRecompilationFlag(hops, ExecType.CP);
+				isb.updatePredicateRecompilationFlag();
 			}
 		}
 	}
@@ -1150,23 +1145,18 @@ public class Recompiler
 	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
-		if( wsb != null )
-		{
-			Hop hops = wsb.getPredicateHops();
-			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(
-					hops, vars, status, true, false, tid);
-				wpb.setPredicate( tmp );
-				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-					&& resetRecompile ) 
-				{
-					Hop.resetRecompilationFlag(hops, ExecType.CP);
-					wsb.updatePredicateRecompilationFlag();
-				}
-				
-				//update predicate vars (potentially after constant folding, e.g., in parfor)
-				if( hops instanceof LiteralOp )
-					wpb.setPredicateResultVar(((LiteralOp)hops).getName().toLowerCase());
+		if( wsb == null )
+			return;
+		
+		Hop hops = wsb.getPredicateHops();
+		if( hops != null ) {
+			ArrayList<Instruction> tmp = recompileHopsDag(
+				hops, vars, status, true, false, tid);
+			wpb.setPredicate( tmp );
+			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
+				&& resetRecompile ) {
+				Hop.resetRecompilationFlag(hops, ExecType.CP);
+				wsb.updatePredicateRecompilationFlag();
 			}
 		}
 	}
@@ -1222,15 +1212,6 @@ public class Recompiler
 					fpb.setIncrementInstructions(tmp);
 				}
 			}
-			
-			//update predicate vars (potentially after constant folding, e.g., in parfor)
-			String[] itervars = fpb.getIterablePredicateVars();
-			if( fromHops != null && fromHops instanceof LiteralOp )
-				itervars[1] = ((LiteralOp)fromHops).getName();
-			if( toHops != null && toHops instanceof LiteralOp )
-				itervars[2] = ((LiteralOp)toHops).getName();
-			if( incrHops != null && incrHops instanceof LiteralOp )
-				itervars[3] = ((LiteralOp)incrHops).getName();	
 		}
 	}
 	

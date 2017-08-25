@@ -46,7 +46,7 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 		if( sb instanceof IfStatementBlock )
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
-			Hop pred = isb.getPredicateHops();
+			Hop pred = isb.getPredicateHops().getInput().get(0);
 			
 			//apply rewrite if literal op (constant value)
 			if( pred instanceof LiteralOp )

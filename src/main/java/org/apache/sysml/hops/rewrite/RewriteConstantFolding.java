@@ -54,7 +54,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
  */
 public class RewriteConstantFolding extends HopRewriteRule
 {
-	
 	private static final String TMP_VARNAME = "__cf_tmp";
 	
 	//reuse basic execution runtime
@@ -69,8 +68,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		if( roots == null )
 			return null;
 
-		for( int i=0; i<roots.size(); i++ )
-		{
+		for( int i=0; i<roots.size(); i++ ) {
 			Hop h = roots.get(i);
 			roots.set(i, rule_ConstantFolding(h));
 		}
@@ -102,8 +100,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		//recursively process childs (before replacement to allow bottom-recursion)
 		//no iterator in order to prevent concurrent modification
-		for( int i=0; i<root.getInput().size(); i++ )
-		{
+		for( int i=0; i<root.getInput().size(); i++ ) {
 			Hop h = root.getInput().get(i);
 			rConstantFoldingExpression(h);
 		}
@@ -112,7 +109,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		//fold binary op if both are literals / unary op if literal
 		if(    root.getDataType() == DataType.SCALAR //scalar ouput
-			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )	
+			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )
 		{ 
 			//core constant folding via runtime instructions
 			try {
@@ -134,7 +131,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		{
 			literal = new LiteralOp(true);
 		}
-									
+		
 		//replace binary operator with folded constant
 		if( literal != null ) 
 		{
@@ -163,8 +160,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 			{
 				root = literal;
 			}
-		}		
-			
+		}
+		
 		
 		//mark processed
 		root.setVisited();
@@ -195,7 +192,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		Dag<Lop> dag = new Dag<Lop>();
 		Recompiler.rClearLops(tmpWrite); //prevent lops reuse
 		Lop lops = tmpWrite.constructLops(); //reconstruct lops
-		lops.addToDag( dag );	
+		lops.addToDag( dag );
 		ArrayList<Instruction> inst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		
 		//execute instructions

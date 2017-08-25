@@ -154,14 +154,11 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			// rewrite 8: rewrite set partition replication factor
 			super.rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 
-			// rewrite 9: nested parallelism (incl exec types)	
-			boolean flagNested = super.rewriteNestedParallelism( pn, M1, flagLIX );
-
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, flagNested );
+			rewriteSetDegreeOfParallelism( pn, M1, false );
 
 			// rewrite 11: task partitioning 
-			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
+			rewriteSetTaskPartitioner( pn, false, flagLIX );
 
 			// rewrite 12: fused data partitioning and execution
 			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables(), tmpmode);
@@ -369,11 +366,10 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		if( emode == PExecMode.REMOTE_MR_DP || emode == PExecMode.REMOTE_SPARK_DP )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-	                  .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 
 			//partitioned matrix
-			if( partitionedMatrices.size()<=0 )
-			{
+			if( partitionedMatrices.size()<=0 ) {
 				LOG.debug(getOptMode()+" OPT: unable to force 'set fused data partitioning and execution' - result="+false );
 				return;
 			}
@@ -381,11 +377,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			String moVarname = partitionedMatrices.keySet().iterator().next();
 			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
 			MatrixObject mo = (MatrixObject)vars.get(moVarname);
-
-			//check if access via iteration variable and sizes match
-			String iterVarname = pfpb.getIterablePredicateVars()[0];
-
-			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
+			
+			if( rIsAccessByIterationVariable(pn, moVarname, pfpb.getIterVar()) &&
 			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
 				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N) ||
 				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||

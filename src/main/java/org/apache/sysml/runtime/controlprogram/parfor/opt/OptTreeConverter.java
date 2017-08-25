@@ -181,8 +181,9 @@ public class OptTreeConverter
 				_rtMap.putMapping(fpb, node);
 			node.setExecType(ExecType.CP);
 			
-			//TODO use constant value if known
-			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
+			//determine number of iterations
+			long N = OptimizerUtils.getNumIterations(fpb, vars, CostEstimator.FACTOR_NUM_ITERATIONS);
+			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(N));
 			
 			node.addChilds( createOptNodes( fpb.getFromInstructions(), vars,storeObjs ) );
 			node.addChilds( createOptNodes( fpb.getToInstructions(), vars,storeObjs ) );
@@ -375,7 +376,9 @@ public class OptTreeConverter
 			node.setExecType(ExecType.CP);
 			node.setLineNumbers(fsb.getBeginLine(), fsb.getEndLine());
 			
-			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
+			//determine number of iterations
+			long N = OptimizerUtils.getNumIterations(fpb, vars, CostEstimator.FACTOR_NUM_ITERATIONS);
+			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(N));
 			
 			//handle predicate
 			fsb.getFromHops().resetVisitStatus();

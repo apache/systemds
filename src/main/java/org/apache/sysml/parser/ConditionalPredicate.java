@@ -21,10 +21,7 @@ package org.apache.sysml.parser;
 
 public class ConditionalPredicate implements ParseInfo
 {
-
-	
-	Expression _expr;
-	
+	private Expression _expr;
 	
 	public ConditionalPredicate(Expression expr){
 		_expr = expr;
@@ -41,7 +38,6 @@ public class ConditionalPredicate implements ParseInfo
 		return _expr.toString();
 	}
 	
-	 
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
 		result.addVariables(_expr.variablesRead());

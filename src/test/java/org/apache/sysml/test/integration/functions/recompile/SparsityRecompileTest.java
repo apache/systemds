@@ -47,8 +47,8 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + SparsityRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 1000;
-	private final static long cols = 500000;    
-	private final static double sparsity = 0.00001d;    
+	private final static long cols = 500000;
+	private final static double sparsity = 0.00001d;
 	private final static double val = 7.0;
 	
 	@Override

@@ -22,13 +22,11 @@ package org.apache.sysml.parser;
 import java.util.HashMap;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.sysml.lops.Lop;
 
 
 public class IterablePredicate extends Expression 
 {
-	
-	private DataIdentifier _iterVar;	// variable being iterated over
+	private DataIdentifier _iterVar; // variable being iterated over
 	private Expression _fromExpr;
 	private Expression _toExpr;
 	private Expression _incrementExpr;
@@ -40,94 +38,62 @@ public class IterablePredicate extends Expression
 		_fromExpr = fromExpr;
 		_toExpr = toExpr;
 		_incrementExpr = incrementExpr;
-
+		
 		_parforParams = parForParamValues;
-		this.setCtxValuesAndFilename(ctx, filename);
-	}
-
-	public String toString()
-	{ 
-		StringBuilder sb = new StringBuilder();
-		sb.append( "(" );
-		sb.append( _iterVar.getName() );
-		sb.append(" in seq(");
-		sb.append(_fromExpr.toString());
-		sb.append(",");
-		sb.append(_toExpr.toString());
-		if (_incrementExpr != null) {
-			sb.append(",");
-			sb.append(_incrementExpr.toString());
-		}
-		sb.append( ")" );
-		if (_parforParams != null && _parforParams.size() > 0){
-			for (String key : _parforParams.keySet())
-			{
-				sb.append( "," );
-				sb.append( key );
-				sb.append( "=" );
-				sb.append( _parforParams.get(key) );
-			}
-		}
-		sb.append( ")" );
-		return sb.toString();
+		setCtxValuesAndFilename(ctx, filename);
 	}
 	
-	 
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		result.addVariables( _fromExpr.variablesRead()      );
-		result.addVariables( _toExpr.variablesRead()        );
+		result.addVariables(_fromExpr.variablesRead());
+		result.addVariables(_toExpr.variablesRead());
 		if( _incrementExpr != null )
 			result.addVariables( _incrementExpr.variablesRead() );
-
 		return result;
 	}
-
-	 
+	
 	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
 		result.addVariable(_iterVar.getName(), _iterVar);
-		
-	 	return result;
+		return result;
 	}
-
+	
 	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		//DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
 		//return new IterablePredicate(newIterVar, _from, _to, _increment);
 		LOG.error(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
 		throw new LanguageException(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
-		
 	}
-
+	
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException 
-	{		
+	{
 		//recursive validate
 		if (_iterVar instanceof FunctionCallIdentifier
 				|| _fromExpr instanceof FunctionCallIdentifier
 				||	_toExpr instanceof FunctionCallIdentifier
 				||	_incrementExpr instanceof FunctionCallIdentifier){
-			raiseValidateError("user-defined function calls not supported for iterable predicates", 
-		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+			raiseValidateError("user-defined function calls not supported for iterable predicates",
+				false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
 		
 		//1) VALIDATE ITERATION VARIABLE (index)
-		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
+		// check the variable has either 1) not been defined already OR 2) defined as integer scalar
 		if (ids.containsKey(_iterVar.getName())){
 			DataIdentifier otherDI = ids.get(_iterVar.getName());
 			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT ){
-				raiseValidateError("iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer", conditional);
-			}	
+				raiseValidateError("iterable predicate in for loop '" + _iterVar.getName()
+					+ "' must be a scalar integer", conditional);
+			}
 		}
 		
 		// set the values for DataIdentifer iterable variable
 		_iterVar.setIntProperties();
-			
+		
 		// add the iterVar to the variable set
 		ids.put(_iterVar.getName(), _iterVar);
-		
 		
 		//2) VALIDATE FOR PREDICATE in (from, to, increment)		
 		// handle default increment if unspecified
@@ -136,7 +102,7 @@ public class IterablePredicate extends Expression
 			ConstIdentifier cTo = (ConstIdentifier) _toExpr;
 			_incrementExpr = new IntIdentifier((cFrom.getLongValue() <= cTo.getLongValue()) ? 1 : -1, this);
 		}
-
+		
 		//recursively validate the individual expression
 		_fromExpr.validateExpression(ids, constVars, conditional);
 		_toExpr.validateExpression(ids, constVars, conditional);
@@ -148,7 +114,7 @@ public class IterablePredicate extends Expression
 		checkNumericScalarOutput( _toExpr );
 		checkNumericScalarOutput( _incrementExpr );
 	}
-		
+	
 	public DataIdentifier getIterVar() {
 		return _iterVar;
 	}
@@ -189,22 +155,34 @@ public class IterablePredicate extends Expression
 		_parforParams = params;
 	}
 	
-	public static String[] createIterablePredicateVariables( String varName, Lop from, Lop to, Lop incr )
+	@Override
+	public String toString()
 	{
-		String[] ret = new String[4]; //varname, from, to, incr
-		
-		ret[0] = varName;
-		
-		if( from.getType()==Lop.Type.Data )
-			ret[1] = from.getOutputParameters().getLabel();
-		if( to.getType()==Lop.Type.Data )
-			ret[2] = to.getOutputParameters().getLabel();
-		if( incr != null && incr.getType()==Lop.Type.Data )
-			ret[3] = incr.getOutputParameters().getLabel();
-		
-		return ret;
+		StringBuilder sb = new StringBuilder();
+		sb.append( "(" );
+		sb.append( _iterVar.getName() );
+		sb.append(" in seq(");
+		sb.append(_fromExpr.toString());
+		sb.append(",");
+		sb.append(_toExpr.toString());
+		if (_incrementExpr != null) {
+			sb.append(",");
+			sb.append(_incrementExpr.toString());
+		}
+		sb.append( ")" );
+		if (_parforParams != null && _parforParams.size() > 0){
+			for (String key : _parforParams.keySet())
+			{
+				sb.append( "," );
+				sb.append( key );
+				sb.append( "=" );
+				sb.append( _parforParams.get(key) );
+			}
+		}
+		sb.append( ")" );
+		return sb.toString();
 	}
-
+	
 	private void checkNumericScalarOutput( Expression expr )
 		throws LanguageException
 	{
@@ -214,12 +192,10 @@ public class IterablePredicate extends Expression
 		Identifier ident = expr.getOutput();
 		if( ident.getDataType() == DataType.MATRIX || ident.getDataType() == DataType.OBJECT ||
 			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BOOLEAN || 
-					                                    ident.getValueType() == ValueType.STRING || 
-					                                    ident.getValueType() == ValueType.OBJECT)) )
+			ident.getValueType() == ValueType.STRING || ident.getValueType() == ValueType.OBJECT)) )
 		{
 			LOG.error(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
 			throw new LanguageException(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
 		}
 	}
-
-} // end class
+}

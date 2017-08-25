@@ -29,7 +29,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class SVDFactorizeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "svd";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + SVDFactorizeTest.class.getSimpleName() + "/";
@@ -41,59 +40,48 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	private final static double sparsity = 0.9;
 	
 	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, 
-				new String[] { "D" })   ); 
+	public void setUp() {
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "D" })   ); 
 	}
 	
 	@Test
-	public void testSVDFactorizeDenseCP() 
-	{
+	public void testSVDFactorizeDenseCP() {
 		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testSVDFactorizeDenseSP() 
-	{
+	public void testSVDFactorizeDenseSP() {
 		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testSVDFactorizeDenseMR() 
-	{
+	public void testSVDFactorizeDenseMR() {
 		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testSVDFactorizeDenseHybrid() 
-	{
+	public void testSVDFactorizeDenseHybrid() {
 		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	@Test
-	public void testLargeSVDFactorizeDenseCP() 
-	{
+	public void testLargeSVDFactorizeDenseCP() {
 		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLargeSVDFactorizeDenseSP() 
-	{
+	public void testLargeSVDFactorizeDenseSP() {
 		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testLargeSVDFactorizeDenseMR() 
-	{
+	public void testLargeSVDFactorizeDenseMR() {
 		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLargeSVDFactorizeDenseHybrid() 
-	{
+	public void testLargeSVDFactorizeDenseHybrid() {
 		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HYBRID );
 	}
 	
@@ -103,8 +91,8 @@ public class SVDFactorizeTest extends AutomatedTestBase
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if( rtplatform == RUNTIME_PLATFORM.SPARK )
-	              DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -127,9 +115,10 @@ public class SVDFactorizeTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, -1);
 			compareResults(1e-8);
 		}
-		finally
-		{
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = rtold;
+			
 		}
 	}
 	

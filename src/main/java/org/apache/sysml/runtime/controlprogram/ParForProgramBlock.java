@@ -300,7 +300,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	//specifics used for optimization
 	protected long             _numIterations   = -1; 
-	protected String[]         _iterablePredicateVarsOriginal = null;
 	
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
@@ -342,10 +341,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		_pwIDSeq = new IDSequence();
 	}
 	
-	public ParForProgramBlock(Program prog, String[] iterPredVars, HashMap<String,String> params) 
+	public ParForProgramBlock(Program prog, String iterPredVar, HashMap<String,String> params) 
 		throws DMLRuntimeException 
 	{
-		this( -1, prog, iterPredVars, params);
+		this( -1, prog, iterPredVar, params);
 	}
 	
 	/**
@@ -358,9 +357,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param params map of parameters
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public ParForProgramBlock(int ID, Program prog, String[] iterPredVars, HashMap<String,String> params) 
+	public ParForProgramBlock(int ID, Program prog, String iterPredVar, HashMap<String,String> params) 
 	{
-		super(prog, iterPredVars);
+		super(prog, iterPredVar);
 
 		//init internal flags according to DML config
 		initInternalConfigurations(ConfigurationManager.getDMLConfig());
@@ -551,38 +550,29 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws DMLRuntimeException
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		
-		// add the iterable predicate variable to the variable set
-		String iterVarName = _iterablePredicateVars[0];
 
 		// evaluate from, to, incr only once (assumption: known at for entry)
 		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
 		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
-		IntObject incr = (_incrementInstructions == null || _incrementInstructions.isEmpty()) && _iterablePredicateVars[3]==null ? 
-				new IntObject((from.getLongValue()<=to.getLongValue()) ? 1 : -1) :
-				executePredicateInstructions( 3, _incrementInstructions, ec );
+		IntObject incr = (_incrementInstructions == null || _incrementInstructions.isEmpty()) ? 
+			new IntObject((from.getLongValue()<=to.getLongValue()) ? 1 : -1) :
+			executePredicateInstructions( 3, _incrementInstructions, ec );
 		
 		if ( incr.getLongValue() == 0 ) //would produce infinite loop
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a non-zero value.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment "
+				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
 		//early exit on num iterations = zero
-		if( computeNumIterations(from, to, incr) <= 0 )
+		_numIterations = computeNumIterations(from, to, incr);
+		if( _numIterations <= 0 )
 			return; //avoid unnecessary optimization/initialization
 		
 		///////
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
 		///////
-		if( _optMode != POptMode.NONE )
-		{
-			updateIterablePredicateVars( iterVarName, from, to, incr );
+		if( _optMode != POptMode.NONE ) {
 			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
-			OptimizationWrapper.optimize( _optMode, sb, this, ec, _monitor ); //core optimize
-			
-			//take changed iterable predicate into account
-			iterVarName = _iterablePredicateVars[0];
-			from = executePredicateInstructions( 1, _fromInstructions, ec );
-			to   = executePredicateInstructions( 2, _toInstructions, ec );
-			incr = executePredicateInstructions( 3, _incrementInstructions, ec );
+			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor); //core optimize
 		}
 		
 		///////
@@ -604,7 +594,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 			
 		// initialize iter var to form value
-		IntObject iterVar = new IntObject(iterVarName, from.getLongValue() );
+		IntObject iterVar = new IntObject(_iterPredVar, from.getLongValue() );
 		
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
@@ -667,8 +657,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		cleanupSharedVariables(ec, varState);
 		
 		//set iteration var to TO value (+ increment) for FOR equivalence
-		iterVar = new IntObject( iterVarName, to.getLongValue() ); //consistent with for
-		ec.setVariable(iterVarName, iterVar);
+		iterVar = new IntObject(_iterPredVar, to.getLongValue()); //consistent with for
+		ec.setVariable(_iterPredVar, iterVar);
 		
 		//ensure that subsequent program blocks never see partitioned data (invalid plans!)
 		//we can replace those variables, because partitioning only applied for read-only matrices
@@ -697,7 +687,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		 //release forced exectypes for fused dp/exec
 		if( _execMode == PExecMode.REMOTE_MR_DP || _execMode == PExecMode.REMOTE_SPARK_DP )
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, _colocatedDPMatrix, ec, false); 
-		resetIterablePredicateVars();
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
 		//execute exit instructions (usually empty)
@@ -1450,34 +1439,33 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		TaskPartitioner tp = null;
 		
-		switch( _taskPartitioner )
-		{
+		switch( _taskPartitioner ) {
 			case FIXED:
-				tp = new TaskPartitionerFixedsize( _taskSize, _iterablePredicateVars[0],
-	                    					   from, to, incr );
+				tp = new TaskPartitionerFixedsize(
+					_taskSize, _iterPredVar, from, to, incr);
 				break;
 			case NAIVE:
-				tp = new TaskPartitionerNaive( _taskSize, _iterablePredicateVars[0],
-                        					   from, to, incr );
+				tp = new TaskPartitionerNaive(
+					_taskSize, _iterPredVar, from, to, incr);
 				break;
 			case STATIC:
-				tp = new TaskPartitionerStatic( _taskSize, _numThreads, _iterablePredicateVars[0],
-                        					   from, to, incr );
+				tp = new TaskPartitionerStatic(
+					_taskSize, _numThreads, _iterPredVar, from, to, incr);
 				break;
 			case FACTORING:
-				tp = new TaskPartitionerFactoring( _taskSize,_numThreads, _iterablePredicateVars[0],
-							                       from, to, incr );
+				tp = new TaskPartitionerFactoring(
+					_taskSize,_numThreads, _iterPredVar, from, to, incr);
 				break;
 			case FACTORING_CMIN:
 				//for constrained factoring the tasksize is used as the minimum constraint
-				tp = new TaskPartitionerFactoringCmin( _taskSize,_numThreads, _taskSize, _iterablePredicateVars[0],
-							                       from, to, incr );
+				tp = new TaskPartitionerFactoringCmin(_taskSize,_numThreads, 
+					_taskSize, _iterPredVar, from, to, incr);
 				break;
 
 			case FACTORING_CMAX:
 				//for constrained factoring the tasksize is used as the minimum constraint
-				tp = new TaskPartitionerFactoringCmax( _taskSize,_numThreads, _taskSize, _iterablePredicateVars[0],
-							                       from, to, incr );
+				tp = new TaskPartitionerFactoringCmax(_taskSize,_numThreads, 
+					_taskSize, _iterPredVar, from, to, incr);
 				break;	
 			default:
 				throw new DMLRuntimeException("Undefined task partitioner: '"+_taskPartitioner+"'.");
@@ -1828,27 +1816,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 	}
-
-	private void updateIterablePredicateVars(String iterVarName, IntObject from, IntObject to, IntObject incr) 
-	{
-		_numIterations = computeNumIterations(from, to, incr); 
-		
-		//keep original iterable predicate
-		_iterablePredicateVarsOriginal = new String[4];
-		System.arraycopy(_iterablePredicateVars, 0, _iterablePredicateVarsOriginal, 0, 4);
-		
-		_iterablePredicateVars[0] = iterVarName;
-		_iterablePredicateVars[1] = from.getStringValue();
-		_iterablePredicateVars[2] = to.getStringValue();
-		_iterablePredicateVars[3] = incr.getStringValue();
-	}
-
-	private void resetIterablePredicateVars()
-	{
-		//reset of modified for optimization (opt!=NONE)
-		if( _iterablePredicateVarsOriginal!=null ) 
-			System.arraycopy(_iterablePredicateVarsOriginal, 0, _iterablePredicateVars, 0, 4);
-	}
 	
 	/**
 	 * NOTE: Only required for remote parfor. Hence, there is no need to transfer DMLConfig to
@@ -1978,15 +1945,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		//reset all state that was set but is not guaranteed to be overwritten by optimizer
 		_variablesDPOriginal.removeAll();
-		_iterablePredicateVarsOriginal = null;
-		_colocatedDPMatrix     = null;
-		_replicationDP         = WRITE_REPLICATION_FACTOR;
-		_replicationExport     = -1;
-		_jvmReuse              = true;
-		_recompileMemoryBudget = -1;
+		_colocatedDPMatrix         = null;
+		_replicationDP             = WRITE_REPLICATION_FACTOR;
+		_replicationExport         = -1;
+		_jvmReuse                  = true;
+		_recompileMemoryBudget     = -1;
 		_enableRuntimePiggybacking = false;
-		_variablesRP           = null;
-		_variablesECache       = null;
+		_variablesRP               = null;
+		_variablesECache           = null;
 	}
 	
 	

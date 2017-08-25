@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -39,13 +40,11 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
-import org.apache.sysml.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
-import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
@@ -53,6 +52,8 @@ import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 public class ProgramBlock implements ParseInfo
 {
+	public static final String PRED_VAR = "__pred";
+	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	private static final boolean CHECK_MATRIX_SPARSITY = false;
 
@@ -188,6 +189,7 @@ public class ProgramBlock implements ParseInfo
 			{
 				tmp = Recompiler.recompileHopsDag(
 					hops, ec.getVariables(), null, false, true, _tid);
+				tmp = JMLCUtils.cleanupRuntimeInstructions(tmp, PRED_VAR);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
@@ -222,40 +224,15 @@ public class ProgramBlock implements ParseInfo
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec)
 		throws DMLRuntimeException
 	{
-		ScalarObject ret = null;
-		String retName = null;
-
- 		//execute all instructions
- 		for (int i = 0; i < inst.size(); i++)
-		{
-			//indexed access required due to debug mode
-			Instruction currInst = inst.get(i);
-			if( !isRemoveVariableInstruction(currInst) )
-			{
-				//execute instruction
-				ec.updateDebugState(i);
-				executeSingleInstruction(currInst, ec);
-
-				//get last return name
-				if(currInst instanceof ComputationCPInstruction )
-					retName = ((ComputationCPInstruction) currInst).getOutputVariableName();
-				else if(currInst instanceof VariableCPInstruction && ((VariableCPInstruction)currInst).getOutputVariableName()!=null)
-					retName = ((VariableCPInstruction)currInst).getOutputVariableName();
-			}
+		//execute all instructions (indexed access required due to debug mode)
+		int pos = 0;
+		for( Instruction currInst : inst ) {
+			ec.updateDebugState(pos++);
+			executeSingleInstruction(currInst, ec);
 		}
-
-		//get return value TODO: how do we differentiate literals and variables?
-		ret = (ScalarObject) ec.getScalarInput(retName, retType, false);
-
-		//execute rmvar instructions
-		for (int i = 0; i < inst.size(); i++) {
-			//indexed access required due to debug mode
-			Instruction currInst = inst.get(i);
-			if( isRemoveVariableInstruction(currInst) ) {
-				ec.updateDebugState(i);
-				executeSingleInstruction(currInst, ec);
-			}
-		}
+		
+		//get scalar return
+		ScalarObject ret = (ScalarObject) ec.getScalarInput(PRED_VAR, retType, false);
 
 		//check and correct scalar ret type (incl save double to int)
 		if( ret.getValueType() != retType )
@@ -268,6 +245,8 @@ public class ProgramBlock implements ParseInfo
 					//do nothing
 			}
 
+		//remove predicate variable
+		ec.removeVariable(PRED_VAR);
 		return ret;
 	}
 
@@ -367,12 +346,7 @@ public class ProgramBlock implements ParseInfo
 				mo.setUpdateType(flags[i]);
 			}
 	}
-
-	private boolean isRemoveVariableInstruction(Instruction inst) {
-		return ( inst instanceof VariableCPInstruction 
-			&& ((VariableCPInstruction)inst).isRemoveVariable() );
-	}
-
+	
 	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{

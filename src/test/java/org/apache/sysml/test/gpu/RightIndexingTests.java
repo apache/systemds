@@ -57,7 +57,7 @@ public class RightIndexingTests extends GPUTests {
 						for (int k = 0; k < sparsities.length; k++) {
 							double sparsity = sparsities[k];
 							Matrix X = generateInputMatrix(spark, dim1, dim2, sparsity, seed);
-							Matrix Y = generateInputMatrix(spark, dim1, dim2, sparsity, seed);
+							//FIXME Matrix Y = generateInputMatrix(spark, dim1, dim2, sparsity, seed);
 							HashMap<String, Object> inputs = new HashMap<>();
 							inputs.put("X", X);
 							String scriptStr = "O = X[" + rl + ":" + ru + "," +  cl + ":" + cu + "];";

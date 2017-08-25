@@ -1558,7 +1558,7 @@ public abstract class Hop implements ParseInfo
 		setDim2( size );
 	}
 
-	public long computeSizeInformation( Hop input )
+	public static long computeSizeInformation( Hop input )
 	{
 		long ret = -1;
 		

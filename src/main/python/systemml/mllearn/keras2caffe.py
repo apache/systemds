@@ -57,8 +57,11 @@ def load_weights_to_model(model,filepath):
 def generate_caffe_model(kModel, input_shape=None, phases=None):
     n = caffe.NetSpec()
     layers = kModel.layers
+    net_params = dict()
 
     for layer in layers:
+        blobs = layer.get_weights()
+        
         if type(layer) == keras.layers.InputLayer:
             #Grab the batchsize from i 0, shift over channels to index 1, and place the rest into the dictionary
             #TODO determine when to transform for layer types/input shape
@@ -86,6 +89,11 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
             #print(in_names)
             #print(in_names[0].name)
             n[name] = L.InnerProduct(n[in_names[0].name], num_output=layer.units) #TODO: Assert only 1
+            config = layer.get_config()
+            if config['use_bias']:
+                net_params[name] = (np.array(blobs[0]).transpose(1, 0), np.array(blobs[1]))
+            else:
+                net_params[name] = (blobs[0])
             if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
@@ -152,17 +160,46 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
             
             #TODO The rest of the arguements including bias, regulizers, dilation,
-            
+            #get bias parameter
+            use_bias = config['use_bias']
+            param = dict(bias_term=use_bias)
             n[name] = L.Deconvolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
-                                    stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
+                                      stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
+                                      convolution_param=param)
+            blobs[0] = np.array(blobs[0]).transpose(3,2,0,1)
+            net_params[name] = blobs
             if layer.activation is not None and layer.activation.__name__ !='linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         elif type(layer) == keras.layers.BatchNormalization:
             name = layer.name
             in_names[0]=getInboundLayers(layer)
-            n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction= layer.momentum, eps = layer.epsilon)
+            n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction= layer.momentum, eps =layer.epsilon,
+                                  in_place=True)
+            variance = np.array(blobs[-1])
+            mean = np.array(blobs[-2])
+            config = layer.get_config()
+
+            param = dict()
+            if config['scale']:
+                gamma = np.array(blobs[-3])
+            else:
+                gamma = np.ones(mean.shape, dtype=np.float32)
+
+            if config['center']:
+                beta = np.array(blobs[0])
+                param['bias_term'] = True
+            else:
+                beta = np.zeros(mean.shape, dtype=np.float32)
+                param['bias_term'] = False
+
+            net_params[name] = (mean, variance, np.array(1.0)) 
+
+            name_scale = name+'_scale'
+            #Scale after batchNorm
+            n[name_scale] = L.Scale(n[name], in_place=True, scale_param=param)
+            net_params[name_scale] = (gamma, beta)
         elif type(layer) == keras.layers.Conv1D:
             name = layer.name
             in_names[0]= getInboundLayers(layer)
@@ -183,18 +220,28 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
             
             #TODO The rest of the arguements including bias, regulizers, dilation,
-            
+            config = layer.get_config()
+            #get bias parameter
+            use_bias = config['use_bias']
+            param = dict(bias_term=use_bias)
             n[name] = L.Convolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
-                                    stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1])
+                                    stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
+                                    convolution_param=param)
+            blobs[0] = np.array(blobs[0]).transpose(3,2,0,1)
+            net_params[name] = blobs
             if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
         #elif type(layer) == keras.Layers.MaxPooling1D:
 
-        elif type(layer) == keras.layers.MaxPooling2D:
+        elif type(layer) == keras.layers.MaxPooling2D or type(layer) == keras.layers.AveragePooling2D:
             name = layer.name
             in_names= getInboundLayers(layer)
+            if type(layer) == keras.layers.MaxPooling2D:
+                pool = P.Pooling.MAX
+            else:
+                pool = P.Pooling.AVE
             #Padding
             #TODO The rest of the arguements including bias, regulizers, dilatin,
             if layer.strides is None:
@@ -209,7 +256,8 @@ def generate_caffe_model(kModel, input_shape=None, phases=None):
                 padding[1] = (layer.input_shape[1]*(stride[1] -1) + layer.pool_size[1] - stride[1]) / 2
             n[name] = L.Pooling(n[in_names[0].name],kernel_h=layer.pool_size[0],
                                     kernel_w=layer.pool_size[1],stride_h=stride[0],
-                                    stride_w= stride[-1],pad_h = padding[0],pad_w= padding[1])
+                                    stride_w=stride[-1],pad_h=padding[0],pad_w=padding[1],
+                                pool=pool)
             #if layer.activation is not None:
                 #name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 #n[name_act] = getActivation(layer,n[name])
@@ -275,12 +323,12 @@ def getActivation(layer,bottom):
         return L.softmax(bottom) #Cannot extract axis from model, so default to -1
     elif keras.activations.serialize(layer.activation) == 'softsign':
         #Needs to be implemented in caffe2dml
-        raise ValueError("softsign is not implemented")
+        raise Exception("softsign is not implemented")
     elif keras.activations.serialize(layer.activation) == 'elu':
         return L.ELU(bottom)
     elif keras.activations.serialize(layer.activation) == 'selu':
         #Needs to be implemented in caffe2dml 
-        raise ValueError("SELU activation is not implemented")
+        raise Exception("SELU activation is not implemented")
     elif keras.activations.serialize(layer.activation) == 'sigmoid':
         return L.Sigmoid(bottom)
     elif keras.activations.serialize(layer.activation) == 'tanh':
@@ -387,5 +435,5 @@ class CaffeSolver:
         f = open(filepath, 'w')
         for key, value in sorted(self.sp.items()):
             if not(type(value) is str):
-                raise TypeError('All solver parameters must be strings')
+                raise Exception('All solver parameters must be strings')
             f.write('%s: %s\n' % (key, value))

@@ -84,7 +84,6 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
 			MatrixBlock dout = _params.input2;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
 			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, false);
 			dout_reshaped.allocateDenseBlock();
 			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);

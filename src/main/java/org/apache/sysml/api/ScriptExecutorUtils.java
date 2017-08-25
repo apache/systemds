@@ -95,7 +95,7 @@ public class ScriptExecutorUtils {
 				ec.setGPUContexts(gCtxs);
 			}
 			rtprog.execute(ec);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			exceptionThrown = true;
 			throw e;
 		} finally { // ensure cleanup/shutdown

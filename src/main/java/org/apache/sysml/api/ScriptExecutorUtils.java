@@ -114,8 +114,12 @@ public class ScriptExecutorUtils {
 					System.out.println(Statistics.display(statisticsMaxHeavyHitters));
 				else
 					System.out.println(Statistics.display());
+			} else {
+				if (statisticsMaxHeavyHitters > 0)
+					System.err.println(Statistics.display(statisticsMaxHeavyHitters));
+				else
+					System.err.println(Statistics.display());
 			}
-
 		}
 	}
 

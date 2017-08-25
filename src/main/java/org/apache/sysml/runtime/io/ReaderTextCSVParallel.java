@@ -95,7 +95,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		clen = ret.getNumColumns();
 
 		// Second Read Pass (read, parse strings, append to matrix block)
-		readCSVMatrixFromHDFS(splits, path, job, ret, rlen, clen, brlen, bclen,
+		readCSVMatrixFromHDFS(splits, path, job, ret, rlen, clen,
 				_props.hasHeader(), _props.getDelim(), _props.isFill(),
 				_props.getFillValue());
 		
@@ -119,11 +119,8 @@ public class ReaderTextCSVParallel extends MatrixReader
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 	
-	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 
-			MatrixBlock dest, long rlen, long clen, int brlen, int bclen, 
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws IOException 
-	{
+	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, MatrixBlock dest, long rlen,
+			long clen, boolean hasHeader, String delim, boolean fill, double fillValue) throws IOException {
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);

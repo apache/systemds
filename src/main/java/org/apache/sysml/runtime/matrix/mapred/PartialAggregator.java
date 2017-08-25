@@ -83,7 +83,7 @@ public class PartialAggregator extends MMCJMRCache
 		}
 	}
 
-	public void aggregateToBuffer(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
+	public void aggregateToBuffer(MatrixIndexes indexes, MatrixValue value)
 		throws IOException, DMLRuntimeException
 	{
 		if( !memOnly )
@@ -100,7 +100,7 @@ public class PartialAggregator extends MMCJMRCache
 			}
 		}
 		
-		aggregateToBufferHelp(indexes, value, leftcached);
+		aggregateToBufferHelp(indexes, value);
 	}
 
 	public long outputToHadoop(CollectMultipleConvertedOutputs outputs, int j, Reporter reporter) 
@@ -132,7 +132,7 @@ public class PartialAggregator extends MMCJMRCache
 		return nonZeros;
 	}
 
-	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
+	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value)
 		throws DMLRuntimeException 
 	{
 		Integer ix = _bufferMap.get( indexes );

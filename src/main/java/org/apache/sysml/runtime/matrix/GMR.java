@@ -189,7 +189,7 @@ public class GMR
 		}
 		
 		boolean resetDistCache = setupDistributedCache(job, instructionsInMapper, 
-				otherInstructionsInReducer, realinputs, realrlens, realclens);
+				otherInstructionsInReducer, realinputs);
 
 		//set up the input files and their format information
 		boolean[] distCacheOnly = getDistCacheOnlyInputs(realIndexes, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer);
@@ -315,9 +315,8 @@ public class GMR
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
-	private static boolean setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
-		throws DMLRuntimeException 
-	{
+	private static boolean setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs)
+			throws DMLRuntimeException {
 		//concatenate mapper and reducer instructions
 		String allInsts = (instMap!=null && !instMap.trim().isEmpty() ) ? instMap : null;
 		if( allInsts==null )

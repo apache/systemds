@@ -51,21 +51,21 @@ public class ConvolutionTransform extends Lop
 	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
 		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, et);
+		init(input, op, et);
 		numThreads = k;
 	}
 	
 	public ConvolutionTransform(Lop input1, Lop input2, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
 		super(Lop.Type.Transform, dt, vt);		
-		init(input1, op, dt, vt, et);
+		init(input1, op, et);
 		numThreads = k;
 		this.addInput(input2);
 		input2.addOutput(this);
 		setLevel();
 	}
 
-	private void init (Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	private void init (Lop input, ConvolutionTransform.OperationTypes op, ExecType et)
 	{
 		operation = op;
  

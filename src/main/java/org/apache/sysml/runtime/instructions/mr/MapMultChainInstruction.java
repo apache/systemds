@@ -197,7 +197,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 				
 				//process instruction
 				if( _chainType == ChainType.XtXv )
-					processXtXvOperations(inIx, inVal, outIx, outVal);
+					processXtXvOperations(inVal, outIx, outVal);
 				else
 					processXtwXvOperations(inIx, inVal, outIx, outVal, _chainType);
 				
@@ -212,15 +212,13 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * Chain implementation for r = (t(X)%*%(X%*%v))
 	 * (implemented as r = (t(t(X%*%v)%*%X))
 	 * 
-	 * @param inIx input matrix indexes
 	 * @param inVal input matrix value
 	 * @param outIx output matrix indexes
 	 * @param outVal output matrix value
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processXtXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal ) 
-		throws DMLRuntimeException
-	{
+	private void processXtXvOperations(MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal)
+			throws DMLRuntimeException {
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
 		MatrixBlock Xi = (MatrixBlock)inVal;
 		MatrixBlock v = (MatrixBlock) dcInput2.getDataBlock(1, 1).getValue();

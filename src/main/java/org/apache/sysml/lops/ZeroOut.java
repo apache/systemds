@@ -29,7 +29,7 @@ public class ZeroOut  extends Lop
 {
 
 	
-	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, ExecType et) {
 		this.addInput(inputMatrix);
 		this.addInput(rowL);
 		this.addInput(rowU);
@@ -64,7 +64,7 @@ public class ZeroOut  extends Lop
 			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
 			throws LopsException {
 		super(Lop.Type.ZeroOut, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
+		init(input, rowL, rowU, colL, colU, et);
 	}
 	
 	private String getOpcode() {

@@ -72,8 +72,8 @@ public class ResultMergeRemoteMR extends ResultMerge
 	//private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
 
-	public ResultMergeRemoteMR(MatrixObject out, MatrixObject[] in, String outputFilename, long pfid, int numMappers, int numReducers, int replication, int max_retry, boolean jvmReuse) 
-	{
+	public ResultMergeRemoteMR(MatrixObject out, MatrixObject[] in, String outputFilename, long pfid, int numMappers,
+			int numReducers, int replication, boolean jvmReuse) {
 		super(out, in, outputFilename);
 		
 		_pfid = pfid;

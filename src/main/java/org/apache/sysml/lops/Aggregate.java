@@ -47,10 +47,10 @@ public class Aggregate extends Lop
 	
 	public Aggregate(Lop input, Aggregate.OperationTypes op, DataType dt, ValueType vt, ExecType et ) {
 		super(Lop.Type.Aggregate, dt, vt);
-		init ( input, op, dt, vt, et );
+		init ( input, op, et );
 	}
 	
-	private void init (Lop input, Aggregate.OperationTypes op, DataType dt, ValueType vt, ExecType et ) {
+	private void init (Lop input, Aggregate.OperationTypes op, ExecType et ) {
 		operation = op;	
 		this.addInput(input);
 		input.addOutput(this);

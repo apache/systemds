@@ -68,23 +68,9 @@ public class FunctionCallSizeInfo
 	 * reachable from the main program. 
 	 * 
 	 * @param fgraph function call graph
-	 * @throws HopsException 
+	 * @throws HopsException if HopsException occurs
 	 */
 	public FunctionCallSizeInfo(FunctionCallGraph fgraph) 
-		throws HopsException 
-	{
-		this(fgraph, true);
-	}
-	
-	/**
-	 * Constructs the function call summary for all functions
-	 * reachable from the main program. 
-	 * 
-	 * @param fgraph function call graph
-	 * @param init initialize function candidates
-	 * @throws HopsException 
-	 */
-	public FunctionCallSizeInfo(FunctionCallGraph fgraph, boolean init) 
 		throws HopsException 
 	{
 		_fgraph = fgraph;

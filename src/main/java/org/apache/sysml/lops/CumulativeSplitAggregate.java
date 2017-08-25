@@ -33,10 +33,10 @@ public class CumulativeSplitAggregate extends Lop
 	{
 		super(Lop.Type.CumulativeSplitAggregate, dt, vt);
 		_initValue = init;
-		init(input, dt, vt, ExecType.MR);
+		init(input, ExecType.MR);
 	}
 	
-	private void init(Lop input, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lop input, ExecType et) {
 		this.addInput(input);
 		input.addOutput(this);
 

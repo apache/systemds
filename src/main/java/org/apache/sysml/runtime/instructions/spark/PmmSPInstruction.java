@@ -102,7 +102,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		
 		//execute pmm instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.flatMapToPair( new RDDPMMFunction(_type, in2, rlen, mc.getRowsPerBlock()) );
+				.flatMapToPair( new RDDPMMFunction(in2, rlen, mc.getRowsPerBlock()) );
 		out = RDDAggregateUtils.sumByKeyStable(out, false);
 		
 		//put output RDD handle into symbol table
@@ -122,7 +122,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		private long _rlen = -1;
 		private int _brlen = -1;
 		
-		public RDDPMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput, long rlen, int brlen ) 
+		public RDDPMMFunction(PartitionedBroadcast<MatrixBlock> binput, long rlen, int brlen )
 			throws DMLRuntimeException
 		{
 			_brlen = brlen;

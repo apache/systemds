@@ -48,13 +48,12 @@ public class GroupedAggregateM extends Lop
 	public GroupedAggregateM(HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, boolean partitioned, ExecType et) {		
 		super(Lop.Type.GroupedAggM, dt, vt);
-		init(inputParameterLops, dt, vt, et);
+		init(inputParameterLops, et);
 		_inputParams = inputParameterLops;
 		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 
-	private void init(HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt, ExecType et) 
+	private void init(HashMap<String, Lop> inputParameterLops, ExecType et)
 	{
 		addInput(inputParameterLops.get(Statement.GAGG_TARGET));
 		inputParameterLops.get(Statement.GAGG_TARGET).addOutput(this);

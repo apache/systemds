@@ -67,9 +67,9 @@ public class ReaderTextCell extends MatrixReader
 	
 		//core read 
 		if( fs.isDirectory(path) )
-			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
+			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen);
 		else
-			readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, _isMMFile);
+			readRawTextCellMatrixFromHDFS(path, fs, ret, rlen, clen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !ret.isInSparseFormat() )
@@ -87,7 +87,7 @@ public class ReaderTextCell extends MatrixReader
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, true, false);
 	
 		//core read 
-		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, _isMMFile);
+		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !ret.isInSparseFormat() )
@@ -97,7 +97,7 @@ public class ReaderTextCell extends MatrixReader
 		return ret;
 	}
 
-	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen)
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -159,17 +159,17 @@ public class ReaderTextCell extends MatrixReader
 		}
 	}
 
-	private void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private void readRawTextCellMatrixFromHDFS( Path path, FileSystem fs, MatrixBlock dest, long rlen, long clen, boolean matrixMarket )
 		throws IOException
 	{
 		//create input stream for path
 		InputStream inputStream = fs.open(path);
 		
 		//actual read
-		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, brlen, bclen, matrixMarket);
+		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, matrixMarket);
 	}
 
-	private void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, boolean matrixMarket)
 			throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	

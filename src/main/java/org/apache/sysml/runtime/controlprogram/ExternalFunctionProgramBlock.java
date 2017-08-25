@@ -120,7 +120,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		createInstructions();
 	}
 	
-	private void changeTmpInput( long id, ExecutionContext ec )
+	private void changeTmpInput( ExecutionContext ec )
 	{
 		ArrayList<DataIdentifier> inputParams = getInputParams();
 		block2CellInst = getBlock2CellInstructions(inputParams, _unblockedFileNames);
@@ -137,12 +137,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * It is necessary to change the local temporary files as only file handles are passed out
 	 * by the external function program block.
-	 * 
-	 * 
-	 * @param id this field does nothing
 	 */
-	private void changeTmpOutput( long id )
-	{
+	private void changeTmpOutput() {
 		ArrayList<DataIdentifier> outputParams = getOutputParams();
 		cell2BlockInst = getCell2BlockInstructions(outputParams, _blockedFileNames);
 	}
@@ -162,8 +158,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	{
 		_runID = _idSeq.getNextID();
 		
-		changeTmpInput( _runID, ec ); 
-		changeTmpOutput( _runID );
+		changeTmpInput(ec);
+		changeTmpOutput();
 		
 		// export input variables to HDFS (see RunMRJobs)
 		ArrayList<DataIdentifier> inputParams = null;

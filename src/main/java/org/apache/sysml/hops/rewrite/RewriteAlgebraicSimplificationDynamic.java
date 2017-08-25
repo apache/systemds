@@ -161,7 +161,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if dims(in)==dims(out); r(X)->X, if 1x1 dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
-				hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
+				hi = fuseDatagenAndReorgOperation(hi, i);     //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyColSumsMVMult(hop, hi, i);           //e.g., colSums(X*Y) -> t(Y) %*% X, if Y col vector
@@ -177,7 +177,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
-			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
+			hi = pushdownBinaryOperationOnDiag(hi);           //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = pushdownSumOnAdditiveBinary(hop, hi, i);     //e.g., sum(A+B) -> sum(A)+sum(B); if dims(A)==dims(B)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
 				hi = simplifyWeightedSquaredLoss(hop, hi, i);     //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true), 
@@ -189,8 +189,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = fuseSumSquared(hop, hi, i);                  //e.g., sum(X^2) -> sumSq(X), if ncol(X)>1
 				hi = fuseAxpyBinaryOperationChain(hop, hi, i);    //e.g., (X+s*Y) -> (X+*s Y), (X-s*Y) -> (X-*s Y) 	
 			}
-			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
-			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product / wsloss
+			hi = reorderMinusMatrixMult(hi);                  //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
+			hi = simplifySumMatrixMult(hi);                   //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product / wsloss
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
 			hi = simplifyScalarMVBinaryOperation(hi);         //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
@@ -457,7 +457,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	@SuppressWarnings("unchecked")
-	private Hop fuseDatagenAndReorgOperation(Hop parent, Hop hi, int pos)
+	private Hop fuseDatagenAndReorgOperation(Hop hi, int pos)
 	{
 		if( HopRewriteUtils.isTransposeOperation(hi)
 			&& hi.getInput().get(0) instanceof DataGenOp                       //datagen
@@ -1058,7 +1058,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	@SuppressWarnings("unchecked")
-	private Hop pushdownBinaryOperationOnDiag(Hop parent, Hop hi, int pos) 
+	private Hop pushdownBinaryOperationOnDiag(Hop hi)
 	{
 		//diag(X)*7 --> diag(X*7) in order to (1) reduce required memory for b(*) and
 		//(2) in order to make the binary operation more efficient (dense vector vs sparse matrix)
@@ -2313,14 +2313,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * NOTE: in this rewrite we need to modify the links to all parents because we 
 	 * remove existing links of subdags and hence affect all consumers.
 	 * 
-	 * @param parent the parent high-level operator
 	 * @param hi high-level operator
-	 * @param pos position
 	 * @return high-level operator
 	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unchecked")
-	private Hop reorderMinusMatrixMult(Hop parent, Hop hi, int pos) 
+	private Hop reorderMinusMatrixMult(Hop hi)
 		throws HopsException
 	{
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y
@@ -2402,7 +2400,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 
 
-	private Hop simplifySumMatrixMult(Hop parent, Hop hi, int pos)
+	private Hop simplifySumMatrixMult(Hop hi)
 	{
 		//sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), later rewritten to dot-product
 		//colSums(A%*%B) -> colSums(A)%*%B

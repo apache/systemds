@@ -75,7 +75,7 @@ public class PartialAggregate extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, ExecType.MR);
+		init(input, op, direct, ExecType.MR);
 	}
 
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
@@ -83,7 +83,7 @@ public class PartialAggregate extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, et);
+		init(input, op, direct, et);
 		_numThreads = k;
 	}
 	
@@ -92,23 +92,19 @@ public class PartialAggregate extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, et);
+		init(input, op, direct, et);
 		_aggtype = aggtype;
 	}
 	
 	/**
-	 * Constructor to setup a partial aggregate operation.
+	 * Init method to setup a partial aggregate operation.
 	 * 
 	 * @param input low-level operator
 	 * @param op aggregate operation type
-	 * @param direct partial aggregate directon type
-	 * @param dt data type
-	 * @param vt value type
+	 * @param direct partial aggregate direction type
 	 * @param et execution type
 	 */
-	private void init(Lop input,
-			Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lop input, Aggregate.OperationTypes op, PartialAggregate.DirectionTypes direct, ExecType et) {
 		operation = op;
 		direction = direct;
 		this.addInput(input);

@@ -1007,7 +1007,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			// If number of columns is smaller than block size then explicit aggregation is not required.
 			// i.e., entire matrix multiplication can be performed in the mappers.
 			boolean needAgg = requiresAggregation(method); 
-			boolean needPart = requiresPartitioning(method, false);
+			boolean needPart = requiresPartitioning(method);
 			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 			
 			//pre partitioning 
@@ -1076,7 +1076,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
 		boolean needAgg = ( X.getDim1() <= 0 || X.getDim1() > X.getRowsInBlock() ); 
-		boolean needPart = requiresPartitioning(MMultMethod.MAPMM_R, true); //R disregarding transpose rewrite
+		boolean needPart = requiresPartitioning(MMultMethod.MAPMM_R); //R disregarding transpose rewrite
 		
 		//pre partitioning
 		Lop dcinput = null;
@@ -1464,7 +1464,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
         return ret;
 	}
 
-	private boolean requiresPartitioning(MMultMethod method, boolean rewrite) 
+	private boolean requiresPartitioning(MMultMethod method)
 	{
 		boolean ret = true; //worst-case
 		Hop input1 = getInput().get(0);

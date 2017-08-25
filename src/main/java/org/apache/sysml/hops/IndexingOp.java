@@ -270,9 +270,9 @@ public class IndexingOp extends Hop
 			Hop cl = getInput().get(3);
 			Hop cu = getInput().get(4);
 			if( isBlockIndexingExpression(rl, ru) )
-				ret[0] = getBlockIndexingExpressionSize(rl, ru);
+				ret[0] = getBlockIndexingExpressionSize(ru);
 			if( isBlockIndexingExpression(cl, cu) )
-				ret[1] = getBlockIndexingExpressionSize(cl, cu);
+				ret[1] = getBlockIndexingExpressionSize(cu);
 		}
 		
 		return ret;
@@ -350,7 +350,7 @@ public class IndexingOp extends Hop
 		return OptimizerUtils.isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
 	}
 
-	private long getBlockIndexingExpressionSize(Hop lbound, Hop ubound) 
+	private long getBlockIndexingExpressionSize(Hop ubound)
 	{
 		//NOTE: ensure consistency with isBlockIndexingExpression
 		LiteralOp c = (LiteralOp) ubound.getInput().get(0); //(c*i)
@@ -437,7 +437,7 @@ public class IndexingOp extends Hop
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input2)+1 );
 		}
 		else if( isBlockIndexingExpression(input2, input3) ) {
-			setDim1(getBlockIndexingExpressionSize(input2, input3));
+			setDim1(getBlockIndexingExpressionSize(input3));
 		}
 		
 		if( _colLowerEqualsUpper ) //COLS
@@ -451,7 +451,7 @@ public class IndexingOp extends Hop
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input4)+1 );
 		}
 		else if( isBlockIndexingExpression(input4, input5) ) {
-			setDim2(getBlockIndexingExpressionSize(input4, input5));
+			setDim2(getBlockIndexingExpressionSize(input5));
 		}
 	}
 	

@@ -93,7 +93,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 	
 		//core read 
-		readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen, _isMMFile);
+		readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, _isMMFile);
 
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -104,13 +104,13 @@ public class ReaderTextCellParallel extends MatrixReader
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz)
 		throws IOException, DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 	
-	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, boolean matrixMarket )
 		throws IOException
 	{
 		int par = _numThreads;

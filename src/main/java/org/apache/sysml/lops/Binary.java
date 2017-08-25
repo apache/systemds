@@ -60,20 +60,19 @@ public class Binary extends Lop
 	
 	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.Binary, dt, vt);
-		init(input1, input2, op, dt, vt, et);	
+		init(input1, input2, op, et);
 		numThreads = k;
 	}
 	
 	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, 
 			boolean isLeftTransposed, boolean isRightTransposed) {
 		super(Lop.Type.Binary, dt, vt);
-		init(input1, input2, op, dt, vt, et);
+		init(input1, input2, op, et);
 		this.isLeftTransposed = isLeftTransposed;
 		this.isRightTransposed = isRightTransposed;
 	}
 	
-	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
 		operation = op;
 		this.addInput(input1);
 		this.addInput(input2);

@@ -59,23 +59,22 @@ public class Transform extends Lop
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
 		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, et);
+		init(input, op, et);
 		_numThreads = k;
 	}
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) {
 		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, ExecType.MR);
+		init(input, op, ExecType.MR);
 	}
 
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
 		super(Lop.Type.Transform, dt, vt);		
 		_bSortIndInMem = bSortIndInMem;
-		init(input, op, dt, vt, et);
+		init(input, op, et);
 	}
 	
-	private void init (Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init(Lop input, Transform.OperationTypes op, ExecType et) {
 		operation = op;
  
 		this.addInput(input);

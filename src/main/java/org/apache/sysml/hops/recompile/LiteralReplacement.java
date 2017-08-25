@@ -67,7 +67,7 @@ public class LiteralReplacement
 				//conditional apply of literal replacements
 				lit = (lit==null) ? replaceLiteralScalarRead(c, vars) : lit;
 				lit = (lit==null) ? replaceLiteralValueTypeCastScalarRead(c, vars) : lit;
-				lit = (lit==null) ? replaceLiteralValueTypeCastLiteral(c, vars) : lit;
+				lit = (lit==null) ? replaceLiteralValueTypeCastLiteral(c) : lit;
 				if( !scalarsOnly ) {
 					lit = (lit==null) ? replaceLiteralDataTypeCastMatrixRead(c, vars) : lit;
 					lit = (lit==null) ? replaceLiteralValueTypeCastRightIndexing(c, vars) : lit;
@@ -172,7 +172,7 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	private static LiteralOp replaceLiteralValueTypeCastLiteral( Hop c, LocalVariableMap vars ) 
+	private static LiteralOp replaceLiteralValueTypeCastLiteral( Hop c)
 		throws DMLRuntimeException
 	{
 		LiteralOp ret = null;

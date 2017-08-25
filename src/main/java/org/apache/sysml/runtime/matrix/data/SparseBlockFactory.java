@@ -29,7 +29,7 @@ public abstract class SparseBlockFactory
 
 	public static SparseBlock createSparseBlock(SparseBlock.Type type, int rlen) {
 		switch( type ) {
-			case MCSR: return new SparseBlockMCSR(rlen, -1);
+			case MCSR: return new SparseBlockMCSR(rlen);
 			case CSR: return new SparseBlockCSR(rlen);
 			case COO: return new SparseBlockCOO(rlen);
 			default:

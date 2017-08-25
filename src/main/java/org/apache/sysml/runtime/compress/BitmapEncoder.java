@@ -71,7 +71,7 @@ public class BitmapEncoder
 				reader = new ReaderColumnSelectionDense(rawblock, colIndices,
 						!CompressedMatrixBlock.MATERIALIZE_ZEROS); 
 			
-			return extractBitmap(colIndices, rawblock, reader);
+			return extractBitmap(colIndices, reader);
 		}
 	}
 
@@ -87,9 +87,8 @@ public class BitmapEncoder
 		}
 		//multiple column selection	(general case)
 		else {			
-			return extractBitmap(colIndices, rawblock,
-					new ReaderColumnSelectionDenseSample(rawblock, colIndices,
-							sampleIndexes, !CompressedMatrixBlock.MATERIALIZE_ZEROS));	
+			return extractBitmap(colIndices, new ReaderColumnSelectionDenseSample(rawblock, colIndices, sampleIndexes,
+					!CompressedMatrixBlock.MATERIALIZE_ZEROS));
 		}
 	}
 
@@ -337,9 +336,7 @@ public class BitmapEncoder
 		return new UncompressedBitmap(distinctVals);
 	}
 
-	private static UncompressedBitmap extractBitmap(int[] colIndices,
-			MatrixBlock rawblock, ReaderColumnSelection rowReader) 
-	{
+	private static UncompressedBitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader) {
 		//probe map for distinct items (for value or value groups)
 		DblArrayIntListHashMap distinctVals = new DblArrayIntListHashMap();
 		

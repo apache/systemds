@@ -287,7 +287,7 @@ public class OptTreeConverter
 		}
 		
 		//create statistics 
-		OptNodeStatistics stats = analyzeStatistics(inst, node, vars);
+		OptNodeStatistics stats = analyzeStatistics();
 		node.setStatistics(stats);
 		
 		return node;
@@ -678,9 +678,7 @@ public class OptTreeConverter
 		return ret;
 	}	
 
-	private static OptNodeStatistics analyzeStatistics(Instruction inst, OptNode on, LocalVariableMap vars) 
-		throws DMLRuntimeException 
-	{
+	private static OptNodeStatistics analyzeStatistics() throws DMLRuntimeException {
 		//since the performance test tool for offline profiling has been removed,
 		//we return default values
 		

@@ -67,7 +67,7 @@ public class ReaderTextCSV extends MatrixReader
 		checkValidInputFile(fs, path); 
 	
 		//core read 
-		ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, 
+		ret = readCSVMatrixFromHDFS(path, fs, ret, clen,
 				   _props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue() );
 		
 		//finally check if change of sparse/dense block representation required
@@ -85,8 +85,8 @@ public class ReaderTextCSV extends MatrixReader
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
 		//core read 
-		long lnnz = readCSVMatrixFromInputStream(is, "external inputstream", ret, new MutableInt(0), rlen, clen, 
-			brlen, bclen, _props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), true);
+		long lnnz = readCSVMatrixFromInputStream(is, "external inputstream", ret, new MutableInt(0), clen,
+			_props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), true);
 				
 		//finally check if change of sparse/dense block representation required
 		ret.setNonZeros( lnnz );
@@ -96,8 +96,8 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	@SuppressWarnings("unchecked")
-	private MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
-			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
+	private MatrixBlock readCSVMatrixFromHDFS( Path path, FileSystem fs, MatrixBlock dest,
+			long clen, boolean hasHeader, String delim, boolean fill, double fillValue )
 		throws IOException, DMLRuntimeException
 	{
 		//prepare file paths in alphanumeric order
@@ -112,7 +112,7 @@ public class ReaderTextCSV extends MatrixReader
 		
 		//determine matrix size via additional pass if required
 		if ( dest == null ) {
-			dest = computeCSVSize(files, job, fs, hasHeader, delim, fill, fillValue);
+			dest = computeCSVSize(files, fs, hasHeader, delim);
 			clen = dest.getNumColumns();
 		}
 		
@@ -120,8 +120,8 @@ public class ReaderTextCSV extends MatrixReader
 		long lnnz = 0;
 		MutableInt row = new MutableInt(0);
 		for(int fileNo=0; fileNo<files.size(); fileNo++) {
-			lnnz += readCSVMatrixFromInputStream(fs.open(files.get(fileNo)), path.toString(), dest, 
-				row, rlen, clen, brlen, bclen, hasHeader, delim, fill, fillValue, fileNo==0);
+			lnnz += readCSVMatrixFromInputStream(fs.open(files.get(fileNo)), path.toString(), dest,
+				row, clen, hasHeader, delim, fill, fillValue, fileNo==0);
 		}
 		
 		//post processing
@@ -131,7 +131,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	private long readCSVMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos, 
-			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue, boolean first )
+			long clen, boolean hasHeader, String delim, boolean fill, double fillValue, boolean first )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -221,9 +221,8 @@ public class ReaderTextCSV extends MatrixReader
 		return lnnz;
 	}
 
-	private MatrixBlock computeCSVSize( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws IOException, DMLRuntimeException 
-	{		
+	private MatrixBlock computeCSVSize(List<Path> files, FileSystem fs, boolean hasHeader, String delim)
+			throws IOException, DMLRuntimeException {
 		int nrow = -1;
 		int ncol = -1;
 		String value = null;

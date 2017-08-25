@@ -42,7 +42,6 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -235,11 +234,9 @@ public class CSVReblockMR
 		return smallestFile;
 	}
 	
-	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-			int[] brlens, int[] bclens, String reblockInstructions, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
-			String[] outputs, OutputInfo[] outputInfos) throws Exception 
-	{
+	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, int[] brlens,
+			int[] bclens, String reblockInstructions, String otherInstructionsInReducer, int numReducers,
+			int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) throws Exception {
 		String[] smallestFiles=new String[inputs.length];
 		JobConf job=new JobConf();
 		for(int i=0; i<inputs.length; i++)
@@ -276,8 +273,9 @@ public class CSVReblockMR
 		for(int i=0; i<rlens.length; i++)
 			if( (rlens[i]>0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>0 && clens[i]!=ret1.clens[i]) )
 				throw new RuntimeException("Dimension doesn't mach for input matrix "+i+", expected ("+rlens[i]+", "+clens[i]+") but real ("+ret1.rlens[i]+", "+ret1.clens[i]+")");
-		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
-				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile, smallestFiles);
+		JobReturn ret = CSVReblockMR.runCSVReblockJob(inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens,
+				reblockInstructions, otherInstructionsInReducer, replication, resultIndexes, outputs,
+				outputInfos, ret1.counterFile, smallestFiles);
 		return ret;
 	}
 		
@@ -354,12 +352,10 @@ public class CSVReblockMR
 		return ret;
 	}
 	
-	private static JobReturn runCSVReblockJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-			int[] brlens, int[] bclens, String reblockInstructions, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
-			String[] outputs, OutputInfo[] outputInfos, Path counterFile, String[] smallestFiles) 
-	throws Exception
-	{
+	private static JobReturn runCSVReblockJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens,
+			int[] brlens, int[] bclens, String reblockInstructions, String otherInstructionsInReducer,
+			int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos, Path counterFile,
+			String[] smallestFiles) throws Exception {
 		JobConf job;
 		job = new JobConf(ReblockMR.class);
 		job.setJobName("CSV-Reblock-MR");

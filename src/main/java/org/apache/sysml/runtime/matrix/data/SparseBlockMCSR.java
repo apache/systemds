@@ -85,7 +85,7 @@ public class SparseBlockMCSR extends SparseBlock
 		}
 	}
 	
-	public SparseBlockMCSR(int rlen, int clen) {
+	public SparseBlockMCSR(int rlen) {
 		_rows = new SparseRow[rlen];
 	}
 	

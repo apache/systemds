@@ -842,15 +842,15 @@ public class RandSPInstruction extends UnarySPInstruction
 	 * @param sparsity sparsity ratio
 	 * @param min minimum value
 	 * @param max maximum value
-	 * @return
+	 * @return true if sufficient memory available locally
 	 */
 	private boolean isMemAvail(long lRows, long lCols, double sparsity, double min, double max) 
 	{
-		double size = (min == 0 && max == 0) ? OptimizerUtils.estimateSizeEmptyBlock(rows, cols):
-												OptimizerUtils.estimateSizeExactSparsity(rows, cols, sparsity);
+		double size = (min == 0 && max == 0) ? OptimizerUtils.estimateSizeEmptyBlock(lRows, lCols):
+												OptimizerUtils.estimateSizeExactSparsity(lRows, lCols, sparsity);
 		
-		return ( OptimizerUtils.isValidCPDimensions(rows, cols)
-				 && OptimizerUtils.isValidCPMatrixSize(rows, cols, sparsity) 
+		return ( OptimizerUtils.isValidCPDimensions(lRows, lCols)
+				 && OptimizerUtils.isValidCPMatrixSize(lRows, lCols, sparsity)
 				 && size < OptimizerUtils.getLocalMemBudget() );
 	}	
 

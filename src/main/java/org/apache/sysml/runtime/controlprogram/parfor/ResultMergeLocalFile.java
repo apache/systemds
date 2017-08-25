@@ -187,14 +187,14 @@ public class ResultMergeLocalFile extends ResultMerge
 			if(withCompare)
 				mergeTextCellWithComp(fnameNew, outMo, inMO);
 			else
-				mergeTextCellWithoutComp( fnameNew, outMo, inMO );
+				mergeTextCellWithoutComp(fnameNew, inMO);
 		}
 		else if( oi == OutputInfo.BinaryCellOutputInfo )
 		{
 			if(withCompare)
 				mergeBinaryCellWithComp(fnameNew, outMo, inMO);
 			else
-				mergeBinaryCellWithoutComp( fnameNew, outMo, inMO );
+				mergeBinaryCellWithoutComp(fnameNew, inMO);
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo )
 		{
@@ -205,9 +205,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
-	{
+	private void mergeTextCellWithoutComp(String fnameNew, ArrayList<MatrixObject> inMO) throws DMLRuntimeException {
 		try
 		{
 			//delete target file if already exists
@@ -307,9 +305,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	@SuppressWarnings("deprecation")
-	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
-	{
+	private void mergeBinaryCellWithoutComp(String fnameNew, ArrayList<MatrixObject> inMO) throws DMLRuntimeException {
 		try
 		{	
 			//delete target file if already exists

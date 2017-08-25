@@ -1057,7 +1057,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		double lsparsity = ((double)nnz/nrows)/ncols;
 		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
 		
-		double sizeUltraSparse = estimateSizeUltraSparseOnDisk( nrows, ncols, nnz );
+		double sizeUltraSparse = estimateSizeUltraSparseOnDisk( ncols, nnz );
 		double sizeSparse = estimateSizeSparseOnDisk(nrows, ncols, nnz);
 		double sizeDense = estimateSizeDenseOnDisk(nrows, ncols);
 		
@@ -2356,7 +2356,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if(sparseBlock==null || lnonZeros==0)
 				return HEADER_SIZE; //empty block
 			else if( lnonZeros<lrlen && sparseDst )
-				return estimateSizeUltraSparseOnDisk(lrlen, lclen, lnonZeros); //ultra sparse block
+				return estimateSizeUltraSparseOnDisk(lclen, lnonZeros); //ultra sparse block
 			else if( sparseDst )
 				return estimateSizeSparseOnDisk(lrlen, lclen, lnonZeros); //sparse block
 			else 
@@ -2368,7 +2368,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if(denseBlock==null || lnonZeros==0)
 				return HEADER_SIZE; //empty block
 			else if( lnonZeros<lrlen && sparseDst )
-				return estimateSizeUltraSparseOnDisk(lrlen, lclen, lnonZeros); //ultra sparse block
+				return estimateSizeUltraSparseOnDisk(lclen, lnonZeros); //ultra sparse block
 			else if( sparseDst )
 				return estimateSizeSparseOnDisk(lrlen, lclen, lnonZeros); //sparse block
 			else
@@ -2438,7 +2438,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//estimate memory consumption for sparse/dense 
 		if( sparse && nnz<nrows )
-			return estimateSizeUltraSparseOnDisk(nrows, ncols, nnz);
+			return estimateSizeUltraSparseOnDisk(ncols, nnz);
 		else if( sparse )
 			return estimateSizeSparseOnDisk(nrows, ncols, nnz);
 		else
@@ -2467,7 +2467,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return size;
 	}
 
-	private static long estimateSizeUltraSparseOnDisk( long nrows, long ncols, long nnz )
+	private static long estimateSizeUltraSparseOnDisk(long ncols, long nnz )
 	{
 		//basic header (int rlen, int clen, byte type) 
 		long size = HEADER_SIZE;
@@ -2551,7 +2551,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatInMemory(finalRlen, finalClen, ennz); 
 	}
 	
-	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, long nnzm1, long rlenm2, long clenm2, long nnzm2)
+	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, long nnzm1, long nnzm2)
 	{
 		//min bound: nnzm1 - rlenm2*clenm2 + nnzm2
 		//max bound: min(rlenm1*rlenm2, nnzm1+nnzm2)
@@ -3657,8 +3657,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		MatrixBlock result = ret;		
-		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 
-				     rhsMatrix.getNumRows(), rhsMatrix.getNumColumns(), rhsMatrix.getNonZeros());
+		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, rhsMatrix.getNonZeros());
 		
 		if( !update.isInPlace() ) //general case
 		{
@@ -3747,7 +3746,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException 
 	{
 		double inVal = scalar.getDoubleValue();
-		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 1, 1, (inVal!=0)?1:0);
+		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, (inVal!=0)?1:0);
 		
 		if( !update.isInPlace() ) //general case
 		{
@@ -3962,10 +3961,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			{
 				int r=(int)range.rowStart;
 				for(; r<Math.min(Math.min(rowCut, sparseBlock.numRows()), range.rowEnd+1); r++)
-					sliceHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockColFactor);
 				
 				for(; r<=Math.min(range.rowEnd, sparseBlock.numRows()-1); r++)
-					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockColFactor);
 				//System.out.println("in: \n"+this);
 				//System.out.println("outlist: \n"+outlist);
 			}
@@ -3998,7 +3997,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 	
-	private void sliceHelp(int r, IndexRange range, int colCut, MatrixBlock left, MatrixBlock right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
+	private void sliceHelp(int r, IndexRange range, int colCut, MatrixBlock left, MatrixBlock right, int rowOffset, int normalBlockColFactor)
 	{
 		if(sparseBlock.isEmpty(r)) 
 			return;
@@ -4230,7 +4229,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixAgg.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
 		}
 		else if(op.sparseSafe)
-			sparseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
+			sparseAggregateUnaryHelp(op, ret);
 		else
 			denseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		
@@ -4240,8 +4239,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 	
-	private void sparseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result,
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) throws DMLRuntimeException
+	private void sparseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result) throws DMLRuntimeException
 	{
 		//initialize result
 		if(op.aggOp.initialValue!=0)

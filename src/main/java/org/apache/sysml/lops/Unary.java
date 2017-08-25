@@ -66,10 +66,10 @@ public class Unary extends Lop
 	 */
 	public Unary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UNARY, dt, vt);
-		init(input1, input2, op, dt, vt, et);
+		init(input1, input2, op, et);
 	}
 
-	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
 		operation = op;
 
 		if (input1.getDataType() == DataType.MATRIX)
@@ -118,13 +118,11 @@ public class Unary extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.UNARY, dt, vt);
-		init(input1, op, dt, vt, et);
+		init(input1, op, et);
 		_numThreads = numThreads;
 	}
 
-	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
-	{
+	private void init(Lop input1, OperationTypes op, ExecType et) throws LopsException {
 		//sanity check
 		if ( (op == OperationTypes.INVERSE || op == OperationTypes.CHOLESKY)
 			 && (et == ExecType.SPARK || et == ExecType.MR) ) {

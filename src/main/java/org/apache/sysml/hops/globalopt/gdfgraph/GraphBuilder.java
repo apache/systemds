@@ -98,7 +98,7 @@ public class GraphBuilder
 			WhileStatementBlock wsb = (WhileStatementBlock) pb.getStatementBlock();		
 			//construct predicate node (conceptually sequence of from/to/incr)
 			GDFNode pred = constructGDFGraph(wsb.getPredicateHops(), wpb, new HashMap<Long, GDFNode>(), roots);
-			HashMap<String,GDFNode> inputs = constructLoopInputNodes(wpb, wsb, roots);
+			HashMap<String,GDFNode> inputs = constructLoopInputNodes(wsb, roots);
 			HashMap<String,GDFNode> lroots = (HashMap<String, GDFNode>) inputs.clone();
 			//process childs blocks
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
@@ -134,7 +134,7 @@ public class GraphBuilder
 			ForStatementBlock fsb = (ForStatementBlock)pb.getStatementBlock();
 			//construct predicate node (conceptually sequence of from/to/incr)
 			GDFNode pred = constructForPredicateNode(fpb, fsb, roots);
-			HashMap<String,GDFNode> inputs = constructLoopInputNodes(fpb, fsb, roots);
+			HashMap<String,GDFNode> inputs = constructLoopInputNodes(fsb, roots);
 			HashMap<String,GDFNode> lroots = (HashMap<String, GDFNode>) inputs.clone();
 			//process childs blocks
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
@@ -220,7 +220,7 @@ public class GraphBuilder
 		return pred;
 	}
 	
-	private static HashMap<String, GDFNode> constructLoopInputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots ) 
+	private static HashMap<String, GDFNode> constructLoopInputNodes(StatementBlock fsb, HashMap<String, GDFNode> roots)
 		throws DMLRuntimeException
 	{
 		HashMap<String, GDFNode> ret = new HashMap<String, GDFNode>();

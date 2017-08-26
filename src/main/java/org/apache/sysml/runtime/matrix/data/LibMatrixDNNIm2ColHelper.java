@@ -287,6 +287,7 @@ public class LibMatrixDNNIm2ColHelper {
 		@Override
 		public void execute(int n) {
 			if( !input.sparseBlock.isEmpty(n) ) {
+				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);
@@ -345,10 +346,10 @@ public class LibMatrixDNNIm2ColHelper {
 				int outRowIndex = cInput*RS + r*S + s;
 				int h = r - pad_h;
 				// And copy it to outputArray[i] (taking care of padding & striding)
-				for (int p = P-1; p > 0; p--, h += stride_h) {
+				for (int p = 0; p < P; p++, h += stride_h) {
 					if (h == hInput) {
 						int w = s - pad_w;
-						for (int q = Q-1; q > 0; q--, w += stride_w) {
+						for (int q = 0; q < Q; q++, w += stride_w) {
 							if (w == wInput) {
 								// chw -> [crs, pq]
 								output.appendValue(outRowIndex, p*Q + q, value);
@@ -387,6 +388,7 @@ public class LibMatrixDNNIm2ColHelper {
 		@Override
 		public void execute(int n, int cInput) {
 			if( !input.sparseBlock.isEmpty(n) ) {
+				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);

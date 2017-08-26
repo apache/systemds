@@ -49,7 +49,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
 	protected final double THRESHOLD = 1e-9;    // for relative error
-
+	private static final boolean PRINT_MAT_ERROR = false;
+	
 	@BeforeClass
 	public static void beforeClass() {
 		spark = createSystemMLSparkSession("GPUTests", "local");
@@ -184,6 +185,39 @@ public abstract class GPUTests extends AutomatedTestBase {
 		genMLC.close();
 		return in1;
 	}
+	
+	private void printMatrixIfNotEqual(MatrixBlock expectedMB, MatrixBlock actualMB) {
+		long rows = expectedMB.getNumRows();
+		long cols = expectedMB.getNumColumns();
+		boolean matrixNotEqual = false;
+		for (int i = 0; i < rows && !matrixNotEqual; i++) {
+			for (int j = 0; j < cols; j++) {
+				double expectedDouble = expectedMB.quickGetValue(i, j);
+				double actualDouble = actualMB.quickGetValue(i, j);
+				if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
+					double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+					if(relativeError >= getTHRESHOLD()) {
+						matrixNotEqual = true;
+						break;
+					}
+				}
+			}
+		}
+		if(matrixNotEqual) {
+			System.out.println("Expected mb != Actual mb. Mismatches are as follows:");
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					double expectedDouble = expectedMB.quickGetValue(i, j);
+					double actualDouble = actualMB.quickGetValue(i, j);
+					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) 
+						System.out.print("(" + i + "," + j  + " : " + expectedDouble + " != " + actualDouble + ") ");
+				}
+			}
+			System.out.println();
+		}
+		else
+			System.out.println("Expected mb = Actual mb");
+	}
 
 	/**
 	 * Asserts that the values in two matrices are in {@link UnaryOpTests#THRESHOLD} of each other
@@ -201,6 +235,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 			Assert.assertEquals(rows, actualMB.getNumRows());
 			Assert.assertEquals(cols, actualMB.getNumColumns());
 
+			if(PRINT_MAT_ERROR) printMatrixIfNotEqual(expectedMB, actualMB);
+			
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
 					double expectedDouble = expectedMB.quickGetValue(i, j);

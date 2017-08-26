@@ -87,7 +87,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 	private final List<Integer> Rlst = Arrays.asList(3);
 	private final List<Integer> strideLst = Arrays.asList(1);
 	private final List<Integer> padLst = Arrays.asList(1);
-	private final List<Double> sparsitylst = Arrays.asList(1.0, 0.1, 0.3);
+	private final List<Double> sparsitylst = Arrays.asList(1.0, 0.1);
 
 	@Override
 	public void setUp() {
@@ -101,7 +101,6 @@ public class NeuralNetworkOpTests extends GPUTests {
 		return 1e-5;
 	}
 
-	@Ignore
 	@Test
 	public void testConv2d() {
 		String scriptStr = "O = conv2d(image, filter, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], filter_shape=[K,C,R,S])";
@@ -254,7 +253,6 @@ public class NeuralNetworkOpTests extends GPUTests {
 		clearGPUMemory();
 	}
 
-	@Ignore
 	@Test
 	public void testConv2dBackwardFilter() {
 		String scriptStr = "O = conv2d_backward_filter(image, dout, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], filter_shape=[K,C,R,S])";
@@ -338,7 +336,6 @@ public class NeuralNetworkOpTests extends GPUTests {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testConv2dBackwardData() {
 		String scriptStr = "O = conv2d_backward_data(filter, dout, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], filter_shape=[K,C,R,S])";
@@ -423,7 +420,6 @@ public class NeuralNetworkOpTests extends GPUTests {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testMaxPool() {
 		String scriptStr = "O = max_pool(image, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S])";
@@ -501,7 +497,6 @@ public class NeuralNetworkOpTests extends GPUTests {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testMaxPoolBackward() {
 		String scriptStr = "O = max_pool_backward(image, dout, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S])";

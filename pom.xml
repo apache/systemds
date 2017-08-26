@@ -897,6 +897,8 @@
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example/dummycoded.column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
+								<!-- Perftest requirement file -->
+								<exclude>scripts/perftest/python/requirements.txt</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

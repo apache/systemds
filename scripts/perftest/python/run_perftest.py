@@ -233,10 +233,11 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
 
         conf_packet = config_packets_train(algos_to_run, mat_type, mat_shape, data_gen_dir,
                                            train_dir, DENSE_TYPE_ALGOS, train_config_dir)
-        for algo_name, config_files in conf_packet.items():
+        for algo_family_name, config_files in conf_packet.items():
             for config in config_files:
+                algo_name = algo_family_name.split('.')[0]
                 file_name = ML_TRAIN[algo_name]
-                algorithm_workflow(algo_name, exec_type, config, file_name, 'train', train_dir)
+                algorithm_workflow(algo_family_name, exec_type, config, file_name, 'train', train_dir)
 
     if 'predict' in mode:
         # Create config directories
@@ -255,10 +256,12 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
         conf_packet = config_packets_predict(algos_to_run, mat_type, mat_shape, data_gen_dir,
                                              train_dir, predict_dir, DENSE_TYPE_ALGOS,
                                              predict_config_dir)
-        for algo_name, config_files in conf_packet.items():
+
+        for algo_family_name, config_files in conf_packet.items():
                 for config in config_files:
+                    algo_name = algo_family_name.split('.')[0]
                     file_name = ML_PREDICT[algo_name]
-                    algorithm_workflow(algo_name, exec_type, config, file_name, 'predict', predict_dir)
+                    algorithm_workflow(algo_family_name, exec_type, config, file_name, 'predict', predict_dir)
 
 
 if __name__ == '__main__':
@@ -290,12 +293,28 @@ if __name__ == '__main__':
     # Families
     all_families = ML_ALGO.keys()
 
+    # Default Conf
+    default_conf = 'spark.driver.maxResultSize=0 ' \
+                   'spark.akka.frameSize=128 ' \
+                   'spark.network.timeout=6000s ' \
+                   'spark.rpc.askTimeout=6000s ' \
+                   'spark.memory.useLegacyMode=true ' \
+                   'spark.files.useFetchCache=false' \
+
+
+    default_conf_big_job = 'spark.executor.extraJavaOptions=\"-Xmn5500m\" ' \
+                           'spark.executor.memory=\"-Xms50g\" ' \
+                           'spark.yarn.executor.memoryOverhead=8250 ' \
+                           'spark.driver.extraJavaOptions=\"-Xms20g -Xmn2g\"'
+
+
+
     # Argparse Module
     cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                       description='SystemML Performance Test Script')
     cparser.add_argument('--family', help='space separated list of classes of algorithms '
                          '(available : ' + ', '.join(sorted(all_families)) + ')',
-                         metavar='', choices=all_families, nargs='+', default=' '.join(all_families))
+                         metavar='', choices=all_families, nargs='+', default=all_families)
     cparser.add_argument('--algo', help='space separated list of algorithm to run '
                          '(Overrides --family, available : ' + ', '.join(sorted(all_algos)) + ')', metavar='',
                          choices=all_algos, nargs='+')
@@ -335,11 +354,12 @@ if __name__ == '__main__':
     cparser.add_argument('--num-executors', help='Number of executors to launch', metavar='')
     cparser.add_argument('--executor-memory', help='Memory per executor', metavar='')
     cparser.add_argument('--executor-cores', help='Number of cores', metavar='')
-    cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
+    cparser.add_argument('--conf', help='Spark configuration parameters, please use these '
+                                        'parameters for large performance tests ' + default_conf_big_job,
+                         default=default_conf, nargs='+', metavar='')
 
     # Single node execution mode options
     cparser.add_argument('-heapmem', help='maximum JVM heap memory', metavar='', default='8g')
-
 
     # Args is a namespace
     args = cparser.parse_args()
@@ -358,19 +378,7 @@ if __name__ == '__main__':
         print('length of --mat-type argument cannot be greater than two')
         sys.exit()
 
-    # Check for validity of input arguments
-    if args.family is not None:
-        for fam in args.family:
-            if fam not in ML_ALGO.keys():
-                print('{} family not present in the performance test suit'.format(fam))
-                sys.exit()
-
     if args.algo is not None:
-        for algo in args.algo:
-            if algo not in all_algos:
-                print('{} algorithm not present in the performance test suit'.format(args.algo))
-                sys.exit()
-
         # This section check the validity of dual datagen algorithms like m-svm
         algo_families = {}
         for current_algo in args.algo:
@@ -385,9 +393,8 @@ if __name__ == '__main__':
             input_families = set(args.family)
             common_families = input_families.intersection(valid_families)
             if len(common_families) == 0:
-                print('Please specify a valid family for {} and the '
-                      'valid families are {}'.format(current_algo, ' '.join(valid_families)))
-                sys.exit()
+                sys.exit('Please specify a valid family for {} and the '
+                         'valid families are {}'.format(current_algo, ' '.join(valid_families)))
 
     # Set level to 0 -> debug mode
     # Set level to 20 -> Plain metrics

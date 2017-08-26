@@ -46,7 +46,8 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
     Based on extract we return the relevant string
     """
     # Debug
-    #print(cmd_string)
+    # print(cmd_string)
+
     exec_command = shlex.split(cmd_string)
     proc1 = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -81,6 +82,7 @@ def parse_hdfs_base(std_outs):
     return: String
     hdfs base uri
     """
+
     hdfs_uri = None
     for line in std_outs:
         if line.startswith('hdfs://'):
@@ -94,6 +96,7 @@ def write_logs(std_outs, log_file_path):
     """
     Write all logs to the specified location
     """
+
     with open(log_file_path, 'w')as log:
         log.write("\n".join(std_outs))
 
@@ -108,6 +111,7 @@ def get_all_logs(process):
     return: List, List
     Std out and Error as logs as list
     """
+
     out_arr = []
     while True:
         nextline = process.stdout.readline().decode('utf8').strip()

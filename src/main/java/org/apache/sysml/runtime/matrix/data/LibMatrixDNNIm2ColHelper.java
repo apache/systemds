@@ -305,7 +305,10 @@ public class LibMatrixDNNIm2ColHelper {
 							R, S, P, Q, stride_h, stride_w, pad_h, pad_w);
 				}
 				output.sortSparseRows();
+				output.recomputeNonZeros();
 			}
+			else
+				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 		}
 	}
 	
@@ -397,7 +400,10 @@ public class LibMatrixDNNIm2ColHelper {
 					}
 				}
 				output.sortSparseRows();
+				output.recomputeNonZeros();
 			}
+			else
+				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 		}
 		
 	}

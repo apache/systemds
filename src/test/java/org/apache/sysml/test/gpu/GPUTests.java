@@ -139,7 +139,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		genMLC.close();
 		return in1;
 	}
-
+	
 	/**
 	 * Generates a random input matrix with a given size and sparsity
 	 *
@@ -152,6 +152,22 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return a random matrix with given size and sparsity
 	 */
 	protected Matrix generateInputMatrix(SparkSession spark, int m, int n, double min, double max, double sparsity, int seed) {
+		return generateInputMatrix(spark, m, n, min, max, sparsity, seed, false);
+	}
+
+	/**
+	 * Generates a random input matrix with a given size and sparsity
+	 *
+	 * @param spark    valid instance of {@link SparkSession}
+	 * @param m        number of rows
+	 * @param n        number of columns
+	 * @param min      min for RNG
+	 * @param max      max for RNG
+	 * @param sparsity sparsity (1 = completely dense, 0 = completely sparse)
+	 * @param performRounding performs rounding after generation of random matrix
+	 * @return a random matrix with given size and sparsity
+	 */
+	protected Matrix generateInputMatrix(SparkSession spark, int m, int n, double min, double max, double sparsity, int seed, boolean performRounding) {
 		// Generate a random matrix of size m * n
 		MLContext genMLC = new MLContext(spark);
 		String scriptStr;
@@ -160,6 +176,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 		} else {
 			scriptStr = "in1 = rand(rows=" + m + ", cols=" + n + ", sparsity = " + sparsity + ", seed= " + seed
 					+ ", min=" + min + ", max=" + max + ")";
+			if(performRounding)
+				scriptStr += "; in1 = round(in1)";
 		}
 		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
 		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");

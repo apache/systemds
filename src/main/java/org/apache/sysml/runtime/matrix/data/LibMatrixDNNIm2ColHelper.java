@@ -344,18 +344,13 @@ public class LibMatrixDNNIm2ColHelper {
 		for(int r = 0; r < R; r++) {
 			for(int s = 0; s < S; s++) {
 				int outRowIndex = cInput*RS + r*S + s;
-				int h = r - pad_h;
-				// And copy it to outputArray[i] (taking care of padding & striding)
-				for (int p = 0; p < P; p++, h += stride_h) {
-					if (h == hInput) {
-						int w = s - pad_w;
-						for (int q = 0; q < Q; q++, w += stride_w) {
-							if (w == wInput) {
-								// chw -> [crs, pq]
-								output.appendValue(outRowIndex, p*Q + q, value);
-							}
-						}
-					}
+				// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+				// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
+				int p = (hInput - r + pad_h)  / stride_h;
+				int q = (wInput - s + pad_w)  / stride_w;
+				if(0 <= p && p < P && 0 <= q && q < Q) {
+					// chw -> [crs, pq]
+					output.appendValue(outRowIndex, p*Q + q, value);
 				}
 			}
 		}

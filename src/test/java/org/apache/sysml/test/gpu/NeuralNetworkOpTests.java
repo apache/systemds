@@ -83,11 +83,11 @@ public class NeuralNetworkOpTests extends GPUTests {
 	private final List<Integer> Nlst = Arrays.asList(32);
 	private final List<Integer> Clst = Arrays.asList(3);
 	private final List<Integer> Hlst = Arrays.asList(64);
-	private final List<Integer> Klst = Arrays.asList(20);
-	private final List<Integer> Rlst = Arrays.asList(3);
-	private final List<Integer> strideLst = Arrays.asList(1);
-	private final List<Integer> padLst = Arrays.asList(1);
-	private final List<Double> sparsitylst = Arrays.asList(1.0, 0.1);
+	private final List<Integer> Klst = Arrays.asList(3);
+	private final List<Integer> Rlst = Arrays.asList(3,5);
+	private final List<Integer> strideLst = Arrays.asList(1, 2);
+	private final List<Integer> padLst = Arrays.asList(0,1);
+	private final List<Double> sparsitylst = Arrays.asList(1.0, 0.1, 0.3);
 
 	@Override
 	public void setUp() {
@@ -421,6 +421,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 	}
 
 	@Test
+	@Ignore
 	public void testMaxPool() {
 		String scriptStr = "O = max_pool(image, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S])";
 
@@ -498,6 +499,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 	}
 
 	@Test
+	@Ignore
 	public void testMaxPoolBackward() {
 		String scriptStr = "O = max_pool_backward(image, dout, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S])";
 

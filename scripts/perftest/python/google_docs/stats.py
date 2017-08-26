@@ -21,93 +21,91 @@
 # -------------------------------------------------------------
 
 import argparse
-from functools import reduce
+import os
 import pprint
-from oauth2client.service_account import ServiceAccountCredentials
-import gspread
+from os.path import join
+import matplotlib.pyplot as plt
+from gdocs_utils import auth
 
-# Get time difference between difference runs
 
-
-def auth(path, sheet_name):
+# Dict
+# {algo_name : [algo_1.0': t1, 'algo_2.0': t2]}
+def get_formatted_data(sheet_data):
     """
-    Responsible for authorization
+    Read all the data from google sheets and transforms it into a dictionary that can be
+    use for plotting later
     """
-    scope = ['https://spreadsheets.google.com/feeds']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
-    gc = gspread.authorize(creds)
-    sheet = gc.open("Perf").worksheet(sheet_name)
-    return sheet
+    algo_dict = {}
 
+    for i in sheet_data:
+        inn_count = 0
+        data = []
+        for key, val in i.items():
+            inn_count += 1
+            if inn_count < 3:
+                data.append(key)
+                data.append(val)
 
-def get_data(sheet, tag):
-    """
-    Get time and algorithm from the sheet
-    """
-    time = sheet.find('time_{}'.format(tag))
-    algo = sheet.find('algo_{}'.format(tag))
-
-    time_col = sheet.col_values(time.col)
-    time_col = list(filter(lambda x: len(x) > 0, time_col))
-
-    algo_col = sheet.col_values(algo.col)
-    algo_col = list(filter(lambda x: len(x) > 0, algo_col))
-    return algo_col, time_col
-
-
-def get_data_dict(data_col):
-    """
-    Return data as dictionary with key as algorithm and list time values
-    """
-    data_dict = {}
-    all_algo = []
-    for algo, _ in data_col:
-        all_algo.append(algo)
-
-    flatten_algo = reduce(lambda x, y: x+y, all_algo)
-
-    # remove the header
-    filter_data = list(filter(lambda x: not x.startswith('algo_'), flatten_algo))
-    distict_algos = set(filter_data)
-
-    for algo_dist in distict_algos:
-        for algo, time in data_col:
-            for k, v in zip(algo, time):
-                if algo_dist == k:
-                    if algo_dist not in data_dict:
-                        data_dict[k] = [v]
+            if inn_count == 2:
+                t1, v1, _, v2 = data
+                if len(str(v2)) > 0:
+                    if v1 not in algo_dict:
+                        algo_dict[v1] = [{t1: v2}]
                     else:
-                        data_dict[k].append(v)
-    return data_dict
+                        algo_dict[v1].append({t1: v2})
+                    inn_count = 0
+                    data = []
+    return algo_dict
+
+
+def plot(x, y, xlab, ylab, title):
+    """
+    Save plots to the current folder based on the arguments
+    """
+    CWD = os.getcwd()
+    PATH = join(CWD, title)
+    width = .35
+    plt.bar(x, y, color="red", width=width)
+    plt.xticks(x)
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
+    plt.title(title)
+    plt.savefig(PATH + '.png')
+    print('Plot {} generated'.format(title))
+    return plt
 
 # Example Usage
-# ./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0
+#  ./stats.py --auth ../key/client_json.json --exec-mode singlenode
 if __name__ == '__main__':
     execution_mode = ['hybrid_spark', 'singlenode']
 
     cparser = argparse.ArgumentParser(description='System-ML Statistics Script')
     cparser.add_argument('--auth', help='Location to read auth file',
                          required=True, metavar='')
-    cparser.add_argument('--exec-mode', help='Execution mode', choices=execution_mode,
+    cparser.add_argument('--exec-type', help='Execution mode', choices=execution_mode,
                          required=True, metavar='')
-    cparser.add_argument('--tags', help='Tagging header value',
-                         required=True, nargs='+')
+    cparser.add_argument('--plot', help='Algorithm to plot', metavar='')
 
     args = cparser.parse_args()
-    arg_dict = vars(args)
-    sheet = auth(args.auth, args.exec_mode)
+
+    sheet = auth(args.auth, args.exec_type)
     all_data = sheet.get_all_records()
 
-    data_col = []
-    for tag in args.tags:
-        algo_col, time_col = get_data(sheet, tag)
-        data_col.append((algo_col, time_col))
+    plot_data = get_formatted_data(all_data)
+    if args.plot is not None:
+        print(plot_data[args.plot])
+        title = args.plot
+        ylab = 'Time in sec'
+        xlab = 'Version'
+        x = []
+        y = []
+        for i in plot_data[args.plot]:
+            version = list(i.keys())[0]
+            time = list(i.values())[0]
+            y.append(time)
+            x.append(version)
 
-    data_dict = get_data_dict(data_col)
-
-    delta_algo = {}
-    for k, v in data_dict.items():
-        delta = float(v[0]) - float(v[1])
-        delta_algo[k] = delta
-
-    pprint.pprint(delta_algo, width=1)
+        x = list(map(lambda x: float(x.split('_')[1]), x))
+        plot(x, y, xlab, ylab, title)
+    else:
+        pprint.pprint(plot_data, width=1)

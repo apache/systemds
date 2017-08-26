@@ -37,6 +37,7 @@ def create_dir_local(directory):
     directory: String
     Location to create a directory
     """
+
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -51,6 +52,7 @@ def write_success(time, path):
     path: String
     Location to write the SUCCESS file
     """
+
     if 'data-gen' in path:
         if path.startswith('hdfs') and len(time.split('.')) == 2:
             full_path = join(path, '_SUCCESS')
@@ -75,6 +77,7 @@ def check_SUCCESS_file_exists(path):
     return: Boolean
     Checks if the file _SUCCESS exists
     """
+
     if 'data-gen' in path:
         if path.startswith('hdfs'):
             full_path = join(path, '_SUCCESS')
@@ -93,6 +96,7 @@ def contains_dir(hdfs_dirs, sub_folder):
     """
     Support for Lambda Function to check if a HDFS subfolder is contained by the HDFS directory
     """
+
     if sub_folder in hdfs_dirs:
         return True
     else:
@@ -106,6 +110,7 @@ def check_hdfs_path(path):
     """
     Check if a path is present in HDFS
     """
+
     cmd = ['hdfs', 'dfs', '-test', '-e', path]
     return_code = subprocess_exec(' '.join(cmd))
     if return_code != 0:
@@ -137,6 +142,7 @@ def relevant_folders(path, algo, family, matrix_type, matrix_shape, mode):
     return: List
     List of folder locations to read data from
     """
+
     folders = []
 
     for current_matrix_type in matrix_type:

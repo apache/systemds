@@ -369,10 +369,12 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
     This dictionary contains algorithms to be executed as keys and the path of configuration
     json files to be executed list of values.
     """
+
     config_bundle = {}
 
-    for k, _ in algo_payload:
-        config_bundle[k] = []
+    for current_algo, current_family in algo_payload:
+        key_name = current_algo + '.' + current_family
+        config_bundle[key_name] = []
 
     for current_algo, current_family in algo_payload:
         current_matrix_type = mat_type_check(current_family, matrix_type, dense_algos)
@@ -389,7 +391,8 @@ def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, t
             algo_func = '_'.join([current_family] + [current_algo.lower().replace('-', '_')]
                                  + ['train'])
             conf_path = globals()[algo_func](save_name, current_datagen_dir, train_dir, config_dir)
-            config_bundle[current_algo].append(conf_path)
+            key_name = current_algo + '.' + current_family
+            config_bundle[key_name].append(conf_path)
 
     config_packets = {}
 

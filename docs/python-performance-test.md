@@ -148,6 +148,17 @@ Run performance test for all algorithms under the family `regression2` and log w
 Run performance test for all algorithms using HDFS.
 
 
+## Result Consolidation and Plotting
+We have two scripts, `stats.py` forpulling results from google docs and `update.py` to updating results to google docs or local file system.
+
+Example of `update.py` would be below
+`./scripts/perftest/python/google_docs/update.py --file  ../../temp/perf_test_singlenode.out --exec-type singlenode --tag 2 --append test.csv` 
+The arguments being `--file` path of the perf-test output, `--exec-type` execution mode used to generate the perf-test output, `--tag` being the realease version or a unique name, `--append` being an optional argument that would append the a local csv file. If instead of `--append` the `--auth` argument needs the location of the `google api key` file.
+
+Example of `stats.py` below 
+`  ./stats.py --auth ../key/client_json.json --exec-type singlenode --plot stats1_data-gen_none_dense_10k_100`
+`--plot` argument needs the name of the composite key that you would like to compare results over. If this argument is not specified the results would be grouped by keys.
+
 ## Operational Notes
 
 All performance test depend mainly on two scripts for execution `systemml-standalone.py` and `systemml-spark-submit.py`. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.
@@ -158,7 +169,7 @@ The logs contain the following information below comma separated.
 
 algorithm | run_type | intercept | matrix_type | data_shape | time_sec
 --- | --- | --- | --- | --- | --- |
-multinomial|data-gen|0|dense|10k_100| 0.33
+multinomial|data-gen|0|10k_100|dense| 0.33
 MultiLogReg|train|0|10k_100|dense|6.956
 MultiLogReg|predict|0|10k_100|dense|4.780
 
@@ -187,8 +198,11 @@ Matrix Shape | Approximate Data Size
 10M_1k|80GB
 100M_1k|800GB
 
+
 For example the command below runs performance test for all data sizes described above
 `run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --mat-shape 10k_1k 100k_1k 1M_1k 10M_1k 100M_1k --master yarn-client  --temp-dir hdfs://localhost:9000/user/systemml`
+
+By default data generated in `hybrid_spark` execution mode is in the current users `hdfs` home directory.
 
 Note: Please use this command `pip3 install -r requirements.txt` before using the perftest scripts.
 

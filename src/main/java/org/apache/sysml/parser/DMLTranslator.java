@@ -1416,19 +1416,15 @@ public class DMLTranslator
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();
 					for (ParameterExpression paramName : fci.getParamExprs()){
-						Hop in = processExpression(paramName.getExpr(), null, ids);						
+						Hop in = processExpression(paramName.getExpr(), null, ids);
 						finputs.add(in);
 					}
 
 					//create function op
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = null;
-					if (target == null) {
-						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{});
-					} else {
-						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
-					}
-
+					FunctionOp fcall = (target == null) ?
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{}, false) :
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()}, false);
 					output.add(fcall);
 					
 					//TODO function output dataops (phase 3)
@@ -1465,7 +1461,7 @@ public class DMLTranslator
 					}
 					
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs);
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
 					output.add(fcall);
 					
 					//TODO function output dataops (phase 3)

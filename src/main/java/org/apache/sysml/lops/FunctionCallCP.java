@@ -22,6 +22,7 @@ package org.apache.sysml.lops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.lops.LopProperties.ExecLocation;
@@ -122,7 +123,7 @@ public class FunctionCallCP extends Lop
 		inst.append(getExecType());
 		
 		inst.append(Lop.OPERAND_DELIMITOR); 
-		inst.append("extfunct");
+		inst.append(FunctionOp.OPSTRING);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fnamespace);
 		inst.append(Lop.OPERAND_DELIMITOR);

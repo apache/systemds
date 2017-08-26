@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.FunctionCallCP;
+import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -33,14 +34,11 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.
  * 
- * Note: Currently, we support expressions in function arguments but no function calls
- * in expressions.
+ * Note: Currently, we support expressions in function arguments along with function calls
+ * in expressions with single outputs, leaving multiple outputs handling as it is.
  */
 public class FunctionOp extends Hop
 {
-	
-	public static String OPSTRING = "extfunct";
-	
 	public enum FunctionType{
 		DML,
 		EXTERNAL_MEM,
@@ -49,22 +47,25 @@ public class FunctionOp extends Hop
 		UNKNOWN
 	}
 	
+	public static final String OPSTRING = "extfunct";
+	
 	private FunctionType _type = null;
 	private String _fnamespace = null;
 	private String _fname = null; 
 	private String[] _outputs = null; 
 	private ArrayList<Hop> _outputHops = null;
+	private boolean _singleOutFun = false;
 	
 	private FunctionOp() {
 		//default constructor for clone
 	}
 
 	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, ArrayList<Hop> outputHops) {
-		this(type, fnamespace, fname, finputs, outputs);
+		this(type, fnamespace, fname, finputs, outputs, false);
 		_outputHops = outputHops;
 	}
 
-	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs) 
+	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, boolean singleOut) 
 	{
 		super(fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
 		
@@ -72,9 +73,9 @@ public class FunctionOp extends Hop
 		_fnamespace = fnamespace;
 		_fname = fname;
 		_outputs = outputs;
+		_singleOutFun = singleOut;
 		
-		for( Hop in : finputs )
-		{			
+		for( Hop in : finputs ) {
 			getInput().add(in);
 			in.getParent().add(this);
 		}
@@ -230,19 +231,20 @@ public class FunctionOp extends Hop
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
-
+		
 		ExecType et = optFindExecType();
 		
 		//construct input lops (recursive)
 		ArrayList<Lop> tmp = new ArrayList<Lop>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
-		
+		 
 		//construct function call
-		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
-		setLineNumbers( fcall );
-		setLops( fcall );
-	
+		Lop fcall = _singleOutFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) :
+			new FunctionCallCP(tmp, _fnamespace, _fname, _outputs, _outputHops, et);
+		setLineNumbers(fcall);
+		setLops(fcall);
+		
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();

@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 /**
  * This class contains the different implementation of im2col operation
@@ -305,10 +306,16 @@ public class LibMatrixDNNIm2ColHelper {
 							R, S, P, Q, stride_h, stride_w, pad_h, pad_w);
 				}
 				output.sortSparseRows();
-				output.recomputeNonZeros();
 			}
 			else
 				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
+			
+			try {
+				output.recomputeNonZeros();
+				output.examSparsity();
+			} catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 	
@@ -400,10 +407,16 @@ public class LibMatrixDNNIm2ColHelper {
 					}
 				}
 				output.sortSparseRows();
-				output.recomputeNonZeros();
 			}
 			else
 				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
+			
+			try {
+				output.recomputeNonZeros();
+				output.examSparsity();
+			} catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 	}

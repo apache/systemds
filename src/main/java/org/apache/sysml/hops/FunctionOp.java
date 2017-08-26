@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.FunctionCallCP;
+import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -33,13 +34,14 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.
  * 
- * Note: Currently, we support expressions in function arguments but no function calls
- * in expressions.
+ * Note: Currently, we support expressions in function arguments along with function calls
+ * in expressions with single outputs, leaving multiple outputs handling as it is.
  */
 public class FunctionOp extends Hop
 {
 	
 	public static String OPSTRING = "extfunct";
+	public boolean isSingleFun = false;
 	
 	public enum FunctionType{
 		DML,
@@ -237,12 +239,13 @@ public class FunctionOp extends Hop
 		ArrayList<Lop> tmp = new ArrayList<Lop>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
-		
-		//construct function call
-		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
-		setLineNumbers( fcall );
-		setLops( fcall );
-	
+		 
+		// TODO find the condition for isSingleFun
+	        //construct function call
+	        Lop fcall = isSingleFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) : new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
+		setLineNumbers(fcall);
+		setLops(fcall);
+        
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();

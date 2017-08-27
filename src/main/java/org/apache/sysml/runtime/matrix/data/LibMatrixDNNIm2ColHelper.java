@@ -342,15 +342,17 @@ public class LibMatrixDNNIm2ColHelper {
 		int RS = R*S;
 		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
 		for(int r = 0; r < R; r++) {
-			for(int s = 0; s < S; s++) {
-				int outRowIndex = cInput*RS + r*S + s;
-				// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
-				// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
-				int p = (hInput - r + pad_h)  / stride_h;
-				int q = (wInput - s + pad_w)  / stride_w;
-				if(0 <= p && p < P && 0 <= q && q < Q) {
-					// chw -> [crs, pq]
-					output.appendValue(outRowIndex, p*Q + q, value);
+			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+			// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
+			int p = (hInput - r + pad_h)  / stride_h;
+			if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) {
+				for(int s = 0; s < S; s++) {
+					int outRowIndex = cInput*RS + r*S + s;
+					int q = (wInput - s + pad_w)  / stride_w;
+					if(0 <= q && q < Q && (wInput - s + pad_w) % stride_w == 0) {
+						// chw -> [crs, pq]
+						output.appendValue(outRowIndex, p*Q + q, value);
+					}
 				}
 			}
 		}

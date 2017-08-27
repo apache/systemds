@@ -47,8 +47,8 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
-					// params.R*params.S*input.getNonZeros()/input.getNumRows() => estimated number of non-zeroes per row
-					initializeSparseIm2ColBlock(im2ColOutBlock, params.R*params.S*input.getNonZeros()/input.getNumRows());
+					double sparsity = Math.min(1, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
 					return new SparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
 				}
 			}
@@ -67,23 +67,23 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-					// params.R*params.S*input.getNonZeros()/input.getNumRows() => estimated number of non-zeroes per row
-					initializeSparseIm2ColBlock(im2ColOutBlock, params.R*params.S*input.getNonZeros()/input.getNumRows());
+					double sparsity = Math.min(1, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
 					return new SparseIm2colWorker(input, im2ColOutBlock, params);
 				}
 			}
 		}
 		
-		static void initializeSparseIm2ColBlock(MatrixBlock im2ColOutBlock, long estNNZPerRow) {
-			if(estNNZPerRow >= Integer.MAX_VALUE)
-				throw new RuntimeException("The dimension of intermediate im2col matrix exceeded:" + estNNZPerRow);
+		static void initializeSparseIm2ColBlock(MatrixBlock im2ColOutBlock, long worstCaseNNPerRow) {
+			if(worstCaseNNPerRow >= Integer.MAX_VALUE)
+				throw new RuntimeException("The dimension of intermediate im2col matrix exceeded:" + worstCaseNNPerRow);
 			// Set to sparse
 			im2ColOutBlock.sparse = true;
 			im2ColOutBlock.denseBlock = null;
 			im2ColOutBlock.allocateSparseRowsBlock();
 			
 			for(int r = 0; r < im2ColOutBlock.getNumRows(); r++) {
-				im2ColOutBlock.getSparseBlock().allocate(r, (int) estNNZPerRow);
+				im2ColOutBlock.getSparseBlock().allocate(r, (int) worstCaseNNPerRow);
 			}
 			im2ColOutBlock.setNonZeros(0);
 		}

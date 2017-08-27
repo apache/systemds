@@ -47,9 +47,8 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
-					// long worstCaseNNZ = params.R*params.S*input.getNonZeros();
-					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true);
-					im2ColOutBlock.allocateSparseRowsBlock();
+					// params.R*params.S*input.getNonZeros()/input.getNumRows() => estimated number of non-zeroes per row
+					initializeSparseIm2ColBlock(im2ColOutBlock, params.R*params.S*input.getNonZeros()/input.getNumRows());
 					return new SparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
 				}
 			}
@@ -68,12 +67,25 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-					// long worstCaseNNZ = params.R*params.S*input.getNonZeros();
-					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true);
-					im2ColOutBlock.allocateSparseRowsBlock();
+					// params.R*params.S*input.getNonZeros()/input.getNumRows() => estimated number of non-zeroes per row
+					initializeSparseIm2ColBlock(im2ColOutBlock, params.R*params.S*input.getNonZeros()/input.getNumRows());
 					return new SparseIm2colWorker(input, im2ColOutBlock, params);
 				}
 			}
+		}
+		
+		static void initializeSparseIm2ColBlock(MatrixBlock im2ColOutBlock, long estNNZPerRow) {
+			if(estNNZPerRow >= Integer.MAX_VALUE)
+				throw new RuntimeException("The dimension of intermediate im2col matrix exceeded:" + estNNZPerRow);
+			// Set to sparse
+			im2ColOutBlock.sparse = true;
+			im2ColOutBlock.denseBlock = null;
+			im2ColOutBlock.allocateSparseRowsBlock();
+			
+			for(int r = 0; r < im2ColOutBlock.getNumRows(); r++) {
+				im2ColOutBlock.getSparseBlock().allocate(r, (int) estNNZPerRow);
+			}
+			im2ColOutBlock.setNonZeros(0);
 		}
 	}
 	
@@ -290,7 +302,6 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
-				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);
@@ -314,7 +325,6 @@ public class LibMatrixDNNIm2ColHelper {
 				output.setNonZeros(meta.nnz);
 			}
 			else {
-				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				output.setNonZeros(0);
 			}
 		}
@@ -411,7 +421,6 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n, int cInput) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
-				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);
@@ -436,7 +445,6 @@ public class LibMatrixDNNIm2ColHelper {
 				output.setNonZeros(meta.nnz);
 			}
 			else {
-				output.reset(output.getNumRows(), output.getNumColumns(), true, 0);
 				output.setNonZeros(0);
 			}
 		}

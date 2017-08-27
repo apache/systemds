@@ -47,8 +47,8 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
-					long worstCaseNNZ = params.R*params.S*input.getNonZeros();
-					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true, worstCaseNNZ);
+					// long worstCaseNNZ = params.R*params.S*input.getNonZeros();
+					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true);
 					im2ColOutBlock.allocateSparseRowsBlock();
 					return new SparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
 				}
@@ -68,8 +68,8 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-					long worstCaseNNZ = params.R*params.S*input.getNonZeros();
-					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true, worstCaseNNZ);
+					// long worstCaseNNZ = params.R*params.S*input.getNonZeros();
+					im2ColOutBlock.reset(im2ColOutBlock.getNumRows(), im2ColOutBlock.getNumColumns(), true);
 					im2ColOutBlock.allocateSparseRowsBlock();
 					return new SparseIm2colWorker(input, im2ColOutBlock, params);
 				}

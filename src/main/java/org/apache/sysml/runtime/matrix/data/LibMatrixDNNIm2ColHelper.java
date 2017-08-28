@@ -47,7 +47,7 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
-					double sparsity = Math.min(1, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
 					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
 					return new SparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
 				}
@@ -67,7 +67,7 @@ public class LibMatrixDNNIm2ColHelper {
 				}
 				else {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-					double sparsity = Math.min(1, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
 					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
 					return new SparseIm2colWorker(input, im2ColOutBlock, params);
 				}
@@ -302,6 +302,7 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
+				input.sparseBlock.reset();
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);
@@ -421,6 +422,7 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n, int cInput) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
+				input.sparseBlock.reset();
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);

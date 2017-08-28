@@ -24,9 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
@@ -44,6 +41,10 @@ import org.junit.Test;
  * <code>
  * mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
  * </code>
+ * 
+ * Note: generateInputMatrix(...) method in this test performs rounding of input matrix. This helps
+ * to test the correctness of our operators at logical level, but not the precision.
+ * 
  */
 public class NeuralNetworkOpTests extends GPUTests {
 

@@ -148,6 +148,27 @@ Run performance test for all algorithms under the family `regression2` and log w
 Run performance test for all algorithms using HDFS.
 
 
+## Google sheets API
+
+Steps below to configure google client API:
+
+- Navigate to [Google APIs Console](https://console.developers.google.com/apis/).
+- Create a new project.
+- Click Enable API. Search for and enable the Google Drive API.
+- Create credentials for a Web Server to access Application Data.
+- Name the service account and grant it a Project Role of Editor.
+- Download the JSON file.
+- Copy the JSON file to your code directory and rename it to client_secret.json
+
+Steps below to configure google sheets:
+
+- Create a new spread sheet with google sheets.
+- Create seperate sheets for `singlenode` and `hybrid_spark`.
+- Find the  client_email inside client_secret.json and save it.
+- Back in your spreadsheet, click the Share button in the top right, and paste the client email into the People field to give it edit rights for each sheet.
+- Click Send
+
+
 ## Result Consolidation and Plotting
 We have two scripts, `stats.py` forpulling results from google docs and `update.py` to updating results to google docs or local file system.
 
@@ -158,6 +179,7 @@ The arguments being `--file` path of the perf-test output, `--exec-type` executi
 Example of `stats.py` below 
 `  ./stats.py --auth ../key/client_json.json --exec-type singlenode --plot stats1_data-gen_none_dense_10k_100`
 `--plot` argument needs the name of the composite key that you would like to compare results over. If this argument is not specified the results would be grouped by keys.
+
 
 ## Operational Notes
 
@@ -197,7 +219,6 @@ Matrix Shape | Approximate Data Size
 1M_1k|8GB
 10M_1k|80GB
 100M_1k|800GB
-
 
 For example the command below runs performance test for all data sizes described above
 `run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --mat-shape 10k_1k 100k_1k 1M_1k 10M_1k 100M_1k --master yarn-client  --temp-dir hdfs://localhost:9000/user/systemml`

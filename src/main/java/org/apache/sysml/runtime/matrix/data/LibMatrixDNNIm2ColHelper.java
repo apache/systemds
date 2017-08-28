@@ -49,7 +49,7 @@ public class LibMatrixDNNIm2ColHelper {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
 					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
 					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
-					return new SparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
+					return new SparseSparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
 				}
 			}
 			else {
@@ -69,7 +69,7 @@ public class LibMatrixDNNIm2ColHelper {
 					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
 					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
 					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
-					return new SparseIm2colWorker(input, im2ColOutBlock, params);
+					return new SparseSparseIm2colWorker(input, im2ColOutBlock, params);
 				}
 			}
 		}
@@ -275,11 +275,11 @@ public class LibMatrixDNNIm2ColHelper {
 	/**
 	 * Performing sparse im2col for all channels for a given row n of the input matrix.
 	 */
-	static class SparseIm2colWorkerAllChannels implements Im2colWorker {
+	static class SparseSparseIm2colWorkerAllChannels implements Im2colWorker {
 		MatrixBlock input;  MatrixBlock output; Im2colSparseMetadata meta;
 		int CRS; int S; int R; int P; int Q; int H; int W; int RS; int HW;
 		int stride_h; int stride_w; int pad_h; int pad_w;
-		public SparseIm2colWorkerAllChannels(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params) {
+		public SparseSparseIm2colWorkerAllChannels(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params) {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.CRS = params.C * params.R * params.S;
@@ -396,11 +396,11 @@ public class LibMatrixDNNIm2ColHelper {
 	/**
 	 * Performing sparse im2col for a given channel c and for a given row n of the input matrix.
 	 */
-	static class SparseIm2colWorker implements Im2colWorker {
+	static class SparseSparseIm2colWorker implements Im2colWorker {
 		MatrixBlock input; MatrixBlock output; Im2colSparseMetadata meta;
 		int CRS; int S; int R; int P; int Q; int H; int W; int HW; int RS;
 		int stride_h; int stride_w; int pad_h; int pad_w; double [] temp;
-		public SparseIm2colWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params) {
+		public SparseSparseIm2colWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params) {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.CRS = params.C * params.R * params.S;

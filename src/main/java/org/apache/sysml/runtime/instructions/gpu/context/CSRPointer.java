@@ -185,13 +185,19 @@ public class CSRPointer {
 	 * @param rowPtr integer array of row pointers
 	 * @param colInd integer array of column indices
 	 * @param values double array of non zero values
+	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void copyToDevice(CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
+	public static void copyToDevice(CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) throws DMLRuntimeException {
 		CSRPointer r = dest;
 		long t0 = 0;
 		if (DMLScript.STATISTICS)
 			t0 = System.nanoTime();
 		r.nnz = nnz;
+		if(rows < 0) throw new DMLRuntimeException("Incorrect input parameter: rows=" + rows);
+		if(nnz < 0) throw new DMLRuntimeException("Incorrect input parameter: nnz=" + nnz);
+		if(rowPtr.length < rows + 1) throw new DMLRuntimeException("The length of rowPtr needs to be greater than or equal to " + (rows + 1));
+		if(colInd.length < nnz) throw new DMLRuntimeException("The length of colInd needs to be greater than or equal to " + nnz);
+		if(values.length < nnz) throw new DMLRuntimeException("The length of values needs to be greater than or equal to " + nnz);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.val, Pointer.to(values), getDoubleSizeOf(nnz), cudaMemcpyHostToDevice);

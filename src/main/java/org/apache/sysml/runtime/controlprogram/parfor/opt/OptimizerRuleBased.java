@@ -32,6 +32,7 @@ import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -48,6 +49,7 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -98,6 +100,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -1175,7 +1179,42 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set export replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
-	
+
+	/**
+	 * Calculates the maximum memory needed in a CP only Parfor
+	 * based on the {@link Hop#computeMemEstimate(MemoTable)}  } function
+	 * called recursively for the "children" of the parfor {@link OptNode}.
+	 *
+	 * @param n the parfor {@link OptNode}
+	 * @return the maximum memory needed for any operation inside a parfor in CP execution mode
+	 * @throws DMLRuntimeException if error
+	 */
+	protected double getMaxCPOnlyBudget(OptNode n) throws DMLRuntimeException {
+		ExecType et = n.getExecType();
+		double ret = 0;
+
+		if (n.isLeaf() && et != getRemoteExecType()) {
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			if (h.getForcedExecType() != LopProperties.ExecType.MR  //e.g., -exec=hadoop
+					&& h.getForcedExecType() != LopProperties.ExecType.SPARK) {
+				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
+				if (mem >= OptimizerUtils.DEFAULT_SIZE) {
+					// memory estimate for worst case scenario.
+					// optimistically ignoring this
+				} else {
+					ret = Math.max(ret, mem);
+				}
+			}
+		}
+
+		if (!n.isLeaf()) {
+			for (OptNode c : n.getChilds()) {
+				ret = Math.max(ret, getMaxCPOnlyBudget(c));
+			}
+		}
+		return ret;
+	}
+
 	///////
 	//REWRITE set degree of parallelism
 	///
@@ -1204,6 +1243,24 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//constrain max parfor parallelism by problem size
 			int parforK = (int)((_N<kMax)? _N : kMax);
+
+
+			// if gpu mode is enabled, the amount of parallelism is set to
+			// the smaller of the number of iterations and the number of GPUs
+			// otherwise it default to the number of CPU cores and the
+			// operations are run in CP mode
+			if (DMLScript.USE_ACCELERATOR) {
+				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
+				double maxMemUsage = getMaxCPOnlyBudget(n);
+				if (maxMemUsage < perGPUBudget){
+					parforK = GPUContextPool.getDeviceCount();
+					parforK = Math.min(parforK, (int)_N);
+					LOG.debug("Setting degree of parallelism + [" + parforK + "] for GPU; per GPU budget :[" +
+							perGPUBudget + "], parfor budget :[" + maxMemUsage + "],  max parallelism per GPU : [" +
+							parforK + "]");
+				}
+			}
+
 			
 			//set parfor degree of parallelism
 			pfpb.setDegreeOfParallelism(parforK);

@@ -528,6 +528,9 @@ public class CSRPointer {
 			cudaFreeHelper(val, eager);
 			cudaFreeHelper(rowPtr, eager);
 			cudaFreeHelper(colInd, eager);
+			val = null;
+			rowPtr = null;
+			colInd = null;
 		}
 	}
 

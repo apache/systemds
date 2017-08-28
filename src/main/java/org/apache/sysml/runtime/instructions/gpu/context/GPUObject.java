@@ -302,8 +302,7 @@ public class GPUObject {
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) throws DMLRuntimeException {
 		if (this.jcudaSparseMatrixPtr != null) {
-			LOG.warn("jcudaSparseMatrixPtr was already allocated for " + this + ", freeing and assigning new value");
-			jcudaSparseMatrixPtr.deallocate();
+			throw new DMLRuntimeException("jcudaSparseMatrixPtr was already allocated for " + this + ", this will cause a memory leak on the GPU");
 		}
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
 		this.isSparse = true;
@@ -322,8 +321,7 @@ public class GPUObject {
 	 */
 	public void setDenseMatrixCudaPointer(Pointer densePtr) throws DMLRuntimeException {
 		if (this.jcudaDenseMatrixPtr != null) {
-			LOG.warn("jcudaDenseMatrixPtr was already allocated for " + this + ", freeing and assigning new value");
-			cudaFreeHelper(jcudaDenseMatrixPtr);
+			throw new DMLRuntimeException("jcudaDenseMatrixPtr was already allocated for " + this + ", this will cause a memory leak on the GPU");
 		}
 		this.jcudaDenseMatrixPtr = densePtr;
 		this.isSparse = false;

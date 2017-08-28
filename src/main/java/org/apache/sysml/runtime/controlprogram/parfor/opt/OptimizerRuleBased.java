@@ -1246,9 +1246,9 @@ public class OptimizerRuleBased extends Optimizer
 
 
 			// if gpu mode is enabled, the amount of parallelism is set to
-			// number of iterations that can be run in parallel on 1 GPU
-			// times the number of GPUs, otherwise it default to the
-			// number of CPU cores and the operations are run in CP mode
+			// the smaller of the number of iterations and the number of GPUs
+			// otherwise it default to the number of CPU cores and the
+			// operations are run in CP mode
 			if (DMLScript.USE_ACCELERATOR) {
 				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
 				double maxMemUsage = getMaxCPOnlyBudget(n);

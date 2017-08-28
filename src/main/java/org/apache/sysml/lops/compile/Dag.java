@@ -393,9 +393,7 @@ public class Dag<N extends Lop>
 		}
 	}
 
-	private static boolean isCompatible(ArrayList<Lop> nodes, JobType jt, int from, int to) 
-		throws LopsException 
-	{
+	private static boolean isCompatible(ArrayList<Lop> nodes, JobType jt) throws LopsException {
 		int base = jt.getBase();
 		for ( Lop node : nodes ) {
 			if ((node.getCompatibleJobs() & base) == 0) {
@@ -455,10 +453,8 @@ public class Dag<N extends Lop>
 					if ( node.hasNonBlockedInputs() ) {
 						int gmrcell_index = JobType.GMRCELL.getId();
 						arr.get(gmrcell_index).add(node);
-						int from = arr.get(gmrcell_index).size();
 						addChildren(node, arr.get(gmrcell_index), execNodes);
-						int to = arr.get(gmrcell_index).size();
-						if (!isCompatible(arr.get(gmrcell_index),JobType.GMR, from, to))  // check against GMR only, not against GMRCELL
+						if (!isCompatible(arr.get(gmrcell_index),JobType.GMR))  // check against GMR only, not against GMRCELL
 							throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
 					}
 					else {
@@ -471,10 +467,8 @@ public class Dag<N extends Lop>
 						} else {
 							int gmr_index = JobType.GMR.getId();
 							arr.get(gmr_index).add(node);
-							int from = arr.get(gmr_index).size();
 							addChildren(node, arr.get(gmr_index), execNodes);
-							int to = arr.get(gmr_index).size();
-							if (!isCompatible(arr.get(gmr_index),JobType.GMR, from, to)) 
+							if (!isCompatible(arr.get(gmr_index),JobType.GMR))
 								throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
 						}
 					}
@@ -482,11 +476,9 @@ public class Dag<N extends Lop>
 				else {
 					int index = jt.getId();
 					arr.get(index).add(node);
-					int from = arr.get(index).size();
 					addChildren(node, arr.get(index), execNodes);
-					int to = arr.get(index).size();
 					// check if all added nodes are compatible with current job
-					if (!isCompatible(arr.get(index), jt, from, to)) {
+					if (!isCompatible(arr.get(index), jt)) {
 						throw new LopsException( 
 								"Unexpected error in addNodeByType.");
 					}
@@ -1203,7 +1195,7 @@ public class Dag<N extends Lop>
 
 				// next generate MR instructions
 				if (!execNodes.isEmpty())
-					generateMRJobs(execNodes, inst, writeInst, deleteInst, jobNodes);
+					generateMRJobs(inst, writeInst, deleteInst, jobNodes);
 				handleSingleOutputJobs(execNodes, jobNodes, finishedNodes);
 			}
 		}
@@ -1670,7 +1662,7 @@ public class Dag<N extends Lop>
 					int code = -1;
 					switch(node.getExecLocation()) {
 					case Map:
-						if(branchCanBePiggyBackedMap(tmpNode, node, execNodes, queuedNodes, markedNodes))
+						if(branchCanBePiggyBackedMap(tmpNode, node, queuedNodes, markedNodes))
 							queueit = true;
 						code=2;
 						break;
@@ -1778,7 +1770,7 @@ public class Dag<N extends Lop>
 	   return true;
 	}
 
-	private boolean branchCanBePiggyBackedMap(Lop tmpNode, Lop node, ArrayList<Lop> execNodes, ArrayList<Lop> queuedNodes, ArrayList<Lop> markedNodes) {
+	private boolean branchCanBePiggyBackedMap(Lop tmpNode, Lop node, ArrayList<Lop> queuedNodes, ArrayList<Lop> markedNodes) {
 		if(node.getExecLocation() != ExecLocation.Map)
 			return false;
 		
@@ -2001,10 +1993,9 @@ public class Dag<N extends Lop>
 	 * Method to check if there exists any lops with ExecLocation=RecordReader
 	 * 
 	 * @param nodes list of low-level operators
-	 * @param loc exec location
 	 * @return true if there is a node with RecordReader exec location
 	 */
-	private static boolean hasANode(ArrayList<Lop> nodes, ExecLocation loc) {
+	private static boolean hasANode(ArrayList<Lop> nodes) {
 		for ( Lop n : nodes ) {
 			if (n.getExecLocation() == ExecLocation.RecordReader)
 				return true;
@@ -2063,8 +2054,7 @@ public class Dag<N extends Lop>
 	 * types requiring different mr jobs. This method breaks the job into
 	 * sub-types and then invokes the appropriate method to generate
 	 * instructions.
-	 * 
-	 * @param execNodes list of exec nodes
+	 *
 	 * @param inst list of instructions
 	 * @param writeinst list of write instructions
 	 * @param deleteinst list of delete instructions
@@ -2072,8 +2062,7 @@ public class Dag<N extends Lop>
 	 * @throws LopsException if LopsException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void generateMRJobs(ArrayList<Lop> execNodes,
-			ArrayList<Instruction> inst,
+	private void generateMRJobs(ArrayList<Instruction> inst,
 			ArrayList<Instruction> writeinst,
 			ArrayList<Instruction> deleteinst, ArrayList<ArrayList<Lop>> jobNodes)
 			throws LopsException, DMLRuntimeException
@@ -2096,7 +2085,7 @@ public class Dag<N extends Lop>
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Generating " + jt.getName() + " job");
 
-				if (jt.allowsRecordReaderInstructions() && hasANode(jobNodes.get(index), ExecLocation.RecordReader)) {
+				if (jt.allowsRecordReaderInstructions() && hasANode(jobNodes.get(index))) {
 					// split the nodes by recordReader lops
 					ArrayList<ArrayList<Lop>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
 					for (int i = 0; i < rrlist.size(); i++) {

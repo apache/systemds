@@ -147,8 +147,8 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			if ( et == ExecType.CP || et == ExecType.GPU ) 
 			{
 				Lop agg1 = null;
-				if( isTernaryAggregateRewriteApplicable() ) {
-					agg1 = constructLopsTernaryAggregateRewrite(et);
+				if (isTernaryAggregateRewriteApplicable()) {
+					agg1 = constructLopsTernaryAggregateRewrite();
 				}
 				else if( isUnaryAggregateOuterCPRewriteApplicable() )
 				{
@@ -260,9 +260,8 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				DirectionTypes dir = HopsDirection2Lops.get(_direction);
 
 				//unary aggregate
-				if( isTernaryAggregateRewriteApplicable() ) 
-				{
-					Lop aggregate = constructLopsTernaryAggregateRewrite(et);
+				if (isTernaryAggregateRewriteApplicable()) {
+					Lop aggregate = constructLopsTernaryAggregateRewrite();
 					setOutputDimensions(aggregate); //0x0 (scalar)
 					setLineNumbers(aggregate);
 					setLops(aggregate);
@@ -515,7 +514,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			return SparkAggType.MULTI_BLOCK;
 	}
 
-	private boolean isTernaryAggregateRewriteApplicable() 
+	private boolean isTernaryAggregateRewriteApplicable()
 		throws HopsException 
 	{
 		boolean ret = false;
@@ -665,9 +664,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		return ret;
 	}
 
-	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
-		throws HopsException, LopsException
-	{
+	private Lop constructLopsTernaryAggregateRewrite() throws HopsException, LopsException {
 		BinaryOp input1 = (BinaryOp)getInput().get(0);
 		Hop input11 = input1.getInput().get(0);
 		Hop input12 = input1.getInput().get(1);

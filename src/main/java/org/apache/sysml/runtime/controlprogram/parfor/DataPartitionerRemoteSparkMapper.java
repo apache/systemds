@@ -30,10 +30,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
 
 import scala.Tuple2;
@@ -57,7 +55,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	private PDataPartitionFormat _dpf;
 	private final long _n;
 	
-	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) 
+	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, PDataPartitionFormat dpf, int n)
 		throws DMLRuntimeException
 	{
 		_rlen = mc.getRows();

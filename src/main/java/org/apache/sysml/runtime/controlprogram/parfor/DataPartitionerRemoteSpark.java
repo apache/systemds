@@ -46,8 +46,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	private final long _numRed;
 	private final int _replication;
 	
-	public DataPartitionerRemoteSpark(PartitionFormat dpf, ExecutionContext ec, long numRed, int replication, boolean keepIndexes) 
-	{
+	public DataPartitionerRemoteSpark(PartitionFormat dpf, ExecutionContext ec, long numRed, int replication) {
 		super(dpf._dpf, dpf._N);
 		
 		_ec = ec;
@@ -78,8 +77,8 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			int numRed = (int)determineNumReducers(inRdd, mc, _numRed);
 	
 			//run spark remote data partition job 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);
-			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi, _replication);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, _format, _n);
+			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, _replication);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
 			     .groupByKey(numRed)   //group partition blocks 		          
 			     .foreach(wfun);       //write partitions to hdfs 

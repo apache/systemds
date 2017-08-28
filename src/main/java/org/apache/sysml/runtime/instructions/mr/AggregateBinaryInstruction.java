@@ -146,7 +146,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				return;
 			
 			// one of the input is from distributed cache.
-			processMapMultInstruction(valueClass, cachedValues, in1, in2, blockRowFactor, blockColFactor);
+			processMapMultInstruction(valueClass, cachedValues, in1, in2);
 		}
 		else //generic matrix mult
 		{
@@ -181,13 +181,10 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	 * @param cachedValues cached value map
 	 * @param in1 indexed matrix value 1
 	 * @param in2 indexed matrix value 2
-	 * @param blockRowFactor ?
-	 * @param blockColFactor ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) 
-		throws DMLRuntimeException 
-	{
+	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues,
+			IndexedMatrixValue in1, IndexedMatrixValue in2) throws DMLRuntimeException {
 		boolean removeOutput = true;
 		
 		if( _cacheType.isRight() )

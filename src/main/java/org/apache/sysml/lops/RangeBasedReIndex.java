@@ -40,7 +40,7 @@ public class RangeBasedReIndex extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, et, forleft);
 	}
 
 	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
@@ -48,7 +48,7 @@ public class RangeBasedReIndex extends Lop
 		throws LopsException 
 	{
 		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, et, false);
 	}
 
 	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
@@ -57,12 +57,11 @@ public class RangeBasedReIndex extends Lop
 	{
 		super(Lop.Type.RangeReIndex, dt, vt);
 		_aggtype = aggtype;
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, et, false);
 	}
 
-	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop leftMatrixRowDim, 
-			Lop leftMatrixColDim, DataType dt, ValueType vt, ExecType et, boolean forleft) 
-	{	
+	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop leftMatrixRowDim,
+			Lop leftMatrixColDim, ExecType et, boolean forleft) {
 		addInput(inputMatrix);
 		addInput(rowL);
 		addInput(rowU);

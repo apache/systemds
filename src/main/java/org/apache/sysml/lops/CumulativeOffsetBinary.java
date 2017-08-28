@@ -38,7 +38,7 @@ public class CumulativeOffsetBinary extends Lop
 		checkSupportedOperations(op);
 		_op = op;
 	
-		init(data, offsets, dt, vt, et);
+		init(data, offsets, et);
 	}
 	
 	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, OperationTypes op, ExecType et)
@@ -51,10 +51,10 @@ public class CumulativeOffsetBinary extends Lop
 		//in case of Spark, CumulativeOffset includes CumulativeSplit and hence needs the init value
 		_initValue = init;
 		
-		init(data, offsets, dt, vt, et);
+		init(data, offsets, et);
 	}
 	
-	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
+	private void init(Lop input1, Lop input2, ExecType et)
 	{
 		this.addInput(input1);
 		this.addInput(input2);

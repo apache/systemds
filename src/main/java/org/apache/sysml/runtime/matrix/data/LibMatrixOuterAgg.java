@@ -309,32 +309,32 @@ public class LibMatrixOuterAgg
 		if(isRowIndexMax(uaggOp)) 
 		{
 			if(bOp.fn instanceof LessThan) {
-				uaRIMLt(in1Val, outVal, bv, bvi, bOp);
+				uaRIMLt(in1Val, outVal, bv, bvi);
 			} else if(bOp.fn instanceof LessThanEquals) {
-				uaRIMLe(in1Val, outVal, bv, bvi, bOp);
+				uaRIMLe(in1Val, outVal, bv, bvi);
 			} else if(bOp.fn instanceof GreaterThan) { 
-				uaRIMGt(in1Val, outVal, bv, bvi, bOp);
+				uaRIMGt(in1Val, outVal, bv, bvi);
 			} else if(bOp.fn instanceof GreaterThanEquals) {
-				uaRIMGe(in1Val, outVal, bv, bvi, bOp);
+				uaRIMGe(in1Val, outVal, bv, bvi);
 			} else if(bOp.fn instanceof Equals){ 
-				uaRIMEq(in1Val, outVal, bv, bvi, bOp);	
+				uaRIMEq(in1Val, outVal, bv, bvi);
 			} else if (bOp.fn instanceof NotEquals) {
-				uaRIMNe(in1Val, outVal, bv, bvi, bOp);
+				uaRIMNe(in1Val, outVal, bv, bvi);
 			}
 		} else if(isRowIndexMin(uaggOp)) 
 		{
 				if(bOp.fn instanceof LessThan) {
-					uaRIMinLt(in1Val, outVal, bv, bvi, bOp);
+					uaRIMinLt(in1Val, outVal, bv, bvi);
 				} else if(bOp.fn instanceof LessThanEquals) {
-					uaRIMinLe(in1Val, outVal, bv, bvi, bOp);
+					uaRIMinLe(in1Val, outVal, bv, bvi);
 				} else if(bOp.fn instanceof GreaterThan) { 
-					uaRIMinGt(in1Val, outVal, bv, bvi, bOp);
+					uaRIMinGt(in1Val, outVal, bv, bvi);
 				} else if(bOp.fn instanceof GreaterThanEquals) {
-					uaRIMinGe(in1Val, outVal, bv, bvi, bOp);
+					uaRIMinGe(in1Val, outVal, bv, bvi);
 				} else if(bOp.fn instanceof Equals){ 
-					uaRIMinEq(in1Val, outVal, bv, bvi, bOp);	
+					uaRIMinEq(in1Val, outVal, bv, bvi);
 				} else if (bOp.fn instanceof NotEquals) {
-					uaRIMinNe(in1Val, outVal, bv, bvi, bOp);
+					uaRIMinNe(in1Val, outVal, bv, bvi);
 				}
 		} else if(uaggOp.indexFn instanceof ReduceCol) {
 			if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals) {
@@ -563,18 +563,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxLt(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxLt(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxLt(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxLt(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -585,18 +585,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxLe(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxLe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxLe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxLe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -607,18 +607,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxGt(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxGt(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxGt(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxGt(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -630,18 +630,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxGe(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxGe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxGe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxGe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -653,18 +653,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxEq(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxEq(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxEq(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxEq(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -677,18 +677,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uarimaxNe(0.0, bv, bvi, bOp);
+		int ind0 = uarimaxNe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uarimaxNe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uarimaxNe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -700,18 +700,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminLt(0.0, bv, bvi, bOp);
+		int ind0 = uariminLt(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminLt(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminLt(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -722,18 +722,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminLe(0.0, bv, bvi, bOp);
+		int ind0 = uariminLe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminLe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminLe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -744,18 +744,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminGt(0.0, bv, bvi, bOp);
+		int ind0 = uariminGt(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminGt(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminGt(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -767,18 +767,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminGe(0.0, bv, bvi, bOp);
+		int ind0 = uariminGe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminGe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminGe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -790,18 +790,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminEq(0.0, bv, bvi, bOp);
+		int ind0 = uariminEq(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminEq(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminEq(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -814,18 +814,18 @@ public class LibMatrixOuterAgg
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void uaRIMinNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static void uaRIMinNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{		
-		int ind0 = uariminNe(0.0, bv, bvi, bOp);
+		int ind0 = uariminNe(0.0, bv, bvi);
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
 			double ai = in.quickGetValue(i, 0);
-			int ind = (ai == 0) ? ind0: uariminNe(ai, bv, bvi, bOp);
+			int ind = (ai == 0) ? ind0: uariminNe(ai, bv, bvi);
 			out.quickSetValue(i, 0, ind);
 		}
 	}
@@ -1098,16 +1098,17 @@ public class LibMatrixOuterAgg
 
 		return cnt;
 	}
-	
+
 	/**
-	 * Find out rowIndexMax for Equal operator. 
+	 * Find out rowIndexMax for Equal operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMax for Equal operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxEq(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uarimaxEq(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ix = Arrays.binarySearch(bv, value);
@@ -1120,14 +1121,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMax for NotEqual operator. 
+	 * Find out rowIndexMax for NotEqual operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMax for NotEqual operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxNe(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uarimaxNe(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ixMax = bv.length;
@@ -1139,14 +1141,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMax for GreaterThan operator. 
+	 * Find out rowIndexMax for GreaterThan operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMax for GreaterThan operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxGt(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uarimaxGt(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ixMax = bv.length;
@@ -1167,10 +1170,10 @@ public class LibMatrixOuterAgg
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxGe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uarimaxGe(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMax = bv.length;
@@ -1188,14 +1191,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMax for LessThan operator. 
+	 * Find out rowIndexMax for LessThan operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMax for LessThan operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxLt(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uarimaxLt(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMax = bv.length;
@@ -1216,10 +1220,11 @@ public class LibMatrixOuterAgg
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMax for LessThanEquals operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uarimaxLe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uarimaxLe(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMax = bv.length;
@@ -1237,14 +1242,15 @@ public class LibMatrixOuterAgg
 	
 
 	/**
-	 * Find out rowIndexMin for Equal operator. 
+	 * Find out rowIndexMin for Equal operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMin for Equal operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminEq(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uariminEq(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;
@@ -1256,14 +1262,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMin for NotEqual operator. 
+	 * Find out rowIndexMin for NotEqual operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMin for NotEqual operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminNe(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uariminNe(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;
@@ -1275,14 +1282,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMin for GreaterThan operator. 
+	 * Find out rowIndexMin for GreaterThan operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMin for GreaterThan operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminGt(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+	private static int uariminGt(double value, double[] bv, int bvi[])
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;
@@ -1299,14 +1307,15 @@ public class LibMatrixOuterAgg
 
 	
 	/**
-	 * Find out rowIndexMin for GreaterThanEqual operator. 
+	 * Find out rowIndexMin for GreaterThanEqual operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMin for GreaterThanEqual operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminGe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uariminGe(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;
@@ -1328,10 +1337,10 @@ public class LibMatrixOuterAgg
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminLt(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uariminLt(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;
@@ -1348,14 +1357,15 @@ public class LibMatrixOuterAgg
 	}
 
 	/**
-	 * Find out rowIndexMin for LessThanEquals operator. 
+	 * Find out rowIndexMin for LessThanEquals operator.
 	 * 
 	 * @param value ?
 	 * @param bv ?
-	 * @param bOp binary operator
+	 * @param bvi ?
+	 * @return rowIndexMin for LessThanEquals operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int uariminLe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+	private static int uariminLe(double value, double[] bv, int[] bvi)
 			throws DMLRuntimeException
 	{
 		int ixMin = 1;

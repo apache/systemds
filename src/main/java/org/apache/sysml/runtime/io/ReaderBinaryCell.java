@@ -51,7 +51,7 @@ public class ReaderBinaryCell extends MatrixReader
 		checkValidInputFile(fs, path); 
 	
 		//core read 
-		readBinaryCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		readBinaryCellMatrixFromHDFS(path, job, fs, ret, rlen, clen);
 		
 		//finally check if change of sparse/dense block representation required
 		//(nnz maintained via append during read for both dense/sparse)
@@ -68,9 +68,8 @@ public class ReaderBinaryCell extends MatrixReader
 	}
 	
 	@SuppressWarnings("deprecation")
-	private void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
-		throws IOException
-	{
+	private void readBinaryCellMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
+			long clen) throws IOException {
 		boolean sparse = dest.isInSparseFormat();		
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();

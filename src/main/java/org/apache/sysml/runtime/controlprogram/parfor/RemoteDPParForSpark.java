@@ -35,9 +35,6 @@ import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.LongAccumulator;
-
-import scala.Tuple2;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -50,15 +47,16 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.instructions.spark.data.DatasetObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
+
+import scala.Tuple2;
 
 /**
  * TODO heavy hitter maintenance
@@ -97,7 +95,7 @@ public class RemoteDPParForSpark
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
 				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
-		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, oi, dpf);
+		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, dpf);
 		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mo) ?
 				tmp.groupByKey(numReducers2) : tmp.map(new PseudoGrouping()) )
 				   .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
@@ -123,10 +121,9 @@ public class RemoteDPParForSpark
 	
 	@SuppressWarnings("unchecked")
 	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
-			String matrixvar, OutputInfo oi, PartitionFormat dpf) 
+			String matrixvar, PartitionFormat dpf)
 		throws DMLRuntimeException 
 	{
-		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
 		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 
@@ -153,7 +150,7 @@ public class RemoteDPParForSpark
 		{
 			//get input rdd and data partitioning 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 		//default binary block input rdd with grouping
@@ -167,7 +164,7 @@ public class RemoteDPParForSpark
 						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
 			
 			//data partitioning of input rdd 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 	} 

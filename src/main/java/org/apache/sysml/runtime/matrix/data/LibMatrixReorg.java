@@ -152,7 +152,7 @@ public class LibMatrixReorg
 			transposeSparseToSparse( in, out, 0, in.rlen, 0, in.clen, 
 				countNnzPerColumn(in, 0, in.rlen));
 		else if( in.sparse )
-			transposeSparseToDense( in, out, 0, in.rlen, 0, in.clen );
+			transposeSparseToDense( in, out, 0, in.rlen);
 		else
 			transposeDenseToSparse( in, out );
 		
@@ -883,7 +883,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
+	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru)
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
@@ -2140,7 +2140,7 @@ public class LibMatrixReorg
 			else if( _in.sparse && _out.sparse )
 				transposeSparseToSparse( _in, _out, rl, ru, cl, cu, _cnt );
 			else if( _in.sparse )
-				transposeSparseToDense( _in, _out, rl, ru, cl, cu );
+				transposeSparseToDense( _in, _out, rl, ru);
 			else
 				throw new DMLRuntimeException("Unsupported multi-threaded dense-sparse transpose.");
 			

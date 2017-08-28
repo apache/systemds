@@ -250,11 +250,10 @@ public class RunMRJobs
 								inst.getOutputs(), inst.getOutputInfos() );
 					}
 					else if( inst.getJobType() == JobType.CSV_REBLOCK ) {
-						ret = CSVReblockMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
-								inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
-								shuffleInst, otherInst,
-								inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
-								inst.getOutputs(), inst.getOutputInfos() );
+						ret = CSVReblockMR.runJob(inst.getInputs(), inst.getInputInfos(), inst.getRlens(),
+								inst.getClens(), inst.getBrlens(), inst.getBclens(), shuffleInst, otherInst,
+								inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),
+								inst.getOutputs(), inst.getOutputInfos());
 					}
 				}
 				break;

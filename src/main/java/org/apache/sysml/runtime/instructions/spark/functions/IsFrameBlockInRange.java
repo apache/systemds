@@ -20,12 +20,10 @@
 package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-
-import scala.Tuple2;
-
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 public class IsFrameBlockInRange implements Function<Tuple2<Long,FrameBlock>, Boolean> 
 {
@@ -33,7 +31,7 @@ public class IsFrameBlockInRange implements Function<Tuple2<Long,FrameBlock>, Bo
 
 	private long _rl, _ru;
 	
-	public IsFrameBlockInRange(long rl, long ru, MatrixCharacteristics mcOut) {
+	public IsFrameBlockInRange(long rl, long ru) {
 		_rl = rl;
 		_ru = ru;
 	}

@@ -240,7 +240,7 @@ public class InterProceduralAnalysis
 		
 		//check size-preserving characteristic
 		if( ret ) {
-			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph, false);
+			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph);
 			HashSet<String> fnStack = new HashSet<String>();
 			LocalVariableMap callVars = new LocalVariableMap();
 			
@@ -500,7 +500,7 @@ public class InterProceduralAnalysis
 					fnStack.remove(fkey);
 				}
 				else if( fcallSizes.isDimsPreservingFunction(fkey) ) {
-					extractFunctionCallEquivalentReturnStatistics(fstmt, fop, callVars);
+					extractFunctionCallEquivalentReturnStatistics(fop, callVars);
 				}
 				else {
 					extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
@@ -672,7 +672,7 @@ public class InterProceduralAnalysis
 		}
 	}
 	
-	private void extractFunctionCallEquivalentReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
+	private void extractFunctionCallEquivalentReturnStatistics(FunctionOp fop, LocalVariableMap callVars)
 		throws HopsException
 	{
 		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());

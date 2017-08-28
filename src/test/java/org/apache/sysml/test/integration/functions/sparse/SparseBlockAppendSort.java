@@ -163,7 +163,7 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 			//init sparse block
 			SparseBlock sblock = null;
 			switch( btype ) {
-				case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
+				case MCSR: sblock = new SparseBlockMCSR(rows); break;
 				case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 				case COO: sblock = new SparseBlockCOO(rows, cols); break;
 			}

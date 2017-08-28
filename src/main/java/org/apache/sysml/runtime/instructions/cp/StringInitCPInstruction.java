@@ -38,9 +38,8 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 	private long _clen = -1;
 	private String _data = null;
 		
-	public StringInitCPInstruction( Operator op, CPOperand in, CPOperand out, long rows, long cols, int rpb, int cpb, 
-			                        String data, String opcode, String inst) 
-	{
+	public StringInitCPInstruction(Operator op, CPOperand in, CPOperand out, long rows, long cols, String data,
+			String opcode, String inst) {
 		super(op, in, out, opcode, inst);
 		_rlen = rows;
 		_clen = cols;
@@ -70,11 +69,9 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 
 		long rows = (s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[1]).longValue());
 		long cols = (s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[2]).longValue());
-        int rpb = Integer.parseInt(s[3]);
-		int cpb = Integer.parseInt(s[4]);
 		String data = s[5];
 		
-		return new StringInitCPInstruction(null, null, out, rows, cols, rpb, cpb, data, opcode, str);
+		return new StringInitCPInstruction(null, null, out, rows, cols, data, opcode, str);
 	}
 	
 	@Override

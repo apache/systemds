@@ -103,12 +103,10 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 			JavaPairRDD<Long,FrameBlock> out = null;
 			if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
-				out = in1.mapPartitionsToPair(
-						new SliceBlockPartitionFunction(ixrange, mcOut), true);
+				out = in1.mapPartitionsToPair(new SliceBlockPartitionFunction(ixrange), true);
 			}
 			else{
-				out = in1.filter(new IsFrameBlockInRange(rl, ru, mcOut))
-			             .mapToPair(new SliceBlock(ixrange, mcOut));
+				out = in1.filter(new IsFrameBlockInRange(rl, ru)).mapToPair(new SliceBlock(ixrange));
 			}
 			
 			//put output RDD handle into symbol table
@@ -149,8 +147,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				broadcastIn2 = sec.getBroadcastForFrameVariable( input2.getName());
 				
 				//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-				out = in1.mapPartitionsToPair(
-						new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
+				out = in1.mapPartitionsToPair(new LeftIndexPartitionFunction(broadcastIn2, ixrange), true);
 			}
 			else { //general case
 				
@@ -280,7 +277,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		private PartitionedBroadcast<FrameBlock> _binput;
 		private IndexRange _ixrange = null;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast<FrameBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<FrameBlock> binput, IndexRange ixrange) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;
@@ -354,7 +351,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		
 		private IndexRange _ixrange;
 		
-		public SliceBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlock(IndexRange ixrange) {
 			_ixrange = ixrange;
 		}
 
@@ -386,7 +383,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		
 		private IndexRange _ixrange;
 		
-		public SliceBlockPartitionFunction(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlockPartitionFunction(IndexRange ixrange) {
 			_ixrange = ixrange;
 		}
 

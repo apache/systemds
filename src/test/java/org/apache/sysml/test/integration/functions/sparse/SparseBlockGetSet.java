@@ -221,7 +221,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			}
 			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
 				switch( btype ) {
-					case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
+					case MCSR: sblock = new SparseBlockMCSR(rows); break;
 					case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 					case COO: sblock = new SparseBlockCOO(rows, cols); break;
 				}

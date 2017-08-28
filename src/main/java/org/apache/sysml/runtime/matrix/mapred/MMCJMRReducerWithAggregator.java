@@ -136,7 +136,7 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 					
 					//aggregate block to output buffer or direct output
 					if( aggBinInstruction.getMMCJType() == MMCJType.AGG ) {
-						aggregator.aggregateToBuffer(indexesbuffer, valueBuffer, tagForLeft==0);
+						aggregator.aggregateToBuffer(indexesbuffer, valueBuffer);
 					}
 					else { //MMCJType.NO_AGG
 						collectFinalMultipleOutputs.collectOutput(indexesbuffer, valueBuffer, 0, cachedReporter);

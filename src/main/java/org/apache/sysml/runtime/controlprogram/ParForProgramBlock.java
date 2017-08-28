@@ -622,11 +622,11 @@ public class ParForProgramBlock extends ForProgramBlock
 					if (DMLScript.USE_ACCELERATOR) {
 						setDegreeOfParallelism(ec.getNumGPUContexts());
 					}
-					executeLocalParFor(ec, iterVar, from, to, incr);
+					executeLocalParFor(ec, from, to, incr);
 					break;
 					
 				case REMOTE_MR: // create parworkers as MR tasks (one job per parfor)
-					executeRemoteMRParFor(ec, iterVar, from, to, incr);
+					executeRemoteMRParFor(ec, from, to, incr);
 					break;
 				
 				case REMOTE_MR_DP: // create parworkers as MR tasks (one job per parfor)
@@ -634,7 +634,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					break;
 				
 				case REMOTE_SPARK: // create parworkers as Spark tasks (one job per parfor)
-					executeRemoteSparkParFor(ec, iterVar, from, to, incr);
+					executeRemoteSparkParFor(ec, from, to, incr);
 					break;
 				
 				case REMOTE_SPARK_DP: // create parworkers as Spark tasks (one job per parfor)
@@ -700,16 +700,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * below for details of the realization.
 	 * 
 	 * @param ec execution context
-	 * @param itervar ?
 	 * @param from ?
 	 * @param to ?
 	 * @param incr ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws InterruptedException if InterruptedException occurs
 	 */
-	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLRuntimeException, InterruptedException
-	{
+	private void executeLocalParFor(ExecutionContext ec, IntObject from, IntObject to, IntObject incr)
+			throws DMLRuntimeException, InterruptedException {
 		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
@@ -838,9 +836,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}	
 
-	private void executeRemoteMRParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLRuntimeException, IOException
-	{
+	private void executeRemoteMRParFor(ExecutionContext ec, IntObject from, IntObject to, IntObject incr)
+			throws DMLRuntimeException, IOException {
 		/* Step 0) check and recompile MR inst
 		 * Step 1) serialize child PB and inst
 		 * Step 2) create tasks
@@ -999,9 +996,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}			
 	}
 
-	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
-		throws DMLRuntimeException
-	{
+	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject from, IntObject to, IntObject incr)
+			throws DMLRuntimeException {
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
@@ -1508,7 +1504,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				break;
 			case REMOTE_SPARK:
 				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed,
-						_replicationDP, false );
+						_replicationDP);
 				break;	
 			default:
 				throw new DMLRuntimeException("Unknown data partitioner: '" +dataPartitioner.name()+"'.");
@@ -1555,10 +1551,8 @@ public class ParForProgramBlock extends ForProgramBlock
 				rm = new ResultMergeLocalAutomatic( out, in, fname );
 				break;
 			case REMOTE_MR:
-				rm = new ResultMergeRemoteMR( out, in, fname, _ID, numMap, numRed,
-					                          WRITE_REPLICATION_FACTOR, 
-					                          MAX_RETRYS_ON_ERROR, 
-					                          ALLOW_REUSE_MR_JVMS );
+				rm = new ResultMergeRemoteMR(out, in, fname, _ID, numMap, numRed, WRITE_REPLICATION_FACTOR,
+					ALLOW_REUSE_MR_JVMS);
 				break;
 			case REMOTE_SPARK:
 				rm = new ResultMergeRemoteSpark( out, in, fname, ec, numMap, numRed );

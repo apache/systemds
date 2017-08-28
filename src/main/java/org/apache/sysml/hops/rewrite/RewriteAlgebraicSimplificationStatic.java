@@ -147,25 +147,25 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);   //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = fuseDatagenAndBinaryOperation(hi);              //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hi);               //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
- 			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
- 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
- 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
- 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
- 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
- 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
- 			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
- 			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
- 			hi = removeUnnecessaryAggregates(hi);                //e.g., sum(rowSums(X)) -> sum(X)
- 			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
- 			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
- 			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
- 			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
- 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
- 			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
- 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
- 				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
+			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
+			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps)
+			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
+			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
+				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
+			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
+			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
+			hi = simplifyUnaryAggReorgOperation(hi);             //e.g., sum(t(X)) -> sum(X)
+			hi = removeUnnecessaryAggregates(hi);                //e.g., sum(rowSums(X)) -> sum(X)
+			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
+			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
+			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
+			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
+			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
+			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
+			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
+				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
-			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
+			hi = simplifySlicedMatrixMult(hi);                   //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
@@ -799,7 +799,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	private Hop simplifyUnaryAggReorgOperation( Hop parent, Hop hi, int pos )
+	private Hop simplifyUnaryAggReorgOperation(Hop hi)
 	{
 		if(   hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  //full uagg
 		   && hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
@@ -1268,7 +1268,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	private Hop simplifySlicedMatrixMult(Hop parent, Hop hi, int pos) 
+	private Hop simplifySlicedMatrixMult(Hop hi)
 		throws HopsException
 	{
 		//e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1] 

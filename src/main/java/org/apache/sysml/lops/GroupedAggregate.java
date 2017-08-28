@@ -69,14 +69,14 @@ public class GroupedAggregate extends Lop
 			HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.GroupedAgg, dt, vt);
-		init(inputParameterLops, dt, vt, et);
+		init(inputParameterLops, et);
 	}
 	
 	public GroupedAggregate(
 			HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et, boolean broadcastGroups) {
 		super(Lop.Type.GroupedAgg, dt, vt);
-		init(inputParameterLops, dt, vt, et);
+		init(inputParameterLops, et);
 		_broadcastGroups = broadcastGroups;
 	}
 	
@@ -84,12 +84,11 @@ public class GroupedAggregate extends Lop
 			HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.GroupedAgg, dt, vt);
-		init(inputParameterLops, dt, vt, et);
+		init(inputParameterLops, et);
 		_numThreads = k;
 	}
 	
-	private void init(HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt, ExecType et) {
+	private void init(HashMap<String, Lop> inputParameterLops, ExecType et) {
 		if ( et == ExecType.MR ) {
 			/*
 			 * Inputs to ParameterizedBuiltinOp can be in an arbitrary order. However,

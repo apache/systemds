@@ -302,7 +302,7 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
-				input.sparseBlock.reset();
+				output.sparseBlock.reset();
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);
@@ -422,7 +422,7 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n, int cInput) {
 			if( !input.sparseBlock.isEmpty(n) ) {
 				meta.reset();
-				input.sparseBlock.reset();
+				output.sparseBlock.reset();
 				int apos = input.sparseBlock.pos(n);
 				int alen = input.sparseBlock.size(n);
 				int[] aix = input.sparseBlock.indexes(n);

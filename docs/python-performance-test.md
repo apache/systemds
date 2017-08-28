@@ -165,7 +165,7 @@ Steps below to configure google sheets:
 - Create a new spread sheet with google sheets.
 - Create seperate sheets for `singlenode` and `hybrid_spark`.
 - Find the  client_email inside client_secret.json and save it.
-- Back in your spreadsheet, click the Share button in the top right, and paste the client email into the People field to give it edit rights.
+- Back in your spreadsheet, click the Share button in the top right, and paste the client email into the People field to give it edit rights for each sheet.
 - Click Send
 
 

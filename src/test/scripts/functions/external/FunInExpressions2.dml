@@ -26,11 +26,12 @@ orderExternal = externalFunction(Matrix[Double] A, Integer col, Boolean desc) re
 foo = function( Matrix[Double] A ) return (Matrix[Double] B)  
 {
    for( i in 1:ncol(A) ) {
-      B = orderExternal(A*A+7, i, TRUE);
+      B = orderExternal(A, i, TRUE) * orderExternal(A, i, TRUE) + 7;
    }
 }
  
 X = read( $1, rows=$2, cols=$3 );
-Y = foo( X );
-Y = sqrt( Y-7 );
+Y = sqrt( foo( X ) -7 );
+# Y = foo( X );
+# Y = sqrt( Y-7 );
 write( Y, $4 ); #ordered input

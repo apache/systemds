@@ -59,7 +59,10 @@ public class ValidateLicAndNotice
 
 	static final String[][] packageLicenses =
 			{		{"org/antlr", "ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3"},
-					{"org/apache/wink/json4j","Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4"}
+					{"org/apache/wink/json4j","Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4"},
+					{"caffe","The proto file (src/main/proto/caffe/caffe.proto) is part of Caffe project,"},
+					{"org/tensorflow","The proto files (src/main/proto/tensorflow/event.proto and src/main/proto/tensorflow/summary.proto) is part of TensorFlow project,"},
+					{"jcuda","JCuda (jcuda.org)"},
 			};
 
 	public static HashMap<String, String[][]> hmJSLicenses = new HashMap<String, String[][]>();

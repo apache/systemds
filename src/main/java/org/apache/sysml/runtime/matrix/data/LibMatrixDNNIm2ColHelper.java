@@ -353,32 +353,52 @@ public class LibMatrixDNNIm2ColHelper {
 		int RS = R*S;
 		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
 		
-		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
-		// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
-		// Therefore,  r <= hInput + pad_h 
-		// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
-		// Therefore,  hInput + pad_h - P*stride_h < r
-		// Math.max(0, hInput + pad_h - P*stride_h + 1) <= r <= Math.min(R-1, hInput + pad_h)
-		int rMin = Math.max(0, hInput + pad_h - P*stride_h + 1);
-		int rMax = Math.min(R-1, hInput + pad_h);
-		int sMin = Math.max(0, wInput + pad_w - Q*stride_w + 1);
-		int sMax = Math.min(S-1, wInput + pad_w);
-		// Constraint 3: (hInput - r + pad_h) % stride_h == 0
-		while((hInput - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
-		while((wInput - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;	
+//		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
+//		// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
+//		// Therefore,  r <= hInput + pad_h 
+//		// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
+//		// Therefore,  hInput + pad_h - P*stride_h < r
+//		// Math.max(0, hInput + pad_h - P*stride_h + 1) <= r <= Math.min(R-1, hInput + pad_h)
+//		int rMin = Math.max(0, hInput + pad_h - P*stride_h + 1);
+//		int rMax = Math.min(R-1, hInput + pad_h);
+//		int sMin = Math.max(0, wInput + pad_w - Q*stride_w + 1);
+//		int sMax = Math.min(S-1, wInput + pad_w);
+//		// Constraint 3: (hInput - r + pad_h) % stride_h == 0
+//		while((hInput - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
+//		while((wInput - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;	
+//		
+//		for(int r = rMin; r <= rMax; r++) {
+//			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+//			// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
+//			int p = (hInput - r + pad_h)  / stride_h;
+//			for(int s = sMin; s <= sMax; s++) {
+//				int outRowIndex = cInput*RS + r*S + s;
+//				int q = (wInput - s + pad_w)  / stride_w;
+//				// chw -> [crs, pq]
+//				output.appendValue(outRowIndex, p*Q + q, value);
+//				// Since the chw are appended in sorted order, no need to sort the output rows
+//				// if(meta.lastIndexPerRow[outRowIndex] > p*Q + q) meta.sortRows = true;
+//				// meta.lastIndexPerRow[outRowIndex] = p*Q + q;
+//			}
+//		}
 		
-		for(int r = rMin; r <= rMax; r++) {
+		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
+		for(int r = 0; r < R; r++) {
 			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
 			// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
 			int p = (hInput - r + pad_h)  / stride_h;
-			for(int s = sMin; s <= sMax; s++) {
-				int outRowIndex = cInput*RS + r*S + s;
-				int q = (wInput - s + pad_w)  / stride_w;
-				// chw -> [crs, pq]
-				output.appendValue(outRowIndex, p*Q + q, value);
-				// Since the chw are appended in sorted order, no need to sort the output rows
-				// if(meta.lastIndexPerRow[outRowIndex] > p*Q + q) meta.sortRows = true;
-				// meta.lastIndexPerRow[outRowIndex] = p*Q + q;
+			if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) {
+				for(int s = 0; s < S; s++) {
+					int outRowIndex = cInput*RS + r*S + s;
+					int q = (wInput - s + pad_w)  / stride_w;
+					if(0 <= q && q < Q && (wInput - s + pad_w) % stride_w == 0) {
+						// chw -> [crs, pq]
+						output.appendValue(outRowIndex, p*Q + q, value);
+						// Since the chw are appended in sorted order, no need to sort the output rows
+						// if(meta.lastIndexPerRow[outRowIndex] > p*Q + q) meta.sortRows = true;
+						// meta.lastIndexPerRow[outRowIndex] = p*Q + q;
+					}
+				}
 			}
 		}
 	}

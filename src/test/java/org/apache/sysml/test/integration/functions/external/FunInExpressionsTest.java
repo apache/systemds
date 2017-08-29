@@ -28,13 +28,13 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.utils.Statistics;
 
-public class FunctionExpressionsTest extends AutomatedTestBase 
+public class FunInExpressionsTest extends AutomatedTestBase 
 {
 	
-	private final static String TEST_NAME1 = "FunctionExpressions1";
-	private final static String TEST_NAME2 = "FunctionExpressions2";
+	private final static String TEST_NAME1 = "FunInExpressions1";
+	private final static String TEST_NAME2 = "FunInExpressions2";
 	private final static String TEST_DIR = "functions/external/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionExpressionsTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FunInExpressionsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 12;
@@ -55,16 +55,16 @@ public class FunctionExpressionsTest extends AutomatedTestBase
 	@Test
 	public void testDMLFunction() 
 	{
-		runFunctionExpressionsTest( TEST_NAME1 );
+		runFunInExpressionsTest( TEST_NAME1 );
 	}
 	
 	@Test
 	public void testExternalFunction() 
 	{
-		runFunctionExpressionsTest( TEST_NAME2 );
+		runFunInExpressionsTest( TEST_NAME2 );
 	}
 
-	private void runFunctionExpressionsTest( String TEST_NAME )
+	private void runFunInExpressionsTest( String TEST_NAME )
 	{		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

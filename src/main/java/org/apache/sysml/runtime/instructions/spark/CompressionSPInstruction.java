@@ -31,10 +31,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class CompressionSPInstruction extends UnarySPInstruction {
 
-public class CompressionSPInstruction extends UnarySPInstruction
-{
-	public CompressionSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+	private CompressionSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
 	}

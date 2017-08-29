@@ -28,10 +28,8 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class PlusMultInstruction extends BinaryInstruction 
-{
-	public PlusMultInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
+public class PlusMultInstruction extends BinaryInstruction {
+	private PlusMultInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
 		super(op, in1, in2, out, istr);
 	}
 

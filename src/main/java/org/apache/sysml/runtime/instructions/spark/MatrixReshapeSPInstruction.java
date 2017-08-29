@@ -42,18 +42,17 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixReshapeSPInstruction extends UnarySPInstruction
-{	
-	
+public class MatrixReshapeSPInstruction extends UnarySPInstruction {
+
 	private CPOperand _opRows = null;
 	private CPOperand _opCols = null;
 	private CPOperand _opByRow = null;
-	
-	public MatrixReshapeSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr)
-	{
+
+	private MatrixReshapeSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
+			CPOperand out, String opcode, String istr) {
 		super(op, in1, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MatrixReshape;
-		
+
 		_opRows = in2;
 		_opCols = in3;
 		_opByRow = in4;

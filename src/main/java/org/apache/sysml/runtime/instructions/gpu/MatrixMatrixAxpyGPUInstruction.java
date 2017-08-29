@@ -30,24 +30,17 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstruction
-{
-	
+public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstruction {
 	CPOperand constant = null;
 	int multiplier = 1;
-	public MatrixMatrixAxpyGPUInstruction(Operator op, 
-			   CPOperand in1, 
-			   CPOperand constant, 
-			   int multiplier,
-			   CPOperand in2, 
-			   CPOperand out, 
-			   String opcode,
-			   String istr){
+
+	private MatrixMatrixAxpyGPUInstruction(Operator op, CPOperand in1, CPOperand constant, int multiplier,
+			CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		this.constant = constant;
 		this.multiplier = multiplier;
 	}
-	
+
 	public static MatrixMatrixAxpyGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 4 );

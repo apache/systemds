@@ -37,13 +37,12 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
-public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction 
-{
-	
-	public CumulativeAggregateSPInstruction(AggregateUnaryOperator op, CPOperand in1, CPOperand out, String opcode, String istr )
-	{
+public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction {
+
+	private CumulativeAggregateSPInstruction(AggregateUnaryOperator op, CPOperand in1, CPOperand out, String opcode,
+			String istr) {
 		super(op, null, in1, out, null, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CumsumAggregate;		
+		_sptype = SPINSTRUCTION_TYPE.CumsumAggregate;
 	}
 
 	public static CumulativeAggregateSPInstruction parseInstruction( String str ) 

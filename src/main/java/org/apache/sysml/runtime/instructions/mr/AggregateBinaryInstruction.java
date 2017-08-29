@@ -39,24 +39,21 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class AggregateBinaryInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
-{	
+public class AggregateBinaryInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private String _opcode = null;
-	
-	//optional argument for cpmm
+
+	// optional argument for cpmm
 	private MMCJType _aggType = MMCJType.AGG;
-	
-	//optional argument for mapmm
+
+	// optional argument for mapmm
 	private CacheType _cacheType = null;
 	private boolean _outputEmptyBlocks = true;
-	
-	public AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr)
-	{
+
+	private AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr) {
 		super(op, in1, in2, out);
 		mrtype = MRINSTRUCTION_TYPE.AggregateBinary;
 		instString = istr;
-		
+
 		_opcode = opcode;
 	}
 

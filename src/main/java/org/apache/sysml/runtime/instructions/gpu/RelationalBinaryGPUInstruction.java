@@ -31,7 +31,8 @@ public abstract class RelationalBinaryGPUInstruction extends GPUInstruction {
 	protected CPOperand _input2;
 	protected CPOperand _output;
 
-	public RelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+	protected RelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.RelationalBinary;
 		_input1 = in1;

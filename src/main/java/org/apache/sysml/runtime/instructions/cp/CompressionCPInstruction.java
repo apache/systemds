@@ -28,13 +28,12 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CompressionCPInstruction extends UnaryCPInstruction
-{
-	
-	public CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+public class CompressionCPInstruction extends UnaryCPInstruction {
+
+	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, in, null, null, out, opcode, istr);
 	}
-	
+
 	public static Instruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{

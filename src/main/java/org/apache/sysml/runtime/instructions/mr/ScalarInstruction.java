@@ -31,17 +31,14 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
+public class ScalarInstruction extends UnaryMRInstructionBase {
 
-public class ScalarInstruction extends UnaryMRInstructionBase 
-{
-	
-	public ScalarInstruction(ScalarOperator op, byte in, byte out, String istr)
-	{
+	private ScalarInstruction(ScalarOperator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
-		
-		//value dependent safe-safeness (trigger re-evaluation sparse-safe)
+
+		// value dependent safe-safeness (trigger re-evaluation sparse-safe)
 		op.setConstant(op.getConstant());
 	}
 

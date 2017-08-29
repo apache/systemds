@@ -24,23 +24,19 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstruction {
 
-public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstruction 
-{
-	
-	public MatrixMatrixRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) 
-		throws DMLRuntimeException
-	{
+	protected MatrixMatrixRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) throws DMLRuntimeException {
 		super(op, in1, in2, out, opcode, istr);
-		
-		//sanity check opcodes
-		if (!( opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("!=") || opcode.equalsIgnoreCase("<")
-			|| opcode.equalsIgnoreCase(">") || opcode.equalsIgnoreCase("<=") || opcode.equalsIgnoreCase(">="))) 
-		{
-			throw new DMLRuntimeException("Unknown opcode in MatrixMatrixRelationalSPInstruction: " + toString());	
-		} 
+
+		// sanity check opcodes
+		if (!(opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("!=") || opcode.equalsIgnoreCase("<")
+				|| opcode.equalsIgnoreCase(">") || opcode.equalsIgnoreCase("<=") || opcode.equalsIgnoreCase(">="))) {
+			throw new DMLRuntimeException("Unknown opcode in MatrixMatrixRelationalSPInstruction: " + toString());
+		}
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException

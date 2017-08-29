@@ -47,35 +47,31 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class FrameIndexingSPInstruction  extends IndexingSPInstruction
-{
-	
-	/*
-	 * This class implements the frame indexing functionality inside Spark.  
-	 * Example instructions: 
-	 *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
-	 *         input=mVar1, output=mVar6, 
-	 *         bounds = (Var2,Var3,Var4,Var5)
-	 *         rowindex_lower: Var2, rowindex_upper: Var3 
-	 *         colindex_lower: Var4, colindex_upper: Var5
-	 *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
-	 *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
-	 *         the result is stored in mVar7
-	 *  
-	 */
-	public FrameIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, SparkAggType aggtype, String opcode, String istr)
-	{
+/**
+ * This class implements the frame indexing functionality inside Spark.  
+ * Example instructions: 
+ *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
+ *         input=mVar1, output=mVar6, 
+ *         bounds = (Var2,Var3,Var4,Var5)
+ *         rowindex_lower: Var2, rowindex_upper: Var3 
+ *         colindex_lower: Var4, colindex_upper: Var5
+ *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
+ *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
+ *         the result is stored in mVar7
+ *  
+ */
+public class FrameIndexingSPInstruction extends IndexingSPInstruction {
+
+	protected FrameIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+			CPOperand cu, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
 		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
 	}
-	
-	public FrameIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, String opcode, String istr)
-	{
+
+	protected FrameIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
+			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
-	
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 

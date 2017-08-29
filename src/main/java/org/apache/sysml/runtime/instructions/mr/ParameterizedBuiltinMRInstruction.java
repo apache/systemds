@@ -37,31 +37,30 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * Supported opcodes: replace.
  * 
  */
-public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
-{	
+public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 	String _opcode = null;
-	
-	//replace-specific attributes
+
+	// replace-specific attributes
 	private double _pattern;
 	private double _replace;
-	
-	//rexpand-specific attributes
+
+	// rexpand-specific attributes
 	private double _max;
 	private boolean _dirRows;
 	private boolean _cast;
 	private boolean _ignore;
-	
-	public ParameterizedBuiltinMRInstruction(Operator op, byte in, double pattern, double replace, byte out, String opcode, String istr)
-	{
+
+	private ParameterizedBuiltinMRInstruction(Operator op, byte in, double pattern, double replace, byte out,
+			String opcode, String istr) {
 		super(op, in, out, istr);
 		instString = istr;
 		_opcode = opcode;
 		_pattern = pattern;
 		_replace = replace;
 	}
-	
-	public ParameterizedBuiltinMRInstruction(Operator op, byte in, double max, boolean dirRows, boolean cast, boolean ignore, byte out, String opcode, String istr)
-	{
+
+	private ParameterizedBuiltinMRInstruction(Operator op, byte in, double max, boolean dirRows, boolean cast,
+			boolean ignore, byte out, String opcode, String istr) {
 		super(op, in, out, istr);
 		instString = istr;
 		_opcode = opcode;

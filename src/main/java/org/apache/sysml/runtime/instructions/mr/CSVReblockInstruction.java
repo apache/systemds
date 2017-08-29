@@ -23,21 +23,19 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CSVReblockInstruction extends ReblockInstruction 
-{
-	
-	public String  delim     = DataExpression.DEFAULT_DELIM_DELIMITER;
+public class CSVReblockInstruction extends ReblockInstruction {
+	public String delim = DataExpression.DEFAULT_DELIM_DELIMITER;
 	public boolean hasHeader = DataExpression.DEFAULT_DELIM_HAS_HEADER_ROW;
-	public boolean fill      = DataExpression.DEFAULT_DELIM_FILL;
-	public double  fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
+	public boolean fill = DataExpression.DEFAULT_DELIM_FILL;
+	public double fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 
-	public CSVReblockInstruction(Operator op, byte in, byte out, int br,
-			int bc, boolean hasHeader, String delim, boolean fll, double mv, String istr) {
+	private CSVReblockInstruction(Operator op, byte in, byte out, int br, int bc, boolean hasHeader, String delim,
+			boolean fll, double mv, String istr) {
 		super(op, in, out, br, bc, false, istr);
-		this.delim=delim;
-		this.fill=fll;
-		this.fillValue=mv;
-		this.hasHeader=hasHeader;
+		this.delim = delim;
+		this.fill = fll;
+		this.fillValue = mv;
+		this.hasHeader = hasHeader;
 	}
 
 	public Instruction clone(byte in) 

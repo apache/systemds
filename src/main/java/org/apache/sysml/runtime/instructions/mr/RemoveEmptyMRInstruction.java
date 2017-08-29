@@ -35,23 +35,18 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * Supported optcodes: rmempty.
  * 
  */
-public class RemoveEmptyMRInstruction extends BinaryInstruction
-{	
-	
-	
-	private long    _len   = -1;
+public class RemoveEmptyMRInstruction extends BinaryInstruction {
+	private long _len = -1;
 	private boolean _rmRows = true;
-	
-	
-	public RemoveEmptyMRInstruction(Operator op, byte in1, byte in2, long len, boolean rmRows, byte out, String istr)
-	{
+
+	private RemoveEmptyMRInstruction(Operator op, byte in1, byte in2, long len, boolean rmRows, byte out, String istr) {
 		super(op, in1, in2, out, istr);
 		instString = istr;
-		
+
 		_len = len;
 		_rmRows = rmRows;
 	}
-	
+
 	public boolean isRemoveRows()
 	{
 		return _rmRows;

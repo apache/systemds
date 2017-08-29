@@ -26,14 +26,12 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class CombineUnaryInstruction extends UnaryMRInstructionBase {
 
-public class CombineUnaryInstruction extends UnaryMRInstructionBase
-{
-	
 	/*
 	 * combineunary:::0:DOUBLE:::1:DOUBLE
 	 */
-	public CombineUnaryInstruction(Operator op, byte in, byte out, String istr) {
+	private CombineUnaryInstruction(Operator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.CombineUnary;
 		instString = istr;

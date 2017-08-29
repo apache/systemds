@@ -55,13 +55,10 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
  * not integrated in automatic operator selection yet.
  * 
  */
-public class PMapmmSPInstruction extends BinarySPInstruction 
-{
-	private static final int NUM_ROWBLOCKS=4;
-	
-	public PMapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, 
-			                    String opcode, String istr )
-	{
+public class PMapmmSPInstruction extends BinarySPInstruction {
+	private static final int NUM_ROWBLOCKS = 4;
+
+	private PMapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 	}

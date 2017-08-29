@@ -25,22 +25,19 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
+public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 
-public abstract class UnaryCPInstruction extends ComputationCPInstruction
-{
-	
-	public UnaryCPInstruction(Operator op, CPOperand in, CPOperand out,
-			String opcode, String instr) {
-		this (op, in, null, null, out, opcode, instr);
+	protected UnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		this(op, in, null, null, out, opcode, instr);
 	}
 
-	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode, String instr) {
-		this (op, in1, in2, null, out, opcode, instr);
+	protected UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String instr) {
+		this(op, in1, in2, null, out, opcode, instr);
 	}
 
-	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String instr) {
+	protected UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String instr) {
 		super(op, in1, in2, in3, out, opcode, instr);
 	}
 
@@ -62,7 +59,7 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction
 		return parse(instr, in1, in2, in3, out);
 	}
 
-	static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+	private static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		
 		// first part is the opcode, last part is the output, middle parts are input operands

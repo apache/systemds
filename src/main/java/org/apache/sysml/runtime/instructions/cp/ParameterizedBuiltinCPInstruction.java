@@ -46,21 +46,19 @@ import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 
-
-public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
-{
+public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final int TOSTRING_MAXROWS = 100;
 	private static final int TOSTRING_MAXCOLS = 100;
 	private static final int TOSTRING_DECIMAL = 3;
 	private static final boolean TOSTRING_SPARSE = false;
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
-	
+
 	private int arity;
-	protected HashMap<String,String> params;
-	
-	public ParameterizedBuiltinCPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr )
-	{
+	protected HashMap<String, String> params;
+
+	protected ParameterizedBuiltinCPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
+			String opcode, String istr) {
 		super(op, null, null, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.ParameterizedBuiltin;
 		params = paramsMap;

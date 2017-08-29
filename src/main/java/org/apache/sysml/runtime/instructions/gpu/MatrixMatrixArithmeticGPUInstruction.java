@@ -28,18 +28,13 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction
-{
-	
-	public MatrixMatrixArithmeticGPUInstruction(Operator op, 
-											   CPOperand in1, 
-											   CPOperand in2, 
-											   CPOperand out, 
-											   String opcode,
-											   String istr){
+public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
+
+	protected MatrixMatrixArithmeticGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		GPUStatistics.incrementNoOfExecutedGPUInst();

@@ -30,15 +30,12 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
-public class CumulativeSplitInstruction extends UnaryInstruction 
-{
-	
+public class CumulativeSplitInstruction extends UnaryInstruction {
 	private MatrixCharacteristics _mcIn = null;
 	private long _lastRowBlockIndex = -1;
 	private double _initValue = 0;
-	
-	public CumulativeSplitInstruction(byte in, byte out, double init, String istr)
-	{
+
+	private CumulativeSplitInstruction(byte in, byte out, double init, String istr) {
 		super(null, in, out, istr);
 		_initValue = init;
 	}

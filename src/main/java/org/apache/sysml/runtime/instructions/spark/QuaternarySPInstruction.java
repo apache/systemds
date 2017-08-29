@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -60,19 +59,17 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 
-public class QuaternarySPInstruction extends ComputationSPInstruction 
-{
-	
+public class QuaternarySPInstruction extends ComputationSPInstruction {
 	private CPOperand _input4 = null;
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
-	
-	public QuaternarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, boolean cacheU, boolean cacheV, String opcode, String str)
-	{
+
+	private QuaternarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
+			CPOperand out, boolean cacheU, boolean cacheV, String opcode, String str) {
 		super(op, in1, in2, in3, out, opcode, str);
 		_sptype = SPINSTRUCTION_TYPE.Quaternary;
 		_input4 = in4;
-		
+
 		_cacheU = cacheU;
 		_cacheV = cacheV;
 	}

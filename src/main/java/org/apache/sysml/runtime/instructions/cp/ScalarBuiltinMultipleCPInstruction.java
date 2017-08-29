@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
  */
 public class ScalarBuiltinMultipleCPInstruction extends BuiltinMultipleCPInstruction {
 
-	public ScalarBuiltinMultipleCPInstruction(Operator op, String opcode, String istr, CPOperand output,
+	protected ScalarBuiltinMultipleCPInstruction(Operator op, String opcode, String istr, CPOperand output,
 			CPOperand... inputs) {
 		super(op, opcode, istr, output, inputs);
 	}

@@ -23,14 +23,13 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public abstract class ComputationCPInstruction extends CPInstruction 
-{
-	
+public abstract class ComputationCPInstruction extends CPInstruction {
 
 	public CPOperand output;
 	public CPOperand input1, input2, input3;
-	
-	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr ) {
+
+	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
@@ -38,7 +37,8 @@ public abstract class ComputationCPInstruction extends CPInstruction
 		output = out;
 	}
 
-	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr ) {
+	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) {
 		super(op, opcode, istr);
 		input1 = in1;
 		input2 = in2;

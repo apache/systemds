@@ -42,17 +42,16 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class AppendGSPInstruction extends BinarySPInstruction
-{
+public class AppendGSPInstruction extends BinarySPInstruction {
 	private boolean _cbind = true;
-	
-	public AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand offset2, CPOperand out, boolean cbind, String opcode, String istr)
-	{
+
+	private AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand offset2,
+			CPOperand out, boolean cbind, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.GAppend;
 		_cbind = cbind;
 	}
-	
+
 	public static AppendGSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

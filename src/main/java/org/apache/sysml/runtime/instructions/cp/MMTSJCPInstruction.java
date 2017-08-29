@@ -26,14 +26,12 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MMTSJCPInstruction extends UnaryCPInstruction
-{	
-	
+public class MMTSJCPInstruction extends UnaryCPInstruction {
 	private MMTSJType _type = null;
 	private int _numThreads = 1;
-	
-	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, int k, String opcode, String istr)
-	{
+
+	private MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, int k, String opcode,
+			String istr) {
 		super(op, in1, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MMTSJ;
 		_type = type;

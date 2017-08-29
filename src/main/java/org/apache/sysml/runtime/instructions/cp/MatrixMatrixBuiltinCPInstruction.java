@@ -27,19 +27,13 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction {
 
-public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
-{
-	
-	public MatrixMatrixBuiltinCPInstruction(Operator op, 
-											   CPOperand in1, 
-											   CPOperand in2, 
-											   CPOperand out, 
-											   String opcode,
-											   String istr){
+	protected MatrixMatrixBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, 2, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException

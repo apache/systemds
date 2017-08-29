@@ -34,17 +34,15 @@ import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class BinaryMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
-{	
+public class BinaryMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private VectorType _vectorType = null;
-	
-	public BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out, String istr)
-	{
+
+	private BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out,
+			String istr) {
 		super(op, in1, in2, out);
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
-		
+
 		_vectorType = vtype;
 	}
 

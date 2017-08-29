@@ -35,18 +35,18 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
-public class AggregateUnaryCPInstruction extends UnaryCPInstruction
-{
-	
-	public AggregateUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
+
+	private AggregateUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		this(op, in, null, null, out, opcode, istr);
 	}
-	
-	public AggregateUnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr){
+
+	protected AggregateUnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, in3, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateUnary;		
+		_cptype = CPINSTRUCTION_TYPE.AggregateUnary;
 	}
-	
+
 	public static AggregateUnaryCPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{

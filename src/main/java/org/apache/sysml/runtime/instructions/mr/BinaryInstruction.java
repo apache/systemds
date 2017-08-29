@@ -29,17 +29,14 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class BinaryInstruction extends BinaryMRInstructionBase {
 
-public class BinaryInstruction extends BinaryMRInstructionBase 
-{
-	
-	public BinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
-	{
+	protected BinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
 		super(op, in1, in2, out);
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
 	}
-	
+
 	public static BinaryInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

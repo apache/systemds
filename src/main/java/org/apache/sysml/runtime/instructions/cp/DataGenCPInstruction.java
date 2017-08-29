@@ -32,11 +32,10 @@ import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class DataGenCPInstruction extends UnaryCPInstruction
-{
-	
+public class DataGenCPInstruction extends UnaryCPInstruction {
+
 	private DataGenMethod method = DataGenMethod.INVALID;
-	
+
 	private long rows;
 	private long cols;
 	private int rowsInBlock;
@@ -45,24 +44,22 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	private double maxValue;
 	private double sparsity;
 	private String pdf, pdfParams;
-	private long seed=0;
-	
-	//sequence specific attributes
+	private long seed = 0;
+
+	// sequence specific attributes
 	private double seq_from;
-	private double seq_to; 
+	private double seq_to;
 	private double seq_incr;
-	
-	//sample specific attributes
+
+	// sample specific attributes
 	private boolean replace;
- 	private int numThreads = -1;
-	
-	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
-							  long rows, long cols, int rpb, int cpb,
-							  double minValue, double maxValue, double sparsity, long seed,
-							  String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) 
-	{
+	private int numThreads = -1;
+
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
+			String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
-		
+
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -77,12 +74,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.pdfParams = pdfParams;
 	}
 
-	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
-			  					long rows, long cols, int rpb, int cpb, double maxValue,
-			  					boolean replace, long seed, String opcode, String istr) 
-	{
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double maxValue, boolean replace, long seed, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
-		
+
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -92,13 +87,11 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.replace = replace;
 		this.seed = seed;
 	}
-	
-	public DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
-							long rows, long cols, int rpb, int cpb, double seqFrom,
-							double seqTo, double seqIncr, String opcode, String istr) 
-	{
+
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double seqFrom, double seqTo, double seqIncr, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
-		
+
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;

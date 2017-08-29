@@ -36,13 +36,13 @@ import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class FrameAppendMSPInstruction extends AppendMSPInstruction
-{
-	public FrameAppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out, boolean cbind, String opcode, String istr)
-	{
+public class FrameAppendMSPInstruction extends AppendMSPInstruction {
+
+	protected FrameAppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out,
+			boolean cbind, String opcode, String istr) {
 		super(op, in1, in2, offset, out, cbind, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 

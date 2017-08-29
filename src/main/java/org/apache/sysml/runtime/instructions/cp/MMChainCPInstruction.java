@@ -26,14 +26,13 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MMChainCPInstruction extends UnaryCPInstruction
-{	
-	
+public class MMChainCPInstruction extends UnaryCPInstruction {
+
 	private ChainType _type = null;
 	private int _numThreads = -1;
-	
-	public MMChainCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, ChainType type, int k, String opcode, String istr)
-	{
+
+	private MMChainCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			ChainType type, int k, String opcode, String istr) {
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MMChain;
 		_type = type;

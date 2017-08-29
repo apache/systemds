@@ -32,17 +32,16 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 
-
-public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
-{
+public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	protected ArrayList<CPOperand> _outputs;
-	
-	public MultiReturnParameterizedBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2, ArrayList<CPOperand> outputs, String opcode, String istr ) {
+
+	private MultiReturnParameterizedBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
+			ArrayList<CPOperand> outputs, String opcode, String istr) {
 		super(op, input1, input2, outputs.get(0), opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
 		_outputs = outputs;
 	}
-	
+
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}

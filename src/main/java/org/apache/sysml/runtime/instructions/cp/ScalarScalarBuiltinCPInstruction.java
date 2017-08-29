@@ -25,10 +25,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction {
 
-public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
-{
-	public ScalarScalarBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String instr){
+	protected ScalarScalarBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String instr) {
 		super(op, in1, in2, out, 2, opcode, instr);
 	}
 

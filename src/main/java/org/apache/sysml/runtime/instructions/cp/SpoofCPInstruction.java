@@ -29,21 +29,21 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public class SpoofCPInstruction extends ComputationCPInstruction
-{
+public class SpoofCPInstruction extends ComputationCPInstruction {
 	private final Class<?> _class;
 	private final SpoofOperator _op;
 	private final int _numThreads;
 	private final CPOperand[] _in;
-	
-	public SpoofCPInstruction(SpoofOperator op, Class<?> cla, int k, CPOperand[] in, CPOperand out, String opcode, String str) {
+
+	private SpoofCPInstruction(SpoofOperator op, Class<?> cla, int k, CPOperand[] in, CPOperand out, String opcode,
+			String str) {
 		super(null, null, null, out, opcode, str);
 		_class = cla;
 		_op = op;
 		_numThreads = k;
 		_in = in;
 	}
-	
+
 	public Class<?> getOperatorClass() {
 		return _class;
 	}

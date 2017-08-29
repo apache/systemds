@@ -36,20 +36,18 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * ZeroOut with complementary=false is to zero out a subregion inside a matrix
  * ZeroOut with complementary=true is to select a subregion inside a matrix (zero out regions outside the selected range)
  */
-public class ZeroOutInstruction extends UnaryMRInstructionBase
-{
-		
-	public IndexRange indexRange=null;
-	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
-	public boolean complementary=false;
-	
-	public ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
+public class ZeroOutInstruction extends UnaryMRInstructionBase {
+	public IndexRange indexRange = null;
+	private IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
+	public boolean complementary = false;
+
+	private ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.ZeroOut;
 		instString = istr;
-		indexRange=rng;
+		indexRange = rng;
 	}
-	
+
 	public static ZeroOutInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 6 );

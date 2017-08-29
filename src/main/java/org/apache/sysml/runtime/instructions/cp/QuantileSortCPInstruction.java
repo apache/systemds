@@ -29,27 +29,26 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
-public class QuantileSortCPInstruction extends UnaryCPInstruction
-{
-	
-	/*
-	 * This class supports two variants of sort operation on a 1-dimensional input matrix. 
-	 * The two variants are <code> weighted </code> and <code> unweighted </code>.
-	 * Example instructions: 
-	 *     sort:mVar1:mVar2 (input=mVar1, output=mVar2)
-	 *     sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
-	 *  
-	 */
-	
-	public QuantileSortCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+/**
+ * This class supports two variants of sort operation on a 1-dimensional input matrix. 
+ * The two variants are <code> weighted </code> and <code> unweighted </code>.
+ * Example instructions: 
+ *     sort:mVar1:mVar2 (input=mVar1, output=mVar2)
+ *     sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
+ *  
+ */
+public class QuantileSortCPInstruction extends UnaryCPInstruction {
+
+	private QuantileSortCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		this(op, in, null, out, opcode, istr);
 	}
-	
-	public QuantileSortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
+
+	private QuantileSortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.QSort;
 	}
-	
+
 	public static QuantileSortCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

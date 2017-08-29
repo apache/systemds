@@ -30,17 +30,14 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MMTSJMRInstruction extends UnaryInstruction
-{	
-	
+public class MMTSJMRInstruction extends UnaryInstruction {
 	private MMTSJType _type = null;
 
-	public MMTSJMRInstruction(Operator op, byte in, MMTSJType type, byte out, String istr)
-	{
+	private MMTSJMRInstruction(Operator op, byte in, MMTSJType type, byte out, String istr) {
 		super(op, in, out, istr);
 		mrtype = MRINSTRUCTION_TYPE.MMTSJ;
 		instString = istr;
-		
+
 		_type = type;
 	}
 

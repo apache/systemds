@@ -54,21 +54,20 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class ReorgSPInstruction extends UnarySPInstruction
-{
-	
-	//sort-specific attributes (to enable variable attributes)
- 	private CPOperand _col = null;
- 	private CPOperand _desc = null;
- 	private CPOperand _ixret = null;
- 	private boolean _bSortIndInMem = false;
-	 	
-	public ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+public class ReorgSPInstruction extends UnarySPInstruction {
+	// sort-specific attributes (to enable variable attributes)
+	private CPOperand _col = null;
+	private CPOperand _desc = null;
+	private CPOperand _ixret = null;
+	private boolean _bSortIndInMem = false;
+
+	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
 	}
-	
-	public ReorgSPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out, String opcode, boolean bSortIndInMem, String istr){
+
+	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out,
+			String opcode, boolean bSortIndInMem, String istr) {
 		this(op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
@@ -76,7 +75,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
 		_bSortIndInMem = bSortIndInMem;
 	}
-	
+
 	public static ReorgSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

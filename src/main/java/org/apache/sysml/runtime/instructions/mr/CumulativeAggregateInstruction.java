@@ -33,17 +33,13 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class CumulativeAggregateInstruction extends AggregateUnaryInstruction 
-{
-	
+public class CumulativeAggregateInstruction extends AggregateUnaryInstruction {
 	private MatrixCharacteristics _mcIn = null;
-	
-	public CumulativeAggregateInstruction(Operator op, byte in, byte out, String istr)
-	{
+
+	private CumulativeAggregateInstruction(Operator op, byte in, byte out, String istr) {
 		super(op, in, out, true, istr);
 	}
-	
+
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn )
 	{
 		_mcIn = mcIn;

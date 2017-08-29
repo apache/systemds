@@ -26,12 +26,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
+public class CombineTernaryInstruction extends TernaryInstruction {
 
-public class CombineTernaryInstruction extends TernaryInstruction
-{
-	
-	public CombineTernaryInstruction(OperationTypes op, byte in1, byte in2,
-			byte in3, byte out, String istr) {
+	private CombineTernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, String istr) {
 		super(op, in1, in2, in3, out, -1, -1, istr);
 		mrtype = MRINSTRUCTION_TYPE.CombineTernary;
 	}

@@ -59,10 +59,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 
+public class VariableCPInstruction extends CPInstruction {
 
-public class VariableCPInstruction extends CPInstruction 
-{
-	
 	/*
 	 * Supported Operations
 	 * --------------------
@@ -118,9 +116,9 @@ public class VariableCPInstruction extends CPInstruction
 	static {
 		_uniqueVarID  = new IDSequence(true); 
 	}
-	
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String sopcode, String istr )
-	{
+
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			int _arity, String sopcode, String istr) {
 		super(sopcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.Variable;
 		opcode = op;
@@ -129,30 +127,31 @@ public class VariableCPInstruction extends CPInstruction
 		addInput(in2);
 		addInput(in3);
 		output = out;
-		
+
 		_formatProperties = null;
 		_schema = null;
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, UpdateType updateType, int _arity, String schema, String sopcode, String istr)
-	{
-		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
+			UpdateType updateType, int _arity, String schema, String sopcode, String istr) {
+		this(op, in1, in2, in3, (CPOperand) null, _arity, sopcode, istr);
 		metadata = md;
-		_updateType = updateType;		
+		_updateType = updateType;
 		_schema = schema;
 	}
-	
+
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, UpdateType updateType, int _arity, FileFormatProperties formatProperties, String schema, String sopcode, String istr)
-	{
-		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
+			UpdateType updateType, int _arity, FileFormatProperties formatProperties, String schema, String sopcode,
+			String istr) {
+		this(op, in1, in2, in3, (CPOperand) null, _arity, sopcode, istr);
 		metadata = md;
-		_updateType = updateType;  
+		_updateType = updateType;
 		_formatProperties = formatProperties;
 		_schema = schema;
 	}
-	
+
 	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLRuntimeException {
 		
 		if ( str.equalsIgnoreCase("createvar"))

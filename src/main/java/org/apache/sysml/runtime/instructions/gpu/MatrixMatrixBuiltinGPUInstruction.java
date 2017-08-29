@@ -27,14 +27,13 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
-
 public class MatrixMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstruction {
 
-  public MatrixMatrixBuiltinGPUInstruction(Operator op, CPOperand input1, CPOperand input2, CPOperand output, String opcode, String istr, int _arity) {
-    super(op, input1, input2, output, opcode, istr, _arity);
-    _gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
-
-  }
+	protected MatrixMatrixBuiltinGPUInstruction(Operator op, CPOperand input1, CPOperand input2, CPOperand output,
+			String opcode, String istr, int _arity) {
+		super(op, input1, input2, output, opcode, istr, _arity);
+		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
+	}
 
   @Override
   public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {

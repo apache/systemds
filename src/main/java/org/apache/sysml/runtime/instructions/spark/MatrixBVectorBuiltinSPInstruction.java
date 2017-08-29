@@ -26,21 +26,15 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixBVectorBuiltinSPInstruction extends BuiltinBinarySPInstruction 
-{
-	
+public class MatrixBVectorBuiltinSPInstruction extends BuiltinBinarySPInstruction {
 	private VectorType _vtype = null;
-	
-	public MatrixBVectorBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, VectorType vtype, String opcode, String istr) 
-		throws DMLRuntimeException 
-	{
+
+	protected MatrixBVectorBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			VectorType vtype, String opcode, String istr) throws DMLRuntimeException {
 		super(op, in1, in2, out, opcode, istr);
-		
 		_vtype = vtype;
-		
-		//sanity check opcodes
-		if(!( opcode.equalsIgnoreCase("mapmax") || opcode.equalsIgnoreCase("mapmin")) ) 
-		{
+		// sanity check opcodes
+		if (!(opcode.equalsIgnoreCase("mapmax") || opcode.equalsIgnoreCase("mapmin"))) {
 			throw new DMLRuntimeException("Unknown opcode in MatrixBVectorBuiltinSPInstruction: " + toString());
 		}
 	}

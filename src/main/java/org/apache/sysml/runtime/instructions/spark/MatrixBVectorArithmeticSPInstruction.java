@@ -25,24 +25,19 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixBVectorArithmeticSPInstruction extends ArithmeticBinarySPInstruction 
-{
-	
+public class MatrixBVectorArithmeticSPInstruction extends ArithmeticBinarySPInstruction {
 	private VectorType _vtype = null;
-	
-	public MatrixBVectorArithmeticSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, VectorType vtype, String opcode, String istr) 
-		throws DMLRuntimeException 
-	{
+
+	protected MatrixBVectorArithmeticSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			VectorType vtype, String opcode, String istr) throws DMLRuntimeException {
 		super(op, in1, in2, out, opcode, istr);
-		
 		_vtype = vtype;
-		
-		//sanity check opcodes
-		if (!( opcode.equalsIgnoreCase("map+") || opcode.equalsIgnoreCase("map-") || opcode.equalsIgnoreCase("map*")
-			 ||opcode.equalsIgnoreCase("map/") || opcode.equalsIgnoreCase("map%%") || opcode.equalsIgnoreCase("map%/%")
-			 ||opcode.equalsIgnoreCase("map^") || opcode.equalsIgnoreCase("map1-*")) )
-		{
-			throw new DMLRuntimeException("Unknown opcode in MatrixBVectorArithmeticSPInstruction: " + toString());		
+		// sanity check opcodes
+		if (!(opcode.equalsIgnoreCase("map+") || opcode.equalsIgnoreCase("map-") || opcode.equalsIgnoreCase("map*")
+				|| opcode.equalsIgnoreCase("map/") || opcode.equalsIgnoreCase("map%%")
+				|| opcode.equalsIgnoreCase("map%/%") || opcode.equalsIgnoreCase("map^")
+				|| opcode.equalsIgnoreCase("map1-*"))) {
+			throw new DMLRuntimeException("Unknown opcode in MatrixBVectorArithmeticSPInstruction: " + toString());
 		}
 	}
 

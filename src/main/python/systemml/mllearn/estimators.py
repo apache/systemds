@@ -99,6 +99,19 @@ class BaseSystemMLEstimator(Estimator):
         """
         self.estimator.setExplain(explain)
         return self
+    
+    def setExplainLevel(self, explainLevel):
+        """
+        Set explain level. Mainly intended for developers.
+        
+        Parameters
+        ----------
+        explainLevel: string
+            Can be one of "hops", "runtime", "recompile_hops", "recompile_runtime"
+            or in the above in upper case.
+        """
+        self.estimator.setExplainLevel(explainLevel)
+        return self
             
     def setStatistics(self, statistics):
         """

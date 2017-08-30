@@ -878,6 +878,8 @@
 								<exclude>src/main/java/*.tokens</exclude>
 								<!-- Generated python files -->
 								<exclude>src/main/python/systemml.egg-info/**</exclude>
+								<!-- Sphinx reStructuredText files -->
+								<exclude>src/main/pythondoc/*.rst</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
 								<!-- Proto files -->

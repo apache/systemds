@@ -49,7 +49,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
 	protected final double THRESHOLD = 1e-9;    // for relative error
-
+	private static final boolean PRINT_MAT_ERROR = false;
+	
 	@BeforeClass
 	public static void beforeClass() {
 		spark = createSystemMLSparkSession("GPUTests", "local");
@@ -139,7 +140,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		genMLC.close();
 		return in1;
 	}
-
+	
 	/**
 	 * Generates a random input matrix with a given size and sparsity
 	 *
@@ -152,6 +153,22 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return a random matrix with given size and sparsity
 	 */
 	protected Matrix generateInputMatrix(SparkSession spark, int m, int n, double min, double max, double sparsity, int seed) {
+		return generateInputMatrix(spark, m, n, min, max, sparsity, seed, false);
+	}
+
+	/**
+	 * Generates a random input matrix with a given size and sparsity
+	 *
+	 * @param spark    valid instance of {@link SparkSession}
+	 * @param m        number of rows
+	 * @param n        number of columns
+	 * @param min      min for RNG
+	 * @param max      max for RNG
+	 * @param sparsity sparsity (1 = completely dense, 0 = completely sparse)
+	 * @param performRounding performs rounding after generation of random matrix
+	 * @return a random matrix with given size and sparsity
+	 */
+	protected Matrix generateInputMatrix(SparkSession spark, int m, int n, double min, double max, double sparsity, int seed, boolean performRounding) {
 		// Generate a random matrix of size m * n
 		MLContext genMLC = new MLContext(spark);
 		String scriptStr;
@@ -160,11 +177,46 @@ public abstract class GPUTests extends AutomatedTestBase {
 		} else {
 			scriptStr = "in1 = rand(rows=" + m + ", cols=" + n + ", sparsity = " + sparsity + ", seed= " + seed
 					+ ", min=" + min + ", max=" + max + ")";
+			if(performRounding)
+				scriptStr += "; in1 = round(in1)";
 		}
 		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
 		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
 		genMLC.close();
 		return in1;
+	}
+	
+	private void printMatrixIfNotEqual(MatrixBlock expectedMB, MatrixBlock actualMB) {
+		long rows = expectedMB.getNumRows();
+		long cols = expectedMB.getNumColumns();
+		boolean matrixNotEqual = false;
+		for (int i = 0; i < rows && !matrixNotEqual; i++) {
+			for (int j = 0; j < cols; j++) {
+				double expectedDouble = expectedMB.quickGetValue(i, j);
+				double actualDouble = actualMB.quickGetValue(i, j);
+				if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
+					double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+					if(relativeError >= getTHRESHOLD()) {
+						matrixNotEqual = true;
+						break;
+					}
+				}
+			}
+		}
+		if(matrixNotEqual) {
+			System.out.println("Expected mb != Actual mb. Mismatches are as follows:");
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					double expectedDouble = expectedMB.quickGetValue(i, j);
+					double actualDouble = actualMB.quickGetValue(i, j);
+					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) 
+						System.out.print("(" + i + "," + j  + " : " + expectedDouble + " != " + actualDouble + ") ");
+				}
+			}
+			System.out.println();
+		}
+		else
+			System.out.println("Expected mb = Actual mb");
 	}
 
 	/**
@@ -183,6 +235,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 			Assert.assertEquals(rows, actualMB.getNumRows());
 			Assert.assertEquals(cols, actualMB.getNumColumns());
 
+			if(PRINT_MAT_ERROR) printMatrixIfNotEqual(expectedMB, actualMB);
+			
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
 					double expectedDouble = expectedMB.quickGetValue(i, j);

@@ -48,7 +48,6 @@ public class LibMatrixDNNConv2dHelper {
 			int PQ = _params.P*_params.Q; int K = _params.K;
 			int RS = _params.R*_params.S;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(RS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
 			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, false);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
@@ -129,7 +128,6 @@ public class LibMatrixDNNConv2dHelper {
 		public Long call() throws Exception {
 			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
 			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {

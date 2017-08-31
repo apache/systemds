@@ -450,8 +450,8 @@ Generate pythondocs with Sphinx.
 
 Copy contents of `systemml/target/pydocs/html` to `systemml-website-site/docs/1.0.0/api/python`.
 
-Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Javadoc` link works and that the correct Javadoc version is displayed. 
-Verify `API Docs` &rarr; `Pythondoc` link works and that the same Pythondoc version is displayed. Verify feedback links under `Issues` menu are not present.
+Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Java` link works and that the correct Javadoc version is displayed. 
+Verify `API Docs` &rarr; `Python` link works and that the same Pythondoc version is displayed. Verify feedback links under `Issues` menu are not present.
 
 Clean up any unnecessary files (such as deleting `.DS_Store` files on OS X).
 

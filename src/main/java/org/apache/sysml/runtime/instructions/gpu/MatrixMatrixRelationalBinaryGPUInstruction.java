@@ -30,7 +30,7 @@ import org.apache.sysml.utils.GPUStatistics;
 
 public class MatrixMatrixRelationalBinaryGPUInstruction extends RelationalBinaryGPUInstruction {
 
-	public MatrixMatrixRelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+	protected MatrixMatrixRelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}

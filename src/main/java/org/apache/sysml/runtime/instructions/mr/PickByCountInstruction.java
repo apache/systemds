@@ -27,43 +27,41 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class PickByCountInstruction extends MRInstruction {
 
-public class PickByCountInstruction extends MRInstruction 
-{
-	
 	public byte input1; // used for both valuepick and rangepick
 	public byte input2; // used only for valuepick
 	public double cst; // used only for rangepick
-	public boolean isValuePick=true;
-	
+	public boolean isValuePick = true;
+
 	/*
-	 *  Constructor for valuepick
-	 *  valuepick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE
-	 *  0 is data matrix, 1 is the quantile matrix, 2 will have the resulting picked data items 
+	 * Constructor for valuepick valuepick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE 0 is
+	 * data matrix, 1 is the quantile matrix, 2 will have the resulting picked
+	 * data items
 	 */
-	public PickByCountInstruction(Operator op, byte _in1, byte _in2, byte out, String istr) {
+	private PickByCountInstruction(Operator op, byte _in1, byte _in2, byte out, String istr) {
 		super(op, out);
 		input1 = _in1;
 		input2 = _in2;
 		cst = 0;
 		mrtype = MRINSTRUCTION_TYPE.PickByCount;
 		instString = istr;
-		isValuePick=true;
+		isValuePick = true;
 	}
 
 	/*
-	 *  Constructor for rangepick
-	 *  rangepick:::0:DOUBLE:::0.25:DOUBLE:::1:DOUBLE
-	 *  0 is data matrix, 0.25 is the quantile that needs to be removed from both ends in the PDF, 
-	 *  1 will have the resulting picked data items between [Q_1-Q_3]
+	 * Constructor for rangepick rangepick:::0:DOUBLE:::0.25:DOUBLE:::1:DOUBLE 0
+	 * is data matrix, 0.25 is the quantile that needs to be removed from both
+	 * ends in the PDF, 1 will have the resulting picked data items between
+	 * [Q_1-Q_3]
 	 */
-	public PickByCountInstruction(Operator op, byte _in1, double _cst, byte out, String istr) {
+	private PickByCountInstruction(Operator op, byte _in1, double _cst, byte out, String istr) {
 		super(op, out);
 		input1 = _in1;
 		cst = _cst;
 		mrtype = MRINSTRUCTION_TYPE.PickByCount;
 		instString = istr;
-		isValuePick=false;
+		isValuePick = false;
 	}
 
 	public static PickByCountInstruction parseInstruction ( String str ) 

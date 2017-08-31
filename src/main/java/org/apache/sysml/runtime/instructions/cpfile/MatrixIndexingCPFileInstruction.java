@@ -42,10 +42,11 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  * COLWISE partition formats. 
  * 
  */
-public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction 
-{
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super( op, in, rl, ru, cl, cu, out, opcode, istr );
+public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction {
+
+	private MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+			CPOperand cu, CPOperand out, String opcode, String istr) {
+		super(op, in, rl, ru, cl, cu, out, opcode, istr);
 	}
 
 	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 

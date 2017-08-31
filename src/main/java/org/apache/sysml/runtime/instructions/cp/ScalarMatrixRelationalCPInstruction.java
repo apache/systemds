@@ -27,15 +27,10 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 //TODO rename to MatrixScalar...
-public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstruction
-{
-	
-	public ScalarMatrixRelationalCPInstruction(Operator op, 
-			   								   CPOperand in1, 
-			   								   CPOperand in2, 
-			   								   CPOperand out, 
-			   								   String opcode,
-			   								   String istr){
+public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstruction {
+
+	protected ScalarMatrixRelationalCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
 

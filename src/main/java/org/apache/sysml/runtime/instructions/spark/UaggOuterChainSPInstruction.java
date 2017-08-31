@@ -61,22 +61,21 @@ import org.apache.sysml.runtime.util.DataConverter;
  * 1. Array of type double: Matrix B is sorted at driver level and passed to every task for cases where operations are handled with special cases. e.g. &lt;, RowSum
  * 2. PartitionedMatrixBlock:  Any operations not implemented through this change goes through generic process, In that case, task takes Matrix B, in partitioned form and operate on it.
  */
-public class UaggOuterChainSPInstruction extends BinarySPInstruction 
-{
-	//operators
+public class UaggOuterChainSPInstruction extends BinarySPInstruction {
+	// operators
 	private AggregateUnaryOperator _uaggOp = null;
 	private AggregateOperator _aggOp = null;
 	private BinaryOperator _bOp = null;
 
-	public UaggOuterChainSPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
-	{
+	private UaggOuterChainSPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
+			CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(bop, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.UaggOuterChain;
-		
+
 		_uaggOp = uaggop;
 		_aggOp = aggop;
 		_bOp = bop;
-			
+
 		_sptype = SPINSTRUCTION_TYPE.UaggOuterChain;
 		instString = istr;
 	}

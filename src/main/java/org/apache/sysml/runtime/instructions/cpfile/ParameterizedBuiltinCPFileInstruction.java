@@ -76,11 +76,10 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  * parallel version due to data-dependent row- and column dependencies.
  * 
  */
-public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinCPInstruction 
-{	
-	
-	public ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) 
-	{
+public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinCPInstruction {
+
+	private ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
+			String opcode, String istr) {
 		super(op, paramsMap, out, opcode, istr);
 	}
 

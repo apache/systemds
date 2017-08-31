@@ -39,41 +39,35 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MapmmChainSPInstruction extends SPInstruction 
-{
-		
+public class MapmmChainSPInstruction extends SPInstruction {
 	private ChainType _chainType = null;
-	
 	private CPOperand _input1 = null;
 	private CPOperand _input2 = null;
-	private CPOperand _input3 = null;	
-	private CPOperand _output = null;	
-	
-	
-	public MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, 
-			                       ChainType type, String opcode, String istr )
-	{
+	private CPOperand _input3 = null;
+	private CPOperand _output = null;
+
+	private MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, ChainType type,
+			String opcode, String istr) {
 		super(op, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MAPMMCHAIN;
-		
+
 		_input1 = in1;
 		_input2 = in2;
 		_output = out;
-		
+
 		_chainType = type;
 	}
-	
-	public MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
-                                   ChainType type, String opcode, String istr )
-	{
+
+	private MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			ChainType type, String opcode, String istr) {
 		super(op, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MAPMMCHAIN;
-		
+
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = in3;
 		_output = out;
-		
+
 		_chainType = type;
 	}
 

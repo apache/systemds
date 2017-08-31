@@ -46,14 +46,14 @@ public class CPOperand
 	public CPOperand(String name, ValueType vt, DataType dt ) {
 		this(name, vt, dt, false);
 	}
-	
-	public CPOperand(String name, ValueType vt, DataType dt, boolean literal ) {
+
+	private CPOperand(String name, ValueType vt, DataType dt, boolean literal) {
 		_name = name;
 		_valueType = vt;
 		_dataType = dt;
 		_isLiteral = literal;
 	}
-	
+
 	public String getName() {
 		return _name;
 	}

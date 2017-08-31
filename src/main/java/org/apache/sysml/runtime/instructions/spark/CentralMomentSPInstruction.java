@@ -41,12 +41,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-public class CentralMomentSPInstruction extends UnarySPInstruction
-{
-	
-	public CentralMomentSPInstruction(CMOperator op, CPOperand in1, CPOperand in2, 
-			CPOperand in3, CPOperand out, String opcode, String str)
-	{
+public class CentralMomentSPInstruction extends UnarySPInstruction {
+
+	private CentralMomentSPInstruction(CMOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String str) {
 		super(op, in1, in2, in3, out, opcode, str);
 	}
 

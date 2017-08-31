@@ -31,45 +31,43 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class ConvolutionGPUInstruction extends GPUInstruction 
-{
-	private CPOperand _input1; 
-	private CPOperand _input2; 
-	private CPOperand _input3; 
-	private CPOperand _output; 
+public class ConvolutionGPUInstruction extends GPUInstruction {
+	private CPOperand _input1;
+	private CPOperand _input2;
+	private CPOperand _input3;
+	private CPOperand _output;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
-	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
+
+	private ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
+			throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if(!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
+		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
+			throw new DMLRuntimeException(
+					"Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found "
+							+ opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
 		_output = out;
 	}
-	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
-			ArrayList<CPOperand> filter_shape) 
-	{
-		this(in1, in2, out, opcode, istr, stride, padding,  input_shape, filter_shape);
+
+	private ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape) {
+		this(in1, in2, out, opcode, istr, stride, padding, input_shape, filter_shape);
 		_input3 = in3;
 	}
-	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
-			ArrayList<CPOperand> filter_shape) 
-	{
+
+	private ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr,
+			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
-		
+
 		_input1 = in1;
 		_input2 = in2;
 		_output = out;
@@ -78,7 +76,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		_input_shape = input_shape;
 		_filter_shape = filter_shape;
 	}
-	
+
 	public static ConvolutionGPUInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{

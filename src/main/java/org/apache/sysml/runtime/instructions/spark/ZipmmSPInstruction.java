@@ -41,17 +41,15 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
-
-public class ZipmmSPInstruction extends BinarySPInstruction 
-{
-	//internal flag to apply left-transpose rewrite or not
+public class ZipmmSPInstruction extends BinarySPInstruction {
+	// internal flag to apply left-transpose rewrite or not
 	private boolean _tRewrite = true;
-	
-	public ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean tRewrite, String opcode, String istr )
-	{
+
+	private ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean tRewrite,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ZIPMM;
-		
+
 		_tRewrite = tRewrite;
 	}
 

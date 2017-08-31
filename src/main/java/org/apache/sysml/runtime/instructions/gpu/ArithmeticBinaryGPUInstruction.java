@@ -26,19 +26,19 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
-
 	protected CPOperand _input1;
 	protected CPOperand _input2;
 	protected CPOperand _output;
 
-	public ArithmeticBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+	protected ArithmeticBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.ArithmeticBinary;
 		_input1 = in1;
 		_input2 = in2;
-	    _output = out;
+		_output = out;
 	}
-	
+
 	public static ArithmeticBinaryGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 3 );

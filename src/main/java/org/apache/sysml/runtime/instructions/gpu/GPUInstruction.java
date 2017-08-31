@@ -30,8 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
-public abstract class GPUInstruction extends Instruction
-{
+public abstract class GPUInstruction extends Instruction {
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
 		AggregateBinary,
@@ -130,22 +129,21 @@ public abstract class GPUInstruction extends Instruction
 	public final static String MISC_TIMER_CUDNN_INIT =                     "nni";   // time spent in initializations for cudnn call
 	public final static String MISC_TIMER_CUDNN_CLEANUP =                  "nnc";   // time spent in cleanup for cudnn call
 
-
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
 
 	protected boolean _requiresLabelUpdate = false;
 
-	public GPUInstruction(String opcode, String istr) {
+	private GPUInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.GPU;
 		instString = istr;
 
-		//prepare opcode and update requirement for repeated usage
+		// prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 
-	public GPUInstruction(Operator op, String opcode, String istr) {
+	protected GPUInstruction(Operator op, String opcode, String istr) {
 		this(opcode, istr);
 		_optr = op;
 	}

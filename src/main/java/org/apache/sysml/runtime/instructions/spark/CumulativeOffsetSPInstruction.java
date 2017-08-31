@@ -43,36 +43,30 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-
-public class CumulativeOffsetSPInstruction extends BinarySPInstruction 
-{
-
+public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private BinaryOperator _bop = null;
 	private UnaryOperator _uop = null;
 	private double _initValue = 0;
-	
-	public CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, String opcode, String istr)
-	{
+
+	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.CumsumOffset;
-		
-		if( "bcumoffk+".equals(opcode) ) {
+
+		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
-		}
-		else if( "bcumoff*".equals(opcode) ){
+		} else if ("bcumoff*".equals(opcode)) {
 			_bop = new BinaryOperator(Multiply.getMultiplyFnObject());
-			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));	
-		}
-		else if( "bcumoffmin".equals(opcode) ){
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
+		} else if ("bcumoffmin".equals(opcode)) {
 			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));	
-		}
-		else if( "bcumoffmax".equals(opcode) ){
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));
+		} else if ("bcumoffmax".equals(opcode)) {
 			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));	
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));
 		}
-		
+
 		_initValue = init;
 	}
 

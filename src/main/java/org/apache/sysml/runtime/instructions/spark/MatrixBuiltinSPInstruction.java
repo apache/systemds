@@ -30,10 +30,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
-{
-	
-	public MatrixBuiltinSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction {
+
+	protected MatrixBuiltinSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, opcode, instr);
 	}
 

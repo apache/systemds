@@ -34,13 +34,13 @@ import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class FrameAppendRSPInstruction extends AppendRSPInstruction
-{
-	public FrameAppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind, String opcode, String istr)
-	{
+public class FrameAppendRSPInstruction extends AppendRSPInstruction {
+
+	protected FrameAppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind,
+			String opcode, String istr) {
 		super(op, in1, in2, out, cbind, opcode, istr);
 	}
-		
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 

@@ -34,17 +34,15 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class AggregateBinaryGPUInstruction extends GPUInstruction
-{
+public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	private CPOperand _input1 = null;
 	private CPOperand _input2 = null;
 	private CPOperand _output = null;
 	private boolean _isLeftTransposed;
 	private boolean _isRightTransposed;
-	
-	public AggregateBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, 
-			String opcode, String istr, boolean leftTranspose, boolean rightTranspose) 
-	{
+
+	private AggregateBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr, boolean leftTranspose, boolean rightTranspose) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.AggregateBinary;
 		_input1 = in1;

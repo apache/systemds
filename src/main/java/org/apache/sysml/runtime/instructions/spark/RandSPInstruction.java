@@ -66,13 +66,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 
-public class RandSPInstruction extends UnarySPInstruction
-{
-	//internal configuration
+public class RandSPInstruction extends UnarySPInstruction {
+	// internal configuration
 	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
-	
+
 	private DataGenMethod method = DataGenMethod.INVALID;
-	
+
 	private long rows;
 	private long cols;
 	private int rowsInBlock;
@@ -82,21 +81,20 @@ public class RandSPInstruction extends UnarySPInstruction
 	private double sparsity;
 	private String pdf;
 	private String pdfParams;
-	private long seed=0;
+	private long seed = 0;
 	private String dir;
 	private double seq_from;
-	private double seq_to; 
+	private double seq_to;
 	private double seq_incr;
-	
-	//sample specific attributes
+
+	// sample specific attributes
 	private boolean replace;
 
-	public RandSPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols, 
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
 			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed, String dir,
-			String probabilityDensityFunction, String pdfParams, String opcode, String istr) 
-	{
+			String probabilityDensityFunction, String pdfParams, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
-		
+
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -112,10 +110,8 @@ public class RandSPInstruction extends UnarySPInstruction
 
 	}
 
-	public RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
-			long rows, long cols, int rpb, int cpb, double seqFrom,
-			double seqTo, double seqIncr, String opcode, String istr) 
-	{
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double seqFrom, double seqTo, double seqIncr, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
@@ -127,10 +123,8 @@ public class RandSPInstruction extends UnarySPInstruction
 		this.seq_incr = seqIncr;
 	}
 
-	public RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in,
-			CPOperand out, long rows, long cols, int rpb, int cpb,
-			double maxValue, boolean replace, long seed, String opcode,
-			String istr) {
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double maxValue, boolean replace, long seed, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 
 		this.method = mthd;

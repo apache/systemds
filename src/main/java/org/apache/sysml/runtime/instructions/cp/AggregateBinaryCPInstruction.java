@@ -32,10 +32,10 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class AggregateBinaryCPInstruction extends BinaryCPInstruction
-{
-	
-	public AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr ){
+public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
+
+	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}

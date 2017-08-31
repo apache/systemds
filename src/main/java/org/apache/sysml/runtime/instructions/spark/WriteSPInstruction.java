@@ -49,20 +49,19 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-public class WriteSPInstruction extends SPInstruction 
-{	
-	private CPOperand input1 = null; 
+public class WriteSPInstruction extends SPInstruction {
+	private CPOperand input1 = null;
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
 	private CPOperand input4 = null;
 	private FileFormatProperties formatProperties;
 
-	public WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
+	private WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
 		super(opcode, str);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
-		
+
 		formatProperties = null; // set in case of csv
 	}
 

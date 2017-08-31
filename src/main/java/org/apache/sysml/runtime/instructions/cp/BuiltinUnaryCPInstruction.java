@@ -31,14 +31,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
+public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 
-public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction 
-{
-	
 	int arity;
-	
-	public BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode, String istr )
-	{
+
+	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode,
+			String istr) {
 		super(op, in, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.BuiltinUnary;
 		arity = _arity;

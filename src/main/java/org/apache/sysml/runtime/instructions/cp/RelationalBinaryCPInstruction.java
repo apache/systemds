@@ -25,14 +25,14 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction {
 
-public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction 
-{
-	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+	protected RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.RelationalBinary;
 	}
-	
+
 	public static RelationalBinaryCPInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		InstructionUtils.checkNumFields (str, 3);
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

@@ -27,19 +27,20 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 
-public abstract class IndexingCPInstruction extends UnaryCPInstruction
-{
+public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
-	
-	public IndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+
+	protected IndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+			CPOperand out, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
 	}
-	
-	public IndexingCPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+
+	protected IndexingCPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru,
+			CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super(op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;

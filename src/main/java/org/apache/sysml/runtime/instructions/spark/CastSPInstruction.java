@@ -37,14 +37,13 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
+public class CastSPInstruction extends UnarySPInstruction {
 
-public class CastSPInstruction extends UnarySPInstruction
-{
-	public CastSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
+	private CastSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Cast;
 	}
-	
+
 	public static CastSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

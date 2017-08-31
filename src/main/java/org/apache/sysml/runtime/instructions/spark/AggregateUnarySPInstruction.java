@@ -43,13 +43,12 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
-public class AggregateUnarySPInstruction extends UnarySPInstruction
-{
-	
+public class AggregateUnarySPInstruction extends UnarySPInstruction {
 	private SparkAggType _aggtype = null;
 	private AggregateOperator _aop = null;
-	
-	public AggregateUnarySPInstruction(AggregateUnaryOperator auop, AggregateOperator aop, CPOperand in, CPOperand out, SparkAggType aggtype, String opcode, String istr){
+
+	protected AggregateUnarySPInstruction(AggregateUnaryOperator auop, AggregateOperator aop, CPOperand in,
+			CPOperand out, SparkAggType aggtype, String opcode, String istr) {
 		super(auop, in, out, opcode, istr);
 		_aggtype = aggtype;
 		_aop = aop;

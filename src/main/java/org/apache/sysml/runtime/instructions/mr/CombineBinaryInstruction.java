@@ -26,17 +26,15 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class CombineBinaryInstruction extends BinaryMRInstructionBase
-{
-	
+public class CombineBinaryInstruction extends BinaryMRInstructionBase {
 	/*
 	 * combinebinary:::0:DOUBLE:::1:INT:::2:INT
 	 */
-	private boolean secondInputIsWeight=true;
-	public CombineBinaryInstruction(Operator op, boolean isWeight, byte in1, byte in2, byte out, String istr) {
+	private boolean secondInputIsWeight = true;
+
+	private CombineBinaryInstruction(Operator op, boolean isWeight, byte in1, byte in2, byte out, String istr) {
 		super(op, in1, in2, out);
-		secondInputIsWeight=isWeight;
+		secondInputIsWeight = isWeight;
 		mrtype = MRINSTRUCTION_TYPE.CombineBinary;
 		instString = istr;
 	}

@@ -27,18 +27,13 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 // TODO rename to MatrixScalar...
-public class ScalarMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstruction
-{
-	
-	public ScalarMatrixArithmeticCPInstruction(Operator op, 
-											   CPOperand in1, 
-											   CPOperand in2, 
-											   CPOperand out, 
-											   String opcode,
-											   String istr){
+public class ScalarMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstruction {
+
+	protected ScalarMatrixArithmeticCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException

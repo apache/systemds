@@ -37,12 +37,12 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 
 	//type (matrix cbind / scalar string concatenation)
 	protected AppendType _type;
-	
-	public AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr)
-	{
+
+	protected AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			AppendType type, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.Append;
-		
+
 		_type = type;
 	}
 

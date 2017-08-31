@@ -27,16 +27,13 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class SeqInstruction extends DataGenMRInstruction
-{
-	
+public class SeqInstruction extends DataGenMRInstruction {
 	public double fromValue;
 	public double toValue;
 	public double incrValue;
-	
-	public SeqInstruction ( Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double fromValue, double toValue,
-				double incrValue, String baseDir, String istr ) {
+
+	private SeqInstruction(Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double fromValue,
+			double toValue, double incrValue, String baseDir, String istr) {
 		super(op, DataGenMethod.SEQ, in, out, rows, cols, rpb, cpb, baseDir);
 		mrtype = MRINSTRUCTION_TYPE.Seq;
 		this.fromValue = fromValue;
@@ -44,7 +41,7 @@ public class SeqInstruction extends DataGenMRInstruction
 		this.incrValue = incrValue;
 		instString = istr;
 	}
-	
+
 	public static SeqInstruction parseInstruction(String str) throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 10 );

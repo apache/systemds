@@ -36,15 +36,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 import scala.Tuple2;
 
-public class TsmmSPInstruction extends UnarySPInstruction 
-{
-	
+public class TsmmSPInstruction extends UnarySPInstruction {
 	private MMTSJType _type = null;
-	
-	public TsmmSPInstruction(Operator op, CPOperand in1, CPOperand out, MMTSJType type, String opcode, String istr )
-	{
+
+	private TsmmSPInstruction(Operator op, CPOperand in1, CPOperand out, MMTSJType type, String opcode, String istr) {
 		super(op, in1, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.TSMM;		
+		_sptype = SPINSTRUCTION_TYPE.TSMM;
 		_type = type;
 	}
 

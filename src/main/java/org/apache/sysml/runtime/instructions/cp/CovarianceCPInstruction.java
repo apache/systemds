@@ -29,18 +29,16 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.COVOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CovarianceCPInstruction extends BinaryCPInstruction
-{
-	
-	public CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
-	{
+public class CovarianceCPInstruction extends BinaryCPInstruction {
+
+	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}
-	
-	public CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-								   String opcode, String istr )
-	{
+
+	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}

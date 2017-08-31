@@ -26,22 +26,19 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class ReblockInstruction extends UnaryMRInstructionBase 
-{
-	
+public class ReblockInstruction extends UnaryMRInstructionBase {
 	public int brlen;
 	public int bclen;
 	public boolean outputEmptyBlocks;
-	
-	public ReblockInstruction (Operator op, byte in, byte out, int br, int bc, boolean emptyBlocks, String istr) {
+
+	protected ReblockInstruction(Operator op, byte in, byte out, int br, int bc, boolean emptyBlocks, String istr) {
 		super(op, in, out);
-		brlen=br;
-		bclen=bc;
+		brlen = br;
+		bclen = bc;
 		outputEmptyBlocks = emptyBlocks;
 		instString = istr;
 	}
-	
+
 	public static ReblockInstruction parseInstruction(String str) 
 	{
 		Operator op = null;

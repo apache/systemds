@@ -46,21 +46,19 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class ReblockSPInstruction extends UnarySPInstruction 
-{
-	private int brlen; 
+public class ReblockSPInstruction extends UnarySPInstruction {
+	private int brlen;
 	private int bclen;
 	private boolean outputEmptyBlocks;
-	
-	public ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
-			String opcode, String instr) 
-	{
+
+	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
+			String opcode, String instr) {
 		super(op, in, out, opcode, instr);
-		brlen=br;
-		bclen=bc;
+		brlen = br;
+		bclen = bc;
 		outputEmptyBlocks = emptyBlocks;
 	}
-	
+
 	public static ReblockSPInstruction parseInstruction(String str)  throws DMLRuntimeException 
 	{
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);

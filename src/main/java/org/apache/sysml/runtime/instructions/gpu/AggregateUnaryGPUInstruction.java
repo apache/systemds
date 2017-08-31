@@ -36,17 +36,15 @@ import org.apache.sysml.utils.GPUStatistics;
  * Implements aggregate unary instructions for CUDA
  */
 public class AggregateUnaryGPUInstruction extends GPUInstruction {
-  private CPOperand _input1 = null;
-  private CPOperand _output = null;
+	private CPOperand _input1 = null;
+	private CPOperand _output = null;
 
-  public AggregateUnaryGPUInstruction(Operator op, CPOperand in1, CPOperand out,
-                                       String opcode, String istr)
-  {
-    super(op, opcode, istr);
-    _gputype = GPUINSTRUCTION_TYPE.AggregateUnary;
-    _input1 = in1;
-    _output = out;
-  }
+	private AggregateUnaryGPUInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr) {
+		super(op, opcode, istr);
+		_gputype = GPUINSTRUCTION_TYPE.AggregateUnary;
+		_input1 = in1;
+		_output = out;
+	}
 
   public static AggregateUnaryGPUInstruction parseInstruction(String str )
           throws DMLRuntimeException

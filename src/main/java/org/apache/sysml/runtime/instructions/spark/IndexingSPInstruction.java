@@ -28,28 +28,25 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
-public abstract class IndexingSPInstruction  extends UnarySPInstruction
-{
-	
-	/*
-	 * This class implements the matrix indexing functionality inside Spark.  
-	 * Example instructions: 
-	 *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
-	 *         input=mVar1, output=mVar6, 
-	 *         bounds = (Var2,Var3,Var4,Var5)
-	 *         rowindex_lower: Var2, rowindex_upper: Var3 
-	 *         colindex_lower: Var4, colindex_upper: Var5
-	 *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
-	 *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
-	 *         the result is stored in mVar7
-	 *  
-	 */
+/**
+ * This class implements the matrix indexing functionality inside Spark.  
+ * Example instructions: 
+ *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
+ *         input=mVar1, output=mVar6, 
+ *         bounds = (Var2,Var3,Var4,Var5)
+ *         rowindex_lower: Var2, rowindex_upper: Var3 
+ *         colindex_lower: Var4, colindex_upper: Var5
+ *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
+ *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
+ *         the result is stored in mVar7
+ *  
+ */
+public abstract class IndexingSPInstruction extends UnarySPInstruction {
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
 	protected SparkAggType _aggType = null;
-	
-	public IndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, SparkAggType aggtype, String opcode, String istr)
-	{
+
+	IndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+			CPOperand out, SparkAggType aggtype, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
@@ -58,17 +55,16 @@ public abstract class IndexingSPInstruction  extends UnarySPInstruction
 
 		_aggType = aggtype;
 	}
-	
-	public IndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, String opcode, String istr)
-	{
+
+	IndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl,
+			CPOperand cu, CPOperand out, String opcode, String istr) {
 		super(op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
 	}
-	
+
 	public static IndexingSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

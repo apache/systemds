@@ -57,21 +57,21 @@ public abstract class CPInstruction extends Instruction
 	// SystemML committers have to be judicious about adding them by weighing the tradeoffs between reuse in future analysis and unnecessary overheads.
 	public final static String MISC_TIMER_CSR_LIX_COPY =				"csrlix";// time spent in CSR-specific method to address performance issues due to repeated re-shifting on update-in-place.
 	public final static String MISC_TIMER_LIX_COPY =					"lixcp";// time spent in range copy
-	
-	public CPInstruction(String opcode, String istr) {
+
+	protected CPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
 		instString = istr;
-		
-		//prepare opcode and update requirement for repeated usage
+
+		// prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
-	public CPInstruction(Operator op, String opcode, String istr) {
+
+	protected CPInstruction(Operator op, String opcode, String istr) {
 		this(opcode, istr);
 		_optr = op;
 	}
-	
+
 	public CPINSTRUCTION_TYPE getCPInstructionType() {
 		return _cptype;
 	}

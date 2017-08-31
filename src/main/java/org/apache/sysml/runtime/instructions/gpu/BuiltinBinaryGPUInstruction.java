@@ -29,21 +29,20 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
+	@SuppressWarnings("unused")
+	private int _arity;
 
-  @SuppressWarnings("unused")
-  private int _arity;
+	CPOperand output;
+	CPOperand input1, input2;
 
-  CPOperand output;
-  CPOperand input1, input2;
-
-
-  public BuiltinBinaryGPUInstruction(Operator op, CPOperand input1, CPOperand input2, CPOperand output, String opcode, String istr, int _arity) {
-    super(op, opcode, istr);
-    this._arity = _arity;
-    this.output = output;
-    this.input1 = input1;
-    this.input2 = input2;
-  }
+	protected BuiltinBinaryGPUInstruction(Operator op, CPOperand input1, CPOperand input2, CPOperand output,
+			String opcode, String istr, int _arity) {
+		super(op, opcode, istr);
+		this._arity = _arity;
+		this.output = output;
+		this.input1 = input1;
+		this.input2 = input2;
+	}
 
   public static BuiltinBinaryGPUInstruction parseInstruction(String str) throws DMLRuntimeException {
     CPOperand in1 = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);

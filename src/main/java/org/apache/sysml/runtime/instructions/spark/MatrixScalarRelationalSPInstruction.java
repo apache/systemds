@@ -24,11 +24,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixScalarRelationalSPInstruction extends RelationalBinarySPInstruction  
-{
-	
-	public MatrixScalarRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
-	{
+public class MatrixScalarRelationalSPInstruction extends RelationalBinarySPInstruction {
+
+	protected MatrixScalarRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
 

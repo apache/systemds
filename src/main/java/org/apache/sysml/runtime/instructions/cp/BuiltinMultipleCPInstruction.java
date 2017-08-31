@@ -43,8 +43,7 @@ public abstract class BuiltinMultipleCPInstruction extends CPInstruction {
 	public CPOperand output;
 	public CPOperand[] inputs;
 
-	public BuiltinMultipleCPInstruction(Operator op, String opcode, String istr, CPOperand output,
-			CPOperand... inputs) {
+	BuiltinMultipleCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
 		super(op, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.BuiltinMultiple;
 		this.output = output;

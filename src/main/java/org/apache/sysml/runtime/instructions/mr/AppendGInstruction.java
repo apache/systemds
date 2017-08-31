@@ -30,15 +30,13 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class AppendGInstruction extends AppendInstruction 
-{
-	private long _offset = -1; //cols of input1 
-	private long _offset2 = -1; //cols of input2
+public class AppendGInstruction extends AppendInstruction {
+	private long _offset = -1; // cols of input1
+	private long _offset2 = -1; // cols of input2
 	private long _len = -1;
-	
-	public AppendGInstruction(Operator op, byte in1, byte in2, long offset, long offset2, byte out, boolean cbind, String istr)
-	{
+
+	private AppendGInstruction(Operator op, byte in1, byte in2, long offset, long offset2, byte out, boolean cbind,
+			String istr) {
 		super(op, in1, in2, out, cbind, istr);
 		_offset = offset;
 		_offset2 = offset2;

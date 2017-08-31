@@ -26,13 +26,14 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
-public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction 
-{		
-	public ArithmeticBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction {
+
+	protected ArithmeticBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.ArithmeticBinary;
 	}
-	
+
 	public static ArithmeticBinaryCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

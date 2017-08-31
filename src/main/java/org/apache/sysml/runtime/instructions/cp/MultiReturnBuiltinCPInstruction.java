@@ -31,15 +31,13 @@ import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
-public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction 
-{
-	
 	int arity;
 	protected ArrayList<CPOperand> _outputs;
-	
-	public MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode, String istr )
-	{
+
+	private MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode,
+			String istr) {
 		super(op, input1, null, outputs.get(0), opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
 		_outputs = outputs;

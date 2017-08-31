@@ -27,9 +27,8 @@ import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
-public abstract class SPInstruction extends Instruction 
-{
-	
+public abstract class SPInstruction extends Instruction {
+
 	public enum SPINSTRUCTION_TYPE { 
 		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
@@ -40,26 +39,25 @@ public abstract class SPInstruction extends Instruction
 		Write, SpoofFused, INVALID, 
 		Convolution
 	};
-	
+
 	protected SPINSTRUCTION_TYPE _sptype;
 	protected Operator _optr;
-	
 	protected boolean _requiresLabelUpdate = false;
-	
-	public SPInstruction(String opcode, String istr) {
+
+	protected SPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.SPARK;
 		instString = istr;
 		instOpcode = opcode;
-		
-		//update requirement for repeated usage
+
+		// update requirement for repeated usage
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
-	public SPInstruction(Operator op, String opcode, String istr) {
+
+	protected SPInstruction(Operator op, String opcode, String istr) {
 		this(opcode, istr);
 		_optr = op;
 	}
-	
+
 	public SPINSTRUCTION_TYPE getSPInstructionType() {
 		return _sptype;
 	}

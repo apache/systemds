@@ -41,7 +41,8 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 	CPOperand input1, input2;
 	AppendCPInstruction.AppendType type;
 
-	public MatrixAppendGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,  AppendCPInstruction.AppendType type, String opcode, String istr) {
+	private MatrixAppendGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			AppendCPInstruction.AppendType type, String opcode, String istr) {
 		super(op, opcode, istr);
 		this.output = out;
 		this.input1 = in1;

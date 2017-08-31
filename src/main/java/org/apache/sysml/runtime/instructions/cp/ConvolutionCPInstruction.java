@@ -34,33 +34,32 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
 
-public class ConvolutionCPInstruction extends UnaryCPInstruction 
-{	
+public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private CPOperand _in2;
-	private CPOperand _in3; 
+	private CPOperand _in3;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
 	private int _numThreads = -1;
-	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
-		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
+
+	private ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
+			int numThreads) throws DMLRuntimeException {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		if (!(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply"))) {
+			throw new DMLRuntimeException(
+					"Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found "
+							+ opcode);
 		}
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_numThreads = numThreads;
 	}
-	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+
+	private ConvolutionCPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
+			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
@@ -68,13 +67,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		_filter_shape = filter_shape;
 		_numThreads = numThreads;
 	}
-	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+
+	private ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
+			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
@@ -83,13 +80,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		_filter_shape = filter_shape;
 		_numThreads = numThreads;
 	}
-	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+
+	private ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;

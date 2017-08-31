@@ -47,31 +47,30 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
-public class QuaternaryInstruction extends MRInstruction implements IDistributedCacheConsumer
-{	
+public class QuaternaryInstruction extends MRInstruction implements IDistributedCacheConsumer {
 	private byte _input1 = -1;
 	private byte _input2 = -1;
-	private byte _input3 = -1;	
+	private byte _input3 = -1;
 	private byte _input4 = -1;
-	
+
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 
-	public QuaternaryInstruction(Operator op, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU, boolean cacheV, String istr)
-	{
+	private QuaternaryInstruction(Operator op, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU,
+			boolean cacheV, String istr) {
 		super(op, out);
 		mrtype = MRINSTRUCTION_TYPE.Quaternary;
 		instString = istr;
-		
+
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = in3;
 		_input4 = in4;
-		
+
 		_cacheU = cacheU;
 		_cacheV = cacheV;
 	}
-	
+
 	public byte getInput1() {
 		return _input1;
 	}

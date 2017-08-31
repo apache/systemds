@@ -27,17 +27,14 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class AggregateInstruction extends UnaryMRInstructionBase {
 
-public class AggregateInstruction extends UnaryMRInstructionBase 
-{
-		
-	public AggregateInstruction(Operator op, byte in, byte out, String istr)
-	{
+	public AggregateInstruction(Operator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Aggregate;
 		instString = istr;
 	}
-	
+
 	public static AggregateInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

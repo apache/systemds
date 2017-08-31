@@ -71,24 +71,21 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  *         the result is stored in mVar7
  *  
  */
-public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
-{
+public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	private final LixCacheType _type;
 
-	public MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, SparkAggType aggtype, String opcode, String istr)
-	{
+	protected MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+			CPOperand cu, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
 		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
 		_type = LixCacheType.NONE;
 	}
-	
-	public MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, LixCacheType type, String opcode, String istr)
-	{
+
+	protected MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
+			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, LixCacheType type, String opcode, String istr) {
 		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 		_type = type;
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 

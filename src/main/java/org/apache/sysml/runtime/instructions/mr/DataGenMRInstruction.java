@@ -22,9 +22,7 @@ package org.apache.sysml.runtime.instructions.mr;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public abstract class DataGenMRInstruction extends MRInstruction 
-{
-	
+public abstract class DataGenMRInstruction extends MRInstruction {
 	protected DataGenMethod method;
 	protected byte input;
 	protected long rows;
@@ -32,19 +30,19 @@ public abstract class DataGenMRInstruction extends MRInstruction
 	protected int rowsInBlock;
 	protected int colsInBlock;
 	protected String baseDir;
-	
-	public DataGenMRInstruction(Operator op, DataGenMethod mthd, byte in, byte out, long r, long c, int rpb, int cpb, String dir)
-	{
+
+	protected DataGenMRInstruction(Operator op, DataGenMethod mthd, byte in, byte out, long r, long c, int rpb, int cpb,
+			String dir) {
 		super(op, out);
 		method = mthd;
-		input=in;
+		input = in;
 		rows = r;
 		cols = c;
 		rowsInBlock = rpb;
 		colsInBlock = cpb;
 		baseDir = dir;
 	}
-	
+
 	public DataGenMethod getDataGenMethod() {
 		return method;
 	}

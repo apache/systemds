@@ -30,27 +30,31 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
 
+public class ReorgGPUInstruction extends GPUInstruction {
+	private CPOperand _input;
+	private CPOperand _output;
 
-public class ReorgGPUInstruction extends GPUInstruction
-{
- 	private CPOperand _input;
-    private CPOperand _output;
- 	/**
- 	 * for opcodes r'
- 	 * 
- 	 * @param op operator
- 	 * @param in input operand
- 	 * @param out output operand
- 	 * @param opcode the opcode
- 	 * @param istr instruction string
- 	 */
-	public ReorgGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
+	/**
+	 * for opcodes r'
+	 * 
+	 * @param op
+	 *            operator
+	 * @param in
+	 *            input operand
+	 * @param out
+	 *            output operand
+	 * @param opcode
+	 *            the opcode
+	 * @param istr
+	 *            instruction string
+	 */
+	private ReorgGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.Reorg;
 		_input = in;
-        _output = out;
+		_output = out;
 	}
-	
+
 	public static ReorgGPUInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

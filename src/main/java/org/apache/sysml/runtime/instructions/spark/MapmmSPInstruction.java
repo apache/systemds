@@ -55,18 +55,16 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MapmmSPInstruction extends BinarySPInstruction 
-{	
+public class MapmmSPInstruction extends BinarySPInstruction {
 	private CacheType _type = null;
 	private boolean _outputEmpty = true;
 	private SparkAggType _aggtype;
-	
-	public MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
-			boolean outputEmpty, SparkAggType aggtype, String opcode, String istr )
-	{
+
+	private MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type,
+			boolean outputEmpty, SparkAggType aggtype, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
-		
+
 		_type = type;
 		_outputEmpty = outputEmpty;
 		_aggtype = aggtype;

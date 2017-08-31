@@ -27,13 +27,11 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CSVWriteInstruction extends UnaryMRInstructionBase{
+public class CSVWriteInstruction extends UnaryMRInstructionBase {
+	public String delim = DataExpression.DEFAULT_DELIM_DELIMITER;
+	public String header = null;// if null or empty string, then no header
+	public boolean sparse = DataExpression.DEFAULT_DELIM_SPARSE;
 
-	
-	public String delim= DataExpression.DEFAULT_DELIM_DELIMITER;
-	public String header=null;//if null or empty string, then no header
-	public boolean sparse=DataExpression.DEFAULT_DELIM_SPARSE;
-	
 	public CSVWriteInstruction(Operator op, byte in, byte out, String del, String hdr, boolean sps, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.CSVWrite;

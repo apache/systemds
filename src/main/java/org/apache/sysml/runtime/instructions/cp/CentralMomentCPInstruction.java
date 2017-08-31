@@ -29,11 +29,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction
-{	
-	public CentralMomentCPInstruction(CMOperator cm, CPOperand in1, CPOperand in2, 
-			CPOperand in3, CPOperand out, String opcode, String str) 
-	{
+public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
+
+	private CentralMomentCPInstruction(CMOperator cm, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String str) {
 		super(cm, in1, in2, in3, out, opcode, str);
 	}
 

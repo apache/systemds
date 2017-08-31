@@ -42,31 +42,30 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-public class UaggOuterChainInstruction extends BinaryInstruction implements IDistributedCacheConsumer
-{	
-	//operators
+public class UaggOuterChainInstruction extends BinaryInstruction implements IDistributedCacheConsumer {
+	// operators
 	private AggregateUnaryOperator _uaggOp = null;
 	private AggregateOperator _aggOp = null;
 	private BinaryOperator _bOp = null;
-	
-	//reused intermediates  
+
+	// reused intermediates
 	private MatrixValue _tmpVal1 = null;
 	private MatrixValue _tmpVal2 = null;
-	
+
 	private double[] _bv = null;
 	private int[] _bvi = null;
 
-	public UaggOuterChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop, byte in1, byte in2, byte out, String istr)
-	{
+	private UaggOuterChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
+			byte in1, byte in2, byte out, String istr) {
 		super(null, in1, in2, out, istr);
-		
+
 		_uaggOp = uaggop;
 		_aggOp = aggop;
 		_bOp = bop;
-			
+
 		_tmpVal1 = new MatrixBlock();
 		_tmpVal2 = new MatrixBlock();
-		
+
 		mrtype = MRINSTRUCTION_TYPE.UaggOuterChain;
 		instString = istr;
 	}

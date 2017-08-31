@@ -31,15 +31,12 @@ import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.utils.GPUStatistics;
 
 public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
-	public ScalarMatrixArithmeticGPUInstruction(Operator op, 
-			   									CPOperand in1, 
-			   									CPOperand in2, 
-			   									CPOperand out, 
-			   									String opcode,
-			   									String istr){
+
+	protected ScalarMatrixArithmeticGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException

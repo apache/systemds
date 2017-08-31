@@ -33,15 +33,14 @@ import org.apache.sysml.runtime.matrix.operators.ReIndexOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-
-public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
-{
+public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 	private IndexRange _ixrange = null;
-	private boolean _forLeft = false;	
+	private boolean _forLeft = false;
 	private long _rlenLhs = -1;
 	private long _clenLhs = -1;
-	
-	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, boolean forleft, long rlen, long clen, String istr) {
+
+	private RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, boolean forleft, long rlen,
+			long clen, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.RangeReIndex;
 		instString = istr;

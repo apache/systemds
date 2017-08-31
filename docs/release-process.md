@@ -204,7 +204,7 @@ this OS X example.
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
-	# verify standalon zip works
+	# verify standalone zip works
 	rm -rf systemml-1.0.0-bin
 	unzip systemml-1.0.0-bin.zip
 	cd systemml-1.0.0-bin
@@ -428,6 +428,7 @@ Copy contents of `systemml/docs/_site` to `systemml-website-site/docs/1.0.0`.
 Delete any unnecessary files (`Gemfile`, `Gemfile.lock`).
 
 Create `systemml-website-site/docs/1.0.0/api/java` folder for javadocs.
+Create `systemml-website-site/docs/1.0.0/api/python` folder for pythondocs.
 
 Update `systemml/pom.xml` project version to what should be displayed in javadocs (such as `1.0.0`).
 
@@ -437,7 +438,20 @@ Build project (which generates javadocs).
 
 Copy contents of `systemml/target/apidocs` to `systemml-website-site/docs/1.0.0/api/java`.
 
-Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Javadoc` link works and that the correct Javadoc version is displayed. Verify feedback links under `Issues` menu are not present.
+Define environment variables to match version and release number used in updated `systemml/pom.xml`.  Both environment variables are referenced when building pythondocs with Sphinx.
+
+	$ export SYSTEMML_VERSION=1.0
+	$ export SYSTEMML_RELEASE=1.0.0
+
+Generate pythondocs with Sphinx.
+
+	$ cd systemml/src/main/pythondoc
+	$ make html
+
+Copy contents of `systemml/target/pydocs/html` to `systemml-website-site/docs/1.0.0/api/python`.
+
+Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Java` link works and that the correct Javadoc version is displayed. 
+Verify `API Docs` &rarr; `Python` link works and that the same Pythondoc version is displayed. Verify feedback links under `Issues` menu are not present.
 
 Clean up any unnecessary files (such as deleting `.DS_Store` files on OS X).
 

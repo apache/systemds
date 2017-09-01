@@ -91,122 +91,32 @@ import org.w3c.dom.NodeList;
  *
  */
 public final class MLContextUtil {
-	
+
 	/**
-	 * Get HOP DAG in dot format for a DML or PYDML Script.
-	 *
-	 * @param mlCtx
-	 *            MLContext object.
-	 * @param script
-	 *            The DML or PYDML Script object to execute.
-	 * @param lines
-	 *            Only display the hops that have begin and end line number
-	 *            equals to the given integers.
-	 * @param performHOPRewrites
-	 *            should perform static rewrites, perform
-	 *            intra-/inter-procedural analysis to propagate size information
-	 *            into functions and apply dynamic rewrites
-	 * @param withSubgraph
-	 *            If false, the dot graph will be created without subgraphs for
-	 *            statement blocks.
-	 * @return hop DAG in dot format
-	 * @throws LanguageException
-	 *             if error occurs
-	 * @throws DMLRuntimeException
-	 *             if error occurs
-	 * @throws HopsException
-	 *             if error occurs
+	 * Version not available message.
 	 */
-	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines,
-			boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException,
-			LanguageException {
-		return getHopDAG(mlCtx, script, lines, null, performHOPRewrites, withSubgraph);
-	}
+	public static final String VERSION_NOT_AVAILABLE = "Version not available";
 
 	/**
-	 * Get HOP DAG in dot format for a DML or PYDML Script.
-	 *
-	 * @param mlCtx
-	 *            MLContext object.
-	 * @param script
-	 *            The DML or PYDML Script object to execute.
-	 * @param lines
-	 *            Only display the hops that have begin and end line number
-	 *            equals to the given integers.
-	 * @param newConf
-	 *            Spark Configuration.
-	 * @param performHOPRewrites
-	 *            should perform static rewrites, perform
-	 *            intra-/inter-procedural analysis to propagate size information
-	 *            into functions and apply dynamic rewrites
-	 * @param withSubgraph
-	 *            If false, the dot graph will be created without subgraphs for
-	 *            statement blocks.
-	 * @return hop DAG in dot format
-	 * @throws LanguageException
-	 *             if error occurs
-	 * @throws DMLRuntimeException
-	 *             if error occurs
-	 * @throws HopsException
-	 *             if error occurs
+	 * Build time not available message.
 	 */
-	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, SparkConf newConf,
-			boolean performHOPRewrites, boolean withSubgraph) throws HopsException, DMLRuntimeException,
-			LanguageException {
-		SparkConf oldConf = mlCtx.getSparkSession().sparkContext().getConf();
-		SparkExecutionContext.SparkClusterConfig systemmlConf = SparkExecutionContext.getSparkClusterConfig();
-		long oldMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
-		try {
-			if (newConf != null) {
-				systemmlConf.analyzeSparkConfiguation(newConf);
-				InfrastructureAnalyzer.setLocalMaxMemory(newConf.getSizeAsBytes("spark.driver.memory"));
-			}
-			ScriptExecutor scriptExecutor = new ScriptExecutor();
-			scriptExecutor.setExecutionType(mlCtx.getExecutionType());
-			scriptExecutor.setGPU(mlCtx.isGPU());
-			scriptExecutor.setForceGPU(mlCtx.isForceGPU());
-			scriptExecutor.setInit(mlCtx.isInitBeforeExecution());
-			if (mlCtx.isInitBeforeExecution()) {
-				mlCtx.setInitBeforeExecution(false);
-			}
-			scriptExecutor.setMaintainSymbolTable(mlCtx.isMaintainSymbolTable());
-
-			Long time = new Long((new Date()).getTime());
-			if ((script.getName() == null) || (script.getName().equals(""))) {
-				script.setName(time.toString());
-			}
-			
-			mlCtx.setExecutionScript(script);
-			scriptExecutor.compile(script, performHOPRewrites);
-			Explain.reset();
-			// To deal with potential Py4J issues
-			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<Integer>() : lines;
-			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines, withSubgraph);
-		} catch (RuntimeException e) {
-			throw new MLContextException("Exception when compiling script", e);
-		} finally {
-			if (newConf != null) {
-				systemmlConf.analyzeSparkConfiguation(oldConf);
-				InfrastructureAnalyzer.setLocalMaxMemory(oldMaxMemory);
-			}
-		}
-	}
+	public static final String BUILD_TIME_NOT_AVAILABLE = "Build time not available";
 
 	/**
-	 * Basic data types supported by the MLContext API
+	 * Basic data types supported by the MLContext API.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static final Class[] BASIC_DATA_TYPES = { Integer.class, Boolean.class, Double.class, String.class };
 
 	/**
-	 * Complex data types supported by the MLContext API
+	 * Complex data types supported by the MLContext API.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class, Matrix.class,
 			Frame.class, (new double[][] {}).getClass(), MatrixBlock.class, URL.class };
 
 	/**
-	 * All data types supported by the MLContext API
+	 * All data types supported by the MLContext API.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static final Class[] ALL_SUPPORTED_DATA_TYPES = (Class[]) ArrayUtils.addAll(BASIC_DATA_TYPES,
@@ -1252,4 +1162,104 @@ public final class MLContextUtil {
 			}
 		}
 	}
+
+	/**
+	 * Get HOP DAG in dot format for a DML or PYDML Script.
+	 *
+	 * @param mlCtx
+	 *            MLContext object.
+	 * @param script
+	 *            The DML or PYDML Script object to execute.
+	 * @param lines
+	 *            Only display the hops that have begin and end line number
+	 *            equals to the given integers.
+	 * @param performHOPRewrites
+	 *            should perform static rewrites, perform
+	 *            intra-/inter-procedural analysis to propagate size information
+	 *            into functions and apply dynamic rewrites
+	 * @param withSubgraph
+	 *            If false, the dot graph will be created without subgraphs for
+	 *            statement blocks.
+	 * @return hop DAG in dot format
+	 * @throws LanguageException
+	 *             if error occurs
+	 * @throws DMLRuntimeException
+	 *             if error occurs
+	 * @throws HopsException
+	 *             if error occurs
+	 */
+	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, boolean performHOPRewrites,
+			boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
+		return getHopDAG(mlCtx, script, lines, null, performHOPRewrites, withSubgraph);
+	}
+
+	/**
+	 * Get HOP DAG in dot format for a DML or PYDML Script.
+	 *
+	 * @param mlCtx
+	 *            MLContext object.
+	 * @param script
+	 *            The DML or PYDML Script object to execute.
+	 * @param lines
+	 *            Only display the hops that have begin and end line number
+	 *            equals to the given integers.
+	 * @param newConf
+	 *            Spark Configuration.
+	 * @param performHOPRewrites
+	 *            should perform static rewrites, perform
+	 *            intra-/inter-procedural analysis to propagate size information
+	 *            into functions and apply dynamic rewrites
+	 * @param withSubgraph
+	 *            If false, the dot graph will be created without subgraphs for
+	 *            statement blocks.
+	 * @return hop DAG in dot format
+	 * @throws LanguageException
+	 *             if error occurs
+	 * @throws DMLRuntimeException
+	 *             if error occurs
+	 * @throws HopsException
+	 *             if error occurs
+	 */
+	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, SparkConf newConf,
+			boolean performHOPRewrites, boolean withSubgraph)
+			throws HopsException, DMLRuntimeException, LanguageException {
+		SparkConf oldConf = mlCtx.getSparkSession().sparkContext().getConf();
+		SparkExecutionContext.SparkClusterConfig systemmlConf = SparkExecutionContext.getSparkClusterConfig();
+		long oldMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
+		try {
+			if (newConf != null) {
+				systemmlConf.analyzeSparkConfiguation(newConf);
+				InfrastructureAnalyzer.setLocalMaxMemory(newConf.getSizeAsBytes("spark.driver.memory"));
+			}
+			ScriptExecutor scriptExecutor = new ScriptExecutor();
+			scriptExecutor.setExecutionType(mlCtx.getExecutionType());
+			scriptExecutor.setGPU(mlCtx.isGPU());
+			scriptExecutor.setForceGPU(mlCtx.isForceGPU());
+			scriptExecutor.setInit(mlCtx.isInitBeforeExecution());
+			if (mlCtx.isInitBeforeExecution()) {
+				mlCtx.setInitBeforeExecution(false);
+			}
+			scriptExecutor.setMaintainSymbolTable(mlCtx.isMaintainSymbolTable());
+
+			Long time = new Long((new Date()).getTime());
+			if ((script.getName() == null) || (script.getName().equals(""))) {
+				script.setName(time.toString());
+			}
+
+			mlCtx.setExecutionScript(script);
+			scriptExecutor.compile(script, performHOPRewrites);
+			Explain.reset();
+			// To deal with potential Py4J issues
+			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<Integer>() : lines;
+			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines, withSubgraph);
+		} catch (RuntimeException e) {
+			throw new MLContextException("Exception when compiling script", e);
+		} finally {
+			if (newConf != null) {
+				systemmlConf.analyzeSparkConfiguation(oldConf);
+				InfrastructureAnalyzer.setLocalMaxMemory(oldMaxMemory);
+			}
+		}
+	}
+
 }

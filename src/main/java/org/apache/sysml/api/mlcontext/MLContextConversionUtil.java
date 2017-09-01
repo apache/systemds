@@ -482,6 +482,9 @@ public class MLContextConversionUtil {
 	 *            the matrix metadata, if available
 	 */
 	public static void determineMatrixFormatIfNeeded(Dataset<Row> dataFrame, MatrixMetadata matrixMetadata) {
+		if (matrixMetadata == null) {
+			return;
+		}
 		MatrixFormat matrixFormat = matrixMetadata.getMatrixFormat();
 		if (matrixFormat != null) {
 			return;

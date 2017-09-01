@@ -358,12 +358,11 @@ public class OptTreeConverter
 			
 			//process body
 			int len = ws.getBody().size();
-			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
-			{
+			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ ) {
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
 				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
-			}			
+			}
 		}
 		else if( pb instanceof ForProgramBlock && sb instanceof ForStatementBlock && !(pb instanceof ParForProgramBlock) )
 		{
@@ -392,12 +391,11 @@ public class OptTreeConverter
 			
 			//process body
 			int len = fs.getBody().size();
-			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-			{
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ ) {
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
 				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
-			}	
+			}
 		}
 		else if( pb instanceof ParForProgramBlock && sb instanceof ParForStatementBlock )
 		{
@@ -409,11 +407,10 @@ public class OptTreeConverter
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
 			long N = fpb.getNumIterations();
-			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
-															  String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
-
-			switch(fpb.getExecMode())
-			{
+			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) :
+				String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
+			
+			switch(fpb.getExecMode()) {
 				case LOCAL:
 					node.setExecType(ExecType.CP);
 					break;
@@ -429,8 +426,7 @@ public class OptTreeConverter
 					node.setExecType(null);
 			}
 			
-			if( !topLevel )
-			{
+			if( !topLevel ) {
 				fsb.getFromHops().resetVisitStatus();
 				fsb.getToHops().resetVisitStatus();
 				if( fsb.getIncrementHops()!=null )
@@ -443,8 +439,7 @@ public class OptTreeConverter
 			
 			//process body
 			int len = fs.getBody().size();
-			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-			{
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ ) {
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
 				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );

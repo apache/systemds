@@ -84,7 +84,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
 		for( String val : tmp )
 			ret.add(new Tuple2<Long,String>(_workerID, val));
-			
+		
 		return ret.iterator();
 	}
 
@@ -102,7 +102,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		//parse and setup parfor body program
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
-		_ec          = body.getEc();				
+		_ec          = body.getEc();
 		_resultVars  = body.getResultVarNames();
 		_numTasks    = 0;
 		_numIters    = 0;

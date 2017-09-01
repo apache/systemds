@@ -255,7 +255,8 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M1) );
 		
 		//determine memory consumption for what-if: all-cp or partitioned 
-		double M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+		double M2 = pn.isCPOnly() ? M1 :
+			_cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		double M3 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (cond partitioning) M="+toMB(M3) );
@@ -898,17 +899,21 @@ public class OptimizerRuleBased extends Optimizer
 		return requiresRecompile;
 	}
 
-	protected boolean isLargeProblem(OptNode pn, double M0)
+	protected boolean isLargeProblem(OptNode pn, double M)
 	{
-		return ((_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE )
-				&& M0 > PROB_SIZE_THRESHOLD_MB ); //original operations at least larger than 256MB
+		//TODO get a proper time estimate based to capture compute-intensive scenarios
+		
+		//rule-based decision based on number of outer iterations or maximum number of
+		//inner iterations (w/ appropriately scaled minimum data size threshold); 
+		return (_N >= PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB)
+			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB/10);
 	}
 
 	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 
 		throws DMLRuntimeException
 	{
 		ExecType et = n.getExecType();
-		boolean ret = ( et == ExecType.CP);		
+		boolean ret = ( et == ExecType.CP);
 		
 		if( n.isLeaf() && et == getRemoteExecType() )
 		{

@@ -70,14 +70,14 @@ public class MLContextLinregTest extends MLContextTestBase {
            switch(type) {
                case CG:
                        Script lrcg = dmlFromFile(TEST_SCRIPT_CG);
-                       lrcg.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001").out("B");
+                       lrcg.in("X", X).in("y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001").out("beta_out");
                        ml.execute(lrcg);
                        
                        break;
                        
                case DS:
                        Script lrds = dmlFromFile(TEST_SCRIPT_DS);
-                       lrds.in("X", X).in("Y", Y).in("$icpt", "0").in("$reg", "0.000001").out("B");
+                       lrds.in("X", X).in("y", Y).in("$icpt", "0").in("$reg", "0.000001").out("beta_out");
                        ml.execute(lrds);
                        
                        break;

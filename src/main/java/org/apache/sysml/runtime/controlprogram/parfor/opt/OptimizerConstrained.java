@@ -231,19 +231,18 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PartitionFormat> partitionedMatrices, double thetaM)
 		throws DMLRuntimeException
 	{
-		boolean blockwise = false;
-
+		//call rewrite first to obtain partitioning information
+		String initPlan = n.getParam(ParamType.DATA_PARTITIONER);
+		boolean blockwise = super.rewriteSetDataPartitioner(n, vars, partitionedMatrices, thetaM);
+		
 		// constraint awareness
-		if( !n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.UNSPECIFIED.toString()) )
-		{
-			Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
-			ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
-			pfpb.setDataPartitioner(PDataPartitioner.valueOf(n.getParam(ParamType.DATA_PARTITIONER)));
-			LOG.debug(getOptMode()+" OPT: forced 'set data partitioner' - result="+n.getParam(ParamType.DATA_PARTITIONER) );
+		if( !initPlan.equals(PDataPartitioner.UNSPECIFIED.name()) ) {
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			pfpb.setDataPartitioner(PDataPartitioner.valueOf(initPlan));
+			LOG.debug(getOptMode()+" OPT: forced 'set data partitioner' - result=" + initPlan );
 		}
-		else
-			super.rewriteSetDataPartitioner(n, vars, partitionedMatrices, thetaM);
-
+		
 		return blockwise;
 	}
 

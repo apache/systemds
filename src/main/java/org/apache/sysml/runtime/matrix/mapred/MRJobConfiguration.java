@@ -563,61 +563,42 @@ public class MRJobConfiguration
 		
 		//set transpose sparse column vector
 		job.setBoolean(PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG, keepIndexes);
-				
 	}
 	
-	public static long getPartitioningNumRows( JobConf job )
-	{
-		return Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG));
+	public static MatrixCharacteristics getPartitionedMatrixSize(JobConf job) {
+		return new MatrixCharacteristics(
+			Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG)),
+			Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG)),
+			Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG)),
+			Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG)));
 	}
 	
-	public static long getPartitioningNumCols( JobConf job )
-	{
-		return Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG));
-	}
 	
-	public static void setPartitioningBlockNumRows( JobConf job, int brlen )
-	{
+	public static void setPartitioningBlockNumRows( JobConf job, int brlen ) {
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
 	}
 	
-	public static int getPartitioningBlockNumRows( JobConf job )
-	{
-		return Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG));
-	}
-
-	public static void setPartitioningBlockNumCols( JobConf job, int bclen )
-	{
+	public static void setPartitioningBlockNumCols( JobConf job, int bclen ) {
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG,String.valueOf(bclen));
 	}
 	
-	public static int getPartitioningBlockNumCols( JobConf job )
-	{
-		return Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG));
-	}
-	
-	public static InputInfo getPartitioningInputInfo( JobConf job )
-	{
+	public static InputInfo getPartitioningInputInfo( JobConf job ) {
 		return InputInfo.stringToInputInfo(job.get(PARTITIONING_INPUT_INFO_CONFIG));
 	}
 	
-	public static OutputInfo getPartitioningOutputInfo( JobConf job )
-	{
+	public static OutputInfo getPartitioningOutputInfo( JobConf job ) {
 		return OutputInfo.stringToOutputInfo(job.get(PARTITIONING_OUTPUT_INFO_CONFIG));
 	}
-
-	public static void setPartitioningFormat( JobConf job, PDataPartitionFormat dpf )
-	{
+	
+	public static void setPartitioningFormat( JobConf job, PDataPartitionFormat dpf ) {
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
 	}
 	
-	public static PDataPartitionFormat getPartitioningFormat( JobConf job )
-	{
+	public static PDataPartitionFormat getPartitioningFormat( JobConf job )	{
 		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
 	}
 	
-	public static int getPartitioningSizeN( JobConf job )
-	{
+	public static int getPartitioningSizeN( JobConf job ) {
 		return Integer.parseInt(job.get(PARTITIONING_OUTPUT_N_CONFIG));
 	}
 	

@@ -32,6 +32,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -42,6 +43,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -66,18 +68,15 @@ public class RemoteDPParWorkerReducer extends ParWorker
 	//reuse matrix partition
 	private MatrixBlock _partition = null; 
 	private boolean _tSparseCol = false;
-		
-	//MR ParWorker attributes  
-	protected String  _stringID       = null;
+	
+	//MR ParWorker attributes 
+	protected String _stringID = null;
 
 	//cached collector/reporter
 	protected OutputCollector<Writable, Writable> _out = null;
 	protected Reporter _report = null;
 
-	public RemoteDPParWorkerReducer() 
-	{
-		
-	}
+	public RemoteDPParWorkerReducer() { }
 	
 	@Override
 	public void reduce(LongWritable key, Iterator<Writable> valueList, OutputCollector<Writable, Writable> out, Reporter reporter)
@@ -107,8 +106,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			//execute program
 			executeTask( lTask );
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new IOException("ParFOR: Failed to execute task.",ex);
 		}
 		
@@ -120,18 +118,15 @@ public class RemoteDPParWorkerReducer extends ParWorker
 	public void configure(JobConf job)
 	{
 		//Step 1: configure data partitioning information
-		_rlen = (int)MRJobConfiguration.getPartitioningNumRows( job );
-		_clen = (int)MRJobConfiguration.getPartitioningNumCols( job );
-		_brlen = MRJobConfiguration.getPartitioningBlockNumRows( job );
-		_bclen = MRJobConfiguration.getPartitioningBlockNumCols( job );
+		_dpf = MRJobConfiguration.getPartitioningFormat( job );
+		MatrixCharacteristics mc = MRJobConfiguration.getPartitionedMatrixSize(job);
+		PartitionFormat pf = new PartitionFormat(_dpf, MRJobConfiguration.getPartitioningSizeN(job));
+		_rlen = (int)pf.getNumRows(mc);
+		_clen = (int)pf.getNumColumns(mc);
+		_brlen = mc.getRowsPerBlock();
+		_bclen = mc.getColsPerBlock();
 		_iterVar = MRJobConfiguration.getPartitioningItervar( job );
 		_inputVar = MRJobConfiguration.getPartitioningMatrixvar( job );
-		_dpf = MRJobConfiguration.getPartitioningFormat( job );		
-		switch( _dpf ) { //create matrix partition for reuse
-			case ROW_WISE:    _rlen = 1; break;
-			case COLUMN_WISE: _clen = 1; break;
-			default:  throw new RuntimeException("Partition format not yet supported in fused partition-execute: "+_dpf);
-		}
 		_info = MRJobConfiguration.getPartitioningOutputInfo( job );
 		_tSparseCol = MRJobConfiguration.getPartitioningTransposedCol( job ); 
 		if( _tSparseCol )

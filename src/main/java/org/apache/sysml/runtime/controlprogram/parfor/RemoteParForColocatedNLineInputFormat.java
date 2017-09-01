@@ -27,6 +27,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
@@ -37,29 +39,21 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
  */
 public class RemoteParForColocatedNLineInputFormat extends NLineInputFormat
 {
-	
 	@Override
 	public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException 
-	{	
+	{
 		InputSplit[] tmp = super.getSplits(job, numSplits);
 		
 		//get partitioning information
+		MatrixCharacteristics mc = MRJobConfiguration.getPartitionedMatrixSize(job);
 		PDataPartitionFormat dpf = MRJobConfiguration.getPartitioningFormat(job);
-		int blen = -1;
-		switch( dpf ) {
-			case ROW_WISE:          blen = 1; break;
-			case ROW_BLOCK_WISE:    blen = MRJobConfiguration.getPartitioningBlockNumRows(job); break;
-			case COLUMN_WISE:       blen = 1; break;
-			case COLUMN_BLOCK_WISE: blen = MRJobConfiguration.getPartitioningBlockNumCols(job); break;
-			default: 
-				//do nothing
-		}		
+		PartitionFormat pf = new PartitionFormat(dpf, -1);
+		int blen = (int) (pf.isRowwise() ? pf.getNumRows(mc) : pf.getNumColumns(mc));
 		String fname = MRJobConfiguration.getPartitioningFilename(job);
 
 		//create wrapper splits 
 		InputSplit[] ret = new InputSplit[ tmp.length ];
-		for( int i=0; i<tmp.length; i++ )
-		{
+		for( int i=0; i<tmp.length; i++ ) {
 			//check for robustness of subsequent cast
 			if( tmp[i] instanceof FileSplit ) 
 				ret[i] = new RemoteParForColocatedFileSplit( (FileSplit) tmp[i], fname, blen );

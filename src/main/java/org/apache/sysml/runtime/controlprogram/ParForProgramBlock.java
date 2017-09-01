@@ -215,6 +215,11 @@ public class ParForProgramBlock extends ForProgramBlock
 			return _dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N 
 				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
+		public boolean isRowwise() {
+			return _dpf == PDataPartitionFormat.ROW_WISE
+				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE
+				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N;
+		}
 		public long getNumParts(MatrixCharacteristics mc) {
 			switch( _dpf ) {
 				case ROW_WISE: return mc.getRows();
@@ -223,6 +228,30 @@ public class ParForProgramBlock extends ForProgramBlock
 				case COLUMN_WISE: return mc.getCols();
 				case COLUMN_BLOCK_WISE: return mc.getNumColBlocks();
 				case COLUMN_BLOCK_WISE_N: return (long)Math.ceil((double)mc.getCols()/_N);
+				default:
+					throw new RuntimeException("Unsupported partition format: "+_dpf);
+			}
+		}
+		public long getNumRows(MatrixCharacteristics mc) {
+			switch( _dpf ) {
+				case ROW_WISE: return 1;
+				case ROW_BLOCK_WISE: return mc.getRowsPerBlock();
+				case ROW_BLOCK_WISE_N: return _N;
+				case COLUMN_WISE: return mc.getRows();
+				case COLUMN_BLOCK_WISE: return mc.getRows();
+				case COLUMN_BLOCK_WISE_N: return mc.getRows();
+				default:
+					throw new RuntimeException("Unsupported partition format: "+_dpf);
+			}
+		}
+		public long getNumColumns(MatrixCharacteristics mc) {
+			switch( _dpf ) {
+				case ROW_WISE: return mc.getCols();
+				case ROW_BLOCK_WISE: return mc.getCols();
+				case ROW_BLOCK_WISE_N: return mc.getCols();
+				case COLUMN_WISE: return 1;
+				case COLUMN_BLOCK_WISE: return mc.getColsPerBlock();
+				case COLUMN_BLOCK_WISE_N: return _N;
 				default:
 					throw new RuntimeException("Unsupported partition format: "+_dpf);
 			}

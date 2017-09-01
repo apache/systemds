@@ -30,6 +30,7 @@ import org.junit.runners.Suite;
 	ParForAdversarialLiteralsTest.class,
 	ParForBlockwiseDataPartitioningTest.class,
 	ParForColwiseDataPartitioningTest.class,
+	ParForDataPartitionExecuteTest.class,
 	ParForDataPartitionLeftIndexingTest.class,
 	ParForDependencyAnalysisTest.class,
 	ParForFunctionSerializationTest.class,

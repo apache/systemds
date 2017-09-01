@@ -87,18 +87,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aIters = aiters;
 		
 		//setup matrix block partition meta data
-		switch( dpf._dpf ) {
-			case ROW_WISE: 
-				_rlen = (int)mc.getRows(); _clen = 1; break;
-			case ROW_BLOCK_WISE_N:
-				_rlen = dpf._N; _clen = (int)mc.getCols(); break;
-			case COLUMN_BLOCK_WISE:
-				_rlen = 1; _clen = (int)mc.getCols(); break;
-			case COLUMN_BLOCK_WISE_N:
-				_rlen = (int)mc.getRows(); _clen = dpf._N; break;
-			default:
-				throw new RuntimeException("Unsupported partition format: "+dpf._dpf.name());
-		}
+		_rlen = (int)dpf.getNumRows(mc);
+		_clen = (int)dpf.getNumColumns(mc);
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;
@@ -237,8 +227,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 				int col_offset = (int)(pval.indexes.getColumnIndex()-1)*_bclen;
 				if( !partition.isInSparseFormat() ) //DENSE
 					partition.copy( row_offset, row_offset+pval.block.getNumRows()-1, 
-							   col_offset, col_offset+pval.block.getNumColumns()-1,
-							   pval.block, false ); 
+						col_offset, col_offset+pval.block.getNumColumns()-1,
+						pval.block, false ); 
 				else //SPARSE 
 					partition.appendToSparse(pval.block, row_offset, col_offset);
 				lnnz += pval.block.getNonZeros();
@@ -250,8 +240,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			partition.setNonZeros(lnnz);
 			partition.examSparsity();
 		}
-		catch(DMLRuntimeException ex)
-		{
+		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);
 		}
 		

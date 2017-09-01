@@ -55,7 +55,7 @@ public class MLContext {
 	/**
 	 * Logger for MLContext
 	 */
-	public static Logger log = Logger.getLogger(MLContext.class);
+	protected static Logger log = Logger.getLogger(MLContext.class);
 
 	/**
 	 * SparkSession object.
@@ -665,7 +665,9 @@ public class MLContext {
 
 		// clear local status, but do not stop sc as it
 		// may be used or stopped externally
-		executionScript.clearAll();
+		if (executionScript != null) {
+			executionScript.clearAll();
+		}
 		resetConfig();
 		spark = null;
 	}
@@ -693,7 +695,7 @@ public class MLContext {
 	 */
 	public String version() {
 		if (info() == null) {
-			return "Version not available";
+			return MLContextUtil.VERSION_NOT_AVAILABLE;
 		}
 		return info().version();
 	}
@@ -705,7 +707,7 @@ public class MLContext {
 	 */
 	public String buildTime() {
 		if (info() == null) {
-			return "Build time not available";
+			return MLContextUtil.BUILD_TIME_NOT_AVAILABLE;
 		}
 		return info().buildTime();
 	}

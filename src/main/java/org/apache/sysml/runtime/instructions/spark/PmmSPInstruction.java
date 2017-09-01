@@ -48,17 +48,14 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class PmmSPInstruction extends BinarySPInstruction 
-{
-	
+public class PmmSPInstruction extends BinarySPInstruction {
 	private CacheType _type = null;
 	private CPOperand _nrow = null;
-	
-	public PmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CPOperand nrow,
-			                CacheType type, String opcode, String istr )
-	{
+
+	private PmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CPOperand nrow, CacheType type,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.PMM;		
+		_sptype = SPINSTRUCTION_TYPE.PMM;
 		_type = type;
 		_nrow = nrow;
 	}

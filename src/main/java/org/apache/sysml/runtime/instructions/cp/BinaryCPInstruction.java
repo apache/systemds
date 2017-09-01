@@ -24,17 +24,15 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 
-public abstract class BinaryCPInstruction extends ComputationCPInstruction
-{
-	
-	public BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, 
-			String opcode, String istr ){
+	protected BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
 
-	public BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
-			String opcode, String istr ){
+	protected BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, in3, out, opcode, istr);
 	}
 

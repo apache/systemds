@@ -27,19 +27,18 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class RandInstruction extends DataGenMRInstruction
-{
+public class RandInstruction extends DataGenMRInstruction {
 	private double minValue;
 	private double maxValue;
 	private double sparsity;
 	private String probabilityDensityFunction;
 	private String pdfParams;
-	
-	private long seed=0;
-	
-	public RandInstruction ( Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double minValue, double maxValue,
-				double sparsity, long seed, String probabilityDensityFunction, String params, String baseDir, String istr ) {
+
+	private long seed = 0;
+
+	private RandInstruction(Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double minValue,
+			double maxValue, double sparsity, long seed, String probabilityDensityFunction, String params,
+			String baseDir, String istr) {
 		super(op, DataGenMethod.RAND, in, out, rows, cols, rpb, cpb, baseDir);
 		mrtype = MRINSTRUCTION_TYPE.Rand;
 		this.minValue = minValue;
@@ -50,7 +49,7 @@ public class RandInstruction extends DataGenMRInstruction
 		this.pdfParams = params;
 		instString = istr;
 	}
-	
+
 	public String getPdfParams() {
 		return pdfParams;
 	}

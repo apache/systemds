@@ -27,10 +27,8 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class AppendRInstruction extends AppendInstruction 
-{
-	public AppendRInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr)
-	{
+public class AppendRInstruction extends AppendInstruction {
+	private AppendRInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr) {
 		super(op, in1, in2, out, cbind, istr);
 	}
 

@@ -28,12 +28,9 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
+public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction {
 
-public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction 
-{
-	
-	public BuiltinUnarySPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr )
-	{
+	protected BuiltinUnarySPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.BuiltinUnary;
 	}

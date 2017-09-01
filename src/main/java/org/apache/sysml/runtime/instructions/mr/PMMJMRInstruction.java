@@ -34,24 +34,21 @@ import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
-{	
-	
+public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private long _rlen = -1;
 	private boolean _outputEmptyBlocks = true;
-	
-	
-	public PMMJMRInstruction(Operator op, byte in1, byte in2, byte out, long nrow, CacheType ctype, boolean outputEmpty, String istr)
-	{
+
+	private PMMJMRInstruction(Operator op, byte in1, byte in2, byte out, long nrow, CacheType ctype,
+			boolean outputEmpty, String istr) {
 		super(op, in1, in2, out);
 		instString = istr;
-		
+
 		_rlen = nrow;
 		_outputEmptyBlocks = outputEmpty;
-		
-		//NOTE: cache type only used by distributed cache input
+
+		// NOTE: cache type only used by distributed cache input
 	}
-	
+
 	public long getNumRows() {
 		return _rlen;
 	}

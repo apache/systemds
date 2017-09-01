@@ -28,11 +28,10 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction 
-{
-		
-	public ArithmeticBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
-	{
+public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction {
+
+	ArithmeticBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ArithmeticBinary;
 	}

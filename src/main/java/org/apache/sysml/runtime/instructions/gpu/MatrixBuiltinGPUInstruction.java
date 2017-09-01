@@ -28,8 +28,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
 public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
-	
-	public MatrixBuiltinGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr){
+
+	protected MatrixBuiltinGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, 1, opcode, instr);
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
 	}

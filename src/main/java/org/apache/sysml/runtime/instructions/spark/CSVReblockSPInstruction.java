@@ -42,8 +42,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CSVReblockSPInstruction extends UnarySPInstruction 
-{
+public class CSVReblockSPInstruction extends UnarySPInstruction {
 	private int _brlen;
 	private int _bclen;
 	private boolean _hasHeader;
@@ -51,10 +50,8 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 	private boolean _fill;
 	private double _fillValue;
 
-	public CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out,
-			int br, int bc, boolean hasHeader, String delim, boolean fill,
-			double fillValue, String opcode, String instr) 
-	{
+	protected CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean hasHeader,
+			String delim, boolean fill, double fillValue, String opcode, String instr) {
 		super(op, in, out, opcode, instr);
 		_brlen = br;
 		_bclen = bc;

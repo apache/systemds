@@ -23,12 +23,13 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public final class ScalarAppendCPInstruction extends AppendCPInstruction
-{	
-	public ScalarAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr) {
+public final class ScalarAppendCPInstruction extends AppendCPInstruction {
+
+	protected ScalarAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			AppendType type, String opcode, String istr) {
 		super(op, in1, in2, in3, out, type, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 

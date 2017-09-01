@@ -83,16 +83,13 @@ import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-
-public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction 
-{	
-	protected HashMap<String,String> params;
-	
-	//removeEmpty-specific attributes
+public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
+	protected HashMap<String, String> params;
+	// removeEmpty-specific attributes
 	private boolean _bRmEmptyBC = false;
-	
-	public ParameterizedBuiltinSPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr, boolean bRmEmptyBC )
-	{
+
+	private ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
+			String opcode, String istr, boolean bRmEmptyBC) {
 		super(op, null, null, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ParameterizedBuiltin;
 		params = paramsMap;

@@ -32,33 +32,32 @@ import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 
-public class MapMultChainInstruction extends MRInstruction implements IDistributedCacheConsumer
-{
+public class MapMultChainInstruction extends MRInstruction implements IDistributedCacheConsumer {
 	private ChainType _chainType = null;
-	
 	private byte _input1 = -1;
 	private byte _input2 = -1;
-	private byte _input3 = -1;	
-	
+	private byte _input3 = -1;
+
 	/**
 	 * Two matrix inputs - type XtXv
 	 * 
-	 * @param type chain type
-	 * @param in1 input byte 1
-	 * @param in2 input byte 2
-	 * @param out output byte
-	 * @param istr instruction string
+	 * @param type
+	 *            chain type
+	 * @param in1
+	 *            input byte 1
+	 * @param in2
+	 *            input byte 2
+	 * @param out
+	 *            output byte
+	 * @param istr
+	 *            instruction string
 	 */
-	public MapMultChainInstruction(ChainType type, byte in1, byte in2, byte out, String istr)
-	{
+	private MapMultChainInstruction(ChainType type, byte in1, byte in2, byte out, String istr) {
 		super(null, out);
-		
 		_chainType = type;
-		
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = -1;
-		
 		mrtype = MRINSTRUCTION_TYPE.MapMultChain;
 		instString = istr;
 	}

@@ -28,12 +28,11 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 
-
-public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction 
-{
+public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction {
 	private int _arity;
-	
-	public BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int arity, String opcode, String istr) {
+
+	protected BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int arity,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.BuiltinBinary;
 		_arity = arity;

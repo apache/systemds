@@ -24,9 +24,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public final class FrameAppendCPInstruction extends AppendCPInstruction
-{	
-	public FrameAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr) {
+public final class FrameAppendCPInstruction extends AppendCPInstruction {
+
+	protected FrameAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			AppendType type, String opcode, String istr) {
 		super(op, in1, in2, in3, out, type, opcode, istr);
 	}
 

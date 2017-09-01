@@ -33,17 +33,15 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
+public class AppendMInstruction extends AppendInstruction implements IDistributedCacheConsumer {
+	private long _offset = -1;
 
-public class AppendMInstruction extends AppendInstruction implements IDistributedCacheConsumer
-{	
-	private long _offset = -1; 
-	
-	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, boolean cbind, String istr)
-	{
+	private AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, boolean cbind,
+			String istr) {
 		super(op, in1, in2, out, cbind, istr);
 		_offset = offset;
 	}
-	
+
 	public static AppendMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

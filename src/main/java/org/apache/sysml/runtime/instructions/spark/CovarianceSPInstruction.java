@@ -39,18 +39,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
-public class CovarianceSPInstruction extends BinarySPInstruction
-{
-	
-	public CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, 
-			                      String opcode, String istr)
-	{
+public class CovarianceSPInstruction extends BinarySPInstruction {
+
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, String opcode,
+			String istr) {
 		super(op, in, in2, out, opcode, istr);
 	}
-	
-	public CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, 
-            String opcode, String istr)
-	{
+
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) {
 		super(op, in, in2, out, opcode, istr);
 	}
 

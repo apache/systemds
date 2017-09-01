@@ -66,14 +66,14 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 import scala.Tuple2;
 
-public class SpoofSPInstruction extends SPInstruction
-{
+public class SpoofSPInstruction extends SPInstruction {
 	private final Class<?> _class;
 	private final byte[] _classBytes;
 	private final CPOperand[] _in;
 	private final CPOperand _out;
-	
-	public SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode, String str) {
+
+	private SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode,
+			String str) {
 		super(opcode, str);
 		_class = cls;
 		_classBytes = classBytes;
@@ -81,7 +81,7 @@ public class SpoofSPInstruction extends SPInstruction
 		_in = in;
 		_out = out;
 	}
-	
+
 	public static SpoofSPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException
 	{

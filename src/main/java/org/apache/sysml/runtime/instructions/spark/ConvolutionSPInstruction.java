@@ -53,18 +53,16 @@ import scala.Tuple2;
 
 public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private CPOperand _in2;
-	private CPOperand _in3; 
+	private CPOperand _in3;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
 
-	public ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+	private ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
+			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
@@ -72,12 +70,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_filter_shape = filter_shape;
 	}
 
-	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out,
-			String opcode, String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
+			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
@@ -86,12 +82,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_filter_shape = filter_shape;
 	}
 
-	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand in3,
-			CPOperand out, String opcode, String istr,
-			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding,
-			ArrayList<CPOperand> input_shape, ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
@@ -101,10 +95,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_filter_shape = filter_shape;
 	}
 
-	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out,
-			String opcode, String istr) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
-				opcode, istr);
+	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
 	}

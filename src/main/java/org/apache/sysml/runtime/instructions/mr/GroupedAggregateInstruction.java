@@ -32,18 +32,16 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-
-public class GroupedAggregateInstruction extends UnaryMRInstructionBase
-{
+public class GroupedAggregateInstruction extends UnaryMRInstructionBase {
 	private boolean _weights = false;
 	private int _ngroups = -1;
 	private long _bclen = -1;
-	
-	public GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, int ngroups, String istr) {
+
+	private GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, int ngroups, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.GroupedAggregate;
 		instString = istr;
-		
+
 		_weights = weights;
 		_ngroups = ngroups;
 	}

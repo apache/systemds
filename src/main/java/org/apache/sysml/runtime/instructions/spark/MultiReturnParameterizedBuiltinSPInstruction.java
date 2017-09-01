@@ -67,12 +67,11 @@ import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
 
 import scala.Tuple2;
 
-
-public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
-{
+public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected ArrayList<CPOperand> _outputs;
-	
-	public MultiReturnParameterizedBuiltinSPInstruction(Operator op, CPOperand input1, CPOperand input2, ArrayList<CPOperand> outputs, String opcode, String istr ) {
+
+	private MultiReturnParameterizedBuiltinSPInstruction(Operator op, CPOperand input1, CPOperand input2,
+			ArrayList<CPOperand> outputs, String opcode, String istr) {
 		super(op, input1, input2, outputs.get(0), opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MultiReturnBuiltin;
 		_outputs = outputs;

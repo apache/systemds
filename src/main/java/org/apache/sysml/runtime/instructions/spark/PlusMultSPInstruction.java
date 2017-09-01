@@ -30,21 +30,18 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
-{
-	public PlusMultSPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, 
-			CPOperand in3, CPOperand out, String opcode, String str) throws DMLRuntimeException 
-	{
+public class PlusMultSPInstruction extends ArithmeticBinarySPInstruction {
+	private PlusMultSPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String str) throws DMLRuntimeException {
 		super(op, in1, in2, out, opcode, str);
-		input3= in3;
-		
-		//sanity check opcodes
-		if ( !(  opcode.equalsIgnoreCase("+*") || opcode.equalsIgnoreCase("-*")  ) ) 
-		{
+		input3 = in3;
+
+		// sanity check opcodes
+		if (!(opcode.equalsIgnoreCase("+*") || opcode.equalsIgnoreCase("-*"))) {
 			throw new DMLRuntimeException("Unknown opcode in PlusMultSPInstruction: " + toString());
-		}		
+		}
 	}
-	
+
 	public static PlusMultSPInstruction parseInstruction(String str) throws DMLRuntimeException
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);

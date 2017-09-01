@@ -25,13 +25,12 @@ import org.apache.sysml.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstruction
-{	
-	public ScalarScalarRelationalCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstruction {
+	protected ScalarScalarRelationalCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException

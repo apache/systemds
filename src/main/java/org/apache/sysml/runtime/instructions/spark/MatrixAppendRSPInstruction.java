@@ -32,13 +32,13 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixAppendRSPInstruction extends AppendRSPInstruction
-{
-	public MatrixAppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind, String opcode, String istr)
-	{
+public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
+
+	protected MatrixAppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind,
+			String opcode, String istr) {
 		super(op, in1, in2, out, cbind, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 

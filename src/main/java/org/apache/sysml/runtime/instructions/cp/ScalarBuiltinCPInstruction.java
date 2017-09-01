@@ -27,15 +27,12 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
+public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 
-public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
-{	
-	
-	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr)
-	{
+	protected ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, 1, opcode, instr);
 	}
-	
+
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 

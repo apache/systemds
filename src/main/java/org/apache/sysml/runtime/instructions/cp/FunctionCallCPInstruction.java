@@ -40,34 +40,34 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 
-public class FunctionCallCPInstruction extends CPInstruction 
-{	
+public class FunctionCallCPInstruction extends CPInstruction {
 	private String _functionName;
 	private String _namespace;
-	
-	public String getFunctionName(){
+
+	public String getFunctionName() {
 		return _functionName;
 	}
-	
+
 	public String getNamespace() {
 		return _namespace;
 	}
-	
+
 	// stores both the bound input and output parameters
 	private ArrayList<CPOperand> _boundInputParamOperands;
 	private ArrayList<String> _boundInputParamNames;
 	private ArrayList<String> _boundOutputParamNames;
-	
-	public FunctionCallCPInstruction(String namespace, String functName, ArrayList<CPOperand> boundInParamOperands, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
+
+	private FunctionCallCPInstruction(String namespace, String functName, ArrayList<CPOperand> boundInParamOperands,
+			ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
 		super(null, functName, istr);
-		
+
 		_cptype = CPINSTRUCTION_TYPE.External;
 		_functionName = functName;
 		_namespace = namespace;
 		_boundInputParamOperands = boundInParamOperands;
 		_boundInputParamNames = boundInParamNames;
 		_boundOutputParamNames = boundOutParamNames;
-		
+
 	}
 
 	public static FunctionCallCPInstruction parseInstruction(String str) 

@@ -32,20 +32,19 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-public class UaggOuterChainCPInstruction extends UnaryCPInstruction
-{
-	//operators
+public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
+	// operators
 	private AggregateUnaryOperator _uaggOp = null;
 	private BinaryOperator _bOp = null;
 
-	public UaggOuterChainCPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
-	{
+	private UaggOuterChainCPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
+			CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(bop, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.UaggOuterChain;
-		
+
 		_uaggOp = uaggop;
 		_bOp = bop;
-			
+
 		instString = istr;
 	}
 

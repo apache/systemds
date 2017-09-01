@@ -36,32 +36,34 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 
-public class MMTSJGPUInstruction extends GPUInstruction
-{
+public class MMTSJGPUInstruction extends GPUInstruction {
+	private MMTSJType _type = null;
+	CPOperand _input;
+	CPOperand _output;
 
-        private MMTSJType _type = null;
-        
-        CPOperand _input;
-        CPOperand _output;
-
-        /**
-         * MMTSJGPUInstruction constructor.
-         * 
-         * @param op	operator
-         * @param in1	input
-         * @param type	left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
-         * @param out	output
-         * @param opcode the opcode
-         * @param istr ?
-         */
-        public MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out,  String opcode, String istr)
-        {
-                super(op, opcode, istr);
-                _gputype = GPUINSTRUCTION_TYPE.MMTSJ;
-                _type = type;
-                _input = in1;
-                _output = out;
-        }
+	/**
+	 * MMTSJGPUInstruction constructor.
+	 * 
+	 * @param op
+	 *            operator
+	 * @param in1
+	 *            input
+	 * @param type
+	 *            left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
+	 * @param out
+	 *            output
+	 * @param opcode
+	 *            the opcode
+	 * @param istr
+	 *            ?
+	 */
+	private MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String opcode, String istr) {
+		super(op, opcode, istr);
+		_gputype = GPUINSTRUCTION_TYPE.MMTSJ;
+		_type = type;
+		_input = in1;
+		_output = out;
+	}
 
         /**
          * parse MMTSJ GPU instruction

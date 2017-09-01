@@ -27,15 +27,12 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class AppendInstruction extends BinaryMRInstructionBase 
-{
+public class AppendInstruction extends BinaryMRInstructionBase {
 	protected boolean _cbind = true;
 
-	public AppendInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr)
-	{
+	protected AppendInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr) {
 		super(op, in1, in2, out);
-		instString = istr;	
+		instString = istr;
 		mrtype = MRINSTRUCTION_TYPE.Append;
 		_cbind = cbind;
 	}

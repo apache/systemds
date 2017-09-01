@@ -29,18 +29,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
-public class ReplicateInstruction extends UnaryMRInstructionBase 
-{
-	
+public class ReplicateInstruction extends UnaryMRInstructionBase {
 	private boolean _repCols = true;
-	private long _lenM = -1; //clen/rlen
-	
-	public ReplicateInstruction(byte in, byte out, boolean repCols, long lenM, String istr)
-	{
+	private long _lenM = -1; // clen/rlen
+
+	private ReplicateInstruction(byte in, byte out, boolean repCols, long lenM, String istr) {
 		super(null, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
-		
+
 		_repCols = repCols;
 		_lenM = lenM;
 	}

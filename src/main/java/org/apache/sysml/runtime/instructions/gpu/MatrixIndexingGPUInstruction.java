@@ -32,10 +32,12 @@ import org.apache.sysml.utils.GPUStatistics;
 
 public class MatrixIndexingGPUInstruction extends GPUInstruction {
 	CPOperand rowLower, rowUpper, colLower, colUpper;
-	CPOperand input1; CPOperand input2; CPOperand output;
-	
-	public MatrixIndexingGPUInstruction(Operator op, CPOperand in, 
-			CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+	CPOperand input1;
+	CPOperand input2;
+	CPOperand output;
+
+	private MatrixIndexingGPUInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+			CPOperand cu, CPOperand out, String opcode, String istr) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.MatrixIndexing;
 		rowLower = rl;
@@ -45,9 +47,9 @@ public class MatrixIndexingGPUInstruction extends GPUInstruction {
 		input1 = in;
 		output = out;
 	}
-	
-	public MatrixIndexingGPUInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, 
-			CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+
+	private MatrixIndexingGPUInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
+			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.MatrixIndexing;
 		rowLower = rl;
@@ -58,7 +60,7 @@ public class MatrixIndexingGPUInstruction extends GPUInstruction {
 		input2 = rhsInput;
 		output = out;
 	}
-	
+
 	public static MatrixIndexingGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

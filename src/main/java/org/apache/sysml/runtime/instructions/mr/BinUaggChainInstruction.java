@@ -32,27 +32,25 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-public class BinUaggChainInstruction extends UnaryInstruction 
-{
-	
-	//operators
+public class BinUaggChainInstruction extends UnaryInstruction {
+	// operators
 	private BinaryOperator _bOp = null;
 	private AggregateUnaryOperator _uaggOp = null;
-	
-	//reused intermediates  
+
+	// reused intermediates
 	private MatrixIndexes _tmpIx = null;
 	private MatrixValue _tmpVal = null;
 
-	public BinUaggChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, byte in1, byte out, String istr)
-	{
+	private BinUaggChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, byte in1, byte out,
+			String istr) {
 		super(null, in1, out, istr);
-		
+
 		_bOp = bop;
 		_uaggOp = uaggop;
-		
+
 		_tmpIx = new MatrixIndexes();
 		_tmpVal = new MatrixBlock();
-		
+
 		mrtype = MRINSTRUCTION_TYPE.BinUaggChain;
 		instString = istr;
 	}

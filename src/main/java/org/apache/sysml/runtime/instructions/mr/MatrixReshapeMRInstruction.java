@@ -31,25 +31,23 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class MatrixReshapeMRInstruction extends UnaryInstruction
-{	
+public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	private boolean _byrow = false;
-	
 	private MatrixCharacteristics _mcIn = null;
 	private MatrixCharacteristics _mcOut = null;
-	
-	//MB: cache should be integrated with tempValues, but for n blocks
+
+	// MB: cache should be integrated with tempValues, but for n blocks
 	private ArrayList<IndexedMatrixValue> _cache = null;
-	
-	public MatrixReshapeMRInstruction(Operator op, byte in, long rows, long cols, boolean byrow, byte out, String istr)
-	{
+
+	private MatrixReshapeMRInstruction(Operator op, byte in, long rows, long cols, boolean byrow, byte out,
+			String istr) {
 		super(op, in, out, istr);
 		mrtype = MRINSTRUCTION_TYPE.MMTSJ;
 		instString = istr;
 		_mcOut = new MatrixCharacteristics(rows, cols, -1, -1);
 		_byrow = byrow;
 	}
-	
+
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn, MatrixCharacteristics mcOut )
 	{
 		_mcIn = mcIn;

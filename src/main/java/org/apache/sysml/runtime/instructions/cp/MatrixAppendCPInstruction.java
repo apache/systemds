@@ -24,9 +24,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public final class MatrixAppendCPInstruction extends AppendCPInstruction
-{	
-	public MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr) {
+public final class MatrixAppendCPInstruction extends AppendCPInstruction {
+
+	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			AppendType type, String opcode, String istr) {
 		super(op, in1, in2, in3, out, type, opcode, istr);
 	}
 

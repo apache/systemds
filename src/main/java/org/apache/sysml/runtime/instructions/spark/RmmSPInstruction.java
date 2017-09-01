@@ -48,13 +48,11 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class RmmSPInstruction extends BinarySPInstruction 
-{
-	
-	public RmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
-	{
+public class RmmSPInstruction extends BinarySPInstruction {
+
+	private RmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.RMM;		
+		_sptype = SPINSTRUCTION_TYPE.RMM;
 	}
 
 	public static RmmSPInstruction parseInstruction( String str ) 

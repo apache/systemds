@@ -37,13 +37,10 @@ import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
-{	
+public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private int _ngroups = -1;
-	
-	public GroupedAggregateMInstruction(Operator op, byte in1, byte in2, byte out, int ngroups, String istr)
-	{
+
+	private GroupedAggregateMInstruction(Operator op, byte in1, byte in2, byte out, int ngroups, String istr) {
 		super(op, in1, in2, out);
 		_ngroups = ngroups;
 	}

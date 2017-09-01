@@ -32,12 +32,9 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
-
-public class TernaryInstruction extends MRInstruction 
-{
-	
+public class TernaryInstruction extends MRInstruction {
 	private OperationTypes _op;
-	
+
 	public byte input1;
 	public byte input2;
 	public byte input3;
@@ -48,17 +45,25 @@ public class TernaryInstruction extends MRInstruction
 	/**
 	 * Single matrix input
 	 * 
-	 * @param op operation type
-	 * @param in1 input 1 (byte)
-	 * @param scalar_in2 input 2 (double)
-	 * @param scalar_in3 input 3 (double)
-	 * @param out output
-	 * @param outputDim1 output dimension 1
-	 * @param outputDim2 output dimension 2
-	 * @param istr instruction string
+	 * @param op
+	 *            operation type
+	 * @param in1
+	 *            input 1 (byte)
+	 * @param scalar_in2
+	 *            input 2 (double)
+	 * @param scalar_in3
+	 *            input 3 (double)
+	 * @param out
+	 *            output
+	 * @param outputDim1
+	 *            output dimension 1
+	 * @param outputDim2
+	 *            output dimension 2
+	 * @param istr
+	 *            instruction string
 	 */
-	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
-	{
+	private TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out,
+			long outputDim1, long outputDim2, String istr) {
 		super(null, out);
 		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
@@ -69,21 +74,29 @@ public class TernaryInstruction extends MRInstruction
 		_outputDim2 = outputDim2;
 		instString = istr;
 	}
-	
+
 	/**
 	 * Two matrix inputs
 	 * 
-	 * @param op operation type
-	 * @param in1 input 1 (byte)
-	 * @param in2 input 2 (byte)
-	 * @param scalar_in3 input 3 (double)
-	 * @param out output
-	 * @param outputDim1 output dimension 1
-	 * @param outputDim2 output dimension 2
-	 * @param istr instruction string
+	 * @param op
+	 *            operation type
+	 * @param in1
+	 *            input 1 (byte)
+	 * @param in2
+	 *            input 2 (byte)
+	 * @param scalar_in3
+	 *            input 3 (double)
+	 * @param out
+	 *            output
+	 * @param outputDim1
+	 *            output dimension 1
+	 * @param outputDim2
+	 *            output dimension 2
+	 * @param istr
+	 *            instruction string
 	 */
-	public TernaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
-	{
+	private TernaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1,
+			long outputDim2, String istr) {
 		super(null, out);
 		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
@@ -94,21 +107,29 @@ public class TernaryInstruction extends MRInstruction
 		_outputDim2 = outputDim2;
 		instString = istr;
 	}
-	
+
 	/**
-	 * Two matrix input 
+	 * Two matrix input
 	 * 
-	 * @param op operation type
-	 * @param in1 input 1 (byte)
-	 * @param scalar_in2 input 2 (double)
-	 * @param in3 input 3 (byte)
-	 * @param out output
-	 * @param outputDim1 output dimension 1
-	 * @param outputDim2 output dimension 2
-	 * @param istr instruction string
+	 * @param op
+	 *            operation type
+	 * @param in1
+	 *            input 1 (byte)
+	 * @param scalar_in2
+	 *            input 2 (double)
+	 * @param in3
+	 *            input 3 (byte)
+	 * @param out
+	 *            output
+	 * @param outputDim1
+	 *            output dimension 1
+	 * @param outputDim2
+	 *            output dimension 2
+	 * @param istr
+	 *            instruction string
 	 */
-	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
-	{
+	private TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1,
+			long outputDim2, String istr) {
 		super(null, out);
 		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
@@ -119,21 +140,29 @@ public class TernaryInstruction extends MRInstruction
 		_outputDim2 = outputDim2;
 		instString = istr;
 	}
-	
+
 	/**
 	 * Three matrix inputs
 	 * 
-	 * @param op operation type
-	 * @param in1 input 1 (byte)
-	 * @param in2 input 2 (byte)
-	 * @param in3 input 3 (byte)
-	 * @param out output
-	 * @param outputDim1 output dimension 1
-	 * @param outputDim2 output dimension 2
-	 * @param istr instruction string
+	 * @param op
+	 *            operation type
+	 * @param in1
+	 *            input 1 (byte)
+	 * @param in2
+	 *            input 2 (byte)
+	 * @param in3
+	 *            input 3 (byte)
+	 * @param out
+	 *            output
+	 * @param outputDim1
+	 *            output dimension 1
+	 * @param outputDim2
+	 *            output dimension 2
+	 * @param istr
+	 *            instruction string
 	 */
-	public TernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
-	{
+	protected TernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1,
+			long outputDim2, String istr) {
 		super(null, out);
 		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
@@ -144,7 +173,7 @@ public class TernaryInstruction extends MRInstruction
 		_outputDim2 = outputDim2;
 		instString = istr;
 	}
-	
+
 	public long getOutputDim1() {
 		return _outputDim1;
 	}

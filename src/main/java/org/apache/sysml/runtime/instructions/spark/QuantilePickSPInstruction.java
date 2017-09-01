@@ -42,20 +42,21 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class QuantilePickSPInstruction extends BinarySPInstruction
-{
+public class QuantilePickSPInstruction extends BinarySPInstruction {
 	private OperationTypes _type = null;
-	
-	public QuantilePickSPInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem, String opcode, String istr){
+
+	private QuantilePickSPInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem,
+			String opcode, String istr) {
 		this(op, in, null, out, type, inmem, opcode, istr);
 	}
-	
-	public QuantilePickSPInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out,  OperationTypes type, boolean inmem, String opcode, String istr){
+
+	private QuantilePickSPInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
+			boolean inmem, String opcode, String istr) {
 		super(op, in, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.QPick;
-		
+
 		_type = type;
-		//inmem ignored here
+		// inmem ignored here
 	}
 
 	public static QuantilePickSPInstruction parseInstruction ( String str ) 

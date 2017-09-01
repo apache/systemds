@@ -31,17 +31,14 @@ import org.apache.sysml.runtime.matrix.operators.COVOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
+public class CM_N_COVInstruction extends UnaryMRInstructionBase {
 
-public class CM_N_COVInstruction extends UnaryMRInstructionBase 
-{
-	
-	public CM_N_COVInstruction(Operator op, byte in, byte out, String istr)
-	{
+	private CM_N_COVInstruction(Operator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.CM_N_COV;
 		instString = istr;
 	}
-	
+
 	public static CM_N_COVInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

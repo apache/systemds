@@ -35,21 +35,18 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
-
-public class ReorgInstruction extends UnaryMRInstructionBase 
-{
-	
-	//required for diag (size-based type, load-balance-aware output of empty blocks)
+public class ReorgInstruction extends UnaryMRInstructionBase {
+	// required for diag (size-based type, load-balance-aware output of empty
+	// blocks)
 	private MatrixCharacteristics _mcIn = null;
 	private boolean _outputEmptyBlocks = true;
-	
-	public ReorgInstruction(ReorgOperator op, byte in, byte out, String istr)
-	{
+
+	private ReorgInstruction(ReorgOperator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
 	}
-	
+
 	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
 	{
 		_mcIn = in; 

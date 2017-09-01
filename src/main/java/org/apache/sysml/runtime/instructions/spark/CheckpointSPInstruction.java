@@ -43,19 +43,17 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public class CheckpointSPInstruction extends UnarySPInstruction
-{
-	//default storage level
+public class CheckpointSPInstruction extends UnarySPInstruction {
+	// default storage level
 	private StorageLevel _level = null;
-	
-	public CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode, String istr) {
+
+	private CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode,
+			String istr) {
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Checkpoint;
-		
 		_level = level;
 	}
-	
+
 	public static CheckpointSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

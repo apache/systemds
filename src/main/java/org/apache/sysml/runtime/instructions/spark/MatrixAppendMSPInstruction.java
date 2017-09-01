@@ -41,13 +41,13 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixAppendMSPInstruction extends AppendMSPInstruction
-{
-	public MatrixAppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out, boolean cbind, String opcode, String istr)
-	{
+public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
+
+	protected MatrixAppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out,
+			boolean cbind, String opcode, String istr) {
 		super(op, in1, in2, offset, out, cbind, opcode, istr);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 

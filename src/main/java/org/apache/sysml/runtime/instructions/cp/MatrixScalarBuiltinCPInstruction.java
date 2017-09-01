@@ -26,19 +26,13 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
+public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction {
 
-public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
-{
-	
-	public MatrixScalarBuiltinCPInstruction(Operator op,
-											CPOperand in1,
-											CPOperand in2,
-											CPOperand out,
-											String opcode,
-											String instr){
+	protected MatrixScalarBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String instr) {
 		super(op, in1, in2, out, 2, opcode, instr);
 	}
-	
+
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 

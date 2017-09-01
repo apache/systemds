@@ -31,17 +31,14 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
+public class UnaryInstruction extends UnaryMRInstructionBase {
 
-public class UnaryInstruction extends UnaryMRInstructionBase 
-{
-	
-	public UnaryInstruction(Operator op, byte in, byte out, String istr)
-	{
+	public UnaryInstruction(Operator op, byte in, byte out, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Unary;
 		instString = istr;
 	}
-	
+
 	public static UnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(str);

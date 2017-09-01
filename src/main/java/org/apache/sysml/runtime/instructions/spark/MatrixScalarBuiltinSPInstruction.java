@@ -24,14 +24,13 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
-{
-	
-	public MatrixScalarBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String instr)
-	{
+public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction {
+
+	protected MatrixScalarBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+			String instr) {
 		super(op, in1, in2, out, opcode, instr);
 	}
-	
+
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 

@@ -26,10 +26,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-
-public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
-{
-	public MatrixBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr){
+public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
+	protected MatrixBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, 1, opcode, instr);
 	}
 

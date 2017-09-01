@@ -325,8 +325,9 @@ public class BuildLiteExecution {
 
 		String s = conn.readScript("scripts/algorithms/l2-svm-predict.dml");
 		Map<String, String> m = new HashMap<String, String>();
-		m.put("$Y", "\"temp/haberman.test.labels.csv\"");
-		m.put("$confusion", "\"temp/l2-svm-confusion.csv\"");
+		m.put("$Y", "temp/1.csv");
+		m.put("$confusion", "temp/2.csv");
+		m.put("$scores", "temp/3.csv");
 
 		PreparedScript l2svmPredict = conn.prepareScript(s, m, new String[] { "X", "y", "w", "fmt" },
 				new String[] { "scores", "confusion_mat" }, false);

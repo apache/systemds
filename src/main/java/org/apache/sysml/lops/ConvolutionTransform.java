@@ -216,6 +216,9 @@ public class ConvolutionTransform extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( numThreads );
 		}
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( intermediateMemBudget );
 	}
 
 }

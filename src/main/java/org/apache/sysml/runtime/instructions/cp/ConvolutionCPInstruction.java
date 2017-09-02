@@ -49,7 +49,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 	private static boolean warnedUnderUtilitization = false;
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
+	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
 		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
@@ -58,11 +58,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_numThreads = numThreads;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
 	private ConvolutionCPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
-			ArrayList<CPOperand> filter_shape, int numThreads) {
+			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
@@ -70,6 +71,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		_input_shape = input_shape;
 		_filter_shape = filter_shape;
 		_numThreads = numThreads;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
 	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
@@ -111,7 +113,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
-			InstructionUtils.checkNumFields(parts, 15);
+			InstructionUtils.checkNumFields(parts, 16);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
 			// filter_shape1, filter_shape2, filter_shape3, filter_shape4, k
@@ -137,7 +139,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			int k = Integer.parseInt(parts[15]);
 
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
-					padding, input_shape, filter_shape, k);
+					padding, input_shape, filter_shape, k, Double.parseDouble(parts[16]));
 		} 
 		else if (opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("relu_maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
@@ -204,12 +206,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[18]));
 		}
 		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward") || opcode.equalsIgnoreCase("bias_multiply") ) {
-			InstructionUtils.checkNumFields(parts, 4);
+			InstructionUtils.checkNumFields(parts, 5);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			int k = Integer.parseInt(parts[4]);
-			return new ConvolutionCPInstruction(in, in2, out, opcode, str, k);
+			return new ConvolutionCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);

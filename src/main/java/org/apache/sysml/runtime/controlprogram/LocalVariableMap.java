@@ -91,6 +91,11 @@ public class LocalVariableMap implements Cloneable
 		localMap.clear();
 	}
 	
+	public void removeAllIn(Set<String> blacklist) {
+		localMap.entrySet().removeIf(
+			e -> blacklist.contains(e.getKey()));
+	}
+	
 	public void removeAllNotIn(Set<String> blacklist) {
 		localMap.entrySet().removeIf(
 			e -> !blacklist.contains(e.getKey()));

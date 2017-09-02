@@ -21,10 +21,12 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
@@ -40,8 +42,11 @@ import scala.Tuple2;
 public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFunction<Task, Long, String> 
 {
 	private static final long serialVersionUID = -3254950138084272296L;
-
-	private final String  _prog;
+	
+	private static final CachedReuseVariables reuseVars = new CachedReuseVariables();
+	
+	private final long _jobid;
+	private final String _prog;
 	private final HashMap<String, byte[]> _clsMap;
 	private boolean _initialized = false;
 	private boolean _caching = true;
@@ -49,9 +54,10 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 	
-	public RemoteParForSparkWorker(String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters) 
+	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
+		_jobid = jobid;
 		_prog = program;
 		_clsMap = clsMap;
 		_initialized = false;
@@ -68,7 +74,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	{
 		//lazy parworker initialization
 		if( !_initialized )
-			configureWorker( TaskContext.get().taskAttemptId() );
+			configureWorker(TaskContext.get().taskAttemptId());
 		
 		//execute a single task
 		long numIter = getExecutedIterations();
@@ -88,10 +94,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		return ret.iterator();
 	}
 
-	private void configureWorker( long ID ) 
+	@SuppressWarnings("unchecked")
+	private void configureWorker(long taskID) 
 		throws DMLRuntimeException, IOException
 	{
-		_workerID = ID;
+		_workerID = taskID;
 		
 		//initialize codegen class cache (before program parsing)
 		synchronized( CodegenUtils.class ) {
@@ -106,7 +113,13 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_resultVars  = body.getResultVarNames();
 		_numTasks    = 0;
 		_numIters    = 0;
-
+		
+		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
+		//we reuse everything except result variables and partitioned input matrices)
+		_ec.pinVariables(_ec.getVarList()); //avoid cleanup of shared inputs
+		Collection<String> blacklist = CollectionUtils.union(_resultVars, _ec.getVarListPartitioned());
+		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist);
+		
 		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
 		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
 		//the initialization and immediately register the created directory for cleanup
@@ -121,7 +134,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
 				//register entire working dir for delete on shutdown
 				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
-			}	
+			}
 		}
 		
 		//ensure that resultvar files are not removed
@@ -133,5 +146,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		//mark as initialized
 		_initialized = true;
+	}
+	
+	public static void cleanupCachedVariables(long pfid) {
+		reuseVars.clearVariables(pfid);
 	}
 }

@@ -544,23 +544,18 @@ public class ExecutionContext {
 		for( String var : varList )
 		{
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject )
-			{
+			if( dat instanceof MatrixObject ) {
 				MatrixObject mo = (MatrixObject)dat;
 				varsState.put( var, mo.isCleanupEnabled() );
-				//System.out.println("pre-pin "+var+" ("+mo.isCleanupEnabled()+")");
 			}
 		}
 		
 		//step 2) pin variables
-		for( String var : varList )
-		{
+		for( String var : varList ) {
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject )
-			{
+			if( dat instanceof MatrixObject ) {
 				MatrixObject mo = (MatrixObject)dat;
 				mo.enableCleanup(false); 
-				//System.out.println("pin "+var);
 			}
 		}
 		
@@ -583,11 +578,8 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @param varsState variable state
 	 */
-	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState)
-	{
-		for( String var : varList)
-		{
-			//System.out.println("unpin "+var+" ("+varsState.get(var)+")");
+	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState) {
+		for( String var : varList) {
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).enableCleanup(varsState.get(var));
@@ -597,15 +589,28 @@ public class ExecutionContext {
 	/**
 	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
 	 * 
-	 * @return variable list as strings
+	 * @return list of all variable names.
 	 */
-	public ArrayList<String> getVarList()
-	{
-		ArrayList<String> varlist = new ArrayList<String>();
-		varlist.addAll(_variables.keySet());	
-		return varlist;
+	public ArrayList<String> getVarList() {
+		return new ArrayList<>(_variables.keySet());
 	}
-
+	
+	/**
+	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
+	 * 
+	 * @return list of all variable names of partitioned matrices.
+	 */
+	public ArrayList<String> getVarListPartitioned() {
+		ArrayList<String> ret = new ArrayList<>();
+		for( String var : _variables.keySet() ) {
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObject 
+				&& ((MatrixObject)dat).isPartitioned() )
+				ret.add(var);
+		}
+		return ret;
+	}
+	
 	public void cleanupMatrixObject(MatrixObject mo)
 		throws DMLRuntimeException 
 	{

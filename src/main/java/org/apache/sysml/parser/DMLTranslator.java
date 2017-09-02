@@ -617,12 +617,11 @@ public class DMLTranslator
 			ForProgramBlock rtpb = null;
 			IterablePredicate iterPred = fsb.getIterPredicate();
 			
-			if( sb instanceof ParForStatementBlock )
-			{
+			if( sb instanceof ParForStatementBlock ) {
 				sbName = "ParForStatementBlock";
-				rtpb = new ParForProgramBlock(prog, iterPred.getIterVar().getName(), iterPred.getParForParams());
+				rtpb = new ParForProgramBlock(prog, iterPred.getIterVar().getName(),
+					iterPred.getParForParams(), ((ParForStatementBlock)sb).getResultVariables());
 				ParForProgramBlock pfrtpb = (ParForProgramBlock)rtpb;
-				pfrtpb.setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
 				pfrtpb.setStatementBlock((ParForStatementBlock)sb); //used for optimization and creating unscoped variables
 			}
 			else {//ForStatementBlock
@@ -636,8 +635,8 @@ public class DMLTranslator
 			
 			// process the body of the for statement block
 			if (fsb.getNumStatements() > 1){
-				LOG.error(fsb.printBlockErrorLocation() + " "  + sbName + " should have 1 statement" );
-				throw new LopsException(fsb.printBlockErrorLocation() + " "  + sbName + " should have 1 statement" );
+				LOG.error(fsb.printBlockErrorLocation() + " " + sbName + " should have 1 statement" );
+				throw new LopsException(fsb.printBlockErrorLocation() + " " + sbName + " should have 1 statement" );
 			}
 			ForStatement fs = (ForStatement)fsb.getStatement(0);
 			for (StatementBlock sblock : fs.getBody()){
@@ -652,9 +651,6 @@ public class DMLTranslator
 			}
 			
 			retPB = rtpb;
-			
-			//post processing for generating missing instructions
-			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			
 			// add statement block
 			retPB.setStatementBlock(sb);

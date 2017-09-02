@@ -328,16 +328,15 @@ public class ProgramConverter
 		ParForProgramBlock tmpPB = null;
 		
 		if( IDPrefix == -1 ) //still on master node
-			tmpPB = new ParForProgramBlock(prog,pfpb.getIterVar(), pfpb.getParForParams());
+			tmpPB = new ParForProgramBlock(prog,pfpb.getIterVar(), pfpb.getParForParams(), pfpb.getResultVariables());
 		else //child of remote ParWorker at any level
-			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterVar(), pfpb.getParForParams());
+			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterVar(), pfpb.getParForParams(), pfpb.getResultVariables());
 		
 		tmpPB.setStatementBlock( createForStatementBlockCopy( (ForStatementBlock) pfpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
 		tmpPB.disableMonitorReport(); //already done in top-level parfor
-		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(pfpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
@@ -1514,9 +1513,8 @@ public class ProgramConverter
 		//program blocks //reset id to preinit state, replaced during exec
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, 0); 
 		
-		ParForProgramBlock pfpb = new ParForProgramBlock(id, prog, iterVar, params);
+		ParForProgramBlock pfpb = new ParForProgramBlock(id, prog, iterVar, params, resultVars);
 		pfpb.disableOptimization(); //already done in top-level parfor
-		pfpb.setResultVariables(resultVars);		
 		pfpb.setFromInstructions(from);
 		pfpb.setToInstructions(to);
 		pfpb.setIncrementInstructions(incr);

@@ -708,30 +708,7 @@ public abstract class Hop implements ParseInfo
 		_validCPSizeEstimate = (wstats!=null) ? OptimizerUtils.isValidCPMatrixSize(
 			wstats[0], wstats[1], OptimizerUtils.getSparsity(wstats[0], wstats[1], wstats[2])) : false;
 	}
-
 	
-	/**
-	 * Computes the hop-specific output memory estimate in bytes. Should be 0 if not
-	 * applicable. 
-	 * 
-	 * @param dim1 dimension 1
-	 * @param dim2 dimension 2
-	 * @param nnz number of non-zeros
-	 * @return memory estimate
-	 */
-	protected abstract double computeOutputMemEstimate( long dim1, long dim2, long nnz );
-
-	/**
-	 * Computes the hop-specific intermediate memory estimate in bytes. Should be 0 if not
-	 * applicable.
-	 * 
-	 * @param dim1 dimension 1
-	 * @param dim2 dimension 2
-	 * @param nnz number of non-zeros
-	 * @return memory estimate
-	 */
-	protected abstract double computeIntermediateMemEstimate( long dim1, long dim2, long nnz );
-
 	/**
 	 * Computes the output matrix characteristics (rows, cols, nnz) based on worst-case output
 	 * and/or input estimates. Should return null if dimensions are unknown.
@@ -849,6 +826,21 @@ public abstract class Hop implements ParseInfo
 	
 	public abstract String getOpString();
 
+	// ========================================================================================
+	// Design doc: Memory estimation of GPU
+	// 1. Since not all operator are supported on GPU, isGPUEnabled indicates whether an operation 
+	// is enabled for GPU. This method doesnot take into account any memory estimates.
+	// 2. To simplify memory estimation logic, the methods computeOutputMemEstimate and computeIntermediateMemEstimate
+	// should return maximum of memory required for GPU and CP operators. 
+	// 3. Additionally, these methods are guarded so that when -gpu flag is not provided, additional memory overhead due to GPU
+	// are ignored. For example: sparse-to-dense conversion on GPU. 
+	// 4. (WIP) Every GPU operators should respect the memory returned by computeIntermediateMemEstimate (and computeOutputMemEstimate - see below point).
+	// 5. (WIP) Every GPU operator should create output in the same format as the corresponding CP operator. That is,  computeOutputMemEstimate
+	// are consistent across both CP and GPU in terms of worst-case.
+	// 6. The drawback of using maximum memory (mem = Math.max(mem_gpu, mem_gpu)) are:
+	// - GPU operator is not selected when mem_gpu < total memory available on GPU < mem
+	// - CP operator is not selected (i.e. distributed operator compiled) when mem_cpu < driver memory budget < mem
+	
 	/**
 	 * In memory-based optimizer mode (see OptimizerUtils.isMemoryBasedOptLevel()), 
 	 * the exectype is determined by checking this method as well as memory budget of this Hop. 
@@ -860,6 +852,31 @@ public abstract class Hop implements ParseInfo
 	 * @return true if the Hop is eligible for GPU Exectype.
 	 */
 	public abstract boolean isGPUEnabled();
+	
+	/**
+	 * Computes the hop-specific output memory estimate in bytes. Should be 0 if not
+	 * applicable. 
+	 * 
+	 * @param dim1 dimension 1
+	 * @param dim2 dimension 2
+	 * @param nnz number of non-zeros
+	 * @return memory estimate
+	 */
+	protected abstract double computeOutputMemEstimate( long dim1, long dim2, long nnz );
+
+	/**
+	 * Computes the hop-specific intermediate memory estimate in bytes. Should be 0 if not
+	 * applicable.
+	 * 
+	 * @param dim1 dimension 1
+	 * @param dim2 dimension 2
+	 * @param nnz number of non-zeros
+	 * @return memory estimate
+	 */
+	protected abstract double computeIntermediateMemEstimate( long dim1, long dim2, long nnz );
+	
+	// ========================================================================================
+
 	
 	protected boolean isVector() {
 		return (dimsKnown() && (_dim1 == 1 || _dim2 == 1) );

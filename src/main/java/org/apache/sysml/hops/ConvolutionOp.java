@@ -191,7 +191,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 //		// TODO: Inserting reblock requires knowing columns apriori
 //		ConvolutionTransform transform1 = new ConvolutionTransform(addReblockIfNecessary(et, lopOp, in), lopOp, getDataType(), getValueType(), et, k);
 //		setReblockedOutputDimension(et, transform1);
-		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k);
+		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k, getIntermediateMemEstimate());
 		setOutputDimensions(transform1);
 		
 		setLineNumbers(transform1);
@@ -226,8 +226,49 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{	
-		//default: no intermediate memory requirements
-		return 0;
+		double ret = 0;
+		ConvolutionParameters params;
+		try {
+			params = parseInput();
+		} catch (DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
+		
+		// Since CP operators use row-level parallelism by default
+		int numWorkers = Math.min(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), Math.max(params.N, 1));
+		
+		if(getOp() == ConvOp.DIRECT_CONV2D) {
+			double inputSparsity = getInput().get(0).getSparsity();
+			// Why inputSparsity => im2col operation preserves the worst-case sparsity of the input.
+			double cpMemBudget = OptimizerUtils.estimateSizeExactSparsity(params.C*params.R*params.S, params.P*params.Q*numWorkers, inputSparsity);
+			if(DMLScript.USE_ACCELERATOR) {
+				// Assumption: To compile a GPU conv2d operator, following should fit on the GPU:
+				// 1. output in dense format (i.e. computeOutputMemEstimate) 
+				// 2. input in any format
+				// 3. atleast one input row in dense format
+				// 4. filter in dense format
+				
+				// Account for potential sparse-to-dense conversion of atleast 1 input row and filter
+				double gpuMemBudget = OptimizerUtils.estimateSizeExactSparsity(1, dim2, 1.0) + OptimizerUtils.estimateSizeExactSparsity(params.K, params.C*params.R*params.S, 1.0);
+				
+				if(cpMemBudget > gpuMemBudget) {
+					// Limit the CP memory budget to allow for more opportunity for compiling GPU instructions
+					// Constraint: allow for atleast one im2col intermediate in case the optimizer decides to compile CP instruction
+					cpMemBudget = OptimizerUtils.estimateSizeExactSparsity(params.C*params.R*params.S, params.P*params.Q, inputSparsity);
+				}
+				
+				// Finally, use the maximum of CP and GPU memory budget
+				ret += Math.max(cpMemBudget, gpuMemBudget);
+			}
+			else {
+				// When -gpu flag is not provided, the memory estimates for CP are not affected.
+				ret += cpMemBudget;
+			}
+		}
+		
+		
+		
+		return ret;
 	}
 	
 	@Override
@@ -347,43 +388,44 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return _etype;
 	}
 	
+	// Caching parameters speed-ups dynamic recompilation time by avoiding unnecessary computeSizeInformation
+	private ConvolutionParameters _cachedParams = new ConvolutionParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 	ConvolutionParameters parseInput() throws DMLRuntimeException {
-		ConvolutionParameters params = null;
 		if(op == ConvOp.MAX_POOLING_BACKWARD 
 				|| op == ConvOp.DIRECT_CONV2D 
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
-			params = new ConvolutionParameters(
-					computeSizeInformation(getInput().get(6)),
-					computeSizeInformation(getInput().get(7)), 
-					computeSizeInformation(getInput().get(8)), 
-					computeSizeInformation(getInput().get(9)), 
-					computeSizeInformation(getInput().get(10)), 
-					computeSizeInformation(getInput().get(12)), 
-					computeSizeInformation(getInput().get(13)), 
-					computeSizeInformation(getInput().get(2)), 
-					computeSizeInformation(getInput().get(3)), 
-					computeSizeInformation(getInput().get(4)), 
-					computeSizeInformation(getInput().get(5)), _maxNumThreads);
+			_cachedParams.setIfUnknown(
+					getInput().get(6),
+					getInput().get(7), 
+					getInput().get(8), 
+					getInput().get(9), 
+					getInput().get(10), 
+					getInput().get(12), 
+					getInput().get(13), 
+					getInput().get(2), 
+					getInput().get(3), 
+					getInput().get(4), 
+					getInput().get(5), _maxNumThreads);
 		}
 		else {
-			params = new ConvolutionParameters(
-					computeSizeInformation(getInput().get(5)),
-					computeSizeInformation(getInput().get(6)), 
-					computeSizeInformation(getInput().get(7)), 
-					computeSizeInformation(getInput().get(8)), 
-					computeSizeInformation(getInput().get(9)), 
-					computeSizeInformation(getInput().get(11)), 
-					computeSizeInformation(getInput().get(12)), 
-					computeSizeInformation(getInput().get(1)), 
-					computeSizeInformation(getInput().get(2)), 
-					computeSizeInformation(getInput().get(3)), 
-					computeSizeInformation(getInput().get(4)), _maxNumThreads);
+			_cachedParams.setIfUnknown(
+					getInput().get(5),
+					getInput().get(6), 
+					getInput().get(7), 
+					getInput().get(8), 
+					getInput().get(9), 
+					getInput().get(11), 
+					getInput().get(12), 
+					getInput().get(1), 
+					getInput().get(2), 
+					getInput().get(3), 
+					getInput().get(4), _maxNumThreads);
 		}
-		return params;
+		return _cachedParams;
 	}
 
 	public static long getExtractedVal(long val1, long val2, long val3) {

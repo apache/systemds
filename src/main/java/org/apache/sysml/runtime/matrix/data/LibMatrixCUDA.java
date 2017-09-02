@@ -58,6 +58,7 @@ import static jcuda.jcusparse.JCusparse.cusparseDcsrmv;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
@@ -65,6 +66,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -308,8 +310,9 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */
 	private static Pointer getDensePointer(GPUContext gCtx, MatrixObject image, boolean isForCuDNN, String instName) throws DMLRuntimeException {
-		if(isForCuDNN && image.getNumRows()*image.getNumColumns() > numDoublesIn2GB) {
-			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot be greater than 2GB. Hint: try reducing the mini-batch size.");
+		long numElems = image.getNumRows()*image.getNumColumns();
+		if(isForCuDNN && numElems > maxNumDoublesOfCuDNNTensor) {
+			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
 		}
 		return getDensePointer(gCtx, image, instName);
 	}
@@ -354,7 +357,7 @@ public class LibMatrixCUDA {
 		if(status != cudnnStatus.CUDNN_STATUS_SUCCESS)
 			throw new DMLRuntimeException("Error status returned by CuDNN:" + jcuda.jcudnn.cudnnStatus.stringFor(status));
 	}
-
+	
 	/**
 	 * Does a 2D convolution followed by a bias_add
 	 *
@@ -377,51 +380,97 @@ public class LibMatrixCUDA {
 	 * @param stride_w string width
 	 * @param P        output height
 	 * @param Q        output width
+	 * @param intermediateMemoryBudget intermediate memory budget
 	 * @throws DMLRuntimeException if error
 	 */
 	public static void conv2dBiasAdd(GPUContext gCtx, String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject output, int N, int C, int H, int W,
-			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget)
 					throws DMLRuntimeException {
-		/*
-		int rows = (int) output.getNumRows();
-		int cols = (int) output.getNumColumns();
-		long size  = rows * cols * Sizeof.DOUBLE;
-
-		Pointer imagePointer = getDensePointer(image, instName);
-		Pointer biasPointer = getDensePointer(bias, instName);
-		Pointer outputPointer = getDensePointer(output, instName);
-		Pointer filterPointer = getDensePointer(filter, instName);
-
-		Pointer tmp = allocate(size);
-
-		conv2d(instName, imagePointer, filterPointer, tmp, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-		cudaDeviceSynchronize();
-
-		long k1 = bias.getNumColumns();
-		if(k1 != bias.getNumColumns() || bias.getNumColumns() != 1 || cols % k1 != 0) {
-			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
-		}
-		// biasAdd(instName, output, bias, output);
-		biasAdd(instName, tmp, biasPointer, outputPointer, rows, cols, (int)k1);
-
-		cudaFreeHelper(tmp);
-		 */
-		LOG.trace("GPU : conv2dBiasAdd" + ", GPUContext=" + gCtx);
-		conv2d(gCtx, instName, image, filter, output, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		conv2d(gCtx, instName, image, filter, output, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
 		//cudaDeviceSynchronize;
 		biasAdd(gCtx, instName, output, bias, output);
 	}
-
+	
+	/**
+	 * Performs a 2D convolution
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param image input matrix object
+	 * @param filter filter matrix object
+	 * @param outputBlock output matrix object
+	 * @param N        number of input images
+	 * @param C        number of channels
+	 * @param H        height of each image
+	 * @param W        width of each image
+	 * @param K        number of output "channels"
+	 * @param R        height of filter
+	 * @param S        width of filter
+	 * @param pad_h    padding height
+	 * @param pad_w    padding width
+	 * @param stride_h stride height
+	 * @param stride_w string width
+	 * @param P        output height
+	 * @param Q        output width
+	 * @param intermediateMemoryBudget intermediate memory budget
+	 * @throws DMLRuntimeException if error
+	 */
 	public static void conv2d(GPUContext gCtx, String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
-			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
-					throws DMLRuntimeException {
-		Pointer imagePointer = getDensePointer(gCtx, image, true, instName);
-		Pointer filterPointer = getDensePointer(gCtx, filter, true, instName);
-		Pointer dstPointer = getDensePointer(gCtx, outputBlock, true, instName);
-
-		conv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+		
+		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
+		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
+		
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
+			// Filter and output are accounted as dense in the memory estimation for conv2d
+			long additionalFilterOverhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
+			Pointer filterPointer = getDensePointer(gCtx, filter, true, instName);
+			Pointer dstPointer = getDensePointer(gCtx, outputBlock, true, instName);
+			if(!isInSparseFormat(gCtx, image) || 
+				(OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) + additionalFilterOverhead) <= intermediateMemoryBudget) {
+				// Perform all-input all-channel conv2d
+				Pointer imagePointer = getDensePointer(gCtx, image, true, instName);
+				conv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			}
+			else {
+				Pointer tempOneImageRowPointer = gCtx.allocate(CHW*Sizeof.DOUBLE);
+				CSRPointer imagePointer = getSparsePointer(gCtx, image, instName);
+				for(int n = 0; n < N; n++) {
+					long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+					cudaMemset(tempOneImageRowPointer, 0, CHW*Sizeof.DOUBLE);
+					if(GPUStatistics.DISPLAY_STATISTICS)
+						GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
+					sliceSparseDense(gCtx, instName, imagePointer, tempOneImageRowPointer, n, n, 0, toInt(CHW-1));
+					// Perform one-input all-channel conv2d
+					conv2d(gCtx, instName, tempOneImageRowPointer, filterPointer, dstPointer.withByteOffset(n*KPQ*Sizeof.DOUBLE), 
+							1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				}
+				gCtx.cudaFreeHelper(tempOneImageRowPointer, true);
+			}
+		}
+		else {
+			throwCuDNNDimensionError(N, CHW, K, CRS, N, KPQ);
+		}
 	}
-
+	
+	
+	/**
+	 * Throw an user-friendly error that shows limitation of invoking a cuDNN kernel
+	 *  
+	 * @param dim1 input1 number of rows
+	 * @param dim2 input1 number of columns
+	 * @param dim3 input2 number of rows
+	 * @param dim4 input2 number of columns
+	 * @param dim5 output number of rows
+	 * @param dim6 output number of columns
+	 * @throws DMLRuntimeException the exception with the appropriate message
+	 */
+	private static void throwCuDNNDimensionError(long dim1, long dim2, long dim3, long dim4, long dim5, long dim6) throws DMLRuntimeException {
+		throw new DMLRuntimeException("The dimensions of input/output matrices is too large to execute a CuDNN kernel. "
+				+ "Max CuDNN matrix size:" + maxNumDoublesOfCuDNNTensor + ". "
+				+ "Given input matrix dimensions: [" + dim1 + "," + dim2 + "], [" + dim3 + "," + dim4 + "]. Output dimension: [" + dim5 + "," + dim6 + "]");
+	}
+	
 	/**
 	 * Performs 2D convolution
 	 * Takes up an insignificant amount of intermediate space when CONVOLUTION_PREFERENCE is set to CUDNN_CONVOLUTION_FWD_NO_WORKSPACE
@@ -447,7 +496,7 @@ public class LibMatrixCUDA {
 	 * @param Q        output width
 	 * @throws DMLRuntimeException if error
 	 */
-	public static void conv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, int N,
+	private static void conv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, int N,
 			int C, int H, int W, int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
 		LOG.trace("GPU : conv2d" + ", GPUContext=" + gCtx);
@@ -964,7 +1013,9 @@ public class LibMatrixCUDA {
 		}
 	}
 
-	private static long numDoublesIn2GB = 268435456;
+	// From CuDNN 5.1 documentation:
+	// The total size of a tensor including the potential padding between dimensions is limited to 2 Giga-elements of type datatype.
+	private static long maxNumDoublesOfCuDNNTensor = 2000000000;
 
 	/**
 	 * This method computes the backpropogation errors for previous layer of convolution operation
@@ -1244,7 +1295,7 @@ public class LibMatrixCUDA {
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns()); // Allocated the dense output matrix
 		long t0=0;
 		cudnnTensorDescriptor srcTensorDesc = in.getGPUObject(gCtx).getTensorDescriptor();
-		if(N*CHW >= numDoublesIn2GB ||  srcTensorDesc == null) {
+		if(N*CHW >= maxNumDoublesOfCuDNNTensor ||  srcTensorDesc == null) {
 			LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
@@ -2814,28 +2865,6 @@ public class LibMatrixCUDA {
 		deviceCopy(instName, srcPtr, destPtr, (int)src.getNumRows(), (int)src.getNumColumns());
 	}
 
-	@SuppressWarnings("unused")
-	private static void compareAndSet(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, double compareVal,  double tolerance,
-			double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) throws DMLRuntimeException {
-		if (ec.getGPUContext(0) != gCtx)
-			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
-		Pointer A = getDensePointer(gCtx, in, instName); // TODO: FIXME: Implement sparse kernel
-		MatrixObject out = ec.getMatrixObject(outputName);
-		int rlen = toInt(out.getNumRows());
-		int clen = toInt(out.getNumColumns());
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlen, clen);	// Allocated the dense output matrix
-		Pointer ret = getDensePointer(gCtx, out, instName);
-
-		// out.getMatrixCharacteristics().setNonZeros(rlen*clen);
-		// compareAndSet(double* A,  double* ret, int rlen, int clen, double compareVal, double ifEqualsVal, double ifNotEqualsVal)
-		long t0=0;
-		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		getCudaKernels(gCtx).launchKernel("compare_and_set",
-				ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
-				A, ret, rlen, clen, compareVal, tolerance, ifEqualsVal, ifLessThanVal, ifGreaterThanVal);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COMPARE_AND_SET_KERNEL, System.nanoTime() - t0);
-	}
-
 	/**
 	 * Fills an an array on the GPU with a given scalar value
 	 * @param ec					currently active instance of the {@link ExecutionContext}
@@ -3122,14 +3151,7 @@ public class LibMatrixCUDA {
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1);
 			CSRPointer inPointer = getSparsePointer(gCtx, in1, instName);
 			Pointer outPointer = getDensePointer(gCtx, out, instName);
-			int size = ru - rl + 1;
-			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-			// Performs a slice operation where the input matrix is sparse and the output matrix is dense.
-			// This function avoids unnecessary sparse to dense conversion of the input matrix.
-			// We can generalize this later to output sparse matrix.
-			getCudaKernels(gCtx).launchKernel("slice_sparse_dense", ExecutionConfig.getConfigForSimpleVectorOperations(size),
-					inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP, System.nanoTime() - t0);
+			sliceSparseDense(gCtx, instName, inPointer, outPointer, rl, ru, cl, cu);
 		}
 		else {
 			// Input in1 is in dense format (see inPointer)
@@ -3149,6 +3171,30 @@ public class LibMatrixCUDA {
 			}
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_DENSE_OP, System.nanoTime() - t0);
 		}
+	}
+	
+	/**
+	 * Perform slice operation on sparse input and output it in dense format
+	 * 
+	 * @param gCtx gpu context
+	 * @param instName instruction name
+	 * @param inPointer sparse CSR input pointer
+	 * @param outPointer dense output pointer (expected to be zeroed out)
+	 * @param rl row lower
+	 * @param ru row upper
+	 * @param cl column lower
+	 * @param cu column upper
+	 * @throws DMLRuntimeException
+	 */
+	private static void sliceSparseDense(GPUContext gCtx, String instName, CSRPointer inPointer, Pointer outPointer, int rl, int ru, int cl, int cu) throws DMLRuntimeException {
+		int size = ru - rl + 1;
+		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		// Performs a slice operation where the input matrix is sparse and the output matrix is dense.
+		// This function avoids unnecessary sparse to dense conversion of the input matrix.
+		// We can generalize this later to output sparse matrix.
+		getCudaKernels(gCtx).launchKernel("slice_sparse_dense", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+				inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP, System.nanoTime() - t0);
 	}
 
 	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
@@ -3648,26 +3694,6 @@ public class LibMatrixCUDA {
 	//********************************************************************/
 	//*****************  END OF Builtin Functions ************************/
 	//********************************************************************/
-
-	/**
-	 * Convenience method for debugging matrices on the GPU.
-	 * @param in		Pointer to a double array (matrix) on the GPU
-	 * @param rlen	row length
-	 * @param clen	column length
-	 */
-	@SuppressWarnings("unused")
-	private static void debugPrintMatrix(Pointer in, int rlen, int clen){
-		double[] data = new double[rlen * clen];
-		cudaMemcpy(Pointer.to(data), in, rlen*clen*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-		int k=0;
-		for (int i=0; i<rlen; ++i){
-			for (int j=0; j<clen; ++j){
-				System.out.print(data[k]);
-				k++;
-			}
-			System.out.println();
-		}
-	}
 
 	/**
 	 * Helper method to get the output block (allocated on the GPU)

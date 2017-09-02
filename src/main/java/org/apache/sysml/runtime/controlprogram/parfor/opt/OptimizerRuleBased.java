@@ -1247,12 +1247,12 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//constrain max parfor parallelism by problem size
 			int parforK = (int)((_N<kMax)? _N : kMax);
-
-
+			
 			// if gpu mode is enabled, the amount of parallelism is set to
 			// the smaller of the number of iterations and the number of GPUs
 			// otherwise it default to the number of CPU cores and the
 			// operations are run in CP mode
+			//FIXME rework for nested parfor parallelism and body w/o gpu ops
 			if (DMLScript.USE_ACCELERATOR) {
 				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
 				double maxMemUsage = getMaxCPOnlyBudget(n);
@@ -1264,15 +1264,14 @@ public class OptimizerRuleBased extends Optimizer
 							parforK + "]");
 				}
 			}
-
 			
 			//set parfor degree of parallelism
 			pfpb.setDegreeOfParallelism(parforK);
-			n.setK(parforK);	
+			n.setK(parforK);
 			
 			//distribute remaining parallelism 
-			int remainParforK = (int)Math.ceil(((double)(kMax-parforK+1))/parforK);
-			int remainOpsK = Math.max(_lkmaxCP / parforK, 1);
+			int remainParforK = getRemainingParallelismParFor(kMax, parforK);
+			int remainOpsK = getRemainingParallelismOps(_lkmaxCP, parforK);
 			rAssignRemainingParallelism( n, remainParforK, remainOpsK ); 
 		}
 		else // ExecType.MR/ExecType.SPARK
@@ -1334,13 +1333,13 @@ public class OptimizerRuleBased extends Optimizer
 					//set parfor degree of parallelism
 					long id = c.getID();
 					c.setK(tmpK);
-					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                                                  .getAbstractPlanMapping().getMappedProg(id)[1];
+					ParForProgramBlock pfpb = (ParForProgramBlock) 
+						OptTreeConverter.getAbstractPlanMapping().getMappedProg(id)[1];
 					pfpb.setDegreeOfParallelism(tmpK);
 					
-					//distribute remaining parallelism 
-					int remainParforK = (int)Math.ceil(((double)(parforK-tmpK+1))/tmpK);
-					int remainOpsK = Math.max(opsK / tmpK, 1);
+					//distribute remaining parallelism
+					int remainParforK = getRemainingParallelismParFor(parforK, tmpK);
+					int remainOpsK = getRemainingParallelismOps(opsK, tmpK);
 					rAssignRemainingParallelism(c, remainParforK, remainOpsK);
 				}
 				else if( c.getNodeType() == NodeType.HOP )
@@ -1387,7 +1386,18 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		}
 	}
-
+	
+	private static int getRemainingParallelismParFor(int parforK, int tmpK) {
+		//compute max remaining parfor parallelism k such that k * tmpK <= parforK
+		return (int)Math.ceil((double)(parforK-tmpK+1) / tmpK);
+	}
+	
+	private static int getRemainingParallelismOps(int opsK, int tmpK) {
+		//compute max remaining operations parallelism k with slight over-provisioning 
+		//such that k * tmpK <= 1.5 * opsK; note that if parfor already exploits the
+		//maximum parallelism, this will not introduce any over-provisioning.
+		return (int)Math.max(Math.round((double)opsK / tmpK), 1);
+	}
 	
 	///////
 	//REWRITE set task partitioner

@@ -168,7 +168,7 @@ dispersion           = 0.0 / 0.0;
 estimated_dispersion = 0.0 / 0.0;
 deviance_nodisp      = 0.0 / 0.0;
 deviance             = 0.0 / 0.0;
-beta_out             = matrix(0, 1, 1);
+beta_out             = "string";
 
 print("BEGIN GLM SCRIPT");
 print("Reading X...");

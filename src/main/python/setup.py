@@ -42,7 +42,7 @@ pillow_version = '2.0.0'
 REQUIRED_PACKAGES = [
     'numpy >= %s' % numpy_version,
     'scipy >= %s' % scipy_version,
-    'pandas',
+    'pandas', 'scikit-learn',
     'Pillow >= %s' % pillow_version
 ]
 

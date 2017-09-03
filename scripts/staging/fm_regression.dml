@@ -24,7 +24,7 @@
  */
 
 # Imports
-source("staging/fm.dml") as fm
+source("algorithms/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
 
 train = function(matrix[double] X)
@@ -32,6 +32,35 @@ train = function(matrix[double] X)
    /*
     * Trains a FM model.
     */
+    
+    # 1.initialize fm core
+    [w0, W, V] = fm::init(d, k);
+    
+    # 2.initialize adam optimizer
+    [mw0, vw0] = adam::init(w0);
+    [mW, vW] = adam::init(W);
+    [mV, vV] = adam::init(V);
+    
+    # 3.Send inputs through fm::forward
+    y = fm::forward(X, w0, W, V);
+    
+    # 4.Send the above result through log_loss::forward
+    sfy = sigmoid::forward(y);
+    
+    # 5.Send the above result through fm::backward
+    fb = fm::backward(sfy);
+    
+    # 6.Call adam::update for all parameters
+    # Default values for some parameters
+    lr      = 0.001; 
+    beta1   = 0.9;       # [0, 1)
+    beta2   = 0.999;     # [0, 1)
+    epsilon = 0.00000001; 
+    t       = 0;
+
+    adam::update(w0, g_w0, lr, beta1, beta2, epsilon, t, matrix[double] m_w0, matrix[double] v_w0);
+    adam::update(W, g_W, lr, beta1, beta2, epsilon, t, matrix[double] m_W, matrix[double] v_W );
+    adam::update(V, g_V, lr, beta1, beta2, epsilon, t, matrix[double] m_V, matrix[double] v_V );
 }
 
 predict = function(matrix[double] X)
@@ -39,11 +68,24 @@ predict = function(matrix[double] X)
    /*
     * computes the predictions for the given inputs.
     */
+    
+    # 1.initialize fm core
+    [w0, W, V] = fm::init(d, k);
+    
+    # 2.Send inputs through fm::forward
+    y = fm::forward(X, w0, W, V);
+    
+    # 3.Send the above result through log_loss::forward
+    log_loss::forward(y);
+    
 }
 
-eval = function(matrix[double X)
-    return (matrix[double] out) {
+eval = function(matrix[double] probs, matrix[double] y)
+    return (matrix[double] loss) {
    /*
     * Computes loss and accuracy.
     */
+    
+    # just compute loss with log_loss::forward(probs, y)
+    y = log_loss::forward(probs, y)
 }

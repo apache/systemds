@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -28,6 +29,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * The main purpose of this test is to ensure that encountered and fixed
@@ -42,6 +44,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "remove_empty_potpourri2";
 	private final static String TEST_NAME3 = "remove_empty_potpourri3";
 	private final static String TEST_NAME4 = "remove_empty_potpourri4";
+	private final static String TEST_NAME5 = "remove_empty_potpourri5";
 	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyPotpourriTest.class.getSimpleName() + "/";
@@ -49,13 +52,13 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }));
 	}
 	
 	@Test
@@ -97,6 +100,16 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	public void testRemoveEmptyComplexDagSplit2Rewrite() {
 		runRemoveEmptyTest(TEST_NAME4, true);
 	}
+	
+	@Test
+	public void testRemoveEmptyWithSelectRecompile() {
+		runRemoveEmptyTest(TEST_NAME5, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyWithSelectRecompileRewrite() {
+		runRemoveEmptyTest(TEST_NAME5, true);
+	}
 
 	/**
 	 * 
@@ -125,7 +138,12 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
+			
+			if( TEST_NAME.equals(TEST_NAME5) ) {
+				Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
+				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
+			}
 		}
 		finally
 		{

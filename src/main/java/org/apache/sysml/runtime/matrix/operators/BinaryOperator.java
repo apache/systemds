@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
+import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
@@ -56,8 +57,8 @@ public class BinaryOperator  extends Operator implements Serializable
 		fn = p;
 		
 		//binaryop is sparse-safe iff (0 op 0) == 0
-		sparseSafe = (fn instanceof Plus || fn instanceof Multiply 
-			|| fn instanceof Minus || fn instanceof And || fn instanceof Or 
+		sparseSafe = (fn instanceof Plus || fn instanceof Multiply || fn instanceof Minus
+			|| fn instanceof And || fn instanceof Or || fn instanceof Xor
 			|| fn instanceof PlusMultiply || fn instanceof MinusMultiply);
 	}
 	
@@ -84,6 +85,7 @@ public class BinaryOperator  extends Operator implements Serializable
 		else if( fn instanceof NotEquals )		return OpOp2.NOTEQUAL;
 		else if( fn instanceof And )			return OpOp2.AND;
 		else if( fn instanceof Or )				return OpOp2.OR;
+		else if( fn instanceof Xor )                    return OpOp2.XOR;
 		else if( fn instanceof Power )			return OpOp2.POW;
 		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {

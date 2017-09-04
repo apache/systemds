@@ -144,6 +144,8 @@ public abstract class ColGroupValue extends ColGroup
 	
 	public abstract int[] getCounts();
 	
+	public abstract int[] getCounts(int rl, int ru);
+	
 	public int[] getCounts(boolean inclZeros) {
 		int[] counts = getCounts();
 		if( inclZeros && this instanceof ColGroupOffset ) {
@@ -180,7 +182,7 @@ public abstract class ColGroupValue extends ColGroup
 		return -1;
 	}
 	
-	protected final double sumValues(int valIx) {
+	public final double sumValues(int valIx) {
 		final int numCols = getNumCols();
 		final int valOff = valIx * numCols;
 		double val = 0.0;
@@ -191,14 +193,16 @@ public abstract class ColGroupValue extends ColGroup
 		return val;
 	}
 	
-	protected final double sumValues(int valIx, KahanFunction kplus, KahanObject kbuff) {
+	public final double sumValues(int valIx, KahanFunction kplus) {
+		return sumValues(valIx, kplus, new KahanObject(0,0));
+	}
+	
+	public final double sumValues(int valIx, KahanFunction kplus, KahanObject kbuff) {
 		final int numCols = getNumCols();
 		final int valOff = valIx * numCols;
 		kbuff.set(0, 0);
-		for( int i = 0; i < numCols; i++ ) {
+		for( int i = 0; i < numCols; i++ )
 			kplus.execute2(kbuff, _values[valOff+i]);
-		}
-		
 		return kbuff._sum;
 	}
 	

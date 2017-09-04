@@ -226,7 +226,6 @@ public class ColGroupRLE extends ColGroupOffset
 	@Override 
 	public int[] getCounts() {
 		final int numVals = getNumValues();
-		
 		int[] counts = new int[numVals];
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -240,7 +239,28 @@ public class ColGroupRLE extends ColGroupOffset
 			}
 			counts[k] = count;
 		}
-		
+		return counts;
+	}
+	
+	@Override 
+	public int[] getCounts(int rl, int ru) {
+		final int numVals = getNumValues();
+		int[] counts = new int[numVals];
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			Pair<Integer,Integer> tmp = skipScanVal(k, rl);
+			int bix = tmp.getKey();
+			int curRunStartOff = tmp.getValue();
+			int curRunEnd = tmp.getValue();
+			int count = 0;
+			for ( ; bix<blen && curRunEnd<ru; bix+=2) {
+				curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix+1];
+				count += Math.min(curRunEnd, ru)-curRunStartOff;
+			}
+			counts[k] = count;
+		}
 		return counts;
 	}
 	

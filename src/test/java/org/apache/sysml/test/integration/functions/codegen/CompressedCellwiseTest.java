@@ -35,9 +35,11 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 public class CompressedCellwiseTest extends AutomatedTestBase 
-{	
+{
 	private static final String TEST_NAME1 = "CompressedCellwiseMain";
 	private static final String TEST_NAME2 = "CompressedCellwiseSide";
+	private static final String TEST_NAME3 = "CompressedCellwiseSumSq";
+	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CompressedCellwiseTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen-compress.xml";
@@ -68,6 +70,7 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 		
 	@Test
@@ -251,6 +254,68 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 	}
 	
 	//TODO compressed side inputs in spark
+	
+	//codegen operations over value tuples only
+	
+	@Test
+	public void testCompressedCellwiseSumSqDenseConstCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.DENSE, ValueType.CONST, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqDenseRandCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.DENSE, ValueType.RAND, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqDenseRand2CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqDenseRand3CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqSparseConstCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.SPARSE, ValueType.CONST, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqSparseRandCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.SPARSE, ValueType.RAND, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqSparseRand2CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqSparseRand3CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqEmptyConstCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.EMPTY, ValueType.CONST, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqEmptyRandCP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.EMPTY, ValueType.RAND, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqEmptyRand2CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	}
+	
+	@Test
+	public void testCompressedCellwiseSumSqEmptyRand3CP() {
+		testCompressedCellwise( TEST_NAME3, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	}
 	
 	
 	private void testCompressedCellwise(String testname, SparsityType stype, ValueType vtype, ExecType et)

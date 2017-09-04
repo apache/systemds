@@ -110,7 +110,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public static boolean INVESTIGATE_ESTIMATES = false;
 	public static boolean ALLOW_DDC_ENCODING = true;
 	private static final boolean LDEBUG = true; //local debug flag
-	private static final Level LDEBUG_LEVEL = Level.DEBUG; //DEBUG/TRACE for details
+	private static final Level LDEBUG_LEVEL = Level.INFO; //DEBUG/TRACE for details
 	
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	
@@ -1616,9 +1616,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					((ColGroupValue)grp).getNumValues());
 		return numVals;
 	}
+	
+	public boolean hasUncompressedColGroup() {
+		return getUncompressedColGroup() != null;
+	}
 
-	private ColGroupUncompressed getUncompressedColGroup()
-	{
+	private ColGroupUncompressed getUncompressedColGroup() {
 		for( ColGroup grp : _colGroups )
 			if( grp instanceof ColGroupUncompressed ) 
 				return (ColGroupUncompressed)grp;

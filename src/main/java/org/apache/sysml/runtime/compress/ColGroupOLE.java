@@ -230,19 +230,33 @@ public class ColGroupOLE extends ColGroupOffset
 	@Override 
 	public int[] getCounts() {
 		final int numVals = getNumValues();
-		
 		int[] counts = new int[numVals];
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
-			
 			//iterate over bitmap blocks and count partial lengths
 			int count = 0;
 			for (int bix=0; bix < blen; bix+=_data[boff+bix]+1)
 				count += _data[boff+bix];
 			counts[k] = count;
 		}
-		
+		return counts;
+	}
+	
+	@Override 
+	public int[] getCounts(int rl, int ru) {
+		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+		final int numVals = getNumValues();
+		int[] counts = new int[numVals];
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			int bix = skipScanVal(k, rl);
+			int count = 0;
+			for( int off=rl; bix < blen && off<ru; bix+=_data[boff+bix]+1, off+=blksz )
+				count += _data[boff+bix];
+			counts[k] = count;
+		}
 		return counts;
 	}
 	

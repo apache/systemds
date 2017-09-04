@@ -178,17 +178,18 @@ public class ColGroupDDC1 extends ColGroupDDC
 			nnz += ((c[i] = _values[(_data[i]&0xFF)*ncol+colpos])!=0) ? 1 : 0;
 		target.setNonZeros(nnz);
 	}
-
+	
 	@Override 
 	public int[] getCounts() {
-		final int nrow = getNumRows();
+		return getCounts(0, getNumRows());
+	}
+	
+	@Override 
+	public int[] getCounts(int rl, int ru) {
 		final int numVals = getNumValues();
-		
 		int[] counts = new int[numVals];
-		for( int i=0; i<nrow; i++ ) {
+		for( int i=rl; i<ru; i++ )
 			counts[_data[i]&0xFF] ++;
-		}
-		
 		return counts;
 	}
 	

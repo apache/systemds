@@ -51,7 +51,7 @@ public abstract class Expression implements ParseInfo
 	 * Boolean operators.
 	 */
 	public enum BooleanOp {
-		CONDITIONALAND, CONDITIONALOR, LOGICALAND, LOGICALOR, NOT, INVALID
+		CONDITIONALAND, CONDITIONALOR, CONDITIONALXOR, LOGICALAND, LOGICALOR, LOGICALXOR, NOT, INVALID
 	};
 
 	/**
@@ -312,6 +312,10 @@ public abstract class Expression implements ParseInfo
 			return BooleanOp.CONDITIONALOR;
 		else if (val.equalsIgnoreCase("|"))
 			return BooleanOp.LOGICALOR;
+		else if (val.equalsIgnoreCase("^^"))
+			return BooleanOp.CONDITIONALOR;
+		else if (val.equalsIgnoreCase("^"))
+			return BooleanOp.LOGICALOR;	
 		else if (val.equalsIgnoreCase("!"))
 			return BooleanOp.NOT;
 		return BooleanOp.INVALID;

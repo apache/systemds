@@ -2067,6 +2067,8 @@ public class DMLTranslator
 				op = OpOp2.AND;
 			} else if (source.getOpCode() == Expression.BooleanOp.LOGICALOR) {
 				op = OpOp2.OR;
+			} else if (source.getOpCode() == Expression.BooleanOp.LOGICALXOR) {
+				op = OpOp2.XOR;
 			} else {
 				LOG.error(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
 				throw new RuntimeException(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());

@@ -168,7 +168,6 @@ dispersion           = 0.0 / 0.0;
 estimated_dispersion = 0.0 / 0.0;
 deviance_nodisp      = 0.0 / 0.0;
 deviance             = 0.0 / 0.0;
-beta_out             = "string";
 
 print("BEGIN GLM SCRIPT");
 print("Reading X...");
@@ -445,10 +444,11 @@ if (termination_code == 1) {
 
 ssX_beta = diag (scale_X) %*% beta;
 ssX_beta [num_features, ] = ssX_beta [num_features, ] + t(shift_X) %*% beta;
+beta_out = ssX_beta; #initialize beta_out before loop excecution
 if (intercept_status == 2) {
     beta_out = cbind (ssX_beta, beta);
 } else {
-    beta_out = ssX_beta;
+    return beta_out;
 }
 
 write (beta_out, fileB, format=fmtB);

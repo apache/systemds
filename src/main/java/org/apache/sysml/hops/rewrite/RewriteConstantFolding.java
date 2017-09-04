@@ -284,4 +284,14 @@ public class RewriteConstantFolding extends HopRewriteRule
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
+	
+	private boolean isApplicableFalseBiconditionalPredicate( Hop hop )
+	        throws HopsException
+        {
+	        ArrayList<Hop> in = hop.getInput();
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.XOR)
+		                && ( (in.get(0) instanceof LiteralOp &&  ((LiteralOp)in.get(0)).getBooleanValue())
+				   ==(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
+	}
+	
 }

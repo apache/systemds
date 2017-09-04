@@ -78,8 +78,8 @@ public class MLContextGLMTest extends MLContextTestBase {
                 String[] addArgs = new String[4];
 		String param4Name = "$lpow=";
                                         
-                double[][] X = getRandomMatrix(10, 3, 0, 1, sparse?sparsity2:sparsity1, -1);
-                double[][] Y = TestUtils.round(getRandomMatrix(10, 1, 0, 1, sparse?sparsity2:sparsity1, -1));
+                double[][] X = getRandomMatrix(2468, 1007, 0, 1, sparse?sparsity2:sparsity1, -1);
+                double[][] Y = TestUtils.round(getRandomMatrix(2468, 1007, 0, 1, sparse?sparsity2:sparsity1, -1));
                 
 		switch(type) {
 			case POISSON_LOG: //dfam, vpow, link, lpow

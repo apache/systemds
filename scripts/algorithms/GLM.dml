@@ -448,7 +448,7 @@ beta_out = ssX_beta; #initialize beta_out before loop excecution
 if (intercept_status == 2) {
     beta_out = cbind (ssX_beta, beta);
 } else {
-    return beta_out;
+    beta_out = beta_out;
 }
 
 write (beta_out, fileB, format=fmtB);

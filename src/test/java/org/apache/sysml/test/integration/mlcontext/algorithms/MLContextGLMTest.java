@@ -34,7 +34,7 @@ public class MLContextGLMTest extends MLContextTestBase {
         protected static Logger log = Logger.getLogger(MLContextGLMTest.class);
         
         protected final static String TEST_SCRIPT_MAIN = "scripts/algorithms/GLM.dml";
-	protected final static String TEST_SCRIPT_PRED = "scripts/algotithms/GLM-predict.dml";
+	protected final static String TEST_SCRIPT_PRED = "scripts/algorithms/GLM-predict.dml";
 	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse

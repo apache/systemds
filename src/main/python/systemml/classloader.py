@@ -22,15 +22,27 @@
 __all__ = ['createJavaObject']
 
 import os
+import numpy as np
+import pandas as pd
 
 try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
     from pyspark import SparkContext
+    from pyspark.sql import SparkSession
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
+_initializedSparkSession = False
 def _createJavaObject(sc, obj_type):
+    # -----------------------------------------------------------------------------------
+    # Avoids race condition between locking of metastore_db of Scala SparkSession and PySpark SparkSession.
+    # This is done at toDF() rather than import level to avoid creation of SparkSession in worker processes.
+    global _initializedSparkSession
+    if not _initializedSparkSession:
+        _initializedSparkSession = True
+        SparkSession.builder.getOrCreate().createDataFrame(pd.DataFrame(np.array([[1,2],[3,4]])))
+    # -----------------------------------------------------------------------------------
     if obj_type == 'mlcontext':
         return sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
     elif obj_type == 'dummy':

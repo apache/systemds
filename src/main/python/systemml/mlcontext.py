@@ -36,11 +36,7 @@ try:
     from pyspark import SparkContext
     from pyspark.conf import SparkConf
     import pyspark.mllib.common
-    # -----------------------------------------------------------------------------------
-    # Avoids race condition between locking of metastore_db of Scala SparkSession and PySpark SparkSession
     from pyspark.sql import SparkSession
-    SparkSession.builder.getOrCreate().createDataFrame(pd.DataFrame(np.array([[1,2],[3,4]])))
-    # -----------------------------------------------------------------------------------
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 

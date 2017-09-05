@@ -3781,7 +3781,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
-	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
+	 * Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.
 	 * Extracted submatrix is returned as "result". Note: This operation is now 0-based.
 	 * 
 	 * @param rl row lower

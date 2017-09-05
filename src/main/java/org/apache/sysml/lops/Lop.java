@@ -38,27 +38,27 @@ public abstract class Lop
 {
 	
 	public enum Type {
-		Data, DataGen, 										//CP/MR read/write/datagen 
-		ReBlock, CSVReBlock,								//MR reblock operations
+		Data, DataGen,                                      //CP/MR read/write/datagen 
+		ReBlock, CSVReBlock,                                //MR reblock operations
 		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
 		UnaryCP, UNARY, BinaryCP, Binary, Ternary,          //CP/MR unary/binary/ternary
-		RangeReIndex, LeftIndex, ZeroOut,                   //CP/MR indexing 
-		Aggregate, PartialAggregate,   	   				    //CP/MR aggregation
-		BinUaggChain, UaggOuterChain,  	                    //CP/MR aggregation
+		RightIndex, LeftIndex, ZeroOut,                     //CP/MR indexing 
+		Aggregate, PartialAggregate,                        //CP/MR aggregation
+		BinUaggChain, UaggOuterChain,                       //CP/MR aggregation
 		TernaryAggregate,                                   //CP ternary-binary aggregates
-		Grouping, 											//MR grouping
+		Grouping,                                           //MR grouping
 		Append,                                             //CP/MR append (column append)
 		CombineUnary, CombineBinary, CombineTernary,        //MR combine (stitch together)
 		CentralMoment, CoVariance, GroupedAgg, GroupedAggM,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
-		FunctionCallCP, FunctionCallCPSingle,				//CP function calls 
+		FunctionCallCP, FunctionCallCPSingle,               //CP function calls 
 		CumulativePartialAggregate, CumulativeSplitAggregate, CumulativeOffsetBinary, //MR cumsum/cumprod/cummin/cummax
 		WeightedSquaredLoss, WeightedSigmoid, WeightedDivMM, WeightedCeMM, WeightedUMM,
 		SortKeys, PickValues,
-		Checkpoint, 										//Spark persist into storage level
-		PlusMult, MinusMult,								//CP
-		SpoofFused,											//CP/SP generated fused operator
+		Checkpoint,                                         //Spark persist into storage level
+		PlusMult, MinusMult,                                //CP
+		SpoofFused,                                         //CP/SP generated fused operator
 		/** CP operation on a variable number of operands */
 		MULTIPLE_CP
 	};

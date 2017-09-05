@@ -27,35 +27,36 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
 
-public class RangeBasedReIndex extends Lop 
+public class RightIndex extends Lop 
 {
-
+	public static final String OPCODE = "rightIndex";
+	
 	private boolean forLeftIndexing = false;
 
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 
-	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, ExecType et, boolean forleft)
 		throws LopsException 
 	{
-		super(Lop.Type.RangeReIndex, dt, vt);
+		super(Lop.Type.RightIndex, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
 	}
 
-	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, ExecType et)
 		throws LopsException 
 	{
-		super(Lop.Type.RangeReIndex, dt, vt);
+		super(Lop.Type.RightIndex, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
 	}
 
-	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
 		throws LopsException 
 	{
-		super(Lop.Type.RangeReIndex, dt, vt);
+		super(Lop.Type.RightIndex, dt, vt);
 		_aggtype = aggtype;
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
 	}
@@ -71,7 +72,7 @@ public class RangeBasedReIndex extends Lop
 		addInput(leftMatrixRowDim);
 		addInput(leftMatrixColDim);
 		
-		inputMatrix.addOutput(this);		
+		inputMatrix.addOutput(this);
 		rowL.addOutput(this);
 		rowU.addOutput(this);
 		colL.addOutput(this);
@@ -84,7 +85,6 @@ public class RangeBasedReIndex extends Lop
 		boolean definesMRJob = false;
 		
 		if ( et == ExecType.MR ) {
-			
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.MMCJ);
@@ -101,9 +101,9 @@ public class RangeBasedReIndex extends Lop
 	
 	private String getOpcode() {
 		if(forLeftIndexing)
-			return "rangeReIndexForLeft";
+			return OPCODE+"ForLeft";
 		else
-			return "rangeReIndex";
+			return OPCODE;
 	}
 	
 	@Override
@@ -182,10 +182,7 @@ public class RangeBasedReIndex extends Lop
 
 	@Override
 	public String toString() {
-		if(forLeftIndexing)
-			return "rangeReIndexForLeft";
-		else
-			return "rangeReIndex";
+		return getOpcode();
 	}
 
 }

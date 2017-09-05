@@ -28,6 +28,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -573,13 +574,13 @@ public class RowAggTmplTest extends AutomatedTestBase
 			if( testname.equals(TEST_NAME15) )
 				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
 			if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString("rangeReIndex"));
+				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
 			if( testname.equals(TEST_NAME28) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString("rangeReIndex"));
+					&& !heavyHittersContainsSubString(RightIndex.OPCODE));
 		}
 		finally {
 			rtplatform = platformOld;

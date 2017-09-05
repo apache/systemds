@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -46,7 +48,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 		IndexRange ixrange = getIndexRange(ec);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase("rangeReIndex") )
+		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//execute right indexing operation
 			FrameBlock in = ec.getFrameInput(input1.getName());
@@ -59,7 +61,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 			ec.setFrameOutput(output.getName(), out);
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase("leftIndex"))
+		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))
 		{
 			FrameBlock lin = ec.getFrameInput(input1.getName());
 			FrameBlock out = null;

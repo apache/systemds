@@ -25,6 +25,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -305,9 +307,9 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	{
 		switch(type){
 		    //for sum, literal replacement of unary aggregates applies
-			case SUM: 		  return "rlit";//return "uak+";
+			case SUM:         return "rlit";//return "uak+";
 			
-			case ROUND: 	  return "round";
+			case ROUND:       return "round";
 			case TRANSPOSE:   return "r'";
 			case MULT_LEFT:
 			case MULT_RIGHT:  return "*";
@@ -316,9 +318,9 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			case MINUS_LEFT:
 			case MINUS_RIGHT: return "-";
 			case MM_LEFT:
-			case MM_RIGHT: 	  return "ba+*";		
-			case RIX:		  return "rangeReIndex";
-			case LIX:		  return "leftIndex";
+			case MM_RIGHT:    return "ba+*";		
+			case RIX:         return RightIndex.OPCODE;
+			case LIX:         return LeftIndex.OPCODE;
 		}
 		
 		return null;

@@ -3087,7 +3087,7 @@ public class LibMatrixCUDA {
 	//********************************************************************/
 
 	/**
-	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
+	 * Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.
 	 *  
 	 * @param ec current execution context
 	 * @param gCtx current gpu context

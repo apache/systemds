@@ -24,6 +24,8 @@ import java.util.HashMap;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Compression;
 import org.apache.sysml.lops.DataGen;
+import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.WeightedCrossEntropy;
 import org.apache.sysml.lops.WeightedCrossEntropyR;
 import org.apache.sysml.lops.WeightedDivMM;
@@ -141,9 +143,9 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "relu_maxpooling",          SPINSTRUCTION_TYPE.Convolution);
 		
-		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
-		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
-		String2SPInstructionType.put( "mapLeftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( RightIndex.OPCODE, SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( LeftIndex.OPCODE, SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( "mapLeftIndex" , SPINSTRUCTION_TYPE.MatrixIndexing);
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'"   	   , SPINSTRUCTION_TYPE.Reorg);

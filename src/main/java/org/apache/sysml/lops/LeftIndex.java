@@ -34,6 +34,8 @@ public class LeftIndex extends Lop
 		NONE
 	}
 	
+	public static final String OPCODE = "leftIndex";
+	
 	private LixCacheType _type;
 
 	public LeftIndex(
@@ -104,7 +106,7 @@ public class LeftIndex extends Lop
 		if( _type != LixCacheType.NONE )
 			return "mapLeftIndex";
 		else
-			return "leftIndex";
+			return OPCODE;
 	}
 	
 	@Override
@@ -153,6 +155,6 @@ public class LeftIndex extends Lop
 
 	@Override
 	public String toString() {
-		return "leftIndex";
+		return getOpcode();
 	}
 }

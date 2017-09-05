@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.LeftIndex.LixCacheType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -30,16 +32,6 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
 /**
  * This class implements the matrix indexing functionality inside Spark.  
- * Example instructions: 
- *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
- *         input=mVar1, output=mVar6, 
- *         bounds = (Var2,Var3,Var4,Var5)
- *         rowindex_lower: Var2, rowindex_upper: Var3 
- *         colindex_lower: Var4, colindex_upper: Var5
- *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
- *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
- *         the result is stored in mVar7
- *  
  */
 public abstract class IndexingSPInstruction extends UnarySPInstruction {
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
@@ -71,9 +63,8 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
+		if ( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
 			if ( parts.length == 8 ) {
-				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
 				CPOperand in = new CPOperand(parts[1]);
 				CPOperand rl = new CPOperand(parts[2]);
 				CPOperand ru = new CPOperand(parts[3]);
@@ -90,9 +81,8 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex")) {
+		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex")) {
 			if ( parts.length == 9 ) {
-				// Example: leftIndex:mVar1:mvar2:Var3:Var4:Var5:Var6:mVar7
 				CPOperand lhsInput = new CPOperand(parts[1]);
 				CPOperand rhsInput = new CPOperand(parts[2]);
 				CPOperand rl = new CPOperand(parts[3]);

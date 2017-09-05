@@ -24,7 +24,9 @@ import java.util.HashMap;
 
 import org.apache.sysml.lops.Append;
 import org.apache.sysml.lops.DataGen;
+import org.apache.sysml.lops.LeftIndex;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.AggregateBinaryCPInstruction;
@@ -257,8 +259,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "qpick"  , CPINSTRUCTION_TYPE.QPick);
 		
 		
-		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
-		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
+		String2CPInstructionType.put( RightIndex.OPCODE, CPINSTRUCTION_TYPE.MatrixIndexing);
+		String2CPInstructionType.put( LeftIndex.OPCODE, CPINSTRUCTION_TYPE.MatrixIndexing);
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
 		String2CPInstructionType.put( "pmm"   , CPINSTRUCTION_TYPE.PMMJ);

@@ -26,7 +26,7 @@ import org.apache.sysml.lops.LeftIndex;
 import org.apache.sysml.lops.LeftIndex.LixCacheType;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.RangeBasedReIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.ZeroOut;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -144,7 +144,7 @@ public class LeftIndexingOp  extends Hop
 					rightInput = getInput().get(1).constructLops();
 
 				
-				RangeBasedReIndex reindex = new RangeBasedReIndex(
+				RightIndex reindex = new RightIndex(
 						rightInput, top, bottom, 
 						left, right, nrow, ncol,
 						getDataType(), getValueType(), et, true);

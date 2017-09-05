@@ -20,6 +20,7 @@ package org.apache.sysml.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
@@ -131,8 +132,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( ">="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 		
 		// Indexing 
-		// right indexing: output = X[1:3, 4:5]
-		String2GPUInstructionType.put( "rangeReIndex", GPUINSTRUCTION_TYPE.MatrixIndexing); 
+		String2GPUInstructionType.put( RightIndex.OPCODE, GPUINSTRUCTION_TYPE.MatrixIndexing); 
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

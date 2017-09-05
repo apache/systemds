@@ -29,6 +29,8 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -48,16 +50,7 @@ import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
- * This class implements the frame indexing functionality inside Spark.  
- * Example instructions: 
- *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
- *         input=mVar1, output=mVar6, 
- *         bounds = (Var2,Var3,Var4,Var5)
- *         rowindex_lower: Var2, rowindex_upper: Var3 
- *         colindex_lower: Var4, colindex_upper: Var5
- *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
- *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
- *         the result is stored in mVar7
+ * This class implements the frame indexing functionality inside Spark.
  *  
  */
 public class FrameIndexingSPInstruction extends IndexingSPInstruction {
@@ -87,7 +80,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase("rangeReIndex") )
+		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//update and check output dimensions
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
@@ -116,7 +109,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				sec.getFrameObject(input1.getName()).getSchema((int)cl, (int)cu));
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
+		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex"))
 		{
 			JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 			PartitionedBroadcast<FrameBlock> broadcastIn2 = null;

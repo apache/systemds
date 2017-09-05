@@ -25,6 +25,7 @@ import org.apache.sysml.lops.BinaryM;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMultChain;
+import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.WeightedCrossEntropy;
 import org.apache.sysml.lops.WeightedCrossEntropyR;
 import org.apache.sysml.lops.WeightedDivMM;
@@ -258,10 +259,10 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "groupedagg"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
 		String2MRInstructionType.put( "mapgroupedagg"  , MRINSTRUCTION_TYPE.MapGroupedAggregate); 
 		
-		//rangereindexing
-		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
-		String2MRInstructionType.put( "rangeReIndexForLeft"  , MRINSTRUCTION_TYPE.RangeReIndex);
-		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
+		//right indexing
+		String2MRInstructionType.put( RightIndex.OPCODE , MRINSTRUCTION_TYPE.RightIndex);
+		String2MRInstructionType.put( RightIndex.OPCODE+"ForLeft" , MRINSTRUCTION_TYPE.RightIndex);
+		String2MRInstructionType.put( "zeroOut" , MRINSTRUCTION_TYPE.ZeroOut);
 
 		//append
 		String2MRInstructionType.put( "mappend"  , MRINSTRUCTION_TYPE.Append);
@@ -413,7 +414,7 @@ public class MRInstructionParser extends InstructionParser
 			case MapGroupedAggregate:
 				return GroupedAggregateMInstruction.parseInstruction(str);
 			
-			case RangeReIndex:
+			case RightIndex:
 				return RangeBasedReIndexInstruction.parseInstruction(str);
 			
 			case ZeroOut:

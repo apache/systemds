@@ -719,6 +719,8 @@ class MLContext(object):
             raise ValueError("Expected script to be an instance of Script")
         scriptString = script.scriptString
         script_java = script.script_java
+        if not script_java.getScriptString():
+            script_java.setScriptString(scriptString)
         return MLResults(self._ml.execute(script_java), self._sc)
 
     def setStatistics(self, statistics):

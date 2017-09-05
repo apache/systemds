@@ -34,7 +34,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 public class OuterProdTmplTest extends AutomatedTestBase 
-{	
+{
 	private static final String TEST_NAME1 = "wdivmm";
 	private static final String TEST_NAME2 = "wdivmmRight";
 	private static final String TEST_NAME3 = "wsigmoid";
@@ -43,7 +43,8 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME6 = "wdivmmbasic";
 	private static final String TEST_NAME7 = "wdivmmTransposeOut";
 	private static final String TEST_NAME8 = "wSparseUnsafeOuterProduct";
-
+	private static final String TEST_NAME9 = "wdivmmNeq";
+	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + OuterProdTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
@@ -62,6 +63,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "6" }) );
 		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "7" }) );
 		addTestConfiguration( TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] { "8" }) );
+		addTestConfiguration( TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] { "9" }) );
 	}
 		
 	@Test
@@ -168,7 +170,21 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	public void testCodegenOuterProdRewrite8_sp() {
 		testCodegenIntegrationWithInput( TEST_NAME8, true, ExecType.SPARK  );
 	}
-
+	
+	@Test
+	public void testCodegenOuterProdRewrite9() {
+		testCodegenIntegration( TEST_NAME9, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenOuterProd9() {
+		testCodegenIntegration( TEST_NAME9, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenOuterProdRewrite9_sp() {
+		testCodegenIntegrationWithInput( TEST_NAME9, true, ExecType.SPARK );
+	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType  )
 	{			
@@ -209,9 +225,12 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			if( testname.equals(TEST_NAME8) )
 				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP")));
-			else if( !rewrites )
+			else if( !rewrites ) {
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP"));
+				if( testname.equals(TEST_NAME9) )
+					Assert.assertTrue(!heavyHittersContainsSubString("!="));
+			}
 		}
 		finally {
 			rtplatform = platformOld;

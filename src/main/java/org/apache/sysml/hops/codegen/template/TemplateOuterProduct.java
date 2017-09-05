@@ -78,7 +78,10 @@ public class TemplateOuterProduct extends TemplateBase {
 	public boolean merge(Hop hop, Hop input) {
 		return !isClosed() && 
 			(TemplateUtils.isBinaryMatrixRowVector(hop)
-			|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop));
+			|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.MULT) 
+				&& HopRewriteUtils.isBinarySparseSafe(input)
+				&& !TemplateUtils.rContainsOuterProduct(input)));
 	}
 
 	@Override
@@ -167,10 +170,10 @@ public class TemplateOuterProduct extends TemplateBase {
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
 			
-			if( HopRewriteUtils.isEqualSize(hop.getInput().get(0), hop.getInput().get(1)) ) {
-				Hop main = hop.getInput().get((cdata1 instanceof CNodeData) ? 0 : 1);
-				inHops2.put("_X", main);
-			}
+			if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )
+				inHops2.put("_X", hop.getInput().get(0));
+			if( TemplateUtils.isMatrix(hop.getInput().get(1)) && cdata2 instanceof CNodeData )
+				inHops2.put("_X", hop.getInput().get(1));
 			
 			//add lookups if required
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));

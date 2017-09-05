@@ -430,4 +430,22 @@ public class TemplateUtils
 		node.setVisited();
 		return ret;
 	}
+	
+	public static boolean containsOuterProduct(Hop hop) {
+		hop.resetVisitStatus();
+		boolean ret = rContainsOuterProduct(hop);
+		hop.resetVisitStatus();
+		return ret;
+	}
+	
+	public static boolean rContainsOuterProduct(Hop current) {
+		if( current.isVisited() )
+			return false;
+		boolean ret = false;
+		ret |= HopRewriteUtils.isOuterProductLikeMM(current);
+		for( int i=0; i<current.getInput().size() && !ret; i++ )
+			ret |= rContainsOuterProduct(current.getInput().get(i));
+		current.setVisited();
+		return ret;
+	}
 }

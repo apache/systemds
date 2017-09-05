@@ -1015,15 +1015,17 @@ public class OptimizerUtils
 		return ( op==OpOp2.NOTEQUAL && val==0);
 	}
 
-	public static double getBinaryOpSparsityConditionalSparseSafe( double sp1, OpOp2 op, LiteralOp lit )
-	{
+	public static boolean isBinaryOpSparsityConditionalSparseSafe( OpOp2 op, LiteralOp lit ) {
 		double val = HopRewriteUtils.getDoubleValueSafe(lit);
-		
 		return (  (op==OpOp2.GREATER  && val==0) 
 				||(op==OpOp2.LESS     && val==0)
 				||(op==OpOp2.NOTEQUAL && val==0)
 				||(op==OpOp2.EQUAL    && val!=0)
-				||(op==OpOp2.MINUS    && val==0)) ? sp1 : 1.0;
+				||(op==OpOp2.MINUS    && val==0));
+	}
+	
+	public static double getBinaryOpSparsityConditionalSparseSafe( double sp1, OpOp2 op, LiteralOp lit ) {
+		return isBinaryOpSparsityConditionalSparseSafe(op, lit) ? sp1 : 1.0;
 	}
 	
 	/**

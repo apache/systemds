@@ -31,6 +31,7 @@ import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
@@ -1040,11 +1041,18 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	public static boolean alwaysRequiresReblock(Hop hop)
-	{
-		return (    hop instanceof DataOp 
-				 && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD
-				 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
+	public static boolean alwaysRequiresReblock(Hop hop) {
+		return (hop instanceof DataOp
+			&& ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD
+			 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
+	}
+	
+	public static boolean containsFunctioOp(ArrayList<Hop> candidates) {
+		if( candidates != null )
+			for( Hop cand : candidates )
+				if( cand instanceof FunctionOp )
+					return true;
+		return false;
 	}
 	
 	public static boolean rHasSimpleReadChain(Hop root, String var)

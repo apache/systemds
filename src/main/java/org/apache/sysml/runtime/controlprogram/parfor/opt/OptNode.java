@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -118,6 +119,10 @@ public class OptNode
 	
 	public void setNodeType(NodeType type) {
 		_ntype = type;
+	}
+	
+	public boolean isNodeType(NodeType... types) {
+		return ArrayUtils.contains(types, _ntype);
 	}
 	
 	public ExecType getExecType() {

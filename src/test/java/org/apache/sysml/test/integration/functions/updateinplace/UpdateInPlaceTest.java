@@ -22,14 +22,11 @@ package org.apache.sysml.test.integration.functions.updateinplace;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 public class UpdateInPlaceTest extends AutomatedTestBase 
 {
@@ -243,49 +240,6 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 			programArgs = new String[]{"-stats"}; //new String[]{"-args", input("A"), output("B") };
 			
 			runTest(true, false, null, -1);
-
-			if(OptimizerRuleBased.APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE)
-			{
-				List<String> listUIPRes = OptimizerRuleBased.getUIPList();
-				int iUIPResCount = 0;
-				
-				// If UpdateInPlace list specified in the argument, verify the list.
-				if (listUIPExp != null)
-				{
-					if(listUIPRes != null)
-					{
-						for (String strUIPMatName: listUIPExp)
-							Assert.assertTrue("Expected UpdateInPlace matrix " + strUIPMatName 
-									+ " does not exist in the result UpdateInPlace matrix list.", 
-									listUIPRes.contains(strUIPMatName));
-						
-						iUIPResCount = listUIPRes.size();
-					}
-	
-					Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + listUIPExp.size() + 
-						" does not match with the # of matrix objects " + iUIPResCount + " from optimization result.", 
-						(iUIPResCount == listUIPExp.size()));
-				}
-				else
-				{
-					Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + "0" + 
-							" does not match with the # of matrix objects " + "0" + " from optimization result.", 
-							(listUIPRes == null || listUIPRes.size() == 0));
-				}
-				
-				Assert.assertTrue("Expected # of UpdateInPlace create variables of type matrix " + lTotalUIPVar + 
-						" does not match with the # of UpdateInPlace create variables of type matrix objects " + Statistics.getTotalUIPVar() + " from optimization result.", 
-						(Statistics.getTotalUIPVar() == lTotalUIPVar));
-				
-				Assert.assertTrue("Expected # of UpdateInPlace LeftIndexing " + lTotalLixUIP + 
-						" does not match with the # of UpdateInPlace LeftIndexing " + Statistics.getTotalLixUIP() + " from optimization result.", 
-						(Statistics.getTotalLixUIP() == lTotalLixUIP));
-				
-				Assert.assertTrue("Expected # of total LeftIndexing " + lTotalLix + 
-						" does not match with the # of total LeftIndexing " + Statistics.getTotalLix() + " from optimization result.", 
-						(Statistics.getTotalLix() == lTotalLix));
-				
-			}
 		}
 		finally {
 			OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE = oldinplace;

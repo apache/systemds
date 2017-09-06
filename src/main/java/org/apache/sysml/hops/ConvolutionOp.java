@@ -666,49 +666,49 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		long ret = -1;
 		if(dimString.equals("K") && filter != null) {
-			ret = getNonNegative(params.K, filter._dim1);
+			ret = getNonNegative(ret, getNonNegative(params.K, filter._dim1));
 		}
 		else if(dimString.equals("CRS") && filter != null) {
-			ret = getNonNegative(nonNegativeMultiply(params.C, params.R, params.S), filter._dim2);
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.R, params.S), filter._dim2));
 		}
 		else if(dimString.equals("N") && input != null) {
-			ret = getNonNegative(params.N, input._dim1);
+			ret = getNonNegative(ret, getNonNegative(params.N, input._dim1));
 		}
 		else if(dimString.equals("CHW") && input != null) {
-			ret = getNonNegative(nonNegativeMultiply(params.C, params.H, params.W), input._dim2);
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.H, params.W), input._dim2));
 		}
 		else if(dimString.equals("N") && dout != null) {
-			ret = getNonNegative(params.N, dout._dim1);
+			ret = getNonNegative(ret, getNonNegative(params.N, dout._dim1));
 		}
 		else if(dimString.equals("KPQ") && dout != null) {
-			ret = getNonNegative(nonNegativeMultiply(params.K, params.P, params.Q), dout._dim2);
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.K, params.P, params.Q), dout._dim2));
 		}
 		else if(dimString.equals("N") && dout1 != null) {
-			ret = getNonNegative(params.N, dout1._dim1);
+			ret = getNonNegative(ret, getNonNegative(params.N, dout1._dim1));
 		}
 		else if(dimString.equals("CPQ") && dout1 != null) {
-			ret = getNonNegative(nonNegativeMultiply(params.C, params.P, params.Q), dout1._dim2);
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.P, params.Q), dout1._dim2));
 		}
 		else if(dimString.equals("K")) {
-			ret = params.K >= 0 ? params.K : -1;
+			ret = getNonNegative(ret, params.K >= 0 ? params.K : -1);
 		}
 		else if(dimString.equals("CRS")) {
-			ret = nonNegativeMultiply(params.C, params.R, params.S);
+			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.R, params.S));
 		}
 		else if(dimString.equals("N")) {
-			ret = params.N >= 0 ? params.N : -1;
+			ret = getNonNegative(ret, params.N >= 0 ? params.N : -1);
 		}
 		else if(dimString.equals("CHW")) {
-			ret = nonNegativeMultiply(params.C, params.H, params.W);
+			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.H, params.W));
 		}
 		else if(dimString.equals("KPQ")) {
-			ret = nonNegativeMultiply(params.K, params.P, params.Q);
+			ret = getNonNegative(ret, nonNegativeMultiply(params.K, params.P, params.Q));
 		}
 		else if(dimString.equals("PQ")) {
-			ret = nonNegativeMultiply(params.P, params.Q);
+			ret = getNonNegative(ret, nonNegativeMultiply(params.P, params.Q));
 		}
 		else if(dimString.equals("CPQ")) {
-			ret = nonNegativeMultiply(params.C, params.P, params.Q);
+			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.P, params.Q));
 		}
 		else {
 			throw new RuntimeException("Unsupported dimension:" + dimString + " for operator " + getOp().name());

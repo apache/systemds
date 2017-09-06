@@ -250,7 +250,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		 * @param val2 memory estimate 2
 		 * @return sum of memory estimates
 		 */
-		static double add(double val1, double val2) {
+		static double guardedAdd(double val1, double val2) {
 			if(val1 < 0 || val2 < 0) return OptimizerUtils.DEFAULT_SIZE;
 			double ret = val1 + val2;
 			if(ret >= OptimizerUtils.DEFAULT_SIZE) return OptimizerUtils.DEFAULT_SIZE;
@@ -267,7 +267,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		public static double addEstimateSizes(ArrayList<IntermediateDimensions> intermediates, int numWorkers) {
 			double memBudget = 0; 
 			for(int i = 0; i < intermediates.size(); i++) {
-				memBudget = add(memBudget, OptimizerUtils.estimateSizeExactSparsity(
+				memBudget = guardedAdd(memBudget, OptimizerUtils.estimateSizeExactSparsity(
 						intermediates.get(i).dim1, intermediates.get(i).dim2, intermediates.get(i).sp)*numWorkers);
 			}
 			return memBudget;
@@ -279,7 +279,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		 * @param val2 memory estimate 2
 		 * @return max of memory estimates
 		 */
-		public static double max(double val1, double val2) {
+		public static double guardedMax(double val1, double val2) {
 			if(val1 < 0 || val2 < 0) return OptimizerUtils.DEFAULT_SIZE;
 			double ret = Math.max(val1, val2);
 			if(ret >= OptimizerUtils.DEFAULT_SIZE) return OptimizerUtils.DEFAULT_SIZE;
@@ -311,7 +311,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				}
 			}
 			// Finally, use the maximum of CP and GPU memory budget
-			return IntermediateDimensions.max(cpMemoryBudget, gpuMemBudget);
+			return IntermediateDimensions.guardedMax(cpMemoryBudget, gpuMemBudget);
 		}
 		else {
 			// When -gpu flag is not provided, the memory estimates for CP are not affected.

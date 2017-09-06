@@ -43,7 +43,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
 	private double _intermediateMemoryBudget = 0;
 	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
 		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
 			throw new DMLRuntimeException(
@@ -54,6 +54,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_input2 = in2;
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
 		_output = out;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
 	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
@@ -171,11 +172,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 					padding, input_shape, filter_shape, Double.parseDouble(parts[15]));
 		}
 		else if( opcode.equalsIgnoreCase("bias_add") || opcode.equalsIgnoreCase("relu_backward") || opcode.equalsIgnoreCase("bias_multiply")  ) {
-			InstructionUtils.checkNumFields(parts, 3);
+			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
-			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str);
+			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	

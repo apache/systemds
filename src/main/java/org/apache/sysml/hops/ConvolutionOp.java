@@ -191,7 +191,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 //		// TODO: Inserting reblock requires knowing columns apriori
 //		ConvolutionTransform transform1 = new ConvolutionTransform(addReblockIfNecessary(et, lopOp, in), lopOp, getDataType(), getValueType(), et, k);
 //		setReblockedOutputDimension(et, transform1);
-		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k, getIntermediateMemEstimate());
+		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k, computeIntermediateMemEstimate(-1, -1, -1 ));
 		setOutputDimensions(transform1);
 		
 		setLineNumbers(transform1);
@@ -320,7 +320,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	protected double computeIntermediateMemEstimate( long ignoreDim1, long ignoreDim2, long ignoreNnz )
 	{	
 		ArrayList<IntermediateDimensions> gpuIntermediates = new ArrayList<IntermediateDimensions>();
 		ArrayList<IntermediateDimensions> cpIntermediates = new ArrayList<IntermediateDimensions>();

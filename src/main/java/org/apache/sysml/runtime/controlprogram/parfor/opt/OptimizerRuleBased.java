@@ -213,9 +213,13 @@ public class OptimizerRuleBased extends Optimizer
 		_cost = est;
 		
 		//debug and warnings output
-		LOG.debug(getOptMode()+" OPT: Optimize w/ max_mem="+toMB(_lm)+"/"+toMB(_rm)+"/"+toMB(_rm2)+", max_k="+_lk+"/"+_rk+"/"+_rk2+")." );
-		if( _rnk<=0 || _rk<=0 )
-			LOG.warn(getOptMode()+" OPT: Optimize for inactive cluster (num_nodes="+_rnk+", num_map_slots="+_rk+")." );
+		if( LOG.isDebugEnabled() ) {
+			LOG.debug(getOptMode()+" OPT: Optimize w/ max_mem="+toMB(_lm)+"/"+toMB(_rm)+"/"+toMB(_rm2)+", max_k="+_lk+"/"+_rk+"/"+_rk2+")." );
+			if( OptimizerUtils.isSparkExecutionMode() )
+				LOG.debug(getOptMode()+" OPT: Optimize w/ "+SparkExecutionContext.getSparkClusterConfig().toString());
+			if( _rnk <= 0 || _rk <= 0 )
+				LOG.warn(getOptMode()+" OPT: Optimize for inactive cluster (num_nodes="+_rnk+", num_map_slots="+_rk+")." );
+		}
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
@@ -356,7 +360,7 @@ public class OptimizerRuleBased extends Optimizer
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
 			int cores = SparkExecutionContext.getDefaultParallelism(true)
 					/ SparkExecutionContext.getNumExecutors();
-			int ccores = (int) Math.min(cores, _N);
+			int ccores = Math.max((int) Math.min(cores, _N), 1);
 			_rm  = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 		}

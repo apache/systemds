@@ -1382,7 +1382,7 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		//broadcasts are stored in mem-and-disk in data space, this config
 		//defines the fraction of data space to be used as broadcast budget
-		private static final double BROADCAST_DATA_FRACTION = 0.3;
+		private static final double BROADCAST_DATA_FRACTION = 0.35;
 
 		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
 		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
@@ -1430,7 +1430,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//always get the current num executors on refresh because this might
 			//change if not all executors are initially allocated and it is plan-relevant
 			int numExec = _numExecutors;
-			if( refresh && !_confOnly ) {
+			if( (refresh && !_confOnly) || isSparkContextCreated() ) {
 				JavaSparkContext jsc = getSparkContextStatic();
 				numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
 			}
@@ -1452,14 +1452,15 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//always get the current default parallelism on refresh because this might
 			//change if not all executors are initially allocated and it is plan-relevant
-			return ( refresh && !_confOnly ) ?
+			int par = ( (refresh && !_confOnly) || isSparkContextCreated() ) ?
 				getSparkContextStatic().defaultParallelism() : _defaultPar;
+			return Math.max(par, 1); //robustness min parallelism
 		}
 
 		public void analyzeSparkConfiguationLegacy(SparkConf conf)  {
 			//ensure allocated spark conf
 			SparkConf sconf = (conf == null) ? createSystemMLSparkConf() : conf;
-
+			
 			//parse absolute executor memory
 			_memExecutor = UtilFunctions.parseMemorySize(
 					sconf.get("spark.executor.memory", "1g"));
@@ -1477,7 +1478,7 @@ public class SparkExecutionContext extends ExecutionContext
 		public void analyzeSparkConfiguation(SparkConf conf) {
 			//ensure allocated spark conf
 			SparkConf sconf = (conf == null) ? createSystemMLSparkConf() : conf;
-
+			
 			//parse absolute executor memory, incl fixed cut off
 			_memExecutor = UtilFunctions.parseMemorySize(
 					sconf.get("spark.executor.memory", "1g"))
@@ -1485,14 +1486,17 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//get data and shuffle memory ratios (defaults not specified in job conf)
 			_memDataMinFrac = sconf.getDouble("spark.memory.storageFraction", 0.5); //default 50%
-			_memDataMaxFrac = sconf.getDouble("spark.memory.fraction", 0.75); //default 75%
-			_memBroadcastFrac = _memDataMaxFrac * BROADCAST_DATA_FRACTION; //default 22.5%
-
+			_memDataMaxFrac = sconf.getDouble("spark.memory.fraction", 0.6); //default 60%
+			_memBroadcastFrac = _memDataMaxFrac * BROADCAST_DATA_FRACTION; //default 21%
+			
 			//analyze spark degree of parallelism
 			analyzeSparkParallelismConfiguation(sconf);
 		}
 
-		private void analyzeSparkParallelismConfiguation(SparkConf sconf) {
+		private void analyzeSparkParallelismConfiguation(SparkConf conf) {
+			//ensure allocated spark conf
+			SparkConf sconf = (conf == null) ? createSystemMLSparkConf() : conf;
+			
 			int numExecutors = sconf.getInt("spark.executor.instances", -1);
 			int numCoresPerExec = sconf.getInt("spark.executor.cores", -1);
 			int defaultPar = sconf.getInt("spark.default.parallelism", -1);
@@ -1532,14 +1536,14 @@ public class SparkExecutionContext extends ExecutionContext
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder("SparkClusterConfig: \n");
-			sb.append("-- legacyVersion    = " + _legacyVersion + " ("+getSparkContextStatic().version()+")\n" );
+			sb.append("-- legacyVersion    = " + _legacyVersion + " ("+getSparkVersionString()+")\n" );
 			sb.append("-- confOnly         = " + _confOnly + "\n");
+			sb.append("-- numExecutors     = " + _numExecutors + "\n");
+			sb.append("-- defaultPar       = " + _defaultPar + "\n");
 			sb.append("-- memExecutor      = " + _memExecutor + "\n");
 			sb.append("-- memDataMinFrac   = " + _memDataMinFrac + "\n");
 			sb.append("-- memDataMaxFrac   = " + _memDataMaxFrac + "\n");
 			sb.append("-- memBroadcastFrac = " + _memBroadcastFrac + "\n");
-			sb.append("-- numExecutors     = " + _numExecutors + "\n");
-			sb.append("-- defaultPar       = " + _defaultPar + "\n");
 			return sb.toString();
 		}
 	}

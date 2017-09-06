@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.GPUStatistics;
@@ -256,7 +257,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
 			
-			LibMatrixCUDA.conv2d(ec.getGPUContext(0), getExtendedOpcode(), image, filter, out, N, C, H, W,
+			LibMatrixCuDNN.conv2d(ec.getGPUContext(0), getExtendedOpcode(), image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
@@ -271,7 +272,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
 			
-			LibMatrixCUDA.conv2dBiasAdd(ec.getGPUContext(0), getExtendedOpcode(), image, bias, filter, out, N, C, H, W,
+			LibMatrixCuDNN.conv2dBiasAdd(ec.getGPUContext(0), getExtendedOpcode(), image, bias, filter, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
@@ -286,8 +287,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), K, C * R * S);
 			
-			LibMatrixCUDA.conv2dBackwardFilter(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			LibMatrixCuDNN.conv2dBackwardFilter(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 			// TODO: For now always copy the device data to host
 			// ec.gpuCtx.copyDeviceToHost(outputBlock);
 		}
@@ -303,8 +304,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			
-			LibMatrixCUDA.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			LibMatrixCuDNN.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -316,8 +317,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * P * Q);
 			
 			if(instOpcode.equalsIgnoreCase("maxpooling"))
-				LibMatrixCUDA.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				LibMatrixCuDNN.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -331,8 +332,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			
-			LibMatrixCUDA.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			LibMatrixCuDNN.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);

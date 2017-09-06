@@ -321,8 +321,6 @@ public class LibMatrixBincell
 				
 				if( m1.sparse ) //SPARSE left
 				{
-					Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0); 
-					
 					if( m1.sparseBlock != null )
 					{
 						SparseBlock a = m1.sparseBlock;
@@ -349,6 +347,7 @@ public class LibMatrixBincell
 				}
 				
 				//2) process right input: op.fn (+,-,*), * only if dense
+				long lnnz = 0;
 				if( m2.sparse ) //SPARSE right
 				{				
 					if(m2.sparseBlock!=null)
@@ -364,20 +363,26 @@ public class LibMatrixBincell
 								for(int k = apos; k < apos+alen; k++) 
 									c[ix+aix[k]] = op.fn.execute(c[ix+aix[k]], avals[k]);
 							}
-						}	
+							//exploit temporal locality of rows
+							lnnz += ret.recomputeNonZeros(i, i, 0, clen-1);
+						}
 					}
 				}
 				else //DENSE right
 				{
-					if( !m2.isEmptyBlock(false) )
-						for( int i=0; i<m*n; i++ )
-							c[i] = op.fn.execute(c[i], m2.denseBlock[i]);
+					if( !m2.isEmptyBlock(false) ) {
+						double[] a = m2.denseBlock;
+						for( int i=0; i<m*n; i++ ) {
+							c[i] = op.fn.execute(c[i], a[i]);
+							lnnz += (c[i]!=0) ? 1 : 0;
+						}
+					}
 					else if(op.fn instanceof Multiply)
 						Arrays.fill(ret.denseBlock, 0, m*n, 0); 
 				}
-	
+				
 				//3) recompute nnz
-				ret.recomputeNonZeros();
+				ret.setNonZeros(lnnz);
 			}
 			else if( !ret.sparse && !m1.sparse && !m2.sparse 
 					&& m1.denseBlock!=null && m2.denseBlock!=null )
@@ -391,12 +396,12 @@ public class LibMatrixBincell
 				ValueFunction fn = op.fn;
 				
 				//compute dense-dense binary, maintain nnz on-the-fly
-				int nnz = 0;
+				int lnnz = 0;
 				for( int i=0; i<m*n; i++ ) {
 					c[i] = fn.execute(a[i], b[i]);
-					nnz += (c[i]!=0)? 1 : 0;
+					lnnz += (c[i]!=0)? 1 : 0;
 				}
-				ret.nonZeros = nnz;
+				ret.setNonZeros(lnnz);
 			}
 			else if( skipEmpty && (m1.sparse || m2.sparse) ) 
 			{

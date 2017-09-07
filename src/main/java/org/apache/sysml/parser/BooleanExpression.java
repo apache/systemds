@@ -113,15 +113,15 @@ public class BooleanExpression extends Expression
 		output.setBooleanProperties();
 		this.setOutput(output);
 		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) || (_opcode == Expression.BooleanOp.CONDITIONALOR) 
-		     || (_opcode == Expression.BooleanOp.CONDITIONALXOR) ) {
+		     /*|| (_opcode == Expression.BooleanOp.CONDITIONALXOR)*/ ) {
 			// always unconditional (because unsupported operation)
 			if (_opcode == Expression.BooleanOp.CONDITIONALAND) {
 				raiseValidateError("Conditional AND (&&) not supported.", false);
 			} else if (_opcode == Expression.BooleanOp.CONDITIONALOR) {
 				raiseValidateError("Conditional OR (||) not supported.", false);
-			} else if (_opcode == Expression.BooleanOp.CONDITIONALXOR) {
-				raiseValidateError("Conditional XOR (^^) not supported.", false);
-			}
+			} //else if (_opcode == Expression.BooleanOp.CONDITIONALXOR) {
+		//           	raiseValidateError("Conditional XOR (^^) not supported.", false);
+		//	}
 		}
 	}
 

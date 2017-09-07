@@ -174,7 +174,7 @@ MLResults
 
 ## LeNet on MNIST Example
 
-SystemML features the DML-based [`nn` library for deep learning](https://github.com/apache/incubator-systemml/tree/master/scripts/nn).
+SystemML features the DML-based [`nn` library for deep learning](https://github.com/apache/systemml/tree/master/scripts/nn).
 
 At project build time, SystemML automatically generates wrapper classes for DML scripts
 to enable convenient access to scripts and execution of functions.
@@ -1220,7 +1220,7 @@ via `ml.scripts.algorithms.Univar_Stats`, as shown below. This feature is not av
 {% highlight scala %}
 val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
 val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
-val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+val scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
 ml.scripts.algorithms.Univar_Stats.in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true).execute
 {% endhighlight %}
 </div>
@@ -1233,8 +1233,8 @@ habermanUrl: String = http://archive.ics.uci.edu/ml/machine-learning-databases/h
 scala> val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
 typesRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[21] at parallelize at <console>:30
 
-scala> val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
-scriptUrl: String = https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml
+scala> val scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
+scriptUrl: String = https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml
 
 scala> ml.scripts.algorithms.Univar_Stats.in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true).execute
 17/06/05 17:23:37 WARN RewriteRemovePersistentReadWrite: Non-registered persistent write of variable 'baseStats' (line 186).

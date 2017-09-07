@@ -50,20 +50,20 @@ public class NativeHelper {
 	private static boolean setMaxNumThreads = false;
 	static {
 		// Note: we only support 64 bit Java on x86 and AMD machine
-    supportedArchitectures.put("x86_64", "x86_64");
-    supportedArchitectures.put("amd64", "x86_64");
+		supportedArchitectures.put("x86_64", "x86_64");
+		supportedArchitectures.put("amd64", "x86_64");
 	}
-	
+
 	private static boolean attemptedLoading = false;
-	
+
 	private static String hintOnFailures = "";
-	
+
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void init() {
 		// Only Linux and Windows supported for BLAS
 		if(!(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_WINDOWS))
 			return;
-		
+
 		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
 		// again and again especially in the parfor (hence the double-checking with synchronized).
 		if(!attemptedLoading) {
@@ -77,48 +77,48 @@ public class NativeHelper {
 			// - Developer testing of different BLAS 
 			// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
 			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
-						
+
 			if(userSpecifiedBLAS.equals("auto") || userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas")) {
 				long start = System.nanoTime();
 				if(!supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
 					LOG.info("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
 					return;
 				}
-	    	synchronized(NativeHelper.class) {
-	    		if(!attemptedLoading) {
-	    			// -----------------------------------------------------------------------------
-	    			// =============================================================================
-	    			// By default, we will native.blas=true and we will attempt to load MKL first.
-    				// If MKL is not enabled then we try to load OpenBLAS.
-    				// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
-	    			if(userSpecifiedBLAS.equals("auto")) {
-	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
-	    				if(blasType == null)
-	    					LOG.info("Unable to load either MKL or OpenBLAS due to " + hintOnFailures);
-	    			}
-	    			else if(userSpecifiedBLAS.equals("mkl")) {
-	    				blasType = isMKLAvailable() ? "mkl" : null;
-	    				if(blasType == null)
-	    					LOG.info("Unable to load MKL due to " + hintOnFailures);
-	    			}
-	    			else if(userSpecifiedBLAS.equals("openblas")) {
-	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
-	    				if(blasType == null)
-	    					LOG.info("Unable to load OpenBLAS due to " + hintOnFailures);
-	    			}
-	    			else {
-	    				// Only thrown at development time.
-	    				throw new RuntimeException("Unsupported BLAS:" + userSpecifiedBLAS);
-	    			}
-	    			// =============================================================================
-				    if(blasType != null && loadLibraryHelper("systemml_" + blasType)) {
-				    	String blasPathAndHint = "";
-				    	// ------------------------------------------------------------
-				    	// This logic gets the list of native libraries that are loaded
-				    	if(LOG.isDebugEnabled()) {
-				    		// Only perform the checking of library paths when DEBUG is enabled to avoid runtime overhead. 
-					    	try {
-					    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+				synchronized(NativeHelper.class) {
+					if(!attemptedLoading) {
+						// -----------------------------------------------------------------------------
+						// =============================================================================
+						// By default, we will native.blas=true and we will attempt to load MKL first.
+						// If MKL is not enabled then we try to load OpenBLAS.
+						// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
+						if(userSpecifiedBLAS.equals("auto")) {
+							blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
+							if(blasType == null)
+								LOG.info("Unable to load either MKL or OpenBLAS due to " + hintOnFailures);
+						}
+						else if(userSpecifiedBLAS.equals("mkl")) {
+							blasType = isMKLAvailable() ? "mkl" : null;
+							if(blasType == null)
+								LOG.info("Unable to load MKL due to " + hintOnFailures);
+						}
+						else if(userSpecifiedBLAS.equals("openblas")) {
+							blasType = isOpenBLASAvailable() ? "openblas" : null;
+							if(blasType == null)
+								LOG.info("Unable to load OpenBLAS due to " + hintOnFailures);
+						}
+						else {
+							// Only thrown at development time.
+							throw new RuntimeException("Unsupported BLAS:" + userSpecifiedBLAS);
+						}
+						// =============================================================================
+						if(blasType != null && loadLibraryHelper("systemml_" + blasType)) {
+							String blasPathAndHint = "";
+							// ------------------------------------------------------------
+							// This logic gets the list of native libraries that are loaded
+							if(LOG.isDebugEnabled()) {
+								// Only perform the checking of library paths when DEBUG is enabled to avoid runtime overhead. 
+								try {
+									java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
 									loadedLibraryNamesField.setAccessible(true);
 									@SuppressWarnings("unchecked")
 									Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
@@ -132,17 +132,17 @@ public class NativeHelper {
 								} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 									LOG.debug("Error while finding list of native libraries:" + e.getMessage());
 								}
-				    	}
-				    	// ------------------------------------------------------------
-				    	
+							}
+							// ------------------------------------------------------------
+
 							LOG.info("Using native blas: " + blasType + blasPathAndHint);
 							isSystemMLLoaded = true;
 						}
-	    		}
-	    	}
-	    	double timeToLoadInMilliseconds = (System.nanoTime()-start)*1e-6;
-	    	if(timeToLoadInMilliseconds > 1000) 
-	    		LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
+					}
+				}
+				double timeToLoadInMilliseconds = (System.nanoTime()-start)*1e-6;
+				if(timeToLoadInMilliseconds > 1000) 
+					LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
 			}
 			else {
 				LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'native.blas'=" + userSpecifiedBLAS + ".");
@@ -150,7 +150,7 @@ public class NativeHelper {
 			attemptedLoading = true;
 		}
 	}
-	
+
 	public static boolean isNativeLibraryLoaded() {
 		init();
 		if(maxNumThreads == -1)
@@ -164,28 +164,28 @@ public class NativeHelper {
 		}
 		return isSystemMLLoaded;
 	}
-	
+
 	public static int getMaxNumThreads() {
 		if(maxNumThreads == -1)
 			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		return maxNumThreads;
 	}
-	
-	
+
+
 	private static boolean isMKLAvailable() {
 		return loadBLAS("mkl_rt", null);
 	}
-	
+
 	private static boolean isOpenBLASAvailable() {
 		if(!loadBLAS("gomp", "gomp required for loading OpenBLAS-enabled SystemML library")) 
 			return false;
 		return loadBLAS("openblas", null);
 	}
-	
+
 	private static boolean loadBLAS(String blas, String optionalMsg) {
 		try {
-			 System.loadLibrary(blas);
-			 return true;
+			System.loadLibrary(blas);
+			return true;
 		}
 		catch (UnsatisfiedLinkError e) {
 			if(!hintOnFailures.contains(blas))
@@ -210,7 +210,7 @@ public class NativeHelper {
 		if(SystemUtils.IS_OS_WINDOWS) {
 			path = libName + "-Windows-x86_64.dll";
 		}
-		
+
 		InputStream in = null; OutputStream out = null;
 		try {
 			// This logic is added because Java doesnot allow to load library from a resource file.
@@ -219,9 +219,9 @@ public class NativeHelper {
 				File temp = File.createTempFile(path, "");
 				temp.deleteOnExit();
 				out = FileUtils.openOutputStream(temp);
-        IOUtils.copy(in, out);
-        in.close(); in = null;
-        out.close(); out = null;
+				IOUtils.copy(in, out);
+				in.close(); in = null;
+				out.close(); out = null;
 				System.load(temp.getAbsolutePath());
 				return true;
 			}
@@ -241,17 +241,17 @@ public class NativeHelper {
 		}
 		return false;
 	}
-	
+
 	// TODO: Add pmm, wsloss, mmchain, etc.
 	public static native boolean matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	private static native boolean tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// LibMatrixDNN operations:
 	// N = number of images, C = number of channels, H = image height, W = image width
 	// K = number of filters, R = filter height, S = filter width
 	// TODO: case not handled: sparse filters (which will only be executed in Java). Since filters are relatively smaller, this is a low priority.
-	
+
 	// Returns -1 if failures or returns number of nonzeros
 	// Called by ConvolutionCPInstruction if both input and filter are dense
 	public static native int conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
@@ -265,7 +265,7 @@ public class NativeHelper {
 	// Else, called by LibMatrixDNN's thread if filter is dense. dout[n] is converted to dense if sparse.
 	public static native int conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	
+
 	// Currently only supported with numThreads = 1 and sparse input
 	// Called by LibMatrixDNN's thread if input is sparse. dout[n] is converted to dense if sparse.
 	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals, double [] rotatedDoutPtr, double [] ret, int N, int C, int H, int W, 
@@ -274,7 +274,7 @@ public class NativeHelper {
 	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	// ----------------------------------------------------------------------------------------------------------------
-	
+
 	// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
 	// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
 	// We can revisit this decision later and hence I would not recommend removing this method. 

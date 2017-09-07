@@ -156,7 +156,14 @@ __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, i
 	}
 }
 
-// Performs inplace addition: ret += input
+/**
+ * Performs inplace addition: ret += input
+ *
+ * @param input rhs input array allocated on the GPU
+ * @param ret the input and output array allocated on the GPU
+ * @param rlen the number of rows
+ * @param clen the number of columns
+ */
 extern "C"
 __global__ void inplace_add(double* input,  double* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;

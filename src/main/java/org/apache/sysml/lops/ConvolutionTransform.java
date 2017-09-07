@@ -37,6 +37,7 @@ public class ConvolutionTransform extends Lop
 	
 	private OperationTypes operation = null;
 	private int numThreads = -1;
+	private double intermediateMemBudget = 0;
 	
 	/**
 	 * Constructor when we have one input.
@@ -47,12 +48,14 @@ public class ConvolutionTransform extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 * @param k number of threads
+	 * @param intermediateMemBudget intermediate memory budget
 	 */
-	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
+	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) 
 	{
 		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, et);
 		numThreads = k;
+		this.intermediateMemBudget = intermediateMemBudget;
 	}
 	
 	public ConvolutionTransform(Lop input1, Lop input2, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
@@ -165,6 +168,9 @@ public class ConvolutionTransform extends Lop
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( numThreads );
 			}
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( intermediateMemBudget );
 			return sb.toString();
 		}
 		else {
@@ -210,6 +216,9 @@ public class ConvolutionTransform extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( numThreads );
 		}
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( intermediateMemBudget );
 	}
 
 }

@@ -49,6 +49,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -151,6 +152,11 @@ public class GPUContext {
 		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
 				+ this);
 
+		if(GPUContextPool.initialGPUMemBudget() > OptimizerUtils.getLocalMemBudget()) {
+			LOG.warn("Potential under-utilization: GPU memory (" + GPUContextPool.initialGPUMemBudget() 
+					+ ") > driver memory budget (" + OptimizerUtils.getLocalMemBudget() + "). "
+					+ "Consider increasing the driver memory budget.");
+		}
 	}
 
 	private void initializeCudaLibraryHandles() throws DMLRuntimeException {

@@ -156,6 +156,25 @@ __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, i
 	}
 }
 
+/**
+ * Performs inplace addition: ret += input
+ *
+ * @param input rhs input array allocated on the GPU
+ * @param ret the input and output array allocated on the GPU
+ * @param rlen the number of rows
+ * @param clen the number of columns
+ */
+extern "C"
+__global__ void inplace_add(double* input,  double* ret, int rlen, int clen) {
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / clen;
+	int iy = tid % clen;
+	if(ix < rlen && iy < clen) {
+		int index = ix * clen + iy;
+		ret[index] += input[index];
+	}
+}
+
 // Performs the operation corresponding to the DML script:
 // ones = matrix(1, rows=1, cols=Hout*Wout)
 // output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)

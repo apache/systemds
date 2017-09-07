@@ -33,7 +33,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from pyspark.sql import SparkSession
 
-from breastcancer.preprocessing import add_row_indices, get_labels_df, preprocess, save
+from breastcancer.preprocessing import add_row_indices, get_labels_df, preprocess, save, sample
 
 
 # Create new SparkSession

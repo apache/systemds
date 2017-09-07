@@ -71,6 +71,8 @@ def open_slide(slide_num, folder, training):
     slide = openslide.open_slide(filename)
   except OpenSlideError:
     slide = None
+  except FileNotFoundError:
+    slide = None
   return slide
 
 
@@ -586,7 +588,7 @@ def preprocess(spark, slide_nums, folder="data", training=True, tile_size=1024, 
     # Append labels
     labels_df = get_labels_df(folder)
     samples_with_labels = (samples.map(
-        lambda tup: (tup[0], int(labels_df.at[tup[0],"tumor_score"]),
+        lambda tup: (int(tup[0]), int(labels_df.at[tup[0],"tumor_score"]),
                      float(labels_df.at[tup[0],"molecular_score"]), Vectors.dense(tup[1]))))
     df = samples_with_labels.toDF(["slide_num", "tumor_score", "molecular_score", "sample"])
     df = df.select(df.slide_num.astype("int"), df.tumor_score.astype("int"),

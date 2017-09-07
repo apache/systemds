@@ -145,8 +145,8 @@ public class BinaryScalar extends Lop
 				return "&&";
 			case OR:
 				return "||";
-			case XOR:
-				return "^^";	
+		//	case XOR:
+		//		return "^^";	
 			
 			/* Builtin Functions */
 			case LOG:

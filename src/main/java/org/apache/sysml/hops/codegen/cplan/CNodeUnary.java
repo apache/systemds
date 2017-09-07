@@ -108,7 +108,7 @@ public class CNodeUnary extends CNode
 				case SQRT:
 					return "    double %TMP% = Math.sqrt(%IN1%);\n";
 				case LOG:
-					return "    double %TMP% = FastMath.log(%IN1%);\n";
+					return "    double %TMP% = Math.log(%IN1%);\n";
 				case ROUND: 
 					return "    double %TMP% = Math.round(%IN1%);\n";
 				case CEIL:
@@ -122,7 +122,7 @@ public class CNodeUnary extends CNode
 				case SIGMOID:
 					return "    double %TMP% = 1 / (1 + FastMath.exp(-%IN1%));\n";
 				case LOG_NZ:
-					return "    double %TMP% = (%IN1%==0) ? 0 : FastMath.log(%IN1%);\n";
+					return "    double %TMP% = (%IN1%==0) ? 0 : Math.log(%IN1%);\n";
 					
 				default: 
 					throw new RuntimeException("Invalid unary type: "+this.toString());

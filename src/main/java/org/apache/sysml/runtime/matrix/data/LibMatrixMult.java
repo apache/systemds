@@ -2684,7 +2684,7 @@ public class LibMatrixMult
 						double wij = w[ix+j];
 						if( wij != 0 ) {
 							double uvij = dotProduct(u, v, uix, vix, cd);
-							wceval += wij * FastMath.log(uvij + eps);
+							wceval += wij * Math.log(uvij + eps);
 						}
 					}
 		}
@@ -2723,7 +2723,7 @@ public class LibMatrixMult
 					int k = wpos + curk[i-bi];
 					for( ; k<wpos+wlen && wix[k]<bjmin; k++ ) {
 						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-						wceval += wval[k] * FastMath.log(uvij + eps);	
+						wceval += wval[k] * Math.log(uvij + eps);
 					}
 					curk[i-bi] = k - wpos;
 				}
@@ -2752,7 +2752,7 @@ public class LibMatrixMult
 					double[] wval = w.values(i);
 					for( int k=wpos; k<wpos+wlen; k++ ) {
 						double uvij = dotProductGeneric(mU, mV, i, wix[k], cd);
-						wceval += wval[k] * FastMath.log(uvij + eps);	
+						wceval += wval[k] * Math.log(uvij + eps);
 					}
 				}	
 		}
@@ -2765,7 +2765,7 @@ public class LibMatrixMult
 					double wij = w[ix];
 					if( wij != 0 ) {
 						double uvij = dotProductGeneric(mU, mV, i, j, cd);
-						wceval += wij * FastMath.log(uvij + eps);	
+						wceval += wij * Math.log(uvij + eps);
 					}
 				}
 		}
@@ -3322,7 +3322,7 @@ public class LibMatrixMult
 				1 / (1 + FastMath.exp(-uvij));
 				
 		//compute weighted output
-		return wij * ((flaglog) ? FastMath.log(cval) : cval);
+		return wij * ((flaglog) ? Math.log(cval) : cval);
 	}
 
 	private static double wsigmoid( final double wij, MatrixBlock u, MatrixBlock v, final int uix, final int vix, final boolean flagminus, final boolean flaglog, final int len )
@@ -3336,7 +3336,7 @@ public class LibMatrixMult
 				1 / (1 + FastMath.exp(-uvij));
 				
 		//compute weighted output
-		return wij * ((flaglog) ? FastMath.log(cval) : cval);
+		return wij * ((flaglog) ? Math.log(cval) : cval);
 	}
 
 	private static void wdivmm( final double wij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean left, final boolean mult, final boolean minus, final int len )

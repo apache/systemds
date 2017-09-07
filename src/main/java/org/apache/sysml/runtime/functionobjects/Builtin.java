@@ -284,12 +284,12 @@ public class Builtin extends ValueFunction
 			case ATAN:   return Math.atan(in); //faster in Math
 			case CEIL:   return FASTMATH ? FastMath.ceil(in) : Math.ceil(in);
 			case FLOOR:  return FASTMATH ? FastMath.floor(in) : Math.floor(in);
-			case LOG:    return FASTMATH ? FastMath.log(in) : Math.log(in);		
-			case LOG_NZ: return (in==0) ? 0 : FASTMATH ? FastMath.log(in) : Math.log(in);
-			case ABS:    return Math.abs(in); //no need for FastMath			
-			case SIGN:	 return FASTMATH ? FastMath.signum(in) : Math.signum(in);			
-			case SQRT:   return Math.sqrt(in); //faster in Math		
-			case EXP:    return FASTMATH ? FastMath.exp(in) : Math.exp(in);		
+			case LOG:    return Math.log(in); //faster in Math
+			case LOG_NZ: return (in==0) ? 0 : Math.log(in); //faster in Math
+			case ABS:    return Math.abs(in); //no need for FastMath
+			case SIGN:	 return FASTMATH ? FastMath.signum(in) : Math.signum(in);
+			case SQRT:   return Math.sqrt(in); //faster in Math
+			case EXP:    return FASTMATH ? FastMath.exp(in) : Math.exp(in);
 			case ROUND: return Math.round(in); //no need for FastMath
 			
 			case PLOGP:
@@ -297,8 +297,8 @@ public class Builtin extends ValueFunction
 					return 0.0;
 				else if (in < 0)
 					return Double.NaN;
-				else
-					return (in * (FASTMATH ? FastMath.log(in) : Math.log(in)));
+				else //faster in Math
+					return in * Math.log(in);
 			
 			case SPROP:
 				//sample proportion: P*(1-P)
@@ -375,17 +375,11 @@ public class Builtin extends ValueFunction
 			}
 			// *** END HACK ***
 		case LOG:
-			//if ( in1 <= 0 )
-			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
-			if( FASTMATH )
-				return (FastMath.log(in1)/FastMath.log(in2)); 
-			else
-				return (Math.log(in1)/Math.log(in2)); 
+			//faster in Math
+			return (Math.log(in1)/Math.log(in2)); 
 		case LOG_NZ:
-			if( FASTMATH )
-				return (in1==0) ? 0 : (FastMath.log(in1)/FastMath.log(in2)); 
-			else
-				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
+			//faster in Math
+			return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
 		
 			
 		default:
@@ -436,17 +430,11 @@ public class Builtin extends ValueFunction
 		case MININDEX: return (in1 <= in2) ? 1 : 0;
 		
 		case LOG:
-			//if ( in1 <= 0 )
-			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
-			if( FASTMATH )
-				return (FastMath.log(in1)/FastMath.log(in2));
-			else
-				return (Math.log(in1)/Math.log(in2));
+			//faster in Math
+			return Math.log(in1)/Math.log(in2);
 		case LOG_NZ:
-			if( FASTMATH )
-				return (in1==0) ? 0 : (FastMath.log(in1)/FastMath.log(in2)); 
-			else
-				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
+			//faster in Math
+			return (in1==0) ? 0 : Math.log(in1)/Math.log(in2);
 		
 				
 		

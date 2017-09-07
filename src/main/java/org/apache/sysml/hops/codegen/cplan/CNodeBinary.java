@@ -176,9 +176,9 @@ public class CNodeBinary extends CNode
 				case MAX:
 					return "    double %TMP% = (%IN1% >= %IN2%) ? %IN1% : %IN2%;\n";
 				case LOG:
-					return "    double %TMP% = FastMath.log(%IN1%)/FastMath.log(%IN2%);\n";
+					return "    double %TMP% = Math.log(%IN1%)/Math.log(%IN2%);\n";
 				case LOG_NZ:
-					return "    double %TMP% = (%IN1% == 0) ? 0 : FastMath.log(%IN1%)/FastMath.log(%IN2%);\n";	
+					return "    double %TMP% = (%IN1% == 0) ? 0 : Math.log(%IN1%)/Math.log(%IN2%);\n";	
 				case POW:
 					return "    double %TMP% = Math.pow(%IN1%, %IN2%);\n";
 				case MINUS1_MULT:

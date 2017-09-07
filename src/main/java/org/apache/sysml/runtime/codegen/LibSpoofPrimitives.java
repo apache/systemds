@@ -832,25 +832,25 @@ public class LibSpoofPrimitives
 	
 	public static void vectLogAdd(double[] a, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += FastMath.log(a[j]);
+			c[ci] += Math.log(a[j]);
 	}
 
 	public static void vectLogAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		for( int j = ai; j < ai+alen; j++ )
-			c[ci + aix[j]] += FastMath.log(a[j]);
+			c[ci + aix[j]] += Math.log(a[j]);
 	}
 	
 	public static double[] vectLogWrite(double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = FastMath.log(a[ai]);
+			c[j] = Math.log(a[ai]);
 		return c;
 	}
 
 	public static double[] vectLogWrite(double[] a, int[] aix, int ai, int alen, int len) {
 		double[] c = allocVector(len, true, Double.NEGATIVE_INFINITY);
 		for( int j = ai; j < ai+alen; j++ )
-			c[aix[j]] = FastMath.log(a[j]);
+			c[aix[j]] = Math.log(a[j]);
 		return c;
 	}
 	

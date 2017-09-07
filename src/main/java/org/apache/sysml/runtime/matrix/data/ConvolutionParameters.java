@@ -78,6 +78,12 @@ public class ConvolutionParameters implements Serializable {
 		if(this.stride_w < 0) this.stride_w = convertToInt(Hop.computeSizeInformation(stride_w));
 		if(this.pad_h < 0) this.pad_h = convertToInt(Hop.computeSizeInformation(pad_h));
 		if(this.pad_w < 0) this.pad_w = convertToInt(Hop.computeSizeInformation(pad_w));
+		if(this.P < 0 && this.H >= 0 && this.R >= 0 && this.stride_h >= 0 && this.pad_h >= 0) {
+			this.P = (int) ConvolutionUtils.getP(this.H, this.R, this.stride_h, this.pad_h);
+		}
+		if(this.Q < 0 && this.W >= 0 && this.S >= 0 && this.stride_w >= 0 && this.pad_w >= 0) {
+			this.Q = (int) ConvolutionUtils.getQ(this.W, this.S, this.stride_w, this.pad_w);
+		}
 		this.numThreads = numThreads;
 	}
 	

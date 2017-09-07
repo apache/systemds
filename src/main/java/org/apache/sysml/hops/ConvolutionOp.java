@@ -402,41 +402,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			return (ret[0]>0 && ret[1]>0) ? ret : null;
 		}
 		
-		switch(op) 
-		{
-			case MAX_POOLING: {
-				ret[0] = getDim("N");
-				ret[1] = getDim("CPQ");
-				ret[2] = -1;
-				break;
-			}
-			case DIRECT_CONV2D: {
-				ret[0] = getDim("N");
-				ret[1] = getDim("KPQ");
-				ret[2] = -1;
-				break;
-			}
-			case DIRECT_CONV2D_BACKWARD_FILTER: {
-				ret[0] = getDim("K");
-				ret[1] = getDim("CRS");
-				ret[2] = -1;
-				break;
-			}
-			case MAX_POOLING_BACKWARD: {
-				ret[0] = getDim("N");
-				ret[1] = getDim("CHW");
-				ret[2] = -1;
-				break;
-			}
-			case DIRECT_CONV2D_BACKWARD_DATA: {
-				ret[0] = getDim("N");
-				ret[1] = getDim("CHW");
-				ret[2] = -1;
-				break;
-			}
-			default:
-				throw new RuntimeException("Unsupported op:" + op.name());
-		}
+		refreshSizeInformation();
+		ret[0] = _dim1; ret[1] = _dim2; ret[2] = _nnz;
 		
 		//safe return (create entry only if at least dims known)
 		return (ret[0]>0 && ret[1]>0) ? ret : null;
@@ -714,7 +681,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			throw new RuntimeException("Unsupported dimension:" + dimString + " for operator " + getOp().name());
 		}
 		
-		if(LOG.isDebugEnabled() && ret <= 0) {
+		if(LOG.isDebugEnabled() && ret < 0) {
 			LOG.debug("Unknown dimension " + dimString + " for ConvolutionOp:" + op.name() + 
 					" img_dim=[" + params.N + " " + params.C + " " + params.H + " " + params.W + "]" +
 					" filter_dim=[" + params.K + " " + params.C + " " + params.H + " " + params.W + "]" + 

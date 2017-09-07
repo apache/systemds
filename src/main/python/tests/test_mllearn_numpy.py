@@ -33,7 +33,6 @@ sys.path.insert(0, path)
 import unittest
 
 import numpy as np
-from pyspark.context import SparkContext
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SparkSession
@@ -44,9 +43,7 @@ from sklearn.metrics import accuracy_score, r2_score
 from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
 from sklearn import linear_model
 
-sc = SparkContext()
 sparkSession = SparkSession.builder.getOrCreate()
-import os
 
 def writeColVector(X, fileName):
 	fileName = os.path.join(os.getcwd(), fileName)

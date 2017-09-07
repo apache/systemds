@@ -312,9 +312,9 @@ public abstract class Expression implements ParseInfo
 			return BooleanOp.CONDITIONALOR;
 		else if (val.equalsIgnoreCase("|"))
 			return BooleanOp.LOGICALOR;
-		else if (val.equalsIgnoreCase("^^"))
-			return BooleanOp.CONDITIONALOR;
-		else if (val.equalsIgnoreCase("^"))
+//		else if (val.equalsIgnoreCase("^^"))
+//			return BooleanOp.CONDITIONALOR;
+		else if (val.equalsIgnoreCase("xor"))
 			return BooleanOp.LOGICALOR;	
 		else if (val.equalsIgnoreCase("!"))
 			return BooleanOp.NOT;

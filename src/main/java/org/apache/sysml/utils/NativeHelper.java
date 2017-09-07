@@ -60,8 +60,8 @@ public class NativeHelper {
 	
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void init() {
-		// Only Linux supported for BLAS
-		if(!SystemUtils.IS_OS_LINUX)
+		// Only Linux and Windows supported for BLAS
+		if(!(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_WINDOWS))
 			return;
 		
 		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
@@ -111,7 +111,7 @@ public class NativeHelper {
 	    				throw new RuntimeException("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
-				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+				    if(blasType != null && loadLibraryHelper("systemml_" + blasType)) {
 				    	String blasPathAndHint = "";
 				    	// ------------------------------------------------------------
 				    	// This logic gets the list of native libraries that are loaded
@@ -198,7 +198,19 @@ public class NativeHelper {
 		}
 	}
 
-	private static boolean loadLibraryHelper(String path)  {
+	/**
+	 * Loads the specified library.
+	 * 
+	 * @param libName can be systemml_mkl or systemml_openblas
+	 * @return true if the library is loaded successfully
+	 */
+	private static boolean loadLibraryHelper(String libName)  {
+		// Default path assume x86_64 Linux
+		String path = "lib" + libName + "-Linux-x86_64.so";
+		if(SystemUtils.IS_OS_WINDOWS) {
+			path = libName + "-Windows-x86_64.dll";
+		}
+		
 		InputStream in = null; OutputStream out = null;
 		try {
 			// This logic is added because Java doesnot allow to load library from a resource file.

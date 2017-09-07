@@ -197,6 +197,40 @@ public class NativeHelper {
 			return false;
 		}
 	}
+	
+	/**
+	 * Get file path for a given library name 
+	 * @param libName can be systemml_mkl or systemml_openblas
+	 * @return file path
+	 */
+	private static String getPath(String libName) {
+		String prefix = "";
+		String suffix = "";
+		String os = "";
+		if (SystemUtils.IS_OS_MAC_OSX) {
+			prefix = "lib";
+			suffix = "dylib";
+			os = "Apple";
+		} else if (SystemUtils.IS_OS_LINUX) {
+			prefix = "lib";
+			suffix = "so";
+			os = "Linux";
+		} else if (SystemUtils.IS_OS_WINDOWS) {
+			prefix = "";
+			suffix = "dll";
+			os = "Windows";
+		} else {
+			LOG.info("Unsupported OS:" + SystemUtils.OS_NAME);
+			throw new RuntimeException("Unsupported OS");
+		}
+		
+		String arch = supportedArchitectures.get(SystemUtils.OS_ARCH);
+		if(arch == null) {
+			LOG.info("Unsupported architecture:" + SystemUtils.OS_ARCH);
+			throw new RuntimeException("Unsupported architecture:" + SystemUtils.OS_ARCH);
+		}
+		return prefix + libName + "-" + os + "-" + arch + "." + suffix;
+	}
 
 	/**
 	 * Loads the specified library.
@@ -205,12 +239,7 @@ public class NativeHelper {
 	 * @return true if the library is loaded successfully
 	 */
 	private static boolean loadLibraryHelper(String libName)  {
-		// Default path assume x86_64 Linux
-		String path = "lib" + libName + "-Linux-x86_64.so";
-		if(SystemUtils.IS_OS_WINDOWS) {
-			path = libName + "-Windows-x86_64.dll";
-		}
-
+		String path = getPath(libName);
 		InputStream in = null; OutputStream out = null;
 		try {
 			// This logic is added because Java doesnot allow to load library from a resource file.

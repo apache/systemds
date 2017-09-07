@@ -1379,7 +1379,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.EQUAL, "==");
 		HopsOpOp2String.put(OpOp2.NOTEQUAL, "!=");
 		HopsOpOp2String.put(OpOp2.OR, "|");
-		HopsOpOp2String.put(OpOp2.XOR, "^");
+		HopsOpOp2String.put(OpOp2.XOR, "xor");
 		HopsOpOp2String.put(OpOp2.AND, "&");
 		HopsOpOp2String.put(OpOp2.LOG, "log");
 		HopsOpOp2String.put(OpOp2.LOG_NZ, "log_nz");
@@ -1481,7 +1481,7 @@ public abstract class Hop implements ParseInfo
 		else if( "==".equals(op) ) return OpOp2.EQUAL;
 		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
 		else if( "|".equals(op) ) return OpOp2.OR;
-		else if( "^".equals(op) ) return OpOp2.XOR;
+		else if( "xor".equals(op) ) return OpOp2.XOR;
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;

@@ -726,10 +726,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					//process zeros before current non-zero
 					if( !sparseSafe )
 						for(int j=lastj+1; j<aix[k]; j++) {
-							kbuff.set(c[aix[j]], corr[aix[j]]);
+							kbuff.set(c[j], corr[j]);
 							kplus.execute2(kbuff, genexec(0, b, scalars, m, n, i, j));
-							c[aix[j]] = kbuff._sum;
-							corr[aix[j]] = kbuff._correction;
+							c[j] = kbuff._sum;
+							corr[j] = kbuff._correction;
 						}
 					//process current non-zero
 					lastj = aix[k];
@@ -775,8 +775,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					//process zeros before current non-zero
 					if( !sparseSafe )
 						for(int j=lastj+1; j<aix[k]; j++) {
-							c[aix[j]] = vfun.execute(c[aix[j]], genexec(0, b, scalars, m, n, i, j));
-							count[aix[j]] ++;
+							c[j] = vfun.execute(c[j], genexec(0, b, scalars, m, n, i, j));
+							count[j] ++;
 						}
 					//process current non-zero
 					lastj = aix[k];

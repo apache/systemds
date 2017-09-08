@@ -31,7 +31,6 @@ import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
-import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
@@ -1047,10 +1046,10 @@ public class HopRewriteUtils
 			 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
 	}
 	
-	public static boolean containsFunctioOp(ArrayList<Hop> candidates) {
+	public static boolean containsOp(ArrayList<Hop> candidates, Class<? extends Hop> clazz) {
 		if( candidates != null )
 			for( Hop cand : candidates )
-				if( cand instanceof FunctionOp )
+				if( cand.getClass().equals(clazz) )
 					return true;
 		return false;
 	}

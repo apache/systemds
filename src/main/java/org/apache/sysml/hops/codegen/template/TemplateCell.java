@@ -241,6 +241,10 @@ public class TemplateCell extends TemplateBase
 		{
 			out = TemplateUtils.skipTranspose(tmp.get(hop.getHopID()), 
 				hop, tmp, compileLiterals);
+			//correct indexing types of existing lookups
+			if( !HopRewriteUtils.containsOp(hop.getParent(), AggBinaryOp.class) )
+				TemplateUtils.rFlipVectorLookups(out);
+			//maintain input hops
 			if( out instanceof CNodeData && !inHops.contains(hop.getInput().get(0)) )
 				inHops.add(hop.getInput().get(0));
 		}

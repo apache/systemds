@@ -448,4 +448,15 @@ public class TemplateUtils
 		current.setVisited();
 		return ret;
 	}
+	
+	public static void rFlipVectorLookups(CNode current) {
+		//flip vector lookups if necessary
+		if( isUnary(current, UnaryType.LOOKUP_C) )
+			((CNodeUnary)current).setType(UnaryType.LOOKUP_R);
+		else if( isUnary(current, UnaryType.LOOKUP_R) )
+			((CNodeUnary)current).setType(UnaryType.LOOKUP_C);
+		//recursively process children
+		for( CNode input : current.getInput() )
+			rFlipVectorLookups(input);
+	}
 }

@@ -212,7 +212,7 @@ public class NativeHelper {
 		if (SystemUtils.IS_OS_MAC_OSX) {
 			prefix = "lib";
 			suffix = "dylib";
-			os = "Apple";
+			os = "Darwin";
 		} else if (SystemUtils.IS_OS_LINUX) {
 			prefix = "lib";
 			suffix = "so";

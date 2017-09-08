@@ -20,7 +20,6 @@
 #include "config.h"
 #include "libmatrixmult.h"
 #include <cstdlib>
-#include "omp.h"
 #include <cmath>
 
 int SYSML_CURRENT_NUM_THREADS = -1;

@@ -52,8 +52,8 @@ public class NativeHelper {
 		// Note: we only support 64 bit Java on x86, PowerPC and AMD machine
 		supportedArchitectures.put("x86_64", "x86_64");
 		supportedArchitectures.put("amd64", "x86_64");
-		supportedArchitectures.put("powerpc", "ppc_64");
-		supportedArchitectures.put("ppc64le", "ppc_64");
+		supportedArchitectures.put("powerpc", "ppc64le");
+		supportedArchitectures.put("ppc64le", "ppc64le");
 	}
 
 	private static boolean attemptedLoading = false;

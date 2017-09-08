@@ -321,7 +321,7 @@ def eval(outputs, execute=True):
     check_MLContext()
     reset()
     outputs = convert_outputs_to_list(outputs)
-    matrix.script.scriptString = perform_dfs(outputs, execute)
+    matrix.script.setScriptString(perform_dfs(outputs, execute))
     if not execute:
         reset_output_flag(outputs)
         return matrix.script.scriptString

@@ -44,12 +44,14 @@ if (USE_OPEN_BLAS)
   set_target_properties(systemml PROPERTIES OUTPUT_NAME "systemml_openblas-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
   include_directories(${OpenBLAS_INCLUDE_DIR})
   set(MATH_LIBRARIES "${OpenBLAS_LIB}")
+  set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
 elseif(USE_INTEL_MKL)
   find_package(MKL REQUIRED)
   # sets the name of the output to include the os and the architecture
   set_target_properties(systemml PROPERTIES OUTPUT_NAME "systemml_mkl-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
   include_directories(${MKL_INCLUDE_DIR})
   set(MATH_LIBRARIES "${MKL_LIBRARIES}")
+  set_target_properties(systemml PROPERTIES LINK_FLAGS "${MATH_LIBRARIES}")
 endif()
 
 # Option written to a config.h file
@@ -64,13 +66,3 @@ include_directories($ENV{JAVA_HOME}/include/win32)
 
 # Include the binary dir which contains "config.h"
 include_directories(${CMAKE_BINARY_DIR})
-
-
-# Setting CXX compiler flags
-if (USE_OPEN_BLAS)
-  # OpenMP is required
-  find_package(OpenMP REQUIRED)
-  set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
-elseif(USE_INTEL_MKL)
-  set_target_properties(systemml PROPERTIES LINK_FLAGS ${MATH_LIBRARIES}")
-endif()

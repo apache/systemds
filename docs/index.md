@@ -79,3 +79,4 @@ command-line interface.
 * [Engine Developer Guide](engine-dev-guide) - Guide for internal SystemML engine development.
 * [Troubleshooting Guide](troubleshooting-guide) - Troubleshoot various issues related to SystemML.
 * [Release Process](release-process) - Description of the SystemML release process.
+* [Using SystemML with Native BLAS support](native-backend) - Explains how to enable SystemML to use native BLAS (for example: Intel MKL, OpenBLAS).

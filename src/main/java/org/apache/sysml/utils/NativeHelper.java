@@ -49,9 +49,11 @@ public class NativeHelper {
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;
 	static {
-		// Note: we only support 64 bit Java on x86 and AMD machine
+		// Note: we only support 64 bit Java on x86, PowerPC and AMD machine
 		supportedArchitectures.put("x86_64", "x86_64");
 		supportedArchitectures.put("amd64", "x86_64");
+		supportedArchitectures.put("powerpc", "ppc_64");
+		supportedArchitectures.put("ppc64le", "ppc_64");
 	}
 
 	private static boolean attemptedLoading = false;

@@ -46,7 +46,16 @@ and then OpenBLAS (if installed).
 If both Intel MKL and OpenBLAS are not available, SystemML
 falls back to its internal Java library.
 
-The current version of SystemML only supports BLAS on **Linux** machines.
+
+|           | Linux       | Windows     | Mac         | PowerPC        |
+|-----------|-------------|-------------|-------------|----------------|
+| Intel MKL | Supported.  | Supported.  | Supported.  | Not Supported. |
+| OpenBLAS  | Supported.  | Supported.  | Supported.  | Supported.     |
+
+
+- When using OpenBLAS, please ensure that OpenBLAS was compiled with gomp support.
+- When using Intel MKL, GNU OpenMP is not required to be installed. SystemML uses Intel MKL-DNN primitives for convolution operations.
+- SystemML only support 64 bit Java on x86, PowerPC and AMD machine for native BLAS.
 
 ## Step 1: Install BLAS
 
@@ -60,18 +69,18 @@ with license key. Since we use MKL DNN primitives, we depend on Intel MKL versio
 
 ### Option 2: Install OpenBLAS  
 
+The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
+which can lead to performance degradation when using SystemML. So, instead we recommend that you
+compile OpenBLAS from the source.
+
 ```bash
-# The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
-# which can lead to performance degradation when using SystemML. So, instead we recommend that you
-# compile OpenBLAS from the source. 
-# RedHat / CentOS: sudo yum install openblas
-# Ubuntu: sudo apt-get install openblas
 git clone https://github.com/xianyi/OpenBLAS.git
 cd OpenBLAS/
 make clean
 make USE_OPENMP=1
 sudo make install
 # After installation, you may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
+# sudo cp /opt/OpenBLAS/lib/libopenblas.so /usr/lib/
 ```
 
 When using OpenBLAS, we also depend on GNU OpenMP (gomp) which will be installed by GCC.
@@ -81,6 +90,7 @@ please add a softlink to it:
 
 ```bash
 sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
+# Power PC: sudo ln -s /usr/lib/powerpc64le-linux-gnu/libgomp.so.1 /usr/lib/powerpc64le-linux-gnu/libgomp.so
 ```
 
 ## Step 2: Install other dependencies

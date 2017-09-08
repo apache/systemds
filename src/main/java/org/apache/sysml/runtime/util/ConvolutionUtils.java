@@ -47,13 +47,31 @@ public class ConvolutionUtils {
 		if(H <= 0 || R <= 0 || heightPadding < 0 || verticalStride < 0) {
 			throw new RuntimeException("Incorrect parameters: height=" + H + " filter_height=" + R + " stride=" + verticalStride + " pad=" + heightPadding);
 		}
-		return (H + 2 * heightPadding - R) / verticalStride + 1;
+		long padded_image_height = H + 2 * heightPadding;
+		long ret = (padded_image_height - R) / verticalStride + 1;
+		if(ret <= 0 || ret > Integer.MAX_VALUE) {
+			// Check for valid output activation height
+			if(padded_image_height < R)
+				throw new RuntimeException("Incorrect parameters: padded image height:" + padded_image_height + " cannot be less than filter_height:" + R);
+			else
+				throw new RuntimeException("Incorrect parameters: height=" + H + " filter_height=" + R + " stride=" + verticalStride + " pad=" + heightPadding + " as P=" + ret);
+		}
+		return ret;
 	}
 	public static long getQ(long W, long S, long horizontalStride, long widthPadding) {
 		if(W <= 0 || S <= 0 || widthPadding < 0 || horizontalStride < 0) {
 			throw new RuntimeException("Incorrect parameters: width=" + W + " filter_width=" + S + " stride=" + horizontalStride + " pad=" + widthPadding);
 		}
-		return (W + 2 * widthPadding - S) / horizontalStride + 1;
+		long padded_image_width = W + 2 * widthPadding;
+		long ret = (padded_image_width - S) / horizontalStride + 1;
+		if(ret <= 0 || ret > Integer.MAX_VALUE) {
+			// Check for valid output activation width
+			if(padded_image_width < S)
+				throw new RuntimeException("Incorrect parameters: padded image width:" + padded_image_width + " cannot be less than filter width:" + S);
+			else
+				throw new RuntimeException("Incorrect parameters: width=" + W + " filter_width=" + S + " stride=" + horizontalStride + " pad=" + widthPadding + " as Q=" + ret);
+		}
+		return ret;
 	}
 
 	

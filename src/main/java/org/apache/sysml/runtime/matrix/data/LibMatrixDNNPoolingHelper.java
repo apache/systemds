@@ -126,13 +126,16 @@ public class LibMatrixDNNPoolingHelper {
 					// This allows for binary search in getValue to be more efficient
 					fromIndex = setSearchIndex(apos, c*HW);
 					toIndex = Math.min(apos+alen, setSearchIndex(fromIndex, (c+1)*HW));
+					final int cHW = c*HW;
 					for (int p = 0; p < P; p++) {
 						for (int q = 0; q < Q; q++, out_index++) {
+							double tmp = outputArray[out_index];
 							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
 								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
-									outputArray[out_index] = Math.max(outputArray[out_index], getValue(c*HW +  h*W + w));
+									tmp = Math.max(tmp, getValue(cHW +  h*W + w));
 								}
 							}
+							outputArray[out_index] = tmp;
 						}
 					}
 				}

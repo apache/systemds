@@ -66,6 +66,9 @@ public class LibMatrixDNNRotate180Helper {
 	
 	/**
 	 * Performing rotate180 when input is sparse (general case)
+	 * 
+	 * Why are we allocating the output of rotate180 in dense format ? 
+	 * Because the number of rows of output (i.e. NPQ) is much larger than number of columns (i.e. K) 
 	 */
 	static class SparseRotate180Worker implements Rotate180Worker {
 

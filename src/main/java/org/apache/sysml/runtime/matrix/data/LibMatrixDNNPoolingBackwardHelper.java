@@ -146,11 +146,12 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		public Long call() throws Exception {
 			for(int n = _rl; n < _ru; n++)  {
 				for (int c = 0; c < C; c++) {
+					final int doutOffset = n*CPQ + c*PQ;
+					final int inputOffset = n*CHW + c*HW;
 					for (int p = 0; p < P; p++) {
 						for (int q = 0; q < Q; q++) {
-							double inVal = doutArray[n*CPQ + c*PQ +  p * Q + q];
+							double inVal = doutArray[doutOffset +  p * Q + q];
 							if(inVal != 0) {
-								final int inputOffset = n*CHW + c*HW;
 								int maxIndex = LibMatrixDNNHelper.getMaxIndexSparse(p, q, inputOffset, n, c, _params.input1, _params, performReluBackward);
 								if(maxIndex != -1)
 									outputArray[maxIndex] += inVal;

@@ -265,9 +265,12 @@ public class LibMatrixDNNHelper {
 			double [] outputArr = mb.getDenseBlock();
 			if(filter != null) {
 				for(int k = 0; k < _params.K; k++) {
+					int outOffset = k*RS;
+					int filterOffset = k*CRS + c*RS;
 					for(int rs = 0; rs < RS; rs++) {
-						outputArr[k*RS + rs] = filter[k*CRS + c*RS + rs];
-						nnz += outputArr[k*RS + rs] != 0 ? 1 : 0;
+						int outIndex = outOffset + rs;
+						outputArr[outIndex] = filter[filterOffset + rs];
+						nnz += outputArr[outIndex] != 0 ? 1 : 0;
 					}
 				}
 			}
@@ -473,12 +476,16 @@ public class LibMatrixDNNHelper {
 		}
 		else {
 			if(!input.isEmptyBlock()) {
+				int outOffset = outputN*params.C*params.H*params.W;
+				int HW = params.H*params.W;
 				int [] tensorIndexes = new int[3];
 				for(int i = 0; i < input.getNumRows(); i++) {
 					if( !input.sparseBlock.isEmpty(i) ) {
 						computeTensorIndexes(i, tensorIndexes, params.P, params.Q);
 						int p = tensorIndexes[1];
 						int q = tensorIndexes[2];
+						int tmpP = p*params.stride_h - params.pad_h;
+						int tmpQ = q*params.stride_w - params.pad_w;
 						if(tensorIndexes[0] != 0) 
 							throw new DMLRuntimeException("Incorrect tensor indexes: " + tensorIndexes[0] + " != 0 <" + p + " " + q + " " + tensorIndexes[0] + params.P + " " + params.Q + ">");
 						
@@ -491,10 +498,10 @@ public class LibMatrixDNNHelper {
 							int c = tensorIndexes[0];
 							int r = tensorIndexes[1];
 							int s = tensorIndexes[2];
-							int h = p*params.stride_h + r - params.pad_h;
-							int w = q*params.stride_w + s - params.pad_w;
+							int h = tmpP + r;
+							int w = tmpQ + s;
 							if(h >= 0 && h < params.H && w >= 0 && w < params.W) {
-								int outIndex = outputN*params.C*params.H*params.W + c*params.H*params.W + h*params.W + w;
+								int outIndex = outOffset + c*HW + h*params.W + w;
 								outputArray[outIndex] += avals[j];
 							}
 						}
@@ -508,6 +515,10 @@ public class LibMatrixDNNHelper {
 	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
 	private static void doCol2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
 		final int outputNOffset = outputN*params.C*params.H*params.W;
+		final int HW = params.H*params.W;
+		final int inputNPQ = inputN*params.P*params.Q;
+		final int CRS = params.C*params.R*params.S;
+		final int RS = params.R*params.S;
 		for (int p = 0; p < params.P; p++) {
 			// h = p*params.stride_h + r - params.pad_h
 			//   = r + hOffset
@@ -522,10 +533,10 @@ public class LibMatrixDNNHelper {
 				final int wOffset = q*params.stride_w - params.pad_w;
 				final int sStart = Math.max(0, - wOffset);
 				final int sEnd = Math.min(params.S, params.W - wOffset);
-				final int tempOffset = (inputN*params.P*params.Q + p*params.Q + q)*params.C*params.R*params.S;
+				final int tempOffset = (inputNPQ + p*params.Q + q)*CRS;
 				for (int c = 0; c < params.C; c++) {
-					final int outOffset = outputNOffset + c*params.H*params.W;
-					final int inputOffset = tempOffset + c*params.R*params.S;
+					final int outOffset = outputNOffset + c*HW;
+					final int inputOffset = tempOffset + c*RS;
 					for (int r = rStart; r < rEnd; r++) {
 						for (int s = sStart; s < sEnd; s++) {
 							int inputIndex = inputOffset + r*params.S + s;

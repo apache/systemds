@@ -167,7 +167,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getConv2dWorkers(params), params);
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	/**
@@ -188,7 +189,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getConv2dBackwardDataWorkers(params), params);
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	/**
@@ -209,7 +211,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getConv2dBackwardFilterWorkers(params), params);
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	
@@ -338,7 +341,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getMaxPoolingBackwardWorkers(params, performReluBackward), params);
 		
 		//post-processing: maintain nnz 
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	/**
@@ -391,7 +395,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getReluBackwardWorkers(params), params);
 		
 		// post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	/**
@@ -429,15 +434,17 @@ public class LibMatrixDNN {
 			double [] biasArr = bias.getDenseBlock();
 			for(int n = 0; n < N; n++) {
 				for(int k = 0; k < K; k++) {
+					double biasVal = biasArr[k];
 					for(int pq = 0; pq < PQ; pq++, index++) {
-						outputArray[index] += biasArr[k];
+						outputArray[index] += biasVal;
 					}
 				}
 			}
 		}
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	
@@ -469,22 +476,52 @@ public class LibMatrixDNN {
 		
 		if(!input.isEmptyBlock() && !bias.isEmptyBlock()) {
 			// Handles both dense and sparse inputs and copies it to dense output
-			outputBlock.copy(input); 
-			double [] outputArray = outputBlock.getDenseBlock();
-			int index = 0;
+			outputBlock.copy(input);
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array
 			double [] biasArr = bias.getDenseBlock();
-			for(int n = 0; n < N; n++) {
+			if(!input.isInSparseFormat()) {
+				double [] outputArray = outputBlock.getDenseBlock();
+				int index = 0;
+				for(int n = 0; n < N; n++) {
+					for(int k = 0; k < K; k++) {
+						double biasVal = biasArr[k];
+						for(int pq = 0; pq < PQ; pq++, index++) {
+							outputArray[index] *= biasVal;
+						}
+					}
+				}
+			}
+			else {
+				// First delete those elements which will become zero 
 				for(int k = 0; k < K; k++) {
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						outputArray[index] *= biasArr[k];
+					if(biasArr[k] == 0) {
+						for(int n = 0; n < N; n++) {
+							outputBlock.sparseBlock.deleteIndexRange(n, k*PQ, (k+1)*PQ);
+						}
+					}
+				}
+				// Then perform bias_multiply for non-zero bias entries
+				for(int n = 0; n < N; n++) {
+					if( !outputBlock.sparseBlock.isEmpty(n) ) {
+						int apos = outputBlock.sparseBlock.pos(n);
+						int alen = outputBlock.sparseBlock.size(n);
+						int[] aix = outputBlock.sparseBlock.indexes(n);
+						double[] avals = outputBlock.sparseBlock.values(n);
+						
+						for(int j=apos; j<apos+alen; j++) {
+							// Since aix[j] => KPQ
+							int k = aix[j] % PQ;
+							if(biasArr[k] != 0)
+								avals[j] *= biasArr[k];
+						}
 					}
 				}
 			}
 			
 			//post-processing: maintain nnz
-			params.output.recomputeNonZeros();
+			params.output.recomputeNonZeros(); 
+			params.output.examSparsity();
 		}
 		else {
 			params.output.setNonZeros(0);
@@ -504,7 +541,8 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getMaxPoolingWorkers(params), params);
 		
 		// post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+		outputBlock.recomputeNonZeros(); 
+		outputBlock.examSparsity();
 	}
 	
 	/**

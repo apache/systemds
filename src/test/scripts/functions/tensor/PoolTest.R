@@ -32,7 +32,7 @@ pad=as.integer(args[7])
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
 if(as.logical(args[9])) {
-	zero_mask = (x - mean(x)) > 0 
+	zero_mask = (x - 1.5*mean(x)) > 0 
 	x = x * zero_mask
 } else {
 	x = x - mean(x)

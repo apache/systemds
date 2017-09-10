@@ -213,7 +213,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 					addArgs[0] = "1"; addArgs[1] = "2.0"; addArgs[2] = "1"; addArgs[3] = "0.0";
 					break;
 				case BINOMIAL_PROBIT: //dfam, vpow, link, yneg 
-					addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "2";
+					addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "0";
 					param4Name = "yneg=";
 					break;
 			}

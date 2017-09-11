@@ -135,10 +135,10 @@ public class MLContextGLMTest extends MLContextTestBase {
                         glm.in("X", X).in("Y", Y).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("beta_out");
                         ml.execute(glm);
 		} else {
-			//<code>cols=1</code> will be enough 
+			//for B <code>cols=1</code> will be enough
 		        double[][] B = TestUtils.round(getRandomMatrix(2468, 1, 0, 1, sparse?sparsity2:sparsity1, -1));
 		        Script glmp = dmlFromFile(TEST_SCRIPT_PRED);
-                        glmp.in("X", X).in("Y", Y).in("B", B).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("means").out("str");
+                        glmp.in("X", X).in("Y", Y).in("B", B).in("$dfam", addArgs[0]).in("$vpow", addArgs[1]).in("$link", addArgs[2]).in(param4Name, addArgs[3]).in("$icpt", "0").in("$tol", "0.000000001").in("$moi", "5").out("means").out("stats");
                         ml.execute(glmp);
 		}
 		

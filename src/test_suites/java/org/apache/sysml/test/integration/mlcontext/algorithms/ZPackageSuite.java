@@ -28,7 +28,6 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ 
   MLContextUnivariateStatisticsTest.class,
-  MLContextLinregTest.class,
   MLContextGLMTest.class
 })
 

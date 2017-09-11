@@ -33,7 +33,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
-import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
@@ -189,10 +188,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		
 		//always reset stats because counters per map task (for case of JVM reuse)
 		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
-		{
-			CacheStatistics.reset();
 			Statistics.reset();
-		}
 	}
 
 	@Override

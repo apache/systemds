@@ -48,7 +48,6 @@ import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
@@ -376,10 +375,8 @@ public class ScriptExecutor {
 		setGlobalFlags();
 		// reset all relevant summary statistics
 		Statistics.resetNoOfExecutedJobs();
-		if (statistics) {
-			CacheStatistics.reset();
+		if (statistics)
 			Statistics.reset();
-		}
 	}
 
 	/**

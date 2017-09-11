@@ -33,7 +33,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -212,10 +211,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		
 		//always reset stats because counters per map task (for case of JVM reuse)
 		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
-		{
-			CacheStatistics.reset();
 			Statistics.reset();
-		}
 	}
 
 	@Override

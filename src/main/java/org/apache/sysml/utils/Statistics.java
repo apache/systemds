@@ -407,6 +407,8 @@ public class Statistics
 		codegenEnumEvalP.reset();
 		codegenCompileTime.reset();
 		codegenClassCompileTime.reset();
+		codegenPlanCacheHits.reset();
+		codegenPlanCacheTotal.reset();
 		
 		parforOptCount = 0;
 		parforOptTime = 0;
@@ -416,6 +418,8 @@ public class Statistics
 		lTotalLix.reset();
 		lTotalLixUIP.reset();
 		lTotalUIPVar.reset();
+		
+		CacheStatistics.reset();
 		
 		resetJITCompileTime();
 		resetJVMgcTime();

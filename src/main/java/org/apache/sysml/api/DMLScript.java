@@ -77,7 +77,6 @@ import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -829,10 +828,8 @@ public class DMLScript
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.resetNoOfExecutedJobs();
-		if( STATISTICS ) {
-			CacheStatistics.reset();
+		if( STATISTICS )
 			Statistics.reset();
-		}
 	}
 	
 	private static void checkSecuritySetup(DMLConfig config) 

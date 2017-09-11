@@ -124,7 +124,7 @@ public class MLContextGLMTest extends MLContextTestBase {
 				break;
 				
 			case BINOMIAL_PROBIT: //dfam, vpow, link, yneg or lpow
-				addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "2";
+				addArgs[0] = "2"; addArgs[1] = "0.0"; addArgs[2] = "3"; addArgs[3] = "0.0";
 				param4Name = main?"$yneg=":"$lpow=";
 				break;
 				

@@ -36,6 +36,8 @@ import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
@@ -114,6 +116,7 @@ public class SpoofCompiler
 	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED_V2; 
 
 	public enum CompilerType {
+		AUTO,
 		JAVAC,
 		JANINO,
 	}
@@ -484,7 +487,11 @@ public class SpoofCompiler
 	}
 	
 	public static void setExecTypeSpecificJavaCompiler() {
-		JAVA_COMPILER = OptimizerUtils.isSparkExecutionMode() ?
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		String compiler = conf.getTextValue(DMLConfig.CODEGEN_COMPILER);
+		CompilerType type = CompilerType.valueOf(compiler.toUpperCase());
+		JAVA_COMPILER = (type != CompilerType.AUTO) ? type :
+			OptimizerUtils.isSparkExecutionMode() ? 
 			CompilerType.JANINO : CompilerType.JAVAC;
 	}
 	

@@ -60,6 +60,9 @@
    <!-- enables operator fusion via code generation, experimental feature -->
    <codegen.enabled>false</codegen.enabled>
    
+   <!-- set the codegen java compiler (auto, janino, javac) -->
+   <codegen.compiler>auto</codegen.compiler>
+   
    <!-- if codegen.enabled, enables source code caching of fused operators -->
    <codegen.plancache>false</codegen.plancache>
    

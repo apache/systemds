@@ -40,6 +40,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -74,6 +75,7 @@ public class DMLConfig
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
 	public static final String NATIVE_BLAS          = "native.blas";
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
+	public static final String CODEGEN_COMPILER     = "codegen.compiler"; //see SpoofCompiler.CompilerType
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
 	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
@@ -119,16 +121,16 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
 		_defaultVals.put(CODEGEN,                "false" );
+		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
-		_defaultVals.put(STATS_MAX_WRAP_LEN,"30" );
+		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
-
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(AVAILABLE_GPUS,   "-1");
+		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 	}
 	
 	public DMLConfig()
@@ -408,7 +410,8 @@ public class DMLConfig
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
-				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
+				COMPRESSED_LINALG, 
+				CODEGEN, CODEGEN_COMPILER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
 				AVAILABLE_GPUS
 		}; 

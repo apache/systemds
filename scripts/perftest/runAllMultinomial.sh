@@ -47,18 +47,18 @@ do
    for f in "runNaiveBayes"
    do
       echo "-- Running "$f" on "$d" (all configs)" >> times.txt;
-      ./${f}.sh ${BASE}/X${d}_k150 ${BASE}/y${d}_k150 150 ${BASE} $2 &> logs/${f}_${d}_k150.out;       
+      ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} $2 &> logs/${f}_${d}_k5.out;       
    done
    
    # run with the parameter setting maximum of iterations
    for f in "runMultiLogReg" "runMSVM"
    do
       echo "-- Running "$f" on "$d" (all configs)" >> times.txt;
-      ./${f}.sh ${BASE}/X${d}_k150 ${BASE}/y${d}_k150 150 ${BASE} $2 ${MAXITR} &> logs/${f}_${d}_k150.out;       
+      ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} $2 ${MAXITR} &> logs/${f}_${d}_k5.out;       
    done
 done
 
 #run KDD only on naive bayes (see binomial for the others)
-#./runNaiveBayes.sh ${BASE0}/X_KDD_k150 ${BASE}/y_KDD_k150 150 &> logs/runNaiveBayes__KDD_k150.out;       
-#./runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 150 &> logs/runNaiveBayes__KDD_k150.out;       
+#./runNaiveBayes.sh ${BASE0}/X_KDD_k5 ${BASE}/y_KDD_k5 5 &> logs/runNaiveBayes__KDD_k5.out;       
+#./runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 5 &> logs/runNaiveBayes__KDD_k5.out;       
    

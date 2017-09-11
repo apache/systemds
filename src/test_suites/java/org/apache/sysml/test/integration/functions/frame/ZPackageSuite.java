@@ -45,6 +45,7 @@ import org.junit.runners.Suite;
 	FrameScalarCastingTest.class,
 	FrameSchemaReadTest.class,
 	FrameSerializationTest.class,
+	ParforFrameIntermediateTest.class,
 })
 
 

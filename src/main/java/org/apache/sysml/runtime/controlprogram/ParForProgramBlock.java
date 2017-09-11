@@ -1279,7 +1279,8 @@ public class ParForProgramBlock extends ForProgramBlock
 						}
 						break;
 					case MATRIX:
-						//currently we do not create any unscoped matrix object outputs
+					case FRAME:
+						//currently we do not create any unscoped matrix or frame outputs
 						//because metadata (e.g., outputinfo) not known at this place.
 						break;
 					case UNKNOWN:

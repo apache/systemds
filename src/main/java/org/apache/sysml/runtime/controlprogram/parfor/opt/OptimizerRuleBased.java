@@ -456,26 +456,25 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		boolean ret = false;
 
-		if( !n.isLeaf() )
-		{
+		if( !n.isLeaf() ) {
 			for( OptNode cn : n.getChilds() )
 				if( cn.getNodeType() != NodeType.FUNCCALL ) //prevent conflicts with aliases
 					ret |= rFindDataPartitioningCandidates( cn, cand, vars, thetaM );
 		}
 		else if( n.getNodeType()== NodeType.HOP
-			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
+			&& n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
-			if( cand.containsKey(inMatrix) ) //Required Condition: partitioning applicable
+			if( cand.containsKey(inMatrix) && h.getDataType().isMatrix() ) //Required: partitionable
 			{
 				PartitionFormat dpf = cand.get(inMatrix);
 				double mnew = getNewRIXMemoryEstimate( n, inMatrix, dpf, vars );
 				//NOTE: for the moment, we do not partition according to the remote mem, because we can execute 
-				//it even without partitioning in CP. However, advanced optimizers should reason about this 					   
+				//it even without partitioning in CP. However, advanced optimizers should reason about this
 				//double mold = h.getMemEstimate();
-				if(	   n.getExecType() == getRemoteExecType()  //Opt Condition: MR/Spark
-					|| h.getMemEstimate() > thetaM ) //Opt Condition: mem estimate > constraint to force partitioning	
+				if( n.getExecType() == getRemoteExecType()  //Opt Condition: MR/Spark
+					|| h.getMemEstimate() > thetaM ) //Opt Condition: mem estimate > constraint to force partitioning
 				{
 					//NOTE: subsequent rewrites will still use the MR mem estimate
 					//(guarded by subsequent operations that have at least the memory req of one partition)

@@ -326,10 +326,12 @@ if (fileY != " ")
         str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + as.scalar (adjust_R2_nobias [1, i]));
     }
     
+    stats = str; # initializing <code>str</code> before if-else execution
+    
     if (fileO != " ") {
-        write (str, fileO);
+        write (stats, fileO);
     } else {
-        print (str);
+        print (stats);
     }
 }
 

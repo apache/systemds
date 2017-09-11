@@ -24,22 +24,32 @@
  */
 
 # Imports
+source("nn/optim/adam.dml") as adam
 source("algorithms/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
+source("nn/layers/log_loss.dml") as log_loss
+source("nn/layers/sigmoid.dml") as sigmoid
+
 
 train = function(matrix[double] X)
-    return (matrix[double] out) {
-   /*
-    * Trains a FM model.
-    */
+    return (matrix[double] w0, matrix[double] W, matrix[double] V) {
+  /*
+   * Trains the FM model.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  
+   * Outputs:
+   *  - w0, W, V : updated model parameters.
+   */
     
     # 1.initialize fm core
     [w0, W, V] = fm::init(d, k);
     
     # 2.initialize adam optimizer
     [mw0, vw0] = adam::init(w0);
-    [mW, vW] = adam::init(W);
-    [mV, vV] = adam::init(V);
+    [mW, vW]   = adam::init(W);
+    [mV, vV]   = adam::init(V);
     
     # 3.Send inputs through fm::forward
     y = fm::forward(X, w0, W, V);
@@ -47,36 +57,46 @@ train = function(matrix[double] X)
     # 4.Send the above result through log_loss::forward
     sfy = sigmoid::forward(y);
     
-    # 5.Send the above result through fm::backward
-    fb = fm::backward(sfy);
+    # 5.compute gradients from a loss l2_loss::backward
+    dy = l2_loss::backward(sfy, y);
+    
+    # 6.Send the above result through fm::backward
+    [dX, dw0, dW, dV] = fm::backward(dy, X, w0, W, V);
     
     # 6.Call adam::update for all parameters
-    # Default values for some parameters
+    ## Default values for some parameters
     lr      = 0.001; 
     beta1   = 0.9;       # [0, 1)
     beta2   = 0.999;     # [0, 1)
     epsilon = 0.00000001; 
     t       = 0;
 
-    adam::update(w0, g_w0, lr, beta1, beta2, epsilon, t, matrix[double] m_w0, matrix[double] v_w0);
-    adam::update(W, g_W, lr, beta1, beta2, epsilon, t, matrix[double] m_W, matrix[double] v_W );
-    adam::update(V, g_V, lr, beta1, beta2, epsilon, t, matrix[double] m_V, matrix[double] v_V );
+    w0 = adam::update(w0, dw0, lr, beta1, beta2, epsilon, t, matrix[double] mw0, matrix[double] vw0);
+    W  = adam::update(W, dW, lr, beta1, beta2, epsilon, t, matrix[double] mW, matrix[double] vW );
+    V  = adam::update(V, dV, lr, beta1, beta2, epsilon, t, matrix[double] mV, matrix[double] vV );
 }
 
-predict = function(matrix[double] X)
+predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
     return (matrix[double] out) {
-   /*
-    * computes the predictions for the given inputs.
-    */
+  /*
+   * Computes the predictions for the given inputs.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  - w0, W, V : trained model parameters. 
+   *  
+   * Outputs:
+   *  - out : target vector, y.
+   */
     
     # 1.initialize fm core
     [w0, W, V] = fm::init(d, k);
     
     # 2.Send inputs through fm::forward
-    y = fm::forward(X, w0, W, V);
+    out = fm::forward(X, w0, W, V);
     
     # 3.Send the above result through log_loss::forward
-    log_loss::forward(y);
+    # loss = log_loss::forward(out);
     
 }
 

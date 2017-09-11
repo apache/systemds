@@ -599,8 +599,9 @@ public class DataExpression extends DataIdentifier
 			String mtdFileName = getMTDFileName(inputFileName);
 
 			// track whether should attempt to read MTD file or not
-			boolean shouldReadMTD = _checkMetadata && !ConfigurationManager
-					.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA);
+			boolean shouldReadMTD = _checkMetadata
+				&& (!ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA)
+					|| MapReduceTool.existsFileOnHDFS(mtdFileName)); // existing mtd file
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext

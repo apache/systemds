@@ -19,14 +19,14 @@
 #
 #-------------------------------------------------------------
 
-/**
+/*
  * Factorization Machines.
  */
 
 forward = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
-    return (matrix[double] y) {
+    return (matrix[double] out) {
   /*
-   * Computes the model y. 
+   * Computes the model. 
    *
    * Reference: 
    *  - Factorization Machines, Steffen Rendle.
@@ -38,36 +38,33 @@ forward = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
    *  - V : factorized interaction terms, of shape (d, k).
    *  
    * Outputs:
-   *  - y : target vector, of shape (n, 1)
+   *  - out : target vector, of shape (n, 1)
    */
    
-   y = w0 + X %*% W + 0.5 * rowSums( (X%*% V)^2 - (X^2 %*% V^2) )
+   out = w0 + (X != 0) %*% W + 0.5 * rowSums( ((X != 0) %*% V)^2 - ((X != 0)^2 %*% V^2) )
 }
    
-   
-// TODO : These gradients, from the paper, are the gradients w.r.t. the output y of the  
-// FM model, i.e., dy/dPARAM. We will want to optimize some loss function depending 
-// on the problem, so we'll want to compute dloss/dPARAM. 
-
-backward = function(matrix[double] dloss/dy, matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
-    return (matrix[double] dw0, matrix[double] dW, matrix[double] dV) {
+backward = function(matrix[double] dout, matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
+    return (matrix[double] dX, matrix[double] dw0, matrix[double] dW, matrix[double] dV) {
    /*
-    * This function accepts the upstream gradients w.r.t y, and returns
-    * the gradients of the loss w.r.t the parameters
+    * This function accepts the upstream gradients w.r.t output target vector, and 
+    * returns the gradients of the loss w.r.t the parameters
     *
     * Inputs:
-    *  - dloss/dy : the gradient of the loss function w.r.t y, of shape (n, 1).
+    *  - dout : the gradient of the loss function w.r.t y, of shape (n, 1).
     *  - X, w0, W, V are as mentioned in the above forward function.
     *
     * Outputs:
+    *  - dX : the gradient of loss function w.r.t  X, of shape (n, d).
     *  - dw0: the gradient of loss function w.r.t w0, of shape (1,).
     *  - dW : the gradient of loss function w.r.t  W, of shape (d, 1). 
     *  - dV : the gradient of loss function w.r.t  V, of shape (d, k).
     */
     
-    dw0 = as.matrix(1,)
-    dW  = colSums(X != 0)
-    dV  = (colSums(t(V) %*% colSums( X != 0)) - colSums(t(V) %*% (X * X))
+    dX  = dout * ( W + 0.5 * rowSums( (2*(X != 0) %*% V^2) - (2*(X != 0) %*% V^2) ) ) # shape (n, d)
+    dw0 = colSums( dout * 1 / as.matrix(1,) ) # shape (1, 1)
+    dW  = colSums( dout * (1 / (X != 0)) ) # shape (d, 1)
+    dV  = colSums( dout ) * 1 / ( rowSums(X != 0) %*% rowSums((X != 0) %*% V) - rowSums((X != 0)^2 %*% V) )  # shape (d, k)
 }
 
 init = function(int d, int k)

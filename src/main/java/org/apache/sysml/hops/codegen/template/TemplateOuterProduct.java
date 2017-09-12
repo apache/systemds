@@ -69,7 +69,8 @@ public class TemplateOuterProduct extends TemplateBase {
 			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
 				&& (TemplateUtils.isBinaryMatrixColVector(hop) || HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
 				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) && HopRewriteUtils.isBinary(hop, OpOp2.MULT, OpOp2.DIV)) )) 
-			|| (HopRewriteUtils.isTransposeOperation(hop) && !HopRewriteUtils.isOuterProductLikeMM(input)) 
+			|| (HopRewriteUtils.isTransposeOperation(hop) && input instanceof AggBinaryOp
+				&& !HopRewriteUtils.isOuterProductLikeMM(input)) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop)
 				&& TemplateUtils.containsOuterProduct(input, HopRewriteUtils.getOtherInput(hop, input)))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.RowCol));

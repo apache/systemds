@@ -1523,21 +1523,26 @@ public abstract class Hop implements ParseInfo
 	
 	/**
 	 * Marks the hop for dynamic recompilation, if dynamic recompilation is 
-	 * enabled and one of the two basic scenarios apply:
+	 * enabled and one of the three basic scenarios apply:
 	 * <ul>
 	 *  <li> The hop has unknown dimensions or sparsity and is scheduled for 
 	 *    remote execution, in which case the latency for distributed jobs easily 
 	 *    covers any recompilation overheads. </li>
 	 *  <li> The hop has unknown dimensions and is scheduled for local execution 
 	 *    due to forced single node execution type. </li>
+	 *  <li> The hop has unknown dimensions and is scheduled for local execution 
+	 *    due to good worst-case memory estimates but codegen is enabled, which
+	 *    requires (mostly) known sizes to validity conditions and cost estimation. </li>
 	 * <ul> <p>
 	 */
 	protected void setRequiresRecompileIfNecessary() {
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		boolean caseRemote = (!dimsKnown(true) && _etype == REMOTE);
 		boolean caseLocal = (!dimsKnown() && _etypeForced == ExecType.CP);
+		boolean caseCodegen = (!dimsKnown() && ConfigurationManager.isCodegenEnabled());
 		
-		if( ConfigurationManager.isDynamicRecompilation() && (caseRemote || caseLocal) )
+		if( ConfigurationManager.isDynamicRecompilation() 
+			&& (caseRemote || caseLocal || caseCodegen) )
 			setRequiresRecompile();
 	}
 

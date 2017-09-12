@@ -370,6 +370,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		final int blocksizeIJ = 16; //u/v block (max at typical L2 size)
 		//blocked execution
+		double sum = 0;
 		for( int bi = rl; bi < ru; bi+=blocksizeIJ )
 			for( int bj = cl, bimin = Math.min(ru, bi+blocksizeIJ); bj < cu; bj+=blocksizeIJ )
 			{
@@ -379,13 +380,14 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				for( int i=bi, ix=bi*n, uix=bi*k; i<bimin; i++, ix+=n, uix+=k )
 					for( int j=bj, vix=bj*k; j<bjmin; j++, vix+=k)
 						if( a[ix+j] != 0 ) {
-							//int cix = (type == OutProdType.LEFT_OUTER_PRODUCT) ? vix : uix;
 							if(type == OutProdType.CELLWISE_OUTER_PRODUCT)
 								c[ix+j] = genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j );
 							else
-								c[0]  += genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j);
+								sum += genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j);
 						}
 			}
+		if( type != OutProdType.CELLWISE_OUTER_PRODUCT )
+			c[0] = sum;
 	}
 	
 	private void executeSparse(SparseBlock sblock,  double[] u, double[] v, double[][] b, double[] scalars,

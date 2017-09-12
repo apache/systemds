@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -98,13 +97,14 @@ public class IndexingOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(!DMLScript.USE_ACCELERATOR) {
-			return false;
-		}
-		else {
-			// only matrix indexing is supported on GPU
-			return (getDataType() == DataType.MATRIX);
-		}
+//		if(!DMLScript.USE_ACCELERATOR) {
+//			return false;
+//		}
+//		else {
+//			// only matrix indexing is supported on GPU
+//			return (getDataType() == DataType.MATRIX);
+//		}
+		return false;
 	}
 
 	@Override

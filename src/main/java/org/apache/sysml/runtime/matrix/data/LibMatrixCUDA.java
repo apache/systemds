@@ -1044,7 +1044,8 @@ public class LibMatrixCUDA {
 		} else {
 			throw new DMLRuntimeException("Internal Error - Invalid index function type, only reducing along rows, columns, diagonals or all elements is supported in Aggregate Unary operations");
 		}
-		assert reductionDirection !=-1 : "Internal Error - Incorrect type of reduction direction set for aggregate unary GPU instruction";
+		if(reductionDirection == -1)
+			throw new DMLRuntimeException("Internal Error - Incorrect type of reduction direction set for aggregate unary GPU instruction");
 
 		// Convert function type to a number
 		int opIndex = -1;
@@ -1055,7 +1056,8 @@ public class LibMatrixCUDA {
 		} else if (aggOp.increOp.fn instanceof Mean) {
 			opIndex = OP_MEAN;
 		} else if (aggOp.increOp.fn instanceof CM) {
-			assert ((CM)aggOp.increOp.fn).getAggOpType() == CMOperator.AggregateOperationTypes.VARIANCE : "Internal Error - Invalid Type of CM operator for Aggregate Unary operation on GPU";
+			if(((CM)aggOp.increOp.fn).getAggOpType() != CMOperator.AggregateOperationTypes.VARIANCE)
+				throw new DMLRuntimeException("Internal Error - Invalid Type of CM operator for Aggregate Unary operation on GPU");
 			opIndex = OP_VARIANCE;
 		} else if (aggOp.increOp.fn instanceof Plus) {
 			opIndex = OP_PLUS;
@@ -1074,8 +1076,8 @@ public class LibMatrixCUDA {
 		} else {
 			throw new DMLRuntimeException("Internal Error - Aggregate operator has invalid Value function");
 		}
-		assert opIndex != -1 : "Internal Error - Incorrect type of operation set for aggregate unary GPU instruction";
-
+		if(opIndex == -1)
+			throw new DMLRuntimeException("Internal Error - Incorrect type of operation set for aggregate unary GPU instruction");
 
 		int rlen = (int)in1.getNumRows();
 		int clen = (int)in1.getNumColumns();

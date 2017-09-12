@@ -712,11 +712,14 @@ public class GPUObject {
 
 	void allocateDenseMatrixOnDevice() throws DMLRuntimeException {
 		LOG.trace("GPU : allocateDenseMatrixOnDevice, on " + this + ", GPUContext=" + getGPUContext());
-		assert !isAllocated() : "Internal error - trying to allocated dense matrix to a GPUObject that is already allocated";
+		if(isAllocated()) 
+			throw new DMLRuntimeException("Internal error - trying to allocated dense matrix to a GPUObject that is already allocated");
 		long rows = mat.getNumRows();
 		long cols = mat.getNumColumns();
-		assert rows > 0 : "Internal error - invalid number of rows when allocating dense matrix";
-		assert cols > 0 : "Internal error - invalid number of columns when allocating dense matrix;";
+		if(rows <= 0)
+			throw new DMLRuntimeException("Internal error - invalid number of rows when allocating dense matrix");
+		if(cols <= 0)
+			throw new DMLRuntimeException("Internal error - invalid number of columns when allocating dense matrix;");
 		long size = getDoubleSizeOf(rows * cols);
 		Pointer tmp = allocate(size);
 		setDenseMatrixCudaPointer(tmp);
@@ -724,11 +727,14 @@ public class GPUObject {
 
 	void allocateSparseMatrixOnDevice() throws DMLRuntimeException {
 		LOG.trace("GPU : allocateSparseMatrixOnDevice, on " + this + ", GPUContext=" + getGPUContext());
-		assert !isAllocated() : "Internal error = trying to allocated sparse matrix to a GPUObject that is already allocated";
+		if(isAllocated()) 
+			throw new DMLRuntimeException("Internal error - trying to allocated sparse matrix to a GPUObject that is already allocated");
 		long rows = mat.getNumRows();
 		long nnz = mat.getNnz();
-		assert rows > 0 : "Internal error - invalid number of rows when allocating a sparse matrix";
-		assert nnz >= 0 : "Internal error - invalid number of non zeroes when allocating a sparse matrix";
+		if(rows <= 0)
+			throw new DMLRuntimeException("Internal error - invalid number of rows when allocating sparse matrix");
+		if(nnz < 0)
+			throw new DMLRuntimeException("Internal error - invalid number of non zeroes when allocating a sparse matrix");
 		CSRPointer tmp = CSRPointer.allocateEmpty(getGPUContext(), nnz, rows);
 		setSparseMatrixCudaPointer(tmp);
 	}

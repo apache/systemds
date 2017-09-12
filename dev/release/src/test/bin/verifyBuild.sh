@@ -90,6 +90,7 @@ if [ -z $WORKING_DIR ] ; then
     WORKING_DIR="$USER_DIR/tmp/relValidation"
 fi
 
+rm -rf "$WORKING_DIR"/systemml
 mkdir -p "$WORKING_DIR"
 OUT_FILE=$WORKING_DIR/relValidation.out
 ERR_FILE=$WORKING_DIR/relValidation.err
@@ -171,6 +172,7 @@ runCommand "cd ../../"
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..." >> $OUT_FILE
 runCommand "pip install --upgrade systemml-$VER_NAME-python.tgz"
+runCommand "pip3 install --upgrade systemml-$VER_NAME-python.tgz"
 runCommand "cd ../../../"
 runCommand "$SPARK_HOME/bin/spark-submit src/test/python/matrix_sum_example.py"
 

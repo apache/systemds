@@ -276,7 +276,7 @@ public class LibMatrixCUDA {
 		getCudaKernels(gCtx).launchKernel("relu_backward",
 				ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(rows), toInt(cols)),
 				imagePointer, doutPointer, outputPointer, toInt(rows), toInt(cols));
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_BIAS_ADD_LIB, System.nanoTime() - t1);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
 
 	}
 
@@ -315,7 +315,7 @@ public class LibMatrixCUDA {
 		getCudaKernels(gCtx).launchKernel("bias_multiply",
 				ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(rows), toInt(cols)),
 				imagePointer, biasPointer, outputPointer, toInt(rows), toInt(cols), toInt(PQ));
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_BIAS_ADD_LIB, System.nanoTime() - t1);
 
 	}
 
@@ -367,7 +367,7 @@ public class LibMatrixCUDA {
 		getCudaKernels(gCtx).launchKernel("bias_add",
 				ExecutionConfig.getConfigForSimpleMatrixOperations(rows, cols),
 				image, bias, output, rows, cols, PQ);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_BIAS_ADD_LIB, System.nanoTime() - t1);
 	}
 	
 

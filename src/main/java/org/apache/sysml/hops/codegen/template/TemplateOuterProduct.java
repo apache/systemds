@@ -69,8 +69,9 @@ public class TemplateOuterProduct extends TemplateBase {
 			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
 				&& (TemplateUtils.isBinaryMatrixColVector(hop) || HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
 				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) && HopRewriteUtils.isBinary(hop, OpOp2.MULT, OpOp2.DIV)) )) 
-			|| HopRewriteUtils.isTransposeOperation(hop) 
-			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop))
+			|| (HopRewriteUtils.isTransposeOperation(hop) && !HopRewriteUtils.isOuterProductLikeMM(input)) 
+			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop)
+				&& TemplateUtils.containsOuterProduct(input, HopRewriteUtils.getOtherInput(hop, input)))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.RowCol));
 	}
 
@@ -81,7 +82,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.MULT) 
 				&& HopRewriteUtils.isBinarySparseSafe(input)
-				&& !TemplateUtils.rContainsOuterProduct(input)));
+				&& !TemplateUtils.containsOuterProduct(input)));
 	}
 
 	@Override
@@ -144,13 +145,13 @@ public class TemplateOuterProduct extends TemplateBase {
 			return;
 		
 		//recursively process required childs
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OUTER);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OUTER, TemplateType.CELL);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me.isPlanRef(i) )
 				rConstructCplan(c, memo, tmp, inHops, inHops2, compileLiterals);
 			else {
-				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
+				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);
 				tmp.put(c.getHopID(), cdata);
 				inHops.add(c);
 			}

@@ -282,6 +282,13 @@ public class HopRewriteUtils
 				removeAllChildReferences(input);
 	}
 	
+	public static Hop getOtherInput(Hop hop, Hop input) {
+		for( Hop c : hop.getInput() )
+			if( c != input )
+				return c;
+		return null;
+	}
+	
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
@@ -1141,8 +1148,7 @@ public class HopRewriteUtils
 	
 	/**
 	 * Compares the size of outputs from hop1 and hop2, in terms of number
-	 * of matrix cells. Note that this methods throws a RuntimeException
-	 * if either hop has unknown dimensions. 
+	 * of matrix cells. 
 	 * 
 	 * @param hop1 high-level operator 1
 	 * @param hop2 high-level operator 2

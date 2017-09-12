@@ -208,13 +208,13 @@ public class TemplateRow extends TemplateBase
 			return;
 		
 		//recursively process required childs
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.ROW);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.ROW, TemplateType.CELL);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me!=null && me.isPlanRef(i) )
 				rConstructCplan(c, memo, tmp, inHops, inHops2, compileLiterals);
 			else {
-				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
+				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);
 				tmp.put(c.getHopID(), cdata);
 				inHops.add(c);
 			}

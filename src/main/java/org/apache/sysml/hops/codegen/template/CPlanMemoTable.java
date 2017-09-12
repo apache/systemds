@@ -303,6 +303,17 @@ public class CPlanMemoTable
 			p -> (p.type==pref) ? -p.countPlanRefs() : p.type.getRank()+1));
 	}
 	
+	public MemoTableEntry getBest(long hopID, TemplateType pref1, TemplateType pref2) {
+		List<MemoTableEntry> tmp = get(hopID);
+		if( tmp == null || tmp.isEmpty() )
+			return null;
+
+		//single plan per type, get plan w/ best rank in preferred order
+		return Collections.min(tmp, Comparator.comparing(
+			p -> (p.type==pref1) ? -p.countPlanRefs()-4 :
+				(p.type==pref2) ? -p.countPlanRefs() : p.type.getRank()+1));
+	}
+	
 	public long[] getAllRefs(long hopID) {
 		long[] refs = new long[3];
 		for( MemoTableEntry me : get(hopID) )

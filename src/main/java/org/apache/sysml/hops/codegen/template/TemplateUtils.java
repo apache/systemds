@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.codegen.template;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -206,7 +207,7 @@ public class TemplateUtils
 		else if( B1 != null && output.getDim1()==B1.getDim2() && output.getDim2()==X.getDim2())
 			return RowType.COL_AGG_B1;
 		else
-			throw new RuntimeException("Unknown row type.");
+			throw new RuntimeException("Unknown row type for hop "+output.getHopID()+".");
 	}
 	
 	public static AggOp getAggOp(Hop hop) {
@@ -438,7 +439,14 @@ public class TemplateUtils
 		return ret;
 	}
 	
-	public static boolean rContainsOuterProduct(Hop current) {
+	public static boolean containsOuterProduct(Hop hop, Hop probe) {
+		hop.resetVisitStatus();
+		boolean ret = rContainsOuterProduct(hop, probe);
+		hop.resetVisitStatus();
+		return ret;
+	}
+	
+	private static boolean rContainsOuterProduct(Hop current) {
 		if( current.isVisited() )
 			return false;
 		boolean ret = false;
@@ -447,6 +455,27 @@ public class TemplateUtils
 			ret |= rContainsOuterProduct(current.getInput().get(i));
 		current.setVisited();
 		return ret;
+	}
+	
+	private static boolean rContainsOuterProduct(Hop current, Hop probe) {
+		if( current.isVisited() )
+			return false;
+		boolean ret = false;
+		ret |= HopRewriteUtils.isOuterProductLikeMM(current)
+			&& checkContainment(current.getInput(), probe, true);
+		for( int i=0; i<current.getInput().size() && !ret; i++ )
+			ret |= rContainsOuterProduct(current.getInput().get(i), probe);
+		current.setVisited();
+		return ret;
+	}
+	
+	private static boolean checkContainment(ArrayList<Hop> inputs, Hop probe, boolean inclTranspose) {
+		if( !inclTranspose )
+			return inputs.contains(probe);
+		for( Hop hop : inputs )
+			if( HopRewriteUtils.isTransposeOfItself(hop, probe) )
+				return true;
+		return false;
 	}
 	
 	public static void rFlipVectorLookups(CNode current) {

@@ -401,9 +401,10 @@ public class GPUContext {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
-		if (size >= getAvailableMemory()) {
+		if(size < 0 )
+			throw new DMLRuntimeException("The size cannot be negative:" + size);
+		else if (size >= getAvailableMemory())
 			evict(instructionName, size);
-		}
 	}
 
 	/**

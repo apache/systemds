@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.transform.encode;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -57,21 +58,27 @@ public class EncoderComposite extends Encoder
 	
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		//build meta data first (for all encoders)
-		for( Encoder encoder : _encoders )
-			encoder.build(in);
-		
-		//propagate meta data 
-		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
-		for( Encoder encoder : _encoders )
-			_meta = encoder.getMetaData(_meta);
-		for( Encoder encoder : _encoders )
-			encoder.initMetaData(_meta);
-		
-		//apply meta data
-		for( Encoder encoder : _encoders )
-			out = encoder.apply(in, out);
+		try {
+			//build meta data first (for all encoders)
+			for( Encoder encoder : _encoders )
+				encoder.build(in);
 			
+			//propagate meta data 
+			_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
+			for( Encoder encoder : _encoders )
+				_meta = encoder.getMetaData(_meta);
+			for( Encoder encoder : _encoders )
+				encoder.initMetaData(_meta);
+			
+			//apply meta data
+			for( Encoder encoder : _encoders )
+				out = encoder.apply(in, out);
+		}
+		catch(Exception ex) {
+			LOG.error("Failed transform-encode frame with \n" + this);
+			throw ex;
+		}
+		
 		return out;
 	}
 
@@ -83,8 +90,14 @@ public class EncoderComposite extends Encoder
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		for( Encoder encoder : _encoders )
-			out = encoder.apply(in, out);
+		try {
+			for( Encoder encoder : _encoders )
+				out = encoder.apply(in, out);
+		}
+		catch(Exception ex) {
+			LOG.error("Failed to transform-apply frame with \n" + this);
+			throw ex;
+		}
 		return out;
 	}
 	
@@ -101,5 +114,19 @@ public class EncoderComposite extends Encoder
 	public void initMetaData(FrameBlock out) {
 		for( Encoder encoder : _encoders )
 			encoder.initMetaData(out);
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("CompositeEncoder("+_encoders.size()+"):\n");
+		for( Encoder encoder : _encoders ) {
+			sb.append("-- ");
+			sb.append(encoder.getClass().getSimpleName());
+			sb.append(": ");
+			sb.append(Arrays.toString(encoder.getColList()));
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }

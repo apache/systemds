@@ -21,6 +21,9 @@ package org.apache.sysml.runtime.transform.encode;
 
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -34,6 +37,7 @@ import org.apache.wink.json4j.JSONArray;
 public abstract class Encoder implements Serializable
 {
 	private static final long serialVersionUID = 2299156350718979064L;
+	protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
 	
 	protected int _clen = -1; 
 	protected int[] _colList = null;

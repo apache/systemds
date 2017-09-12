@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-
 #Script to generate caffe proto and .caffemodel files from Keras models
+
 from caffe import *
 import caffe
 from caffe import layers as L
@@ -31,6 +31,7 @@ from caffe import params as P
 import keras
 from keras.models import load_model
 from keras.models import model_from_json
+from keras.utils.conv_utils import convert_kernel
 
 import numpy as np
 
@@ -58,10 +59,11 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
     n = caffe.NetSpec()
     layers = kModel.layers
     net_params = dict()
-
+    input_name = ''
+    label_name = ''
     for layer in layers:
         blobs = layer.get_weights()
-        
+
         if type(layer) == keras.layers.InputLayer:
             #Grab the batchsize from i 0, shift over channels to index 1, and place the rest into the dictionary
             #TODO determine when to transform for layer types/input shape
@@ -77,17 +79,16 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                         #print(batch_list[i])
             name = layer.name
             #TODO figure out having 2 tops, with n.label
+            input_name = name
+            label_name = name + "_label"
             n[name] = L.Input(shape=[dict(dim=batch_list)])
-            #print(name)
+
         elif type(layer) == keras.layers.Dense:
             #Pull name from Keras
             name = layer.name
             #Pull layer name of the layer passing to current layer
             in_names = getInboundLayers(layer)
             #Pipe names into caffe using unique Keras layer names
-            #print("Current Keras layer" + layer.name + " Input Layer:") #debug to assure there are a correct number of layer names (1)
-            #print(in_names)
-            #print(in_names[0].name)
             n[name] = L.InnerProduct(n[in_names[0].name], num_output=layer.units) #TODO: Assert only 1
             config = layer.get_config()
             if config['use_bias']:
@@ -97,16 +98,22 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
+
         elif type(layer) == keras.layers.Flatten:
+            
+            """TODO Implement Flatten in Caffe2DML
             name = layer.name
             in_names= getInboundLayers(layer)
             n[name] = L.Flatten(n[in_names[0].name])
+            """
 
         elif type(layer) == keras.layers.Dropout:#TODO Random seed will be lost
             name = layer.name
             in_names= getInboundLayers(layer)
             n[name] = L.Dropout(n[in_names[0].name], dropout_ratio= layer.rate, in_place=True)
+
         #elif type(layer) == keras.Layers.LSTM:
+
         elif type(layer) == keras.layers.Add:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -117,6 +124,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             #print(network_layers)
             #unpack the bottom layers
             n[name] = L.Eltwise(*network_layers, operation=1) #1 is SUM
+
         elif type(layer) == keras.layers.Multiply:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -126,6 +134,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                 network_l.append(n[ref.name])
             #unpack the bottom layers
             n[name] = L.Eltwise(*network_layers, operation=0)
+
         elif type(layer) == keras.layers.Concatenate:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -133,8 +142,9 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             network_layers = []
             for ref in in_names:
                 network_layers.append(n[ref.name])
-            axis = getCompensatedAxis(layer)
+            axis = get_compensated_axis(layer)
             n[name] = L.Concat(*network_layers, axis=1)
+
         elif type(layer) == keras.layers.Maximum:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -144,6 +154,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                 network_layers += n[ref.name]
             #unpack the bottom layers
             n[name] = L.Eltwise(*network_layers, operation=2)
+
         elif type(layer) == keras.layers.Conv2DTranspose:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -155,31 +166,21 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             #Padding
             padding = [0,0] #If padding is valid(aka no padding)
             if layer.padding == 'same': #Calculate the padding for 'same'
-                #padding[0] = (layer.input_shape[1]*(stride[0] -1) + layer.kernel_size[0] - stride[0]) / 2
-
-                #padding[1] = (layer.input_shape[2]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
-                if (layer.input_shape[1] % stride[0] == 0):
-                    padding[0] = max(layer.kernel_size[0] - stride[0], 0)
-                else:
-                    padding[0] = max(layer.kernel_size[0] - (layer.input_shape[1] % stride[0]), 0)
-                if (layer.input_shape[2] % stride[1] == 0):
-                    padding[1] = max(layer.kernel_size[1] - stride[1], 0)
-                else:
-                    padding[1] = max(layer.kernel_size[1] - (layer.input_shape[2] % stride[1]), 0)
-            
-            #TODO The rest of the arguements including bias, regulizers, dilation,
+                padding = [layer.kernel_size[0]/2 ,layer.kernel_size[1]/2]
             #get bias parameter
             use_bias = config['use_bias']
             param = dict(bias_term=use_bias)
+
             n[name] = L.Deconvolution(n[in_names[0].name],kernel_h=layer.kernel_size[0],
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
                                       stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
                                       convolution_param=param)
-            blobs[0] = np.array(blobs[0]).transpose(3,2,1,0)
+            blobs[0] = np.array(blobs[0]).transpose(3,2,0,1)
             net_params[name] = blobs
             if layer.activation is not None and layer.activation.__name__ !='linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
+
         elif type(layer) == keras.layers.BatchNormalization:
             name = layer.name
             in_names=getInboundLayers(layer)
@@ -189,7 +190,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             mean = np.array(blobs[-2])
 
             config = layer.get_config()
-
+            #Set mean variance and gamma into respective params
             param = dict()
             if config['scale']:
                 gamma = np.array(blobs[-3])
@@ -203,16 +204,18 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                 beta = np.zeros(mean.shape, dtype=np.float32)
                 param['bias_term'] = False
 
-            net_params[name] = (mean, variance, np.array(1.0)) 
+            net_params[name] = (mean, variance, np.array(1.0))
 
             name_scale = name+'_scale'
             #Scale after batchNorm
             n[name_scale] = L.Scale(n[name], in_place=True, scale_param=param)
             net_params[name_scale] = (gamma, beta)
+
         elif type(layer) == keras.layers.Conv1D:
             name = layer.name
             in_names[0]= getInboundLayers(layer)
             n[name] = L.Convolution()
+
         elif type(layer) == keras.layers.Conv2D:
             name = layer.name
             in_names= getInboundLayers(layer)
@@ -224,18 +227,6 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             #Padding
             padding = [0,0] #If padding is valid(aka no padding)
             if layer.padding == 'same': #Calculate the padding for 'same'
-                #padding[0] = (layer.input_shape[1]*(stride[0] -1) + layer.kernel_size[0] - stride[0]) / 2
-                #TODO Generalize and not use Tensorflow padding formula
-                #padding[1] = (layer.input_shape[2]*(stride[1] -1) + layer.kernel_size[1] - stride[1]) / 2
-                """if (layer.input_shape[1] % stride[0] == 0):
-                    padding[0] = max(layer.kernel_size[0] - stride[0], 0)
-                else:
-                    padding[0] = max(layer.kernel_size[0] - (layer.input_shape[1] % stride[0]), 0)
-                if (layer.input_shape[2] % stride[1] == 0):
-                    padding[1] = max(layer.kernel_size[1] - stride[1], 0)
-                else:
-                    padding[1] = max(layer.kernel_size[1] - (layer.input_shape[2] % stride[1]), 0)
-                """
                 padding = [layer.kernel_size[0]/2 ,layer.kernel_size[1]/2]
             #TODO The rest of the arguements including bias, regulizers, dilation,
             config = layer.get_config()
@@ -246,20 +237,13 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                                     kernel_w=layer.kernel_size[1],stride_h=stride[0],
                                     stride_w=stride[-1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
                                     convolution_param=param)
-            """def rot90(W):
-                for i in range(W.shape[0]):
-                    for j in range(W.shape[1]):
-                        W[i, j] = np.rot90(W[i, j], 2)
-                return W
-            """
-            blobs[0] = rot90(np.array(blobs[0]))
-            blobs[0] = np.array(blobs[0]).transpose(3,2,0,1)
-             
+            weights = blobs
+            blobs[0] = np.array(blobs[0]).transpose((3,2,0,1))
+            print(type(weights))
             net_params[name] = blobs
             if layer.activation is not None and layer.activation.__name__ != 'linear':
                 name_act = name + "_activation_" + layer.activation.__name__ #get function string
                 n[name_act] = getActivation(layer,n[name])
-        #elif type(layer) == keras.Layers.MaxPooling1D:
 
         elif type(layer) == keras.layers.MaxPooling2D or type(layer) == keras.layers.AveragePooling2D:
             name = layer.name
@@ -277,44 +261,39 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             #Padding
             padding = [0,0] #If padding is valid(aka no padding)
             if layer.padding == 'same': #Calculate the padding for 'same'
-                #padding[0] = (layer.input_shape[1]*(stride[0] -1) + layer.pool_size[0] - stride[0]) / 2
-                #TODO generalize and not use Tensorflow padding formula
-                #padding[1] = (layer.input_shape[2]*(stride[1] -1) + layer.pool_size[1] - stride[1]) / 2
-                if (layer.input_shape[1] % stride[0] == 0):
-                    padding[0] = max(layer.pool_size[0] - stride[0], 0)
-                else:
-                    padding[0] = max(layer.pool_size[0] - (layer.input_shape[1] % stride[0]), 0)
-                if (layer.input_shape[2] % stride[1] == 0):
-                    padding[1] = max(layer.pool_size[1] - stride[1], 0)
-                else:
-                    padding[1] = max(layer.pool_size[1] - (layer.input_shape[2] % stride[1]), 0)
                 padding = [layer.pool_size[0]/2,layer.pool_size[1]/2]
             n[name] = L.Pooling(n[in_names[0].name],kernel_h=layer.pool_size[0],
                                     kernel_w=layer.pool_size[1],stride_h=stride[0],
                                     stride_w=stride[1],pad_h=padding[0],pad_w=padding[1],
                                 pool=pool)
-            #if layer.activation is not None:
-                #name_act = name + "_activation_" + layer.activation.__name__ #get function string
-                #n[name_act] = getActivation(layer,n[name])
+            """
+            if hasattr(layer,layer.activation):
+                name_act = name + "_activation_" + layer.activation.__name__ #get function string
+                n[name_act] = getActivation(layer,n[name])
+            """
         #Activation (wrapper for activations) and Advanced Activation Layers
         elif type(layer) == keras.layers.Activation:
             name = layer.name
             in_names = getInboundLayers(layer)
             n[name] = getActivation(layer,n[in_names[0].name]) #TODO: Assert only 1
+
         #Caffe lacks intializer, regulizer, and constraint params
         elif type(layer) == keras.layers.LeakyReLU:
             #TODO: figure out how to pass Leaky params
             name = layer.name
             in_names = getInboundLayers(layer)
             n[name] = L.PReLU(n[in_names[0].name])
+
         elif type(layer) == keras.layers.PReLU:
             name = layer.name
             in_names = getInboundLayers(layer)
             n[name] = L.PReLU(n[in_names[0].name])
+
         elif type(layer) == keras.layers.ELU:
             name = layer.name
             in_names = getInboundLayers(layer)
             n[name] = L.ELU(n[in_names[0].name],layer.alpha)
+
         elif type(layer)==keras.layers.GlobalAveragePooling2D:
             name = layer.name
             in_names = getInboundLayers(layer)
@@ -328,15 +307,32 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             n[name] = L.Convolution(n[in_names[0].name], num_output=3, kernel_size=1, stride=1,
                 pad_h=padding[0][0], pad_w=padding[1][0], convolution_param=dict(bias_term = False))
             net_params[name] = np.ones((3,3,1,1))
+
         else:
             raise Exception("Cannot convert model. " + layer.name + " is not supported.")
+    #Determine the loss needed to be added
+    print("Converting model to proto and converting weights")
+    write_caffe_model(n, filepath)
+    caffe_model = caffe.Net(filepath, caffe.TEST)
+    for layer in caffe_model.params.keys():
+        for i in range(0, len(caffe_model.params[layer])):
+            print(layer + ": ")
+            print(net_params[layer][i].shape)
+            print(caffe_model.params[layer][i].data.shape)
+            print(dir(caffe_model.params[layer]))
+            caffe_model.params[layer][i].data[...] = net_params[layer][i]
+
+    caffe_model.save(weights_filepath)
+
+    #Change back Input into Data layer for Caffe2DML
+    n[label_name], n[input_name] = L.Data(ntop=2)
 
     #Determine the loss needed to be added
     for output in kModel.output_layers:
         if hasattr(kModel, 'loss'):
             if kModel.loss == 'categorical_crossentropy' and output.activation.__name__ == 'softmax':
                 name = output.name + "_activation_" + output.activation.__name__
-                n[name] = L.SoftmaxWithLoss(n[output.name])
+                n[name] = L.SoftmaxWithLoss(n[output.name],n[label_name])
             elif kModel.loss == 'binary_crossentropy' and output.activation.__name__ == 'sigmoid':
                 name = output.name + "_activation_" + output.activation.__name__
                 n[name] = L.SigmoidCrossEntropyLoss(n[output.name])
@@ -354,20 +350,10 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
                 #TODO implement Infogain Loss
                 else:
                     raise Exception(kModel.loss + "is not supported")
-    print("Converting model to proto and converting weights")            
+ 
     write_caffe_model(n, filepath)
-    caffe_model = caffe.Net(filepath, caffe.TEST)
-    for layer in caffe_model.params.keys():
-        for n in range(0, len(caffe_model.params[layer])):
-            #print(layer + ": ")
-            #print(net_params[layer][n].shape)
-            #print(caffe_model.params[layer][n].data.shape)
-            #print(dir(caffe_model.params[layer]))
-            caffe_model.params[layer][n].data[...] = net_params[layer][n]
 
-    caffe_model.save(weights_filepath)
-
-    return n
+    return n,caffe_model
 
 
 def getInboundLayers(layer):
@@ -375,9 +361,11 @@ def getInboundLayers(layer):
         for node in layer.inbound_nodes: #get inbound nodes to current layer
             node_list = node.inbound_layers #get layers pointing to this node
             in_names = in_names + node_list
+        if any('flat' in s.name for s in in_names): #For Caffe2DML to reroute any use of Flatten layers
+            return getInboundLayers([s for s in in_names if 'flat' in s.name][0])
         return in_names
 
-#Only works with non Tensorflow functions! TODO
+#Only works with non Tensorflow functions!
 def getActivation(layer,bottom):
     if keras.activations.serialize(layer.activation) == 'relu':
         return L.ReLU(bottom, in_place=True)
@@ -398,8 +386,6 @@ def getActivation(layer,bottom):
     #To add more acitvaiton functions, add more elif statements with
     #activation funciton __name__'s.
 
-    
-#def generate_caffe_weights(kModel):
 
 #Params: keras Model, caffe prototxt filepath, filepath to save solver
 def generate_caffe_solver(kModel,cModelPath,filepath):
@@ -414,9 +400,11 @@ def write_caffe_model(cModel,filepath):
         f.write(str(cModel.to_proto()))
 
 
-#Get compensated axis since Caffe has n,c,h,w and Keras has n,h,w,c for tensor dimensions
-#Params: Current Keras layer
-def getCompensatedAxis(layer):
+"""
+Get compensated axis since Caffe has n,c,h,w and Keras has n,h,w,c for tensor dimensions
+Params: Current Keras layer
+"""
+def get_compensated_axis(layer):
     compensated_axis = layer.axis
     #Cover all cases for anything accessing the 0th index or the last index
     if layer.axis > 0 and layer.axis < layer.input[0].shape.ndims-1:
@@ -426,7 +414,7 @@ def getCompensatedAxis(layer):
     elif layer.axis == -1 or layer.axis == layer.input[0].shape.ndims - 1:
         compensated_axis = 1
     return compensated_axis
-#Copied from caffe repo in examples/pycaffe/tools.py
+
 class CaffeSolver:
 
     """
@@ -437,7 +425,7 @@ class CaffeSolver:
     """
 
     def __init__(self, testnet_prototxt_path="testnet.prototxt",
-                 trainnet_prototxt_path="trainnet.prototxt", debug=False):
+                debug=False):
 
         self.sp = {}
 

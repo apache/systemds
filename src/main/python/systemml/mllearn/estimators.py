@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML', 'Keras2DML']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -29,6 +29,8 @@ import sklearn as sk
 from sklearn.metrics import accuracy_score, r2_score
 from py4j.protocol import Py4JError
 import traceback
+import keras
+import keras2caffe
 from sklearn.preprocessing import LabelEncoder
 import threading
 import time
@@ -841,9 +843,8 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.visualize_called = True
         return self
     
-"""
-class Keras2DML(BaseSystemMLClassifier):
-  
+class Keras2DML(Caffe2DML):
+    """
     Peforms training/prediction for a given caffe network
 
 
@@ -851,10 +852,10 @@ class Keras2DML(BaseSystemMLClassifier):
     --------
 
 
-   
-    def __init__(self, sparkSession, model, input_shape, transferUsingDF=false,
-                 tesnorboard_log_dir=None):
-       
+    """
+    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False,
+                 tensorboard_log_dir=None):
+        """
         Performs training/prediction for a given caffe network.
 
         Parameters
@@ -866,4 +867,12 @@ class Keras2DML(BaseSystemMLClassifier):
         tensorboard_log_dir: directory to store the event logs (default: None,
         we use a temporary directory)
         """
-      
+        self.name = keras_model.name
+        #Convert keras model into caffe net and weights
+        caffenet, caffemodel = keras2caffe.generate_caffe_model(keras_model,self.name + ".proto",self.name + ".caffemodel")
+        #Create solver from network file
+        caffesolver = keras2caffe.CaffeSolver(self.name + ".proto").write(self.name + "_solver.proto")
+        #Generate caffe2DML object
+        super(Keras2DML,self).__init__(sparkSession, self.name+ "_solver.proto",input_shape, transferUsingDF, tensorboard_log_dir)
+        #Create and Load weights into caffe2DML
+        convert_caffemodel(sparkSession.sparkContext,self.name + ".proto", self.name + ".caffemodel", self.name + "_C2DML_weights")

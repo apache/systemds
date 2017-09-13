@@ -244,7 +244,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	private static void cudnnConv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, int N,
 			int C, int H, int W, int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
-		LOG.trace("GPU : conv2d" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : conv2d" + ", GPUContext=" + gCtx);
+		}
 		cudnnFilterDescriptor filterDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 		Pointer workSpace = null;
@@ -411,7 +413,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer dwPointer, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		LOG.trace("GPU : conv2dBackwardFilter" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : conv2dBackwardFilter" + ", GPUContext=" + gCtx);
+		}
 		cudnnFilterDescriptor dwDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 
@@ -551,7 +555,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer dx, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		LOG.trace("GPU : conv2dBackwardData" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : conv2dBackwardData" + ", GPUContext=" + gCtx);
+		}
 		cudnnFilterDescriptor wDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 
@@ -708,7 +714,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer y, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		LOG.trace("GPU : performMaxpooling" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : performMaxpooling" + ", GPUContext=" + gCtx);
+		}
 
 		cudnnPoolingDescriptor poolingDesc = null;
 
@@ -803,7 +811,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		LOG.trace("GPU : maxpoolingBackward" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : maxpoolingBackward" + ", GPUContext=" + gCtx);
+		}
 		Pointer y = null;
 		cudnnPoolingDescriptor poolingDesc = null;
 
@@ -938,7 +948,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static void batchNormalizationForwardInference(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
 			MatrixObject ret, double epsilon) throws DMLRuntimeException {
-		LOG.trace("GPU : batchNormalizationForwardInference" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationForwardInference" + ", GPUContext=" + gCtx);
+		}
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 
 		int N = toInt(image.getNumRows());
@@ -984,7 +996,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static void batchNormalizationForwardTraining(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
 			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar, double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
-		LOG.trace("GPU : batchNormalizationForwardTraining" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationForwardTraining" + ", GPUContext=" + gCtx);
+		}
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 
 		int N = toInt(image.getNumRows());
@@ -1104,7 +1118,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static void batchNormalizationBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject scale, MatrixObject ret, MatrixObject retScale, MatrixObject retBias,
 			double epsilon) throws DMLRuntimeException {
-		LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
+		}
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 
 		int N = toInt(image.getNumRows());
@@ -1134,7 +1150,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	private static void cudnnReLU(GPUContext gCtx, String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) throws DMLRuntimeException {
 		long t0=0;
 		try {
-			LOG.trace("GPU : performCuDNNReLU" + ", GPUContext=" + gCtx);
+			if(LOG.isTraceEnabled()) {
+				LOG.trace("GPU : performCuDNNReLU" + ", GPUContext=" + gCtx);
+			}
 			cudnnTensorDescriptor dstTensorDesc = srcTensorDesc;
 
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName);
@@ -1176,7 +1194,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long t0=0;
 		cudnnTensorDescriptor srcTensorDesc = in.getGPUObject(gCtx).getTensorDescriptor();
 		if(N*CHW >= maxNumDoublesOfCuDNNTensor ||  srcTensorDesc == null) {
-			LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
+			if(LOG.isTraceEnabled()) {
+				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
+			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
@@ -1193,8 +1213,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 	/**
 	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
+	 * 
 	 * @param gCtx a valid {@link GPUContext}
 	 * @param image input matrix object
+	 * @param instName name of the instruction
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */

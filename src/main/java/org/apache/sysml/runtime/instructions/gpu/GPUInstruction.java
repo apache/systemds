@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -123,7 +124,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_CONVOLUTION_BACKWARD_DATA_LIB =  "nncbd"; // time spent in cudnnConvolutionBackwardData
 	public final static String MISC_TIMER_MAXPOOLING_FORWARD_LIB =         "nnmf";  // time spent in cudnnPoolingForward
 	public final static String MISC_TIMER_MAXPOOLING_BACKWARD_LIB =        "nnmb";  // time spent in cudnnPoolingBackward
-	public final static String MISC_TIMER_BIAS_ADD_LIB =                   "nnba";  // time spent in bias_add cuda kernel
+	public final static String MISC_TIMER_BIAS_ADD_LIB =                   "nnba";  // time spent in bias_add, bias_multiply cuda kernel
 	public final static String MISC_TIMER_RELU_BACKWARD_KERNEL=            "nnrbk"; // time spent in relu_backward cuda kernel
 	public final static String MISC_TIMER_RELU_KERNEL =                    "nnrk";  // time spent in the relu kernel
 	public final static String MISC_TIMER_CUDNN_INIT =                     "nni";   // time spent in initializations for cudnn call
@@ -187,7 +188,9 @@ public abstract class GPUInstruction extends Instruction {
 	public void postprocessInstruction(ExecutionContext ec)
 					throws DMLRuntimeException
 	{
-		//JCuda.cudaDeviceSynchronize();
+		if(DMLScript.SYNCHRONIZE_GPU) {
+			jcuda.runtime.JCuda.cudaDeviceSynchronize();
+		}
 	}
 
 	/**
@@ -199,10 +202,7 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException if an error occurs
 	 */
 	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
-		long t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getMatrixInputForGPUInstruction(name);
-		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t0);
-		return mb.getKey();
+		return ec.getMatrixInputForGPUInstruction(name, getExtendedOpcode());
 	}
 
 	/**
@@ -216,9 +216,9 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
-		long t0 = System.nanoTime();
+		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (GPUStatistics.DISPLAY_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

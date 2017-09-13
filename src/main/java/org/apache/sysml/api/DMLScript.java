@@ -170,8 +170,10 @@ public class DMLScript
 	 * case (TRUE/FALSE for DML and True/False for PYDML).
 	 */
 	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
+	
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
+	public static boolean           SYNCHRONIZE_GPU  	= true;   									// whether to synchronize GPU after every instruction
 
 
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout

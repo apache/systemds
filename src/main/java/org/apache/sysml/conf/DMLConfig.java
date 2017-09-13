@@ -83,7 +83,8 @@ public class DMLConfig
 	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS      = "systemml.stats.extraDNN"; //boolean
 	public static final String AVAILABLE_GPUS       = "systemml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
-
+	public static final String SYNCHRONIZE_GPU       = "systemml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
+	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
@@ -131,6 +132,7 @@ public class DMLConfig
 		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
+		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
 	}
 	
 	public DMLConfig()
@@ -413,7 +415,7 @@ public class DMLConfig
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
-				AVAILABLE_GPUS
+				AVAILABLE_GPUS, SYNCHRONIZE_GPU
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

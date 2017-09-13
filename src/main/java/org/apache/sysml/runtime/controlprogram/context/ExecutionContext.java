@@ -378,30 +378,22 @@ public class ExecutionContext {
 		return mo;
 	}
 
-	public Pair<MatrixObject, Boolean> getMatrixInputForGPUInstruction(String varName)
+	public MatrixObject getMatrixInputForGPUInstruction(String varName, String opcode)
 			throws DMLRuntimeException 
 	{
 		GPUContext gCtx = getGPUContext(0);
-		boolean copied = false;
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
 
-		boolean acquired = false;
 		if( mo.getGPUObject(gCtx) == null ) {
 			GPUObject newGObj = gCtx.createGPUObject(mo);
 			mo.setGPUObject(gCtx, newGObj);
-		} else if( !mo.getGPUObject(gCtx).isInputAllocated() ) {
-			mo.acquireRead();
-			acquired = true;
 		}
-
-		copied = mo.getGPUObject(gCtx).acquireDeviceRead();
-		if(acquired) {
-			mo.release();
-		}
-		return new Pair<MatrixObject, Boolean>(mo, copied);
+		// No need to perform acquireRead here because it is performed in copyFromHostToDevice
+		mo.getGPUObject(gCtx).acquireDeviceRead(opcode);
+		return mo;
 	}
 	
 	/**

@@ -39,13 +39,13 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  * @param ru row upper
  * @param cl column lower
  * @param cu column upper
+ * @param retClen number of columns of output matrix
  */
 extern "C"
-__global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, double* ret, int rl, int ru, int cl, int cu) {
+__global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, double* ret, int rl, int ru, int cl, int cu, int retClen) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int rowIndex = index + rl;
     if (rowIndex <= ru){
-    	int retClen = cu - cl + 1;
     	// Iterate over elements of the row 'rowIndex'.
     	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {
     		// Only slice if the index falls into the given range
@@ -53,6 +53,31 @@ __global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, do
     			ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
     		}
     	}
+    }
+}
+
+/**
+ * Performs a slice operation where the input matrix is dense and the output matrix is dense.
+ * 
+ * @params in dense input pointer
+ * @params ret dense output pointer
+ * @param rl row lower
+ * @param ru row upper
+ * @param cl column lower
+ * @param cu column upper
+ * @param inClen number of columns of input matrix
+ * @param retClen number of columns of output matrix
+ */
+extern "C"
+__global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int cl, int cu, int inClen, int retClen) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int rowIndex = index + rl;
+    if (rowIndex <= ru){
+    	int inIndex = rowIndex*inClen + cl;
+    	int retIndex = index*retClen;
+    	for(int i = retIndex; i < retIndex+retClen; i++, inIndex++) {
+			ret[i] = in[inIndex];
+		}
     }
 }
 

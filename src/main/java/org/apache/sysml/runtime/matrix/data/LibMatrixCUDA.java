@@ -2235,21 +2235,20 @@ public class LibMatrixCUDA {
 	 * @param ru row upper
 	 * @param cl column lower
 	 * @param cu column upper
-	 * @param len1 input number of columns
-	 * @param len2 output number of columns
+	 * @param inClen input number of columns
+	 * @param retClen output number of columns
 	 * @throws DMLRuntimeException
 	 */
 	protected static void sliceDenseDense(GPUContext gCtx, String instName, Pointer inPointer, Pointer outPointer, 
-			int rl, int ru, int cl, int cu, int len1, int len2) throws DMLRuntimeException {
+			int rl, int ru, int cl, int cu, int inClen, int retClen) throws DMLRuntimeException {
 		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		if (len1 == len2) {
-			cudaMemcpy(outPointer, inPointer.withByteOffset(rl * len1 * Sizeof.DOUBLE), (ru - rl + 1) * len1
+		if (inClen == retClen) {
+			cudaMemcpy(outPointer, inPointer.withByteOffset(rl * inClen * Sizeof.DOUBLE), (ru - rl + 1) * inClen
 					* Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
 		} else {
-			for (int i = rl, ix1 = rl * len1 + cl, ix2 = 0; i <= ru; i++, ix1 += len1, ix2 += len2) {
-				cudaMemcpy(outPointer.withByteOffset(ix2 * Sizeof.DOUBLE),
-						inPointer.withByteOffset(ix1 * Sizeof.DOUBLE), len2 * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
-			}
+			int size = ru - rl + 1;
+			getCudaKernels(gCtx).launchKernel("slice_dense_dense", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+					inPointer, outPointer, rl, ru, cl, cu, inClen, retClen);
 		}
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_DENSE_OP, System.nanoTime() - t0);
 	}
@@ -2270,11 +2269,12 @@ public class LibMatrixCUDA {
 	protected static void sliceSparseDense(GPUContext gCtx, String instName, CSRPointer inPointer, Pointer outPointer, int rl, int ru, int cl, int cu) throws DMLRuntimeException {
 		int size = ru - rl + 1;
 		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		int retClen = cu - cl + 1;
 		// Performs a slice operation where the input matrix is sparse and the output matrix is dense.
 		// This function avoids unnecessary sparse to dense conversion of the input matrix.
 		// We can generalize this later to output sparse matrix.
 		getCudaKernels(gCtx).launchKernel("slice_sparse_dense", ExecutionConfig.getConfigForSimpleVectorOperations(size),
-				inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu);
+				inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu, retClen);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP, System.nanoTime() - t0);
 	}
 

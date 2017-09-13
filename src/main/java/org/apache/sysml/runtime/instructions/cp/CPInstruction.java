@@ -52,6 +52,7 @@ public abstract class CPInstruction extends Instruction
 	public final static String MISC_TIMER_RELEASE_BUFF_WRITE =			"rlswr";// time spent in buffer write in release operation
 	public final static String MISC_TIMER_SPARSE_TO_DENSE =				"s2d";  // time spent in sparse to dense conversion
 	public final static String MISC_TIMER_DENSE_TO_SPARSE =				"d2s";  // time spent in sparse to dense conversion
+	public final static String MISC_TIMER_RECOMPUTE_NNZ =				"rnnz"; // time spent in recompute non-zeroes
 	
 	// Instruction specific miscellaneous timers that were found as potential bottlenecks in one of performance analysis.
 	// SystemML committers have to be judicious about adding them by weighing the tradeoffs between reuse in future analysis and unnecessary overheads.

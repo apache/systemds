@@ -27,18 +27,21 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
 import static jcuda.jcusparse.JCusparse.cusparseDnnz;
 import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -583,14 +586,14 @@ public class GPUObject {
 		return isEmptyAndSparseAndAllocated;
 	}
 
-	public boolean acquireDeviceRead() throws DMLRuntimeException {
+	public boolean acquireDeviceRead(String opcode) throws DMLRuntimeException {
 		LOG.trace("GPU : acquireDeviceRead on " + this);
 		boolean transferred = false;
 		if (!isAllocated()) {
 			LOG.trace(
 					"GPU : in acquireDeviceRead, data is not allocated, copying from host, on " + this + ", GPUContext="
 							+ getGPUContext());
-			copyFromHostToDevice();
+			copyFromHostToDevice(opcode);
 			transferred = true;
 		}
 		addLock();
@@ -771,20 +774,30 @@ public class GPUObject {
 		return GPUSize;
 	}
 
-	void copyFromHostToDevice() throws DMLRuntimeException {
+	void copyFromHostToDevice(String opcode) throws DMLRuntimeException {
 		LOG.trace("GPU : copyFromHostToDevice, on " + this + ", GPUContext=" + getGPUContext());
 		long start = 0;
 		if (DMLScript.STATISTICS)
 			start = System.nanoTime();
 
+		long acqrTime = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		MatrixBlock tmp = mat.acquireRead();
+		if(GPUStatistics.DISPLAY_STATISTICS) {
+			if(tmp.isInSparseFormat())
+				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, System.nanoTime()-acqrTime);
+			else
+				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_DENSE_MB, System.nanoTime()-acqrTime);
+		}
+		
 		if (tmp.isInSparseFormat()) {
-
 			int rowPtr[] = null;
 			int colInd[] = null;
 			double[] values = null;
-
-			tmp.recomputeNonZeros();
+			
+			// Only recompute non-zero if unknown, else this will incur huge penalty !!
+			if(tmp.getNonZeros() < 0) {
+				tmp.recomputeNonZeros(opcode);
+			}
 			long nnz = tmp.getNonZeros();
 			mat.getMatrixCharacteristics().setNonZeros(nnz);
 
@@ -837,8 +850,11 @@ public class GPUObject {
 			allocateSparseMatrixOnDevice();
 
 			if (copyToDevice) {
+				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				CSRPointer.copyToDevice(getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
 						values);
+				if(GPUStatistics.DISPLAY_STATISTICS) 
+					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
 			double[] data = tmp.getDenseBlock();
@@ -847,14 +863,26 @@ public class GPUObject {
 				throw new DMLRuntimeException("Incorrect sparsity calculation");
 			else if (data == null && tmp.getNonZeros() != 0)
 				throw new DMLRuntimeException("MatrixBlock is not allocated");
-			else if (tmp.getNonZeros() == 0)
-				data = new double[tmp.getNumRows() * tmp.getNumColumns()];
-
-			// Copy dense block
+			
 			allocateDenseMatrixOnDevice();
-
-			cudaMemcpy(getJcudaDenseMatrixPtr(), Pointer.to(data),
-					getDoubleSizeOf(mat.getNumRows() * mat.getNumColumns()), cudaMemcpyHostToDevice);
+			
+			if (tmp.getNonZeros() == 0) {
+				// Minor optimization: No need to allocate empty error for CPU 
+				// data = new double[tmp.getNumRows() * tmp.getNumColumns()];
+				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				cudaMemset(getJcudaDenseMatrixPtr(), 0, getDoubleSizeOf(mat.getNumRows() * mat.getNumColumns()));
+				if(GPUStatistics.DISPLAY_STATISTICS) 
+					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t1);
+			}
+			else {
+				// Copy dense block
+				// H2D now only measures the time taken to do 
+				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				cudaMemcpy(getJcudaDenseMatrixPtr(), Pointer.to(data),
+						getDoubleSizeOf(mat.getNumRows() * mat.getNumColumns()), cudaMemcpyHostToDevice);
+				if(GPUStatistics.DISPLAY_STATISTICS) 
+					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
+			}
 		}
 
 		mat.release();

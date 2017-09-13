@@ -199,10 +199,7 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException if an error occurs
 	 */
 	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
-		long t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getMatrixInputForGPUInstruction(name);
-		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t0);
-		return mb.getKey();
+		return ec.getMatrixInputForGPUInstruction(name, getExtendedOpcode());
 	}
 
 	/**
@@ -216,9 +213,9 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
-		long t0 = System.nanoTime();
+		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (GPUStatistics.DISPLAY_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

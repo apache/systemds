@@ -219,8 +219,17 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		double sparsity = 1.0;
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		if(getOp() == ConvOp.BIAS_MULTIPLY) {
+			// in non-gpu mode, the worst case size of bias multiply operation is same as that of input.
+			if(DMLScript.USE_ACCELERATOR) 
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
+			else
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, getInput().get(0).getSparsity());
+		}
+		else {
+			double sparsity = 1.0;
+			return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		}
 	}
 	
 	// ---------------------------------------------------------------

@@ -277,6 +277,11 @@ object Utils {
 	
 	// --------------------------------------------------------------
 	// File IO utility functions
+	def writeToFile(content:String, filePath:String): Unit = {
+		val pw = new java.io.PrintWriter(new File(filePath))
+		pw.write(content)
+		pw.close
+	}
 	def getInputStreamReader(filePath:String ):InputStreamReader = {
 		//read solver script from file
 		if(filePath == null)

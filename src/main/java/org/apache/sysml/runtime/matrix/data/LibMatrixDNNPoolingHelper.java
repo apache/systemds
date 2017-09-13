@@ -55,11 +55,14 @@ public class LibMatrixDNNPoolingHelper {
 					final int inOffset1 = inOffset + c*HW;
 					for (int p = 0; p < P; p++) {
 						for (int q = 0; q < Q; q++, out_index++) {
+							double tmp = outputArray[out_index];
 							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
-								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
-									outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*W + w]);
+								int inputIndex = inOffset1 +  h*W + _params.start_indexes_w[q];
+								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++, inputIndex++) {
+									tmp = Math.max(tmp, inputArray[inputIndex]);
 								}
 							}
+							outputArray[out_index] = tmp;
 						}
 					}
 				}
@@ -75,66 +78,62 @@ public class LibMatrixDNNPoolingHelper {
 	{
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params;
-		int HW;
+		final int HW;
 		double [] outputArray;
-		int C; int P; int Q; int W;
+		final int C; final int P; final int Q; final int W; final int H; final int CPQ; final int PQ;
 		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			outputArray = params.output.getDenseBlock();
-			C = params.C; P = params.P; Q = params.Q; W = params.W;
+			C = params.C; P = params.P; Q = params.Q; H = params.H; 
+			W = params.W;
 			HW = _params.H*_params.W;
-		}
-		
-		boolean isNthRowEmpty = false;
-		int apos; int alen; int[] aix; double[] avals;
-		private void getNthSparseRow(int n) {
-			if( !_params.input1.sparseBlock.isEmpty(n) ) {
-				apos = _params.input1.sparseBlock.pos(n);
-				alen = _params.input1.sparseBlock.size(n);
-				aix = _params.input1.sparseBlock.indexes(n);
-				avals = _params.input1.sparseBlock.values(n);
-				isNthRowEmpty = false;
-			}
-			else
-				isNthRowEmpty = true;
-		}
-		int fromIndex = -1; // as per C
-		int toIndex = -1; // as per C
-		private int setSearchIndex(int from, int searchVal) {
-			for(int j = from; j < apos+alen; j++) {
-				if(aix[j] > searchVal)
-					return Math.max(from, j-1);
-			}
-			return apos+alen;
-		}
-		private double getValue(int col) {
-			if( !isNthRowEmpty ) {
-				int index = Arrays.binarySearch(aix, fromIndex, toIndex, col);
-				return index > 0 ? avals[index] : 0;
-			}
-			return 0;
+			CPQ = C*P*Q;
+			PQ = P*Q;
 		}
 		
 		@Override
 		public Long call() throws Exception {
-			final int CPQ = C*P*Q;
 			for(int n = _rl; n < _ru; n++)  {
-				getNthSparseRow(n);
-				int out_index = n*CPQ;
-				for (int c = 0; c < C; c++) {
-					// This allows for binary search in getValue to be more efficient
-					fromIndex = setSearchIndex(apos, c*HW);
-					toIndex = Math.min(apos+alen, setSearchIndex(fromIndex, (c+1)*HW));
-					for (int p = 0; p < P; p++) {
-						for (int q = 0; q < Q; q++, out_index++) {
-							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
-								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
-									outputArray[out_index] = Math.max(outputArray[out_index], getValue(c*HW +  h*W + w));
+				if( !_params.input1.sparseBlock.isEmpty(n) ) {
+					final int apos = _params.input1.sparseBlock.pos(n);
+					final int alen = _params.input1.sparseBlock.size(n);
+					final int [] aix = _params.input1.sparseBlock.indexes(n);
+					final double [] avals = _params.input1.sparseBlock.values(n);
+					int chw = 0; int index = apos;
+					for (int c = 0; c < C; c++) {
+						final int outOffset = n*CPQ + c*PQ;
+						for(int h = 0; h < H; h++) {
+							for(int w = 0; w < W; w++, chw++) {
+								// Take into account zero values as well
+								double nchwVal = 0;
+								if(aix[index] == chw) {
+									nchwVal = avals[index++];
+									// Ensure that we satisfy the condition index < apos+alen
+									if(index >= apos+alen) index--;
+								}
+								// Perform maxpooling without binary search :)
+								// Tradeoff as compared to dense maxpooling: 
+								// In dense maxpooling, iteration space CPQHW where H and W iterations are restricted by _params.start_indexes_h[p] 
+								// and are eligible for JIT optimizations.
+								// In sparse maxpooling, iteration space CHWPQ without HW restrictions.
+								for (int p = 0; p < P; p++) {
+									if(h >= _params.start_indexes_h[p] && h < _params.end_indexes_h[p]) {
+										final int outOffsetWithp = outOffset + p*Q;
+										for (int q = 0; q < Q; q++) {
+											if(w >= _params.start_indexes_w[q] && w < _params.end_indexes_w[q]) {
+												outputArray[outOffsetWithp + q] = Math.max(outputArray[outOffsetWithp + q], nchwVal);
+											}
+										}
+									}
 								}
 							}
 						}
 					}
+				}
+				else {
+					// Empty input image
+					Arrays.fill(outputArray, n*CPQ, (n+1)*CPQ, 0);
 				}
 			}
 			return 0L;

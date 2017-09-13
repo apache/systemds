@@ -182,10 +182,10 @@ trait NextBatchGenerator extends TabbedDMLGenerator {
 	  dmlScript.append("\n")
 	}
 	def getTestBatch(tabDMLScript:StringBuilder):Unit = {
-    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, null, null, "", Caffe2DML.numImages, "i")
+    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, null, null, "", Caffe2DML.numImages, "iter")
   } 
   def getTrainingBatch(tabDMLScript:StringBuilder):Unit = {
-    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, "yb", Caffe2DML.y, "", Caffe2DML.numImages, "i")
+    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, "yb", Caffe2DML.y, "", Caffe2DML.numImages, "iter")
   }
 	def getTrainingBatch(tabDMLScript:StringBuilder, X:String, y:String, numImages:String):Unit = {
 	  assignBatch(tabDMLScript, "Xb", X, "yb", y, "", numImages, "i")
@@ -293,6 +293,13 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
 	
 	def ifBlock(cond:String)(op: => Unit) {
 	  tabDMLScript.append("if(" + cond + ") {\n")
+	  numTabs += 1
+	  op
+	  numTabs -= 1
+	  tabDMLScript.append("}\n")
+	}
+	def whileBlock(cond:String)(op: => Unit) {
+	  tabDMLScript.append("while(" + cond + ") {\n")
 	  numTabs += 1
 	  op
 	  numTabs -= 1

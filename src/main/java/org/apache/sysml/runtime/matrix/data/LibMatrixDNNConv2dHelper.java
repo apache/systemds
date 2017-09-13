@@ -96,9 +96,10 @@ public class LibMatrixDNNConv2dHelper {
 							int alen = src.sparseBlock.size(k);
 							int[] aix = src.sparseBlock.indexes(k);
 							double[] avals = src.sparseBlock.values(k);
+							int desPosK = destPos + k*PQ;
 							for(int j = apos; j < apos+alen; j++) {
 								int pqIndex = aix[j];
-								dest[destPos + k*PQ + pqIndex ] += avals[j];
+								dest[desPosK + pqIndex ] += avals[j];
 							}
 						}
 					}
@@ -174,9 +175,10 @@ public class LibMatrixDNNConv2dHelper {
 							int alen = src.sparseBlock.size(k);
 							int[] aix = src.sparseBlock.indexes(k);
 							double[] avals = src.sparseBlock.values(k);
+							int desPosK = destPos + k*PQ;
 							for(int j = apos; j < apos+alen; j++) {
 								int pqIndex = aix[j];
-								dest[destPos + k*PQ + pqIndex ] = avals[j];
+								dest[desPosK + pqIndex ] = avals[j];
 							}
 						}
 					}

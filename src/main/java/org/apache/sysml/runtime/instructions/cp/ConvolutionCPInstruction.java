@@ -288,8 +288,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			// As we always fill the output first with bias
-			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
-			outputBlock.allocateDenseBlock();
+			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), input.isInSparseFormat());
+			outputBlock.allocateDenseOrSparseBlock();
 			LibMatrixDNN.biasMultiply(input, bias, outputBlock, _numThreads);
 		}
 		

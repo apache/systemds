@@ -107,12 +107,14 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		Collection<PlanPartition> parts = PlanAnalyzer.analyzePlanPartitions(memo, roots, true);
 		
 		//step 2: optimize individual plan partitions
+		int sumMatPoints = 0;
 		for( PlanPartition part : parts ) {
 			//create composite templates (within the partition)
 			createAndAddMultiAggPlans(memo, part.getPartition(), part.getRoots());
 			
 			//plan enumeration and plan selection
 			selectPlans(memo, part);
+			sumMatPoints += part.getMatPointsExt().length;
 		}
 		
 		//step 3: add composite templates (across partitions)
@@ -121,6 +123,10 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//take all distinct best plans
 		for( Entry<Long, List<MemoTableEntry>> e : getBestPlans().entrySet() )
 			memo.setDistinct(e.getKey(), e.getValue());
+		
+		//maintain statistics
+		if( DMLScript.STATISTICS )
+			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
 	}
 	
 	private void selectPlans(CPlanMemoTable memo, PlanPartition part) 
@@ -257,7 +263,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			Statistics.incrementCodegenEnumAll((rgraph!=null)?len:0);
+			Statistics.incrementCodegenEnumAllP((rgraph!=null)?len:0);
 			Statistics.incrementCodegenEnumEval(numEvalPlans);
 			Statistics.incrementCodegenEnumEvalP(numEvalPartPlans);
 		}

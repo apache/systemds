@@ -79,6 +79,7 @@ public class Statistics
 	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
 	private static final LongAdder codegenClassCompile = new LongAdder(); //count
 	private static final LongAdder codegenEnumAll = new LongAdder(); //count
+	private static final LongAdder codegenEnumAllP = new LongAdder(); //count
 	private static final LongAdder codegenEnumEval = new LongAdder(); //count
 	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
@@ -262,6 +263,9 @@ public class Statistics
 	public static void incrementCodegenEnumAll(long delta) {
 		codegenEnumAll.add(delta);
 	}
+	public static void incrementCodegenEnumAllP(long delta) {
+		codegenEnumAllP.add(delta);
+	}
 	public static void incrementCodegenEnumEval(long delta) {
 		codegenEnumEval.add(delta);
 	}
@@ -299,6 +303,9 @@ public class Statistics
 	
 	public static long getCodegenEnumAll() {
 		return codegenEnumAll.longValue();
+	}
+	public static long getCodegenEnumAllP() {
+		return codegenEnumAllP.longValue();
 	}
 	public static long getCodegenEnumEval() {
 		return codegenEnumEval.longValue();
@@ -403,6 +410,7 @@ public class Statistics
 		codegenCPlanCompile.reset();
 		codegenClassCompile.reset();
 		codegenEnumAll.reset();
+		codegenEnumAllP.reset();
 		codegenEnumEval.reset();
 		codegenEnumEvalP.reset();
 		codegenCompileTime.reset();
@@ -795,8 +803,8 @@ public class Statistics
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
 						+ getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
-				sb.append("Codegen enum (All,Eval,EvalP):\t" + getCodegenEnumAll() + "/"
-						+ getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
+				sb.append("Codegen enum (ALLt/p,EVALt/p):\t" + getCodegenEnumAll() + "/" +
+						getCodegenEnumAllP() + "/" + getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
 				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");

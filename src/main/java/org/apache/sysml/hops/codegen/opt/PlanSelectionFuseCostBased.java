@@ -57,6 +57,7 @@ import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -87,12 +88,14 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		Collection<PlanPartition> parts = PlanAnalyzer.analyzePlanPartitions(memo, roots, false);
 		
 		//step 2: optimize individual plan partitions
+		int sumMatPoints = 0;
 		for( PlanPartition part : parts ) {
 			//create composite templates (within the partition)
 			createAndAddMultiAggPlans(memo, part.getPartition(), part.getRoots());
 			
 			//plan enumeration and plan selection
 			selectPlans(memo, part.getPartition(), part.getRoots(), part.getMatPoints());
+			sumMatPoints += part.getMatPoints().size();
 		}
 		
 		//step 3: add composite templates (across partitions)
@@ -101,6 +104,10 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		//take all distinct best plans
 		for( Entry<Long, List<MemoTableEntry>> e : getBestPlans().entrySet() )
 			memo.setDistinct(e.getKey(), e.getValue());
+		
+		//maintain statistics
+		if( DMLScript.STATISTICS )
+			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
 	}
 	
 	//within-partition multi-agg templates
@@ -389,7 +396,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			}
 			
 			if( DMLScript.STATISTICS ) {
-				Statistics.incrementCodegenEnumAll(len);
+				Statistics.incrementCodegenEnumAllP(len);
 				Statistics.incrementCodegenEnumEval(len);
 			}
 			

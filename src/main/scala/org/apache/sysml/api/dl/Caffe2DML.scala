@@ -531,15 +531,16 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
       }
     }
   }
-  
+  private def appendSnapshotWrite(varName:String, fileName:String):Unit = {
+	tabDMLScript.append(write(varName, "snapshot_dir + \"" + fileName + "\"", "binary"))
+  }
   private def performSnapshot():Unit = {
     if(solverParam.getSnapshot > 0) {
       ifBlock("iter %% " + solverParam.getSnapshot + " == 0") {
         tabDMLScript.append("snapshot_dir= \"" + solverParam.getSnapshotPrefix + "\" + \"/iter_\" + iter + \"/\"\n")
-        net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(
-        	"write(" + l.weight + ", snapshot_dir + \"" + l.param.getName + "_weight.mtx\", format=\"binary\")\n"))
-  		net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(
-  			"write(" + l.bias + ", snapshot_dir + \"" + l.param.getName + "_bias.mtx\", format=\"binary\")\n"))
+        val allLayers = net.getLayers.map(net.getCaffeLayer(_))
+        allLayers.filter(_.weight != null).map(l => appendSnapshotWrite(l.weight, l.param.getName + "_weight.mtx"))
+        allLayers.filter(_.bias != null).map(l => appendSnapshotWrite(l.bias, l.param.getName + "_bias.mtx"))
       }
   	}
   }
@@ -608,8 +609,8 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
   // --------------------------------------------------------------
   
   def modelVariables():List[String] = {
-    net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(_.weight) ++
-    net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(_.bias)
+	val allLayers = net.getLayers.map(net.getCaffeLayer(_))
+	allLayers.filter(_.weight != null).map(_.weight) ++ allLayers.filter(_.bias != null).map(_.bias)
   }
     
   // ================================================================================================

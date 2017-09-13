@@ -173,20 +173,20 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   	val tmpSum = "tmp_sum_var" + Math.abs((new Random()).nextInt())
   	if(eager)
   	  dmlScript.append(tmpSum + " = 0\n")
-		for(varName <- modelVariables) {
-			dmlScript.append(varName + " = read(\"" + outputDir + sep + varName + ".mtx\")\n")
-			if(eager)
-			  dmlScript.append(tmpSum + " = " + tmpSum + " + 0.001*mean(" + varName + ")\n")
-		}
+	for(varName <- modelVariables) {
+		dmlScript.append(varName + " = read(\"" + outputDir + sep + varName + ".mtx\")\n")
+		if(eager)
+		  dmlScript.append(tmpSum + " = " + tmpSum + " + 0.001*mean(" + varName + ")\n")
+	}
   	if(eager) {
   	  dmlScript.append("if(" + tmpSum + " > 0) { print(\"Loaded the model\"); } else {  print(\"Loaded the model.\"); }")
   	}
   	val script = dml(dmlScript.toString)
-		for(varName <- modelVariables) {
-			script.out(varName)
-		}
-	  val ml = new MLContext(sc)
-	  baseEstimator.mloutput = ml.execute(script)
+	for(varName <- modelVariables) {
+		script.out(varName)
+	}
+  	val ml = new MLContext(sc)
+  	baseEstimator.mloutput = ml.execute(script)
   }
   def save(sc:JavaSparkContext, outputDir:String, format:String="binary", sep:String="/"):Unit = {
 	  if(baseEstimator.mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
@@ -196,9 +196,9 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
 	  	dmlScript.append("write(" + varName + ", \"" + outputDir + sep + varName + ".mtx\", format=\"" + format + "\")\n")
 	  }
 	  val script = dml(dmlScript.toString)
-		for(varName <- modelVariables) {
-			script.in(varName, baseEstimator.mloutput.getMatrix(varName))
-		}
+	  for(varName <- modelVariables) {
+		script.in(varName, baseEstimator.mloutput.getMatrix(varName))
+	  }
 	  val ml = new MLContext(sc)
 	  ml.execute(script)
 	}

@@ -55,6 +55,7 @@ trait BaseDMLGenerator {
   def transpose(x:String):String = "t(" + x + ")"
   def write(varName:String, fileName:String, format:String):String = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"
   def readWeight(varName:String, fileName:String, sep:String="/"):String =  varName + " = read(weights + \"" + sep + fileName + "\")\n"
+  def readScalarWeight(varName:String, fileName:String, sep:String="/"):String =  varName + " = as.scalar(read(weights + \"" + sep + fileName + "\"))\n"
   def asDMLString(str:String):String = "\"" + str + "\""
   def assign(dmlScript:StringBuilder, lhsVar:String, rhsVar:String):Unit = {
     dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("\n")
@@ -401,8 +402,9 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
 	  if(readWeights) {
 		  // Loading existing weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias
 		  tabDMLScript.append("# Load the weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias\n")
-		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(readWeight(l.weight, l.param.getName + "_weight.mtx")))
-		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(readWeight(l.bias, l.param.getName + "_bias.mtx")))
+		  val allLayers = net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_))
+		  allLayers.filter(_.weight != null).map(l => tabDMLScript.append(readWeight(l.weight, l.param.getName + "_weight.mtx")))
+		  allLayers.filter(_.bias != null).map(l => tabDMLScript.append(readWeight(l.bias, l.param.getName + "_bias.mtx")))
 	  }
 	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
   }

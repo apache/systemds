@@ -315,10 +315,8 @@ class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) exte
   }
   
   private def withSuffix(str:String):String = if(update_mean_var) str else str + "_ignore"
-  override def weight = "ema_mean" + id
   override def weightShape():Array[Int] = Array(numChannels.toInt, 1)
   override def biasShape():Array[Int] = Array(numChannels.toInt, 1)
-  override def bias = "ema_var" + id
   def cache_mean(): String = "cache_mean" + id
   def cache_var():String = "cache_mean" + id
   def cache_norm():String = "cache_norm" + id

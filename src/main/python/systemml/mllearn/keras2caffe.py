@@ -184,8 +184,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
         elif type(layer) == keras.layers.BatchNormalization:
             name = layer.name
             in_names=getInboundLayers(layer)
-            n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction= layer.momentum, eps =layer.epsilon,
-                                  in_place=True)
+            n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction= layer.momentum, eps =layer.epsilon)
             variance = np.array(blobs[-1])
             mean = np.array(blobs[-2])
 
@@ -193,12 +192,12 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             #Set mean variance and gamma into respective params
             param = dict()
             if config['scale']:
-                gamma = np.array(blobs[-3])
+                gamma = np.array(blobs[0])
             else:
                 gamma = np.ones(mean.shape, dtype=np.float32)
 
             if config['center']:
-                beta = np.array(blobs[0])
+                beta = np.array(blobs[1])
                 param['bias_term'] = True
             else:
                 beta = np.zeros(mean.shape, dtype=np.float32)
@@ -319,7 +318,7 @@ def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, p
             print(layer + ": ")
             print(net_params[layer][i].shape)
             print(caffe_model.params[layer][i].data.shape)
-            print(dir(caffe_model.params[layer]))
+            #print(dir(caffe_model.params[layer]))
             caffe_model.params[layer][i].data[...] = net_params[layer][i]
 
     caffe_model.save(weights_filepath)

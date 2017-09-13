@@ -20,27 +20,7 @@
 #
 #-------------------------------------------------------------
 
-jars='.'
-os_suffix='linux-x86_64'
-version='0.8.0'
-
-# Downloads the jcuda jars
-for lib in jcuda jcublas jcufft jcusparse jcusolver jcurand jnvgraph jcudnn
-do
-        file=$lib'-'$version'.jar'
-        if [ ! -f $file ]; then
-                url='https://search.maven.org/remotecontent?filepath=org/jcuda/'$lib'/'$version'/'$file
-                wget -O $file $url
-        fi
-        jars=$jars','$file
-
-        file=$lib'-natives-'$version'-'$os_suffix'.jar'
-        if [ ! -f $file ]; then
-                url='https://search.maven.org/remotecontent?filepath=org/jcuda/'$lib'-natives/'$version'/'$file
-                wget -O $file $url
-        fi
-        jars=$jars','$file
-done
+jars='systemml-*-extra.jar'
 
 # N = Number of images, C = number of channels, H = height, W = width
 # F = number of filters, Hf = filter height, Wf = filter width

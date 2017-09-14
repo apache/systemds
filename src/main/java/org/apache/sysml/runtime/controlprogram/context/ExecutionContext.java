@@ -374,7 +374,7 @@ public class ExecutionContext {
 		}
 		// The lock is added here for an output block
 		// so that any block currently in use is not deallocated by eviction on the GPU
-		mo.getGPUObject(getGPUContext(0)).addLock();
+		mo.getGPUObject(getGPUContext(0)).addWriteLock();
 		return mo;
 	}
 

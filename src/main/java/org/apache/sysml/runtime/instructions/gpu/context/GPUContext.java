@@ -43,6 +43,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -130,6 +131,34 @@ public class GPUContext {
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
 	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
+	
+	public void printMemoryInfo(String opcode) throws DMLRuntimeException {
+		// if(LOG.isDebugEnabled()) {
+			long totalFreeCUDASpace = 0;
+			for(Entry<Long, LinkedList<Pointer>> kv : freeCUDASpaceMap.entrySet()) {
+				totalFreeCUDASpace += kv.getKey()*kv.getValue().size();
+			}
+			long readLockedAllocatedMemory = 0;
+			long writeLockedAllocatedMemory = 0;
+			long unlockedAllocatedMemory = 0;
+			for(GPUObject gpuObj : allocatedGPUObjects) {
+				if(gpuObj.readLocks.longValue() > 0)
+					readLockedAllocatedMemory += gpuObj.getSizeOnDevice();
+				else if(gpuObj.writeLock)
+					writeLockedAllocatedMemory += gpuObj.getSizeOnDevice();
+				else
+					unlockedAllocatedMemory += gpuObj.getSizeOnDevice();
+			}
+			long free[] = { 0 };
+			long total[] = { 0 };
+			cudaMemGetInfo(free, total);
+			long gpuFreeMemory =  (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
+			LOG.info(opcode + ": Total memory: " + total[0] + ", Free memory: " + free[0] + " (with util factor: " + gpuFreeMemory + "), "
+					+ "Lazy unfreed memory: " + totalFreeCUDASpace + ", Locked allocated memory (read/write): " 
+					+ readLockedAllocatedMemory + "/" + writeLockedAllocatedMemory + ", "
+					+ " Unlocked allocated memory: " + unlockedAllocatedMemory);
+		// }
+	}
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
@@ -472,18 +501,19 @@ public class GPUContext {
 		Collections.sort(allocatedGPUObjects, new Comparator<GPUObject>() {
 			@Override
 			public int compare(GPUObject p1, GPUObject p2) {
-				long p1Val = p1.locks.get();
-				long p2Val = p2.locks.get();
-
-				if (p1Val > 0 && p2Val > 0) {
+				if (p1.isLocked() && p2.isLocked()) {
 					// Both are locked, so don't sort
 					return 0;
-				} else if (p1Val > 0 || p2Val > 0) {
+				} else if (p1.isLocked()) {
 					// Put the unlocked one to RHS
-					return Long.compare(p2Val, p1Val);
+					// a value less than 0 if x < y; and a value greater than 0 if x > y
+					return -1;
+				} else if (p2.isLocked()) {
+					// Put the unlocked one to RHS
+					// a value less than 0 if x < y; and a value greater than 0 if x > y
+					return 1;
 				} else {
 					// Both are unlocked
-
 					if (evictionPolicy == EvictionPolicy.MIN_EVICT) {
 						long p1Size = 0;
 						long p2Size = 0;
@@ -510,7 +540,7 @@ public class GPUContext {
 
 		while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
 			GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
-			if (toBeRemoved.locks.get() > 0) {
+			if (toBeRemoved.isLocked()) {
 				throw new DMLRuntimeException(
 						"There is not enough memory on device for this matrix, request (" + neededSize + "). Allocated GPU objects:" + allocatedGPUObjects.toString());
 			}

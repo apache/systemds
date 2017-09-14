@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -26,6 +28,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.GPUInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
@@ -46,6 +49,8 @@ public abstract class GPUInstruction extends Instruction {
 		Builtin,
 		MatrixIndexing
 	};
+	
+	private static final Log LOG = LogFactory.getLog(GPUInstruction.class.getName());
 
 	// Memory/conversions
 	public final static String MISC_TIMER_HOST_TO_DEVICE =          "H2D";	// time spent in bringing data to gpu (from host)
@@ -191,6 +196,14 @@ public abstract class GPUInstruction extends Instruction {
 		if(DMLScript.SYNCHRONIZE_GPU) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 		}
+		// if(LOG.isDebugEnabled()) {
+		 	ec.getGPUContext(0).printMemoryInfo(getOpcode());
+//			for(GPUContext gpuCtx : ec.getGPUContexts()) {
+//				if(gpuCtx != null)
+//					gpuCtx.printMemoryInfo();
+//			}
+		// }
+			
 	}
 
 	/**

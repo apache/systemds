@@ -256,7 +256,7 @@ public abstract class ColGroupDDC extends ColGroupValue
 	}
 	
 	@Override
-	public Iterator<double[]> getRowIterator(int rl, int ru) {
+	public ColGroupRowIterator getRowIterator(int rl, int ru) {
 		return new DDCRowIterator(rl, ru);
 	}
 	
@@ -305,12 +305,9 @@ public abstract class ColGroupDDC extends ColGroupValue
 		}
 	}
 	
-	private class DDCRowIterator implements Iterator<double[]>
+	private class DDCRowIterator extends ColGroupRowIterator
 	{
-		//iterator configuration 
 		private final int _ru;
-		//iterator state
-		private final double[] _buff = new double[getNumCols()]; 
 		private int _rpos = -1;
 		
 		public DDCRowIterator(int rl, int ru) {
@@ -324,13 +321,14 @@ public abstract class ColGroupDDC extends ColGroupValue
 		}
 
 		@Override
-		public double[] next() {
-			//copy entire value tuple and 
+		public void next(double[] buff) {
+			//copy entire value tuple to output row
 			final int clen = getNumCols();
-			System.arraycopy(getValues(), getCode(_rpos)*clen, _buff, 0, clen);
+			final int off = getCode(_rpos)*clen;
+			for(int j=0; j<clen; j++)
+				buff[_colIndexes[j]] = _values[off+j];
 			//advance position to next row
 			_rpos++;
-			return _buff;
 		}
 	}
 }

@@ -281,7 +281,7 @@ public abstract class ColGroup implements Serializable
 	 * @param ru row upper index, exclusive
 	 * @return an iterator instance
 	 */
-	public abstract Iterator<double[]> getRowIterator(int rl, int ru);
+	public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
 	
 	/**
 	 * Count the number of non-zeros per row
@@ -291,4 +291,14 @@ public abstract class ColGroup implements Serializable
  	 * @param ru row upper bound, exclusive
 	 */
 	protected abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
+
+	/**
+	 * Base class for column group row iterators. We do not
+	 * implement the default Iterator interface in order to
+	 * avoid unnecessary value copies per group.
+	 */
+	protected abstract class ColGroupRowIterator {
+		public abstract boolean hasNext();
+		public abstract void next(double[] buff);
+	}
 }

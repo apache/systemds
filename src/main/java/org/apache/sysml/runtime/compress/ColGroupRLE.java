@@ -797,7 +797,7 @@ public class ColGroupRLE extends ColGroupOffset
 	}
 	
 	@Override
-	public Iterator<double[]> getRowIterator(int rl, int ru) {
+	public ColGroupRowIterator getRowIterator(int rl, int ru) {
 		return new RLERowIterator(rl, ru);
 	}
 	
@@ -855,12 +855,11 @@ public class ColGroupRLE extends ColGroupOffset
 		}
 	}
 	
-	private class RLERowIterator implements Iterator<double[]>
+	private class RLERowIterator extends ColGroupRowIterator
 	{
 		//iterator configuration 
 		private final int _ru;
 		//iterator state
-		private final double[] _buff = new double[getNumCols()];
 		private final int[] _astart;
 		private final int[] _apos;
 		private final int[] _vcodes;
@@ -872,6 +871,7 @@ public class ColGroupRLE extends ColGroupOffset
 			_astart = new int[getNumValues()];
 			_apos = skipScan(getNumValues(), rl, _astart);
 			_vcodes = new int[Math.min(BitmapEncoder.BITMAP_BLOCK_SZ, ru-rl)];
+			Arrays.fill(_vcodes, -1); //initial reset
 			getNextSegment();
 		}
 		
@@ -881,25 +881,24 @@ public class ColGroupRLE extends ColGroupOffset
 		}
 		
 		@Override
-		public double[] next() {
+		public void next(double[] buff) {
 			//copy entire value tuple or reset to zero
 			int ix = _rpos%BitmapEncoder.BITMAP_BLOCK_SZ;
 			final int clen = getNumCols();
-			if( _vcodes[ix] >= 0 )
-				System.arraycopy(getValues(), _vcodes[ix]*clen, _buff, 0, clen);
-			else
-				Arrays.fill(_buff, 0);
+			for(int j=0, off=_vcodes[ix]*clen; j<clen; j++)
+				if( _vcodes[ix] >= 0 )
+					buff[_colIndexes[j]] = _values[off+j];
+			//reset vcode to avoid scan on next segment
+			_vcodes[ix] = -1;
 			//advance position to next row
 			_rpos++;
 			if( _rpos%BitmapEncoder.BITMAP_BLOCK_SZ==0 && _rpos<_ru )
 				getNextSegment();
-			return _buff;
 		}
 		
 		public void getNextSegment() {
 			//materialize value codes for entire segment in a 
 			//single pass over all values (store value code by pos)
-			Arrays.fill(_vcodes, -1);
 			final int numVals = getNumValues();
 			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			for (int k = 0; k < numVals; k++) {

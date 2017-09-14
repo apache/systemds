@@ -47,6 +47,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.ColGroup.ColGroupRowIterator;
 import org.apache.sysml.runtime.compress.ColGroup.CompressionType;
 import org.apache.sysml.runtime.compress.cocode.PlanningCoCoder;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeEstimator;
@@ -2305,16 +2306,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		protected final int _ru;
 		
 		//iterator state
-		protected Iterator<double[]>[] _iters = null;
+		protected ColGroupRowIterator[] _iters = null;
 		protected int _rpos;
 		
-		@SuppressWarnings("unchecked")
 		public RowIterator(int rl, int ru) {
 			_rl = rl;
 			_ru = ru;
 			
 			//initialize array of column group iterators
-			_iters = new Iterator[_colGroups.size()];
+			_iters = new ColGroupRowIterator[_colGroups.size()];
 			for( int i=0; i<_colGroups.size(); i++ )
 				_iters[i] = _colGroups.get(i).getRowIterator(_rl, _ru);
 			
@@ -2339,12 +2339,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		@Override
 		public double[] next() {
 			//copy group rows into consolidated row
-			for(int j=0; j<_iters.length; j++) {
-				ColGroup grp = _colGroups.get(j);
-				double[] row = _iters[j].next();
-				for( int k=0; k<row.length; k++ )
-					_ret[grp.getColIndex(k)] = row[k];
-			}
+			Arrays.fill(_ret, 0);
+			for(int j=0; j<_iters.length; j++)
+				_iters[j].next(_ret);
 			//advance to next row and return buffer
 			_rpos++;
 			return _ret;
@@ -2364,12 +2361,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		public SparseRow next() {
 			//copy group rows into consolidated dense vector
 			//to avoid binary search+shifting or final sort
-			for(int j=0; j<_iters.length; j++) {
-				ColGroup grp = _colGroups.get(j);
-				double[] row = _iters[j].next();
-				for( int k=0; k<row.length; k++ )
-					_tmp[grp.getColIndex(k)] = row[k];
-			}
+			for(int j=0; j<_iters.length; j++)
+				_iters[j].next(_tmp);
 			//append non-zero values to consolidated sparse row
 			_ret.setSize(0);
 			for(int i=0; i<_tmp.length; i++)

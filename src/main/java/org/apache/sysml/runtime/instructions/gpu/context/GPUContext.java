@@ -390,10 +390,6 @@ public class GPUContext {
 	 * @param eager           true if to be done eagerly
 	 */
 	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
-		// Always perform eager cudaFree if the ALLOW_GPU_LAZY_CUDA_FREE optimization is disabled. 
-		if(!OptimizerUtils.ALLOW_GPU_LAZY_CUDA_FREE)
-			eager = true;
-		
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) // trying to free a null pointer
 			return;

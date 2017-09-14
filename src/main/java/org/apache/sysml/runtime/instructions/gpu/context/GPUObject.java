@@ -34,6 +34,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,9 +100,14 @@ public class GPUObject {
 	protected boolean dirty = false;
 
 	/**
-	 * number of read/write locks on this object (this GPUObject is being used in a current instruction)
+	 * number of read locks on this object (this GPUObject is being used in a current instruction)
 	 */
-	protected AtomicLong locks = new AtomicLong();
+	protected LongAdder readLocks = new LongAdder();
+	
+	/**
+	 * whether write lock on this object (this GPUObject is being used in a current instruction)
+	 */
+	protected boolean writeLock = false;
 
 	/**
 	 * Timestamp, needed by {@link GPUContext#evict(long)}
@@ -132,7 +138,11 @@ public class GPUObject {
 			that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
 		}
 		that.dirty = me.dirty;
-		that.locks = new AtomicLong(me.locks.get());
+		// TODO Nakul: Should the locks be cloned here ?
+		// The only place clone is getting called: LibMatrixCUDA's solve
+		that.readLocks.reset();
+		that.writeLock = false;
+		
 		that.timestamp = new AtomicLong(me.timestamp.get());
 		that.isSparse = me.isSparse;
 
@@ -618,7 +628,7 @@ public class GPUObject {
 			copyFromHostToDevice(opcode);
 			transferred = true;
 		}
-		addLock();
+		addReadLock();
 		if (!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
 		return transferred;
@@ -664,10 +674,6 @@ public class GPUObject {
 		return allocated;
 	}
 
-	public void addLock() {
-		locks.addAndGet(1);
-	}
-
 	/**
 	 * if the data is allocated on the GPU and is dirty, it is copied back to the host memory
 	 *
@@ -693,22 +699,51 @@ public class GPUObject {
 		}
 		return copied;
 	}
+	
+	public boolean isLocked() {
+		return writeLock || readLocks.longValue() > 0;
+	}
+	
+	public void addReadLock() throws DMLRuntimeException {
+		if(writeLock)
+			throw new DMLRuntimeException("Attempting to add a read lock when writeLock="+ writeLock);
+		else
+			readLocks.increment();
+	}
+	
+	public void addWriteLock() throws DMLRuntimeException {
+		if(readLocks.longValue() > 0)
+			throw new DMLRuntimeException("Attempting to add a write lock when readLocks="+ readLocks.longValue());
+		else if(writeLock)
+			throw new DMLRuntimeException("Attempting to add a write lock when writeLock="+ writeLock);
+		else
+			writeLock = true;
+	}
+	
+	public void releaseReadLock() throws DMLRuntimeException {
+		readLocks.decrement();
+		if(readLocks.longValue() < 0)
+			throw new DMLRuntimeException("Attempting to release a read lock when readLocks="+ readLocks.longValue());
+	}
+	
+	public void releaseWriteLock() throws DMLRuntimeException {
+		if(writeLock)
+			writeLock = false;
+		else
+			throw new DMLRuntimeException("Internal state error : Attempting to release write lock on a GPUObject, which was already released");
+	}
+	
+	public void resetReadWriteLock() {
+		readLocks.reset();
+		writeLock = false;
+	}
 
 	/**
 	 * Updates the locks depending on the eviction policy selected
 	 *
 	 * @throws DMLRuntimeException if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
-	private void updateReleaseLocks(int l) throws DMLRuntimeException {
-		int newLocks = (int) locks.addAndGet(l);
-		if (newLocks < 0) {
-			throw new CacheException("Internal state error : Invalid number of locks on a GPUObject");
-		}
-
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : updateReleaseLocks, new number of locks is " + newLocks + ", on " + this + ", GPUContext="
-				+ getGPUContext());
-		}
+	private void updateReleaseLocks() throws DMLRuntimeException {
 		GPUContext.EvictionPolicy evictionPolicy = getGPUContext().evictionPolicy;
 		switch (evictionPolicy) {
 		case LRU:
@@ -730,8 +765,8 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if data is not allocated or if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
 	public void releaseInput() throws DMLRuntimeException {
-		// A read lock is a positive quantity, therefor when the lock is freed, a negative 1 is added
-		updateReleaseLocks(-1);
+		releaseReadLock();
+		updateReleaseLocks();
 		if (!isAllocated())
 			throw new CacheException("Attempting to release an input before allocating it");
 	}
@@ -742,8 +777,8 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if data is not allocated or if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
 	public void releaseOutput() throws DMLRuntimeException {
-		// A write lock is a negative quantity, therefore when the lock is freed, a positive number is added
-		updateReleaseLocks(1);
+		releaseWriteLock();
+		updateReleaseLocks();
 		dirty = true;
 		if (!isAllocated())
 			throw new CacheException("Attempting to release an output before allocating it");
@@ -798,7 +833,7 @@ public class GPUObject {
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 			tensorDescriptor = null;
 		}
-		locks.set(0);
+		resetReadWriteLock();
 		getGPUContext().removeRecordedUsage(this);
 	}
 
@@ -1061,7 +1096,8 @@ public class GPUObject {
 		final StringBuilder sb = new StringBuilder("GPUObject{");
 		sb.append(", tensorShape=").append(Arrays.toString(tensorShape));
 		sb.append(", dirty=").append(dirty);
-		sb.append(", locks=").append(locks);
+		sb.append(", readLocks=").append(readLocks.longValue());
+		sb.append(", writeLock=").append(writeLock);
 		sb.append(", sparse? ").append(isSparse);
 		sb.append(", dims=[").append(mat.getNumRows()).append(",").append(mat.getNumColumns()).append("]");
 		sb.append('}');

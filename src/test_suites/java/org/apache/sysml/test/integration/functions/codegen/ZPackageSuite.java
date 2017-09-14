@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
 	CompressedMultiAggregateTest.class,
 	CompressedOuterProductTest.class,
 	CompressedRowAggregateTest.class,
+	CompressedRowAggregateLargeTest.class,
 	CPlanComparisonTest.class,
 	CPlanVectorPrimitivesTest.class,
 	DAGCellwiseTmplTest.class,

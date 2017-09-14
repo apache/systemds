@@ -214,7 +214,16 @@ public abstract class ColGroupDDC extends ColGroupValue
 			}	
 		}
 	}
-
+	
+	/**
+	 * Generic get value for byte-length-agnostic access
+	 * to first column.
+	 * 
+	 * @param r global row index
+	 * @return value
+	 */
+	protected abstract double getData(int r);
+	
 	/**
 	 * Generic get value for byte-length-agnostic access.
 	 * 
@@ -233,6 +242,8 @@ public abstract class ColGroupDDC extends ColGroupValue
 	 */
 	protected abstract void setData(int r, int code);
 	
+	protected abstract int getCode(int r);
+	
 	@Override
 	public long estimateInMemorySize() {
 		return super.estimateInMemorySize();
@@ -242,6 +253,11 @@ public abstract class ColGroupDDC extends ColGroupValue
 	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
 		//DDC iterator is always row major, so no need for custom handling
 		return new DDCIterator(rl, ru, inclZeros);
+	}
+	
+	@Override
+	public Iterator<double[]> getRowIterator(int rl, int ru) {
+		return new DDCRowIterator(rl, ru);
 	}
 	
 	private class DDCIterator implements Iterator<IJV>
@@ -286,6 +302,35 @@ public abstract class ColGroupDDC extends ColGroupValue
 				_value = getData(_rpos, _cpos);
 			}
 			while( !_inclZeros && _value==0);
+		}
+	}
+	
+	private class DDCRowIterator implements Iterator<double[]>
+	{
+		//iterator configuration 
+		private final int _ru;
+		//iterator state
+		private final double[] _buff = new double[getNumCols()]; 
+		private int _rpos = -1;
+		
+		public DDCRowIterator(int rl, int ru) {
+			_ru = ru;
+			_rpos = rl;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public double[] next() {
+			//copy entire value tuple and 
+			final int clen = getNumCols();
+			System.arraycopy(getValues(), getCode(_rpos)*clen, _buff, 0, clen);
+			//advance position to next row
+			_rpos++;
+			return _buff;
 		}
 	}
 }

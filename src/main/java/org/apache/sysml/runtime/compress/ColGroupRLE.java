@@ -790,11 +790,17 @@ public class ColGroupRLE extends ColGroupOffset
 		return new RLEValueIterator(k, 0, getNumRows());
 	}
 	
+	
 	@Override
 	public Iterator<Integer> getIterator(int k, int rl, int ru) {
 		return new RLEValueIterator(k, rl, ru);
 	}
-
+	
+	@Override
+	public Iterator<double[]> getRowIterator(int rl, int ru) {
+		return new RLERowIterator(rl, ru);
+	}
+	
 	private class RLEValueIterator implements Iterator<Integer>
 	{
 		private final int _ru;
@@ -845,6 +851,76 @@ public class ColGroupRLE extends ColGroupOffset
 			//increment row index within run
 			else {
 				_rpos++;
+			}
+		}
+	}
+	
+	private class RLERowIterator implements Iterator<double[]>
+	{
+		//iterator configuration 
+		private final int _ru;
+		//iterator state
+		private final double[] _buff = new double[getNumCols()];
+		private final int[] _astart;
+		private final int[] _apos;
+		private final int[] _vcodes;
+		private int _rpos = -1;
+		
+		public RLERowIterator(int rl, int ru) {
+			_ru = ru;
+			_rpos = rl;
+			_astart = new int[getNumValues()];
+			_apos = skipScan(getNumValues(), rl, _astart);
+			_vcodes = new int[Math.min(BitmapEncoder.BITMAP_BLOCK_SZ, ru-rl)];
+			getNextSegment();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public double[] next() {
+			//copy entire value tuple or reset to zero
+			int ix = _rpos%BitmapEncoder.BITMAP_BLOCK_SZ;
+			final int clen = getNumCols();
+			if( _vcodes[ix] >= 0 )
+				System.arraycopy(getValues(), _vcodes[ix]*clen, _buff, 0, clen);
+			else
+				Arrays.fill(_buff, 0);
+			//advance position to next row
+			_rpos++;
+			if( _rpos%BitmapEncoder.BITMAP_BLOCK_SZ==0 && _rpos<_ru )
+				getNextSegment();
+			return _buff;
+		}
+		
+		public void getNextSegment() {
+			//materialize value codes for entire segment in a 
+			//single pass over all values (store value code by pos)
+			Arrays.fill(_vcodes, -1);
+			final int numVals = getNumValues();
+			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+			for (int k = 0; k < numVals; k++) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = _apos[k];
+				int start = _astart[k];
+				int end = (_rpos/blksz+1)*blksz;
+				while( bix < blen && start < end ) {
+					int lstart = _data[boff + bix];
+					int llen = _data[boff + bix + 1];
+					//set codes of entire run, with awareness of unaligned runs/segments
+					Arrays.fill(_vcodes, Math.min(Math.max(_rpos, start+lstart), end)-_rpos, 
+						Math.min(start+lstart+llen,end)-_rpos, k);
+					if( start+lstart+llen >= end )
+						break;
+					start += lstart + llen;
+					bix += 2;
+				}
+				_apos[k] = bix;
+				_astart[k] = start;
 			}
 		}
 	}

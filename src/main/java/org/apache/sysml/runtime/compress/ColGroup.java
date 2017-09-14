@@ -261,8 +261,27 @@ public abstract class ColGroup implements Serializable
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result)
 		throws DMLRuntimeException;
 	
+	/**
+	 * Create a column group iterator for a row index range.
+	 * 
+	 * @param rl row lower index, inclusive
+	 * @param ru row upper index, exclusive
+	 * @param inclZeros include zero values into scope of iterator
+	 * @param rowMajor use a row major iteration order
+	 * @return an iterator instance
+	 */
 	public abstract Iterator<IJV> getIterator(int rl, int ru,
 			boolean inclZeros, boolean rowMajor);
+	
+	/**
+	 * Create a dense row iterator for a row index range. This iterator
+	 * implies the inclusion of zeros and row-major iteration order.
+	 * 
+	 * @param rl row lower index, inclusive
+	 * @param ru row upper index, exclusive
+	 * @return an iterator instance
+	 */
+	public abstract Iterator<double[]> getRowIterator(int rl, int ru);
 	
 	/**
 	 * Count the number of non-zeros per row

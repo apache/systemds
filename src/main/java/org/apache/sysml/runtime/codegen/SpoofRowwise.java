@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -185,20 +186,25 @@ public abstract class SpoofRowwise extends SpoofOperator
 			&& LibSpoofPrimitives.isFlipOuter(out.getNumRows(), out.getNumColumns());
 		
 		//input preparation
+		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, true, _tB1);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core parallel execute
 		ExecutorService pool = Executors.newFixedThreadPool( k );
-		int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
+		int nk = (a instanceof CompressedMatrixBlock) ? k :
+			UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 		int blklen = (int)(Math.ceil((double)m/nk));
+		if( a instanceof CompressedMatrixBlock )
+			blklen = BitmapEncoder.getAlignedBlocksize(blklen);
+		
 		try
 		{
 			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<ParColAggTask>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParColAggTask(inputs.get(0), b, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
+					tasks.add(new ParColAggTask(a, b, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 				//aggregate partial results
 				int len = _type.isColumnAgg() ? out.getNumRows()*out.getNumColumns() : 1;
@@ -210,7 +216,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 				//execute tasks
 				ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParExecTask(inputs.get(0), b, out, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
+					tasks.add(new ParExecTask(a, b, out, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				//aggregate nnz, no need to aggregate results
 				long nnz = 0;
@@ -304,24 +310,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( a.isEmptyBlock(false) )
 			return;
 		
-		if( !a.isInSparseFormat() ) { //DENSE
-			Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
-			for( int i=rl; iter.hasNext(); i++ ) {
-				genexec(iter.next(), 0, b, scalars, c, n, i);
-			}
-		}
-		else { //SPARSE
-			Iterator<SparseRow> iter = a.getSparseRowIterator(rl, ru);
-			SparseRow empty = new SparseRowVector(1);
-			for( int i=rl; iter.hasNext(); i++ ) {
-				SparseRow row = iter.next();
-				if( !row.isEmpty() )
-					genexec(row.values(), 
-						row.indexes(), 0, b, scalars, c, row.size(), n, i);
-				else
-					genexec(empty.values(), 
-						empty.indexes(), 0, b, scalars, c, 0, n, i);
-			}
+		Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
+		for( int i=rl; iter.hasNext(); i++ ) {
+			genexec(iter.next(), 0, b, scalars, c, n, i);
 		}
 	}
 	

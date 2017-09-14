@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.DataConverter;
 
@@ -70,7 +71,7 @@ public class BuildLiteExecution {
 	}
 
 	public static void jmlcHelloWorld() throws Exception {
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript("print('hello world');", new String[] {}, new String[] {}, false);
 		script.executeScript();
 		conn.close();
@@ -96,7 +97,7 @@ public class BuildLiteExecution {
 		File file = new File("temp/scoring-example.dml");
 		FileUtils.writeStringToFile(file, scriptString);
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 		String dml = conn.readScript("temp/scoring-example.dml");
 		PreparedScript script = conn.prepareScript(dml, new String[] { "W", "X" }, new String[] { "predicted_y" },
 				false);
@@ -124,7 +125,7 @@ public class BuildLiteExecution {
 
 	public static void jmlcUnivariateStatistics() throws Exception {
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 
 		String dml = conn.readScript("scripts/algorithms/Univar-Stats.dml");
 		Map<String, String> m = new HashMap<String, String>();
@@ -155,7 +156,7 @@ public class BuildLiteExecution {
 	}
 
 	public static void jmlcWriteMatrix() throws Exception {
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript(
 				"x=matrix('1 2 3 4',rows=2,cols=2);write(x,'temp/x.csv',format='csv');", new String[] {},
 				new String[] {}, false);
@@ -177,7 +178,7 @@ public class BuildLiteExecution {
 	}
 
 	public static void jmlcReadMatrix() throws Exception {
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript("x=read('temp/x.csv',format='csv');y=x*2;print(toString(y));",
 				new String[] {}, new String[] {}, false);
 		script.executeScript();
@@ -276,7 +277,7 @@ public class BuildLiteExecution {
 		"write(B, \"B.csv\", format=\"csv\")\n";
 		/* @formatter:on */
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript(dml, new String[] {}, new String[] {}, false);
 		script.executeScript();
 		conn.close();
@@ -284,7 +285,7 @@ public class BuildLiteExecution {
 
 	public static void jmlcL2SVM() throws Exception {
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 
 		String dml = conn.readScript("scripts/algorithms/l2-svm.dml");
 		PreparedScript l2svm = conn.prepareScript(dml, new String[] { "X", "Y", "fmt", "Log" },
@@ -368,7 +369,7 @@ public class BuildLiteExecution {
 
 	public static void jmlcLinReg() throws Exception {
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 
 		String linRegDS = conn.readScript("scripts/algorithms/LinearRegDS.dml");
 		PreparedScript linRegDSScript = conn.prepareScript(linRegDS, new String[] { "X", "y" },
@@ -438,7 +439,7 @@ public class BuildLiteExecution {
 	}
 
 	public static void jmlcALS() throws Exception {
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 
 		String dataGen = conn.readScript("scripts/datagen/genRandData4ALS.dml");
 
@@ -486,7 +487,7 @@ public class BuildLiteExecution {
 
 	public static void jmlcKmeans() throws Exception {
 
-		Connection conn = new Connection();
+		Connection conn = getConfiguredConnection();
 
 		Map<String, String> m = new HashMap<String, String>();
 		m.put("$k", "5");
@@ -697,6 +698,12 @@ public class BuildLiteExecution {
 		} catch (DMLRuntimeException e) {
 			return "N/A";
 		}
+	}
+
+	private static Connection getConfiguredConnection() {
+		Connection conn = new Connection(ConfigType.ALLOW_DYN_RECOMPILATION, ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
+				ConfigType.PARALLEL_CP_MATRIX_OPERATIONS);
+		return conn;
 	}
 
 }

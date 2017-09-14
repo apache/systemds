@@ -1163,6 +1163,7 @@
 		</profile>
 
 		<profile>
+			<!-- Profile to create lightweight jar (currently for JMLC only) -->
 			<id>lite</id>
 			<build>
 				<plugins>

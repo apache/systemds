@@ -23,8 +23,8 @@
  * Bayesian Optimizer
  */
  
-Sobol = function (matrix [double] X)
-   return (matrix [double] out) {
+Sobol = function (matrix [double] X, int d, int n)
+   return (matrix [double] quasi, matrix [double] seed) {
      n = nrow(X);
      
      /*
@@ -36,64 +36,153 @@ Sobol = function (matrix [double] X)
       *      - doi>10.1145/641876.641879
       *  
       * Inputs:
-      * - N: no. of points 
-      * - D: dimension (to make sure that the file contains enough data!)
+      * - n: no. of points to generate
+      * - d: spatial dimension (to make sure that the file contains enough data!)
       * - X: input file containing direction numbers
       *
       * Outputs:
-      *  A two dimesional array points, where
+      *  A matrix points, where
       *
-      * POINTS [i][j] = the j-th component of the i-th point
+      * POINTS = the j-th component of the i-th point # NxD matrix
       * 
       * with i indexed from 0 to N-1 and j indexed from 0 to D-1
       *
       */
       
-      L = ceil (log(N) / log(2.0));
       
-      for (i in 0:N-1) {
-        POINTS[i] = [D];
-      }
+      # ------------------------------------------ 
+      #       N |   Binary  |   HI BIT |LOW BIT 
+      # ------------------------------------------
+      #       0           0      0       1
+      #       1           1      1       2
+      #       2          10      2       1
+      #       3          11      2       3
+      #       4         100      3       1
+      #       5         101      3       2
+      #       6         110      3       1
+      #      10        1010      4       0
+      #    1023  1111111111     10      11
+      #    1024 10000000000     11       1
+      #    1025 10000000001     11       2
+      # ------------------------------------------
       
-      for (i in 0:D-1) {
-        POINTS[0][j] = 0;
+      r = matrix("0", d, n)
+      
+      # initialize (a part of) V
+      v = matrix("1 1 1 1 1 1 1 1 1 1
+                  1 1 1 1 1 1 1 1 1 1      
+                  1 1 1 1 1 1 1 1 1 1
+                  1 1 1 1 1 1 1 1 1 1 
+
+                  1 3 1 3 1 3 3 1
+                  3 1 3 1 3 1 1 3 1 3
+                  1 3 1 3 3 1 3 1 3 1 
+                  3 1 1 3 1 3 1 3 1 3
+  
+                  7 5 1 3 3 7 5 
+                  5 7 7 1 3 3 7 5 1 1 
+                  5 3 3 1 7 5 1 3 3 7
+                  5 1 1 5 7 7 5 1 3 3
+
+                  1 7 9 13 11 
+                  1 3 7 9 5 13 13 11 3 15
+                  5 3 15 7 9 13 9 1 11 7
+                  5 15 1 15 11 5 3 1 7 9
+
+                  9 3 27 
+                  15 29 21 23 19 11 25 7 13 17
+                  1 25 29 3 31 11 5 23 27 19 
+                  21 5 1 17 13 7 15 9 31 9
+
+                  37 33 7 5 11 39 63 
+                  27 17 15 23 29 3 21 13 31 25
+                  9 49 33 19 29 11 19 27 25
+
+                  13
+                  33 115 41 79 17 29 119 75 73 105
+                  7 59 65 21 3 113 61 89 45 107
+
+                  7 23 39")
+            
+      # set poly
+      poly = matrix("1   3   7   11   13   19   25   37   59   47
+                     61  55  41  67   97   91  109  103  115   131   
+                     193 137 145 143 241   157 185  167  229   171
+                     213 191 253 203 211  239  247 285   369   299")
+      
+      initialized = 1
+      dim_max = 40
+      dim_num_save = -1
+      log_max = 30
+      seed_save = -1
+
+      initialize remaining rows of V
+      2, dim_num+1
+
+      # find the degree polynomial I from binary encoding
+
+      J  = poly(1:dim_num+1,)
+      d = 0
+
+
+      # Expand this bit pattern to separate components of logical array INCLUD.
+
+      J = poly(1:dim_num+1,)
+      includ = matrix(0, d, 1)
+
+      J2 = floor(J/2)
+      includ = (J != 2 * J2)
+      J = J2
+
+      J = (, d+1, maxcol+1)
+      newv = v(1:i, 1:j-m)
+
+      newv = bitwise_xor(newv, v)
+      v = newv
+
+      # Multiply columns of V by appropriate power of 2
+
+      v(0:dim_num, j) = v(0:dim_num, j-1) * 2
+
+      # RECIPD is 1/(common denominator of the elements in V).
+
+      recipd = 1.0 / (2*l)
+
+      lastq = matrix(0, dim_num, 1)
+
+      seed = floor(seed)
+
+      if (seed < 0) {
+        seed = 0
+      } elseif( seed == 0) {
+        l = 1
+        lastq = matrix(0, dim_num, 1)
+      } elseif(seed == seed_save + 1) {
+        l = lo0(seed)
+      } elseif(seed <= seed_save) {
+        seed_save = 0
+        l = 1
+        lastq = matrix(0, dim_num, 1)
+
+        L = bit_lo0(seed_temp(seed_save:seed))
+        lastq = bitwise_xor(lastq, v)
+  
+        L = bit_lo0(seed)
+      } elseif(seed_save + 1 < seed) {
+        L = bit_lo0(seed_temp(seed_save:seed))
+        lastq = bitwise_xor(lastq, v)
+
+        L = bit_lo0(seed)
       }
-     
-     # Computing first dimension
-     # Compute direction numbers V[1] to V[L], scaled by pow(2,32)
-     for (i in 1:N) {
-       V[i] = 1 << (32-i); # all m's 1
-     }
-    
-     # Evalulate X[0] to X[N-1], scaled by pow(2,32)
-     for (i in 1:N-1) {
-       X[i] = X[i-1] ^ V[C[i-1]];
-       POINTS[i][0] = X[i] / pow(2.0, 32); # actual points for first dimension.
-     }
-     
-     # Computing remaining dimensions
-     for (j in 1:D-1) {
-       if (L <= s) {
-         for (i in 1:L) V[i] = m[i] << (32-i); 
-       }
-       else {
-         for (i in 1:s) V[i] = m[i] << (32-i); 
-         for (i in s+1:L) {
-           V[i] = V[i-s] ^ (V[i-s] >> s); 
-	         for (k in 1:s-1) V[i] ^= (((a >> (s-1-k)) & 1) * V[i-k]); 
-         }
-       }
-       
-       for (i in 1:N-1) {
-         X[i] = X[i-1] ^ V[C[i-1]];
-         POINTS[i][j] = (double)X[i]/pow(2.0,32); # the actual points
-         //        ^ j for dimension (j+1)
-       }
-     }
-     
+
+      quasi = matrix(0, dim_num, 1)
+      quasi = lastq * recipd
+      lastq = bitwise_xor(lastq, v)
+
+      seed_save = seed 
+      seed = seed + 1
     
 }
- 
 
 samples = function (double N, double burn, logdist, xx, widths, step_out) 
   return (matrix [double] out) {

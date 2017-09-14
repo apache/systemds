@@ -33,7 +33,8 @@ for file in os.listdir(os.path.join(root_dir, 'target')):
     if (fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*.jar')
             and not (fnmatch.fnmatch(file, 'systemml-*javadoc.jar')
                   or fnmatch.fnmatch(file, 'systemml-*sources.jar')
-                  or fnmatch.fnmatch(file, 'systemml-*standalone.jar'))):
+                  or fnmatch.fnmatch(file, 'systemml-*standalone.jar')
+                  or fnmatch.fnmatch(file, 'systemml-*lite.jar'))):
         shutil.copyfile(os.path.join(root_dir, 'target', file),
                         os.path.join(java_dir_full_path, file))
     if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT-extra.jar') or fnmatch.fnmatch(file, 'systemml-*-extra.jar'):

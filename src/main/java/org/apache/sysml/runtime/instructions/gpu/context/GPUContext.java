@@ -93,27 +93,28 @@ public class GPUContext {
 	/**
 	 * cudnnHandle for Deep Neural Network operations on the GPU
 	 */
-	private final ThreadLocal<cudnnHandle> cudnnHandle = new ThreadLocal<>();
+	private cudnnHandle cudnnHandle;
 	/**
 	 * cublasHandle for BLAS operations on the GPU
 	 */
-	private final ThreadLocal<cublasHandle> cublasHandle = new ThreadLocal<>();
+	private cublasHandle cublasHandle;
 	/**
 	 * cusparseHandle for certain sparse BLAS operations on the GPU
 	 */
-	private final ThreadLocal<cusparseHandle> cusparseHandle = new ThreadLocal<>();
+	private cusparseHandle cusparseHandle;
 	/**
 	 * cusolverDnHandle for invoking solve() function on dense matrices on the GPU
 	 */
-	private final ThreadLocal<cusolverDnHandle> cusolverDnHandle = new ThreadLocal<>();
+	private cusolverDnHandle cusolverDnHandle;
 	/**
 	 * cusolverSpHandle for invoking solve() function on sparse matrices on the GPU
 	 */
-	private final ThreadLocal<cusolverSpHandle> cusolverSpHandle = new ThreadLocal<>();
+	private cusolverSpHandle cusolverSpHandle;
 	/**
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
-	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
+	private JCudaKernels kernels;
+
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig()
 			.getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
@@ -208,36 +209,38 @@ public class GPUContext {
 	}
 
 	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
-		if (cudnnHandle.get() == null) {
-			cudnnHandle.set(new cudnnHandle());
-			cudnnCreate(cudnnHandle.get());
+		deleteCudaLibraryHandles();
+
+		if (cudnnHandle == null) {
+			cudnnHandle = new cudnnHandle();
+			cudnnCreate(cudnnHandle);
 		}
 
-		if (cublasHandle.get() == null) {
-			cublasHandle.set(new cublasHandle());
-			cublasCreate(cublasHandle.get());
+		if (cublasHandle == null) {
+			cublasHandle = new cublasHandle();
+			cublasCreate(cublasHandle);
 		}
 		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
 		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
 		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
 
-		if (cusparseHandle.get() == null) {
-			cusparseHandle.set(new cusparseHandle());
-			cusparseCreate(cusparseHandle.get());
+		if (cusparseHandle == null) {
+			cusparseHandle = new cusparseHandle();
+			cusparseCreate(cusparseHandle);
 		}
 
-		if (cusolverDnHandle.get() == null) {
-			cusolverDnHandle.set(new cusolverDnHandle());
-			cusolverDnCreate(cusolverDnHandle.get());
+		if (cusolverDnHandle == null) {
+			cusolverDnHandle = new cusolverDnHandle();
+			cusolverDnCreate(cusolverDnHandle);
 		}
 
-		if (cusolverSpHandle.get() == null) {
-			cusolverSpHandle.set(new cusolverSpHandle());
-			cusolverSpCreate(cusolverSpHandle.get());
+		if (cusolverSpHandle == null) {
+			cusolverSpHandle = new cusolverSpHandle();
+			cusolverSpCreate(cusolverSpHandle);
 		}
 
-		if (kernels.get() == null) {
-			kernels.set(new JCudaKernels());
+		if (kernels == null) {
+			kernels = new JCudaKernels();
 		}
 	}
 
@@ -710,7 +713,7 @@ public class GPUContext {
 	 * @return cudnnHandle for current thread
 	 */
 	public cudnnHandle getCudnnHandle() {
-		return cudnnHandle.get();
+		return cudnnHandle;
 	}
 
 	/**
@@ -719,7 +722,7 @@ public class GPUContext {
 	 * @return cublasHandle for current thread
 	 */
 	public cublasHandle getCublasHandle() {
-		return cublasHandle.get();
+		return cublasHandle;
 	}
 
 	/**
@@ -728,7 +731,7 @@ public class GPUContext {
 	 * @return cusparseHandle for current thread
 	 */
 	public cusparseHandle getCusparseHandle() {
-		return cusparseHandle.get();
+		return cusparseHandle;
 	}
 
 	/**
@@ -737,7 +740,7 @@ public class GPUContext {
 	 * @return cusolverDnHandle for current thread
 	 */
 	public cusolverDnHandle getCusolverDnHandle() {
-		return cusolverDnHandle.get();
+		return cusolverDnHandle;
 	}
 
 	/**
@@ -746,7 +749,7 @@ public class GPUContext {
 	 * @return cusolverSpHandle for current thread
 	 */
 	public cusolverSpHandle getCusolverSpHandle() {
-		return cusolverSpHandle.get();
+		return cusolverSpHandle;
 	}
 
 	/**
@@ -755,7 +758,7 @@ public class GPUContext {
 	 * @return {@link JCudaKernels} for current thread
 	 */
 	public JCudaKernels getKernels() {
-		return kernels.get();
+		return kernels;
 	}
 
 	/**
@@ -768,11 +771,34 @@ public class GPUContext {
 			LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 		}
 		clearMemory();
-		cudnnDestroy(cudnnHandle.get());
-		cublasDestroy(cublasHandle.get());
-		cusparseDestroy(cusparseHandle.get());
-		cusolverDnDestroy(cusolverDnHandle.get());
-		cusolverSpDestroy(cusolverSpHandle.get());
+
+		deleteCudaLibraryHandles();
+	}
+
+	/**
+	 *	Deletes CUDA library handles
+	 */
+	private void deleteCudaLibraryHandles() {
+		if (cudnnHandle != null)
+			cudnnDestroy(cudnnHandle);
+
+		if (cublasHandle != null)
+			cublasDestroy(cublasHandle);
+
+		if (cusparseHandle != null)
+			cusparseDestroy(cusparseHandle);
+
+		if (cusolverDnHandle != null)
+			cusolverDnDestroy(cusolverDnHandle);
+
+		if (cusolverSpHandle != null)
+			cusolverSpDestroy(cusolverSpHandle);
+
+		cudnnHandle = null;
+		cublasHandle = null;
+		cusparseHandle = null;
+		cusolverDnHandle = null;
+		cusolverSpHandle = null;
 	}
 
 	/**

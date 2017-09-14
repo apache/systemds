@@ -132,8 +132,14 @@ public class GPUContext {
 	 */
 	private final ThreadLocal<JCudaKernels> kernels = new ThreadLocal<>();
 	
+	/**
+	 * Print information of memory usage. 
+	 * 
+	 * @param opcode opcode of caller
+	 * @throws DMLRuntimeException if error 
+	 */
 	public void printMemoryInfo(String opcode) throws DMLRuntimeException {
-		// if(LOG.isDebugEnabled()) {
+		if(LOG.isDebugEnabled()) {
 			long totalFreeCUDASpace = 0;
 			for(Entry<Long, LinkedList<Pointer>> kv : freeCUDASpaceMap.entrySet()) {
 				totalFreeCUDASpace += kv.getKey()*kv.getValue().size();
@@ -153,11 +159,11 @@ public class GPUContext {
 			long total[] = { 0 };
 			cudaMemGetInfo(free, total);
 			long gpuFreeMemory =  (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
-			LOG.info(opcode + ": Total memory: " + total[0] + ", Free memory: " + free[0] + " (with util factor: " + gpuFreeMemory + "), "
+			LOG.debug(opcode + ": Total memory: " + total[0] + ", Free memory: " + free[0] + " (with util factor: " + gpuFreeMemory + "), "
 					+ "Lazy unfreed memory: " + totalFreeCUDASpace + ", Locked allocated memory (read/write): " 
 					+ readLockedAllocatedMemory + "/" + writeLockedAllocatedMemory + ", "
 					+ " Unlocked allocated memory: " + unlockedAllocatedMemory);
-		// }
+		}
 	}
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
@@ -384,6 +390,10 @@ public class GPUContext {
 	 * @param eager           true if to be done eagerly
 	 */
 	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
+		// Always perform eager cudaFree if the ALLOW_GPU_LAZY_CUDA_FREE optimization is disabled. 
+		if(!OptimizerUtils.ALLOW_GPU_LAZY_CUDA_FREE)
+			eager = true;
+		
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) // trying to free a null pointer
 			return;

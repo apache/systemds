@@ -204,6 +204,13 @@ public class OptimizerUtils
 	 * 
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
+	
+	/**
+	 * Enables lazy freeing of rmvar-ed GPU pointers.
+	 * If the subsequent instructions potential have matrices of same sizes, this optimization
+	 * allows reuse of previously allocated GPU pointer. Thus, saving the cost of unnecessary CUDA alloc and free.   
+	 */
+	public static final boolean ALLOW_GPU_LAZY_CUDA_FREE = true;
 
 	//////////////////////
 	// Optimizer levels //

@@ -196,13 +196,12 @@ public abstract class GPUInstruction extends Instruction {
 		if(DMLScript.SYNCHRONIZE_GPU) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 		}
-		// if(LOG.isDebugEnabled()) {
-		 	ec.getGPUContext(0).printMemoryInfo(getOpcode());
-//			for(GPUContext gpuCtx : ec.getGPUContexts()) {
-//				if(gpuCtx != null)
-//					gpuCtx.printMemoryInfo();
-//			}
-		// }
+		if(LOG.isDebugEnabled()) {
+			for(GPUContext gpuCtx : ec.getGPUContexts()) {
+				if(gpuCtx != null)
+					gpuCtx.printMemoryInfo(getOpcode());
+			}
+		}
 			
 	}
 

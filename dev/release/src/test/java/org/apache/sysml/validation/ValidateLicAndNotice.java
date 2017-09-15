@@ -97,7 +97,7 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will validate all zip and tgz from distribution location.
+	 * This will validate all archives from distribution location.
 	 *
 	 * @return Returns the output code
 	 */
@@ -118,7 +118,7 @@ public class ValidateLicAndNotice
 
 		List<String> zips = getZipsInDistro(libDirectory);
 		if(zips.size() == 0) {
-			Utility.debugPrint(Constants.DEBUG_ERROR, "Can't find zip/tgz files in folder: " + libDirectory.getAbsoluteFile().toString());
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Can't find archives in folder: " + libDirectory.getAbsoluteFile().toString());
 			return Constants.NO_ZIP_TGZ;
 		}
 
@@ -126,7 +126,7 @@ public class ValidateLicAndNotice
 		{
 			retCodeForAllFileTypes = Constants.SUCCESS;
 			Utility.debugPrint(Constants.DEBUG_INFO, "======================================================================================");
-			Utility.debugPrint(Constants.DEBUG_INFO, "Validating zip file : " + zipFile + " ...");
+			Utility.debugPrint(Constants.DEBUG_INFO, "Validating archive: " + zipFile + " ...");
 
 			for (String fileType: fileTypes) {
 				retCode = Constants.SUCCESS;
@@ -167,29 +167,29 @@ public class ValidateLicAndNotice
 					retCode += Constants.FILE_NOT_IN_LIC;
 				}
 
-				// Validate shaded jar and notice only one time for each zip/tgz file.
+				// Validate shaded jar and notice only one time for each archive.
 				if(fileType == Constants.JAR) {
 					for (String file : fileSysml)
 						retCode += ValidateLicAndNotice.validateShadedLic(libDirectory + "/" + zipFile, file, outTempDir.getAbsolutePath());
 					if (!validateNotice(outTempDir.getAbsolutePath()+"/"+Constants.NOTICE)) {
-						Utility.debugPrint(Constants.DEBUG_ERROR, "Notice validation falied, please check notice file manually in this zip/tgz file.");
+						Utility.debugPrint(Constants.DEBUG_ERROR, "Notice validation failed, please check notice file manually in this archive.");
 						retCode += Constants.INVALID_NOTICE;
 					}
 					if (!validateJSCssLicense(licenseFile, libDirectory + "/" + zipFile)) {
-						Utility.debugPrint(Constants.DEBUG_ERROR, "JS/CSS license validation falied, please check license file manually in this zip/tgz file.");
+						Utility.debugPrint(Constants.DEBUG_ERROR, "JS/CSS license validation failed, please check license file manually in this archive.");
 						retCode += Constants.JS_CSS_LIC_NOT_EXIST;
 					}
 				}
 
 				if (retCode  == Constants.SUCCESS)
-					Utility.debugPrint(Constants.DEBUG_INFO3, "Validation of file type '." + fileType + "' in zip/tgz file : " + zipFile + " completed successfully.");
+					Utility.debugPrint(Constants.DEBUG_INFO3, "Validation of file type '." + fileType + "' in archive " + zipFile + " completed successfully.");
 				else {
-					Utility.debugPrint(Constants.DEBUG_ERROR, "License/Notice validation failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
+					Utility.debugPrint(Constants.DEBUG_ERROR, "License/Notice validation failed for archive " + zipFile + " with error code " + retCode + ", please validate file manually.");
 					retCodeForAllFileTypes = Constants.FAILURE;
 				}
 			}
 			if(retCodeForAllFileTypes == Constants.SUCCESS)
-				Utility.debugPrint(Constants.DEBUG_INFO, "Validation of zip/tgz file : " + zipFile + " completed successfully.");
+				Utility.debugPrint(Constants.DEBUG_INFO, "Validation of archive " + zipFile + " completed successfully.");
 
 			retCodeAll = retCodeForAllFileTypes != Constants.SUCCESS?Constants.FAILURE:retCodeAll;
 		}
@@ -304,12 +304,12 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will return the list of files in licsense files but not in list of files coming from zip/tgz file.
+	 * This will return the list of files in license files but not in list of files coming from archive.
 	 *
-	 * @param	licenseFile is the file against which contents of zip/tgz file gets compared.
-	 * @param 	files	are the list of files coming from zip/tgz file.
-	 * @param 	fileExt	is the extention of file to validate (e.g. "jar")
-	 * @return 	Returns the list of files in License file but not in zip/tgz file.
+	 * @param	licenseFile is the file against which contents of archive gets compared.
+	 * @param 	files	are the list of files coming from archive.
+	 * @param 	fileExt	is the extension of file to validate (e.g. "jar")
+	 * @return 	Returns the list of files in License file but not in archive.
 	 */
 	private List<String> getLICENSEFilesNotInList(File licenseFile, List<String> files, String fileExt) throws IOException {
 
@@ -343,10 +343,10 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will return the list of files in licsense files with specified file extention.
+	 * This will return the list of files in license files with specified file extension.
 	 *
-	 * @param	licenseFile is the file against which contents of zip/tgz file gets compared.
-	 * @param 	fileExt	is the extention of file to validate (e.g. "jar")
+	 * @param	licenseFile is the file against which contents of archive gets compared.
+	 * @param 	fileExt	is the extension of file to validate (e.g. "jar")
 	 * @return 	Returns the list of files in License file.
 	 */
 	private List<String> getFilesFromLicenseFile(File licenseFile, String fileExt) throws IOException {
@@ -381,12 +381,12 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	* This will return the list of files coming from zip/tgz file but not in the licsense file.
+	* This will return the list of files coming from archive but not in the license file.
 	 *
-	 * @param	licenseFile is the file against which contents of zip/tgz file gets compared.
-	 * @param 	files	are the list of files coming from zip/tgz file.
-	 * @param 	fileExt	is the extention of file to validate (e.g. "jar")
-	 * @return 	Returns the list of files in zip/tgz file but not in License file.
+	 * @param	licenseFile is the file against which contents of archive gets compared.
+	 * @param 	files	are the list of files coming from archive.
+	 * @param 	fileExt	is the extension of file to validate (e.g. "jar")
+	 * @return 	Returns the list of files in archive but not in License file.
 	 */
 	private List<String> getFilesNotInLICENSE(File licenseFile, List<String> files, String fileExt) throws IOException {
 		List<String> badFiles = new ArrayList<String>();
@@ -400,16 +400,18 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will return the list of zip/tgz files from a directory.
+	 * This will return the list of archives from a directory.
 	 *
-	 * @param	directory is the location from where list of zip/tgz will be returned.
-	 * @return 	Returns the list of zip/tgz files from a directory.
+	 * @param	directory is the location from where list of archives will be returned.
+	 * @return 	Returns the list of archives (e.g., .zip/tgz/tar.gz files) from a directory.
 	 */
 	private List<String> getZipsInDistro(File directory) {
 		List<String> zips = new ArrayList<String>();
 		for (String fileName : directory.list())
-			if ((fileName.endsWith("." + Constants.ZIP)) || (fileName.endsWith("." + Constants.TGZ)))
+			if ((fileName.endsWith("." + Constants.ZIP)) || (fileName.endsWith("." + Constants.TGZ)) ||
+				(fileName.endsWith("." + Constants.TAR_GZ))) {
 				zips.add(fileName);
+			}
 		return zips;
 	}
 
@@ -434,19 +436,19 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will return the file from zip/tgz file and store it in specified location.
+	 * This will return the file from archive and store it in specified location.
 	 *
-	 * @param	zipFileName is the name of zip/tgz file from which file to be extracted.
+	 * @param	zipFileName is the name of archive from which file to be extracted.
 	 * @param	fileName is the name of the file to be extracted.
 	 * @param	strDestLoc is the location where file will be extracted.
 	 * @param 	bFirstDirLevel to indicate to get file from first directory level.
 	 * @return  Success or Failure
 	 */
 	public static boolean extractFile(String zipFileName, String fileName, String strDestLoc, boolean bFirstDirLevel) {
-		Utility.debugPrint(Constants.DEBUG_CODE, "Extracting " + fileName + " from jar/zip/tgz file " + zipFileName);
+		Utility.debugPrint(Constants.DEBUG_CODE, "Extracting " + fileName + " from archive " + zipFileName);
 		if (zipFileName.endsWith("." + Constants.ZIP) || zipFileName.endsWith("." + Constants.JAR))
 			return extractFileFromZip(zipFileName, fileName, strDestLoc, bFirstDirLevel);
-		else if (zipFileName.endsWith("." + Constants.TGZ))
+		else if (zipFileName.endsWith("." + Constants.TGZ) || zipFileName.endsWith("." + Constants.TAR_GZ))
 			return extractFileFromTGZ(zipFileName, fileName, strDestLoc, bFirstDirLevel);
 		return Constants.bFAILURE;
 	}
@@ -557,16 +559,16 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will return the list of files from zip/tgz file.
+	 * This will return the list of files from archive.
 	 *
-	 * @param	zipFileName is the name of zip file from which list of files with specified file extension will be returned.
+	 * @param	zipFileName is the name of archive (e.g., .zip/tgz/tar.gz file) from which list of files with specified file extension will be returned.
 	 * @param	fileExt is the file extension to be used to get list of files to be returned.
-	 * @return	Returns list of files having specified extention from zip file .
+	 * @return	Returns list of files having specified extension from archive.
 	 */
 	public static List<String> getFiles (String zipFileName, String fileExt) {
 		if (zipFileName.endsWith("." + Constants.ZIP))
 			return getFilesFromZip (zipFileName, fileExt);
-		else if (zipFileName.endsWith("." + Constants.TGZ))
+		else if (zipFileName.endsWith("." + Constants.TGZ) || zipFileName.endsWith("." + Constants.TAR_GZ))
 			return getFilesFromTGZ (zipFileName, fileExt);
 		return null;
 	}
@@ -575,7 +577,7 @@ public class ValidateLicAndNotice
 	 *
 	 * @param	zipFileName is the name of zip file from which list of files with specified file extension will be returned.
 	 * @param	fileExt is the file extension to be used to get list of files to be returned.
-	 * @return	Returns list of files having specified extention from zip file .
+	 * @return	Returns list of files having specified extension from zip file.
 	 */
 	public static List<String> getFilesFromZip (String zipFileName, String fileExt) {
 		List<String> files = new ArrayList<String>();
@@ -604,7 +606,7 @@ public class ValidateLicAndNotice
 	 *
 	 * @param	tgzFileName is the name of tgz file from which list of files with specified file extension will be returned.
 	 * @param	fileExt is the file extension to be used to get list of files to be returned.
-	 * @return	Returns list of files having specified extention from tgz file .
+	 * @return	Returns list of files having specified extension from tgz file.
 	 */
 	public static List<String> getFilesFromTGZ (String tgzFileName, String fileExt) {
 
@@ -683,10 +685,10 @@ public class ValidateLicAndNotice
 	}
 
 	/**
-	 * This will validate license for JavaScript & CSS files within a zip/tgz file.
+	 * This will validate license for JavaScript & CSS files within an archive.
 	 *
-	 * @param	licenseFile is the file against which contents of zip/tgz file gets compared.
-	 * @param	zipFileName is the name of zip/tgz file from which list of JavaScript files will be returned.
+	 * @param	licenseFile is the file against which contents of archive gets compared.
+	 * @param	zipFileName is the name of archive from which list of JavaScript files will be returned.
 	 * @return  Success or Failure code
 	 */
 	public static boolean validateJSCssLicense(File licenseFile, String zipFileName) throws Exception
@@ -807,7 +809,7 @@ public class ValidateLicAndNotice
 			Utility.debugPrint(Constants.DEBUG_INFO, "Return code = " + retCode);
 		}
 		catch (Exception e) {
-			Utility.debugPrint(Constants.DEBUG_ERROR, "Error while validating license in zip/tgz file." + e);
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Error while validating license in archive." + e);
 		}
 	}
 

@@ -36,15 +36,15 @@ This will compile the utility source code which is not on regular source code pa
 --verifyAll <--tag="Code based on Git tag will be validated."> [--workDir="Directory where output files will be created]
 This will verify license, notice and binary files. 
 
---verifyLic [--distDir="Directory Containing zip/tgz files]
-This will verify license, notice in zip/tgz files. 
+--verifyLic [--distDir="Directory Containing zip/tgz/tar.gz files]
+This will verify license, notice in zip/tgz/tar.gz files. 
 
 --verifyBin <--tag="Code based on Git tag will be validated."> [--workDir="Directory where output files will be created]
 This will verify binary distribution files for runtime correctness. 
 
 OPTIONS
 
---distDir            - Directory containing release artifacts (zip/tzg) files.
+--distDir            - Directory containing release artifacts (zip/tgz/tar.gz) files.
 
 --workDir             - Directory where output files will be created.
 
@@ -73,7 +73,7 @@ EOF
 set -e
 
 if [ $# -eq 0 ]; then
-  echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Insuffient parameters passed.";
+  echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Insufficient parameters passed.";
   exit_with_usage
 fi
 
@@ -160,7 +160,7 @@ if [[ "$COMPILE_CODE" == "true" ]]; then
 
     javac -Xlint:unchecked -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/*.java
 
-    cd "$ORIG_DIR" # Return to directoryt from it was called.
+    cd "$ORIG_DIR" # Return to directory from it was called.
     exit 0
 fi
 
@@ -180,7 +180,7 @@ if [[ "$BIN_VERIFY" == "true" ]]; then
 fi
 
 if [[ "$LIC_NOTICE_VERIFY" == "true" ]]; then
-    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying license and notices from zip/tgz files..."
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying license and notices from zip/tgz/tar.gz files..."
 
     java -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateLicAndNotice $DIST_DIR
     RET_CODE=$?

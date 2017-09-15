@@ -38,4 +38,4 @@ src_path_prefix = os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFAC
 src_path = src_path_prefix + '.zip' if platform.system() == "Windows" and os.path.exists(src_path_prefix + '.zip') else src_path_prefix + '.tar.gz' 
 os.rename(
     src_path,
-    os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION + '-python.tgz'))
+    os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION + '-python.tar.gz'))

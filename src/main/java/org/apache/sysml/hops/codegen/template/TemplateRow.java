@@ -433,12 +433,12 @@ public class TemplateRow extends TemplateBase
 		
 		@Override
 		public int compare(Hop h1, Hop h2) {
-			long ncells1 = h1.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
+			long ncells1 = h1.isScalar() ? Long.MIN_VALUE : 
 				(h1==_X) ? Long.MAX_VALUE : (h1==_B1) ? Long.MAX_VALUE-1 : 
-				h1.dimsKnown() ? h1.getDim1()*h1.getDim2() : Long.MAX_VALUE-2;
-			long ncells2 = h2.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
+				h1.dimsKnown() ? h1.getLength() : Long.MAX_VALUE-2;
+			long ncells2 = h2.isScalar() ? Long.MIN_VALUE : 
 				(h2==_X) ? Long.MAX_VALUE : (h2==_B1) ? Long.MAX_VALUE-1 : 
-				h2.dimsKnown() ? h2.getDim1()*h2.getDim2() : Long.MAX_VALUE-2;
+				h2.dimsKnown() ? h2.getLength() : Long.MAX_VALUE-2;
 			return (ncells1 > ncells2) ? -1 : (ncells1 < ncells2) ? 1 : 0; 
 		}
 	}

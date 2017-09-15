@@ -983,6 +983,10 @@ public abstract class Hop implements ParseInfo
 		_dim2 = dim2;
 	}
 	
+	public long getLength() {
+		return _dim1 * _dim2;
+	}
+	
 	public double getSparsity() {
 		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
 	}
@@ -1012,6 +1016,14 @@ public abstract class Hop implements ParseInfo
 	
 	public void setDataType( DataType dt ) {
 		_dataType = dt;
+	}
+	
+	public boolean isScalar() {
+		return _dataType.isScalar();
+	}
+	
+	public boolean isMatrix() {
+		return _dataType.isMatrix();
 	}
 
 	public void setVisited() {

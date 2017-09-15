@@ -355,17 +355,20 @@ public class TemplateCell extends TemplateBase
 		
 		@Override
 		public int compare(Hop h1, Hop h2) {
-			long ncells1 = h1.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
-				h1.dimsKnown() ? h1.getDim1()*h1.getDim2() : Long.MAX_VALUE;
-			long ncells2 = h2.getDataType()==DataType.SCALAR ? Long.MIN_VALUE :
-				h2.dimsKnown() ? h2.getDim1()*h2.getDim2() : Long.MAX_VALUE;
+			long ncells1 = h1.isScalar() ? Long.MIN_VALUE : 
+				h1.dimsKnown() ? h1.getLength() : Long.MAX_VALUE;
+			long ncells2 = h2.isScalar() ? Long.MIN_VALUE :
+				h2.dimsKnown() ? h2.getLength() : Long.MAX_VALUE;
 			if( ncells1 > ncells2 || h1 == _driver )
 				return -1;
 			else if( ncells1 < ncells2 || h2 == _driver)
 				return 1;
-			return Long.compare(
-				h1.dimsKnown(true) ? h1.getNnz() : ncells1, 
-				h2.dimsKnown(true) ? h2.getNnz() : ncells2);
+			if( h1.isScalar() && h2.isScalar() )
+				return Long.compare(h1.getHopID(), h2.getHopID());
+			return (h1.dimsKnown(true) && h2.dimsKnown(true) && h1.getNnz() != h2.getNnz()
+				&& HopRewriteUtils.isSparse(h1) || HopRewriteUtils.isSparse(h1)) ?
+				Long.compare(h1.getNnz(), h2.getNnz()) :
+				Long.compare(h1.getHopID(), h2.getHopID());
 		}
 	}
 }

@@ -29,8 +29,6 @@ import sklearn as sk
 from sklearn.metrics import accuracy_score, r2_score
 from py4j.protocol import Py4JError
 import traceback
-import keras
-import keras2caffe
 from sklearn.preprocessing import LabelEncoder
 import threading
 import time
@@ -845,18 +843,15 @@ class Caffe2DML(BaseSystemMLClassifier):
     
 class Keras2DML(Caffe2DML):
     """
-    Peforms training/prediction for a given caffe network
-
-
-    Examples
-    --------
+    Peforms training/prediction for a given keras model.
 
 
     """
+
     def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False,
                  tensorboard_log_dir=None):
         """
-        Performs training/prediction for a given caffe network.
+        Performs training/prediction for a given keras model.
 
         Parameters
         ----------
@@ -867,6 +862,8 @@ class Keras2DML(Caffe2DML):
         tensorboard_log_dir: directory to store the event logs (default: None,
         we use a temporary directory)
         """
+        #NOTE Lazily imported until the Caffe Dependency issue is resolved
+        from . import keras2caffe
         self.name = keras_model.name
         #Convert keras model into caffe net and weights
         caffenet, caffemodel = keras2caffe.generate_caffe_model(keras_model,self.name + ".proto",self.name + ".caffemodel")

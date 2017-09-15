@@ -448,14 +448,14 @@ public class PreparedScript
 		//enable requested functions for recompile once
 		for( String fname : fnames ) {
 			String fkey = DMLProgram.constructFunctionKey(fnamespace, fname);
-			if( !fgraph.isRecursiveFunction(fkey) ) {
+			if( fgraph != null && !fgraph.isRecursiveFunction(fkey) ) {
 				FunctionProgramBlock fpb = _prog.getFunctionProgramBlock(fnamespace, fname);
 				if( fpb != null )
 					fpb.setRecompileOnce(true);
 				else
 					LOG.warn("Failed to enable function recompile for non-existing '"+fkey+"'.");		
 			}
-			else {
+			else if( fgraph != null ) {
 				LOG.warn("Failed to enable function recompile for recursive '"+fkey+"'.");
 			}
 		}

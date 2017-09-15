@@ -39,7 +39,7 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 
 	CPOperand output;
 	CPOperand input1, input2;
-	AppendCPInstruction.AppendType type;
+	AppendCPInstruction.AppendType atype;
 
 	private MatrixAppendGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendCPInstruction.AppendType type, String opcode, String istr) {
@@ -47,7 +47,7 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		this.output = out;
 		this.input1 = in1;
 		this.input2 = in2;
-		this.type = type;
+		this.atype = type;
 	}
 
 	public static MatrixAppendGPUInstruction parseInstruction ( String str )
@@ -86,9 +86,9 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, input1.getName());
 		MatrixObject mat2 = getMatrixInputForGPUInstruction(ec, input2.getName());
 
-		if(type == AppendCPInstruction.AppendType.CBIND) {
+		if(atype == AppendCPInstruction.AppendType.CBIND) {
 			LibMatrixCUDA.cbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
-		} else if (type == AppendCPInstruction.AppendType.RBIND ) {
+		} else if (atype == AppendCPInstruction.AppendType.RBIND ) {
 			LibMatrixCUDA.rbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
 		} else {
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);

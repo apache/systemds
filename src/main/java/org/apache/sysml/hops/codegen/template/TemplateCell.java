@@ -366,7 +366,7 @@ public class TemplateCell extends TemplateBase
 			if( h1.isScalar() && h2.isScalar() )
 				return Long.compare(h1.getHopID(), h2.getHopID());
 			return (h1.dimsKnown(true) && h2.dimsKnown(true) && h1.getNnz() != h2.getNnz()
-				&& HopRewriteUtils.isSparse(h1) || HopRewriteUtils.isSparse(h1)) ?
+				&& (HopRewriteUtils.isSparse(h1) || HopRewriteUtils.isSparse(h2))) ?
 				Long.compare(h1.getNnz(), h2.getNnz()) :
 				Long.compare(h1.getHopID(), h2.getHopID());
 		}

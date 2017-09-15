@@ -308,12 +308,14 @@ public class MLContextConversionUtil {
 	public static FrameObject binaryBlocksToFrameObject(String variableName, JavaPairRDD<Long, FrameBlock> binaryBlocks,
 			FrameMetadata frameMetadata) {
 
-		MatrixCharacteristics mc = (frameMetadata != null) ? frameMetadata.asMatrixCharacteristics()
-				: new MatrixCharacteristics();
-
+		MatrixCharacteristics mc = (frameMetadata != null) ? 
+			frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
+		ValueType[] schema = (frameMetadata != null) ?
+			frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]) : 
+			UtilFunctions.nCopies((int)mc.getCols(), ValueType.STRING);
+		
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(),
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo),
-				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
+			new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), schema);
 		frameObject.setRDDHandle(new RDDObject(binaryBlocks, variableName));
 		return frameObject;
 	}

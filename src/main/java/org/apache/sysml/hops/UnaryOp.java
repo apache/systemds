@@ -577,14 +577,15 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	{
 		double ret = 0;
 		
-		if ( _op == OpOp1.IQM  || _op == OpOp1.MEDIAN) {
+		if ( _op == OpOp1.IQM || _op == OpOp1.MEDIAN) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
 
 		if (isGPUEnabled()) {
-			OptimizerUtils.estimateSize(dim1, dim2); // Intermediate memory required to convert sparse to dense
+			// Intermediate memory required to convert sparse to dense
+			ret += OptimizerUtils.estimateSize(dim1, dim2); 
 		}
 		
 		return ret;

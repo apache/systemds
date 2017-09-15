@@ -871,7 +871,7 @@ class Keras2DML(Caffe2DML):
         #Convert keras model into caffe net and weights
         caffenet, caffemodel = keras2caffe.generate_caffe_model(keras_model,self.name + ".proto",self.name + ".caffemodel")
         #Create solver from network file
-        caffesolver = keras2caffe.CaffeSolver(self.name + ".proto").write(self.name + "_solver.proto")
+        caffesolver = keras2caffe.CaffeSolver(self.name + ".proto",keras_model).write(self.name + "_solver.proto")
         #Generate caffe2DML object
         super(Keras2DML,self).__init__(sparkSession, self.name+ "_solver.proto",input_shape, transferUsingDF, tensorboard_log_dir)
         #Create and Load weights into caffe2DML

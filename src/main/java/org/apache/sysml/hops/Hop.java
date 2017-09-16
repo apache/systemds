@@ -231,14 +231,6 @@ public abstract class Hop implements ParseInfo
 			}
 		}
 	}
-	
-	public void setRequiresReblock(boolean flag) {
-		_requiresReblock = flag;
-	}
-	
-	public void setRequiresCompression(boolean flag) {
-		_requiresCompression = flag;
-	}
 
 	public boolean hasMatrixInputWithDifferentBlocksizes()
 	{
@@ -254,27 +246,35 @@ public abstract class Hop implements ParseInfo
 		return false;
 	}
 	
-	public void setOutputBlocksizes( long brlen, long bclen )
-	{
+	public void setOutputBlocksizes( long brlen, long bclen ) {
 		setRowsInBlock( brlen );
 		setColsInBlock( bclen );
 	}
 	
-	public boolean requiresReblock()
-	{
+	public void setRequiresReblock(boolean flag) {
+		_requiresReblock = flag;
+	}
+	
+	public boolean requiresReblock() {
 		return _requiresReblock;
 	}
 	
-	public void setRequiresCheckpoint(boolean flag)
-	{
+	public void setRequiresCheckpoint(boolean flag) {
 		_requiresCheckpoint = flag;
 	}
 	
-	public boolean requiresCheckpoint()
-	{
+	public boolean requiresCheckpoint() {
 		return _requiresCheckpoint;
 	}
-
+	
+	public void setRequiresCompression(boolean flag) {
+		_requiresCompression = flag;
+	}
+	
+	public boolean requiresCompression() {
+		return _requiresCompression;
+	}
+	
 	public void constructAndSetLopsDataFlowProperties() 
 		throws HopsException
 	{

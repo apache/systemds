@@ -540,7 +540,7 @@ public class OptTreeConverter
 			FunctionOp fhop = (FunctionOp) hop;
 			String fname = fhop.getFunctionName();
 			String fnspace = fhop.getFunctionNamespace();
-			String fKey = DMLProgram.constructFunctionKey(fnspace, fname);
+			String fKey = fhop.getFunctionKey();
 			Object[] prog = _hlMap.getRootProgram();
 
 			OptNode node = new OptNode(NodeType.FUNCCALL);
@@ -558,16 +558,13 @@ public class OptTreeConverter
 				if( !memo.contains(fKey) )
 				{
 					memo.add(fKey); 
-				
 					int len = fs.getBody().size();
-					for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-					{
+					for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ ) {
 						ProgramBlock lpb = fpb.getChildBlocks().get(i);
 						StatementBlock lsb = fs.getBody().get(i);
 						node.addChild( rCreateAbstractOptNode(lsb, lpb, vars, false, memo) );
 					}
-				
-					memo.remove(fKey);							
+					memo.remove(fKey);
 				}
 				else
 					node.addParam(ParamType.RECURSIVE_CALL, "true");

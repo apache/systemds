@@ -27,8 +27,17 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class Compression extends Lop 
 {
-	public static final String OPCODE = "compress"; 
-
+	public static final String OPCODE = "compress";
+	
+	public enum CompressConfig {
+		TRUE,
+		FALSE,
+		AUTO;
+		public boolean isEnabled() {
+			return this == TRUE || this == AUTO;
+		}
+	}
+	
 	public Compression(Lop input, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException
 	{

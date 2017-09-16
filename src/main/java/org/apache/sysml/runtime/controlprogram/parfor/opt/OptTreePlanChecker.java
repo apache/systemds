@@ -189,11 +189,9 @@ public class OptTreePlanChecker
 			return;
 		
 		//process functionop
-		if( hop instanceof FunctionOp )
-		{
+		if( hop instanceof FunctionOp ) {
 			FunctionOp fop = (FunctionOp) hop;
-			String key = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(),fop.getFunctionName());
-			memo.put(key, fop);
+			memo.put(fop.getFunctionKey(), fop);
 		}
 		
 		//process children

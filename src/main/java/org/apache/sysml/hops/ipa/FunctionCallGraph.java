@@ -266,7 +266,7 @@ public class FunctionCallGraph
 			for( Hop h : hopsDAG ) {
 				if( h instanceof FunctionOp ){
 					FunctionOp fop = (FunctionOp) h;
-					String lfkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+					String lfkey = fop.getFunctionKey();
 					//keep all function operators
 					if( !_fCalls.containsKey(lfkey) )
 						_fCalls.put(lfkey, new ArrayList<FunctionOp>());

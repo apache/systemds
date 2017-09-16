@@ -473,7 +473,7 @@ public class InterProceduralAnalysis
 		{
 			//maintain counters and investigate functions if not seen so far
 			FunctionOp fop = (FunctionOp) hop;
-			String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+			String fkey = fop.getFunctionKey();
 			
 			if( fop.getFunctionType() == FunctionType.DML )
 			{
@@ -527,7 +527,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
 		ArrayList<Hop> inputOps = fop.getInput();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		for( int i=0; i<inputVars.size(); i++ )
 		{
@@ -587,7 +587,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		try
 		{
@@ -650,7 +650,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		try
 		{
@@ -661,7 +661,7 @@ public class InterProceduralAnalysis
 				
 				if( di.getDataType()==DataType.MATRIX )
 				{
-					MatrixObject moOut = createOutputMatrix(-1, -1, -1);	
+					MatrixObject moOut = createOutputMatrix(-1, -1, -1);
 					callVars.put(pvarname, moOut);
 				}
 			}
@@ -675,14 +675,14 @@ public class InterProceduralAnalysis
 	private void extractFunctionCallEquivalentReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
 		throws HopsException
 	{
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 		try {
 			Hop input = fop.getInput().get(0);
 			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(), -1);	
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
 		catch( Exception ex ) {
-			throw new HopsException( "Failed to extract output statistics for unary function "+fkey+".", ex);
+			throw new HopsException( "Failed to extract output statistics "
+				+ "for unary function "+fop.getFunctionKey()+".", ex);
 		}
 	}
 	

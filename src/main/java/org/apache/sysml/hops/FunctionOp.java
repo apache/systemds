@@ -26,6 +26,7 @@ import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -84,19 +85,21 @@ public class FunctionOp extends Hop
 	/** FunctionOps may have any number of inputs. */
 	@Override
 	public void checkArity() throws HopsException {}
-
-	public String getFunctionNamespace()
-	{
+	
+	public String getFunctionKey() {
+		return DMLProgram.constructFunctionKey(
+			getFunctionNamespace(), getFunctionName());
+	}
+	
+	public String getFunctionNamespace() {
 		return _fnamespace;
 	}
 	
-	public String getFunctionName()
-	{
+	public String getFunctionName() {
 		return _fname;
 	}
 	
-	public void setFunctionName( String fname )
-	{
+	public void setFunctionName( String fname ) {
 		_fname = fname;
 	}
 	
@@ -104,13 +107,11 @@ public class FunctionOp extends Hop
 		return _outputHops;
 	}
 	
-	public String[] getOutputVariableNames()
-	{
+	public String[] getOutputVariableNames() {
 		return _outputs;
 	}
 	
-	public FunctionType getFunctionType()
-	{
+	public FunctionType getFunctionType() {
 		return _type;
 	}
 

@@ -91,8 +91,7 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
-			_dagRuleSet.add(     new RewriteCompressedReblock()                  );
-			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
+			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
@@ -110,6 +109,7 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
  			}
+ 			_sbRuleSet.add(      new RewriteCompressedReblock()                  );
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks	
  			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
@@ -118,7 +118,7 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
  			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
  			if( OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE )
- 				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()      );
+ 				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

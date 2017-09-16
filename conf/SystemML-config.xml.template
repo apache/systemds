@@ -55,7 +55,7 @@
    <cp.parallel.io>true</cp.parallel.io>
    
    <!-- enables compressed linear algebra, experimental feature -->
-   <compressed.linalg>false</compressed.linalg>
+   <compressed.linalg>auto</compressed.linalg>
    
    <!-- enables operator fusion via code generation, experimental feature -->
    <codegen.enabled>false</codegen.enabled>

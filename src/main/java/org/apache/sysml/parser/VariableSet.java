@@ -56,6 +56,11 @@ public class VariableSet
 		return _variables.containsKey(name);
 	}
 	
+	public boolean containsAnyName(Set<String> names){
+		return _variables.keySet().stream()
+			.anyMatch(n -> names.contains(n));
+	}
+	
 	public DataIdentifier getVariable(String name){
 		return _variables.get(name);
 	}

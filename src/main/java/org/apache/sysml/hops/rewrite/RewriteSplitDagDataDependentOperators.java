@@ -369,7 +369,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			//create additional cut by rewriting both hop dags 
 			int pos = HopRewriteUtils.getChildReferencePos(hop, c);
 			HopRewriteUtils.removeChildReferenceByPos(hop, c, pos);
-			HopRewriteUtils.addChildReference(hop, tread, pos);			
+			HopRewriteUtils.addChildReference(hop, tread, pos);
 		
 			//update live in and out of new statement block (for piggybacking)
 			DataIdentifier diVar = new DataIdentifier(varname);

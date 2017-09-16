@@ -41,6 +41,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
+import org.apache.sysml.lops.Compression;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -72,12 +73,13 @@ public class DMLConfig
 	public static final String YARN_APPQUEUE        = "dml.yarn.app.queue"; 
 	public static final String CP_PARALLEL_OPS      = "cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "cp.parallel.io";
-	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	public static final String COMPRESSED_LINALG    = "compressed.linalg"; //auto, true, false
 	public static final String NATIVE_BLAS          = "native.blas";
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_COMPILER     = "codegen.compiler"; //see SpoofCompiler.CompilerType
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
+	
 	public static final String EXTRA_FINEGRAINED_STATS = "systemml.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN = "systemml.stats.maxWrapLength"; //int
 	public static final String EXTRA_GPU_STATS      = "systemml.stats.extraGPU"; //boolean
@@ -120,7 +122,7 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPQUEUE,    	     "default" );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
-		_defaultVals.put(COMPRESSED_LINALG,      "false" );
+		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );

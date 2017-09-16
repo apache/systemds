@@ -95,7 +95,7 @@ If you want to try out the bleeding edge version, please use following commands:
 git checkout https://github.com/apache/systemml.git
 cd systemml
 mvn clean package -P distribution
-pip install target/systemml-1.0.0-SNAPSHOT-python.tgz
+pip install target/systemml-1.0.0-SNAPSHOT-python.tar.gz
 ```
 </div>
 <div data-lang="Python 3" markdown="1">
@@ -103,7 +103,7 @@ pip install target/systemml-1.0.0-SNAPSHOT-python.tgz
 git checkout https://github.com/apache/systemml.git
 cd systemml
 mvn clean package -P distribution
-pip3 install target/systemml-1.0.0-SNAPSHOT-python.tgz
+pip3 install target/systemml-1.0.0-SNAPSHOT-python.tar.gz
 ```
 </div>
 </div>

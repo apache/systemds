@@ -265,11 +265,14 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     echo "RELEASE_STAGING_LOCATION=$RELEASE_STAGING_LOCATION"
     echo "BASE_DIR=$BASE_DIR"
 
-    exit 5
+    # As fix has been added below to update version information exit to update pom file is not needed.
+    # exit 5
 
     # Update dev/release/target/release/systemml/pom.xml  with similar to following contents which is for 0.13.0 RC1
     #   Update <version>0.13.0</version>
     #   Update <tag>v0.13.0-rc1</tag>
+    sed -i .bak "s|<version>$DEVELOPMENT_VERSION<\/version>|<version>$RELEASE_VERSION<\/version>|" $BASE_DIR/target/release/systemml/pom.xml
+    sed -i .bak "s|<tag>HEAD<\/tag>|<tag>$RELEASE_TAG<\/tag>|" $BASE_DIR/target/release/systemml/pom.xml
 
     cd $RELEASE_WORK_DIR/systemml
     ## Rerunning mvn with clean and package goals, as release:prepare changes ordeer for some dependencies like unpack and shade.

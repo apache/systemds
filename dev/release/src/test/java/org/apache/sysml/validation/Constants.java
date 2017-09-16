@@ -59,6 +59,7 @@ public class Constants
 
 	public static final String ZIP = "zip";
 	public static final String TGZ = "tgz";
+	public static final String TAR_GZ = "tar.gz";
 	public static final String LICENSE = "LICENSE";
 	public static final String NOTICE = "NOTICE";
 	public static final String JAR = "jar";

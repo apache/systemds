@@ -1149,8 +1149,8 @@
 								<configuration>
 									<artifacts>
 										<artifact>
-											<file>${basedir}/target/${project.artifactId}-${project.version}-python.tgz</file>
-											<type>tgz</type>
+											<file>${basedir}/target/${project.artifactId}-${project.version}-python.tar.gz</file>
+											<type>tar.gz</type>
 											<classifier>python</classifier>
 										</artifact>
 									</artifacts>

@@ -33,7 +33,6 @@ sys.path.insert(0, path)
 import unittest
 
 import numpy as np
-from pyspark.context import SparkContext
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SparkSession
@@ -44,7 +43,6 @@ from sklearn import linear_model
 from sklearn.metrics import accuracy_score, r2_score
 from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
 
-sc = SparkContext()
 sparkSession = SparkSession.builder.getOrCreate()
 
 # Currently not integrated with JUnit test

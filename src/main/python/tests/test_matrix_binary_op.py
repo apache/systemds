@@ -33,7 +33,7 @@ import unittest
 import systemml as sml
 import numpy as np
 from pyspark.context import SparkContext
-sc = SparkContext()
+sc = SparkContext.getOrCreate()
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim*dim) + 1.01, dtype=np.double)

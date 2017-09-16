@@ -28,12 +28,8 @@ import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.parser.ForStatementBlock;
-import org.apache.sysml.parser.FunctionStatementBlock;
-import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
-import org.apache.sysml.parser.WhileStatementBlock;
 
 /**
  * Rule: Simplify program structure by merging sequences of last-level
@@ -66,9 +62,9 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 			for( int i=0; i<tmpList.size()-1; i++ ) {
 				StatementBlock sb1 = tmpList.get(i);
 				StatementBlock sb2 = tmpList.get(i+1);
-				if( isLastLevelStatementBlock(sb1) && isLastLevelStatementBlock(sb2) 
-					&& !hasFunctionOpRoot(sb1) && !sb1.isSplitDag() && !sb2.isSplitDag() 
-					&& sb2.getBeginLine()!=34 ) 
+				if( HopRewriteUtils.isLastLevelStatementBlock(sb1) 
+					&& HopRewriteUtils.isLastLevelStatementBlock(sb2) 
+					&& !hasFunctionOpRoot(sb1) && !sb1.isSplitDag() && !sb2.isSplitDag() ) 
 				{
 					ArrayList<Hop> sb1Hops = sb1.get_hops();
 					ArrayList<Hop> sb2Hops = sb2.get_hops();
@@ -106,9 +102,12 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 							sb2Hops.add(root);
 						}
 					}
-					Hop.resetVisitStatus(sb2Hops);
+					//clear partial hops from the merged statement block to avoid problems with 
+					//other statement block rewrites that iterate over the original program
+					sb1Hops.clear();
 					
 					//run common-subexpression elimination
+					Hop.resetVisitStatus(sb2Hops);
 					rewriter.rewriteHopDAGs(sb2Hops, new ProgramRewriteStatus());
 					
 					//modify live variable sets of s2
@@ -163,12 +162,5 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		for( Hop root : sb.get_hops() )
 			ret |= (root instanceof FunctionOp);
 		return ret;
-	}
-	
-	private static boolean isLastLevelStatementBlock(StatementBlock sb) {
-		return !((sb instanceof FunctionStatementBlock)
-			|| (sb instanceof WhileStatementBlock)
-			|| (sb instanceof IfStatementBlock)
-			|| (sb instanceof ForStatementBlock)); //incl parfor
 	}
 }

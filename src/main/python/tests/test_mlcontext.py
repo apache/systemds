@@ -36,7 +36,7 @@ from pyspark.context import SparkContext
 
 from systemml import MLContext, dml, pydml
 
-sc = SparkContext()
+sc = SparkContext.getOrCreate()
 ml = MLContext(sc)
 
 class TestAPI(unittest.TestCase):

@@ -81,7 +81,7 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 		}
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;

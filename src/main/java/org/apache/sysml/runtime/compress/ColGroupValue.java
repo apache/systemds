@@ -107,11 +107,14 @@ public abstract class ColGroupValue extends ColGroup
 		
 		// adding the size of values
 		size += 8; //array reference
-		if (_values != null) {
-			size += 32 + _values.length * 8; //values
-		}
+		size += getValuesSize(); // values
 	
 		return size;
+	}
+	
+	public long getValuesSize() {
+		return ( _values != null ) ? 
+			32 + _values.length * 8 : 0;
 	}
 
 	/**
@@ -123,9 +126,13 @@ public abstract class ColGroupValue extends ColGroup
 	public int getNumValues() {
 		return _values.length / _colIndexes.length;
 	}
-
+	
 	public double[] getValues() {
 		return _values;
+	}
+	
+	public void setValues(double[] values) {
+		_values = values;
 	}
 	
 	public double getValue(int k, int col) {

@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.ConverterUtils;
@@ -100,6 +101,18 @@ public class ColGroupDDC1 extends ColGroupDDC
 	@Override
 	protected int getCode(int r) {
 		return (_data[r]&0xFF);
+	}
+	
+	public void recodeData(HashMap<Double,Integer> map) {
+		//prepare translation table
+		final int numVals = getNumValues();
+		byte[] lookup = new byte[numVals];
+		for( int k=0; k<numVals; k++ )
+			lookup[k] = map.get(_values[k]).byteValue();
+		
+		//recode the data
+		for( int i=0; i<_numRows; i++ )
+			_data[i] = lookup[_data[i]&0xFF];
 	}
 	
 	@Override

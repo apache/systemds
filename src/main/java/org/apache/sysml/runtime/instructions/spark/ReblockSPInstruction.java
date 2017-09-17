@@ -174,9 +174,14 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
 			
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-					in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
-			out = RDDAggregateUtils.mergeByKey(out, false);
+			boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown()
+				&& (mc.getRows() < mcOut.getRowsPerBlock() || mc.getRowsPerBlock()%mcOut.getRowsPerBlock() == 0)
+				&& (mc.getCols() < mcOut.getColsPerBlock() || mc.getColsPerBlock()%mcOut.getColsPerBlock() == 0);
+			
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1
+				.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
+			if( !shuffleFreeReblock )
+				out = RDDAggregateUtils.mergeByKey(out, false);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

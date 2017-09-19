@@ -205,7 +205,7 @@ BB1_5:
 )
 {
 	.reg .pred 	%p<4>;
-	.reg .b32 	%r<13>;
+	.reg .b32 	%r<15>;
 	.reg .f64 	%fd<2>;
 	.reg .b64 	%rd<9>;
 
@@ -215,24 +215,26 @@ BB1_5:
 	ld.param.u32 	%r3, [slice_dense_dense_param_2];
 	ld.param.u32 	%r4, [slice_dense_dense_param_4];
 	ld.param.u32 	%r5, [slice_dense_dense_param_6];
-	ld.param.u32 	%r6, [slice_dense_dense_param_7];
-	ld.param.u32 	%r7, [slice_dense_dense_param_8];
+	ld.param.u32 	%r7, [slice_dense_dense_param_7];
+	ld.param.u32 	%r6, [slice_dense_dense_param_8];
 	mov.u32 	%r8, %ctaid.x;
 	mov.u32 	%r9, %ntid.x;
 	mov.u32 	%r10, %tid.x;
 	mad.lo.s32 	%r1, %r9, %r8, %r10;
-	div.s32 	%r2, %r1, %r7;
-	setp.lt.s32	%p1, %r2, %r6;
-	setp.gt.s32	%p2, %r7, -1;
+	div.s32 	%r2, %r1, %r6;
+	setp.lt.s32	%p1, %r2, %r7;
+	setp.gt.s32	%p2, %r6, -1;
 	and.pred  	%p3, %p1, %p2;
 	@!%p3 bra 	BB2_2;
 	bra.uni 	BB2_1;
 
 BB2_1:
+	rem.s32 	%r11, %r1, %r6;
 	cvta.to.global.u64 	%rd3, %rd1;
-	add.s32 	%r11, %r2, %r3;
-	mad.lo.s32 	%r12, %r11, %r5, %r4;
-	mul.wide.s32 	%rd4, %r12, 8;
+	add.s32 	%r12, %r2, %r3;
+	add.s32 	%r13, %r11, %r4;
+	mad.lo.s32 	%r14, %r12, %r5, %r13;
+	mul.wide.s32 	%rd4, %r14, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f64 	%fd1, [%rd5];
 	cvta.to.global.u64 	%rd6, %rd2;

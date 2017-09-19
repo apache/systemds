@@ -108,7 +108,7 @@ __global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int c
 	int ix = tid / retClen;
 	int iy = tid % retClen;
 	if(ix < retRlen && iy < retClen) {
-	    int inIndex = (ix + rl)*inClen + cl;
+	    int inIndex = (ix + rl)*inClen + cl + iy;
 		ret[tid] = in[inIndex];
 	}
 }

@@ -2321,7 +2321,7 @@ public class LibMatrixCUDA {
 			int[] rlPtr = { -1 }; int[] ruPtr = { -1 };
 			cudaMemcpy(Pointer.to(rlPtr), inPointer.rowPtr.withByteOffset(rl*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
 			cudaMemcpy(Pointer.to(ruPtr), inPointer.rowPtr.withByteOffset((ru+1)*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
-			size = ruPtr[0] - rlPtr[1];
+			size = ruPtr[0] - rlPtr[0];
 			timer = GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ;
 			kernel = "slice_sparse_dense_nnz";
 		}

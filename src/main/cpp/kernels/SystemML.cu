@@ -26,10 +26,10 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
-
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.
+ * Parallelization: rows of output matrix.
  * 
  * @params inVal input val pointer
  * @params inRowPtr input row pointer
@@ -42,10 +42,11 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  * @param retClen number of columns of output matrix
  */
 extern "C"
-__global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, double* ret, int rl, int ru, int cl, int cu, int retClen) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+  	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int rowIndex = index + rl;
-    if (rowIndex <= ru){
+  	if (rowIndex <= ru){
     	// Iterate over elements of the row 'rowIndex'.
     	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {
     		// Only slice if the index falls into the given range
@@ -53,6 +54,38 @@ __global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, do
     			ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
     		}
     	}
+    }
+}
+
+/**
+ * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
+ * This function avoids unnecessary sparse to dense conversion of the input matrix.
+ * Parallelization: subset of number of non-zeroes of input matrix.
+ * 
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params colInd input col index pointer
+ * @params ret dense output pointer
+ * @param rl row lower
+ * @param ru row upper
+ * @param cl column lower
+ * @param cu column upper
+ * @param retClen number of columns of output matrix
+ */
+extern "C"
+__global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = tid + inRowPtr[rl];
+    
+    // Only slice if the index falls into the given range
+    if(i < inRowPtr[ru+1] && cl <= colInd[i] && colInd[i] <= cu) {
+    	// Find the row index for corresponding non-zero value 'i'.
+    	int rowIndex = rl;
+    	while(inRowPtr[rowIndex] < i) {
+    		rowIndex++;
+    	}
+	    ret[ (rowIndex-rl)*retClen + (colInd[i] - cl) ] = inVal[i];
     }
 }
 
@@ -66,19 +99,18 @@ __global__ void slice_sparse_dense(double* inVal, int* inRowPtr, int* colInd, do
  * @param cl column lower
  * @param cu column upper
  * @param inClen number of columns of input matrix
+ * @param retRlen number of rows of output matrix
  * @param retClen number of columns of output matrix
  */
 extern "C"
-__global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int cl, int cu, int inClen, int retClen) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int rowIndex = index + rl;
-    if (rowIndex <= ru){
-    	int inIndex = rowIndex*inClen + cl;
-    	int retIndex = index*retClen;
-    	for(int i = retIndex; i < retIndex+retClen; i++, inIndex++) {
-			ret[i] = in[inIndex];
-		}
-    }
+__global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int ix = tid / retClen;
+	int iy = tid % retClen;
+	if(ix < retRlen && iy < retClen) {
+	    int inIndex = (ix + rl)*inClen + cl;
+		ret[tid] = in[inIndex];
+	}
 }
 
 
@@ -164,8 +196,7 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
-		int index = ix * clen + iy;
-		ret[index] = max(0.0, A[index]);
+		ret[tid] = max(0.0, A[tid]);
 	}
 }
 
@@ -176,8 +207,7 @@ __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, i
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
-		int index = ix * clen + iy;
-		ret[index] = X[index] > 0 ?  dout[index] : 0;
+		ret[tid] = X[tid] > 0 ?  dout[tid] : 0;
 	}
 }
 
@@ -195,8 +225,7 @@ __global__ void inplace_add(double* input,  double* ret, int rlen, int clen) {
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
-		int index = ix * clen + iy;
-		ret[index] += input[index];
+		ret[tid] += input[tid];
 	}
 }
 
@@ -210,9 +239,8 @@ __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, in
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
-		int index = ix * clen + iy;
 		int biasIndex = iy / PQ;
-		ret[index] = input[index] + bias[biasIndex];
+		ret[tid] = input[tid] + bias[biasIndex];
 	}
 }
 
@@ -240,9 +268,8 @@ __global__ void bias_multiply(double* input,  double* bias, double* ret, int rle
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
-		int index = ix * clen + iy;
 		int biasIndex = iy / PQ;
-		ret[index] = input[index] * bias[biasIndex];
+		ret[tid] = input[tid] * bias[biasIndex];
 	}
 }
 

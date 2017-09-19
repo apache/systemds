@@ -2317,13 +2317,12 @@ public class LibMatrixCUDA {
 		int retClen = cu - cl + 1;
 		
 		int size = -1; String kernel = null; String timer = null;
-		int nnzInput = getNnz(inPointer, rl, ru);
 		
 		// Note: row-wise parallelization scheme iterates over input rows in single thread 
 		// whereas nnz parallelization scheme iterates over number of output rows in single thread.
 		if(inClen > 10 && retClen > 2*retRlen) {
 			// Perform nnz parallelization for wide and short matrices
-			size = nnzInput;
+			size = getNnz(inPointer, rl, ru);
 			timer = GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ;
 			kernel = "slice_sparse_dense_nnz";
 		}

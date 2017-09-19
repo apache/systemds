@@ -2321,7 +2321,7 @@ public class LibMatrixCUDA {
 		
 		// Note: row-wise parallelization scheme iterates over input rows in single thread 
 		// whereas nnz parallelization scheme iterates over number of output rows in single thread.
-		if(inClen > 10 && inClen > 2*retRlen) {
+		if(inClen > 10 && retClen > 2*retRlen) {
 			// Perform nnz parallelization for wide and short matrices
 			size = nnzInput;
 			timer = GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ;

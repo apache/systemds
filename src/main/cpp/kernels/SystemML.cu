@@ -82,7 +82,7 @@ __global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd
     if(i < inRowPtr[ru+1] && cl <= colInd[i] && colInd[i] <= cu) {
     	// Find the row index for corresponding non-zero value 'i'.
     	int rowIndex = rl;
-    	while(inRowPtr[rowIndex] < i) {
+    	while(inRowPtr[rowIndex+1] < i) {
     		rowIndex++;
     	}
 	    ret[ (rowIndex-rl)*retClen + (colInd[i] - cl) ] = inVal[i];

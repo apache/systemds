@@ -119,7 +119,7 @@ BB0_6:
 )
 {
 	.reg .pred 	%p<6>;
-	.reg .b32 	%r<24>;
+	.reg .b32 	%r<22>;
 	.reg .f64 	%fd<2>;
 	.reg .b64 	%rd<22>;
 
@@ -128,64 +128,60 @@ BB0_6:
 	ld.param.u64 	%rd8, [slice_sparse_dense_nnz_param_1];
 	ld.param.u64 	%rd6, [slice_sparse_dense_nnz_param_2];
 	ld.param.u64 	%rd7, [slice_sparse_dense_nnz_param_3];
-	ld.param.u32 	%r8, [slice_sparse_dense_nnz_param_4];
-	ld.param.u32 	%r12, [slice_sparse_dense_nnz_param_5];
-	ld.param.u32 	%r9, [slice_sparse_dense_nnz_param_6];
-	ld.param.u32 	%r10, [slice_sparse_dense_nnz_param_7];
-	ld.param.u32 	%r11, [slice_sparse_dense_nnz_param_8];
-	mov.u32 	%r13, %ntid.x;
-	mov.u32 	%r14, %ctaid.x;
-	mov.u32 	%r15, %tid.x;
-	mad.lo.s32 	%r16, %r13, %r14, %r15;
+	ld.param.u32 	%r5, [slice_sparse_dense_nnz_param_4];
+	ld.param.u32 	%r9, [slice_sparse_dense_nnz_param_5];
+	ld.param.u32 	%r6, [slice_sparse_dense_nnz_param_6];
+	ld.param.u32 	%r7, [slice_sparse_dense_nnz_param_7];
+	ld.param.u32 	%r8, [slice_sparse_dense_nnz_param_8];
+	mov.u32 	%r10, %ntid.x;
+	mov.u32 	%r11, %ctaid.x;
+	mov.u32 	%r12, %tid.x;
+	mad.lo.s32 	%r13, %r10, %r11, %r12;
 	cvta.to.global.u64 	%rd1, %rd8;
-	mul.wide.s32 	%rd9, %r8, 4;
+	mul.wide.s32 	%rd9, %r5, 4;
 	add.s64 	%rd10, %rd1, %rd9;
-	ld.global.u32 	%r22, [%rd10];
-	add.s32 	%r2, %r16, %r22;
-	mul.wide.s32 	%rd11, %r12, 4;
+	ld.global.u32 	%r14, [%rd10];
+	add.s32 	%r1, %r13, %r14;
+	mul.wide.s32 	%rd11, %r9, 4;
 	add.s64 	%rd12, %rd1, %rd11;
-	ld.global.u32 	%r17, [%rd12+4];
-	setp.ge.s32	%p1, %r2, %r17;
+	ld.global.u32 	%r15, [%rd12+4];
+	setp.ge.s32	%p1, %r1, %r15;
 	@%p1 bra 	BB1_5;
 
 	cvta.to.global.u64 	%rd2, %rd7;
 	cvta.to.global.u64 	%rd3, %rd5;
 	cvta.to.global.u64 	%rd13, %rd6;
-	cvt.s64.s32	%rd4, %r2;
-	mul.wide.s32 	%rd14, %r2, 4;
+	cvt.s64.s32	%rd4, %r1;
+	mul.wide.s32 	%rd14, %r1, 4;
 	add.s64 	%rd15, %rd13, %rd14;
-	ld.global.u32 	%r3, [%rd15];
-	setp.lt.s32	%p2, %r3, %r9;
-	setp.gt.s32	%p3, %r3, %r10;
+	ld.global.u32 	%r2, [%rd15];
+	setp.lt.s32	%p2, %r2, %r6;
+	setp.gt.s32	%p3, %r2, %r7;
 	or.pred  	%p4, %p2, %p3;
 	@%p4 bra 	BB1_5;
 
-	mov.u32 	%r23, %r8;
-	bra.uni 	BB1_3;
-
-BB1_6:
-	mul.wide.s32 	%rd20, %r6, 4;
-	add.s64 	%rd21, %rd1, %rd20;
-	ld.global.u32 	%r22, [%rd21];
-	mov.u32 	%r23, %r6;
+	mov.u32 	%r21, %r5;
 
 BB1_3:
-	mov.u32 	%r5, %r23;
-	mov.u32 	%r4, %r22;
-	add.s32 	%r6, %r5, 1;
-	setp.lt.s32	%p5, %r4, %r2;
-	@%p5 bra 	BB1_6;
+	mov.u32 	%r3, %r21;
+	add.s32 	%r4, %r3, 1;
+	mul.wide.s32 	%rd16, %r4, 4;
+	add.s64 	%rd17, %rd1, %rd16;
+	ld.global.u32 	%r16, [%rd17];
+	setp.lt.s32	%p5, %r16, %r1;
+	mov.u32 	%r21, %r4;
+	@%p5 bra 	BB1_3;
 
-	shl.b64 	%rd16, %rd4, 3;
-	add.s64 	%rd17, %rd3, %rd16;
-	ld.global.f64 	%fd1, [%rd17];
-	sub.s32 	%r18, %r5, %r8;
-	mul.lo.s32 	%r19, %r18, %r11;
-	sub.s32 	%r20, %r19, %r9;
-	add.s32 	%r21, %r20, %r3;
-	mul.wide.s32 	%rd18, %r21, 8;
-	add.s64 	%rd19, %rd2, %rd18;
-	st.global.f64 	[%rd19], %fd1;
+	shl.b64 	%rd18, %rd4, 3;
+	add.s64 	%rd19, %rd3, %rd18;
+	ld.global.f64 	%fd1, [%rd19];
+	sub.s32 	%r17, %r3, %r5;
+	mul.lo.s32 	%r18, %r17, %r8;
+	sub.s32 	%r19, %r18, %r6;
+	add.s32 	%r20, %r19, %r2;
+	mul.wide.s32 	%rd20, %r20, 8;
+	add.s64 	%rd21, %rd2, %rd20;
+	st.global.f64 	[%rd21], %fd1;
 
 BB1_5:
 	ret;

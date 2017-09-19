@@ -47,6 +47,25 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
   	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int rowIndex = index + rl;
   	if (rowIndex <= ru){
+  		/*
+		 * TODO: Alternative approach: use dynamic parallelism. We are skipping this for now to avoid
+		 * the complexity of two-step separate compilation and linking process.
+		 *  
+		 * extern "C"
+		 * __global__ void slice_sparse_dense_row_helper(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+		 *     int rl, int ru, int cl, int cu, int retClen, int start, int end, int index) {
+		 *  int i = blockIdx.x * blockDim.x + threadIdx.x + start;   
+		 * 	// Only slice if the index falls into the given range
+		 * 	if(i < end && cl <= colInd[i] && colInd[i] <= cu) {
+		 * 		ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
+		 * 	}
+		 * }
+		 *
+		 * int size = inRowPtr[rowIndex+1] - inRowPtr[rowIndex];
+		 * double numThreads = (double)min(size, MAX_NUM_THREADS_CHILD_KERNEL);
+		 * slice_sparse_dense_row_helper<<< ceil(numThreads/ MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr, colInd, ret, 
+    	 *			rl, ru, cl, cu, retClen, inRowPtr[rowIndex], inRowPtr[rowIndex+1], index);
+		 */
     	// Iterate over elements of the row 'rowIndex'.
     	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {
     		// Only slice if the index falls into the given range

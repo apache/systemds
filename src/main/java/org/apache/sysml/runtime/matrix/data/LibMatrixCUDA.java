@@ -2317,11 +2317,13 @@ public class LibMatrixCUDA {
 		int retClen = cu - cl + 1;
 		
 		int size = -1; String kernel = null; String timer = null;
-		if(retClen > 2*retRlen) {
-			int[] rlPtr = { -1 }; int[] ruPtr = { -1 };
-			cudaMemcpy(Pointer.to(rlPtr), inPointer.rowPtr.withByteOffset(rl*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
-			cudaMemcpy(Pointer.to(ruPtr), inPointer.rowPtr.withByteOffset((ru+1)*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
-			size = ruPtr[0] - rlPtr[0];
+		int nnzInput = getNnz(inPointer, rl, ru);
+		
+		// Note: row-wise parallelization scheme iterates over input rows in single thread 
+		// whereas nnz parallelization scheme iterates over number of output rows in single thread.
+		if(inClen > 10 && inClen > 2*retRlen) {
+			// Perform nnz parallelization for wide and short matrices
+			size = nnzInput;
 			timer = GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ;
 			kernel = "slice_sparse_dense_nnz";
 		}
@@ -2331,13 +2333,27 @@ public class LibMatrixCUDA {
 			kernel = "slice_sparse_dense_row";
 		}
 		
-		
 		// Performs a slice operation where the input matrix is sparse and the output matrix is dense.
 		// This function avoids unnecessary sparse to dense conversion of the input matrix.
 		// We can generalize this later to output sparse matrix.
 		getCudaKernels(gCtx).launchKernel(kernel, ExecutionConfig.getConfigForSimpleVectorOperations(size),
 				inPointer.val, inPointer.rowPtr, inPointer.colInd, outPointer, rl, ru, cl, cu, retClen);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, timer, System.nanoTime() - t0);
+	}
+	
+	/**
+	 * Returns the number of non-zeroes in the given range of rows
+	 * 
+	 * @param inPointer input CSR pointer
+	 * @param rl lower row index (inclusive and zero-based)
+	 * @param ru upper row index (inclusive and zero-based)
+	 * @return number of non-zeroes
+	 */
+	private static int getNnz(CSRPointer inPointer, int rl, int ru) {
+		int[] rlPtr = { -1 }; int[] ruPtr = { -1 };
+		cudaMemcpy(Pointer.to(rlPtr), inPointer.rowPtr.withByteOffset(rl*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
+		cudaMemcpy(Pointer.to(ruPtr), inPointer.rowPtr.withByteOffset((ru+1)*Sizeof.INT), Sizeof.INT, cudaMemcpyDeviceToHost);
+		return ruPtr[0] - rlPtr[0];
 	}
 
 	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {

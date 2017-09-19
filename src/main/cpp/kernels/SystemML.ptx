@@ -168,7 +168,7 @@ BB1_3:
 	mul.wide.s32 	%rd16, %r4, 4;
 	add.s64 	%rd17, %rd1, %rd16;
 	ld.global.u32 	%r16, [%rd17];
-	setp.lt.s32	%p5, %r16, %r1;
+	setp.le.s32	%p5, %r16, %r1;
 	mov.u32 	%r21, %r4;
 	@%p5 bra 	BB1_3;
 

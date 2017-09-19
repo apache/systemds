@@ -29,6 +29,7 @@ option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel
 
 # Build a shared libraray
 add_library(systemml SHARED libmatrixdnn.cpp  libmatrixmult.cpp  systemml.cpp)
+set_target_properties(systemml PROPERTIES MACOSX_RPATH 1)
 
 set(MATH_LIBRARIES "")
 
@@ -72,5 +73,6 @@ if (USE_OPEN_BLAS)
   find_package(OpenMP REQUIRED)
   set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
 elseif(USE_INTEL_MKL)
-  set_target_properties(systemml PROPERTIES LINK_FLAGS ${MATH_LIBRARIES}")
+  set_target_properties(systemml PROPERTIES LINK_FLAGS "${MATH_LIBRARIES}")
 endif()
+

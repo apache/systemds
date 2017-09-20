@@ -1055,7 +1055,7 @@ extern "C"
 __global__ void matrix_tanh(double *A, double *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
-        C[index] = tan(A[index]);
+        C[index] = tanh(A[index]);
     }
 }
 

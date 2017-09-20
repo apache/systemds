@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML', 'Keras2DML']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -858,4 +858,35 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.visualize_called = True
         return self
     
-    
+class Keras2DML(Caffe2DML):
+    """
+    Peforms training/prediction for a given keras model.
+
+
+    """
+
+    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False,
+                 tensorboard_log_dir=None):
+        """
+        Performs training/prediction for a given keras model.
+
+        Parameters
+        ----------
+        parkSession: PySpark SparkSession
+        model: keras hdf5 model file path
+        input_shape: 3-element list (number of channels, input height, input width)
+        transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
+        tensorboard_log_dir: directory to store the event logs (default: None,
+        we use a temporary directory)
+        """
+        #NOTE Lazily imported until the Caffe Dependency issue is resolved
+        from . import keras2caffe
+        self.name = keras_model.name
+        #Convert keras model into caffe net and weights
+        caffenet, caffemodel = keras2caffe.generate_caffe_model(keras_model,self.name + ".proto",self.name + ".caffemodel")
+        #Create solver from network file
+        caffesolver = keras2caffe.CaffeSolver(self.name + ".proto",keras_model).write(self.name + "_solver.proto")
+        #Generate caffe2DML object
+        super(Keras2DML,self).__init__(sparkSession, self.name+ "_solver.proto",input_shape, transferUsingDF, tensorboard_log_dir)
+        #Create and Load weights into caffe2DML
+        convert_caffemodel(sparkSession.sparkContext,self.name + ".proto", self.name + ".caffemodel", self.name + "_C2DML_weights")

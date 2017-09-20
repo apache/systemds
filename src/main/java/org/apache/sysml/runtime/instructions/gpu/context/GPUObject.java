@@ -1050,7 +1050,7 @@ public class GPUObject {
 	 * @throws CacheException ?
 	 */
 	public void clearData() throws DMLRuntimeException {
-		clearData(false);
+		clearData(DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**

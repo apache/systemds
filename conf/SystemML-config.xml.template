@@ -87,6 +87,9 @@
     <!-- whether to synchronize GPUs after every GPU instruction -->
     <systemml.gpu.sync.postProcess>true</systemml.gpu.sync.postProcess>
     
+    <!-- whether to perform eager CUDA free on rmvar instruction -->
+    <systemml.gpu.eager.cudaFree>false</systemml.gpu.eager.cudaFree>
+    
     <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <systemml.stats.maxWrapLength>30</systemml.stats.maxWrapLength>
 </root>

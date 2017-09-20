@@ -264,6 +264,10 @@ public class SparkExecutionContext extends ExecutionContext
 
 		return conf;
 	}
+	
+	public static boolean isLocalMaster() {
+		return getSparkContextStatic().isLocal();
+	}
 
 	/**
 	 * Spark instructions should call this for all matrix inputs except broadcast
@@ -491,21 +495,19 @@ public class SparkExecutionContext extends ExecutionContext
 
 		return rdd;
 	}
-
-	/**
-	 * TODO So far we only create broadcast variables but never destroy
-	 * them. This is a memory leak which might lead to executor out-of-memory.
-	 * However, in order to handle this, we need to keep track when broadcast
-	 * variables are no longer required.
-	 *
-	 * @param varname variable name
-	 * @return wrapper for broadcast variables
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
+	
 	@SuppressWarnings("unchecked")
 	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable( String varname )
 		throws DMLRuntimeException
 	{
+		//NOTE: The memory consumption of this method is the in-memory size of the 
+		//matrix object plus the partitioned size in 1k-1k blocks. Since the call
+		//to broadcast happens after the matrix object has been released, the memory
+		//requirements of blockified chunks in Spark's block manager are covered under
+		//this maximum. Also note that we explicitly clear the in-memory blocks once
+		//the broadcasts are created (other than in local mode) in order to avoid 
+		//unnecessary memory requirements during the lifetime of this broadcast handle.
+		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		MatrixObject mo = getMatrixObject(varname);
@@ -547,12 +549,16 @@ public class SparkExecutionContext extends ExecutionContext
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
 					PartitionedBlock<MatrixBlock> tmp = pmb.createPartition(offset, numBlks, new MatrixBlock());
 					ret[i] = getSparkContext().broadcast(tmp);
+					if( !isLocalMaster() )
+						tmp.clearBlocks();
 				}
 			}
 			else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
+				if( !isLocalMaster() )
+					pmb.clearBlocks();
 			}
-
+			
 			bret = new PartitionedBroadcast<MatrixBlock>(ret);
 			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bret, varname,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
@@ -613,10 +619,14 @@ public class SparkExecutionContext extends ExecutionContext
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
 					PartitionedBlock<FrameBlock> tmp = pmb.createPartition(offset, numBlks, new FrameBlock());
 					ret[i] = getSparkContext().broadcast(tmp);
+					if( !isLocalMaster() )
+						tmp.clearBlocks();
 				}
 			}
 			else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
+				if( !isLocalMaster() )
+					pmb.clearBlocks();
 			}
 
 			bret = new PartitionedBroadcast<FrameBlock>(ret);

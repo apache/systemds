@@ -254,6 +254,10 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 			}
 		}
 	}
+	
+	public void clearBlocks() {
+		_partBlocks = null;
+	}
 
 	/**
 	 * Redirects the default java serialization via externalizable to our default 

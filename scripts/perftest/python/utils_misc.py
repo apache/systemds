@@ -44,7 +44,7 @@ def split_config_args(args):
     """
 
     perftest_args_dict = {}
-    
+
     perftest_args_dict['family'] = args['family']
     perftest_args_dict['algo'] = args['algo']
     perftest_args_dict['exec_type'] = args['exec_type']
@@ -72,8 +72,6 @@ def split_config_args(args):
     if 'config' in args.keys():
         if args['config'] is not None:
             systemml_args_dict['-config'] = args['config']
-        else:
-            systemml_args_dict['-config'] = ''
 
     if 'gpu' in args.keys():
         if args['gpu'] is not None:

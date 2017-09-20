@@ -169,7 +169,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
   dct = dc
   if (!given_sequences) {
     # only given dout for output at final timestep, so prepend empty douts for all other timesteps
-    dout = cbind(matrix(0, rows=N, cols=(T-1)*D), dout)  # shape (N, T*M)
+    dout = cbind(matrix(0, rows=N, cols=(T-1)*M), dout)  # shape (N, T*M)
   }
 
   t = T

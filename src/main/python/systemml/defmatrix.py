@@ -830,7 +830,16 @@ class matrix(object):
 
     def tan(self):
         return unaryMatrixFunction(self, 'tan')
+    
+    def sinh(self):
+        return unaryMatrixFunction(self, 'sinh')
 
+    def cosh(self):
+        return unaryMatrixFunction(self, 'cosh')
+
+    def tanh(self):
+        return unaryMatrixFunction(self, 'tanh')
+    
     def arcsin(self):
         return self.asin()
 

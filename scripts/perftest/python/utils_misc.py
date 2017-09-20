@@ -57,17 +57,29 @@ def split_config_args(args):
 
     systemml_args_dict = {}
 
-    if args['stats'] is not None:
-        systemml_args_dict['-stats'] = args['stats']
+    if 'stats' in args.keys():
+        if args['stats'] is not None:
+            systemml_args_dict['-stats'] = args['stats']
+        else:
+            systemml_args_dict['-stats'] = ''
 
-    if args['explain'] is not None:
-        systemml_args_dict['-explain'] = args['explain']
+    if 'explain' in args.keys():
+        if args['explain'] is not None:
+            systemml_args_dict['-explain'] = args['explain']
+        else:
+            systemml_args_dict['-explain'] = ''
 
-    if args['config'] is not None:
-        systemml_args_dict['-config'] = args['config']
+    if 'config' in args.keys():
+        if args['config'] is not None:
+            systemml_args_dict['-config'] = args['config']
+        else:
+            systemml_args_dict['-config'] = ''
 
-    if args['gpu'] is not None:
-        systemml_args_dict['-gpu'] = args['gpu']
+    if 'gpu' in args.keys():
+        if args['gpu'] is not None:
+            systemml_args_dict['-gpu'] = args['gpu']
+        else:
+            systemml_args_dict['-gpu'] = ''
 
     backend_args_dict = {}
     exec_type = args['exec_type']

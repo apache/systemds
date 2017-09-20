@@ -158,6 +158,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "sin"   , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "cos"   , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "tan"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "sinh"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "cosh"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "tanh"   , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "asin"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "acos"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "atan"  , CPINSTRUCTION_TYPE.BuiltinUnary);

@@ -1051,7 +1051,7 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public enum OpOp1 {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, LOG, EXP, 
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		SVD,
@@ -1276,6 +1276,9 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.ASIN, org.apache.sysml.lops.Unary.OperationTypes.ASIN);
 		HopsOpOp1LopsU.put(OpOp1.ACOS, org.apache.sysml.lops.Unary.OperationTypes.ACOS);
 		HopsOpOp1LopsU.put(OpOp1.ATAN, org.apache.sysml.lops.Unary.OperationTypes.ATAN);
+		HopsOpOp1LopsU.put(OpOp1.SINH, org.apache.sysml.lops.Unary.OperationTypes.SINH);
+		HopsOpOp1LopsU.put(OpOp1.COSH, org.apache.sysml.lops.Unary.OperationTypes.COSH);
+		HopsOpOp1LopsU.put(OpOp1.TANH, org.apache.sysml.lops.Unary.OperationTypes.TANH);
 		HopsOpOp1LopsU.put(OpOp1.SIGN, org.apache.sysml.lops.Unary.OperationTypes.SIGN);
 		HopsOpOp1LopsU.put(OpOp1.SQRT, org.apache.sysml.lops.Unary.OperationTypes.SQRT);
 		HopsOpOp1LopsU.put(OpOp1.EXP, org.apache.sysml.lops.Unary.OperationTypes.EXP);
@@ -1310,6 +1313,9 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.ASIN, org.apache.sysml.lops.UnaryCP.OperationTypes.ASIN);
 		HopsOpOp1LopsUS.put(OpOp1.ACOS, org.apache.sysml.lops.UnaryCP.OperationTypes.ACOS);
 		HopsOpOp1LopsUS.put(OpOp1.ATAN, org.apache.sysml.lops.UnaryCP.OperationTypes.ATAN);
+		HopsOpOp1LopsUS.put(OpOp1.SINH, org.apache.sysml.lops.UnaryCP.OperationTypes.SINH);
+		HopsOpOp1LopsUS.put(OpOp1.COSH, org.apache.sysml.lops.UnaryCP.OperationTypes.COSH);
+		HopsOpOp1LopsUS.put(OpOp1.TANH, org.apache.sysml.lops.UnaryCP.OperationTypes.TANH);
 		HopsOpOp1LopsUS.put(OpOp1.SQRT, org.apache.sysml.lops.UnaryCP.OperationTypes.SQRT);
 		HopsOpOp1LopsUS.put(OpOp1.EXP, org.apache.sysml.lops.UnaryCP.OperationTypes.EXP);
 		HopsOpOp1LopsUS.put(OpOp1.LOG, org.apache.sysml.lops.UnaryCP.OperationTypes.LOG);
@@ -1365,6 +1371,9 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp12String.put(OpOp1.ASIN, "asin");
 		HopsOpOp12String.put(OpOp1.ACOS, "acos");
 		HopsOpOp12String.put(OpOp1.ATAN, "atan");
+		HopsOpOp12String.put(OpOp1.SINH, "sinh");
+		HopsOpOp12String.put(OpOp1.COSH, "cosh");
+		HopsOpOp12String.put(OpOp1.TANH, "tanh");
 		HopsOpOp12String.put(OpOp1.STOP, "stop");
 		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
 		HopsOpOp12String.put(OpOp1.SPROP, "sprop");

@@ -34,7 +34,7 @@ public class UnaryCP extends Lop
 {
 	
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
 		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM
 	};
@@ -106,6 +106,15 @@ public class UnaryCP extends Lop
 		case ATAN:
 			return "atan";
 
+		case SINH:
+			return "sinh";
+
+		case COSH:
+			return "cosh";
+
+		case TANH:
+			return "tanh";
+			
 		case SQRT:
 			return "sqrt";
 

@@ -78,6 +78,7 @@ public abstract class Expression implements ParseInfo
 		COLSUM,
 		COLVAR,
 		COS,
+		COSH,
 		COV,
 		CUMMAX,
 		CUMMIN,
@@ -123,6 +124,7 @@ public abstract class Expression implements ParseInfo
 		SD,
 		SEQ,
 		SIN,
+		SINH,
 		SIGN,
 		SOLVE,
 		SQRT,
@@ -130,6 +132,7 @@ public abstract class Expression implements ParseInfo
 		SVD,
 		TABLE,
 		TAN,
+		TANH,
 		TRACE, 
 		TRANS,
 		VAR

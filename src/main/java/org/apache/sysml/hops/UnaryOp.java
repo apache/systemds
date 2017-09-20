@@ -109,7 +109,9 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			switch(_op) {
 				case SELP:case EXP:case SQRT:case LOG:case ABS:
 				case ROUND:case FLOOR:case CEIL:
-				case SIN:case COS: case TAN:case ASIN:case ACOS:case ATAN:
+				case SIN:case COS: case TAN:
+				case ASIN:case ACOS:case ATAN:
+				case SINH:case COSH: case TANH:
 				case SIGN:
 					return true;
 				default:
@@ -601,6 +603,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		if( mc.dimsKnown() ) {
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN 
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
+				|| _op==OpOp1.COSH || _op==OpOp1.SINH || _op==OpOp1.TANH 
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
 				|| _op==OpOp1.SPROP || _op==OpOp1.SELP ) //sparsity preserving
 			{
@@ -723,8 +726,10 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			Hop input = getInput().get(0);
 			setDim1( input.getDim1() );
 			setDim2( input.getDim2() );
-			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN  
-				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN
+			// cosh(0)=cos(0)=1, acos(0)=1.5707963267948966
+			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN  
+				|| _op==OpOp1.SINH || _op==OpOp1.TANH
+				|| _op==OpOp1.ASIN || _op==OpOp1.ATAN
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP ) //sparsity preserving
 			{
 				setNnz( input.getNnz() );

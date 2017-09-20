@@ -701,6 +701,9 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case ASIN:    costs = 93; break;
 				case ACOS:    costs = 103; break;
 				case ATAN:    costs = 40; break;
+				case SINH:    costs = 93; break; // TODO:
+				case COSH:    costs = 103; break;
+				case TANH:    costs = 40; break;
 				case CUMSUM:
 				case CUMMIN:
 				case CUMMAX:

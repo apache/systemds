@@ -2765,6 +2765,9 @@ public class DMLTranslator
 		case ASIN:
 		case ACOS:
 		case ATAN:
+		case SINH:
+		case COSH:
+		case TANH:
 		case SIGN:	
 		case SQRT:
 		case EXP:
@@ -2797,6 +2800,15 @@ public class DMLTranslator
 				break;
 			case ATAN:
 				mathOp1 = Hop.OpOp1.ATAN;
+				break;
+			case SINH:
+				mathOp1 = Hop.OpOp1.SINH;
+				break;
+			case COSH:
+				mathOp1 = Hop.OpOp1.COSH;
+				break;
+			case TANH:
+				mathOp1 = Hop.OpOp1.TANH;
 				break;
 			case SIGN:
 				mathOp1 = Hop.OpOp1.SIGN;

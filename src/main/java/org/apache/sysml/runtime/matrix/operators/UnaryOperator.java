@@ -43,6 +43,8 @@ public class UnaryOperator extends Operator
 		if( fn instanceof Builtin ) {
 			Builtin f=(Builtin)fn;
 			sparseSafe = (f.bFunc==Builtin.BuiltinCode.SIN || f.bFunc==Builtin.BuiltinCode.TAN 
+					// sinh and tanh are zero only at zero, else they are nnz
+					|| f.bFunc==Builtin.BuiltinCode.SINH || f.bFunc==Builtin.BuiltinCode.TANH
 					|| f.bFunc==Builtin.BuiltinCode.ROUND || f.bFunc==Builtin.BuiltinCode.ABS
 					|| f.bFunc==Builtin.BuiltinCode.SQRT || f.bFunc==Builtin.BuiltinCode.SPROP
 					|| f.bFunc==Builtin.BuiltinCode.SELP || f.bFunc==Builtin.BuiltinCode.LOG_NZ

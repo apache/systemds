@@ -50,6 +50,21 @@ public class UnaryOpTests extends UnaryOpTestsBase {
 	public void testTan() throws Exception {
 		testSimpleUnaryOpMatrixOutput("tan", "gpu_tan");
 	}
+	
+	@Test
+	public void testSinh() throws Exception {
+		testSimpleUnaryOpMatrixOutput("sinh", "gpu_sinh");
+	}
+
+	@Test
+	public void testCosh() throws Exception {
+		testSimpleUnaryOpMatrixOutput("cosh", "gpu_cosh");
+	}
+
+	@Test
+	public void testTanh() throws Exception {
+		testSimpleUnaryOpMatrixOutput("tanh", "gpu_tanh");
+	}
 
 	@Test
 	public void testAsin() throws Exception {

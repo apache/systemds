@@ -292,6 +292,9 @@ public class GPUContext {
 	public Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException {
 		long t0 = 0, t1 = 0, end = 0;
 		Pointer A;
+		if(size < 0) {
+			throw new DMLRuntimeException("Cannot allocate memory of size " + size);
+		}
 		if (freeCUDASpaceMap.containsKey(size)) {
 			if (LOG.isTraceEnabled()) {
 				LOG.trace(
@@ -321,7 +324,41 @@ public class GPUContext {
 				t0 = System.nanoTime();
 			ensureFreeSpace(instructionName, size);
 			A = new Pointer();
-			cudaMalloc(A, size);
+			try {
+				cudaMalloc(A, size);
+			} catch(jcuda.CudaException e) {
+				if(!DMLScript.EAGER_CUDA_FREE) {
+					// Strategy to avoid memory allocation due to potential fragmentation (a rare event):
+					// Step 1. First clear up lazy matrices and try cudaMalloc again.
+					// Step 2. Even if the issue persists, then evict all the allocated GPU objects and and try cudaMalloc again.
+					// After Step 2, SystemML will hold no pointers on GPU and the hope is that cudaMalloc will start afresh 
+					// by allocating objects sequentially with no holes.
+					
+					// Step 1:
+					LOG.debug("Eagerly deallocating rmvar-ed matrices to avoid memory allocation error due to potential fragmentation.");
+					clearFreeCUDASpaceMap(instructionName, -1);
+					try {
+						cudaMalloc(A, size);
+					} catch(jcuda.CudaException e1) {
+						// Step 2:
+						GPUStatistics.cudaForcedClearUnpinnedMatCount.add(1);
+						LOG.warn("Eagerly deallocating unpinned matrices to avoid memory allocation error due to potential fragmentation. "
+								+ "If you see this warning often, we recommend that you set systemml.gpu.eager.cudaFree configuration property to true");
+						for(GPUObject toBeRemoved : allocatedGPUObjects) {
+							if (!toBeRemoved.isLocked()) {
+								if (toBeRemoved.dirty) {
+									toBeRemoved.copyFromDeviceToHost(instructionName, true);
+								}
+								toBeRemoved.clearData(true);
+							}
+						}
+						cudaMalloc(A, size);
+					}
+				}
+				else {
+					throw new DMLRuntimeException("Unable to allocate memory of size " + size + " using cudaMalloc", e);
+				}
+			}
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaAllocTime.add(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS)
@@ -464,6 +501,44 @@ public class GPUContext {
 	protected void evict(final long GPUSize) throws DMLRuntimeException {
 		evict(null, GPUSize);
 	}
+	
+	/**
+	 * Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap to free up space
+	 * 
+	 * @param instructionName name of the instruction for which performance measurements are made
+	 * @param neededSize      desired size to be freed up on the GPU (-1 if we want to eagerly free up all the blocks)
+	 * @throws DMLRuntimeException If no reusable memory blocks to free up or if not enough matrix blocks with zero locks on them.
+	 */
+	protected void clearFreeCUDASpaceMap(String instructionName,  final long neededSize) throws DMLRuntimeException {
+		if(neededSize < 0) {
+			GPUStatistics.cudaForcedClearLazyFreedMatCount.add(1);
+			while(freeCUDASpaceMap.size() > 0) {
+				Entry<Long, Set<Pointer>> toFreeListPair = freeCUDASpaceMap.removeAndGetLRUEntry();
+				freeCUDASpaceMap.remove(toFreeListPair.getKey());
+				for(Pointer toFree : toFreeListPair.getValue()) {
+					cudaFreeHelper(instructionName, toFree, true);
+				}
+			}
+		}
+		else {
+			LRUCacheMap<Long, Set<Pointer>> lruCacheMap = freeCUDASpaceMap;
+			while (lruCacheMap.size() > 0) {
+				if (neededSize <= getAvailableMemory())
+					break;
+				Map.Entry<Long, Set<Pointer>> toFreeListPair = lruCacheMap.removeAndGetLRUEntry();
+				Set<Pointer> toFreeList = toFreeListPair.getValue();
+				Long size = toFreeListPair.getKey();
+	
+				Iterator<Pointer> it = toFreeList.iterator(); // at this point, freeList should have at least one element
+				Pointer toFree = it.next();
+				it.remove();
+	
+				if (toFreeList.isEmpty())
+					lruCacheMap.remove(size);
+				cudaFreeHelper(instructionName, toFree, true);
+			}
+		}
+	}
 
 	/**
 	 * Memory on the GPU is tried to be freed up until either a chunk of needed size is freed up
@@ -487,25 +562,8 @@ public class GPUContext {
 		if (LOG.isDebugEnabled()) {
 			printMemoryInfo("EVICTION_CUDA_FREE_SPACE");
 		}
-		
-		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
-		// to free up space
-		LRUCacheMap<Long, Set<Pointer>> lruCacheMap = freeCUDASpaceMap;
-		while (lruCacheMap.size() > 0) {
-			if (neededSize <= getAvailableMemory())
-				break;
-			Map.Entry<Long, Set<Pointer>> toFreeListPair = lruCacheMap.removeAndGetLRUEntry();
-			Set<Pointer> toFreeList = toFreeListPair.getValue();
-			Long size = toFreeListPair.getKey();
 
-			Iterator<Pointer> it = toFreeList.iterator(); // at this point, freeList should have at least one element
-			Pointer toFree = it.next();
-			it.remove();
-
-			if (toFreeList.isEmpty())
-				lruCacheMap.remove(size);
-			cudaFreeHelper(instructionName, toFree, true);
-		}
+		clearFreeCUDASpaceMap(instructionName,  neededSize);
 
 		if (neededSize <= getAvailableMemory())
 			return;

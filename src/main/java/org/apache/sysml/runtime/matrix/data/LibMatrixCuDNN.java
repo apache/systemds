@@ -692,13 +692,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		 */
 		public Pointer getNthRow(int n) throws DMLRuntimeException {
 			if(isInputInSparseFormat) {
+				jcuda.runtime.JCuda.cudaDeviceSynchronize();
 				long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				cudaMemset(outPointer, 0, numColumns*Sizeof.DOUBLE);
+				jcuda.runtime.JCuda.cudaDeviceSynchronize();
 				if(GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
-				sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, toInt(numColumns-1));
+				sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, toInt(numColumns-1), numColumns);
 			}
 			else {
-				sliceDenseDense(gCtx, instName, (Pointer)inPointer, outPointer, n, n, 0, toInt(numColumns-1), numColumns, numColumns);
+				sliceDenseDense(gCtx, instName, (Pointer)inPointer, outPointer, n, n, 0, toInt(numColumns-1), numColumns);
 			}
 			return outPointer;
 		}

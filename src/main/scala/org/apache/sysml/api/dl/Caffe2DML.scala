@@ -206,6 +206,76 @@ class Caffe2DML(val sc: SparkContext,
     mloutput = baseFit(df, sc)
     new Caffe2DMLModel(this)
   }
+  /**
+   * Returns maximum dimensions of convolution and max pooling layer for either DIRECT_CONV2D or IM2COL
+   */
+  def getMaxDimensionOfConvLayers(approach:String, batchSize:Int):Int = {
+    val convOrPoolLayers = net.getLayers.map(l => net.getCaffeLayer(l)).filter(l => l.isInstanceOf[Convolution] || l.isInstanceOf[MaxPooling])
+    if(convOrPoolLayers.length == 0) {
+      return -1
+    }
+    else if(approach.equalsIgnoreCase("DIRECT_CONV2D") || approach.equalsIgnoreCase("IM2COL")) {
+      convOrPoolLayers
+        .map(l => {
+          if(l.isInstanceOf[Convolution]) {
+            val convLayer = l.asInstanceOf[Convolution]
+            val CHW = convLayer.numChannels.toInt*convLayer.Hin.toInt*convLayer.Win.toInt 
+            val KPQ = convLayer.numKernels.toInt*convLayer.Hout.toInt*convLayer.Wout.toInt
+            val inputOutputMaxCol = Math.max(CHW, KPQ)
+            if(approach.equalsIgnoreCase("DIRECT_CONV2D"))
+              inputOutputMaxCol
+            else {
+              val CRS = convLayer.numChannels.toInt*convLayer.kernel_h.toInt*convLayer.kernel_w.toInt
+              val NPQ = batchSize*convLayer.Hout.toInt*convLayer.Wout.toInt
+              return Math.max(Math.max(inputOutputMaxCol, CRS), NPQ)
+            }
+          }
+          else if(l.isInstanceOf[MaxPooling]) {
+            val maxpoolLayer = l.asInstanceOf[MaxPooling]
+            val CHW = maxpoolLayer.numChannels.toInt*maxpoolLayer.Hin.toInt*maxpoolLayer.Win.toInt 
+            val CPQ = maxpoolLayer.numChannels.toInt*maxpoolLayer.Hout.toInt*maxpoolLayer.Wout.toInt
+            Math.max(CHW, CPQ)
+          }
+          else {
+            throw new RuntimeException("Unexpected error: Incorrect layer type for " + l.param.getName)
+          }
+        }).max
+    }
+    else {
+      throw new RuntimeException("Unsupported approach:" + approach)
+    }
+  }
+  /**
+   * Returns maximum size of matrix blocks for either DIRECT_CONV2D or IM2COL
+   */
+  def getMaxMatrixBlockSize(approach:String, batchSize:Int):Long = {
+    if(approach.equalsIgnoreCase("DIRECT_CONV2D") || approach.equalsIgnoreCase("IM2COL")) {
+      net.getLayers
+        .map(l => net.getCaffeLayer(l))
+        .map(l => {
+          if(l.isInstanceOf[Convolution]) {
+            val convLayer = l.asInstanceOf[Convolution]
+            val CHW = convLayer.numChannels.toLong*convLayer.Hin.toLong*convLayer.Win.toLong 
+            val KPQ = convLayer.numKernels.toLong*convLayer.Hout.toLong*convLayer.Wout.toLong
+            val inputOutputMaxCol = Math.max(CHW, KPQ)
+            if(approach.equalsIgnoreCase("DIRECT_CONV2D"))
+              batchSize*inputOutputMaxCol
+            else {
+              val CRS = convLayer.numChannels.toLong*convLayer.kernel_h.toLong*convLayer.kernel_w.toLong
+              val NPQ = batchSize*convLayer.Hout.toLong*convLayer.Wout.toLong
+              return Math.max(Math.max(batchSize*inputOutputMaxCol, batchSize*CRS), batchSize*NPQ)
+            }
+          }
+          else {
+            val outputShape = l.outputShape
+            batchSize*outputShape._1.toLong*outputShape._2.toLong*outputShape._3.toLong
+          }
+        }).max
+    }
+    else {
+      throw new RuntimeException("Unsupported approach:" + approach)
+    }
+  }
   // --------------------------------------------------------------
   // Returns true if last 2 of 4 dimensions are 1.
   // The first dimension refers to number of input datapoints.

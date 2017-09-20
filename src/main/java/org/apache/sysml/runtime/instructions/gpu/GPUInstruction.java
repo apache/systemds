@@ -120,7 +120,8 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_REDUCE_COL_KERNEL =                "rcolk";  // time spent in reduce column kernel
 	
 	public final static String MISC_TIMER_RIX_DENSE_OP =                     "drix";    // time spent in the right indexing dense kernel
-	public final static String MISC_TIMER_RIX_SPARSE_DENSE_OP =              "sdrix";   // time spent in the right indexing sparse dense kernel
+	public final static String MISC_TIMER_RIX_SPARSE_DENSE_OP_ROWWISE =      "sdrixr";   // time spent in the right indexing sparse dense kernel (row-wise parallelism)
+	public final static String MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ =      	 "sdrixn";   // time spent in the right indexing sparse dense kernel (nnz parallelism)
 
 	// Deep learning operators
 	public final static String MISC_TIMER_ACTIVATION_FORWARD_LIB =         "nnaf";  // time spent in cudnnActivationForward

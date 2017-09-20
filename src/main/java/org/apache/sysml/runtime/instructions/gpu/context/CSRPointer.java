@@ -521,7 +521,7 @@ public class CSRPointer {
 	 * @throws DMLRuntimeException ?
 	 */
 	public void deallocate() throws DMLRuntimeException {
-		deallocate(false);
+		deallocate(DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**

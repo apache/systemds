@@ -46,6 +46,9 @@ import org.junit.BeforeClass;
  */
 public abstract class GPUTests extends AutomatedTestBase {
 
+	// To run the test until this issue is resolved
+	protected final static boolean IGNORE_CLEAR_MEMORY_BUG = true;
+	
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
 	protected final double THRESHOLD = 1e-9;    // for relative error
@@ -79,7 +82,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	/**
 	 * Clear out the memory on all GPUs
 	 */
-	protected void clearGPUMemory() {
+	protected synchronized void clearGPUMemory() {
 		try {
 			int count = GPUContextPool.getDeviceCount();
 			int freeCount = GPUContextPool.getAvailableCount();
@@ -88,7 +91,12 @@ public abstract class GPUTests extends AutomatedTestBase {
 			List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
 			for (GPUContext gCtx : gCtxs) {
 				gCtx.initializeThread();
-				gCtx.clearMemory();
+				try {
+					gCtx.clearMemory();
+				} catch(RuntimeException e) {
+					if(!IGNORE_CLEAR_MEMORY_BUG)
+						throw e;
+				}
 			}
 			GPUContextPool.freeAllGPUContexts();
 

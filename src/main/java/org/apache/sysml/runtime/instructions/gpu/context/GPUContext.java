@@ -369,7 +369,7 @@ public class GPUContext {
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
 	public void cudaFreeHelper(final Pointer toFree) {
-		cudaFreeHelper(null, toFree, false);
+		cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**
@@ -389,7 +389,7 @@ public class GPUContext {
 	 * @param toFree          {@link Pointer} instance to be freed
 	 */
 	public void cudaFreeHelper(String instructionName, final Pointer toFree) {
-		cudaFreeHelper(instructionName, toFree, false);
+		cudaFreeHelper(instructionName, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**

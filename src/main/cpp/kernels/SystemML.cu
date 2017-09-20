@@ -65,6 +65,9 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
 		 * double numThreads = (double)min(size, MAX_NUM_THREADS_CHILD_KERNEL);
 		 * slice_sparse_dense_row_helper<<< ceil(numThreads/ MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr, colInd, ret, 
     	 *			rl, ru, cl, cu, retClen, inRowPtr[rowIndex], inRowPtr[rowIndex+1], index);
+    	 *
+    	 * Two-step compilation and linking process in JCudaKernels's constructor:
+    	 * cuLinkAddFile(linkState, CUjitInputType.CU_JIT_INPUT_LIBRARY, "/usr/local/cuda/lib64/libcudadevrt.a", jitOptions);
 		 */
     	// Iterate over elements of the row 'rowIndex'.
     	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {

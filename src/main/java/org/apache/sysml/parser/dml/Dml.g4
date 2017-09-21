@@ -153,7 +153,7 @@ expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
     // boolean or
     | left=expression op=('|'|'||') right=expression # BooleanOrExpression
     // boolean xor
-    | 'xor' '(' left=expression ','  right=expression ')' # BooleanXorExpression
+    | op='xor' '(' left=expression ','  right=expression ')' # BooleanXorExpression
 
     // ---------------------------------
     // only applicable for builtin function expressions

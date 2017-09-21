@@ -152,6 +152,8 @@ expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
     | left=expression op=('&'|'&&') right=expression # BooleanAndExpression
     // boolean or
     | left=expression op=('|'|'||') right=expression # BooleanOrExpression
+    // boolean xor
+    | op=('xor') '(' left=expression ','  right=expression ')' # BooleanXorExpression
 
     // ---------------------------------
     // only applicable for builtin function expressions

@@ -188,81 +188,8 @@ trait NextBatchGenerator extends TabbedDMLGenerator {
     assignBatch(tabDMLScript, "Xb", Caffe2DML.XVal, "yb", Caffe2DML.yVal, "", Caffe2DML.numValidationImages, "iVal")
 }
 
-trait VisualizeDMLGenerator extends TabbedDMLGenerator {
-  var doVisualize                             = false
-  var _tensorboardLogDir: String              = null
-  def setTensorBoardLogDir(log: String): Unit = _tensorboardLogDir = log
-  def tensorboardLogDir: String = {
-    if (_tensorboardLogDir == null) {
-      _tensorboardLogDir = java.io.File.createTempFile("temp", System.nanoTime().toString()).getAbsolutePath
-    }
-    _tensorboardLogDir
-  }
-  def visualizeLoss(): Unit = {
-    checkTensorBoardDependency()
-    doVisualize = true
-    // Visualize for both training and validation
-    visualize(" ", " ", "training_loss", "iter", "training_loss", true)
-    visualize(" ", " ", "training_accuracy", "iter", "training_accuracy", true)
-    visualize(" ", " ", "validation_loss", "iter", "validation_loss", false)
-    visualize(" ", " ", "validation_accuracy", "iter", "validation_accuracy", false)
-  }
-  val visTrainingDMLScript: StringBuilder   = new StringBuilder
-  val visValidationDMLScript: StringBuilder = new StringBuilder
-  def checkTensorBoardDependency(): Unit =
-    try {
-      if (!doVisualize)
-        Class.forName("com.google.protobuf.GeneratedMessageV3")
-    } catch {
-      case _: ClassNotFoundException =>
-        throw new DMLRuntimeException(
-          "To use visualize() feature, you will have to include protobuf-java-3.2.0.jar in your classpath. Hint: you can download the jar from http://central.maven.org/maven2/com/google/protobuf/protobuf-java/3.2.0/protobuf-java-3.2.0.jar"
-        )
-    }
-  private def visualize(layerName: String, varType: String, aggFn: String, x: String, y: String, isTraining: Boolean) = {
-    val dmlScript = if (isTraining) visTrainingDMLScript else visValidationDMLScript
-    dmlScript.append(
-      "viz_counter1 = visualize(" +
-      commaSep(asDMLString(layerName), asDMLString(varType), asDMLString(aggFn), x, y, asDMLString(tensorboardLogDir))
-      + ");\n"
-    )
-    dmlScript.append("viz_counter = viz_counter + viz_counter1\n")
-  }
-  def visualizeLayer(net: CaffeNetwork, layerName: String, varType: String, aggFn: String): Unit = {
-    // 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
-    // 'sum', 'mean', 'var' or 'sd'
-    checkTensorBoardDependency()
-    doVisualize = true
-    if (net.getLayers.filter(_.equals(layerName)).size == 0)
-      throw new DMLRuntimeException("Cannot visualize the layer:" + layerName)
-    val dmlVar = {
-      val l = net.getCaffeLayer(layerName)
-      varType match {
-        case "weight"  => l.weight
-        case "bias"    => l.bias
-        case "dweight" => l.dWeight
-        case "dbias"   => l.dBias
-        case "output"  => l.out
-        // case "doutput" => l.dX
-        case _ => throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
-      }
-    }
-    if (dmlVar == null)
-      throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
-    // Visualize for both training and validation
-    visualize(layerName, varType, aggFn, "iter", aggFn + "(" + dmlVar + ")", true)
-    visualize(layerName, varType, aggFn, "iter", aggFn + "(" + dmlVar + ")", false)
-  }
 
-  def appendTrainingVisualizationBody(dmlScript: StringBuilder, numTabs: Int): Unit =
-    if (doVisualize)
-      tabDMLScript(dmlScript, numTabs).append(visTrainingDMLScript.toString)
-  def appendValidationVisualizationBody(dmlScript: StringBuilder, numTabs: Int): Unit =
-    if (doVisualize)
-      tabDMLScript(dmlScript, numTabs).append(visValidationDMLScript.toString)
-}
-
-trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with VisualizeDMLGenerator {
+trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
   // Also makes "code reading" possible for Caffe2DML :)
   var dmlScript = new StringBuilder
   var numTabs   = 0
@@ -270,9 +197,6 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
     dmlScript.clear()
     alreadyImported.clear()
     numTabs = 0
-    visTrainingDMLScript.clear()
-    visValidationDMLScript.clear()
-    doVisualize = false
   }
   // -------------------------------------------------------------------------------------------------
   // Helper functions that calls super class methods and simplifies the code of this trait
@@ -341,16 +265,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
 
     if (isTraining) {
       // Append external built-in function headers:
-      // 1. visualize external built-in function header
-      if (doVisualize) {
-        tabDMLScript.append(
-          "visualize = externalFunction(String layerName, String varType, String aggFn, Double x, Double y, String logDir) return (Double B) " +
-          "implemented in (classname=\"org.apache.sysml.udf.lib.Caffe2DMLVisualizeWrapper\",exectype=\"mem\"); \n"
-        )
-        tabDMLScript.append("viz_counter = 0\n")
-        System.out.println("Please use the following command for visualizing: tensorboard --logdir=" + tensorboardLogDir)
-      }
-      // 2. update_nesterov external built-in function header
+      // 1. update_nesterov external built-in function header
       if (Caffe2DML.USE_NESTEROV_UDF) {
         tabDMLScript.append(
           "update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v, double lambda) return (matrix[double] X, matrix[double] v) implemented in (classname=\"org.apache.sysml.udf.lib.SGDNesterovUpdate\",exectype=\"mem\");  \n"

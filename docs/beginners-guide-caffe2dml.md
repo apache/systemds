@@ -231,7 +231,7 @@ Dml.g4      ---> antlr  ---> DmlLexer.java, DmlListener.java, DmlParser.java ---
 caffe.proto ---> protoc ---> target/generated-sources/caffe/Caffe.java       ---> parse caffe_network.proto, caffe_solver.proto 
 ```
 
-Again, the SystemML engine doesnot invoke (or depend on) Caffe and TensorFlow for any of its runtime operators.
+Again, the SystemML engine doesnot invoke (or depend on) Caffe for any of its runtime operators.
 Since the grammar files for the respective APIs (i.e. `caffe.proto`) are used by SystemML, 
 we include their licenses in our jar files.
 

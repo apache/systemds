@@ -191,11 +191,12 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "replace"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "rexpand"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "toString"    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformapply",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2CPInstructionType.put( "transformencode",CPINSTRUCTION_TYPE.MultiReturnParameterizedBuiltin);
+		String2CPInstructionType.put( "transformcolmap",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformmeta",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2CPInstructionType.put( "toString"    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "transformencode",CPINSTRUCTION_TYPE.MultiReturnParameterizedBuiltin);
 		
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);

@@ -117,6 +117,30 @@ public class EncoderComposite extends Encoder
 	}
 	
 	@Override
+	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+		//determine if dummycode encoder exists
+		EncoderDummycode dummy = null;
+		for( Encoder encoder : _encoders )
+			if( encoder instanceof EncoderDummycode )
+				dummy = (EncoderDummycode) encoder;
+		//computed shifted start positions
+		if( dummy != null ) {
+			//delete to dummycode encoder
+			out = dummy.getColMapping(meta, out);
+		}
+		//use simple 1-1 mapping
+		else {
+			for(int i=0; i<out.getNumRows(); i++) {
+				out.quickSetValue(i, 0, i+1);
+				out.quickSetValue(i, 1, i+1);
+				out.quickSetValue(i, 2, i+1);
+			}
+		}
+		
+		return out;
+	}
+	
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CompositeEncoder("+_encoders.size()+"):\n");

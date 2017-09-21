@@ -145,7 +145,7 @@ public abstract class Expression implements ParseInfo
 		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
 		// Distribution Functions
 		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
-		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMMETA,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING,	// The "toString" method for DML; named arguments accepted to format output
 		INVALID
 	};

@@ -194,9 +194,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case CDF:
 			case INVCDF: 
 			case REPLACE:
-			case TRANSFORMAPPLY: 
-			case TRANSFORMDECODE: 
-			case TRANSFORMMETA: 
+			case TRANSFORMAPPLY:
+			case TRANSFORMDECODE:
+			case TRANSFORMCOLMAP:
+			case TRANSFORMMETA:
 			case TOSTRING: {
 				ExecType et = optFindExecType();
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
@@ -1070,6 +1071,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		//force CP for in-memory only transform builtins
 		if( (_op == ParamBuiltinOp.TRANSFORMAPPLY && REMOTE==ExecType.MR)
 			|| _op == ParamBuiltinOp.TRANSFORMDECODE && REMOTE==ExecType.MR
+			|| _op == ParamBuiltinOp.TRANSFORMCOLMAP 
 			|| _op == ParamBuiltinOp.TRANSFORMMETA 
 			|| _op == ParamBuiltinOp.TOSTRING 
 			|| _op == ParamBuiltinOp.CDF 
@@ -1162,11 +1164,16 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				//TODO parse json spec
 				break;
 			}
-			
 			case TRANSFORMAPPLY: {
 				//rows remain unchanged only if no omitting
 				//cols remain unchanged of no dummy coding 
 				//TODO parse json spec
+				break;
+			}
+			case TRANSFORMCOLMAP: {
+				Hop target = getTargetHop();
+				setDim1( target.getDim2() );
+				setDim2( 3 ); //fixed schema
 				break;
 			}
 			default:

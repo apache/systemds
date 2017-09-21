@@ -140,6 +140,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if (   opcode.equals("transformapply")
 				 || opcode.equals("transformdecode")
+				 || opcode.equals("transformcolmap")
 				 || opcode.equals("transformmeta")) 
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
@@ -254,7 +255,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if ( opcode.equalsIgnoreCase("transformapply")) {
 			//acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
-			FrameBlock meta = ec.getFrameInput(params.get("meta"));		
+			FrameBlock meta = ec.getFrameInput(params.get("meta"));
 			String[] colNames = data.getColumnNames();
 			
 			//compute transformapply
@@ -266,7 +267,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.releaseFrameInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
 		}
-		else if ( opcode.equalsIgnoreCase("transformdecode")) {			
+		else if ( opcode.equalsIgnoreCase("transformdecode")) {
 			//acquire locks
 			MatrixBlock data = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
@@ -281,6 +282,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 			ec.releaseFrameInput(params.get("meta"));
+		}
+		else if ( opcode.equalsIgnoreCase("transformcolmap")) {
+			//acquire locks
+			FrameBlock meta = ec.getFrameInput(params.get("target"));
+			String[] colNames = meta.getColumnNames();
+			
+			//compute transformapply
+			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null);
+			MatrixBlock mbout = encoder.getColMapping(meta, new MatrixBlock(meta.getNumColumns(), 3, false));
+			
+			//release locks
+			ec.setMatrixOutput(output.getName(), mbout, getExtendedOpcode());
+			ec.releaseFrameInput(params.get("target"));
 		}
 		else if ( opcode.equalsIgnoreCase("transformmeta")) {
 			//get input spec and path

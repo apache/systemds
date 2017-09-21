@@ -100,4 +100,24 @@ public class EncoderDummycode extends Encoder
 			_dummycodedLength += _domainSizes[j]-1;
 		}
 	}
+	
+	@Override
+	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+		final int clen = out.getNumRows();
+		for(int colID=1, idx=0, ncolID=1; colID <= clen; colID++) {
+			int start = ncolID;
+			if( idx < _colList.length && colID==_colList[idx] ) {
+				ncolID += meta.getColumnMetadata(colID-1).getNumDistinct();
+				idx ++;
+			}
+			else {
+				ncolID ++;
+			}
+			out.quickSetValue(colID-1, 0, colID);
+			out.quickSetValue(colID-1, 1, start);
+			out.quickSetValue(colID-1, 2, ncolID-1);
+		}
+		
+		return out;
+	}
 }

@@ -484,8 +484,8 @@ public class ExecutionContext {
 	{
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData, opcode);
-	    mo.release(opcode);
-	    setVariable(varName, mo);
+		mo.release(opcode);
+		setVariable(varName, mo);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) 

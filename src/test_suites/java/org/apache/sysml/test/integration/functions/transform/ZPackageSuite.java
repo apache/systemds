@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	TransformEncodeDecodeTest.class,
 	TransformFrameEncodeApplySubsetTest.class,
 	TransformFrameEncodeApplyTest.class,
+	TransformFrameEncodeColmapTest.class,
 	TransformFrameEncodeDecodeTest.class,
 	TransformFrameEncodeDecodeTokenTest.class,
 })

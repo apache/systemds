@@ -2234,24 +2234,27 @@ public class DMLTranslator
 		
 		case TRANSFORMAPPLY:
 			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORMAPPLY, 
-									paramHops);
-			break;	
+				target.getName(), target.getDataType(), target.getValueType(), 
+				ParamBuiltinOp.TRANSFORMAPPLY, paramHops);
+			break;
 		
 		case TRANSFORMDECODE:
 			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORMDECODE, 
-									paramHops);
-			break;			
+				target.getName(), target.getDataType(), target.getValueType(), 
+				ParamBuiltinOp.TRANSFORMDECODE, paramHops);
+			break;
+		
+		case TRANSFORMCOLMAP:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+				target.getName(), target.getDataType(), target.getValueType(), 
+				ParamBuiltinOp.TRANSFORMCOLMAP, paramHops);
+			break;
 
 		case TRANSFORMMETA:
 			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORMMETA, 
-									paramHops);
-			break;		
+				target.getName(), target.getDataType(), target.getValueType(), 
+				ParamBuiltinOp.TRANSFORMMETA, paramHops);
+			break;
 		
 		case TOSTRING:
 			currBuiltinOp = new ParameterizedBuiltinOp(

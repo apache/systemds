@@ -36,10 +36,9 @@ import org.apache.sysml.parser.Expression.ValueType;
  */
 public class ParameterizedBuiltin extends Lop 
 {
-	
 	public enum OperationTypes { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
-		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING
 	};
 	
@@ -209,7 +208,8 @@ public class ParameterizedBuiltin extends Lop
 			
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
-			case TRANSFORMMETA:	{
+			case TRANSFORMCOLMAP:
+			case TRANSFORMMETA: {
 				sb.append(_operation.toString().toLowerCase()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));

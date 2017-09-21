@@ -69,6 +69,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
 		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
 		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
+		opcodeMap.put("transformcolmap", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMCOLMAP);
 		opcodeMap.put("transformmeta", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMMETA);
 
 		// toString
@@ -234,7 +235,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		case TRANSFORMDECODE:
 			validateTransformDecode(output, conditional);
-			break;	
+			break;
+		
+		case TRANSFORMCOLMAP:
+			validateTransformColmap(output, conditional);
+			break;
 		
 		case TRANSFORMMETA:
 			validateTransformMeta(output, conditional);
@@ -320,6 +325,23 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.FRAME);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);
+	}
+	
+	private void validateTransformColmap(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		//validate data / metadata (recode maps) 
+		Expression exprTarget = getVarParam(Statement.GAGG_TARGET);
+		checkDataType("transformcolmap", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		
+		//validate specification
+		checkDataValueType("transformcolmap", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
+		
+		//set output dimensions
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(exprTarget.getOutput().getDim2(), 3);
 	}
 	
 	private void validateTransformMeta(DataIdentifier output, boolean conditional) 

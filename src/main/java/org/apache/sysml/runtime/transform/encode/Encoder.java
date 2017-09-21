@@ -136,4 +136,17 @@ public abstract class Encoder implements Serializable
 	 * @param meta frame block
 	 */
 	public abstract void initMetaData(FrameBlock meta);
+	
+	/**
+	 * Obtain the column mapping of encoded frames based on the passed
+	 * meta data frame.
+	 * 
+	 * @param meta meta data frame block
+	 * @param out output matrix
+	 * @return matrix with column mapping (one row per attribute)
+	 */
+	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+		//default: do nothing
+		return out;
+	}
 }

@@ -43,8 +43,6 @@
 			<directory>${basedir}/target/classes</directory>
 			<includes>
 				<include>**/caffe/*</include>
-				<include>**/org/tensorflow/framework/*</include>
-				<include>**/org/tensorflow/util/*</include>
 				<include>**/org/apache/sysml/api/dl/*</include>
 			</includes>
 			<outputDirectory>.</outputDirectory>

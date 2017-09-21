@@ -303,9 +303,6 @@ class Caffe2DML(val sc: SparkContext,
 
   // TODO: throw error or warning if user tries to set solver_mode == GPU instead of using setGPU method
 
-  // Method called by Python mllearn to visualize variable of certain layer
-  def visualizeLayer(layerName: String, varType: String, aggFn: String): Unit = visualizeLayer(net, layerName, varType, aggFn)
-
   def getTrainAlgo(): String = if (inputs.containsKey("$train_algo")) inputs.get("$train_algo") else "minibatch"
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
 
@@ -373,9 +370,6 @@ class Caffe2DML(val sc: SparkContext,
       }
     }
     // ----------------------------------------------------------------------------
-
-    // Check if this is necessary
-    if (doVisualize) tabDMLScript.append("print(" + asDMLString("Visualization counter:") + " + viz_counter)")
 
     val trainingScript = tabDMLScript.toString()
     // Print script generation time and the DML script on stdout
@@ -522,7 +516,6 @@ class Caffe2DML(val sc: SparkContext,
           tabDMLScript.append(
             print(dmlConcat(asDMLString("Iter:"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
           )
-          appendTrainingVisualizationBody(dmlScript, numTabs)
           printClassificationReport
         }
       } else {
@@ -615,7 +608,6 @@ class Caffe2DML(val sc: SparkContext,
           tabDMLScript.append(
             print(dmlConcat(asDMLString("Iter:"), "iter", asDMLString(", validation loss:"), "validation_loss", asDMLString(", validation accuracy:"), "validation_accuracy"))
           )
-          appendValidationVisualizationBody(dmlScript, numTabs)
         }
       }
     }

@@ -270,9 +270,6 @@
 					  </archive>
 		              <excludes>
 		                <exclude>**/caffe/*</exclude>
-		                <exclude>**/org/tensorflow/*</exclude>
-		                <exclude>**/org/tensorflow/framework/*</exclude>
-		                <exclude>**/org/tensorflow/util/*</exclude>
 		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
 		              </excludes>
 		            </configuration>
@@ -360,22 +357,6 @@
 			                <protocVersion>2.5.0</protocVersion> <!-- 2.4.1, 2.5.0, 2.6.1, 3.0.0 -->
 			                <inputDirectories>
 			                    <include>src/main/proto/caffe</include>
-			                </inputDirectories>
-			                <outputDirectories>
-			                    <include>src/main/java</include>
-			                </outputDirectories>
-			            </configuration>
-			        </execution>
-			        <execution>
-			        	<id>tf-sources</id>
-			            <phase>generate-sources</phase>
-			            <goals>
-			                <goal>run</goal>
-			            </goals>
-			            <configuration>
-			                <protocVersion>3.0.0</protocVersion> <!-- 2.4.1, 2.5.0, 2.6.1, 3.0.0 -->
-			                <inputDirectories>
-			                    <include>src/main/proto/tensorflow</include>
 			                </inputDirectories>
 			                <outputDirectories>
 			                    <include>src/main/java</include>
@@ -884,8 +865,6 @@
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
 								<!-- Proto files -->
 								<exclude>src/main/proto/caffe/caffe.proto</exclude>
-								<exclude>src/main/proto/tensorflow/event.proto</exclude>
-								<exclude>src/main/proto/tensorflow/summary.proto</exclude>
 								<exclude>scripts/nn/examples/caffe2dml/models/**/*</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
@@ -1045,7 +1024,7 @@
 								org.apache.sysml.runtime.matrix.data (for MatrixIndexes, MatrixBlock, etc)
 								org.apache.sysml.udf
 							-->
-							<excludePackageNames>caffe:org.tensorflow:org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+							<excludePackageNames>caffe:org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
 							<additionalparam>${javadoc.opts}</additionalparam>
 						</configuration>
 						<executions>

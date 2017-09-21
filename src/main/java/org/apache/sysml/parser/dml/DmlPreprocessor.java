@@ -33,6 +33,7 @@ import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanAndExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanNotExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanOrExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.BooleanXorExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.CommandlineParamExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.CommandlinePositionExpressionContext;
@@ -270,6 +271,12 @@ public class DmlPreprocessor implements DmlListener {
 
 	@Override
 	public void exitBooleanOrExpression(BooleanOrExpressionContext ctx) {}
+	
+	@Override
+	public void enterBooleanXorExpression(BooleanXorExpressionContext ctx) {}
+
+	@Override
+	public void exitBooleanXorExpression(BooleanXorExpressionContext ctx) {}
 
 	@Override
 	public void enterAssignmentStatement(AssignmentStatementContext ctx) {}

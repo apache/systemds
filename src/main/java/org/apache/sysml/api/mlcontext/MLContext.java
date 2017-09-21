@@ -291,7 +291,7 @@ public class MLContext {
 
 	/**
 	 * Set configuration property, such as
-	 * {@code setConfigProperty("localtmpdir", "/tmp/systemml")}.
+	 * {@code setConfigProperty("sysml.localtmpdir", "/tmp/systemml")}.
 	 *
 	 * @param propertyName
 	 *            property name

@@ -1330,27 +1330,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws DMLRuntimeException 
 	{
 		//TODO needs as precondition a systematic treatment of persistent read information.
-		/*
-		if( LIVEVAR_AWARE_CLEANUP && _sb != null)
-		{
-			//cleanup shared variables after they are unpinned
-			VariableSet liveout = _sb.liveOut();
-			for( Entry<String, Boolean> var : varState.entrySet() ) 
-			{
-				String varname = var.getKey();
-				boolean unpinned = var.getValue();
-				String fprefix = ConfigurationManager.getConfig().getTextValue("scratch") 
-						         + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID();
-				
-				//delete unpinned vars if not in liveout (similar like rmvar) and not persistent input
-				if( unpinned && !liveout.containsVariable(varname) )
-					      
-				{
-					VariableCPInstruction.processRemoveVariableInstruction(ec,varname);
-				}
-			}
-		}
-		*/
 	}
 	
 	/**

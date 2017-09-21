@@ -152,8 +152,8 @@ Iter:2000, validation loss:173.66147359346, validation accuracy:97.4897540983606
 
 - Print the generated DML script along with classification report:  `lenet.set(debug=True)`
 - Print the heavy hitters instruction and the execution plan (advanced users): `lenet.setStatistics(True).setExplain(True)`
-- (Optional but recommended) Enable [native BLAS](http://apache.github.io/systemml/native-backend): `lenet.setConfigProperty("native.blas", "auto")`
-- Enable experimental feature such as codegen: `lenet.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")`
+- (Optional but recommended) Enable [native BLAS](http://apache.github.io/systemml/native-backend): `lenet.setConfigProperty("sysml.native.blas", "auto")`
+- Enable experimental feature such as codegen: `lenet.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")`
 - Force GPU execution (please make sure the required jcuda dependency are included): lenet.setGPU(True).setForceGPU(True)
 
 Unlike Caffe where default train and test algorithm is `minibatch`, you can specify the
@@ -242,13 +242,13 @@ If you are using OpenBLAS, please ensure that it was built with `USE_OPENMP` fla
 For more detail see http://apache.github.io/systemml/native-backend
 
 ```python
-caffe2dmlObject.setConfigProperty("native.blas", "auto")
+caffe2dmlObject.setConfigProperty("sysml.native.blas", "auto")
 ```
 
 - Turn on the experimental codegen feature. This should help reduce unnecessary allocation cost after every binary operation.
 
 ```python
-caffe2dmlObject.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")
+caffe2dmlObject.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")
 ```
 
 - Tuned the [Garbage Collector](http://spark.apache.org/docs/latest/tuning.html#garbage-collection-tuning). 

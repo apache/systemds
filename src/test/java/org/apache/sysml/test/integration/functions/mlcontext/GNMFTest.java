@@ -42,6 +42,7 @@ import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -182,7 +183,7 @@ public class GNMFTest extends MLContextTestBase
 			
 			if(numRegisteredOutputs >= 2) {
 				script.out("W");
-				ml.setConfigProperty("cp.parallel.ops", "false");
+				ml.setConfigProperty(DMLConfig.CP_PARALLEL_OPS, "false");
 			}
 			
 			MLResults results = ml.execute(script);

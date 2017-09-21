@@ -29,6 +29,7 @@ import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -91,7 +92,7 @@ public class APICodegenTest extends AutomatedTestBase
 					.setAppName("MLContextTest").setMaster("local");
 				JavaSparkContext sc = new JavaSparkContext(conf);
 				MLContext ml = new MLContext(sc);
-				ml.setConfigProperty("codegen.enabled", "true");
+				ml.setConfigProperty(DMLConfig.CODEGEN, "true");
 				ml.setStatistics(true);
 				Script script = dml(s).in("X", mX).out("R");
 				ml.execute(script);

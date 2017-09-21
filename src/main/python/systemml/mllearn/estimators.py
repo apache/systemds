@@ -138,7 +138,7 @@ class BaseSystemMLEstimator(Estimator):
         
     def setConfigProperty(self, propertyName, propertyValue):
         """
-        Set configuration property, such as setConfigProperty("localtmpdir", "/tmp/systemml").
+        Set configuration property, such as setConfigProperty("sysml.localtmpdir", "/tmp/systemml").
 
         Parameters
         ----------

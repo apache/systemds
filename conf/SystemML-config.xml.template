@@ -19,77 +19,77 @@
 
 <root>
    <!-- local fs tmp working directory-->
-   <localtmpdir>/tmp/systemml</localtmpdir>
+   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
 
    <!-- hdfs tmp working directory--> 
-   <scratch>scratch_space</scratch> 
+   <sysml.scratch>scratch_space</sysml.scratch> 
 
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
-   <optlevel>2</optlevel>  
+   <sysml.optlevel>2</sysml.optlevel>  
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
-   <numreducers>10</numreducers> 
+   <sysml.numreducers>10</sysml.numreducers> 
    
    <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
-   <jvmreuse>false</jvmreuse> 
+   <sysml.jvmreuse>false</sysml.jvmreuse> 
 
    <!-- default block dim for binary block files -->
-   <defaultblocksize>1000</defaultblocksize> 
+   <sysml.defaultblocksize>1000</sysml.defaultblocksize> 
 
    <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
-   <dml.yarn.appmaster>false</dml.yarn.appmaster>
+   <sysml.yarn.appmaster>false</sysml.yarn.appmaster>
 
    <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
-   <dml.yarn.appmaster.mem>2048</dml.yarn.appmaster.mem>
+   <sysml.yarn.appmaster.mem>2048</sysml.yarn.appmaster.mem>
 
    <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
-   <dml.yarn.mapreduce.mem>2048</dml.yarn.mapreduce.mem>
+   <sysml.yarn.mapreduce.mem>2048</sysml.yarn.mapreduce.mem>
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
-   <dml.yarn.app.queue>default</dml.yarn.app.queue>
+   <sysml.yarn.app.queue>default</sysml.yarn.app.queue>
    
    <!-- enables multi-threaded operations in singlenode control program -->
-   <cp.parallel.ops>true</cp.parallel.ops>
+   <sysml.cp.parallel.ops>true</sysml.cp.parallel.ops>
    
    <!-- enables multi-threaded read/write in singlenode control program -->
-   <cp.parallel.io>true</cp.parallel.io>
+   <sysml.cp.parallel.io>true</sysml.cp.parallel.io>
    
    <!-- enables compressed linear algebra, experimental feature -->
-   <compressed.linalg>auto</compressed.linalg>
+   <sysml.compressed.linalg>auto</sysml.compressed.linalg>
    
    <!-- enables operator fusion via code generation, experimental feature -->
-   <codegen.enabled>false</codegen.enabled>
+   <sysml.codegen.enabled>false</sysml.codegen.enabled>
    
    <!-- set the codegen java compiler (auto, janino, javac) -->
-   <codegen.compiler>auto</codegen.compiler>
+   <sysml.codegen.compiler>auto</sysml.codegen.compiler>
    
    <!-- if codegen.enabled, enables source code caching of fused operators -->
-   <codegen.plancache>false</codegen.plancache>
+   <sysml.codegen.plancache>true</sysml.codegen.plancache>
    
    <!-- if codegen.enabled, compile literals as constants: 1..heuristic, 2..always -->
-   <codegen.literals>1</codegen.literals>
+   <sysml.codegen.literals>1</sysml.codegen.literals>
    
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
-   <native.blas>none</native.blas>
+   <sysml.native.blas>none</sysml.native.blas>
 
    <!-- prints finegrained statistics information -->
-   <systemml.stats.finegrained>false</systemml.stats.finegrained>
+   <sysml.stats.finegrained>false</sysml.stats.finegrained>
    
    <!-- prints extra statistics information for GPU -->
-   <systemml.stats.extraGPU>false</systemml.stats.extraGPU>
+   <sysml.stats.extraGPU>false</sysml.stats.extraGPU>
 
    <!-- prints extra statistics information for Deep Neural Networks done in CP mode -->
-   <systemml.stats.extraDNN>false</systemml.stats.extraDNN>
+   <sysml.stats.extraDNN>false</sysml.stats.extraDNN>
 
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
-    <systemml.gpu.availableGPUs>-1</systemml.gpu.availableGPUs>
+    <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
     
     <!-- whether to synchronize GPUs after every GPU instruction -->
-    <systemml.gpu.sync.postProcess>true</systemml.gpu.sync.postProcess>
+    <sysml.gpu.sync.postProcess>true</sysml.gpu.sync.postProcess>
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
-    <systemml.gpu.eager.cudaFree>false</systemml.gpu.eager.cudaFree>
-    
-    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
-   <systemml.stats.maxWrapLength>30</systemml.stats.maxWrapLength>
+    <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
+   
+   <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
+   <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
 </root>

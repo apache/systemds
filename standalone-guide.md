@@ -324,18 +324,18 @@ The `l2-svm-predict.dml` algorithm is used on our test data sample to predict th
 The console output should show the accuracy of the trained model in percent, i.e.:
 
     15/09/01 01:32:51 INFO api.DMLScript: BEGIN DML run 09/01/2015 01:32:51
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating localtmpdir with value /tmp/systemml
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating scratch with value scratch_space
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating optlevel with value 2
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating numreducers with value 10
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating jvmreuse with value false
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating defaultblocksize with value 1000
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.appmaster with value false
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.appmaster.mem with value 2048
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.mapreduce.mem with value 2048
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating dml.yarn.app.queue with value default
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.ops with value true
-    15/09/01 01:32:51 INFO conf.DMLConfig: Updating cp.parallel.io with value true
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.localtmpdir with value /tmp/systemml
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.scratch with value scratch_space
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.optlevel with value 2
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.numreducers with value 10
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.jvmreuse with value false
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.defaultblocksize with value 1000
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.yarn.appmaster with value false
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.yarn.appmaster.mem with value 2048
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.yarn.mapreduce.mem with value 2048
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.yarn.app.queue with value default
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.parallel.ops with value true
+    15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.parallel.io with value true
     Accuracy (%): 74.14965986394557
     15/09/01 01:32:52 INFO api.DMLScript: SystemML Statistics:
     Total execution time:		0.130 sec.

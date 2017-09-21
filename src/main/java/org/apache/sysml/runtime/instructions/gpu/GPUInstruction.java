@@ -104,6 +104,9 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_SIN_KERNEL =                       "sink";   // time spent in the sin kernel
 	public final static String MISC_TIMER_COS_KERNEL =                       "cosk";   // time spent in the cos kernel
 	public final static String MISC_TIMER_TAN_KERNEL =                       "tank";   // time spent in the tan kernel
+	public final static String MISC_TIMER_SINH_KERNEL =                       "sinhk";   // time spent in the sinh kernel
+	public final static String MISC_TIMER_COSH_KERNEL =                       "coshk";   // time spent in the cosh kernel
+	public final static String MISC_TIMER_TANH_KERNEL =                       "tanhk";   // time spent in the tanh kernel
 	public final static String MISC_TIMER_ASIN_KERNEL =                      "asink";   // time spent in the asin kernel
 	public final static String MISC_TIMER_ACOS_KERNEL =                      "acosk";   // time spent in the acos kernel
 	public final static String MISC_TIMER_ATAN_KERNEL =                      "atank";   // time spent in the atan kernel

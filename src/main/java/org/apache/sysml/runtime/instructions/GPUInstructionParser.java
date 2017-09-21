@@ -91,6 +91,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "sin",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "cos",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "tan",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sinh",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "cosh",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "tanh",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "asin",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "acos",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "atan",  GPUINSTRUCTION_TYPE.BuiltinUnary);

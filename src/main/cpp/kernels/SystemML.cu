@@ -990,6 +990,20 @@ __global__ void matrix_sin(double *A, double *C, unsigned int size) {
 }
 
 /**
+ * Do an sinh over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_sinh(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = sinh(A[index]);
+    }
+}
+
+/**
  * Do an cos over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
@@ -1004,6 +1018,20 @@ __global__ void matrix_cos(double *A, double *C, unsigned int size) {
 }
 
 /**
+ * Do an cosh over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_cosh(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = cosh(A[index]);
+    }
+}
+
+/**
  * Do an tan over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
@@ -1014,6 +1042,20 @@ __global__ void matrix_tan(double *A, double *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = tan(A[index]);
+    }
+}
+
+/**
+ * Do an tanh over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_tanh(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = tanh(A[index]);
     }
 }
 

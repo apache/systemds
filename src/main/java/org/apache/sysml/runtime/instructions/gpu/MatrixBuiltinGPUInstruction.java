@@ -66,6 +66,12 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.cos(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "tan":
 				LibMatrixCUDA.tan(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "sinh":
+				LibMatrixCUDA.sinh(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "cosh":
+				LibMatrixCUDA.cosh(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "tanh":
+				LibMatrixCUDA.tanh(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "asin":
 				LibMatrixCUDA.asin(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "acos":

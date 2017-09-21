@@ -1322,6 +1322,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ACOS:
 		case ASIN:
 		case ATAN:
+		case COSH:
+		case SINH:
+		case TANH:
 		case SIGN:
 		case SQRT:
 		case ABS:
@@ -1345,6 +1348,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ACOS:
 		case ASIN:
 		case ATAN:
+		case COSH:
+		case SINH:
+		case TANH:
 		case SIGN:	
 		case SQRT:
 		case ABS:
@@ -1552,6 +1558,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ASIN;
 		else if (functionName.equals("atan"))
 			bifop = Expression.BuiltinFunctionOp.ATAN;
+		else if (functionName.equals("cosh"))
+			bifop = Expression.BuiltinFunctionOp.COSH;
+		else if (functionName.equals("sinh"))
+			bifop = Expression.BuiltinFunctionOp.SINH;
+		else if (functionName.equals("tanh"))
+			bifop = Expression.BuiltinFunctionOp.TANH;
 		else if (functionName.equals("diag"))
 			bifop = Expression.BuiltinFunctionOp.DIAG;
 		else if (functionName.equals("exp"))

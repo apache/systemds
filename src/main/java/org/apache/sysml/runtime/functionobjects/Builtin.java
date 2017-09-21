@@ -49,7 +49,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinCode { SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
+	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -61,6 +61,9 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "sin"    , BuiltinCode.SIN);
 		String2BuiltinCode.put( "cos"    , BuiltinCode.COS);
 		String2BuiltinCode.put( "tan"    , BuiltinCode.TAN);
+		String2BuiltinCode.put( "sinh"    , BuiltinCode.SINH);
+		String2BuiltinCode.put( "cosh"    , BuiltinCode.COSH);
+		String2BuiltinCode.put( "tanh"    , BuiltinCode.TANH);
 		String2BuiltinCode.put( "asin"   , BuiltinCode.ASIN);
 		String2BuiltinCode.put( "acos"   , BuiltinCode.ACOS);
 		String2BuiltinCode.put( "atan"   , BuiltinCode.ATAN);
@@ -95,7 +98,7 @@ public class Builtin extends ValueFunction
 	}
 	
 	// We should create one object for every builtin function that we support
-	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
+	private static Builtin sinObj = null, cosObj = null, tanObj = null, sinhObj = null, coshObj = null, tanhObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
@@ -135,6 +138,19 @@ public class Builtin extends ValueFunction
 			if ( tanObj == null )
 				tanObj = new Builtin(BuiltinCode.TAN);
 			return tanObj;
+		case SINH:
+			if ( sinhObj == null )
+				sinhObj = new Builtin(BuiltinCode.SINH);
+			return sinhObj;
+		
+		case COSH:
+			if ( coshObj == null )
+				coshObj = new Builtin(BuiltinCode.COSH);
+			return coshObj;
+		case TANH:
+			if ( tanhObj == null )
+				tanhObj = new Builtin(BuiltinCode.TANH);
+			return tanhObj;
 		case ASIN:
 			if ( asinObj == null )
 				asinObj = new Builtin(BuiltinCode.ASIN);
@@ -282,6 +298,10 @@ public class Builtin extends ValueFunction
 			case ASIN:   return FASTMATH ? FastMath.asin(in) : Math.asin(in);
 			case ACOS:   return FASTMATH ? FastMath.acos(in) : Math.acos(in);
 			case ATAN:   return Math.atan(in); //faster in Math
+			// FastMath.*h is faster 98% of time than Math.*h in initial micro-benchmarks
+			case SINH:   return FASTMATH ? FastMath.sinh(in) : Math.sinh(in);
+			case COSH:   return FASTMATH ? FastMath.cosh(in) : Math.cosh(in);
+			case TANH:   return FASTMATH ? FastMath.tanh(in) : Math.tanh(in);
 			case CEIL:   return FASTMATH ? FastMath.ceil(in) : Math.ceil(in);
 			case FLOOR:  return FASTMATH ? FastMath.floor(in) : Math.floor(in);
 			case LOG:    return Math.log(in); //faster in Math

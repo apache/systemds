@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeUnary extends CNode
 {
+	// TODO: Add support for SINH, COSH and TANH
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, CBIND0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific

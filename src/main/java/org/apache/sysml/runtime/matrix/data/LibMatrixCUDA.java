@@ -2604,6 +2604,57 @@ public class LibMatrixCUDA {
 		// tan(0) = 0
 		unaryOp(ec, gCtx, in1, "matrix_tan", 0, outputName, instName, GPUInstruction.MISC_TIMER_TAN_KERNEL);
 	}
+	
+	/**
+	 * Performs an "sinh" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void sinh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : sinh" + ", GPUContext=" + gCtx);
+		}
+		// sin(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_sinh", 0, outputName, instName, GPUInstruction.MISC_TIMER_SINH_KERNEL);
+	}
+
+	/**
+	 * Performs an "cosh" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void cosh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : cosh" + ", GPUContext=" + gCtx);
+		}
+		// cos(0) = 1
+		unaryOp(ec, gCtx, in1, "matrix_cosh", 1, outputName, instName, GPUInstruction.MISC_TIMER_COSH_KERNEL);
+	}
+
+	/**
+	 * Performs an "tanh" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void tanh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : tanh" + ", GPUContext=" + gCtx);
+		}
+		// tan(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_tanh", 0, outputName, instName, GPUInstruction.MISC_TIMER_TANH_KERNEL);
+	}
 
 	/**
 	 * Performs an "asin" operation on a matrix on the GPU

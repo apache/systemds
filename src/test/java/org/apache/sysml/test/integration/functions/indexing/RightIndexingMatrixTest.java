@@ -33,10 +33,8 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 public class RightIndexingMatrixTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME = "RightIndexingMatrixTest";
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + RightIndexingMatrixTest.class.getSimpleName() + "/";
@@ -50,123 +48,117 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.5;
 	private final static double sparsity2 = 0.01;
 	
-	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
-				new String[] {"B", "C", "D"}));
+			new String[] {"B", "C", "D"}));
 	}
 	
 	@Test
-	public void testRightIndexingDenseCP() 
-	{
+	public void testRightIndexingDenseCP() {
 		runRightIndexingTest(ExecType.CP, false);
 	}
 	
 	@Test
-	public void testRightIndexingDenseSP() 
-	{
+	public void testRightIndexingDenseSP() {
 		runRightIndexingTest(ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testRightIndexingDenseMR() 
-	{
+	public void testRightIndexingDenseMR() {
 		runRightIndexingTest(ExecType.MR, false);
 	}
 	
 	@Test
-	public void testRightIndexingSparseCP() 
-	{
+	public void testRightIndexingSparseCP() {
 		runRightIndexingTest(ExecType.CP, true);
 	}
 	
 	@Test
-	public void testRightIndexingSparseSP() 
-	{
+	public void testRightIndexingSparseSP() {
 		runRightIndexingTest(ExecType.SPARK, true);
 	}
 	
 	@Test
-	public void testRightIndexingSparseMR() 
-	{
+	public void testRightIndexingSparseMR() {
 		runRightIndexingTest(ExecType.MR, true);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 * @param sparse
-	 */
-	public void runRightIndexingTest( ExecType et, boolean sparse ) 
+	//various regression tests that led to test failures before
+	
+	@Test
+	public void testRightIndexingDenseCPFixed1() {
+		runRightIndexingTest(ExecType.CP, false, 2083, 2083, 437, 842);
+	}
+	
+	@Test
+	public void testRightIndexingDenseCPFixed2() {
+		runRightIndexingTest(ExecType.CP, false, 1632, 1632, 282, 345);
+	}
+	
+	public void runRightIndexingTest( ExecType et, boolean sparse ) {
+		Random rand = new Random(System.currentTimeMillis());
+		long rl = (long)(rand.nextDouble()*((double)rows))+1;
+		long ru = (long)(rand.nextDouble()*((double)(rows-rl+1)))+rl;
+		long cl = (long)(rand.nextDouble()*((double)cols))+1;
+		long cu = (long)(rand.nextDouble()*((double)(cols-cl+1)))+cl;
+		
+		runRightIndexingTest(et, sparse, rl, ru, cl, cu);
+	}
+	
+	public void runRightIndexingTest( ExecType et, boolean sparse, long rl, long ru, long cl, long cu )
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-			
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}	
+		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
-		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			
-		    
-		    double sparsity = sparse ? sparsity2 : sparsity1;
-		    
-	        config.addVariable("rows", rows);
-	        config.addVariable("cols", cols);
-	        
-	        long rowstart=216, rowend=429, colstart=967, colend=1009;
-	        Random rand=new Random(System.currentTimeMillis());
-	        rowstart=(long)(rand.nextDouble()*((double)rows))+1;
-	        rowend=(long)(rand.nextDouble()*((double)(rows-rowstart+1)))+rowstart;
-	        colstart=(long)(rand.nextDouble()*((double)cols))+1;
-	        colend=(long)(rand.nextDouble()*((double)(cols-colstart+1)))+colstart;
-	        config.addVariable("rowstart", rowstart);
-	        config.addVariable("rowend", rowend);
-	        config.addVariable("colstart", colstart);
-	        config.addVariable("colend", colend);
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			double sparsity = sparse ? sparsity2 : sparsity1;
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
+			config.addVariable("rowstart", rl);
+			config.addVariable("rowend", ru);
+			config.addVariable("colstart", cl);
+			config.addVariable("colend", cu);
 			loadTestConfiguration(config);
-	        
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  input("A"), 
+			programArgs = new String[]{"-explain","-args",  input("A"),
 				Long.toString(rows), Long.toString(cols),
-				Long.toString(rowstart), Long.toString(rowend),
-				Long.toString(colstart), Long.toString(colend),
+				Long.toString(rl), Long.toString(ru),
+				Long.toString(cl), Long.toString(cu),
 				output("B"), output("C"), output("D") };
 			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
-	
-			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("A", A, true);
-	        
-	        boolean exceptionExpected = false;
-			int expectedNumberOfJobs = -1;
-			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+				inputDir() + " " + rl + " " + ru + " " + cl + " " + cu + " " + expectedDir();
 			
+			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
+			writeInputMatrix("A", A, true);
+			
+			//run tests
+			runTest(true, false, null, -1);
 			runRScript(true);
-			//disableOutAndExpectedDeletion();
-		
-			for(String file: config.getOutputFiles())
-			{
+			
+			//compare results
+			for(String file: config.getOutputFiles()) {
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
 				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 			}
 		}
-		finally
-		{
-			rtplatform = oldRTP;
+		finally {
+			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

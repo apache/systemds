@@ -28,6 +28,8 @@ A1=readMM(paste(args[1], "A.mtx", sep=""))
 A = as.matrix(A1);
 
 B=A[args[2]:args[3],args[4]:args[5]]
+if( args[2]==args[3] )
+  B = t(B) #correct implicit row to column vector conversion
 C=A[1:args[3],args[4]:ncol(A)]
 D=A[,args[4]:args[5]]
 writeMM(as(B,"CsparseMatrix"), paste(args[6], "B", sep=""), format="text")

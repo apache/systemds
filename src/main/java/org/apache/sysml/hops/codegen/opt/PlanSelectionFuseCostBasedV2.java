@@ -939,6 +939,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				case MAX: 
 				case AND:
 				case OR:
+				case XOR:
 				case EQUAL:
 				case NOTEQUAL:
 				case LESS:

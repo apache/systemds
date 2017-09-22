@@ -874,13 +874,13 @@ public abstract class AutomatedTestBase
 			// Create a SystemML config file for this test case based on default template
 			// from src/test/config or derive from custom configuration provided by test.
 			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
-
 			String localTemp = curLocalTempDir.getPath();
-			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>",
-					String.format("<scratch>%s/scratch_space</scratch>", localTemp));
-			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>",
-					String.format("<localtmpdir>%s/localtmp</localtmpdir>", localTemp));
-
+			String configContents = configTemplate
+				.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),
+					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp+"/scratch_space"))
+				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemml"),
+					createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp+"/localtmp"));
+			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
 			System.out.printf("This test case will use SystemML config file %s\n", getCurConfigFile());
@@ -892,7 +892,9 @@ public abstract class AutomatedTestBase
 			TestUtils.clearDirectory(DEBUG_TEMP_DIR + baseDirectory + INPUT_DIR);
 	}
 
-
+	public String createXMLElement(String tagName, String value) {
+		return String.format("<%s>%s</%s>",tagName, value, tagName);
+	}
 
 	/**
 	 * <p>

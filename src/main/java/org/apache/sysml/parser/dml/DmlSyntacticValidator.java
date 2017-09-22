@@ -67,7 +67,6 @@ import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanAndExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanNotExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BooleanOrExpressionContext;
-import org.apache.sysml.parser.dml.DmlParser.BooleanXorExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.CommandlineParamExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.CommandlinePositionExpressionContext;
@@ -210,11 +209,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		booleanExpressionHelper(ctx, ctx.left.info, ctx.right.info, ctx.info, ctx.op.getText());
 	}
 	
-	@Override
-	public void exitBooleanXorExpression(BooleanXorExpressionContext ctx) {
-		booleanExpressionHelper(ctx, ctx.left.info, ctx.right.info, ctx.info, ctx.op.getText());
-	}	
-
 	@Override
 	public void exitBooleanNotExpression(BooleanNotExpressionContext ctx) {
 		unaryBooleanExpressionHelper(ctx, ctx.left.info, ctx.info, ctx.op.getText());
@@ -1043,8 +1037,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override public void enterBooleanOrExpression(BooleanOrExpressionContext ctx) {}
 	
-	@Override public void enterBooleanXorExpression(BooleanXorExpressionContext ctx) {}
-
 	@Override
 	public void enterMultiIdExpression(MultiIdExpressionContext ctx) { }
 

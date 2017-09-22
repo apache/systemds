@@ -298,7 +298,6 @@ public abstract class ColGroup implements Serializable
 	 * avoid unnecessary value copies per group.
 	 */
 	protected abstract class ColGroupRowIterator {
-		public abstract boolean hasNext();
-		public abstract void next(double[] buff);
+		public abstract void next(double[] buff, int rowIx, int segIx, boolean last);
 	}
 }

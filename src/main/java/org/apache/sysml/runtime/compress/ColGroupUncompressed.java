@@ -469,30 +469,21 @@ public class ColGroupUncompressed extends ColGroup
 	
 	private class UCRowIterator extends ColGroupRowIterator
 	{
-		private final int _ru;
-		private int _rpos = -1;
-		
 		public UCRowIterator(int rl, int ru) {
-			_ru = ru;
-			_rpos = rl;
+			//do nothing
 		}
 		
 		@Override
-		public boolean hasNext() {
-			return (_rpos < _ru);
-		}
-		
-		@Override
-		public void next(double[] buff) {
+		public void next(double[] buff, int rowIx, int segIx, boolean last) {
 			//copy entire dense/sparse row
 			if( _data.isAllocated() ) {
 				if( _data.isInSparseFormat() ) {
-					if( !_data.getSparseBlock().isEmpty(_rpos) ) {
+					if( !_data.getSparseBlock().isEmpty(rowIx) ) {
 						SparseBlock sblock = _data.getSparseBlock();
-						int apos = sblock.pos(_rpos);
-						int alen = sblock.size(_rpos);
-						int[] aix = sblock.indexes(_rpos);
-						double[] avals = sblock.values(_rpos);
+						int apos = sblock.pos(rowIx);
+						int alen = sblock.size(rowIx);
+						int[] aix = sblock.indexes(rowIx);
+						double[] avals = sblock.values(rowIx);
 						for(int k=apos; k<apos+alen; k++)
 							buff[_colIndexes[aix[k]]] = avals[k];
 					}
@@ -500,12 +491,10 @@ public class ColGroupUncompressed extends ColGroup
 				else {
 					final int clen = getNumCols();
 					double[] a = _data.getDenseBlock();
-					for(int j=0, aix=_rpos*clen; j<clen; j++)
+					for(int j=0, aix=rowIx*clen; j<clen; j++)
 						buff[_colIndexes[j]] = a[aix+j];
 				}
 			}
-			//advance position to next row
-			_rpos++;
 		}
 	}
 }

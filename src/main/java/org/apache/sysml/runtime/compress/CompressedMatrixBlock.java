@@ -2417,10 +2417,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		@Override
 		public double[] next() {
+			//prepare meta data common across column groups
+			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+			final int ix = _rpos % blksz;
+			final boolean last = (_rpos+1 == _ru);
 			//copy group rows into consolidated row
 			Arrays.fill(_ret, 0);
 			for(int j=0; j<_iters.length; j++)
-				_iters[j].next(_ret);
+				_iters[j].next(_ret, _rpos, ix, last);
 			//advance to next row and return buffer
 			_rpos++;
 			return _ret;
@@ -2438,10 +2442,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		@Override
 		public SparseRow next() {
+			//prepare meta data common across column groups
+			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+			final int ix = _rpos % blksz;
+			final boolean last = (_rpos+1 == _ru);
 			//copy group rows into consolidated dense vector
 			//to avoid binary search+shifting or final sort
 			for(int j=0; j<_iters.length; j++)
-				_iters[j].next(_tmp);
+				_iters[j].next(_tmp, _rpos, ix, last);
 			//append non-zero values to consolidated sparse row
 			_ret.setSize(0);
 			for(int i=0; i<_tmp.length; i++)

@@ -307,28 +307,17 @@ public abstract class ColGroupDDC extends ColGroupValue
 	
 	private class DDCRowIterator extends ColGroupRowIterator
 	{
-		private final int _ru;
-		private int _rpos = -1;
-		
 		public DDCRowIterator(int rl, int ru) {
-			_ru = ru;
-			_rpos = rl;
+			//do nothing
 		}
 
 		@Override
-		public boolean hasNext() {
-			return (_rpos < _ru);
-		}
-
-		@Override
-		public void next(double[] buff) {
+		public void next(double[] buff, int rowIx, int segIx, boolean last) {
 			//copy entire value tuple to output row
 			final int clen = getNumCols();
-			final int off = getCode(_rpos)*clen;
+			final int off = getCode(rowIx)*clen;
 			for(int j=0; j<clen; j++)
 				buff[_colIndexes[j]] = _values[off+j];
-			//advance position to next row
-			_rpos++;
 		}
 	}
 }

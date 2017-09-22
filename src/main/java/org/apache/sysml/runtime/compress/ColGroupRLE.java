@@ -857,46 +857,35 @@ public class ColGroupRLE extends ColGroupOffset
 	
 	private class RLERowIterator extends ColGroupRowIterator
 	{
-		//iterator configuration 
-		private final int _ru;
 		//iterator state
 		private final int[] _astart;
 		private final int[] _apos;
 		private final int[] _vcodes;
-		private int _rpos = -1;
 		
 		public RLERowIterator(int rl, int ru) {
-			_ru = ru;
-			_rpos = rl;
 			_astart = new int[getNumValues()];
 			_apos = skipScan(getNumValues(), rl, _astart);
 			_vcodes = new int[Math.min(BitmapEncoder.BITMAP_BLOCK_SZ, ru-rl)];
 			Arrays.fill(_vcodes, -1); //initial reset
-			getNextSegment();
+			getNextSegment(rl);
 		}
 		
 		@Override
-		public boolean hasNext() {
-			return (_rpos < _ru);
-		}
-		
-		@Override
-		public void next(double[] buff) {
-			//copy entire value tuple or reset to zero
-			int ix = _rpos%BitmapEncoder.BITMAP_BLOCK_SZ;
+		public void next(double[] buff, int rowIx, int segIx, boolean last) {
 			final int clen = getNumCols();
-			for(int j=0, off=_vcodes[ix]*clen; j<clen; j++)
-				if( _vcodes[ix] >= 0 )
+			final int vcode = _vcodes[segIx];
+			if( vcode >= 0 ) {
+				//copy entire value tuple if necessary
+				for(int j=0, off=vcode*clen; j<clen; j++)
 					buff[_colIndexes[j]] = _values[off+j];
-			//reset vcode to avoid scan on next segment
-			_vcodes[ix] = -1;
-			//advance position to next row
-			_rpos++;
-			if( _rpos%BitmapEncoder.BITMAP_BLOCK_SZ==0 && _rpos<_ru )
-				getNextSegment();
+				//reset vcode to avoid scan on next segment
+				_vcodes[segIx] = -1;
+			}
+			if( segIx+1==BitmapEncoder.BITMAP_BLOCK_SZ && !last )
+				getNextSegment(rowIx+1);
 		}
 		
-		public void getNextSegment() {
+		private void getNextSegment(int rowIx) {
 			//materialize value codes for entire segment in a 
 			//single pass over all values (store value code by pos)
 			final int numVals = getNumValues();
@@ -906,13 +895,13 @@ public class ColGroupRLE extends ColGroupOffset
 				int blen = len(k);
 				int bix = _apos[k];
 				int start = _astart[k];
-				int end = (_rpos/blksz+1)*blksz;
+				int end = (rowIx/blksz+1)*blksz;
 				while( bix < blen && start < end ) {
 					int lstart = _data[boff + bix];
 					int llen = _data[boff + bix + 1];
 					//set codes of entire run, with awareness of unaligned runs/segments
-					Arrays.fill(_vcodes, Math.min(Math.max(_rpos, start+lstart), end)-_rpos, 
-						Math.min(start+lstart+llen,end)-_rpos, k);
+					Arrays.fill(_vcodes, Math.min(Math.max(rowIx, start+lstart), end)-rowIx, 
+						Math.min(start+lstart+llen,end)-rowIx, k);
 					if( start+lstart+llen >= end )
 						break;
 					start += lstart + llen;

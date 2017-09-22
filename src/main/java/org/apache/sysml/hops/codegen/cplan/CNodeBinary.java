@@ -46,7 +46,7 @@ public class CNodeBinary extends CNode
 		//scalar-scalar operations
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
-		MIN, MAX, AND, OR, LOG, LOG_NZ, POW,
+		MIN, MAX, AND, OR, XOR, LOG, LOG_NZ, POW,
 		MINUS1_MULT, MINUS_NZ;
 		
 		public static boolean contains(String value) {
@@ -368,6 +368,7 @@ public class CNodeBinary extends CNode
 			case EQUAL:                    return "b(==)";
 			case NOTEQUAL:                 return "b(!=)";
 			case OR:                       return "b(|)";
+			case XOR:                      return "b(xor)";
 			case AND:                      return "b(&)";
 			case MINUS1_MULT:              return "b(1-*)";
 			case MINUS_NZ:                 return "b(-nz)";

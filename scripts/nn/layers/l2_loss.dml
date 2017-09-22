@@ -70,3 +70,21 @@ backward = function(matrix[double] pred, matrix[double] y)
   dpred = (pred-y) / N
 }
 
+compute_loss_accuracy = function(matrix[double] probs, matrix[double] y)
+    return (double loss, double accuracy) {
+  /*
+   * Computes loss for the L2 loss.
+   *
+   * * Inputs:
+   *  - pred: Predictions, of shape (N, M).
+   *  - y: Targets, of shape (N, M).
+   *
+   * Outputs:
+   *  - loss: Average loss.
+   *  - accuracy: Average Accuracy (currently only returns -1)
+   */
+   N = nrow(y)
+   losses = 0.5 * rowSums((pred-y)^2)
+   loss = sum(losses) / N
+   accuracy = -1
+ }

@@ -130,11 +130,35 @@ trait CaffeLayer extends BaseDMLGenerator {
     bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
     dmlScript.append("\n")
   }
+  def invokeComputeLoss(dmlScript: StringBuilder, arguments: String*): Unit =
+    invoke(dmlScript, sourceFileName + "::", List[String]("loss", "accuracy"), "compute_loss_accuracy", arguments.toList)
   // --------------------------------------------------------------------------------------
 }
 
 trait IsLossLayer extends CaffeLayer {
   def computeLoss(dmlScript: StringBuilder, numTabs: Int): Unit
+  override def init(dmlScript: StringBuilder) = { }
+  def scores(): String = {
+    val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+    ret.size.toLong match {
+      case 0L => throw new LanguageException("Expected atleast 1 bottom layer")
+      case 1L => ret.get(0).out
+      case _ => {
+        val ret1 = ret.filter(!_.out.equals("Xb")).toList
+        ret1.size.toLong match {
+          case 0L => throw new LanguageException("Atleast one of the output of previous layer should be Xb")
+          case 1L => ret1.get(0).out
+          case _ => throw new LanguageException("More than 2 bottom layers is not supported")
+        }
+      }
+    }
+  }
+  def isSegmentationProblem(): Boolean =
+    try {
+      return outputShape._2.toInt != 1 && outputShape._3.toInt != 1
+    } catch {
+      case _: Throwable => throw new RuntimeException("Cannot infer the output dimensions:" + outputShape)
+    }
 }
 
 trait HasWeight extends CaffeLayer {
@@ -508,16 +532,26 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
   override def biasShape(): Array[Int]   = null
 }
 
+// L2 loss function.
+class EuclideanLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
+  override def sourceFileName: String = if (!isSegmentationProblem()) "l2_loss" else throw new DMLRuntimeException("Segementation is not supported for EuclideanLoss in Caffe2DML yet")
+  override def weightShape(): Array[Int] = null
+  override def biasShape(): Array[Int]   = null
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
+    invokeForward(dmlScript, List[String](out), scores, "yb")
+  
+  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit = 
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id + outSuffix), scores, "yb")
+  
+  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit =
+      invokeComputeLoss(dmlScript, scores, "yb")
+}
+
 class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
   // -------------------------------------------------
-  override def sourceFileName                 = if (!isSegmentationProblem()) "softmax" else "softmax2d"
-  override def init(dmlScript: StringBuilder) = {}
-  def isSegmentationProblem(): Boolean =
-    try {
-      return outputShape._2.toInt != 1 && outputShape._3.toInt != 1
-    } catch {
-      case _: Throwable => throw new RuntimeException("Cannot infer the output dimensions:" + outputShape)
-    }
+  override def sourceFileName                 = if (!isSegmentationProblem()) "softmax_loss" else "softmax2d_loss"
+  def isSegmentationSupported():Boolean       = true
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
     if (!isSegmentationProblem()) {
       invokeForward(dmlScript, List[String](out), scores)
@@ -525,42 +559,11 @@ class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetw
       invokeForward(dmlScript, List[String](out), scores, outputShape._1)
     }
   override def backward(dmlScript: StringBuilder, outSuffix: String) =
-    if (!isSegmentationProblem()) {
-      invoke(dmlScript, "cross_entropy_loss::", List[String]("dProbs" + outSuffix), "backward", false, out, "yb")
-      dmlScript.append("; ")
-      invoke(dmlScript, "softmax::", List[String]("dOut" + id + outSuffix), "backward", false, "dProbs", scores)
-      val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
-      dmlScript.append("; ")
-      bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
-      dmlScript.append("\n")
-    } else {
-      throw new RuntimeException("backward for SoftmaxWithLoss is not implemented for segmentation problem")
-    }
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id + outSuffix), scores, out, "yb")
+    
   override def computeLoss(dmlScript: StringBuilder, numTabs: Int) =
-    if (!isSegmentationProblem()) {
-      val tabBuilder = new StringBuilder
-      for (i <- 0 until numTabs) tabBuilder.append("\t")
-      val tabs = tabBuilder.toString
-      dmlScript.append("tmp_loss = cross_entropy_loss::forward(" + commaSep(out, "yb") + ")\n")
-      dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
-      dmlScript.append(tabs).append("true_yb = rowIndexMax(yb)\n")
-      dmlScript.append(tabs).append("predicted_yb = rowIndexMax(" + out + ")\n")
-      dmlScript.append(tabs).append("accuracy = mean(predicted_yb == true_yb)*100\n")
-    } else {
-      throw new RuntimeException("Computation of loss for SoftmaxWithLoss is not implemented for segmentation problem")
-    }
-  def scores(): String = {
-    val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
-    if (ret.size == 1) return ret.get(0).out
-    else if (ret.size == 2) {
-      val ret1 = if (!ret.get(0).out.equals("Xb")) ret.get(0).out else "";
-      val ret2 = if (!ret.get(1).out.equals("Xb")) ret.get(1).out else "";
-      if (!ret1.equals("") && !ret2.equals("")) throw new LanguageException("Atleast one of the output of previous layer should be Xb")
-      else if (!ret1.equals("")) return ret1
-      else return ret2
-    } else
-      throw new LanguageException("More than 2 bottom layers is not supported")
-  }
+    invokeComputeLoss(dmlScript, scores, out, "yb")
+    
   override def weightShape(): Array[Int] = null
   override def biasShape(): Array[Int]   = null
   // -------------------------------------------------
@@ -572,6 +575,35 @@ class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetw
     }
     computedBottomLayerOutputShape
   }
+}
+
+class TanH(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName                 = "tanh"
+  override def init(dmlScript: StringBuilder) = {}
+  /*
+   * Computes the forward pass for a tanh nonlinearity layer.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = invokeForward(dmlScript, List[String](out), X)
+  /*
+   * Computes the backward pass for a tanh nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
+  override def weightShape(): Array[Int]                             = null
+  override def biasShape(): Array[Int]                               = null
+  // -------------------------------------------------
 }
 
 class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {

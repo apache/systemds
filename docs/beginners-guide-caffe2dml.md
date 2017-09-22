@@ -210,6 +210,8 @@ vgg.predict(X_test)
 # OR Fine-Tuning: vgg.fit(X_train, y_train)
 ```
 
+Please see [Caffe2DML's reference guide](http://apache.github.io/systemml/reference-guide-caffe2dml) for more details.
+
 ## Frequently asked questions
 
 #### What is the purpose of Caffe2DML API ?

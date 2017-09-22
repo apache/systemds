@@ -162,6 +162,96 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testVectorSinDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_SIN, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorSinSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_SIN, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorCosDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_COS, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorCosSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_COS, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorTanDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_TAN, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorTanSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_TAN, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorASinDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ASIN, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorASinSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ASIN, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorACosDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ACOS, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorACosSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ACOS, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorATanDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ATAN, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorATanSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_ATAN, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorSinHDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_SINH, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorSinHSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_SINH, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorCosHDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_COSH, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorCosHSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_COSH, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
+	public void testVectorTanHDense() {
+		testVectorUnaryPrimitive(UnaryType.VECT_TANH, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorTanHSparse() {
+		testVectorUnaryPrimitive(UnaryType.VECT_TANH, InputType.VECTOR_SPARSE);
+	}
+	
+	@Test
 	public void testVectorSignDense() {
 		testVectorUnaryPrimitive(UnaryType.VECT_SIGN, InputType.VECTOR_DENSE);
 	}

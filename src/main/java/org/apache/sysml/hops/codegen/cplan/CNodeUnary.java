@@ -27,16 +27,17 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CNodeUnary extends CNode
 {
-	// TODO: Add support for SINH, COSH and TANH
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, CBIND0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
+		VECT_SIN, VECT_COS, VECT_TAN, VECT_ASIN, VECT_ACOS, VECT_ATAN, 
+		VECT_SINH, VECT_COSH, VECT_TANH,
 		VECT_CUMSUM, VECT_CUMMIN, VECT_CUMMAX,
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
-		SIN, COS, TAN, ASIN, ACOS, ATAN,
+		SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH,
 		SELP, SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
@@ -66,6 +67,15 @@ public class CNodeUnary extends CNode
 				case VECT_CEIL:
 				case VECT_FLOOR:
 				case VECT_SIGN:
+				case VECT_SIN:
+				case VECT_COS:
+				case VECT_TAN:
+				case VECT_ASIN:
+				case VECT_ACOS:
+				case VECT_ATAN:
+				case VECT_SINH:
+				case VECT_COSH:
+				case VECT_TANH:
 				case VECT_CUMSUM:
 				case VECT_CUMMIN:
 				case VECT_CUMMAX:{
@@ -104,6 +114,12 @@ public class CNodeUnary extends CNode
 					return "    double %TMP% = FastMath.acos(%IN1%);\n";
 				case ATAN:
 					return "    double %TMP% = Math.atan(%IN1%);\n";
+				case SINH:
+					return "    double %TMP% = FastMath.sinh(%IN1%);\n";
+				case COSH: 
+					return "    double %TMP% = FastMath.cosh(%IN1%);\n";
+				case TANH:
+					return "    double %TMP% = FastMath.tanh(%IN1%);\n";
 				case SIGN:
 					return "    double %TMP% = FastMath.signum(%IN1%);\n";
 				case SQRT:
@@ -135,6 +151,9 @@ public class CNodeUnary extends CNode
 				|| this == VECT_LOG || this == VECT_ABS
 				|| this == VECT_ROUND || this == VECT_CEIL
 				|| this == VECT_FLOOR || this == VECT_SIGN
+				|| this == VECT_SIN || this == VECT_COS || this == VECT_TAN
+				|| this == VECT_ASIN || this == VECT_ACOS || this == VECT_ATAN
+				|| this == VECT_SINH || this == VECT_COSH || this == VECT_TANH
 				|| this == VECT_CUMSUM || this == VECT_CUMMIN
 				|| this == VECT_CUMMAX;
 		}
@@ -223,12 +242,21 @@ public class CNodeUnary extends CNode
 			case ROW_MAXS:  return "u(Rmax)";
 			case VECT_EXP:
 			case VECT_POW2:
-			case VECT_MULT2: 
-			case VECT_SQRT: 
+			case VECT_MULT2:
+			case VECT_SQRT:
 			case VECT_LOG:
 			case VECT_ABS:
 			case VECT_ROUND:
 			case VECT_CEIL:
+			case VECT_SIN:
+			case VECT_COS:
+			case VECT_TAN:
+			case VECT_ASIN:
+			case VECT_ACOS:
+			case VECT_ATAN:
+			case VECT_SINH:
+			case VECT_COSH:
+			case VECT_TANH:
 			case VECT_FLOOR:
 			case VECT_CUMSUM:
 			case VECT_CUMMIN:
@@ -236,11 +264,11 @@ public class CNodeUnary extends CNode
 			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
 			case LOOKUP_R:  return "u(ixr)";
 			case LOOKUP_C:  return "u(ixc)";
-			case LOOKUP_RC:	return "u(ixrc)";
+			case LOOKUP_RC: return "u(ixrc)";
 			case LOOKUP0:   return "u(ix0)";
 			case CBIND0:    return "u(cbind0)";
 			case POW2:      return "^2";
-			default:		return "u("+_type.name().toLowerCase()+")";
+			default:        return "u("+_type.name().toLowerCase()+")";
 		}
 	}
 
@@ -257,6 +285,15 @@ public class CNodeUnary extends CNode
 			case VECT_CEIL:
 			case VECT_FLOOR:
 			case VECT_SIGN:
+			case VECT_SIN:
+			case VECT_COS:
+			case VECT_TAN:
+			case VECT_ASIN:
+			case VECT_ACOS:
+			case VECT_ATAN:
+			case VECT_SINH:
+			case VECT_COSH:
+			case VECT_TANH:
 			case VECT_CUMSUM:
 			case VECT_CUMMIN:
 			case VECT_CUMMAX:
@@ -272,10 +309,10 @@ public class CNodeUnary extends CNode
 			case LOOKUP_R:
 			case LOOKUP_C:
 			case LOOKUP_RC:
-			case LOOKUP0:	
+			case LOOKUP0:
 			case CBIND0:
 			case POW2:
-			case MULT2:	
+			case MULT2:
 			case ABS:  
 			case SIN:
 			case COS: 
@@ -283,13 +320,16 @@ public class CNodeUnary extends CNode
 			case ASIN:
 			case ACOS:
 			case ATAN:
+			case SINH:
+			case COSH:
+			case TANH:
 			case SIGN:
 			case SQRT:
 			case LOG:
-			case ROUND: 
+			case ROUND:
 			case CEIL:
 			case FLOOR:
-			case SELP:	
+			case SELP:
 			case SPROP:
 			case SIGMOID:
 			case LOG_NZ:

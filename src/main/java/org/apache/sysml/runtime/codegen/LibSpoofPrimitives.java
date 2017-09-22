@@ -958,6 +958,241 @@ public class LibSpoofPrimitives
 		return c;
 	}
 	
+	//custom sin
+	
+	public static void vectSinAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.sin(a[j]);
+	}
+
+	public static void vectSinAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.sin(a[j]);
+	}
+	
+	public static double[] vectSinWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.sin(a[ai]);
+		return c;
+	}
+
+	public static double[] vectSinWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.sin(a[j]);
+		return c;
+	}
+	
+	//custom cos
+	
+	public static void vectCosAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.cos(a[j]);
+	}
+
+	public static void vectCosAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.cos(a[j]);
+	}
+	
+	public static double[] vectCosWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.cos(a[ai]);
+		return c;
+	}
+
+	public static double[] vectCosWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, 1);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.cos(a[j]);
+		return c;
+	}
+	
+	//custom tan
+	
+	public static void vectTanAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.tan(a[j]);
+	}
+
+	public static void vectTanAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.tan(a[j]);
+	}
+	
+	public static double[] vectTanWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.tan(a[ai]);
+		return c;
+	}
+
+	public static double[] vectTanWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.tan(a[j]);
+		return c;
+	}
+
+	//custom asin
+	
+	public static void vectAsinAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.asin(a[j]);
+	}
+
+	public static void vectAsinAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.asin(a[j]);
+	}
+	
+	public static double[] vectAsinWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.asin(a[ai]);
+		return c;
+	}
+
+	public static double[] vectAsinWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.asin(a[j]);
+		return c;
+	}
+	
+	//custom acos
+	
+	public static void vectAcosAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.acos(a[j]);
+	}
+
+	public static void vectAcosAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.acos(a[j]);
+	}
+	
+	public static double[] vectAcosWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.acos(a[ai]);
+		return c;
+	}
+
+	public static double[] vectAcosWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, Math.PI/2);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.acos(a[j]);
+		return c;
+	}
+	
+	//custom atan
+	
+	public static void vectAtanAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  Math.atan(a[j]);
+	}
+
+	public static void vectAtanAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += Math.atan(a[j]);
+	}
+	
+	public static double[] vectAtanWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = Math.atan(a[ai]);
+		return c;
+	}
+
+	public static double[] vectAtanWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = Math.atan(a[j]);
+		return c;
+	}
+
+	
+	//custom sinh
+	
+	public static void vectSinhAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.sinh(a[j]);
+	}
+
+	public static void vectSinhAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.sinh(a[j]);
+	}
+	
+	public static double[] vectSinhWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.sinh(a[ai]);
+		return c;
+	}
+
+	public static double[] vectSinhWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.sinh(a[j]);
+		return c;
+	}
+	
+	//custom cosh
+	
+	public static void vectCoshAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.cosh(a[j]);
+	}
+
+	public static void vectCoshAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.cosh(a[j]);
+	}
+	
+	public static double[] vectCoshWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.cosh(a[ai]);
+		return c;
+	}
+
+	public static double[] vectCoshWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, 1);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.cosh(a[j]);
+		return c;
+	}
+	
+	//custom tanh
+	
+	public static void vectTanhAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.tanh(a[j]);
+	}
+
+	public static void vectTanhAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += FastMath.tanh(a[j]);
+	}
+	
+	public static double[] vectTanhWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.tanh(a[ai]);
+		return c;
+	}
+
+	public static double[] vectTanhWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = FastMath.tanh(a[j]);
+		return c;
+	}
+	
 	//custom sign
 	
 	public static void vectSignAdd(double[] a, double[] c, int ai, int ci, int len) {

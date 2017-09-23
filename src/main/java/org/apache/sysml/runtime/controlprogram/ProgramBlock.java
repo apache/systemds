@@ -309,25 +309,26 @@ public class ProgramBlock implements ParseInfo
 
 		ArrayList<String> varnames = _sb.getUpdateInPlaceVars();
 		UpdateType[] flags = new UpdateType[varnames.size()];
-		for( int i=0; i<flags.length; i++ )
-			if( ec.getVariable(varnames.get(i)) != null ) {
-				String varname = varnames.get(i);
-				MatrixObject mo = ec.getMatrixObject(varname);
-				flags[i] = mo.getUpdateType();
-				//create deep copy if required and if it fits in thread-local mem budget
-				if( flags[i]==UpdateType.COPY && OptimizerUtils.getLocalMemBudget()/2 >
-					OptimizerUtils.estimateSizeExactSparsity(mo.getMatrixCharacteristics())) {
-					MatrixObject moNew = new MatrixObject(mo);
-					MatrixBlock mbVar = mo.acquireRead();
-					moNew.acquireModify( !mbVar.isInSparseFormat() ? new MatrixBlock(mbVar) :
-						new MatrixBlock(mbVar, MatrixBlock.DEFAULT_INPLACE_SPARSEBLOCK, true) );
-					moNew.setFileName(mo.getFileName()+Lop.UPDATE_INPLACE_PREFIX+tid);
-					mo.release();
-					moNew.release();
-					moNew.setUpdateType(UpdateType.INPLACE);
-					ec.setVariable(varname, moNew);
-				}
+		for( int i=0; i<flags.length; i++ ) {
+			String varname = varnames.get(i);
+			if( !ec.isMatrixObject(varname) )
+				continue;
+			MatrixObject mo = ec.getMatrixObject(varname);
+			flags[i] = mo.getUpdateType();
+			//create deep copy if required and if it fits in thread-local mem budget
+			if( flags[i]==UpdateType.COPY && OptimizerUtils.getLocalMemBudget()/2 >
+				OptimizerUtils.estimateSizeExactSparsity(mo.getMatrixCharacteristics())) {
+				MatrixObject moNew = new MatrixObject(mo);
+				MatrixBlock mbVar = mo.acquireRead();
+				moNew.acquireModify( !mbVar.isInSparseFormat() ? new MatrixBlock(mbVar) :
+					new MatrixBlock(mbVar, MatrixBlock.DEFAULT_INPLACE_SPARSEBLOCK, true) );
+				moNew.setFileName(mo.getFileName()+Lop.UPDATE_INPLACE_PREFIX+tid);
+				mo.release();
+				moNew.release();
+				moNew.setUpdateType(UpdateType.INPLACE);
+				ec.setVariable(varname, moNew);
 			}
+		}
 
 		return flags;
 	}

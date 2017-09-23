@@ -18,5 +18,7 @@
 -->
 
 <root>
+   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysml.scratch>scratch_space</sysml.scratch>
    <sysml.compressed.linalg>true</sysml.compressed.linalg>
 </root>

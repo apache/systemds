@@ -134,6 +134,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		//valid if read/updated by leftindexing 
 		//CP exec type not evaluated here as no lops generated yet 
 		boolean validLix = hop instanceof DataOp 
+			&& hop.isMatrix() && hop.getInput().get(0).isMatrix()
 			&& hop.getInput().get(0) instanceof LeftIndexingOp
 			&& hop.getInput().get(0).getInput().get(0) instanceof DataOp
 			&& hop.getInput().get(0).getInput().get(0).getName().equals(varname);

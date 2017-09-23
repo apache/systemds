@@ -2318,17 +2318,8 @@ public class DMLTranslator
 			break;
 			
 		case WRITE:
-			String name = target.getName();
-			currBuiltinOp = new DataOp(
-					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTWRITE, hops.get(name), paramHops);
-            //MB: commented for dynamic write
-			/*Identifier ioFilename = (Identifier)source.getVarParam(DataExpression.IO_FILENAME);
-			if (!(ioFilename instanceof StringIdentifier)) {
-				LOG.error(source.printErrorLocation() + "processDataExpression():: Filename must be a constant string value");
-				throw new ParseException(source.printErrorLocation() + "processDataExpression():: Filename must be a constant string value");
-			} else {
-				((DataOp)currBuiltinOp).setFileName(((StringIdentifier)ioFilename).getValue());
-			}*/
+			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), 
+				DataOpTypes.PERSISTENTWRITE, hops.get(target.getName()), paramHops);
 			break;
 			
 		case RAND:

@@ -18,6 +18,8 @@
 -->
 
 <root>
+   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysml.scratch>scratch_space</sysml.scratch>
    <sysml.optlevel>7</sysml.optlevel>
    <sysml.compressed.linalg>true</sysml.compressed.linalg>
    <sysml.codegen.enabled>true</sysml.codegen.enabled>

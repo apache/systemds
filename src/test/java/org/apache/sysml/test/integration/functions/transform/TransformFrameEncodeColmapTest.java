@@ -34,7 +34,9 @@ import org.junit.Test;
 
 public class TransformFrameEncodeColmapTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "TransformFrameEncodeColmap";
+	private final static String TEST_NAME1 = "TransformFrameEncodeColmap1";
+	private final static String TEST_NAME2 = "TransformFrameEncodeColmap2";
+	
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeColmapTest.class.getSimpleName() + "/";
 	
@@ -46,31 +48,51 @@ public class TransformFrameEncodeColmapTest extends AutomatedTestBase
 	@Override
 	public void setUp()  {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "y" }) );
 	}
 	
 	@Test
-	public void testHomesIDsSingleNode() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
+	public void testHomesIDsSingleNode1() {
+		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
 	}
 	
 	@Test
-	public void testHomesColnamesSingleNode() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+	public void testHomesColnamesSingleNode1() {
+		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
 	}
 	
 	@Test
-	public void testHomesIDsSpark() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false);
+	public void testHomesIDsSpark1() {
+		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SPARK, "csv", false);
 	}
 	
 	@Test
-	public void testHomesColnamesSpark() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true);
+	public void testHomesColnamesSpark1() {
+		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SPARK, "csv", true);
 	}
 	
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, boolean colnames )
+	@Test
+	public void testHomesIDsSingleNode2() {
+		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
+	}
+	
+	@Test
+	public void testHomesColnamesSingleNode2() {
+		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+	}
+	
+	@Test
+	public void testHomesIDsSpark2() {
+		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SPARK, "csv", false);
+	}
+	
+	@Test
+	public void testHomesColnamesSpark2() {
+		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SPARK, "csv", true);
+	}
+	
+	private void runTransformTest( String testname, RUNTIME_PLATFORM rt, String ofmt, boolean colnames )
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
@@ -89,10 +111,10 @@ public class TransformFrameEncodeColmapTest extends AutomatedTestBase
 		
 		try
 		{
-			getAndLoadTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(testname);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-explain","-nvargs", 
 				"DATA=" + HOME + "input/" + DATASET,
 				"TFSPEC=" + HOME + "input/" + SPEC,

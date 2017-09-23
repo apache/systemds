@@ -175,6 +175,11 @@ public class ExecutionContext {
 	{
 		return _variables.get(varname).getMetaData();
 	}
+	
+	public boolean isMatrixObject(String varname) {
+		Data dat = getVariable(varname);
+		return (dat!= null && dat instanceof MatrixObject);
+	}
 
 	public MatrixObject getMatrixObject(String varname) 
 		throws DMLRuntimeException

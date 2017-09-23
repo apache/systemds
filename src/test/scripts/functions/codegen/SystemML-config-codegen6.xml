@@ -18,6 +18,8 @@
 -->
 
 <root>
+   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysml.scratch>scratch_space</sysml.scratch>
    <sysml.optlevel>6</sysml.optlevel>
    <sysml.codegen.enabled>true</sysml.codegen.enabled>
    <sysml.codegen.plancache>true</sysml.codegen.plancache>

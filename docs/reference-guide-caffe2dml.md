@@ -307,6 +307,21 @@ layer {
 }
 ```
 
+### Sigmoid Layer
+
+Invokes [nn/layers/tanh.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/sigmoid.dml) layer.
+
+**Sample Usage:**
+```
+layer {
+  name: "sigmoid1"
+  type: "Sigmoid"
+  bottom: "conv1"
+  top: "conv1"
+}
+```
+
+
 ### Threshold Layer
 
 Computes `X > threshold`

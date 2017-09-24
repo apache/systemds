@@ -603,6 +603,43 @@ class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetw
   }
 }
 
+class Sigmoid(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName                 = "sigmoid"
+  override def init(dmlScript: StringBuilder) = {}
+  /*
+   * Computes the forward pass for a sigmoid nonlinearity layer.
+   *
+   *   `sigmoid(x) = 1 / (1 + e^-x)`
+   *
+   * If `X` contains a single feature column, the output of a sigmoid
+   * layer can be interpreted as a predicted probability of a true
+   * class when paired with a log loss function in a binary
+   * classification problem.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = invokeForward(dmlScript, List[String](out), X)
+  /*
+   * Computes the backward pass for a sigmoid nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
+  override def weightShape(): Array[Int]                             = null
+  override def biasShape(): Array[Int]                               = null
+  // -------------------------------------------------
+}
+
+
 class TanH(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   override def sourceFileName                 = "tanh"
   override def init(dmlScript: StringBuilder) = {}

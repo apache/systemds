@@ -213,6 +213,7 @@ class CaffeNetwork(netFilePath: String, val currentPhase: Phase, var numChannels
       case "innerproduct"    => new InnerProduct(param, id, this)
       case "relu"            => new ReLU(param, id, this)
       case "tanh"            => new TanH(param, id, this)
+      case "sigmoid"         => new Sigmoid(param, id, this)
       case "softmaxwithloss" => new SoftmaxWithLoss(param, id, this)
       case "euclideanloss"   => new EuclideanLoss(param, id, this)
       case "dropout"         => new Dropout(param, id, this)

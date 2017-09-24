@@ -39,6 +39,7 @@ source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
+source("nn/layers/sigmoid.dml") as sigmoid
 
 batch_norm1d = function() {
   /*

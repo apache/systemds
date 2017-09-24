@@ -29,6 +29,10 @@ forward = function(matrix[double] X)
   /*
    * Computes the forward pass for a tanh nonlinearity layer.
    *
+   * ```
+   * tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+   * ```
+   *
    * Inputs:
    *  - X: Inputs, of shape (any, any).
    *

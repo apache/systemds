@@ -1543,7 +1543,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		Expression.BuiltinFunctionOp bifop = null;
 		
 		if (functionName.equals("xor"))
-		        bifop = Expression.BooleanOp.XOR;
+		        bifop = Expression.BuiltinFunctionOp.XOR;
 		else if (functionName.equals("avg"))
 			bifop = Expression.BuiltinFunctionOp.MEAN;
 		else if (functionName.equals("cos"))

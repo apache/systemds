@@ -2067,8 +2067,6 @@ public class DMLTranslator
 				op = OpOp2.AND;
 			} else if (source.getOpCode() == Expression.BooleanOp.LOGICALOR) {
 				op = OpOp2.OR;
-			} else if (source.getOpCode() == Expression.BooleanOp.LOGICALXOR) {
-				op = OpOp2.XOR;
 			} else {
 				LOG.error(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
 				throw new RuntimeException(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
@@ -2760,6 +2758,10 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+		case XOR:
+			Hop.OpOp2 mathOpx;
+				mathOpx = Hop.OpOp2.XOR;
+				break;
 		case ABS:
 		case SIN:
 		case COS:

@@ -106,7 +106,7 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
         case 12 : return max(x, y);
         case 13 : return getBoolean((int)llrint(x) & (int)llrint(y));
         case 14 : return getBoolean((int)llrint(x) | (int)llrint(y));
-	case 19 : return xor(x, y);
+	case 19 : return getBoolean(x ^ y);
         case 15 : return 1 - x * y;
         case 16 : return (x != 0.0 ? x - y : 0.0);
         case 17 : {

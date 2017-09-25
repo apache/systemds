@@ -42,7 +42,7 @@
 # V      matrix  right singular matrix
 # -----------------------------------------------------------------------------
 
-source("staging/scalable_linalg/qr.dml") as qr
+source("scalable_linalg/qr.dml") as qr
 
 X = read($1);
 
@@ -61,9 +61,9 @@ SingularValueDecomposition = function(matrix[double] X, int nb)
   
   [Q, R] = qr::QR(X, nb); //scalable qr decomposition
   
-  [V, S, temp] = svd(R); //computes svd locally
+  [U, S, V] = svd(R); //computes svd locally
   
 }
 
-write(V, $2);
-write(S, $3);
+# write(U, $2);
+# write(S, $3);

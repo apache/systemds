@@ -147,7 +147,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "log"  , CPINSTRUCTION_TYPE.Builtin);
 		String2CPInstructionType.put( "log_nz"  , CPINSTRUCTION_TYPE.Builtin);
 
-                String2CPInstructionType.put( "xor"  , CPINSTRUCTION_TYPE.BuiltinBinary);
+                //String2CPInstructionType.put( "xor"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "max"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "min"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "solve"  , CPINSTRUCTION_TYPE.BuiltinBinary);

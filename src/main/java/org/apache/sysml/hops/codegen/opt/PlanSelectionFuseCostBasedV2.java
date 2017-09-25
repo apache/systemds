@@ -92,8 +92,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static final double SPARSE_SAFE_SPARSITY_EST = 0.1;
 	
 	//optimizer configuration
-	public static boolean USE_COST_PRUNING = true;
-	public static boolean USE_STRUCTURAL_PRUNING = true;
+	public static boolean COST_PRUNING = true;
+	public static boolean STRUCTURAL_PRUNING = false;
 	
 	private static final IDSequence COST_ID = new IDSequence();
 	private static final TemplateRow ROW_TPL = new TemplateRow();
@@ -149,8 +149,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			//prepare pruning helpers and prune memo table w/ determined mat points
 			StaticCosts costs = new StaticCosts(computeCosts, getComputeCost(computeCosts, memo), 
 				getReadCost(part, memo), getWriteCost(part.getRoots(), memo));
-			ReachabilityGraph rgraph = USE_STRUCTURAL_PRUNING ? new ReachabilityGraph(part, memo) : null;
-			if( USE_STRUCTURAL_PRUNING ) {
+			ReachabilityGraph rgraph = STRUCTURAL_PRUNING ? new ReachabilityGraph(part, memo) : null;
+			if( STRUCTURAL_PRUNING ) {
 				part.setMatPointsExt(rgraph.getSortedSearchSpace());
 				for( Long hopID : part.getPartition() )
 					memo.pruneRedundant(hopID, true, part.getMatPointsExt());
@@ -210,15 +210,19 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			long pskip = 0; //skip after costing
 			
 			//skip plans with structural pruning
-			if( USE_STRUCTURAL_PRUNING && (rgraph!=null) && rgraph.isCutSet(plan) ) {
+			if( STRUCTURAL_PRUNING && (rgraph!=null) && rgraph.isCutSet(plan) ) {
 				//compute skip (which also acts as boundary for subproblems)
 				pskip = rgraph.getNumSkipPlans(plan);
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Enum: Structural pruning for cut set: "+rgraph.getCutSet(plan));
 				
 				//start increment rgraph get subproblems
 				SubProblem[] prob = rgraph.getSubproblems(plan);
 				
 				//solve subproblems independently and combine into best plan
 				for( int j=0; j<prob.length; j++ ) {
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Enum: Subproblem "+(j+1)+"/"+prob.length+": "+prob[j]);
 					boolean[] bestTmp = enumPlans(memo, part, 
 						costs, null, prob[j].freeMat, prob[j].offset, bestC);
 					LibSpoofPrimitives.vectWrite(bestTmp, plan, prob[j].freePos);
@@ -228,7 +232,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				//the default code path; hence we postpone the skip after costing
 			}
 			//skip plans with branch and bound pruning (cost)
-			else if( USE_COST_PRUNING ) {
+			else if( COST_PRUNING ) {
 				double lbC = Math.max(costs._read, costs._compute) + costs._write
 					+ getMaterializationCost(part, matPoints, memo, plan);
 				if( lbC >= bestC ) {
@@ -241,7 +245,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			
 			//cost assignment on hops. Stop early if exceeds bestC.
-			double pCBound = USE_COST_PRUNING ? bestC : Double.MAX_VALUE;
+			double pCBound = COST_PRUNING ? bestC : Double.MAX_VALUE;
 			double C = getPlanCost(memo, part, matPoints, plan, costs._computeCosts, pCBound);
 			if (LOG.isTraceEnabled())
 				LOG.trace("Enum: " + Arrays.toString(plan) + " -> " + C);
@@ -263,7 +267,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			Statistics.incrementCodegenEnumAllP((rgraph!=null)?len:0);
+			Statistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
 			Statistics.incrementCodegenEnumEval(numEvalPlans);
 			Statistics.incrementCodegenEnumEvalP(numEvalPartPlans);
 		}

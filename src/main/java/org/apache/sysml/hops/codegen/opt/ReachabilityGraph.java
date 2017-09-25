@@ -118,28 +118,26 @@ public class ReachabilityGraph
 		_cutSets = cutSets.stream()
 				.sorted(Comparator.comparing(p -> p.getRight()))
 				.map(p -> p.getLeft()).toArray(CutSet[]::new);
-	
+		
+		//created sorted order of materialization points
+		//(cut sets in predetermined order, all other points appended)
 		HashMap<InterestingPoint, Integer> probe = new HashMap<>();
 		ArrayList<InterestingPoint> lsearchSpace = new ArrayList<>();
 		for( CutSet cs : _cutSets ) {
-			cs.updatePos(lsearchSpace.size());
-			cs.updatePartitions(probe);
 			CollectionUtils.addAll(lsearchSpace, cs.cut);
-			for( InterestingPoint p: cs.cut )
-				probe.put(p, probe.size()-1);
+			for( InterestingPoint p : cs.cut )
+				probe.put(p, probe.size());
 		}
 		for( InterestingPoint p : part.getMatPointsExt() )
 			if( !probe.containsKey(p) ) {
 				lsearchSpace.add(p);
-				probe.put(p, probe.size()-1);
+				probe.put(p, probe.size());
 			}
 		_searchSpace = lsearchSpace.toArray(new InterestingPoint[0]);
 		
-		//materialize partition indices
-		for( CutSet cs : _cutSets ) {
-			cs.updatePartitionIndexes(probe);
-			cs.finalizePartition();
-		}
+		//finalize cut sets (update positions wrt search space)
+		for( CutSet cs : _cutSets )
+			cs.updatePositions(probe);
 		
 		//final sanity check of interesting points
 		if( _searchSpace.length != part.getMatPointsExt().length )
@@ -175,7 +173,7 @@ public class ReachabilityGraph
 	public long getNumSkipPlans(boolean[] plan) {
 		for( CutSet cs : _cutSets )
 			if( isCutSet(cs, plan) ) {
-				int pos = cs.posCut[cs.posCut.length-1];				
+				int pos = cs.posCut[cs.posCut.length-1];
 				return UtilFunctions.pow(2, plan.length-pos-1);
 			}
 		throw new RuntimeException("Failed to compute "
@@ -271,48 +269,44 @@ public class ReachabilityGraph
 			freePos = pos;
 			freeMat = mat;
 		}
+		
+		@Override
+		public String toString() {
+			return "SubProblem: "+Arrays.toString(freeMat)+"; "
+				+offset+"; "+Arrays.toString(freePos);
+		}
 	}
 	
-	public static class CutSet {
-		public InterestingPoint[] cut;
-		public InterestingPoint[] left;
-		public InterestingPoint[] right;
-		public int[] posCut;
-		public int[] posLeft;
-		public int[] posRight;
+	private static class CutSet {
+		private final InterestingPoint[] cut;
+		private final InterestingPoint[] left;
+		private final InterestingPoint[] right;
+		private int[] posCut;
+		private int[] posLeft;
+		private int[] posRight;
 		
-		public CutSet(InterestingPoint[] cutPoints, 
+		private CutSet(InterestingPoint[] cutPoints, 
 				InterestingPoint[] l, InterestingPoint[] r) {
 			cut = cutPoints;
-			left = l;
-			right = r;
+			left = (InterestingPoint[]) ArrayUtils.addAll(cut, l);
+			right = (InterestingPoint[]) ArrayUtils.addAll(cut, r);
 		}
 		
-		public void updatePos(int index) {
-			posCut = new int[cut.length];
-			for(int i=0; i<posCut.length; i++)
-				posCut[i] = index + i;
-		}
-		
-		public void updatePartitions(HashMap<InterestingPoint,Integer> blacklist) {
-			left = Arrays.stream(left).filter(p -> !blacklist.containsKey(p))
-				.toArray(InterestingPoint[]::new);
-			right = Arrays.stream(right).filter(p -> !blacklist.containsKey(p))
-				.toArray(InterestingPoint[]::new);
-		}
-		
-		public void updatePartitionIndexes(HashMap<InterestingPoint,Integer> probe) {
-			posLeft = new int[left.length];
-			for(int i=0; i<left.length; i++)
-				posLeft[i] = probe.get(left[i]);
-			posRight = new int[right.length];
-			for(int i=0; i<right.length; i++)
-				posRight[i] = probe.get(right[i]);
-		}
-		
-		public void finalizePartition() {
-			left = (InterestingPoint[]) ArrayUtils.addAll(cut, left);
-			right = (InterestingPoint[]) ArrayUtils.addAll(cut, right);
+		private void updatePositions(HashMap<InterestingPoint,Integer> probe) {
+			int lenCut = cut.length;
+			posCut = new int[lenCut];
+			for(int i=0; i<lenCut; i++)
+				posCut[i] = probe.get(cut[i]);
+			
+			int lenLeft = left.length - cut.length;
+			posLeft = new int[lenLeft];
+			for(int i=0; i<lenLeft; i++)
+				posLeft[i] = probe.get(left[lenCut+i]);
+			
+			int lenRight = right.length - cut.length;
+			posRight = new int[lenRight];
+			for(int i=0; i<lenRight; i++)
+				posRight[i] = probe.get(right[lenCut+i]);
 		}
 		
 		@Override
@@ -329,12 +323,12 @@ public class ReachabilityGraph
 		private long _ID;
 		private InterestingPoint _p;
 		
-		public NodeLink(InterestingPoint p) {
+		private NodeLink(InterestingPoint p) {
 			_ID = _seqID.getNextID();
 			_p = p;
 		} 
 		
-		public void addInput(NodeLink in) {
+		private void addInput(NodeLink in) {
 			_inputs.add(in);
 		}
 		

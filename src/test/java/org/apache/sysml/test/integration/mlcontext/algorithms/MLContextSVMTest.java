@@ -116,16 +116,16 @@ public class MLContextSVMTest extends MLContextTestBase {
                  switch(type) {
                  case L2SVM:
                             Script l2svm = dmlFromFile(TEST_SCRIPT_L2SVM);
-                            l2svm.in("X", X).in("Y", Y).in("$icpt", 0).in("$tol", 0.001)
-                                  .in("$reg", 1.0).in("$maxiter", 100).out("w");
+                            l2svm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
+                                  .in("$reg", "1.0").in("$maxiter", "100").out("w");
                             ml.execute(l2svm);
 
                             break;
 
                  case MSVM:
                            Script msvm = dmlFromFile(TEST_SCRIPT_MSVM);
-                           msvm.in("X", X).in("Y", Y).in("$icpt", 0).in("$tol", 0.001)
-                                .in("$reg", 1.0).in("$maxiter", 100).out("w");
+                           msvm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
+                                .in("$reg", "1.0").in("$maxiter", "100").out("w");
                            ml.execute(msvm);
 
                            break;

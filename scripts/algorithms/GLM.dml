@@ -686,30 +686,18 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
     #     g_Y = y_residual / (var_function * link_gradient);
     #     w   = 1.0 / (var_function * link_gradient ^ 2);
 {
-    num_records = nrow (linear_terms);
-    zeros_r = matrix (0.0, rows = num_records, cols = 1);
-    ones_r = 1 + zeros_r;
+    zeros_r = matrix(0, nrow(linear_terms), 1);
+    ones_r = matrix(1, nrow(linear_terms), 1);
     g_Y  = zeros_r;
     w  = zeros_r;
 
     # Some constants
 
     one_over_sqrt_two_pi = 0.39894228040143267793994605993438;
-    ones_2 = matrix (1.0, rows = 1, cols = 2);
-    p_one_m_one = ones_2;
-    p_one_m_one [1, 2] = -1.0;
-    m_one_p_one = ones_2;
-    m_one_p_one [1, 1] = -1.0;
-    zero_one = ones_2;
-    zero_one [1, 1] = 0.0;
-    one_zero = ones_2;
-    one_zero [1, 2] = 0.0;
-    flip_pos = matrix (0, rows = 2, cols = 2);
-    flip_neg = flip_pos;
-    flip_pos [1, 2] = 1;
-    flip_pos [2, 1] = 1;
-    flip_neg [1, 2] = -1;
-    flip_neg [2, 1] = 1;
+    p_one_m_one = matrix("1 -1", 1, 2);
+    m_one_p_one = matrix("-1 1", 1, 2);
+    flip_pos = matrix("0 1 1 0", 2, 2);
+    flip_neg = matrix("0 -1 1 0", 2, 2);
     
     if (dist_type == 1 & link_type == 1) 
     { # POWER DISTRIBUTION
@@ -753,15 +741,13 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 w   =  rowSums (Y) * vec1 / link_power ^ 2;
             }
         } else {
-            is_LT_pos_infinite = (linear_terms == 1.0/0.0);
-            is_LT_neg_infinite = (linear_terms == -1.0/0.0);
-            is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
+            is_LT_infinite = cbind(linear_terms==1.0/0.0, linear_terms==-1.0/0.0);
             finite_linear_terms = replace (target =        linear_terms, pattern =  1.0/0.0, replacement = 0);
             finite_linear_terms = replace (target = finite_linear_terms, pattern = -1.0/0.0, replacement = 0);
             if (link_type == 2)                           { # Binomial.logit
-                Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
-                Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
-                Y_prob = Y_prob * ((1.0 - rowSums (is_LT_infinite)) %*% ones_2) + is_LT_infinite;
+                Y_prob = cbind(exp(finite_linear_terms), ones_r);
+                Y_prob = Y_prob / rowSums (Y_prob);
+                Y_prob = Y_prob * (1.0 - rowSums (is_LT_infinite)) + is_LT_infinite;
                 g_Y = rowSums (Y * (Y_prob %*% flip_neg));           ### = y_residual;
                 w   = rowSums (Y * (Y_prob %*% flip_pos) * Y_prob);  ### = y_variance;
             } else if (link_type == 3)                  { # Binomial.probit
@@ -786,7 +772,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio;
             } else if (link_type == 5)                  { # Binomial.cauchit
                 Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / 3.1415926535897932384626433832795;
-                Y_prob = Y_prob * ((1.0 - rowSums (is_LT_infinite)) %*% ones_2) + is_LT_infinite;
+                Y_prob = Y_prob * (1.0 - rowSums (is_LT_infinite)) + is_LT_infinite;
                 y_residual = Y [, 1] * Y_prob [, 2] - Y [, 2] * Y_prob [, 1];
                 var_function = rowSums (Y) * Y_prob [, 1] * Y_prob [, 2];
                 link_gradient_normalized = (1 + linear_terms ^ 2) * 3.1415926535897932384626433832795;
@@ -932,22 +918,16 @@ binomial_probability_two_column =
     return   (Matrix[double] Y_prob, int isNaN)
 {
     isNaN = 0;
-    num_records = nrow (linear_terms);
 
     # Define some auxiliary matrices
 
     ones_2 = matrix (1.0, rows = 1, cols = 2);
-    p_one_m_one = ones_2;
-    p_one_m_one [1, 2] = -1.0;
-    m_one_p_one = ones_2;
-    m_one_p_one [1, 1] = -1.0;
-    zero_one = ones_2;
-    zero_one [1, 1] = 0.0;
-    one_zero = ones_2;
-    one_zero [1, 2] = 0.0;
-
-    zeros_r = matrix (0.0, rows = num_records, cols = 1);
-    ones_r = 1.0 + zeros_r;
+    p_one_m_one = matrix("1 -1", 1, 2);
+    m_one_p_one = matrix("-1 1", 1, 2);
+    zero_one = matrix("0 1", 1, 2);
+    one_zero = matrix("1 0", 1, 2);
+    zeros_r = matrix(0, nrow(linear_terms), 1);
+    ones_r = matrix(1, nrow(linear_terms), 1);
 
     # Begin the function body
 
@@ -963,14 +943,12 @@ binomial_probability_two_column =
             isNaN = 1;
         }
     } else {              # Binomial.non_power
-        is_LT_pos_infinite = (linear_terms ==  1.0/0.0);
-        is_LT_neg_infinite = (linear_terms == -1.0/0.0);
-        is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
+        is_LT_infinite = cbind(linear_terms==1.0/0.0, linear_terms==-1.0/0.0);
         finite_linear_terms = replace (target =        linear_terms, pattern =  1.0/0.0, replacement = 0);
         finite_linear_terms = replace (target = finite_linear_terms, pattern = -1.0/0.0, replacement = 0);
         if (link_type == 2)             { # Binomial.logit
-            Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
-            Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
+            Y_prob = cbind(exp(finite_linear_terms), ones_r);
+            Y_prob = Y_prob / rowSums (Y_prob);
         } else if (link_type == 3)    { # Binomial.probit
             lt_pos_neg = (finite_linear_terms >= 0) %*% p_one_m_one + ones_r %*% zero_one;
             t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
@@ -980,7 +958,7 @@ binomial_probability_two_column =
                   + t_gp * (-1.453152027 
                   + t_gp *   1.061405429))));
             the_gauss_exp = exp (- (finite_linear_terms ^ 2) / 2.0);
-            Y_prob = lt_pos_neg + ((the_gauss_exp * pt_gp) %*% ones_2) * (0.5 - lt_pos_neg);
+            Y_prob = lt_pos_neg + (0.5 - lt_pos_neg) * the_gauss_exp * pt_gp;
         } else if (link_type == 4)    { # Binomial.cloglog
             the_exp = exp (finite_linear_terms);
             the_exp_exp = exp (- the_exp);
@@ -992,7 +970,7 @@ binomial_probability_two_column =
         } else {
             isNaN = 1;
         }
-        Y_prob = Y_prob * ((1.0 - rowSums (is_LT_infinite)) %*% ones_2) + is_LT_infinite;
+        Y_prob = Y_prob * (1.0 - rowSums (is_LT_infinite)) + is_LT_infinite;
 }   }            
 
 

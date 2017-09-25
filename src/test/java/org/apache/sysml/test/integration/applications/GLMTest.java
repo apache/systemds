@@ -36,7 +36,6 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public abstract class GLMTest extends AutomatedTestBase
 {
-	
     protected final static String TEST_DIR = "applications/glm/";
     protected final static String TEST_NAME = "GLM";
     protected String TEST_CLASS_DIR = TEST_DIR + GLMTest.class.getSimpleName() + "/";
@@ -309,7 +308,8 @@ public abstract class GLMTest extends AutomatedTestBase
 		proArgs.add("B=" + output("betas_SYSTEMML"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
-		fullDMLScriptName = getScript();
+		fullDMLScriptName = (scriptType==ScriptType.DML) ?
+			"scripts/algorithms/GLM.dml" : getScript();
 		
 		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), String.format ("%d", distFamilyType), String.format ("%f", distParam),
 				String.format ("%d", linkType), String.format ("%f", linkPower), "1" /*intercept*/, "0.000000000001" /*tolerance (espilon)*/,

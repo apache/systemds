@@ -1316,6 +1316,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private boolean isMathFunction() {
 		switch (this.getOpCode()) {
+		case XOR:
 		case COS:
 		case SIN:
 		case TAN:
@@ -1339,6 +1340,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	private void checkMathFunctionParam() throws LanguageException {
 		switch (this.getOpCode()) {
+		case XOR:
 		case COS:
 		case SIN:
 		case TAN:
@@ -1538,7 +1540,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		//	(assign built-in function op if function is built-in
 		Expression.BuiltinFunctionOp bifop = null;
 		
-		if (functionName.equals("avg"))
+		if (functionName.equals("xor"))
+		        bifop = Expression.BuiltinFunctionOp.XOR;
+		else if (functionName.equals("avg"))
 			bifop = Expression.BuiltinFunctionOp.MEAN;
 		else if (functionName.equals("cos"))
 			bifop = Expression.BuiltinFunctionOp.COS;

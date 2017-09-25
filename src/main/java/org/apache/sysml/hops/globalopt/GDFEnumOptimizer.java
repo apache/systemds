@@ -41,6 +41,7 @@ import org.apache.sysml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchH
 import org.apache.sysml.hops.globalopt.gdfresolve.MismatchHeuristicFactory;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.recompile.Recompiler.ResetType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -137,7 +138,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		long finalPlanMismatch = getPlanMismatches();
 		
 		//generate final runtime plan (w/ optimal config)
-		Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
+		Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(),
+			new LocalVariableMap(), 0, ResetType.NO_RESET);
 		
 		ec = ExecutionContextFactory.createContext(prog);
 		double optCosts = CostEstimationWrapper.getTimeEstimate(prog, ec);
@@ -430,7 +432,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		   (p.getNode().getHop()==null || p.getNode().getProgramBlock()==null) )
 		{
 			//recompile entire runtime program
-			Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
+			Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(),
+				new LocalVariableMap(), 0, ResetType.NO_RESET);
 			_compiledPlans++;
 			
 			//cost entire runtime program
@@ -456,7 +459,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				}
 				
 				//recompile modified runtime program
-				Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
+				Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(),
+					new LocalVariableMap(), 0, ResetType.NO_RESET);
 				_compiledPlans++;
 				
 				//cost partial runtime program up to current hop

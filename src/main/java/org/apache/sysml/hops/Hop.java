@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.recompile.Recompiler.ResetType;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.BinaryScalar;
 import org.apache.sysml.lops.CSVReBlock;
@@ -938,30 +939,31 @@ public abstract class Hop implements ParseInfo
 		memo.add(getHopID());
 	}
 
-	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
+	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et, ResetType reset )
 	{
 		resetVisitStatus( hops );
 		for( Hop hopRoot : hops )
-			hopRoot.resetRecompilationFlag( et );
+			hopRoot.resetRecompilationFlag( et, reset );
 	}
 	
-	public static void resetRecompilationFlag( Hop hops, ExecType et )
+	public static void resetRecompilationFlag( Hop hops, ExecType et, ResetType reset )
 	{
 		hops.resetVisitStatus();
-		hops.resetRecompilationFlag( et );
+		hops.resetRecompilationFlag( et, reset );
 	}
 	
-	private void resetRecompilationFlag( ExecType et ) 
+	private void resetRecompilationFlag( ExecType et, ResetType reset ) 
 	{
 		if( isVisited() )
 			return;
 		
 		//process child hops
 		for (Hop h : getInput())
-			h.resetRecompilationFlag( et );
+			h.resetRecompilationFlag( et, reset );
 		
 		//reset recompile flag
-		if( et == null || getExecType() == et || getExecType()==null )
+		if( (et == null || getExecType() == et || getExecType() == null)
+			&& (reset==ResetType.RESET || (reset==ResetType.RESET_KNOWN_DIMS && dimsKnown())) )
 			_requiresRecompile = false;
 		
 		setVisited();

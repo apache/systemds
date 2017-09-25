@@ -118,8 +118,7 @@ import org.apache.sysml.utils.MLContextProxy;
  * 
  */
 public class Recompiler 
-{	
-	
+{
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
 	
 	//Max threshold for in-memory reblock of text input [in bytes]
@@ -133,7 +132,16 @@ public class Recompiler
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<ProgramRewriter>() {
 		@Override protected ProgramRewriter initialValue() { return new ProgramRewriter(false, true); }
-    };
+	};
+	
+	public enum ResetType {
+		RESET,
+		RESET_KNOWN_DIMS,
+		NO_RESET;
+		public boolean isReset() {
+			return this != NO_RESET;
+		}
+	}
 	
 	/**
 	 * Re-initializes the recompiler according to the current optimizer flags.
@@ -547,7 +555,7 @@ public class Recompiler
 		return newInst;
 	}
 
-	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean resetRecompile ) 
+	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, ResetType resetRecompile ) 
 		throws DMLRuntimeException
 	{
 		try 
@@ -797,7 +805,8 @@ public class Recompiler
 	// private helper functions //
 	//////////////////////////////
 	
-	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, 
+		RecompileStatus status, long tid, ResetType resetRecompile ) 
 		throws HopsException, DMLRuntimeException, LopsException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
@@ -884,11 +893,11 @@ public class Recompiler
 				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
 				
 				//reset recompilation flags (w/ special handling functions)
-				if(    ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
+				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
 					&& !containsRootFunctionOp(sb.get_hops())  
-					&& resetRecompile ) 
+					&& resetRecompile.isReset() ) 
 				{
-					Hop.resetRecompilationFlag(sb.get_hops(), ExecType.CP);
+					Hop.resetRecompilationFlag(sb.get_hops(), ExecType.CP, resetRecompile);
 					sb.updateRecompilationFlag();
 				}
 			}
@@ -1123,7 +1132,7 @@ public class Recompiler
 	
 	//helper functions for predicate recompile
 	
-	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
+	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( isb == null )
@@ -1135,14 +1144,14 @@ public class Recompiler
 				hops, vars, status, true, false, tid);
 			ipb.setPredicate( tmp );
 			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
-				&& resetRecompile ) {
-				Hop.resetRecompilationFlag(hops, ExecType.CP);
+				&& resetRecompile.isReset() ) {
+				Hop.resetRecompilationFlag(hops, ExecType.CP, resetRecompile);
 				isb.updatePredicateRecompilationFlag();
 			}
 		}
 	}
 	
-	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
+	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( wsb == null )
@@ -1154,14 +1163,14 @@ public class Recompiler
 				hops, vars, status, true, false, tid);
 			wpb.setPredicate( tmp );
 			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-				&& resetRecompile ) {
-				Hop.resetRecompilationFlag(hops, ExecType.CP);
+				&& resetRecompile.isReset() ) {
+				Hop.resetRecompilationFlag(hops, ExecType.CP, resetRecompile);
 				wsb.updatePredicateRecompilationFlag();
 			}
 		}
 	}
 	
-	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
+	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( fsb != null )
@@ -1172,25 +1181,25 @@ public class Recompiler
 			
 			//handle recompilation flags
 			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-				&& resetRecompile ) 
+				&& resetRecompile.isReset() ) 
 			{
 				if( fromHops != null ) {
 					ArrayList<Instruction> tmp = recompileHopsDag(
 						fromHops, vars, status, true, false, tid);
 					fpb.setFromInstructions(tmp);
-					Hop.resetRecompilationFlag(fromHops,ExecType.CP);
+					Hop.resetRecompilationFlag(fromHops,ExecType.CP, resetRecompile);
 				}
 				if( toHops != null ) {
 					ArrayList<Instruction> tmp = recompileHopsDag(
 						toHops, vars, status, true, false, tid);
 					fpb.setToInstructions(tmp);
-					Hop.resetRecompilationFlag(toHops,ExecType.CP);
+					Hop.resetRecompilationFlag(toHops,ExecType.CP, resetRecompile);
 				}
 				if( incrHops != null ) {
 					ArrayList<Instruction> tmp = recompileHopsDag(
 						incrHops, vars, status, true, false, tid);
 					fpb.setIncrementInstructions(tmp);
-					Hop.resetRecompilationFlag(incrHops,ExecType.CP);
+					Hop.resetRecompilationFlag(incrHops,ExecType.CP, resetRecompile);
 				}
 				fsb.updatePredicateRecompilationFlags();
 			}

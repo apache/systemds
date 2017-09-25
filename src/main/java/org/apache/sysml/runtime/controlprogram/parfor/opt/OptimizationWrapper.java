@@ -32,6 +32,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.recompile.Recompiler.ResetType;
 import org.apache.sysml.hops.rewrite.HopRewriteRule;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
@@ -200,7 +201,9 @@ public class OptimizationWrapper
 				//* clone of variables in order to allow for statistics propagation across DAGs
 				//(tid=0, because deep copies created after opt)
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, true);
+				ResetType reset = ConfigurationManager.isCodegenEnabled() ? 
+					ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
+				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, reset);
 				
 				//inter-procedural optimization (based on previous recompilation)
 				if( pb.hasFunctions() ) {
@@ -215,8 +218,9 @@ public class OptimizationWrapper
 							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(funcparts[0], funcparts[1]);
 							//reset recompilation flags according to recompileOnce because it is only safe if function is recompileOnce 
 							//because then recompiled for every execution (otherwise potential issues if func also called outside parfor)
-							Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, fpb.isRecompileOnce());
-						}		
+							ResetType reset2 = fpb.isRecompileOnce() ? reset : ResetType.NO_RESET;
+							Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, reset2);
+						}
 					}
 				}
 			}
@@ -230,8 +234,7 @@ public class OptimizationWrapper
 			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
 			LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to create opt tree.", ex);
 		}
 		
@@ -244,14 +247,12 @@ public class OptimizationWrapper
 		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 		
 		//assert plan correctness
-		if( CHECK_PLAN_CORRECTNESS && LOG.isDebugEnabled() )
-		{
+		if( CHECK_PLAN_CORRECTNESS && LOG.isDebugEnabled() ) {
 			try{
 				OptTreePlanChecker.checkProgramCorrectness(pb, sb, new HashSet<String>());
 				LOG.debug("ParFOR Opt: Checked plan and program correctness.");
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				throw new DMLRuntimeException("Failed to check program correctness.", ex);
 			}
 		}
@@ -265,8 +266,7 @@ public class OptimizationWrapper
 		OptTreeConverter.clear();
 		
 		//monitor stats
-		if( monitor )
-		{
+		if( monitor ) {
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, otype.ordinal());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMTPLANS, opt.getNumTotalPlans());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMEPLANS, opt.getNumEvaluatedPlans());

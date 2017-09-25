@@ -41,7 +41,7 @@ W = read($model);
 
 dimensions = as.scalar(W[nrow(W),1])
 if(dimensions != ncol(X))
-	stop("Stopping due to invalid input: Model dimensions do not seem to match input data dimensions")
+  stop("Stopping due to invalid input: Model dimensions do not seem to match input data dimensions")
 
 intercept = as.scalar(W[nrow(W)-1,1])
 W = W[1:(nrow(W)-2),]
@@ -52,34 +52,34 @@ m=ncol(X);
 
 b = matrix(0, rows=1, cols=num_classes)
 if (intercept == 1)
-	b = W[m+1,]
+  b = W[m+1,]
 
 ones = matrix(1, rows=N, cols=1)
 scores = X %*% W[1:m,] + ones %*% b;
 	
 if(cmdLine_scores != " ")
-	write(scores, cmdLine_scores, format=cmdLine_fmt);
+  write(scores, cmdLine_scores, format=cmdLine_fmt);
 
 if(!cmdLine_scoring_only){
-	Y = read(cmdLine_Y);
+  Y = read(cmdLine_Y);
 	
-	if(min(Y) < 1)
-		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
+  if(min(Y) < 1)
+    stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
 	
-	pred = rowIndexMax(scores);
-	correct_percentage = sum((pred - Y) == 0) / N * 100;
-	
-	acc_str = "Accuracy (%): " + correct_percentage
-	print(acc_str)
-	if(cmdLine_accuracy != " ")
-		write(acc_str, cmdLine_accuracy)
+  pred = rowIndexMax(scores);
+  correct_percentage = sum((pred - Y) == 0) / N * 100;
+  
+  acc_str = "Accuracy (%): " + correct_percentage
+  print(acc_str)
+  if(cmdLine_accuracy != " ")
+    write(acc_str, cmdLine_accuracy)
 
-	num_classes_ground_truth = max(Y)
-	if(num_classes < num_classes_ground_truth)
-		num_classes = num_classes_ground_truth
+  num_classes_ground_truth = max(Y)
+  if(num_classes < num_classes_ground_truth)
+    num_classes = num_classes_ground_truth
 
-	if(cmdLine_confusion != " "){
-		confusion_mat = table(Y, pred, num_classes, num_classes)
-		write(confusion_mat, cmdLine_confusion, format="csv")
-	}
+  if(cmdLine_confusion != " "){
+    confusion_mat = table(Y, pred, num_classes, num_classes)
+    write(confusion_mat, cmdLine_confusion, format="csv")
+  }
 }

@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-source("staging/scalable_linalg/svd.dml") as svd
+source("scalable_linalg/svd.dml") as svd
 
 test_SVD = function() {
 
@@ -29,11 +29,11 @@ test_SVD = function() {
   eps = n*n*1e-12; # for larger matrices eps should be larger
 
   # create a symmetric random matrix
-  A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
+  A = rand(rows=n*n, cols=n, min=-1.0, max=1.0, pdf="uniform")
 
-  [U, S, Vt] = svd::SingularValueDecomposition(X, nb)
+  [U, S, V] = svd::SingularValueDecomposition(X, nb)
 
-  B = U %*% S %*% Vt;
+  B = U %*% S %*% t(V);
   
   diff = A - B;
   

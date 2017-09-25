@@ -26,9 +26,9 @@ N = 200;
 if( sum(X)<0 ) #cause unknown sparsity
    X = matrix(1, rows=100000000, cols=ncol(X));
 
-R = matrix(0, rows=ceil(nrow(X)/N), cols=1); 
+R = matrix(0, rows=ceiling(nrow(X)/N), cols=1); 
 
-parfor( bi in 1:ceil(nrow(X)/N), opt=CONSTRAINED, datapartitioner=$2, mode=$3, log=DEBUG) {
+parfor( bi in 1:ceiling(nrow(X)/N), opt=CONSTRAINED, datapartitioner=$2, mode=$3, log=DEBUG) {
    Xbi = X[(7+(bi-1)*N+1):min(bi*N,nrow(X)),];   
    print(sum(Xbi));
    R[bi,1] = sum(Xbi); 

@@ -169,7 +169,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "plogp" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "print" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "round" , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "ceil"  , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ceiling", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "floor" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "ucumk+", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "ucum*" , CPINSTRUCTION_TYPE.BuiltinUnary);

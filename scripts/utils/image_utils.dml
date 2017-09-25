@@ -24,9 +24,9 @@
  * Assumption: Hout < Hin, Wout < Win and input contains values [0, ..]
  */
 crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) return (matrix[double] out) {
-	start_h = ceil((Hin - Hout) / 2)
+	start_h = ceiling((Hin - Hout) / 2)
 	end_h = start_h + Hout - 1
-	start_w = ceil((Win - Wout) / 2)
+	start_w = ceiling((Win - Wout) / 2)
 	end_w = start_w + Wout - 1
 	mask = matrix(0, rows=Hin, cols=Win)
 	temp_mask = matrix(1, rows=Hout, cols=Wout)
@@ -50,9 +50,9 @@ crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) 
  * 
  * script = """
  * crop_grayscale = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) return (matrix[double] out) {
- * 	start_h = ceil((Hin - Hout) / 2)
+ * 	start_h = ceiling((Hin - Hout) / 2)
  * 	end_h = start_h + Hout - 1
- * 	start_w = ceil((Win - Wout) / 2)
+ * 	start_w = ceiling((Win - Wout) / 2)
  * 	end_w = start_w + Wout - 1
  * 	mask = matrix(0, rows=Hin, cols=Win)
  * 	temp_mask = matrix(1, rows=Hout, cols=Wout)
@@ -71,9 +71,9 @@ crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) 
  *
  */
 crop_grayscale = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) return (matrix[double] out) {
-	start_h = ceil((Hin - Hout) / 2)
+	start_h = ceiling((Hin - Hout) / 2)
 	end_h = start_h + Hout - 1
-	start_w = ceil((Win - Wout) / 2)
+	start_w = ceiling((Win - Wout) / 2)
 	end_w = start_w + Wout - 1
 	mask = matrix(0, rows=Hin, cols=Win)
 	temp_mask = matrix(1, rows=Hout, cols=Wout)

@@ -107,7 +107,7 @@ train = function(matrix[double] X, matrix[double] Y,
   # Optimize
   print("Starting optimization")
   group_batch_size = parallel_batches*batch_size
-  groups = as.integer(ceil(N/group_batch_size))
+  groups = as.integer(ceiling(N/group_batch_size))
   print("Total Epochs: "+epochs+", Batch size: "+batch_size+
         ", Degree of parallelism: "+parallel_batches+", Group batch size: "+group_batch_size+
         ", Num groups: "+groups)
@@ -317,7 +317,7 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
   batch_size = 64
-  iters = ceil(N / batch_size)
+  iters = ceiling(N / batch_size)
   parfor(i in 1:iters, check=0) {  # complains about `probs` as an inter-loop dependency
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1

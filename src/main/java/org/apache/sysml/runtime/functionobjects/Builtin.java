@@ -85,7 +85,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
 		String2BuiltinCode.put( "round"  , BuiltinCode.ROUND);
 		String2BuiltinCode.put( "stop"   , BuiltinCode.STOP);
-		String2BuiltinCode.put( "ceil"   , BuiltinCode.CEIL);
+		String2BuiltinCode.put( "ceiling", BuiltinCode.CEIL);
 		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
 		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
 		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);

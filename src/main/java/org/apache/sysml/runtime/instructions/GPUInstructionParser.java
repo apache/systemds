@@ -87,7 +87,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "sqrt",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "round", GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "floor", GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "ceil",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ceiling",GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "sin",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "cos",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "tan",   GPUINSTRUCTION_TYPE.BuiltinUnary);

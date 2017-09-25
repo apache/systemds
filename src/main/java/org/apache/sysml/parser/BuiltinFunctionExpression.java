@@ -1708,7 +1708,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.AVG_POOL;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
-		else if (functionName.equals("ceil"))
+		else if (functionName.equals("ceiling"))
 			bifop = Expression.BuiltinFunctionOp.CEIL;
 		else if (functionName.equals("floor"))
 			bifop = Expression.BuiltinFunctionOp.FLOOR;

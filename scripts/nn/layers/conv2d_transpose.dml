@@ -182,7 +182,7 @@ init_bilinear = function(int C, int K)
    *
    * Upsampling the input by factor f (each side) requires
    * channel-wise independent kernels of size K = 2f - f%2,
-   * stride = f and pad = ceil((f-1)/2). The weights are set
+   * stride = f and pad = ceiling((f-1)/2). The weights are set
    * via bilinear interpolation, bias is set to 0.
    *
    * Inputs:
@@ -194,7 +194,7 @@ init_bilinear = function(int C, int K)
    *  - W: Weights, of shape (C, C*K*K).
    *  - b: Biases, of shape (C, 1).
    */
-  factor_up = ceil(K / 2)
+  factor_up = ceiling(K / 2)
   center = (2 * factor_up - factor_up %% 2 - 1) / 2 / factor_up
   vect = 1 - abs(seq(0, K-1) / factor_up - center)
   weights = matrix(vect %*% t(vect), rows=1, cols=K*K)

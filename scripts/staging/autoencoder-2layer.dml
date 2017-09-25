@@ -184,7 +184,7 @@ if( full_obj ){
 }
 
 iter = 0
-num_iters_per_epoch = ceil(n / batch_size)
+num_iters_per_epoch = ceiling(n / batch_size)
 max_iterations = max_epochs * num_iters_per_epoch
 #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
 beg = 1

@@ -434,6 +434,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		return ret;
 	}
 	
+	public Hop getConstantValue() {
+		return getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
+	}
+	
 	public void setIncrementValue(double incr)
 	{
 		_incr = incr;

@@ -50,6 +50,7 @@ import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
@@ -76,6 +77,8 @@ public class TemplateRow extends TemplateBase
 	public boolean open(Hop hop) {
 		return (hop instanceof BinaryOp && hop.dimsKnown() && isValidBinaryOperation(hop)
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix()
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)))
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && LibMatrixMult.isSkinnyRightHandSide(
@@ -98,8 +101,7 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop) ) 
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().indexOf(input)==0
-				&& input.getDim2()==1 && hop.getInput().get(1).getDim2()==1
-				&& HopRewriteUtils.isEmpty(hop.getInput().get(1)))
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)))
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 					&& TemplateCell.isValidOperation(hop))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
@@ -130,8 +132,7 @@ public class TemplateRow extends TemplateBase
 	public CloseType close(Hop hop) {
 		//close on column or full aggregate (e.g., colSums, t(X)%*%y)
 		if(    (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.Row)
-			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)))
-			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND) )
+			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))))
 			return CloseType.CLOSED_VALID;
 		else
 			return CloseType.OPEN;
@@ -192,6 +193,8 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, 
 			inHops2.get("X"), inHops2.get("B1")));
+		if( tpl.getRowType()==RowType.NO_AGG_CONST )
+			tpl.setConstDim2(hop.getDim2());
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.determineMinVectorIntermediates(output));
 		tpl.getOutput().resetVisitStatus();
@@ -323,7 +326,9 @@ public class TemplateRow extends TemplateBase
 		{
 			//special case for cbind with zeros
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			out = new CNodeUnary(cdata1, UnaryType.CBIND0);
+			CNode cdata2 = TemplateUtils.createCNodeData(
+				HopRewriteUtils.getDataGenOpConstantValue(hop.getInput().get(1)), true);
+			out = new CNodeBinary(cdata1, cdata2, BinType.VECT_CBIND);
 			inHops.remove(hop.getInput().get(1)); //rm 0-matrix
 		}
 		else if(hop instanceof BinaryOp)

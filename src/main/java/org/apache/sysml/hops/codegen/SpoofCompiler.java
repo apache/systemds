@@ -645,6 +645,8 @@ public class SpoofCompiler
 				HopRewriteUtils.setOutputParametersForScalar(hnew);
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
+			else if( tmpCNode instanceof CNodeRow && ((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST )
+				((SpoofFusedOp)hnew).setConstDim2(((CNodeRow)tmpCNode).getConstDim2());
 			
 			if( !(tmpCNode instanceof CNodeMultiAgg) )
 				HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);

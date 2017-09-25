@@ -32,7 +32,6 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
-import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -190,8 +189,7 @@ public class TemplateUtils
 			|| (output instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)output)))
 			&& !(output instanceof AggBinaryOp && HopRewriteUtils.isTransposeOfItself(output.getInput().get(0),X)) )
 			return RowType.NO_AGG_B1;
-		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1 
-				|| HopRewriteUtils.isBinary(output, OpOp2.CBIND))
+		else if( output.getDim1()==X.getDim1() && (output.getDim2()==1)
 			&& !(output instanceof AggBinaryOp && HopRewriteUtils
 				.isTransposeOfItself(output.getInput().get(0),X)))
 			return RowType.ROW_AGG;
@@ -206,6 +204,8 @@ public class TemplateUtils
 			return RowType.COL_AGG_B1_T;
 		else if( B1 != null && output.getDim1()==B1.getDim2() && output.getDim2()==X.getDim2())
 			return RowType.COL_AGG_B1;
+		else if( X.getDim1() == output.getDim1() && X.getDim2() != output.getDim2() )
+			return RowType.NO_AGG_CONST;
 		else
 			throw new RuntimeException("Unknown row type for hop "+output.getHopID()+".");
 	}

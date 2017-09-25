@@ -193,6 +193,30 @@ public class LibSpoofPrimitives
 		for( int i=0; i<aix.length; i++ )
 			c[aix[i]] = a[i];
 	}
+	
+	// cbind handling
+	
+	public static double[] vectCBindWrite(double a, double b) {
+		double[] c = allocVector(2, false);
+		c[0] = a;
+		c[1] = b;
+		return c;
+	}
+	
+	public static double[] vectCBindWrite(double[] a, double b, int aix, int len) {
+		double[] c = allocVector(len+1, false);
+		System.arraycopy(a, aix, c, 0, len);
+		c[len] = b;
+		return c;
+	}
+	
+	public static double[] vectCBindWrite(double[] a, double b, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len+1, false);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = a[j];
+		c[len] = b;
+		return c;
+	}
 
 	// custom vector sums, mins, maxs
 	

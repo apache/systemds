@@ -474,11 +474,21 @@ public class HopRewriteUtils
 			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
 	}
 	
+	public static boolean isDataGenOpWithConstantValue(Hop hop) {
+		return hop instanceof DataGenOp
+			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
+			&& ((DataGenOp)hop).hasConstantValue();
+	}
+	
 	public static boolean isDataGenOpWithConstantValue(Hop hop, double value) {
 		return hop instanceof DataGenOp
 			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
 			&& ((DataGenOp)hop).hasConstantValue(value);
 	}
+	
+	public static Hop getDataGenOpConstantValue(Hop hop) {
+		return ((DataGenOp) hop).getConstantValue();
+	} 
 	
 	public static ReorgOp createTranspose(Hop input) {
 		return createReorg(input, ReOrgOp.TRANSPOSE);

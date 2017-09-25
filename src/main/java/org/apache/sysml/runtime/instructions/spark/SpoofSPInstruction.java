@@ -354,7 +354,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			if( type == RowType.NO_AGG )
 				mcOut.set(mcIn);
 			else if( type == RowType.ROW_AGG )
-				mcOut.set(mcIn.getRows(), ((SpoofRowwise)op).isCBind0()? 2:1, 
+				mcOut.set(mcIn.getRows(), 1, 
 					mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( type == RowType.COL_AGG )
 				mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
@@ -454,7 +454,8 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 			
 			//setup local memory for reuse
-			int clen2 = (int) (_op.getRowType().isRowTypeB1() ? _inputs.get(0).getNumCols() : -1);
+			int clen2 = (int) ((_op.getRowType()==RowType.NO_AGG_CONST) ? _op.getConstDim2() :
+				_op.getRowType().isRowTypeB1() ? _inputs.get(0).getNumCols() : -1);
 			LibSpoofPrimitives.setupThreadLocalMemory(_op.getNumIntermediates(), _clen, clen2);
 			
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();

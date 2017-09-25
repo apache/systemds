@@ -49,6 +49,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	public enum RowType {
 		NO_AGG,    //no aggregation
 		NO_AGG_B1, //no aggregation w/ matrix mult B1
+		NO_AGG_CONST, //no aggregation w/ expansion/contraction
 		FULL_AGG,  //full row/col aggregation
 		ROW_AGG,   //row aggregation (e.g., rowSums() or X %*% v)
 		COL_AGG,   //col aggregation (e.g., colSums() or t(y) %*% X)
@@ -69,13 +70,13 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	protected final RowType _type;
-	protected final boolean _cbind0;
+	protected final long _constDim2;
 	protected final boolean _tB1;
 	protected final int _reqVectMem;
 	
-	public SpoofRowwise(RowType type, boolean cbind0, boolean tB1, int reqVectMem) {
+	public SpoofRowwise(RowType type, long constDim2, boolean tB1, int reqVectMem) {
 		_type = type;
-		_cbind0 = cbind0;
+		_constDim2 = constDim2;
 		_tB1 = tB1;
 		_reqVectMem = reqVectMem;
 	}
@@ -84,8 +85,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		return _type;
 	}
 	
-	public boolean isCBind0() {
-		return _cbind0;
+	public long getConstDim2() {
+		return _constDim2;
 	}
 	
 	public int getNumIntermediates() {
@@ -124,7 +125,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
+		final int n2 = (_type==RowType.NO_AGG_CONST) ? (int)_constDim2 : 
+			_type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		if( !aggIncr || !out.isAllocated() )
 			allocateOutputMatrix(m, n, n2, out);
@@ -179,7 +181,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = _type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
+		final int n2 = (_type==RowType.NO_AGG_CONST) ? (int)_constDim2 : 
+			_type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		allocateOutputMatrix(m, n, n2, out);
 		final boolean flipOut = _type.isRowTypeB1ColumnAgg()
@@ -258,8 +261,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		switch( _type ) {
 			case NO_AGG:       out.reset(m, n, false); break;
 			case NO_AGG_B1:    out.reset(m, n2, false); break;
+			case NO_AGG_CONST: out.reset(m, (int)_constDim2, false); break;
 			case FULL_AGG:     out.reset(1, 1, false); break;
-			case ROW_AGG:      out.reset(m, 1+(_cbind0?1:0), false); break;
+			case ROW_AGG:      out.reset(m, 1, false); break;
 			case COL_AGG:      out.reset(1, n, false); break;
 			case COL_AGG_T:    out.reset(n, 1, false); break;
 			case COL_AGG_B1:   out.reset(n2, n, false); break;

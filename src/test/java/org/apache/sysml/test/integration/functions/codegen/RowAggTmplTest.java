@@ -67,6 +67,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME28 = TEST_NAME+"28"; //Kmeans, final eval
 	private static final String TEST_NAME29 = TEST_NAME+"29"; //sum(rowMins(X))
 	private static final String TEST_NAME30 = TEST_NAME+"30"; //Mlogreg inner core, multi-class
+	private static final String TEST_NAME31 = TEST_NAME+"31"; //MLogreg - matrix-vector cbind 0s generalized
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -78,7 +79,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=30; i++)
+		for(int i=1; i<=31; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -532,6 +533,21 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME30, false, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenRowAggRewrite31CP() {
+		testCodegenIntegration( TEST_NAME31, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg31CP() {
+		testCodegenIntegration( TEST_NAME31, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg31SP() {
+		testCodegenIntegration( TEST_NAME31, false, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -581,6 +597,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			if( testname.equals(TEST_NAME30) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString(RightIndex.OPCODE));
+			if( testname.equals(TEST_NAME31) )
+				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
 		}
 		finally {
 			rtplatform = platformOld;

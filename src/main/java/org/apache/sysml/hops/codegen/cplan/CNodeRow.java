@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -40,7 +39,7 @@ public class CNodeRow extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowwise { \n"
 			+ "  public %TMP%() {\n"
-			+ "    super(RowType.%TYPE%, %CBIND0%, %TB1%, %VECT_MEM%);\n"
+			+ "    super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n"
 			+ "  }\n"
 			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int len, int rowIndex) { \n"
 			+ "%BODY_dense%"
@@ -59,6 +58,7 @@ public class CNodeRow extends CNodeTpl
 	}
 	
 	private RowType _type = null; //access pattern 
+	private long _constDim2 = -1; //constant number of output columns
 	private int _numVectors = -1; //number of intermediate vectors
 	
 	public void setRowType(RowType type) {
@@ -77,6 +77,14 @@ public class CNodeRow extends CNodeTpl
 	
 	public int getNumVectorIntermediates() {
 		return _numVectors;
+	}
+	
+	public void setConstDim2(long dim2) {
+		_constDim2 = dim2;
+	}
+	
+	public long getConstDim2() {
+		return _constDim2;
 	}
 	
 	@Override
@@ -109,8 +117,7 @@ public class CNodeRow extends CNodeTpl
 		
 		//replace colvector information and number of vector intermediates
 		tmp = tmp.replace("%TYPE%", _type.name());
-		tmp = tmp.replace("%CBIND0%", String.valueOf(
-			TemplateUtils.isUnary(_output, UnaryType.CBIND0)));
+		tmp = tmp.replace("%CONST_DIM2%", String.valueOf(_constDim2));
 		tmp = tmp.replace("%TB1%", String.valueOf(
 			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
@@ -122,6 +129,7 @@ public class CNodeRow extends CNodeTpl
 		switch( _type ) {
 			case NO_AGG:
 			case NO_AGG_B1:
+			case NO_AGG_CONST:
 				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName)
 					.replace("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:
@@ -142,13 +150,13 @@ public class CNodeRow extends CNodeTpl
 	@Override
 	public SpoofOutputDimsType getOutputDimType() {
 		switch( _type ) {
-			case NO_AGG:    return SpoofOutputDimsType.INPUT_DIMS;
-			case NO_AGG_B1: return SpoofOutputDimsType.ROW_RANK_DIMS;
-			case FULL_AGG:  return SpoofOutputDimsType.SCALAR;
-			case ROW_AGG:   return TemplateUtils.isUnary(_output, UnaryType.CBIND0) ?
-						SpoofOutputDimsType.ROW_DIMS2 : SpoofOutputDimsType.ROW_DIMS;
-			case COL_AGG:   return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
-			case COL_AGG_T: return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
+			case NO_AGG:       return SpoofOutputDimsType.INPUT_DIMS;
+			case NO_AGG_B1:    return SpoofOutputDimsType.ROW_RANK_DIMS;
+			case NO_AGG_CONST: return SpoofOutputDimsType.INPUT_DIMS_CONST2; 
+			case FULL_AGG:     return SpoofOutputDimsType.SCALAR;
+			case ROW_AGG:      return SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG:      return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
+			case COL_AGG_T:    return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
 			case COL_AGG_B1:   return SpoofOutputDimsType.COLUMN_RANK_DIMS; 
 			case COL_AGG_B1_T: return SpoofOutputDimsType.COLUMN_RANK_DIMS_T; 
 			default:

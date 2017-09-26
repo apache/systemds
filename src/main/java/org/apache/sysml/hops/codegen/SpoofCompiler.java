@@ -434,7 +434,7 @@ public class SpoofCompiler
 				ret = constructModifiedHopDag(roots, cplans, clas);
 				
 				//run common subexpression elimination and other rewrites
-				ret = rewriteCSE.rewriteHopDAGs(ret, new ProgramRewriteStatus());	
+				ret = rewriteCSE.rewriteHopDAG(ret, new ProgramRewriteStatus());	
 				
 				//explain after modification
 				if( LOG.isTraceEnabled() ) {

@@ -108,15 +108,14 @@ public class RewriteConstantFolding extends HopRewriteRule
 		LiteralOp literal = null;
 		
 		//fold binary op if both are literals / unary op if literal
-		if(    root.getDataType() == DataType.SCALAR //scalar ouput
+		if( root.getDataType() == DataType.SCALAR //scalar output
 			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )
 		{ 
 			//core constant folding via runtime instructions
 			try {
 				literal = evalScalarOperation(root); 
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
 			}
 			

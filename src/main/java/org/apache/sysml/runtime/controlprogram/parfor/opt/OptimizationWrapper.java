@@ -184,8 +184,8 @@ public class OptimizationWrapper
 			try {
 				ProgramRewriter rewriter = createProgramRewriterWithRuleSets();
 				ProgramRewriteStatus state = new ProgramRewriteStatus();
-				rewriter.rewriteStatementBlockHopDAGs( sb, state );
-				fs.setBody(rewriter.rewriteStatementBlocks(fs.getBody(), state));
+				rewriter.rRewriteStatementBlockHopDAGs( sb, state );
+				fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
 				if( state.getRemovedBranches() ){
 					LOG.debug("ParFOR Opt: Removed branches during program rewrites, rebuilding runtime program");
 					pb.setChildBlocks(ProgramRecompiler.generatePartitialRuntimeProgram(pb.getProgram(), fs.getBody()));

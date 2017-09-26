@@ -1909,8 +1909,8 @@ public class OptimizerRuleBased extends Optimizer
 			RewriteInjectSparkLoopCheckpointing rewrite = new RewriteInjectSparkLoopCheckpointing(false);
 			ProgramRewriter rewriter = new ProgramRewriter(rewrite);
 			ProgramRewriteStatus state = new ProgramRewriteStatus();
-			rewriter.rewriteStatementBlockHopDAGs( pfsb, state );
-			fs.setBody(rewriter.rewriteStatementBlocks(fs.getBody(), state));
+			rewriter.rRewriteStatementBlockHopDAGs( pfsb, state );
+			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
 			
 			//recompile if additional checkpoints introduced
 			if( state.getInjectedCheckpoints() ) {

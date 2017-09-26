@@ -31,7 +31,6 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class BranchRemovalTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "if_branch_removal";
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BranchRemovalTest.class.getSimpleName() + "/";
@@ -142,11 +141,8 @@ public class BranchRemovalTest extends AutomatedTestBase
 			//check expected number of compiled and executed MR jobs
 			int expectedNumCompiled = 5; //reblock, 3xGMR (append), write
 			int expectedNumExecuted = 0;			
-			if( branchRemoval && IPA )
+			if( branchRemoval )
 				expectedNumCompiled = 1; //reblock
-			else if( branchRemoval ){
-				expectedNumCompiled = condition ? 4 : 3; //reblock, GMR (append), write
-			}
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 

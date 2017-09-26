@@ -98,7 +98,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 						}
 						//add remaining roots from s1 to s2
 						else if( !(HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
-							&& twrites.containsKey(root.getName())) ) {
+							&& (twrites.containsKey(root.getName()) || !sb2.liveOut().containsVariable(root.getName()))) ) {
 							sb2Hops.add(root);
 						}
 					}
@@ -108,7 +108,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 					
 					//run common-subexpression elimination
 					Hop.resetVisitStatus(sb2Hops);
-					rewriter.rewriteHopDAGs(sb2Hops, new ProgramRewriteStatus());
+					rewriter.rewriteHopDAG(sb2Hops, new ProgramRewriteStatus());
 					
 					//modify live variable sets of s2
 					sb2.setLiveIn(sb1.liveIn()); //liveOut remains unchanged

@@ -46,7 +46,9 @@ public class HopDagValidator {
 
 	private HopDagValidator() {}
 	
-	public static void validateHopDag(final ArrayList<Hop> roots) throws HopsException {
+	public static void validateHopDag(ArrayList<Hop> roots, HopRewriteRule rule) 
+		throws HopsException 
+	{
 		if( roots == null )
 			return;
 		try {
@@ -57,13 +59,16 @@ public class HopDagValidator {
 		}
 		catch(HopsException ex) {
 			try {
-				LOG.error( "\n"+Explain.explainHops(roots) );
+				LOG.error("Invalid HOP DAG after rewrite " + rule.getClass().getName() 
+						+ ": \n" + Explain.explainHops(roots), ex);
 			}catch(DMLRuntimeException e){}
 			throw ex;
 		}
 	}
 	
-	public static void validateHopDag(final Hop root) throws HopsException {
+	public static void validateHopDag(Hop root, HopRewriteRule rule) 
+		throws HopsException 
+	{
 		if( root == null )
 			return;
 		try {
@@ -73,7 +78,8 @@ public class HopDagValidator {
 		}
 		catch(HopsException ex) {
 			try {
-				LOG.error( "\n"+Explain.explain(root) );
+				LOG.error("Invalid HOP DAG after rewrite " + rule.getClass().getName() 
+						+ ": \n" + Explain.explain(root), ex);
 			}catch(DMLRuntimeException e){}
 			throw ex;
 		}
@@ -91,7 +97,6 @@ public class HopDagValidator {
 		if (seen != hop.isVisited()) {
 			String parentIDs = hop.getParent().stream()
 					.map(h -> Long.toString(h.getHopID())).collect(Collectors.joining(", "));
-			//noinspection ConstantConditions
 			check(false, hop, parentIDs, seen);
 		}
 		if (seen) return; // we saw the Hop previously, no need to re-validate

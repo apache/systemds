@@ -31,13 +31,12 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class IPAAssignConstantPropagationTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "constant_propagation_sb";
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAAssignConstantPropagationTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
-	private final static int cols = 15;    
+	private final static int cols = 15;
 	
 	
 	@Override
@@ -47,40 +46,27 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "X" }) );
 	}
-
-	
 	
 	@Test
-	public void testAssignConstantPropagationNoBranchRemovalNoIPA() 
-	{
+	public void testAssignConstantPropagationNoBranchRemovalNoIPA() {
 		runIPAAssignConstantPropagationTest(false, false);
 	}
 	
 	@Test
-	public void testAssignConstantPropagationNoBranchRemovalIPA() 
-	{
+	public void testAssignConstantPropagationNoBranchRemovalIPA() {
 		runIPAAssignConstantPropagationTest(false, true);
 	}
 	
 	@Test
-	public void testAssignConstantPropagationBranchRemovalNoIPA() 
-	{
+	public void testAssignConstantPropagationBranchRemovalNoIPA() {
 		runIPAAssignConstantPropagationTest(true, false);
 	}
 	
 	@Test
-	public void testAssignConstantPropagationBranchRemovalIPA() 
-	{
+	public void testAssignConstantPropagationBranchRemovalIPA() {
 		runIPAAssignConstantPropagationTest(true, true);
 	}
-
-
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
+	
 	private void runIPAAssignConstantPropagationTest( boolean branchRemoval, boolean IPA )
 	{	
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
@@ -98,7 +84,7 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				Integer.toString(rows) + " " + Integer.toString(cols) + " " + expectedDir();			
+				Integer.toString(rows) + " " + Integer.toString(cols) + " " + expectedDir();
 
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = branchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
@@ -112,17 +98,15 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = ( branchRemoval && IPA ) ? 0 : 1; //rand
-			int expectedNumExecuted = 0;			
+			int expectedNumCompiled = branchRemoval ? 0 : 1; //rand
+			int expectedNumExecuted = 0;
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}
-	
 }

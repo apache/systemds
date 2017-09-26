@@ -179,10 +179,10 @@ public class Recompiler
 		//need for synchronization as we do temp changes in shared hops/lops
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) 
-		{	
+		{
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
-					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
-	
+					OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+			
 			// prepare hops dag for recompile
 			if( !inplace ){ 
 				// deep copy hop dag (for non-reversable rewrites)
@@ -194,7 +194,7 @@ public class Recompiler
 				for( Hop hopRoot : hops )
 					rClearLops( hopRoot );
 			}
-
+			
 			// replace scalar reads with literals 
 			if( !inplace && litreplace ) {
 				Hop.resetVisitStatus(hops);
@@ -202,14 +202,14 @@ public class Recompiler
 					rReplaceLiterals( hopRoot, vars, false );
 			}
 			
-			// refresh matrix characteristics (update stats)			
+			// refresh matrix characteristics (update stats)
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
 				rUpdateStatistics( hopRoot, vars );
 			
 			// dynamic hop rewrites
 			if( !inplace ) {
-				_rewriter.get().rewriteHopDAGs( hops, null );
+				_rewriter.get().rewriteHopDAG( hops, null );
 				
 				//update stats after rewrites
 				Hop.resetVisitStatus(hops);
@@ -236,12 +236,12 @@ public class Recompiler
 					(status==null || !status.isInitialCodegen()));
 			}
 			
-			// construct lops			
+			// construct lops
 			Dag<Lop> dag = new Dag<Lop>();
 			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);	
-			}		
+			}
 			
 			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());
@@ -309,7 +309,7 @@ public class Recompiler
 			if( !inplace ) {
 				// deep copy hop dag (for non-reversable rewrites)
 				//(this also clears existing lops in the created dag) 
-				hops = deepCopyHopsDag(hops);	
+				hops = deepCopyHopsDag(hops);
 			}
 			else {
 				// clear existing lops
@@ -323,7 +323,7 @@ public class Recompiler
 				rReplaceLiterals( hops, vars, false );
 			}
 			
-			// refresh matrix characteristics (update stats)			
+			// refresh matrix characteristics (update stats)
 			hops.resetVisitStatus();
 			rUpdateStatistics( hops, vars );
 			
@@ -341,7 +341,7 @@ public class Recompiler
 			hops.resetVisitStatus();
 			memo.init(hops, status);
 			hops.resetVisitStatus();
-			hops.refreshMemEstimates(memo); 		
+			hops.refreshMemEstimates(memo);
 			
 			// codegen if enabled
 			if( ConfigurationManager.isCodegenEnabled()
@@ -351,10 +351,10 @@ public class Recompiler
 					(status==null || !status.isInitialCodegen()));
 			}
 			
-			// construct lops			
+			// construct lops
 			Dag<Lop> dag = new Dag<Lop>();
 			Lop lops = hops.constructLops();
-			lops.addToDag(dag);		
+			lops.addToDag(dag);
 			
 			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());

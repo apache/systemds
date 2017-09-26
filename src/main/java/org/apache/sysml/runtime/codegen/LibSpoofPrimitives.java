@@ -932,24 +932,24 @@ public class LibSpoofPrimitives
 	
 	//custom ceil
 	
-	public static void vectCeilAdd(double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectCeilingAdd(double[] a, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] +=  FastMath.ceil(a[j]);
 	}
 
-	public static void vectCeilAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	public static void vectCeilingAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		for( int j = ai; j < ai+alen; j++ )
 			c[ci + aix[j]] += FastMath.ceil(a[j]);
 	}
 	
-	public static double[] vectCeilWrite(double[] a, int ai, int len) {
+	public static double[] vectCeilingWrite(double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
 			c[j] = FastMath.ceil(a[ai]);
 		return c;
 	}
 
-	public static double[] vectCeilWrite(double[] a, int[] aix, int ai, int alen, int len) {
+	public static double[] vectCeilingWrite(double[] a, int[] aix, int ai, int alen, int len) {
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = FastMath.ceil(a[j]);

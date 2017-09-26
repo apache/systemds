@@ -31,7 +31,7 @@ public class CNodeUnary extends CNode
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
-		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
+		VECT_ABS, VECT_ROUND, VECT_CEILING, VECT_FLOOR, VECT_SIGN, 
 		VECT_SIN, VECT_COS, VECT_TAN, VECT_ASIN, VECT_ACOS, VECT_ATAN, 
 		VECT_SINH, VECT_COSH, VECT_TANH,
 		VECT_CUMSUM, VECT_CUMMIN, VECT_CUMMAX,
@@ -64,7 +64,7 @@ public class CNodeUnary extends CNode
 				case VECT_LOG:
 				case VECT_ABS:
 				case VECT_ROUND:
-				case VECT_CEIL:
+				case VECT_CEILING:
 				case VECT_FLOOR:
 				case VECT_SIGN:
 				case VECT_SIN:
@@ -147,7 +147,7 @@ public class CNodeUnary extends CNode
 			return this == VECT_EXP || this == VECT_POW2
 				|| this == VECT_MULT2 || this == VECT_SQRT
 				|| this == VECT_LOG || this == VECT_ABS
-				|| this == VECT_ROUND || this == VECT_CEIL
+				|| this == VECT_ROUND || this == VECT_CEILING
 				|| this == VECT_FLOOR || this == VECT_SIGN
 				|| this == VECT_SIN || this == VECT_COS || this == VECT_TAN
 				|| this == VECT_ASIN || this == VECT_ACOS || this == VECT_ATAN
@@ -245,7 +245,7 @@ public class CNodeUnary extends CNode
 			case VECT_LOG:
 			case VECT_ABS:
 			case VECT_ROUND:
-			case VECT_CEIL:
+			case VECT_CEILING:
 			case VECT_SIN:
 			case VECT_COS:
 			case VECT_TAN:
@@ -279,7 +279,7 @@ public class CNodeUnary extends CNode
 			case VECT_LOG:
 			case VECT_ABS:
 			case VECT_ROUND:
-			case VECT_CEIL:
+			case VECT_CEILING:
 			case VECT_FLOOR:
 			case VECT_SIGN:
 			case VECT_SIN:

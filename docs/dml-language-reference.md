@@ -821,7 +821,7 @@ is same as
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-exp(), log(), abs(), sqrt(), round(), floor(), ceil() | Apply mathematical function on input (cell wise if input is matrix) | Input: (&lt;matrix&gt;), or (&lt;scalar&gt;) <br/> Output: &lt;matrix&gt;, or &lt;scalar&gt; | sqrt(X) <br/> log(X,y) <br/> round(X) <br/> floor(X) <br/> ceil(X)
+exp(), log(), abs(), sqrt(), round(), floor(), ceiling() | Apply mathematical function on input (cell wise if input is matrix) | Input: (&lt;matrix&gt;), or (&lt;scalar&gt;) <br/> Output: &lt;matrix&gt;, or &lt;scalar&gt; | sqrt(X) <br/> log(X,y) <br/> round(X) <br/> floor(X) <br/> ceiling(X)
 sin(), cos(), tan(), sinh(), cosh(), tanh(), asin(), acos(), atan() | Apply trigonometric function on input (cell wise if input is matrix) | Input: (&lt;matrix&gt;), or (&lt;scalar&gt;) <br/> Output: &lt;matrix&gt;, or &lt;scalar&gt; | sin(X)
 sign() | Returns a matrix representing the signs of the input matrix elements, where 1 represents positive, 0 represents zero, and -1 represents negative | Input : (A &lt;matrix&gt;) <br/> Output : &lt;matrix&gt; | <span style="white-space: nowrap;">A = matrix("-5 0 3 -3",</span> rows=2, cols=2) <br/>signA = sign(A)<br/>Matrix signA: [[-1, 0], [1, -1]]
 

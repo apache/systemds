@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.codegen;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -175,6 +176,16 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(double[] data, int n, int rowIndex, int colIndex) {
 		return (data!=null) ? data[rowIndex*n+colIndex] : 0;
+	}
+	
+	protected static double getValue(double[] avals, int[] aix, int ai, int alen, double colIndex) {
+		int icolIndex = UtilFunctions.toInt(colIndex);
+		return getValue(avals, aix, ai, alen, icolIndex);
+	}
+	
+	protected static double getValue(double[] avals, int[] aix, int ai, int alen, int colIndex) {
+		int pos = Arrays.binarySearch(aix, ai, ai+alen, colIndex);
+		return (pos >= 0) ? avals[pos] : 0;
 	}
 	
 	protected static double getValue(SideInput data, double rowIndex) {

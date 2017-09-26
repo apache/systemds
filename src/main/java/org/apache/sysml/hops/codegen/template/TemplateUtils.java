@@ -234,9 +234,9 @@ public class TemplateUtils
 		throw new RuntimeException("Undefined outer product type for hop "+out.getHopID());
 	}
 	
-	public static boolean isLookup(CNode node) {
+	public static boolean isLookup(CNode node, boolean includeRC1) {
 		return isUnary(node, UnaryType.LOOKUP_R, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC)
-			|| isTernary(node, TernaryType.LOOKUP_RC1);
+			|| (includeRC1 && isTernary(node, TernaryType.LOOKUP_RC1));
 	}
 	
 	public static boolean isUnary(CNode node, UnaryType...types) {
@@ -315,7 +315,7 @@ public class TemplateUtils
 	
 	public static boolean hasNoOperation(CNodeTpl tpl) {
 		return tpl.getOutput() instanceof CNodeData 
-			|| isLookup(tpl.getOutput());
+			|| isLookup(tpl.getOutput(), true);
 	}
 	
 	public static boolean hasOnlyDataNodeOrLookupInputs(CNode node) {

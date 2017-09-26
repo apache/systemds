@@ -54,7 +54,9 @@ public class CNodeTernary extends CNode
 					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
 					
 				case LOOKUP_RC1:
-					return "    double %TMP% = getValue(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";
+					return sparse ?
+						"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
+						"    double %TMP% = getValue(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";
 					
 				case LOOKUP_RVECT1:
 					return "    double[] %TMP% = getVector(%IN1%, %IN2%, rowIndex, %IN3%-1);\n";
@@ -96,14 +98,19 @@ public class CNodeTernary extends CNode
 		sb.append(_inputs.get(2).codegen(sparse));
 		
 		//generate binary operation
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
+			&& _inputs.get(0).getVarname().startsWith("a")
+			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
-		String tmp = _type.getTemplate(sparse);
+		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replace("%TMP%", var);
 		for( int j=1; j<=3; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+j+"v%", 
-				varj+(varj.startsWith("b")?"":"vals") );
+				varj+(varj.startsWith("a")?"vals":"") );
+			tmp = tmp.replace("%IN"+j+"i%", 
+				varj+(varj.startsWith("a")?"ix":"") );
 			tmp = tmp.replace("%IN"+j+"%", varj );
 		}
 		sb.append(tmp);

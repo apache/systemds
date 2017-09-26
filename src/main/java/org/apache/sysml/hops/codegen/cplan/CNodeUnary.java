@@ -198,7 +198,7 @@ public class CNodeUnary extends CNode
 		
 		//generate unary operation
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
-			&& !_inputs.get(0).getVarname().startsWith("b")
+			&& _inputs.get(0).getVarname().startsWith("a")
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse);

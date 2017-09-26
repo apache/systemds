@@ -691,7 +691,8 @@ public class SpoofCompiler
 			//remove invalid plans with column indexing on main input
 			if( tpl instanceof CNodeCell || tpl instanceof CNodeRow ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				if( rHasLookupRC1(tpl.getOutput(), in1) || isLookupRC1(tpl.getOutput(), in1) ) {
+				boolean inclRC1 = !(tpl instanceof CNodeRow);
+				if( rHasLookupRC1(tpl.getOutput(), in1, inclRC1) || isLookupRC1(tpl.getOutput(), in1, inclRC1) ) {
 					cplans2.remove(e.getKey());
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
@@ -700,7 +701,7 @@ public class SpoofCompiler
 			else if( tpl instanceof CNodeMultiAgg ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
-					if( rHasLookupRC1(output, in1) || isLookupRC1(output, in1) ) {
+					if( rHasLookupRC1(output, in1, true) || isLookupRC1(output, in1, true) ) {
 						cplans2.remove(e.getKey());
 						if( LOG.isTraceEnabled() )
 							LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
@@ -712,7 +713,7 @@ public class SpoofCompiler
 			if( tpl instanceof CNodeMultiAgg )
 				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
 			else
-				rFindAndRemoveLookup(tpl.getOutput(), in1);
+				rFindAndRemoveLookup(tpl.getOutput(), in1, !(tpl instanceof CNodeRow));
 			
 			//remove invalid row templates (e.g., unsatisfied blocksize constraint)
 			if( tpl instanceof CNodeRow ) {
@@ -770,44 +771,44 @@ public class SpoofCompiler
 	private static void rFindAndRemoveLookupMultiAgg(CNodeMultiAgg node, CNodeData mainInput) {
 		//process all outputs individually
 		for( CNode output : node.getOutputs() )
-			rFindAndRemoveLookup(output, mainInput);
+			rFindAndRemoveLookup(output, mainInput, true);
 		
 		//handle special case, of lookup being itself the output node
 		for( int i=0; i < node.getOutputs().size(); i++) {
 			CNode tmp = node.getOutputs().get(i);
-			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
+			if( TemplateUtils.isLookup(tmp, true) && tmp.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
 				node.getOutputs().set(i, tmp.getInput().get(0));
 		}
 	}
 	
-	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput) {
+	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput, boolean includeRC1) {
 		for( int i=0; i<node.getInput().size(); i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
+			if( TemplateUtils.isLookup(tmp, includeRC1) && tmp.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
 			{
 				node.getInput().set(i, tmp.getInput().get(0));
 			}
 			else
-				rFindAndRemoveLookup(tmp, mainInput);
+				rFindAndRemoveLookup(tmp, mainInput, includeRC1);
 		}
 	}
 	
-	private static boolean rHasLookupRC1(CNode node, CNodeData mainInput) {
+	private static boolean rHasLookupRC1(CNode node, CNodeData mainInput, boolean includeRC1) {
 		boolean ret = false;
 		for( int i=0; i<node.getInput().size() && !ret; i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( isLookupRC1(tmp, mainInput) )
+			if( isLookupRC1(tmp, mainInput, includeRC1) )
 				ret = true;
 			else
-				ret |= rHasLookupRC1(tmp, mainInput);
+				ret |= rHasLookupRC1(tmp, mainInput, includeRC1);
 		}
 		return ret;
 	}
 	
-	private static boolean isLookupRC1(CNode node, CNodeData mainInput) {
-		return (node instanceof CNodeTernary && (((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+	private static boolean isLookupRC1(CNode node, CNodeData mainInput, boolean includeRC1) {
+		return (node instanceof CNodeTernary && ((((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 && includeRC1)
 				|| ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RVECT1 )
 				&& node.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)node.getInput().get(0)).getHopID() == mainInput.getHopID());

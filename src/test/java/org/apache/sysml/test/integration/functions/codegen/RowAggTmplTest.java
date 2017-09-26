@@ -68,6 +68,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME29 = TEST_NAME+"29"; //sum(rowMins(X))
 	private static final String TEST_NAME30 = TEST_NAME+"30"; //Mlogreg inner core, multi-class
 	private static final String TEST_NAME31 = TEST_NAME+"31"; //MLogreg - matrix-vector cbind 0s generalized
+	private static final String TEST_NAME32 = TEST_NAME+"32"; //X[, 1] - rowSums(X)
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -79,7 +80,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=31; i++)
+		for(int i=1; i<=32; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -546,6 +547,21 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenRowAgg31SP() {
 		testCodegenIntegration( TEST_NAME31, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenRowAggRewrite32CP() {
+		testCodegenIntegration( TEST_NAME32, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg32CP() {
+		testCodegenIntegration( TEST_NAME32, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg32SP() {
+		testCodegenIntegration( TEST_NAME32, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

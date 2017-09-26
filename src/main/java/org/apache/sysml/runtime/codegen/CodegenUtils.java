@@ -40,6 +40,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
@@ -51,6 +53,8 @@ import org.codehaus.janino.SimpleCompiler;
 
 public class CodegenUtils 
 {
+	private static final Log LOG = LogFactory.getLog(CodegenUtils.class.getName());
+	
 	//cache to reuse compiled and loaded classes 
 	private static ConcurrentHashMap<String, Class<?>> _cache = new ConcurrentHashMap<String,Class<?>>();
 	
@@ -167,6 +171,7 @@ public class CodegenUtils
 				.loadClass(name);
 		}
 		catch(Exception ex) {
+			LOG.error("Failed to compile class "+name+": \n"+src);
 			throw new DMLRuntimeException("Failed to compile class "+name+".", ex);
 		}
 	}	
@@ -232,7 +237,8 @@ public class CodegenUtils
 			}
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+			LOG.error("Failed to compile class "+name+": \n"+src);
+			throw new DMLRuntimeException("Failed to compile class "+name+".", ex);
 		}
 	}
 	

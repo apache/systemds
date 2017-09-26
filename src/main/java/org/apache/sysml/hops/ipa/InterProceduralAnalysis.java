@@ -171,6 +171,7 @@ public class InterProceduralAnalysis
 			throw new HopsException("Invalid number of IPA repetitions: " + repetitions);
 		
 		//perform number of requested IPA iterations
+		FunctionCallSizeInfo lastSizes = null;
 		for( int i=0; i<repetitions; i++ ) {
 			if( LOG.isDebugEnabled() )
 				LOG.debug("IPA: start IPA iteration " + (i+1) + "/" + repetitions +".");
@@ -200,6 +201,15 @@ public class InterProceduralAnalysis
 			for( IPAPass pass : _passes )
 				if( pass.isApplicable() )
 					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
+			
+			//early abort without functions or on reached fixpoint
+			if( _fgraph.getReachableFunctions().isEmpty() 
+				|| (lastSizes != null && lastSizes.equals(fcallSizes)) ) {
+				if( LOG.isDebugEnabled() )
+					LOG.debug("IPA: Early abort after " + (i+1) + "/" + repetitions
+						+ " repetitions due to reached fixpoint.");
+				break;
+			}
 		}
 		
 		//cleanup pass: remove unused functions

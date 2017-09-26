@@ -31,78 +31,60 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class IPAConstantPropagationTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "constant_propagation_if";
 	private final static String TEST_NAME2 = "constant_propagation_while";
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAConstantPropagationTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
-	private final static int cols = 15;    
-	
+	private final static int cols = 15;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "X" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "X" }) );
 	}
 	
-	
 	@Test
-	public void testConstantPropagationNoUpdateNoBranchRemovalNoIPA() 
-	{
+	public void testConstantPropagationNoUpdateNoBranchRemovalNoIPA() {
 		runIPAConstantPropagationTest(false, false, false);
 	}
 	
 	@Test
-	public void testConstantPropagationNoUpdateNoBranchRemovalIPA() 
-	{
+	public void testConstantPropagationNoUpdateNoBranchRemovalIPA() {
 		runIPAConstantPropagationTest(false, false, true);
 	}
 	
 	@Test
-	public void testConstantPropagationNoUpdateBranchRemovalNoIPA() 
-	{
+	public void testConstantPropagationNoUpdateBranchRemovalNoIPA() {
 		runIPAConstantPropagationTest(false, true, false);
 	}
 	
 	@Test
-	public void testConstantPropagationNoUpdateBranchRemovalIPA() 
-	{
+	public void testConstantPropagationNoUpdateBranchRemovalIPA() {
 		runIPAConstantPropagationTest(false, true, true);
 	}
 	
 	@Test
-	public void testConstantPropagationUpdateNoBranchRemovalNoIPA() 
-	{
+	public void testConstantPropagationUpdateNoBranchRemovalNoIPA() {
 		runIPAConstantPropagationTest(true, false, false);
 	}
 	
 	@Test
-	public void testConstantPropagationUpdateNoBranchRemovalIPA() 
-	{
+	public void testConstantPropagationUpdateNoBranchRemovalIPA() {
 		runIPAConstantPropagationTest(true, false, true);
 	}
 	
 	@Test
-	public void testConstantPropagationUpdateBranchRemovalNoIPA() 
-	{
+	public void testConstantPropagationUpdateBranchRemovalNoIPA() {
 		runIPAConstantPropagationTest(true, true, false);
 	}
 	
 	@Test
-	public void testConstantPropagationUpdateBranchRemovalIPA() 
-	{
+	public void testConstantPropagationUpdateBranchRemovalIPA() {
 		runIPAConstantPropagationTest(true, true, true);
 	}
-
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
+	
 	private void runIPAConstantPropagationTest( boolean update, boolean branchRemoval, boolean IPA )
 	{	
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
@@ -136,17 +118,15 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = ( branchRemoval && IPA && !update ) ? 0 : 1; //rand
-			int expectedNumExecuted = 0;			
+			int expectedNumCompiled = ( branchRemoval && !update ) ? 0 : 1; //rand
+			int expectedNumExecuted = 0;
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}
-	
 }

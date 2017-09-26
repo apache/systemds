@@ -894,10 +894,9 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
     
         [Y_prob, isNaN] = binomial_probability_two_column (linear_terms, link_type, link_power);
         
-        if (isNaN == 0) {            
-            does_prob_contradict = (Y_prob <= 0);
-            if (sum (does_prob_contradict * abs (Y)) == 0) {
-                log_l = sum (Y * log (Y_prob * (1 - does_prob_contradict) + does_prob_contradict));
+        if (isNaN == 0) {
+            if( sum((Y_prob<=0) * abs(Y)) == 0 ) {
+                log_l = sum (Y * log (Y_prob * (1 - (Y_prob<=0)) + (Y_prob<=0)));
                 if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)) {
                     isNaN = 1;
                 }
@@ -922,10 +921,6 @@ binomial_probability_two_column =
     # Define some auxiliary matrices
 
     ones_2 = matrix (1.0, rows = 1, cols = 2);
-    p_one_m_one = matrix("1 -1", 1, 2);
-    m_one_p_one = matrix("-1 1", 1, 2);
-    zero_one = matrix("0 1", 1, 2);
-    one_zero = matrix("1 0", 1, 2);
     zeros_r = matrix(0, nrow(linear_terms), 1);
     ones_r = matrix(1, nrow(linear_terms), 1);
 
@@ -934,11 +929,11 @@ binomial_probability_two_column =
     Y_prob = zeros_r %*% ones_2;
     if (link_type == 1) { # Binomial.power
         if          (link_power == 0) { # Binomial.log
-            Y_prob = exp (linear_terms) %*% p_one_m_one + ones_r %*% zero_one;    
+            Y_prob = cbind(exp(linear_terms), 1-exp(linear_terms));
         } else if (link_power == 0.5) { # Binomial.sqrt
-            Y_prob = (linear_terms ^ 2) %*% p_one_m_one + ones_r %*% zero_one;    
+            Y_prob = cbind(linear_terms^2, 1-linear_terms^2);
         } else if (sum (linear_terms < 0) == 0) { # Binomial.power_nonlog
-            Y_prob = (linear_terms ^ (1.0 / link_power)) %*% p_one_m_one + ones_r %*% zero_one;    
+            Y_prob = cbind(linear_terms^(1.0/link_power), 1-linear_terms^(1.0/link_power));
         } else {
             isNaN = 1;
         }
@@ -950,7 +945,7 @@ binomial_probability_two_column =
             Y_prob = cbind(exp(finite_linear_terms), ones_r);
             Y_prob = Y_prob / rowSums (Y_prob);
         } else if (link_type == 3)    { # Binomial.probit
-            lt_pos_neg = (finite_linear_terms >= 0) %*% p_one_m_one + ones_r %*% zero_one;
+            lt_pos_neg = cbind(finite_linear_terms>=0, finite_linear_terms<0);
             t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
             pt_gp = t_gp * ( 0.254829592 
                   + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
@@ -966,12 +961,12 @@ binomial_probability_two_column =
             Y_prob [, 1] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2);
             Y_prob [, 2] = the_exp_exp;
         } else if (link_type == 5)    { # Binomial.cauchit
-            Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / 3.1415926535897932384626433832795;
+            Y_prob = 0.5 + cbind(atan(finite_linear_terms), -atan(finite_linear_terms)) / 3.1415926535897932384626433832795;
         } else {
             isNaN = 1;
         }
         Y_prob = Y_prob * (1.0 - rowSums (is_LT_infinite)) + is_LT_infinite;
-}   }            
+}   }
 
 
 # THE CG-STEIHAUG PROCEDURE SCRIPT

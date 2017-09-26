@@ -292,6 +292,18 @@ public class FunctionCallSizeInfo
 	}
 	
 	@Override
+	public boolean equals(Object o) {
+		if( o instanceof FunctionCallSizeInfo )
+			return false;
+		FunctionCallSizeInfo that = (FunctionCallSizeInfo)o;
+		return _fgraph == that._fgraph
+			&& _fcand.equals(that._fcand)
+			&& _fcandUnary.equals(that._fcandUnary)
+			&& _fcandSafeNNZ.entrySet().equals(that._fcandSafeNNZ.entrySet())
+			&& _fSafeLiterals.entrySet().equals(that._fSafeLiterals.entrySet());
+	}
+	
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		

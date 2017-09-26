@@ -277,7 +277,7 @@ public class DMLTranslator
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
 			InterProceduralAnalysis ipa = new InterProceduralAnalysis(dmlp);
-			ipa.analyzeProgram(OptimizerUtils.ALLOW_IPA_SECOND_CHANCE ? 2 : 1);
+			ipa.analyzeProgram(OptimizerUtils.IPA_NUM_REPETITIONS);
 			resetHopsDAGVisitStatus(dmlp);
 		}
 

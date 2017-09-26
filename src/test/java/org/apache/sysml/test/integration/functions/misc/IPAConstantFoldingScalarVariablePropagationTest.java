@@ -90,7 +90,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 	private void runIPAScalarVariablePropagationTest(String testname, boolean IPA_SECOND_CHANCE)
 	{
 		// Save old settings
-		boolean oldFlagIPASecondChance = OptimizerUtils.ALLOW_IPA_SECOND_CHANCE;
+		int oldIPANumRep = OptimizerUtils.IPA_NUM_REPETITIONS;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = rtplatform;
 
@@ -102,7 +102,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
-			OptimizerUtils.ALLOW_IPA_SECOND_CHANCE = IPA_SECOND_CHANCE;
+			OptimizerUtils.IPA_NUM_REPETITIONS = IPA_SECOND_CHANCE ? 2 : 1;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 
@@ -116,7 +116,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 		}
 		finally {
 			// Reset
-			OptimizerUtils.ALLOW_IPA_SECOND_CHANCE = oldFlagIPASecondChance;
+			OptimizerUtils.IPA_NUM_REPETITIONS = oldIPANumRep;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = platformOld;
 		}

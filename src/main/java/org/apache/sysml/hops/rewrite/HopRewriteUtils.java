@@ -772,6 +772,10 @@ public class HopRewriteUtils
 			&& MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
 	}
 	
+	public static boolean isSparse( Hop hop, double threshold ) {
+		return hop.getSparsity() < threshold;
+	}
+	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
 		throws HopsException
 	{

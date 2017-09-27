@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
@@ -165,10 +166,13 @@ public class CNodeUnary extends CNode
 			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
 		public boolean isScalarLookup() {
-			return this == LOOKUP0 
-				|| this == UnaryType.LOOKUP_R
-				|| this == UnaryType.LOOKUP_C
-				|| this == UnaryType.LOOKUP_RC;
+			return ArrayUtils.contains(new UnaryType[]{
+				LOOKUP0, LOOKUP_R, LOOKUP_C, LOOKUP_RC}, this);
+		}
+		public boolean isSparseSafeScalar() {
+			return ArrayUtils.contains(new UnaryType[]{
+				POW2, MULT2, ABS, ROUND, CEIL, FLOOR, SIGN, 
+				SIN, TAN, SELP, SPROP}, this);
 		}
 	}
 	

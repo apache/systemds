@@ -250,13 +250,14 @@ public class TemplateUtils
 			&& ArrayUtils.contains(types, ((CNodeBinary)node).getType());
 	}
 	
-	public static boolean rIsBinaryOnly(CNode node, BinType...types) {
+	public static boolean rIsSparseSafeOnly(CNode node, BinType...types) {
 		if( !(isBinary(node, types) || node instanceof CNodeData 
-			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isScalarLookup())) )
+			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isScalarLookup())
+			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isSparseSafeScalar())) )
 			return false;
 		boolean ret = true;
 		for( CNode c : node.getInput() )
-			ret &= rIsBinaryOnly(c, types);
+			ret &= rIsSparseSafeOnly(c, types);
 		return ret;
 	}
 	

@@ -327,7 +327,7 @@ public class TemplateCell extends TemplateBase
 					&& roots.get(i).getInput().contains(mainInput))
 				|| (HopRewriteUtils.isBinary(roots.get(i), OpOp2.DIV) 
 					&& roots.get(i).getInput().get(0) == mainInput)
-				|| (TemplateUtils.rIsBinaryOnly(outputs.get(i), BinType.MULT)
+				|| (TemplateUtils.rIsSparseSafeOnly(outputs.get(i), BinType.MULT)
 					&& TemplateUtils.rContainsInput(outputs.get(i), mainInput.getHopID()));
 			if( onlySum )
 				ret &= (aggOps.get(i)==AggOp.SUM || aggOps.get(i)==AggOp.SUM_SQ);
@@ -366,7 +366,7 @@ public class TemplateCell extends TemplateBase
 			if( h1.isScalar() && h2.isScalar() )
 				return Long.compare(h1.getHopID(), h2.getHopID());
 			return (h1.dimsKnown(true) && h2.dimsKnown(true) && h1.getNnz() != h2.getNnz()
-				&& (HopRewriteUtils.isSparse(h1) || HopRewriteUtils.isSparse(h2))) ?
+				&& (HopRewriteUtils.isSparse(h1, 1.0) || HopRewriteUtils.isSparse(h2, 1.0))) ?
 				Long.compare(h1.getNnz(), h2.getNnz()) :
 				Long.compare(h1.getHopID(), h2.getHopID());
 		}

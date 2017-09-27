@@ -138,7 +138,7 @@ parfor (run_index in 1 : num_runs, check = 0)
     C_old = C;
     iter_count = 0;
     term_code = 0;
-    wcss = 0;
+    wcss = 1.0/0.0; #INF
 
     while (term_code == 0)
     {
@@ -150,33 +150,34 @@ parfor (run_index in 1 : num_runs, check = 0)
         wcss_old = wcss;
         wcss = sumXsq + sum (minD);
         if (is_verbose == TRUE) {
-            if (iter_count == 0) {
+            if (iter_count == 0)
                 print ("Run " + run_index + ", At Start-Up:  Centroid WCSS = " + wcss);
-            } else {
+            else
                 print ("Run " + run_index + ", Iteration " + iter_count + ":  Centroid WCSS = " + wcss
                     + ";  Centroid change (avg.sq.dist.) = " + (sum ((C - C_old) ^ 2) / num_centroids));
-        }   }
+        }
+        
+        # Find the closest centroid for each record
+        P = D <= minD;
+        # If some records belong to multiple centroids, share them equally
+        P = P / rowSums (P);
+        # Compute the column normalization factor for P
+        P_denom = colSums (P);
+        # Compute new centroids as weighted averages over the records
+        C_new = (t(P) %*% X) / t(P_denom);
+        
         # Check if convergence or maximum iteration has been reached
-        if (wcss_old - wcss < eps * wcss & iter_count > 0) {
-            term_code = 1;  # Convergence is reached
-        } else {
-            if (iter_count >= max_iter) {
-                term_code = 2;  # Maximum iteration is reached
-            } else {
-                iter_count = iter_count + 1;
-                # Find the closest centroid for each record
-                P = (D <= minD);
-                # If some records belong to multiple centroids, share them equally
-                P = P / rowSums (P);
-                # Compute the column normalization factor for P
-                P_denom = colSums (P);
-                if (sum (P_denom <= 0) > 0) {
-                    term_code = 3;  # There is a "runaway" centroid with 0.0 denominator
-                } else {
-                    C_old = C;
-                    # Compute new centroids as weighted averages over the records
-                    C = (t(P) %*% X) / t(P_denom);
-    }   }   }   }
+        iter_count = iter_count + 1
+        if(wcss_old - wcss < eps * wcss)
+           term_code = 1; # Convergence reached
+        else if(iter_count >= max_iter) 
+           term_code = 2; # Max iteration reached
+        else if(sum (P_denom <= 0) > 0)
+           term_code = 3; # "Runaway" centroid (0.0 denom)
+        else {
+           C_old = C; C = C_new; 
+        }
+    }
     print ("Run " + run_index + ", Iteration " + iter_count + ":  Terminated with code = " + term_code + ",  Centroid WCSS = " + wcss);
     All_Centroids [(num_centroids * (run_index - 1) + 1) : (num_centroids * run_index), ] = C;
     final_wcss [run_index, 1] = wcss;

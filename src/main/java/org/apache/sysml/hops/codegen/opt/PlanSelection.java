@@ -47,18 +47,22 @@ public abstract class PlanSelection
 	 * @param memo partial fusion plans P
 	 * @param roots entry points of HOP DAG G
 	 */
-	public abstract void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots);	
+	public abstract void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots);
 	
 	/**
-	 * Determines if the given partial fusion plan is valid.
+	 * Determines if the given partial fusion plan is a valid entry point
+	 * of a fused operator.
 	 * 
 	 * @param me memo table entry
 	 * @param hop current hop
 	 * @return true if entry is valid as top-level plan
 	 */
 	public static boolean isValid(MemoTableEntry me, Hop hop) {
-		return (me.type != TemplateType.OUTER //ROW, CELL, MAGG
-			|| (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)));
+		return (me.type == TemplateType.CELL)
+			|| (me.type == TemplateType.MAGG)
+			|| (me.type == TemplateType.ROW && !HopRewriteUtils.isTransposeOperation(hop))
+			|| (me.type == TemplateType.OUTER 
+				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)));
 	}
 	
 	protected void addBestPlan(long hopID, MemoTableEntry me) {

@@ -87,7 +87,9 @@ public class CNodeUnary extends CNode
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
 			    case LOOKUP_R:
-			    	return "    double %TMP% = getValue(%IN1%, rowIndex);\n";
+			    	return sparse ?
+			    		"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
+			    		"    double %TMP% = getValue(%IN1%, rowIndex);\n";
 			    case LOOKUP_C:
 			    	return "    double %TMP% = getValue(%IN1%, n, 0, colIndex);\n";
 			    case LOOKUP_RC:

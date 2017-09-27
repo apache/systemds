@@ -43,6 +43,7 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -568,18 +569,18 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 	}
 	
-	private static boolean isRowTemplateWithoutAgg(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
+	private static boolean isRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
 		//consider all aggregations other than root operation
 		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
 		boolean ret = true;
 		for(int i=0; i<3; i++)
 			if( me.isPlanRef(i) )
-				ret &= rIsRowTemplateWithoutAgg(memo, 
+				ret &= rIsRowTemplateWithoutAggOrVects(memo, 
 					current.getInput().get(i), visited);
 		return ret;
 	}
 	
-	private static boolean rIsRowTemplateWithoutAgg(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
+	private static boolean rIsRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
 		if( visited.contains(current.getHopID()) )
 			return true;
 		
@@ -587,8 +588,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
 		for(int i=0; i<3; i++)
 			if( me!=null && me.isPlanRef(i) )
-				ret &= rIsRowTemplateWithoutAgg(memo, current.getInput().get(i), visited);
-		ret &= !(current instanceof AggUnaryOp || current instanceof AggBinaryOp);
+				ret &= rIsRowTemplateWithoutAggOrVects(memo, current.getInput().get(i), visited);
+		ret &= !(current instanceof AggUnaryOp || current instanceof AggBinaryOp
+			|| HopRewriteUtils.isBinary(current, OpOp2.CBIND));
 		
 		visited.add(current.getHopID());
 		return ret;
@@ -628,7 +630,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		for( Long hopID : part.getPartition() ) {
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
 			if( me != null && me.type == TemplateType.ROW && memo.contains(hopID, TemplateType.CELL)
-				&& isRowTemplateWithoutAgg(memo, memo.getHopRefs().get(hopID), new HashSet<Long>())) {
+				&& isRowTemplateWithoutAggOrVects(memo, memo.getHopRefs().get(hopID), new HashSet<Long>())) {
 				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
 				memo.remove(memo.getHopRefs().get(hopID), new HashSet<MemoTableEntry>(blacklist));
 				if( LOG.isTraceEnabled() ) {

@@ -718,8 +718,7 @@ public class SpoofCompiler
 			//remove invalid row templates (e.g., unsatisfied blocksize constraint)
 			if( tpl instanceof CNodeRow ) {
 				//check for invalid row cplan over column vector
-				if(in1.getNumCols() == 1 || (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
-					&& tpl.getOutput().getDataType().isScalar()) ) {
+				if( ((CNodeRow)tpl).getRowType()==RowType.NO_AGG && tpl.getOutput().getDataType().isScalar() ) {
 					cplans2.remove(e.getKey());
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed invalid row cplan w/o agg on column vector.");

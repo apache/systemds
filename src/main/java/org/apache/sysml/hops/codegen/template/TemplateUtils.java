@@ -235,7 +235,8 @@ public class TemplateUtils
 	}
 	
 	public static boolean isLookup(CNode node, boolean includeRC1) {
-		return isUnary(node, UnaryType.LOOKUP_R, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC)
+		return isUnary(node, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC)
+			|| (includeRC1 && isUnary(node, UnaryType.LOOKUP_R))
 			|| (includeRC1 && isTernary(node, TernaryType.LOOKUP_RC1));
 	}
 	

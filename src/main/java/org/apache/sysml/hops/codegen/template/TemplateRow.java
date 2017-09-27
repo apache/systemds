@@ -78,7 +78,7 @@ public class TemplateRow extends TemplateBase
 		return (hop instanceof BinaryOp && hop.dimsKnown() && isValidBinaryOperation(hop)
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix()
-				&& HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)))
+				&& hop.dimsKnown() && TemplateUtils.isColVector(hop.getInput().get(1)))
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && LibMatrixMult.isSkinnyRightHandSide(
@@ -101,9 +101,9 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop) ) 
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().indexOf(input)==0
-				&& HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)))
+				&& hop.dimsKnown() && TemplateUtils.isColVector(hop.getInput().get(1)))
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
-					&& TemplateCell.isValidOperation(hop))
+				&& TemplateCell.isValidOperation(hop))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection() == Direction.RowCol 
@@ -121,7 +121,9 @@ public class TemplateRow extends TemplateBase
 		//merge rowagg tpl with cell tpl if input is a vector
 		return !isClosed() &&
 			((hop instanceof BinaryOp && isValidBinaryOperation(hop)
-				&& hop.getDim1() > 1 && input.getDim1()>1) 
+				&& hop.getDim1() > 1 && input.getDim1()>1)
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix()
+				&& hop.dimsKnown() && TemplateUtils.isColVector(hop.getInput().get(1)))
 			 ||(hop instanceof AggBinaryOp
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 			 	&& (input.getDim2()==1 || (input==hop.getInput().get(1) 
@@ -184,6 +186,7 @@ public class TemplateRow extends TemplateBase
 		Hop[] sinHops = inHops.stream()
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
 			.sorted(new HopInputComparator(inHops2.get("X"),inHops2.get("B1"))).toArray(Hop[]::new);
+		inHops2.putIfAbsent("X", sinHops[0]); //robustness special cases
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -326,10 +329,19 @@ public class TemplateRow extends TemplateBase
 		{
 			//special case for cbind with zeros
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			CNode cdata2 = TemplateUtils.createCNodeData(
-				HopRewriteUtils.getDataGenOpConstantValue(hop.getInput().get(1)), true);
+			CNode cdata2 = null;
+			if( HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)) ) {
+				cdata2 = TemplateUtils.createCNodeData(HopRewriteUtils
+					.getDataGenOpConstantValue(hop.getInput().get(1)), true);
+				inHops.remove(hop.getInput().get(1)); //rm 0-matrix
+			}
+			else {
+				cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
+			}
 			out = new CNodeBinary(cdata1, cdata2, BinType.VECT_CBIND);
-			inHops.remove(hop.getInput().get(1)); //rm 0-matrix
+			if( cdata1 instanceof CNodeData )
+				inHops2.put("X", hop.getInput().get(0));
 		}
 		else if(hop instanceof BinaryOp)
 		{

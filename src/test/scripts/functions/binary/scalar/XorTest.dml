@@ -38,9 +38,9 @@ write(Left1, "$$outdir$$left_1", format="text");
 
 Left2 = Helper;
 i = 0;
-while( xor(i == 0, trueVar == TRUE) ) # xor(1, 0) = 1
+while( xor(i == 0, trueVar == TRUE) )  # xor(1, 0) = 1
 {
-  left2 = 2 * Left2;
+  Left2 = 2 * Left2;
   i = 1;
 }
 write(Left2, "$$outdir$$left_2", format="text");
@@ -48,9 +48,9 @@ write(Left2, "$$outdir$$left_2", format="text");
 Left3 = Helper;
 i = 0;
 j = 0;
-while( xor(i == 1, j == 0) ) # xor(0, 1) = 1
+while( xor(i == 1, j == 0) )           # xor(0, 1) = 1
 {
-  left3 = 2 * left3;
+  Left3 = 2 * Left3;
   j = 1;
 }
 write(Left3, "$$outdir$$left_3", format="text");
@@ -66,7 +66,7 @@ write(Left4, "$$outdir$$left_4", format="text");
 Right1 = Helper;
 i = 0;
 j = 0;
-while( xor(j == 0, i == 0) )          # xor(1, 1) = 0 
+while( xor(j == 0, i == 0) )           # xor(1, 1) = 0 
 {
   Right1 = 2 * Right1;
   i = 1;
@@ -77,7 +77,7 @@ write(Right1, "$$outdir$$right_1", format="text");
 Right2 = Helper;
 i = 0;
 j = 0;
-while( xor(j == 0, i == 1) )          # xor(1, 0) = 1
+while( xor(j == 0, i == 1) )           # xor(1, 0) = 1
 {
   Right2 = 2 * Right2;
   j = 1;
@@ -86,7 +86,7 @@ write(Right2, "$$outdir$$right_2", format="text");
 
 Right3 = Helper;
 i = 0;
-while( xor(trueVar == TRUE, i == 0) ) # xor(0, 1) = 1
+while( xor(trueVar == TRUE, i == 0) )  # xor(0, 1) = 1
 {
   Right3 = 2 * Right3;
   i = 1;

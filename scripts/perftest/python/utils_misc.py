@@ -54,30 +54,28 @@ def split_config_args(args):
     perftest_args_dict['filename'] = args['filename']
     perftest_args_dict['mode'] = args['mode']
     perftest_args_dict['temp_dir'] = args['temp_dir']
+    perftest_args_dict['file_system_type'] = args['file_system_type']
 
     systemml_args_dict = {}
 
-    if 'stats' in args.keys():
-        if args['stats'] is not None:
-            systemml_args_dict['-stats'] = args['stats']
-        else:
-            systemml_args_dict['-stats'] = ''
+    if args['stats'] is not None:
+        systemml_args_dict['-stats'] = args['stats']
+    else:
+        systemml_args_dict['-stats'] = ''
 
-    if 'explain' in args.keys():
-        if args['explain'] is not None:
-            systemml_args_dict['-explain'] = args['explain']
-        else:
-            systemml_args_dict['-explain'] = ''
+    if args['explain'] is not None:
+        systemml_args_dict['-explain'] = args['explain']
+    else:
+        systemml_args_dict['-explain'] = ''
 
-    if 'config' in args.keys():
-        if args['config'] is not None:
-            systemml_args_dict['-config'] = args['config']
+    if args['config'] is not None:
+        systemml_args_dict['-config'] = args['config']
 
-    if 'gpu' in args.keys():
-        if args['gpu'] is not None:
-            systemml_args_dict['-gpu'] = args['gpu']
-        else:
+    if args['gpu'] is not None:
+        if args['gpu'] == 'no_option':
             systemml_args_dict['-gpu'] = ''
+        else:
+            systemml_args_dict['-gpu'] = args['gpu']
 
     backend_args_dict = {}
     exec_type = args['exec_type']
@@ -373,8 +371,9 @@ def mat_type_check(current_family, matrix_types, dense_algos):
     return current_type
 
 
-def get_default_dir(temp_dir, exec_mode, config_dir):
+def get_default_dir(file_system_type, temp_dir, exec_mode, config_dir):
     """
+    file_system_type: String
     temp_dir: String
     exec_mode: String
     config_dir: String
@@ -390,17 +389,23 @@ def get_default_dir(temp_dir, exec_mode, config_dir):
             return temp_dir
 
     if exec_mode == 'hybrid_spark':
-        cmd = ['hdfs', 'getconf', '-confKey', 'fs.default.name']
-        hdfs_base = subprocess_exec(' '.join(cmd), extract='hdfs_base')
+        if file_system_type == 'hdfs':
+            cmd = ['hdfs', 'getconf', '-confKey', 'fs.default.name']
+            hdfs_base = subprocess_exec(' '.join(cmd), extract='hdfs_base')
 
-        if temp_dir is None:
-            hdfs_home = join(hdfs_base, 'user', getpass.getuser())
-            check_hdfs_path(hdfs_home)
-            return hdfs_home
-
-        if temp_dir is not None:
-            if temp_dir.startswith('hdfs'):
-                return temp_dir
-            else:
-                hdfs_home = join(hdfs_base, 'user', getpass.getuser(), temp_dir)
+            if temp_dir is None:
+                hdfs_home = join(hdfs_base, 'user', getpass.getuser())
+                check_hdfs_path(hdfs_home)
                 return hdfs_home
+
+            if temp_dir is not None:
+                if temp_dir.startswith('hdfs'):
+                    return temp_dir
+                else:
+                    hdfs_home = join(hdfs_base, 'user', getpass.getuser(), temp_dir)
+                    return hdfs_home
+        else:
+            if temp_dir is None:
+                return config_dir
+            if temp_dir is not None:
+                return temp_dir

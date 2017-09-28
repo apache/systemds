@@ -25,7 +25,7 @@ from os.path import join
 from utils_misc import split_rowcol, config_writer, mat_type_check
 
 # This file contains configuration settings for data generation
-DATA_FORMAT = 'csv'
+DATA_FORMAT = 'binary'
 
 MATRIX_TYPE_DICT = {'dense': '0.9',
                     'sparse': '0.01'}

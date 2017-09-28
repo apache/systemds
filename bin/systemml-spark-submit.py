@@ -92,17 +92,27 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
         ml_options.append(stats)
     if gpu is not None:
         ml_options.append('-gpu')
-        ml_options.append(gpu)
+        if gpu is not 'no_option':
+            ml_options.append(gpu)
 
     if len(ml_options) < 1:
         ml_options = ''
 
     # stats, explain, target_jars
     cmd_spark = [spark_path, '--class', 'org.apache.sysml.api.DMLScript',
-                 '--master', master, '--driver-memory', driver_memory,
-                 '--num-executors', num_executors, '--executor-memory', executor_memory,
-                 '--executor-cores', executor_cores, '--conf', default_conf,
+                 '--master', master,
+                 '--driver-memory', driver_memory,
+                 '--conf', default_conf,
                  '--jars', cuda_jars, systemml_jars]
+
+    if num_executors is not None:
+        cmd_spark = cmd_spark + ['--num-executors', num_executors]
+
+    if executor_memory is not None:
+        cmd_spark = cmd_spark + ['--executor-memory', executor_memory]
+
+    if executor_cores is not None:
+        cmd_spark = cmd_spark + ['--executor-cores', executor_cores]
 
     cmd_system_ml = ['-config', default_config,
                      '-exec', 'hybrid_spark', '-f', script_file, ' '.join(ml_options)]
@@ -110,7 +120,7 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
     cmd = cmd_spark + cmd_system_ml
 
     # Debug
-    # print(' '.join(cmd))
+    print(' '.join(cmd))
     return_code = os.system(' '.join(cmd))
     return return_code
 
@@ -120,10 +130,10 @@ if __name__ == '__main__':
                                       description='System-ML Spark Submit Script')
     # SPARK-SUBMIT Options
     cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
-    cparser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.g. 512M)', metavar='')
-    cparser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='')
-    cparser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='')
-    cparser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='')
+    cparser.add_argument('--driver-memory', default='8G', help='Memory for driver (e.g. 512M, 1G)', metavar='')
+    cparser.add_argument('--num-executors', nargs=1, help='Number of executors to launch', metavar='')
+    cparser.add_argument('--executor-memory', nargs=1, help='Memory per executor', metavar='')
+    cparser.add_argument('--executor-cores', nargs=1, help='Number of executor cores', metavar='')
     cparser.add_argument('--conf', help='Spark configuration file', nargs='+', metavar='')
 
     # SYSTEM-ML Options
@@ -138,7 +148,7 @@ if __name__ == '__main__':
                                    metavar='')
     cparser.add_argument('-gpu', help='uses CUDA instructions when reasonable, '
                                       'set <force> option to skip conservative memory estimates '
-                                      'and use GPU wherever possible', nargs='?')
+                                      'and use GPU wherever possible', nargs='?', const='no_option')
     cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; '
                                                    'path can be local/hdfs/gpfs', metavar='')
 

@@ -27,7 +27,7 @@ from functools import reduce
 from utils_fs import relevant_folders
 
 # Contains configuration setting for training
-DATA_FORMAT = 'csv'
+DATA_FORMAT = 'binary'
 
 
 def binomial_m_svm_train(save_folder_name, datagen_dir, train_dir, config_dir):

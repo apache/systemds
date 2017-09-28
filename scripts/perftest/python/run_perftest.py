@@ -378,6 +378,12 @@ if __name__ == '__main__':
     perftest_args_dict, systemml_args_dict, backend_args_dict = split_config_args(all_arg_dict)
 
     # temp_dir hdfs / local path check
+    if args.file_system_type is None:
+        if args.exec_type == 'hybrid_spark':
+            args.file_system_type = 'hdfs'
+        else:
+            args.file_system_type = 'local'
+            
     perftest_args_dict['temp_dir'] = get_default_dir(args.file_system_type, args.temp_dir, args.exec_type, default_config_dir)
 
     # default_mat_type validity

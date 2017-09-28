@@ -116,10 +116,6 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
-			k = 1; //serial execution
-		}
-		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatrices(inputs);
@@ -130,6 +126,12 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//sparse safe check
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
+		
+		long inputSize = sparseSafe ? 
+			getTotalInputNnz(inputs) : getTotalInputSize(inputs);
+		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
+			k = 1; //serial execution
+		}
 		
 		double ret = 0;
 		if( k <= 1 ) //SINGLE-THREADED
@@ -199,10 +201,6 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		if( inputs==null || inputs.size() < 1 || out==null )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
-			k = 1; //serial execution
-		}
-		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatrices(inputs);
@@ -213,6 +211,12 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//sparse safe check 
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
+		
+		long inputSize = sparseSafe ? 
+			getTotalInputNnz(inputs) : getTotalInputSize(inputs);
+		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
+			k = 1; //serial execution
+		}
 		
 		//result allocation and preparations
 		boolean sparseOut = _type == CellType.NO_AGG

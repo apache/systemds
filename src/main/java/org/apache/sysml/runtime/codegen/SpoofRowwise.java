@@ -170,7 +170,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	{
 		//redirect to serial execution
 		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.checkParColumnAgg(inputs.get(0), k, false))
-			|| getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
+			|| getTotalInputSize(inputs) < PAR_NUMCELL_THRESHOLD ) {
 			return execute(inputs, scalarObjects, out);
 		}
 		

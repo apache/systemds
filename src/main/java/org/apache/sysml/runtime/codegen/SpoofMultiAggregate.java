@@ -85,7 +85,9 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
 		
-		if( getTotalInputNnz(inputs) < PAR_NUMCELL_THRESHOLD ) {
+		long inputSize = isSparseSafe() ?
+			getTotalInputNnz(inputs) : getTotalInputSize(inputs);
+		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
 	

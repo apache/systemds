@@ -156,6 +156,11 @@ public abstract class SpoofOperator implements Serializable
 		return inputs.stream().mapToLong(in -> in.getNonZeros()).sum();
 	}
 	
+	public static long getTotalInputSize(ArrayList<MatrixBlock> inputs) {
+		return inputs.stream().mapToLong(
+			in -> (long)in.getNumRows() * in.getNumColumns()).sum();
+	}
+	
 	//abstraction for safely accessing sideways matrices without the need 
 	//to allocate empty matrices as dense, see prepInputMatrices
 	

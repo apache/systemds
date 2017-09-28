@@ -50,8 +50,9 @@ for running SystemML from Spark via Scala, Python, or Java.
 * [Standalone](standalone-guide) - Standalone mode allows data scientists to rapidly prototype algorithms on a single
 machine in R-like and Python-like declarative languages.
 * [JMLC](jmlc) - Java Machine Learning Connector.
-* *Experimental* [Caffe2DML API](beginners-guide-caffe2dml) for Deep Learning.
+* *Experimental* Caffe2DML API for Deep Learning ([beginner's guide](beginners-guide-caffe2dml), [reference guide](reference-guide-caffe2dml)) - Converts a Caffe specification to DML.
 * *Experimental* [Keras2DML API](beginners-guide-keras2dml) for Deep Learning.
+
 ## Language Guides
 
 * [Python API Reference](python-reference) - API Reference Guide for Python users.
@@ -79,3 +80,4 @@ command-line interface.
 * [Engine Developer Guide](engine-dev-guide) - Guide for internal SystemML engine development.
 * [Troubleshooting Guide](troubleshooting-guide) - Troubleshoot various issues related to SystemML.
 * [Release Process](release-process) - Description of the SystemML release process.
+* [Using Native BLAS](native-backend) in SystemML.

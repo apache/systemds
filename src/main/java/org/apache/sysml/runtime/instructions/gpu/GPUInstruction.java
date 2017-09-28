@@ -61,7 +61,8 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_ROW_TO_COLUMN_MAJOR =     "r2c";	// time spent in converting data from row major to column major
 	public final static String MISC_TIMER_COLUMN_TO_ROW_MAJOR =     "c2r";	// time spent in converting data from column major to row major
 	public final static String MISC_TIMER_OBJECT_CLONE =            "clone";// time spent in cloning (deep copying) a GPUObject instance
-
+	public final static String MISC_TIMER_CUDA_SYNC =            	"sync"; // time spent in device sync
+	
 	public final static String MISC_TIMER_CUDA_FREE =               "f";		// time spent in calling cudaFree
 	public final static String MISC_TIMER_ALLOCATE =                "a";		// time spent to allocate memory on gpu
 	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT =   "ad";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
@@ -198,7 +199,11 @@ public abstract class GPUInstruction extends Instruction {
 					throws DMLRuntimeException
 	{
 		if(DMLScript.SYNCHRONIZE_GPU) {
+			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			if(GPUStatistics.DISPLAY_STATISTICS) {
+				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
+			}
 		}
 		if(LOG.isDebugEnabled()) {
 			for(GPUContext gpuCtx : ec.getGPUContexts()) {

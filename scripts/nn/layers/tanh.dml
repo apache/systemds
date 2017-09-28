@@ -29,10 +29,9 @@ forward = function(matrix[double] X)
   /*
    * Computes the forward pass for a tanh nonlinearity layer.
    *
-   *   ```
-   *   tanh(x) = (e^x - e^-x) / (e^x + e^-x)
-   *           = 2 * sigmoid(2x) - 1
-   *   ```
+   * ```
+   * tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+   * ```
    *
    * Inputs:
    *  - X: Inputs, of shape (any, any).
@@ -40,10 +39,7 @@ forward = function(matrix[double] X)
    * Outputs:
    *  - out: Outputs, of same shape as `X`.
    */
-  # out = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
-  # Simplification of the above formulation to use the sigmoid function:
-  sigma2X = sigmoid::forward(2*X)
-  out = 2*sigma2X - 1
+  out = tanh(X)
 }
 
 backward = function(matrix[double] dout, matrix[double] X)
@@ -58,8 +54,7 @@ backward = function(matrix[double] dout, matrix[double] X)
    * Outputs:
    *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
-  sigma2X = sigmoid::forward(2*X)
-  out = 2*sigma2X - 1
+  out = tanh(X)
   dX = (1-out^2) * dout
 }
 

@@ -69,4 +69,3 @@ backward = function(matrix[double] pred, matrix[double] y)
   N = nrow(y)
   dpred = (pred-y) / N
 }
-

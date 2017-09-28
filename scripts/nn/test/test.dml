@@ -39,6 +39,7 @@ source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
+source("nn/layers/sigmoid.dml") as sigmoid
 
 batch_norm1d = function() {
   /*
@@ -816,6 +817,58 @@ tanh = function() {
   out = tanh::forward(X)
   out_ref = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
 
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
+    }
+  }
+}
+
+compare_tanh_builtin_forward_with_old = function() {
+  /*
+   * Test for the `tanh` forward function.
+   */
+  print("Testing the tanh forward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+
+  out = tanh::forward(X)
+  
+  sigma2X = sigmoid::forward(2*X)
+  out_ref = 2*sigma2X - 1
+  
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
+    }
+  }
+}
+
+compare_tanh_builtin_backward_with_old = function() {
+  /*
+   * Test for the `tanh` forward function.
+   */
+  print("Testing the tanh forward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+  dout = rand(rows=N, cols=C, pdf="normal")
+  
+  sigma2X = sigmoid::forward(2*X)
+  out = 2*sigma2X - 1
+  out_ref = (1-out^2) * dout
+  
+  out = tanh::backward(dout, X)
+  
   # Equivalency check
   for (i in 1:nrow(out)) {
     for (j in 1:ncol(out)) {

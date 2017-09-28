@@ -48,8 +48,8 @@ V1 = 0 + 290*rand(rows=R, cols=1, pdf="normal");
 V2 = 0 + 300*rand(rows=R, cols=1, pdf="normal");
 V3 = -0.3*V1 + 0.925*V2 + rand(rows=R, cols=1, pdf="normal");
 
-C1 = ceiling(C/2.5);
-C2 = ceiling(C/2.5);
+C1 = ceil(C/2.5);
+C2 = ceil(C/2.5);
 C3 = C - C1 - C2;
 
 M = matrix(0, rows=R, cols=C)

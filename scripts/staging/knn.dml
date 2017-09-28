@@ -107,7 +107,7 @@ n_features = ncol( Train );
 s_selected_k = 5;
 m_selected_feature = matrix(1,rows=1,cols=n_records);
 if( select_k == 1 | select_feature==1 ){
-    default_interval = as.integer( ceiling( sqrt( n_records ) ) );
+    default_interval = as.integer( ceil( sqrt( n_records ) ) );
     interval = ifdef( $interval,default_interval );
     print( "interval is " + interval );
     #parameter check

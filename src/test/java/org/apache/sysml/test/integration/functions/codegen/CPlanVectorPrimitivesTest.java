@@ -143,12 +143,12 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	
 	@Test
 	public void testVectorCeilDense() {
-		testVectorUnaryPrimitive(UnaryType.VECT_CEILING, InputType.VECTOR_DENSE);
+		testVectorUnaryPrimitive(UnaryType.VECT_CEIL, InputType.VECTOR_DENSE);
 	}
 	
 	@Test
 	public void testVectorCeilSparse() {
-		testVectorUnaryPrimitive(UnaryType.VECT_CEILING, InputType.VECTOR_SPARSE);
+		testVectorUnaryPrimitive(UnaryType.VECT_CEIL, InputType.VECTOR_SPARSE);
 	}
 	
 	@Test

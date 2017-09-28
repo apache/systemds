@@ -19,19 +19,7 @@
 #
 #-------------------------------------------------------------
 
+V = read($1);
+R = ceiling(V);
+write(R, $2);
 
-X = read($1);
-N = 200;
-
-if( sum(X)<0 ) #cause unknown sparsity
-   X = matrix(1, rows=100000000, cols=ncol(X));
-
-R = matrix(0, rows=ceil(ncol(X)/N), cols=1); 
-
-parfor( bi in 1:ceil(ncol(X)/N), opt=CONSTRAINED, datapartitioner=$2, mode=$3, log=DEBUG) {
-   Xbi = X[,((bi-1)*N+1):min(bi*N,ncol(X))];   
-   print(sum(Xbi));
-   R[bi,1] = sum(Xbi); 
-}   
-
-write(R, $4);       

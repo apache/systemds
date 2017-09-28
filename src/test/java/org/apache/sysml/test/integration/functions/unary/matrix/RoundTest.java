@@ -34,7 +34,8 @@ public class RoundTest extends AutomatedTestBase
 	private enum TEST_TYPE { 
 		ROUND ("RoundTest"), 
 		FLOOR ("Floor"),
-		CEIL ("Ceil");
+		CEIL ("Ceil"),
+		CEILING ("Ceiling");
 					
 		String scriptName = null;
 		TEST_TYPE(String name) {
@@ -58,6 +59,7 @@ public class RoundTest extends AutomatedTestBase
 		addTestConfiguration(TEST_TYPE.ROUND.scriptName, new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.ROUND.scriptName, new String[] { "R" }));
 		addTestConfiguration(TEST_TYPE.FLOOR.scriptName, new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.FLOOR.scriptName, new String[] { "R" }));
 		addTestConfiguration(TEST_TYPE.CEIL.scriptName,  new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.CEIL.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.CEILING.scriptName,  new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.CEILING.scriptName, new String[] { "R" }));
 	}
 	
 	@Test
@@ -151,6 +153,36 @@ public class RoundTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testCeiling1() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testCeiling2() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testCeiling3() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testCeiling4() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testCeiling5() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testCeiling6() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
+	}
+	
+	@Test
 	public void testRoundMR1() {
 		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
 	}
@@ -238,6 +270,36 @@ public class RoundTest extends AutomatedTestBase
 	@Test
 	public void testCeilMR6() {
 		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testCeilingMR1() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testCeilingMR2() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testCeilingMR3() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testCeilingMR4() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testCeilingMR5() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testCeilingMR6() {
+		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
 	}
 	
 	// -----------------------------------------------------------------------------

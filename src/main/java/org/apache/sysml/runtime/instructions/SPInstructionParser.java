@@ -223,7 +223,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sqrt"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "plogp" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ceiling", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);

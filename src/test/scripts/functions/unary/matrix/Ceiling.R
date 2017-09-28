@@ -20,18 +20,14 @@
 #-------------------------------------------------------------
 
 
-X = read($1);
-N = 200;
+args <- commandArgs(TRUE)
+options(digits=22)
 
-if( sum(X)<0 ) #cause unknown sparsity
-   X = matrix(1, rows=100000000, cols=ncol(X));
+library("Matrix")
 
-R = matrix(0, rows=ceil(ncol(X)/N), cols=1); 
+A <- as.matrix(readMM(paste(args[1], "math.mtx", sep="")))
 
-parfor( bi in 1:ceil(ncol(X)/N), opt=CONSTRAINED, datapartitioner=$2, mode=$3, log=DEBUG) {
-   Xbi = X[,((bi-1)*N+1):min(bi*N,ncol(X))];   
-   print(sum(Xbi));
-   R[bi,1] = sum(Xbi); 
-}   
+R = ceiling(A);
 
-write(R, $4);       
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
+

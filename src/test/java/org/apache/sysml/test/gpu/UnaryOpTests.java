@@ -113,7 +113,7 @@ public class UnaryOpTests extends UnaryOpTestsBase {
 
 	@Test
 	public void testCeil() throws Exception {
-		testSimpleUnaryOpMatrixOutput("ceiling", "gpu_ceil");
+		testSimpleUnaryOpMatrixOutput("ceil", "gpu_ceil");
 	}
 
 	@Test

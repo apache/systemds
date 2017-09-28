@@ -149,7 +149,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "slog" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "pow"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "ceiling", MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "ceil" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "floor", MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "sprop", MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "sigmoid", MRINSTRUCTION_TYPE.Unary);

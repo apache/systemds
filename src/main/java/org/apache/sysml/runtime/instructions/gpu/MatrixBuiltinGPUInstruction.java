@@ -56,7 +56,7 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.round(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "floor":
 				LibMatrixCUDA.floor(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
-			case "ceiling":
+			case "ceil":
 				LibMatrixCUDA.ceil(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "abs":
 				LibMatrixCUDA.abs(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;

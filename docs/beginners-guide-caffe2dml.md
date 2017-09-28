@@ -469,13 +469,13 @@ Output:
 033|ip2_bias_v = sgd_momentum::init(ip2_bias)
 034|num_validation = 10 * BATCH_SIZE
 035|# Sanity check to ensure that validation set is not too large
-036|if(num_validation > ceiling(0.3 * num_images)) {
-037|    max_test_iter = floor(ceiling(0.3 * num_images) / BATCH_SIZE)
+036|if(num_validation > ceil(0.3 * num_images)) {
+037|    max_test_iter = floor(ceil(0.3 * num_images) / BATCH_SIZE)
 038|    stop("Too large validation size. Please reduce test_iter to " + max_test_iter)
 039|}
 040|X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,]; X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,]; num_images = nrow(y)
-041|num_iters_per_epoch = ceiling(num_images / BATCH_SIZE)
-042|max_epochs = ceiling(2000 / num_iters_per_epoch)
+041|num_iters_per_epoch = ceil(num_images / BATCH_SIZE)
+042|max_epochs = ceil(2000 / num_iters_per_epoch)
 043|iter = 0
 044|lr = 0.01
 045|for(e in 1:max_epochs) {

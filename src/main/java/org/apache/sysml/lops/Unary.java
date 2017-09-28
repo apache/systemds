@@ -280,7 +280,7 @@ public class Unary extends Lop
 			return "min";
 		
 		case CEIL:
-			return "ceiling";
+			return "ceil";
 		
 		case FLOOR:
 			return "floor";

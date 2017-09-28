@@ -103,7 +103,7 @@ train = function(matrix[double] X, matrix[double] Y,
   # Optimize
   print("Starting optimization")
   batch_size = 64
-  iters = ceiling(N / batch_size)
+  iters = ceil(N / batch_size)
   for (e in 1:epochs) {
     for(i in 1:iters) {
       # Get next batch
@@ -251,7 +251,7 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
   batch_size = 64
-  iters = ceiling(N / batch_size)
+  iters = ceil(N / batch_size)
   for(i in 1:iters) {
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1

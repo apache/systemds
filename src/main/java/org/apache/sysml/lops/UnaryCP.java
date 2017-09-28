@@ -140,7 +140,7 @@ public class UnaryCP extends Lop
 			return "stop";
 			
 		case CEIL:
-			return "ceiling";
+			return "ceil";
 			
 		case FLOOR:
 			return "floor";

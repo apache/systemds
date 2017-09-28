@@ -145,7 +145,7 @@ feature_map_height = img_height/pooling_height
 feature_map_width = img_width/pooling_width
 ones3 = matrix(1, rows=1, cols=feature_map_height*feature_map_width)
 
-num_iters_per_epoch = ceiling(num_images/BATCH_SIZE)
+num_iters_per_epoch = ceil(num_images/BATCH_SIZE)
 maxiter = maxepochs * num_iters_per_epoch
 obj = 0
 iter = 0

@@ -68,7 +68,7 @@ train = function(matrix[double] X, matrix[double] Y,
   # Optimize
   print("Starting optimization")
   batch_size = 50
-  iters = 1000 #ceiling(N / batch_size)
+  iters = 1000 #ceil(N / batch_size)
   for (e in 1:epochs) {
     for(i in 1:iters) {
       # Get next batch

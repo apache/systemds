@@ -27,7 +27,7 @@ limitations under the License.
 
 <br/>
 
-Caffe2DML is an **experimental API** that converts an Caffe specification to DML. 
+Caffe2DML is an **experimental API** that converts a Caffe specification to DML. 
 It is designed to fit well into the mllearn framework and hence supports NumPy, Pandas as well as PySpark DataFrame.
 
 # Training Lenet 

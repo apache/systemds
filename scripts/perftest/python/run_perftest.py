@@ -283,7 +283,7 @@ if __name__ == '__main__':
     default_mat_shape = ['10k_100']
 
     # Default temp directory, contains everything generated in perftest
-    default_config_dir = join(systemml_home, 'scripts', 'perftest', 'temp')
+    default_config_dir = join(systemml_home, 'temp')
 
     # Initialize time
     start_time = time.time()

@@ -94,7 +94,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution forward
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysml.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image
@@ -145,7 +145,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution backward filter
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysml.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image
@@ -198,7 +198,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution backward data
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysml.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image

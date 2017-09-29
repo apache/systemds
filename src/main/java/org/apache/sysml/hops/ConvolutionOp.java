@@ -29,6 +29,7 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 
@@ -191,7 +192,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 //		// TODO: Inserting reblock requires knowing columns apriori
 //		ConvolutionTransform transform1 = new ConvolutionTransform(addReblockIfNecessary(et, lopOp, in), lopOp, getDataType(), getValueType(), et, k);
 //		setReblockedOutputDimension(et, transform1);
-		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k, computeIntermediateMemEstimate(-1, -1, -1 ));
+		double cpIntermediateMemEstimate = computeIntermediateMemEstimate(-1, -1, -1 );
+		if(et == ExecType.GPU && _dim1 > 0 && _dim2 > 0) {
+			// This enables us to compile more efficient matrix-matrix CuDNN operation instead of 
+			// row-by-row invocation of multiple vector-matrix CuDNN operations.
+			// This is possible as the operations on GPU are single-threaded
+			double optimisticIntermediateMemEstimate = GPUContextPool.initialGPUMemBudget() - getOutputMemEstimate() - inputs.get(0).getOutputMemEstimate();
+			if(in2 != null) {
+				optimisticIntermediateMemEstimate -= inputs.get(1).getOutputMemEstimate();
+			}
+			cpIntermediateMemEstimate = Math.max(cpIntermediateMemEstimate, optimisticIntermediateMemEstimate);
+		}
+		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k, cpIntermediateMemEstimate);
 		setOutputDimensions(transform1);
 		
 		setLineNumbers(transform1);

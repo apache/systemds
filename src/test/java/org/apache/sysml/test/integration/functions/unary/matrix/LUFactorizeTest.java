@@ -20,7 +20,7 @@
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -28,7 +28,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class LUFactorizeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "lu";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + LUFactorizeTest.class.getSimpleName() + "/";
@@ -38,61 +37,48 @@ public class LUFactorizeTest extends AutomatedTestBase
 	private final static double sparsity = 0.9;
 	
 	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, 
-				new String[] { "D" })   ); 
+	public void setUp() {
+		addTestConfiguration( TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "D" })   ); 
 	}
 	
 	@Test
-	public void testLUFactorizeDenseCP() 
-	{
+	public void testLUFactorizeDenseCP() {
 		runTestLUFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLUFactorizeDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestLUFactorize( rows1, RUNTIME_PLATFORM.SPARK );
+	public void testLUFactorizeDenseSP() {
+		runTestLUFactorize( rows1, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testLUFactorizeDenseMR() 
-	{
+	public void testLUFactorizeDenseMR() {
 		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLUFactorizeDenseHybrid() 
-	{
+	public void testLUFactorizeDenseHybrid() {
 		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseCP() 
-	{
+	public void testLargeLUFactorizeDenseCP() {
 		runTestLUFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestLUFactorize( rows2, RUNTIME_PLATFORM.SPARK );
+	public void testLargeLUFactorizeDenseSP() {
+		runTestLUFactorize( rows2, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseMR() 
-	{
+	public void testLargeLUFactorizeDenseMR() {
 		runTestLUFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseHybrid() 
-	{
+	public void testLargeLUFactorizeDenseHybrid() {
 		runTestLUFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
 	}
 	
@@ -100,6 +86,10 @@ public class LUFactorizeTest extends AutomatedTestBase
 	{		
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -122,8 +112,8 @@ public class LUFactorizeTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, -1);
 			compareResults(1e-8);
 		}
-		finally
-		{
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = rtold;
 		}
 	}

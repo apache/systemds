@@ -20,7 +20,7 @@
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -81,27 +81,22 @@ public class QRSolverTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testQRSolveCP() 
-	{
+	public void testQRSolveCP() {
 		runTestQRSolve( RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testQRSolveSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestQRSolve( RUNTIME_PLATFORM.SPARK );
+	public void testQRSolveSP() {
+		runTestQRSolve( RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testQRSolveMR() 
-	{
+	public void testQRSolveMR() {
 		runTestQRSolve( RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testQRSolveHybrid() 
-	{
+	public void testQRSolveHybrid() {
 		runTestQRSolve( RUNTIME_PLATFORM.HYBRID );
 	}
 	
@@ -110,12 +105,20 @@ public class QRSolverTest extends AutomatedTestBase
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
 		
-		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
-		runRScript(true);
-	
-		compareResultsWithR(1e-5);
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
-		rtplatform = rtold;
+		try {
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1);
+			runRScript(true);
+		
+			compareResultsWithR(1e-5);			
+		}
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			rtplatform = rtold;
+		}
 	}	
 }

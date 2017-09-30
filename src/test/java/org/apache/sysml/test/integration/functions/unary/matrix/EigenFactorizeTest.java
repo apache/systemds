@@ -20,7 +20,7 @@
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -28,7 +28,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class EigenFactorizeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "eigen";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + EigenFactorizeTest.class.getSimpleName() + "/";
@@ -39,61 +38,48 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	private final static int numEigenValuesToEvaluate = 15;
 	
 	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, 
-				new String[] { "D" })   ); 
+	public void setUp() {
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "D" })   );
 	}
 	
 	@Test
-	public void testEigenFactorizeDenseCP() 
-	{
+	public void testEigenFactorizeDenseCP() {
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testEigenFactorizeDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	public void testEigenFactorizeDenseSP() {
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testEigenFactorizeDenseMR() 
-	{
+	public void testEigenFactorizeDenseMR() {
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testEigenFactorizeDenseHybrid() 
-	{
+	public void testEigenFactorizeDenseHybrid() {
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	@Test
-	public void testLargeEigenFactorizeDenseCP() 
-	{
+	public void testLargeEigenFactorizeDenseCP() {
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLargeEigenFactorizeDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	public void testLargeEigenFactorizeDenseSP() {
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testLargeEigenFactorizeDenseMR() 
-	{
+	public void testLargeEigenFactorizeDenseMR() {
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLargeEigenFactorizeDenseHybrid() 
-	{
+	public void testLargeEigenFactorizeDenseHybrid() {
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
 	}
 	
@@ -101,6 +87,10 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	{		
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -126,8 +116,8 @@ public class EigenFactorizeTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, -1);
 			compareResults(1e-8);
 		}
-		finally
-		{
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = rtold;
 		}
 	}

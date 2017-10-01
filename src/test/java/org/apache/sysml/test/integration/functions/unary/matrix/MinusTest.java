@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -58,64 +58,55 @@ public class MinusTest extends AutomatedTestBase
 	}
 
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 	
 	@Test
-	public void testMinusDenseCP() 
-	{
+	public void testMinusDenseCP() {
 		runTestMinus( false, ExecType.CP );
 	}
 	
 	@Test
-	public void testMinusSparseCP() 
-	{
+	public void testMinusSparseCP() {
 		runTestMinus( true, ExecType.CP );
 	}
 	
 	@Test
-	public void testMinusDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	public void testMinusDenseSP() {
 		runTestMinus( false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testMinusSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	public void testMinusSparseSP() {
 		runTestMinus( true, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testMinusDenseMR() 
-	{
+	public void testMinusDenseMR() {
 		runTestMinus( false, ExecType.MR );
 	}
 	
 	@Test
-	public void testMinusSparseMR() 
-	{
+	public void testMinusSparseMR() {
 		runTestMinus( true, ExecType.MR );
 	}
-		
 	
 	private void runTestMinus( boolean sparse, ExecType et )
 	{		
 		//handle rows and cols
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(et == ExecType.SPARK) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( et == ExecType.SPARK ) {
 	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	    }
 		else {
 	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
@@ -129,8 +120,7 @@ public class MinusTest extends AutomatedTestBase
 			config.addVariable("cols", cols);
 			
 			String TEST_CACHE_DIR = "";
-			if (TEST_CACHE_ENABLED)
-			{
+			if (TEST_CACHE_ENABLED) {
 				TEST_CACHE_DIR = sparse + "/";
 			}
 			
@@ -157,8 +147,9 @@ public class MinusTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Y");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-12, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			
 			//reset platform for additional tests
 			rtplatform = platformOld;
 		}

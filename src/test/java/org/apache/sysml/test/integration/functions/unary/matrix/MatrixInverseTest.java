@@ -20,7 +20,7 @@
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -61,42 +61,44 @@ public class MatrixInverseTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testInverseCP() 
-	{
+	public void testInverseCP() {
 		runTestMatrixInverse( RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testInverseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runTestMatrixInverse( RUNTIME_PLATFORM.SPARK );
+	public void testInverseSP() {
+		runTestMatrixInverse( RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test
-	public void testInverseMR() 
-	{
+	public void testInverseMR() {
 		runTestMatrixInverse( RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testInverseHybrid() 
-	{
+	public void testInverseHybrid() {
 		runTestMatrixInverse( RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	private void runTestMatrixInverse( RUNTIME_PLATFORM rt )
-	{		
-
+	{
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
 		
-		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
-		runRScript(true);
-	
-		compareResultsWithR(1e-5);
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
-		rtplatform = rtold;
+		try {
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1);
+			runRScript(true);
+	
+			compareResultsWithR(1e-5);
+		}
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			rtplatform = rtold;
+		}
 	}
 }

@@ -62,6 +62,9 @@
    
    <!-- set the codegen java compiler (auto, janino, javac) -->
    <sysml.codegen.compiler>auto</sysml.codegen.compiler>
+
+   <!-- set the codegen optimizer (fuse_all, fuse_no_redundancy, fuse_cost_based_v2) -->
+   <sysml.codegen.compiler>fuse_cost_based_v2</sysml.codegen.compiler>
    
    <!-- if codegen.enabled, enables source code caching of fused operators -->
    <sysml.codegen.plancache>true</sysml.codegen.plancache>

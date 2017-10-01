@@ -297,6 +297,7 @@ public class DMLTranslator
 			SpoofCompiler.PLAN_CACHE_POLICY = PlanCachePolicy.get(
 				dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE),
 				dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
+			SpoofCompiler.setConfiguredPlanSelector();
 			SpoofCompiler.setExecTypeSpecificJavaCompiler();
 			if( SpoofCompiler.INTEGRATION==IntegrationType.HOPS )
 				codgenHopsDAG(dmlp);

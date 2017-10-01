@@ -108,13 +108,13 @@ public class SpoofCompiler
 	//internal configuration flags
 	public static boolean LDEBUG                      = false;
 	public static CompilerType JAVA_COMPILER          = CompilerType.JANINO; 
+	public static PlanSelector PLAN_SEL_POLICY        = PlanSelector.FUSE_COST_BASED_V2; 
 	public static IntegrationType INTEGRATION         = IntegrationType.RUNTIME;
 	public static final boolean RECOMPILE_CODEGEN     = true;
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED_V2; 
-
+	
 	public enum CompilerType {
 		AUTO,
 		JAVAC,
@@ -484,6 +484,13 @@ public class SpoofCompiler
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);
 		}
+	}
+	
+	public static void setConfiguredPlanSelector() {
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		String optimizer = conf.getTextValue(DMLConfig.CODEGEN_OPTIMIZER);
+		PlanSelector type = PlanSelector.valueOf(optimizer.toUpperCase());
+		PLAN_SEL_POLICY = type;
 	}
 	
 	public static void setExecTypeSpecificJavaCompiler() {

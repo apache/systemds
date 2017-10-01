@@ -41,6 +41,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
+import org.apache.sysml.hops.codegen.SpoofCompiler.PlanSelector;
 import org.apache.sysml.lops.Compression;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -77,6 +78,7 @@ public class DMLConfig
 	public static final String NATIVE_BLAS          = "sysml.native.blas";
 	public static final String CODEGEN              = "sysml.codegen.enabled"; //boolean
 	public static final String CODEGEN_COMPILER     = "sysml.codegen.compiler"; //see SpoofCompiler.CompilerType
+	public static final String CODEGEN_OPTIMIZER    = "sysml.codegen.optimizer"; //see SpoofCompiler.PlanSelector
 	public static final String CODEGEN_PLANCACHE    = "sysml.codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "sysml.codegen.literals"; //1..heuristic, 2..always
 	
@@ -125,6 +127,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
+		_defaultVals.put(CODEGEN_COMPILER,       PlanSelector.FUSE_COST_BASED_V2.name() );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
@@ -416,7 +419,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
 				COMPRESSED_LINALG, 
-				CODEGEN, CODEGEN_COMPILER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
+				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE
 		}; 

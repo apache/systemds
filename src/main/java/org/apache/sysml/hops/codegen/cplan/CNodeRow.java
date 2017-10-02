@@ -158,7 +158,8 @@ public class CNodeRow extends CNodeTpl
 			case COL_AGG:      return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
 			case COL_AGG_T:    return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
 			case COL_AGG_B1:   return SpoofOutputDimsType.COLUMN_RANK_DIMS; 
-			case COL_AGG_B1_T: return SpoofOutputDimsType.COLUMN_RANK_DIMS_T; 
+			case COL_AGG_B1_T: return SpoofOutputDimsType.COLUMN_RANK_DIMS_T;
+			case COL_AGG_B1R:  return SpoofOutputDimsType.RANK_DIMS_COLS;
 			default:
 				throw new RuntimeException("Unsupported row type: "+_type.toString());
 		}

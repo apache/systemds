@@ -47,22 +47,25 @@ public abstract class SpoofRowwise extends SpoofOperator
 	private static final long serialVersionUID = 6242910797139642998L;
 	
 	public enum RowType {
-		NO_AGG,    //no aggregation
-		NO_AGG_B1, //no aggregation w/ matrix mult B1
+		NO_AGG,       //no aggregation
+		NO_AGG_B1,    //no aggregation w/ matrix mult B1
 		NO_AGG_CONST, //no aggregation w/ expansion/contraction
-		FULL_AGG,  //full row/col aggregation
-		ROW_AGG,   //row aggregation (e.g., rowSums() or X %*% v)
-		COL_AGG,   //col aggregation (e.g., colSums() or t(y) %*% X)
-		COL_AGG_T, //transposed col aggregation (e.g., t(X) %*% y)
+		FULL_AGG,     //full row/col aggregation
+		ROW_AGG,      //row aggregation (e.g., rowSums() or X %*% v)
+		COL_AGG,      //col aggregation (e.g., colSums() or t(y) %*% X)
+		COL_AGG_T,    //transposed col aggregation (e.g., t(X) %*% y)
 		COL_AGG_B1,   //col aggregation w/ matrix mult B1
-		COL_AGG_B1_T; //transposed col aggregation w/ matrix mult B1
+		COL_AGG_B1_T, //transposed col aggregation w/ matrix mult B1
+		COL_AGG_B1R;  //col aggregation w/ matrix mult B1 to row vector
 		
 		public boolean isColumnAgg() {
-			return (this == COL_AGG || this == COL_AGG_T)
-				|| (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
+			return this == COL_AGG || this == COL_AGG_T
+				|| this == COL_AGG_B1 || this == COL_AGG_B1_T
+				|| this == COL_AGG_B1R;
 		}
 		public boolean isRowTypeB1() {
-			return (this == NO_AGG_B1) || (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
+			return this == NO_AGG_B1 || this == COL_AGG_B1 
+				|| this == COL_AGG_B1_T || this == COL_AGG_B1R;
 		}
 		public boolean isRowTypeB1ColumnAgg() {
 			return (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
@@ -268,7 +271,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			case COL_AGG_T:    out.reset(n, 1, false); break;
 			case COL_AGG_B1:   out.reset(n2, n, false); break;
 			case COL_AGG_B1_T: out.reset(n, n2, false); break;
-			
+			case COL_AGG_B1R:  out.reset(1, n2, false); break;
 		}
 		out.allocateDenseBlock();
 	}

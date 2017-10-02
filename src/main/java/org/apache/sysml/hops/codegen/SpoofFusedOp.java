@@ -42,6 +42,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		ROW_DIMS,
 		COLUMN_DIMS_ROWS,
 		COLUMN_DIMS_COLS,
+		RANK_DIMS_COLS,
 		SCALAR,
 		MULTI_SCALAR,
 		ROW_RANK_DIMS, // right wdivmm, row mm
@@ -163,6 +164,12 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				case COLUMN_DIMS_COLS:
 					ret = new long[]{1, mc.getCols(), -1};
 					break;
+				case RANK_DIMS_COLS: {
+					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
+					if( mc2.dimsKnown() )
+						ret = new long[]{1, mc2.getCols(), -1};
+					break;
+				}
 				case INPUT_DIMS:
 					ret = new long[]{mc.getRows(), mc.getCols(), -1};
 					break;
@@ -218,6 +225,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 			case COLUMN_DIMS_COLS:
 				setDim1(1);
 				setDim2(getInput().get(0).getDim2());
+				break;
+			case RANK_DIMS_COLS:
+				setDim1(1);
+				setDim2(getInput().get(1).getDim2());
 				break;
 			case INPUT_DIMS:
 				setDim1(getInput().get(0).getDim1());

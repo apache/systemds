@@ -204,6 +204,8 @@ public class TemplateUtils
 			return RowType.COL_AGG_B1_T;
 		else if( B1 != null && output.getDim1()==B1.getDim2() && output.getDim2()==X.getDim2())
 			return RowType.COL_AGG_B1;
+		else if( B1 != null && output.getDim1()==1 && B1.getDim2() == output.getDim2() )
+			return RowType.COL_AGG_B1R;
 		else if( X.getDim1() == output.getDim1() && X.getDim2() != output.getDim2() )
 			return RowType.NO_AGG_CONST;
 		else

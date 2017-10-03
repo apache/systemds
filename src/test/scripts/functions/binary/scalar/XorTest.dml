@@ -28,7 +28,8 @@ trueVar = TRUE;
 Left1 = Helper;
 i = 0;
 j = 0;
-while( xor(i == 0, j == 0) )           # xor(1, 1) = 0
+# while( xor(i == 0, j == 0) )           # xor(1, 1) = 0
+while (1)
 {
 	Left1 = 2 * Left1;
 	i = 1;

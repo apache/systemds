@@ -19,10 +19,16 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
@@ -54,9 +60,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			boolean inmem, String opcode, String istr) {
 		super(op, in, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.QPick;
-
 		_type = type;
-		// inmem ignored here
 	}
 
 	public static QuantilePickSPInstruction parseInstruction ( String str ) 
@@ -71,27 +75,22 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		}
 		
 		//instruction parsing
-		if( parts.length == 4 )
-		{
+		if( parts.length == 4 ) {
 			//instructions of length 4 originate from unary - mr-iqm
-			//TODO this should be refactored to use pickvaluecount lops
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			OperationTypes ptype = OperationTypes.IQM;
-			boolean inmem = false;
-			return new QuantilePickSPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);			
+			return new QuantilePickSPInstruction(null, in1, in2, out, ptype, false, opcode, str);
 		}
-		else if( parts.length == 5 )
-		{
+		else if( parts.length == 5 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[2]);
 			OperationTypes ptype = OperationTypes.valueOf(parts[3]);
 			boolean inmem = Boolean.parseBoolean(parts[4]);
 			return new QuantilePickSPInstruction(null, in1, out, ptype, inmem, opcode, str);
 		}
-		else if( parts.length == 6 )
-		{
+		else if( parts.length == 6 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
@@ -109,51 +108,37 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-		boolean weighted = (mc.getCols()==2);
-		
 		//get input rdds
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		
 		//NOTE: no difference between inmem/mr pick (see related cp instruction), but wrt w/ w/o weights
 		//(in contrast to cp instructions, w/o weights does not materializes weights of 1)
-		switch( _type ) 
-		{
+		switch( _type ) {
 			case VALUEPICK: {
-				double sum_wt = weighted ? sumWeights(in) : mc.getRows();
-				ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-				long key = (long)Math.ceil(quantile.getDoubleValue()*sum_wt);
-				double val = lookupKey(in, key, mc.getRowsPerBlock());
-				ec.setScalarOutput(output.getName(), new DoubleObject(val));
-				
+				ScalarObject quantile = ec.getScalarInput(input2);
+				double[] wt = getWeightedQuantileSummary(in, mc, quantile.getDoubleValue());
+				ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				break;
 			}
 			
 			case MEDIAN: {
-				double sum_wt = weighted ? sumWeights(in) : mc.getRows();
-				long key = (long)Math.ceil(0.5*sum_wt);
-				double val = lookupKey(in, key, mc.getRowsPerBlock());
-				ec.setScalarOutput(output.getName(), new DoubleObject(val));
-								
+				double[] wt = getWeightedQuantileSummary(in, mc, 0.5);
+				ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				break;
 			}
 			
 			case IQM: {
-				double sum_wt = weighted ? sumWeights(in) : mc.getRows();
-				long key25 = (long)Math.ceil(0.25*sum_wt);
-				long key75 = (long)Math.ceil(0.75*sum_wt);	
-				double val25 = lookupKey(in, key25, mc.getRowsPerBlock());
-				double val75 = lookupKey(in, key75, mc.getRowsPerBlock());
+				double[] wt = getWeightedQuantileSummary(in, mc, 0.25, 0.75);
+				long key25 = (long)Math.ceil(wt[1]);
+				long key75 = (long)Math.ceil(wt[2]);
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
-						.filter(new FilterFunction(key25+1,key75,mc.getRowsPerBlock()))
-						.mapToPair(new ExtractAndSumFunction(key25+1, key75, mc.getRowsPerBlock()));
-				MatrixBlock mb = RDDAggregateUtils.sumStable(out);					
-				double val = (mb.getValue(0, 0) 
-				             + (key25-0.25*sum_wt)*val25
-				             - (key75-0.75*sum_wt)*val75)
-				             / (0.5*sum_wt);
+					.filter(new FilterFunction(key25+1,key75,mc.getRowsPerBlock()))
+					.mapToPair(new ExtractAndSumFunction(key25+1, key75, mc.getRowsPerBlock()));
+				double sum = RDDAggregateUtils.sumStable(out).getValue(0, 0);
+				double val = MatrixBlock.computeIQMCorrection(
+					sum, wt[0], wt[3], wt[5], wt[4], wt[6]);
 				ec.setScalarOutput(output.getName(), new DoubleObject(val));
-				
 				break;
 			}
 		
@@ -161,25 +146,92 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				throw new DMLRuntimeException("Unsupported qpick operation type: "+_type);
 		}
 	}
+	
+	/**
+	 * Get a summary of weighted quantiles in in the following form:
+	 * sum of weights, (keys of quantiles), (portions of quantiles), (values of quantiles)
+	 * 
+	 * @param w rdd containing values and optionally weights, sorted by value
+	 * @param mc matrix characteristics
+	 * @param quantiles one or more quantiles between 0 and 1.
+	 * @return a summary of weighted quantiles
+	 * @throws DMLRuntimeException 
+	 */
+	private double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, Double... quantiles)
+		throws DMLRuntimeException 
+	{
+		double[] ret = new double[3*quantiles.length + 1];
+		if( mc.getCols()==2 ) //weighted 
+		{
+			//sort blocks (values sorted but blocks and partitions are not)
+			w = w.sortByKey();
+			
+			//compute cumsum weights per partition
+			//with assumption that partition aggregates fit into memory
+			List<Tuple2<Integer,Double>> partWeights = w
+				.mapPartitionsWithIndex(new SumWeightsFunction(), false).collect();
+			
+			//compute sum of weights
+			ret[0] = partWeights.stream().mapToDouble(p -> p._2()).sum();
+			
+			//compute total cumsum and determine partitions
+			double[] qdKeys = new double[quantiles.length];
+			long[] qiKeys = new long[quantiles.length];
+			int[] partitionIDs = new int[quantiles.length];
+			double[] offsets = new double[quantiles.length];
+			for( int i=0; i<quantiles.length; i++ ) {
+				qdKeys[i] = quantiles[i]*ret[0];
+				qiKeys[i] = (long)Math.ceil(qdKeys[i]);
+			}
+			double cumSum = 0;
+			for( Tuple2<Integer,Double> psum : partWeights ) {
+				double tmp = cumSum + psum._2();
+				for(int i=0; i<quantiles.length; i++)
+					if( tmp >= qiKeys[i] && partitionIDs[i] == 0 ) {
+						partitionIDs[i] = psum._1();
+						offsets[i] = cumSum;
+					}
+				cumSum = tmp;
+			}
+			
+			//get keys and values for quantile cutoffs 
+			List<Tuple2<Integer,double[]>> qVals = w
+				.mapPartitionsWithIndex(new ExtractWeightedQuantileFunction(
+					mc, qdKeys, qiKeys, partitionIDs, offsets), false).collect();
+			for( Tuple2<Integer,double[]> qVal : qVals ) {
+				ret[qVal._1()+1] = qVal._2()[0];
+				ret[qVal._1()+quantiles.length+1] = qVal._2()[1];
+				ret[qVal._1()+2*quantiles.length+1] = qVal._2()[2];
+			}
+		}
+		else {
+			ret[0] = mc.getRows();
+			for( int i=0; i<quantiles.length; i++ ){
+				ret[i+1] = quantiles[i] * mc.getRows();
+				ret[i+quantiles.length+1] = Math.ceil(ret[i+1])-ret[i+1];
+				ret[i+2*quantiles.length+1] = lookupKey(w, 
+					(long)Math.ceil(ret[i+1]), mc.getRowsPerBlock());
+			}
+		}
+		
+		return ret;
+	}
 
 	private double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
+		throws DMLRuntimeException
 	{
 		long rix = UtilFunctions.computeBlockIndex(key, brlen);
-		long pos = UtilFunctions.computeCellInBlock(key, brlen);		
-				
+		long pos = UtilFunctions.computeCellInBlock(key, brlen);
 		List<MatrixBlock> val = in.lookup(new MatrixIndexes(rix,1));
+		if( val.isEmpty() )
+			throw new DMLRuntimeException("Invalid key lookup in empty list.");
+		MatrixBlock tmp = val.get(0);
+		if( tmp.getNumRows() <= pos )
+			throw new DMLRuntimeException("Invalid key lookup for " +
+				pos + " in block of size " + tmp.getNumRows()+"x"+tmp.getNumColumns());
 		return val.get(0).quickGetValue((int)pos, 0);
 	}
-
-	private double sumWeights(JavaPairRDD<MatrixIndexes,MatrixBlock> in)
-	{
-		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = in
-				.mapValues(new ExtractAndSumWeightsFunction());
-		MatrixBlock val = RDDAggregateUtils.sumStable(tmp);
-		
-		return val.quickGetValue(0, 0);
-	}
-
+	
 	private static class FilterFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 	{
 		private static final long serialVersionUID = -8249102381116157388L;
@@ -188,8 +240,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		private long _minRowIndex;
 		private long _maxRowIndex;
 		
-		public FilterFunction(long key25, long key75, int brlen)
-		{
+		public FilterFunction(long key25, long key75, int brlen) {
 			_minRowIndex = UtilFunctions.computeBlockIndex(key25, brlen);
 			_maxRowIndex = UtilFunctions.computeBlockIndex(key75, brlen);
 		}
@@ -227,41 +278,101 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		{
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
-			
-			if( _minRowIndex==_maxRowIndex ){
-				mb = mb.sliceOperations(_minPos-1, _maxPos-1, 0, 0, new MatrixBlock());
-			}
-			else if( ix.getRowIndex() == _minRowIndex ) {
-				mb = mb.sliceOperations(_minPos, mb.getNumRows()-1, 0, 0, new MatrixBlock());	
-			}
-			else if( ix.getRowIndex() == _maxRowIndex ) {
-				mb = mb.sliceOperations(0, _maxPos, 0, 0, new MatrixBlock());	
-			}
-			
-			//create output (with correction)
+			int rl = (ix.getRowIndex() == _minRowIndex) ? _minPos : 0;
+			int ru = (ix.getRowIndex() == _maxRowIndex) ? _maxPos+1 : mb.getNumRows();
 			MatrixBlock ret = new MatrixBlock(1,2,false);
-			ret.setValue(0, 0, mb.sum());
-			
-			return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(1,1), ret);
+			ret.setValue(0, 0, (mb.getNumColumns()==1) ? 
+				sum(mb, rl, ru) : sumWeighted(mb, rl, ru));
+			return new Tuple2<>(new MatrixIndexes(1,1), ret);
 		}
+		
+		private static double sum(MatrixBlock mb, int rl, int ru) {
+			double sum = 0;
+			for(int i=rl; i<ru; i++)
+				sum += mb.quickGetValue(i, 0);
+			return sum;
+		}
+		
+		private static double sumWeighted(MatrixBlock mb, int rl, int ru) {
+			double sum = 0;
+			for(int i=rl; i<ru; i++)
+				sum += mb.quickGetValue(i, 0)
+					* mb.quickGetValue(i, 1);
+			return sum;
+ 		}
 	}
 
-	private static class ExtractAndSumWeightsFunction implements Function<MatrixBlock,MatrixBlock> 
+	private static class SumWeightsFunction implements Function2<Integer,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>,Iterator<Tuple2<Integer, Double>>> 
 	{
 		private static final long serialVersionUID = 7169831202450745373L;
 
 		@Override
-		public MatrixBlock call(MatrixBlock arg0) 
+		public Iterator<Tuple2<Integer, Double>> call(Integer v1, Iterator<Tuple2<MatrixIndexes, MatrixBlock>> v2)
 			throws Exception 
 		{
-			//slice operation (2nd column)
-			 MatrixBlock mb = arg0.sliceOperations(0, arg0.getNumRows()-1, 1, 1, new MatrixBlock());
+			//aggregate partition weights (in sorted order)
+			double sum = 0;
+			while( v2.hasNext() )
+				sum += v2.next()._2().sumWeightForQuantile();
 			
-			//create output (with correction)
-			MatrixBlock ret = new MatrixBlock(1,2,false);
-			ret.setValue(0, 0, mb.sum());
+			//return tuple for partition aggregate
+			return Arrays.asList(new Tuple2<>(v1,sum)).iterator();
+		}
+	}
+	
+	private static class ExtractWeightedQuantileFunction implements Function2<Integer,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>,Iterator<Tuple2<Integer, double[]>>> 
+	{
+		private static final long serialVersionUID = 4879975971050093739L;
+		private final MatrixCharacteristics _mc;
+		private final double[] _qdKeys;
+		private final long[] _qiKeys;
+		private final int[] _qPIDs;
+		private final double[] _offsets;
+		
+		public ExtractWeightedQuantileFunction(MatrixCharacteristics mc, double[] qdKeys, long[] qiKeys, int[] qPIDs, double[] offsets) {
+			_mc = mc;
+			_qdKeys = qdKeys;
+			_qiKeys = qiKeys;
+			_qPIDs = qPIDs;
+			_offsets = offsets;
+		}
+
+		@Override
+		public Iterator<Tuple2<Integer, double[]>> call(Integer v1, Iterator<Tuple2<MatrixIndexes, MatrixBlock>> v2) 
+			throws Exception 
+		{
+			//early abort for unnecessary partitions
+			if( !ArrayUtils.contains(_qPIDs, v1) )
+				return Collections.emptyIterator();
 			
-			return ret;
+			//determine which quantiles are active
+			int qlen = (int)Arrays.stream(_qPIDs).filter(i -> i==v1).count();
+			int[] qix = new int[qlen];
+			for(int i=0, pos=0; i<_qPIDs.length; i++)
+				if( _qPIDs[i]==v1 )
+					qix[pos++] = i;
+			double offset = _offsets[qix[0]];
+			
+			//iterate over blocks and determine quantile positions
+			ArrayList<Tuple2<Integer,double[]>> ret = new ArrayList<>();
+			while( v2.hasNext() ) {
+				Tuple2<MatrixIndexes, MatrixBlock> tmp = v2.next();
+				MatrixIndexes ix = tmp._1();
+				MatrixBlock mb = tmp._2();
+				for( int i=0; i<mb.getNumRows(); i++ ) {
+					double val = mb.quickGetValue(i, 1);
+					for( int j=0; j<qlen; j++ ) {
+						if( offset+val >= _qiKeys[qix[j]] ) {
+							long pos = UtilFunctions.computeCellIndex(ix.getRowIndex(), _mc.getRowsPerBlock(), i);
+							double posPart = offset+val - _qdKeys[qix[j]];
+							ret.add(new Tuple2<>(qix[j], new double[]{pos, posPart, mb.quickGetValue(i, 0)}));
+							_qiKeys[qix[j]] = Long.MAX_VALUE;
+						}
+					}
+					offset += val;
+				}
+			}
+			return ret.iterator();
 		}
 	}
 }

@@ -31,12 +31,8 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-/**
- * 
- */
 public class QuantileWeightsTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "QuantileWeights";
 	private final static String TEST_NAME2 = "MedianWeights";
 	private final static String TEST_NAME3 = "IQMWeights";
@@ -51,8 +47,7 @@ public class QuantileWeightsTest extends AutomatedTestBase
 	private final static double sparsity2 = 0.3;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
@@ -60,191 +55,155 @@ public class QuantileWeightsTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testQuantile1DenseCP() 
-	{
+	public void testQuantile1DenseCP() {
 		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile2DenseCP() 
-	{
+	public void testQuantile2DenseCP() {
 		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile3DenseCP() 
-	{
+	public void testQuantile3DenseCP() {
 		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile1SparseCP() 
-	{
+	public void testQuantile1SparseCP() {
 		runQuantileTest(TEST_NAME1, 0.25, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile2SparseCP() 
-	{
+	public void testQuantile2SparseCP() {
 		runQuantileTest(TEST_NAME1, 0.50, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile3SparseCP() 
-	{
+	public void testQuantile3SparseCP() {
 		runQuantileTest(TEST_NAME1, 0.75, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testQuantile1DenseMR() 
-	{
+	public void testQuantile1DenseMR() {
 		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testQuantile2DenseMR() 
-	{
+	public void testQuantile2DenseMR() {
 		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testQuantile3DenseMR() 
-	{
+	public void testQuantile3DenseMR() {
 		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testQuantile1SparseMR() 
-	{
+	public void testQuantile1SparseMR() {
 		runQuantileTest(TEST_NAME1, 0.25, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testQuantile2SparseMR() 
-	{
+	public void testQuantile2SparseMR() {
 		runQuantileTest(TEST_NAME1, 0.50, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testQuantile3SparseMR() 
-	{
+	public void testQuantile3SparseMR() {
 		runQuantileTest(TEST_NAME1, 0.75, true, ExecType.MR);
 	}
 
 	@Test
-	public void testQuantile1DenseSP() 
-	{
+	public void testQuantile1DenseSP() {
 		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testQuantile2DenseSP() 
-	{
+	public void testQuantile2DenseSP() {
 		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testQuantile3DenseSP() 
-	{
+	public void testQuantile3DenseSP() {
 		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testQuantile1SparseSP() 
-	{
+	public void testQuantile1SparseSP() {
 		runQuantileTest(TEST_NAME1, 0.25, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testQuantile2SparseSP() 
-	{
+	public void testQuantile2SparseSP() {
 		runQuantileTest(TEST_NAME1, 0.50, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testQuantile3SparseSP() 
-	{
+	public void testQuantile3SparseSP() {
 		runQuantileTest(TEST_NAME1, 0.75, true, ExecType.SPARK);
 	}
 
 	@Test
-	public void testMedianDenseCP() 
-	{
+	public void testMedianDenseCP() {
 		runQuantileTest(TEST_NAME2, -1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMedianSparseCP() 
-	{
+	public void testMedianSparseCP() {
 		runQuantileTest(TEST_NAME2, -1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMedianDenseMR() 
-	{
+	public void testMedianDenseMR() {
 		runQuantileTest(TEST_NAME2, -1, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testMedianSparseMR() 
-	{
+	public void testMedianSparseMR() {
 		runQuantileTest(TEST_NAME2, -1, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testMedianDenseSP() 
-	{
+	public void testMedianDenseSP() {
 		runQuantileTest(TEST_NAME2, -1, false, ExecType.SPARK);
 	}
 
 	@Test
-	public void testMedianSparseSP() 
-	{
+	public void testMedianSparseSP() {
 		runQuantileTest(TEST_NAME2, -1, true, ExecType.SPARK);
 	}
 
 	@Test
-	public void testIQMDenseCP() 
-	{
+	public void testIQMDenseCP() {
 		runQuantileTest(TEST_NAME3, -1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testIQMSparseCP() 
-	{
+	public void testIQMSparseCP() {
 		runQuantileTest(TEST_NAME3, -1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testIQMDenseMR() 
-	{
+	public void testIQMDenseMR() {
 		runQuantileTest(TEST_NAME3, -1, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testIQMSparseMR() 
-	{
+	public void testIQMSparseMR() {
 		runQuantileTest(TEST_NAME3, -1, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testIQMDenseSP() 
-	{
+	public void testIQMDenseSP() {
 		runQuantileTest(TEST_NAME3, -1, false, ExecType.SPARK);
 	}
 
 	@Test
-	public void testIQMSparseSP() 
-	{
+	public void testIQMSparseSP() {
 		runQuantileTest(TEST_NAME3, -1, true, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
 	{
 		//rtplatform for MR
@@ -268,11 +227,10 @@ public class QuantileWeightsTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", 
 				input("A"), input("W"), Double.toString(p), output("R")};
-			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 				inputDir() + " " + p + " " + expectedDir();
-	
+			
 			//generate actual dataset (always dense because values <=0 invalid)
 			double sparsitya = sparse ? sparsity2 : sparsity1;
 			double[][] A = getRandomMatrix(rows, 1, 1, maxVal, sparsitya, 1236); 
@@ -288,11 +246,9 @@ public class QuantileWeightsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
-			rtplatform = platformOld;
+		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			rtplatform = platformOld;
 		}
 	}
-
 }

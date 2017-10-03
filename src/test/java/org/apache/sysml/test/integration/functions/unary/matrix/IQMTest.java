@@ -22,20 +22,17 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 public class IQMTest extends AutomatedTestBase 
 {
-	
 	private enum TEST_TYPE { 
 		IQM ("IQM");
-					
 		String scriptName = null;
 		TEST_TYPE(String name) {
 			this.scriptName = name;
@@ -45,8 +42,7 @@ public class IQMTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + IQMTest.class.getSimpleName() + "/";
 
-	private final static String[] datasets 
-	= {
+	private final static String[] datasets = {
 		"2.2 3.2 3.7 4.4 5.3 5.7 6.1 6.4 7.2 7.8",  // IQM = 5.3100000000000005
 		"2 3 4 1 2 3 4",							// IQM = 2.7142857142857144
 		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1",	// IQM = 1
@@ -60,16 +56,14 @@ public class IQMTest extends AutomatedTestBase
 	private final static double[] dataLengths = { 10, 7, 19, 7, 9, 20, 10, 21};
 	private final static double[] expectedResults = {5.3100000000000005, 2.7142857142857144, 1, 1, 9, 8, 4, 1.2857142857142858};
 		
-	private final static String[] weightedDatasets 
-	= {
+	private final static String[] weightedDatasets = {
 		"1 1 1 1 1 1 1",					// weighted IQM = 1
 		"1 3 5 7 9 11 13 15 17",			// weighted IQM = 8
 		"-1 -3 -5   0 7  9 -11 13 15 17",	// weighted IQM = 1.2857142857142858
 		"-1 -3 -5 -11 0  7   9 13 15 17"	// weighted IQM = 0
 	};
 		
-	private final static String[] weights 
-	= {
+	private final static String[] weights = {
 		"2 3 4 1  2 3 4",
 		"2 3 2 4  2 1 2 3 1",
 		"2 3 2 4  2 1 2 3 1 1",
@@ -165,6 +159,46 @@ public class IQMTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testIQM1_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 1, false);
+	}
+	
+	@Test
+	public void testIQM2_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 2, false);
+	}
+	
+	@Test
+	public void testIQM3_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 3, false);
+	}
+	
+	@Test
+	public void testIQM4_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 4, false);
+	}
+	
+	@Test
+	public void testIQM5_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 5, false);
+	}
+	
+	@Test
+	public void testIQM6_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 6, false);
+	}
+	
+	@Test
+	public void testIQM7_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 7, false);
+	}
+	
+	@Test
+	public void testIQM8_SP() {
+		runTest(RUNTIME_PLATFORM.SPARK, 8, false);
+	}
+	
+	@Test
 	public void testIQM1wt() {
 		runTest(RUNTIME_PLATFORM.HYBRID, 1, true);
 	}
@@ -206,25 +240,21 @@ public class IQMTest extends AutomatedTestBase
 	
 	@Test
 	public void testIQM1wt_SP() {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTest(RUNTIME_PLATFORM.SPARK, 1, true);
 	}
 	
 	@Test
 	public void testIQM2wt_SP() {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTest(RUNTIME_PLATFORM.SPARK, 2, true);
 	}
 	
 	@Test
 	public void testIQM3wt_SP() {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTest(RUNTIME_PLATFORM.SPARK, 3, true);
 	}
 	
 	@Test
 	public void testIQM4wt_SP() {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTest(RUNTIME_PLATFORM.SPARK, 4, true);
 	}
 	
@@ -232,6 +262,10 @@ public class IQMTest extends AutomatedTestBase
 	private void runTest(RUNTIME_PLATFORM rt, int datasetIndex, boolean isWeighted ) {
 		RUNTIME_PLATFORM rtOld = rtplatform;
 		rtplatform = rt;
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -263,10 +297,8 @@ public class IQMTest extends AutomatedTestBase
 			
 			config.addVariable("rows", rows);
 			config.addVariable("cols", 1);
-	
 			loadTestConfiguration(config);
-	
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + test.scriptName + ".dml";
 			String outFile = output("iqmFile");
@@ -275,24 +307,21 @@ public class IQMTest extends AutomatedTestBase
 				outFile, wtOutFile };
 			
 			runTest(true, false, null, -1);
-	
+			
 			double IQM = TestUtils.readDMLScalar(outFile);
 			double wtIQM = TestUtils.readDMLScalar(wtOutFile);
 			
 			if(isWeighted) {
-				assertTrue("Incorrect weighted inter quartile mean", wtIQM == expectedIQM);
+				assertTrue("Incorrect weighted inter quartile mean "+wtIQM+" vs "+expectedIQM, wtIQM == expectedIQM);
 			}
 			else {
-				assertTrue("Incorrect inter quartile mean", wtIQM == IQM);
-				assertTrue("Incorrect inter quartile mean", wtIQM == expectedIQM);
+				assertTrue("Incorrect inter quartile mean "+wtIQM+" vs "+IQM, wtIQM == IQM);
+				assertTrue("Incorrect inter quartile mean "+wtIQM+" vs "+expectedIQM, wtIQM == expectedIQM);
 			}
 		}
-		finally
-		{
-			//reset runtime platform
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = rtOld;
 		}
 	}
-	
-	
 }

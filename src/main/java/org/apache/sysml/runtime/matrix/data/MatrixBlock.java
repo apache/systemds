@@ -4680,92 +4680,39 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public double interQuartileMean() throws DMLRuntimeException {
-		
+		//input state: rlen x 2, values and weights, sorted by weight
+		//approach: determine q25 and q75 keys by cumsum of weights
 		double sum_wt = sumWeightForQuantile();
-		
 		double q25d = 0.25*sum_wt;
 		double q75d = 0.75*sum_wt;
-		
 		int q25i = (int) Math.ceil(q25d);
 		int q75i = (int) Math.ceil(q75d);
 		
-		// skip until (but excluding) q25
-		int t = 0, i=-1;
-		while(i<getNumRows() && t < q25i) {
-			i++;
-			//System.out.println("    " + i + ": " + quickGetValue(i,0) + "," + quickGetValue(i,1));
-			t += quickGetValue(i,1);
-		}
-		// compute the portion of q25
-		double runningSum = (t-q25d)*quickGetValue(i,0);
+		// find q25 as sum of weights (but excluding from mean)
+		double psum = 0; int i = -1;
+		while(psum < q25i && i < getNumRows())
+			psum += quickGetValue(++i, 1);
+		double q25Part = psum-q25d; 
+		double q25Val = quickGetValue(i, 0);
 		
-		// add until (including) q75
-		while(i<getNumRows() && t < q75i) {
-			i++;
-			t += quickGetValue(i,1);
-			runningSum += quickGetValue(i,0)*quickGetValue(i,1);
+		// compute mean and find q75 as sum of weights (including in mean)
+		double sum = 0;
+		while(psum < q75i && i < getNumRows()) {
+			double v1 = quickGetValue(++i, 0);
+			double v2 = quickGetValue(i, 1);
+			psum += v2;
+			sum += v1 * v2;
 		}
-		// subtract additional portion of q75
-		runningSum -= (t-q75d)*quickGetValue(i,0);
+		double q75Part = psum-q75d;
+		double q75Val = quickGetValue(i, 0);
 		
-		return runningSum/(sum_wt*0.5);
+		//compute final IQM, incl. correction for q25 and q75 portions 
+		return computeIQMCorrection(sum, sum_wt, q25Part, q25Val, q75Part, q75Val);
 	}
 	
-	/**
-	 * Computes the weighted interQuartileMean.
-	 * The matrix block ("this" pointer) has two columns, in which the first column 
-	 * refers to the data and second column denotes corresponding weights.
-	 * 
-	 * @return InterQuartileMean
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public double interQuartileMeanOLD() throws DMLRuntimeException {
-		double sum_wt = sumWeightForQuantile();
-		
-		int fromPos = (int) Math.ceil(0.25*sum_wt);
-		int toPos = (int) Math.ceil(0.75*sum_wt);
-		int selectRange = toPos-fromPos; // range: (fromPos,toPos]
-		
-		if ( selectRange == 0 )
-			return 0.0;
-		
-		int index, count=0;
-		
-		// The first row (0^th row) has value 0.
-		// If it has a non-zero weight i.e., input data has zero values
-		// then "index" must start from 0, otherwise we skip the first row 
-		// and start with the next value in the data, which is in the 1st row.
-		if ( quickGetValue(0,1) > 0 ) 
-			index = 0;
-		else
-			index = 1;
-		
-		// keep scanning the weights, until we hit the required position <code>fromPos</code>
-		while ( count < fromPos ) {
-			count += quickGetValue(index,1);
-			index++;
-		}
-		
-		double runningSum; 
-		double val;
-		int wt, selectedCount;
-		
-		runningSum = (count-fromPos) * quickGetValue(index-1, 0);
-		selectedCount = (count-fromPos);
-		
-		while(count <= toPos ) {
-			val = quickGetValue(index,0);
-			wt = (int) quickGetValue(index,1);
-			
-			runningSum += (val * Math.min(wt, selectRange-selectedCount));
-			selectedCount += Math.min(wt, selectRange-selectedCount);
-			count += wt;
-			index++;
-		}
-		
-		//System.out.println(fromPos + ", " + toPos + ": " + count + ", "+ runningSum + ", " + selectedCount);
-		
-		return runningSum/selectedCount;
+	public static double computeIQMCorrection(double sum, double sum_wt, 
+		double q25Part, double q25Val, double q75Part, double q75Val) {
+		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
 	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue ret) 
@@ -4850,13 +4797,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return sum weight for quantile
 	 * @throws DMLRuntimeException
 	 */
-	private double sumWeightForQuantile() 
+	public double sumWeightForQuantile() 
 		throws DMLRuntimeException 
 	{
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ ) {
 			double tmp = quickGetValue(i, 1);
-			sum_wt += tmp;		
+			sum_wt += tmp;
 			
 			// test all values not just final sum_wt to ensure that non-integer weights
 			// don't cancel each other out; integer weights are required by all quantiles, etc

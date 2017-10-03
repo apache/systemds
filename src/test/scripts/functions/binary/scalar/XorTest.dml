@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,85 +19,36 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.binary.scalar.XorTest.java
-
-$$readhelper$$
+op1 = $1;
+op2 = $2;
+type = $3;
 
 trueVar = TRUE;
+b = FALSE;
 
-Left1 = Helper;
-i = 0;
-j = 0;
-# while( xor(i == 0, j == 0) )           # xor(1, 1) = 0
-while (1)
-{
-	Left1 = 2 * Left1;
-	i = 1;
-	j = 1;
+if( type == 0 ) {
+   b = xor(op1, op2); # xor(0, 0) = 1
 }
-write(Left1, "$$outdir$$left_1", format="text");
+else if( type == 1 ) {
+   b = xor(op1, op2)  # xor(0, 1) = 0
+}
+else if( $3 == 2 ) {
+   b = xor(op1, op2)  # xor(1, 0) = 0
+}
+else if( type == 3 ) {
+   b = xor(op1, op2)  # xor(1, 0) = 0
+}
+else if( type == 4 ) {
+   b = xor(op1, op2)  # xor(1, 1) = 1
+}
+else if( type == 5 ) {
+   b = xor(op1, op2)  # xor(1, 0) = 0
+}
+else if( type == 6 ) {
+   b = xor(op1, op2)  # xor(1, 1) = 1
+}
+else if( type == 7) {
+   b = xor(op1, op2)  # xor(0, 1) = 0
+}
 
-Left2 = Helper;
-i = 0;
-while( xor(i == 0, trueVar == TRUE) )  # xor(1, 0) = 1
-{
-  Left2 = 2 * Left2;
-  i = 1;
-}
-write(Left2, "$$outdir$$left_2", format="text");
-
-Left3 = Helper;
-i = 0;
-j = 0;
-while( xor(i == 1, j == 0) )           # xor(0, 1) = 1
-{
-  Left3 = 2 * Left3;
-  j = 1;
-}
-write(Left3, "$$outdir$$left_3", format="text");
-
-Left4 = Helper;
-i = 0;
-while( xor(i == 1, trueVar == FALSE) ) # xor(0, 0) = 0
-{
-  Left4 = 2 * Left4;
-}
-write(Left4, "$$outdir$$left_4", format="text");
-
-Right1 = Helper;
-i = 0;
-j = 0;
-while( xor(j == 0, i == 0) )           # xor(1, 1) = 0 
-{
-  Right1 = 2 * Right1;
-  i = 1;
-  j = 1;
-}
-write(Right1, "$$outdir$$right_1", format="text");
-
-Right2 = Helper;
-i = 0;
-j = 0;
-while( xor(j == 0, i == 1) )           # xor(1, 0) = 1
-{
-  Right2 = 2 * Right2;
-  j = 1;
-}
-write(Right2, "$$outdir$$right_2", format="text");
-
-Right3 = Helper;
-i = 0;
-while( xor(trueVar == TRUE, i == 0) )  # xor(0, 1) = 1
-{
-  Right3 = 2 * Right3;
-  i = 1;
-}
-write(Right3, "$$outdir$$right_3", format="text");
-
-Right4 = Helper;
-i = 0;
-while( xor(trueVar == FALSE, i == 1) ) # xor(0, 0) = 0
-{
-  Right4 = 2 * Right4;
-}
-write(Right4, "$$outdir$$right_4", format="text");
+write(b, $4);

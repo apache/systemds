@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,12 +18,14 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 import sys
 import subprocess
 import shlex
 import re
+import tempfile
+import os
 
 # Subprocess and log parsing related functions
 
@@ -49,24 +51,34 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
     # print(cmd_string)
 
     exec_command = shlex.split(cmd_string)
-    proc1 = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-
-    error_arr, out_arr = get_all_logs(proc1)
-    std_outs = out_arr + error_arr
-    std_outs.insert(0, ' '.join(exec_command))
-    return_code = proc1.returncode
+    log_file = None
+    is_temp_file = False
 
     if log_file_path is not None:
-        write_logs(std_outs, log_file_path + '.log')
+        log_file_path = log_file_path + '.log'
+        log_file = open(log_file_path, "w+")
+    else:
+        os_log_file, log_file_path = tempfile.mkstemp()
+        log_file = os.fdopen(os_log_file, 'w+')
+        is_temp_file = True
+
+    log_file.write(' '.join(exec_command))
+    log_file.write('\n')
+    proc1 = subprocess.Popen(exec_command, stdout=log_file,
+                             stderr=subprocess.STDOUT)
+    proc1.wait()
+    return_code = proc1.returncode
+
+    log_file.close()
+    log_file = open(log_file_path, 'r+')
 
     if return_code == 0:
         if extract == 'time':
-            return_data = parse_time(std_outs)
+            return_data = parse_time(log_file)
         if extract == 'dir':
-            return_data = parse_hdfs_paths(std_outs)
+            return_data = parse_hdfs_paths(log_file)
         if extract == 'hdfs_base':
-            return_data = parse_hdfs_base(std_outs)
+            return_data = parse_hdfs_base(log_file)
         if extract is None:
             return_data = 0
 
@@ -74,9 +86,12 @@ def subprocess_exec(cmd_string, log_file_path=None, extract=None):
         return_data = 'proc_fail'
         print('sub-process failed, return code {}'.format(return_code))
 
+    if is_temp_file:
+        os.remove(log_file_path)
+
     return return_data
 
-
+            
 def parse_hdfs_base(std_outs):
     """
     return: String

@@ -26,7 +26,9 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
+
 
 public class MLContextSVMTest extends MLContextTestBase {
         protected static Logger log = Logger.getLogger(MLContextSVMTest.class);
@@ -42,7 +44,7 @@ public class MLContextSVMTest extends MLContextTestBase {
 
         public enum SVMtype {
                 L2SVM,
-                MSVM
+                MSVM,
         }
 
         @Test
@@ -104,8 +106,7 @@ public class MLContextSVMTest extends MLContextTestBase {
         public void testMSVMSparseMul() {
                 runSVMTestMLC(SVMtype.MSVM, 4, false, true);
         }
-        
-        /* This test is only for the I/O check, TODO: validate output */
+
         private void runSVMTestMLC(SVMtype type, int numClasses,boolean rewrites, boolean sparse) {
 
                  OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
@@ -113,22 +114,27 @@ public class MLContextSVMTest extends MLContextTestBase {
                  double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse ? sparsity2: sparsity1, 714);
                  double[][] Y = TestUtils.round(getRandomMatrix(rows, 1, 1, numClasses, 1.0, 136));
 
-                 switch(type) {
-                 case L2SVM:
-                            Script l2svm = dmlFromFile(TEST_SCRIPT_L2SVM);
-                            l2svm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
-                                  .in("$reg", "1.0").in("$maxiter", "100").out("w");
-                            ml.execute(l2svm);
+                 switch (type) {
+                         case L2SVM:
+                                    Script l2svm = dmlFromFile(TEST_SCRIPT_L2SVM);
+                                    l2svm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
+                                           .in("$reg", "1.0").in("$maxiter", "100").out("w");
+                                    double[][] w = ml.execute(l2svm).getMatrix("w").to2DDoubleArray();
+                                    log.debug("output matrix weights:\n" + getMatrixAsString(w));
+                                     Assert.assertEquals(0.0, w[cols+2][0], 0); //this col is intercept value(=0).
 
-                            break;
+                                    break;
 
-                 case MSVM:
-                           Script msvm = dmlFromFile(TEST_SCRIPT_MSVM);
-                           msvm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
-                                .in("$reg", "1.0").in("$maxiter", "100").out("w");
-                           ml.execute(msvm);
+                         case MSVM:
+                                   Script msvm = dmlFromFile(TEST_SCRIPT_MSVM);
+                                   msvm.in("X", X).in("Y", Y).in("$icpt", "0").in("$tol", "0.001")
+                                         .in("$reg", "1.0").in("$maxiter", "100").out("w");
+                                   w = ml.execute(msvm).getMatrix("w").to2DDoubleArray();
+                         log.debug("output matrix weights:\n" + getMatrixAsString(w));
+                         Assert.assertEquals(0, w[cols][0], 0); //this col is intercept value(=0).
 
-                           break;
-                 }
+                         break;
         }
+
+    }
 }

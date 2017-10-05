@@ -62,7 +62,7 @@
 # 2. Execute using Spark
 #   ```
 #   spark-submit --master local[*] --driver-memory 10G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
+#   --conf spark.driver.maxResultSize=0
 #   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_lenet_distrib_sgd-train.dml
 #   -nvargs train=nn/examples/data/mnist/mnist_train.csv test=nn/examples/data/mnist/mnist_test.csv
 #   C=1 Hin=28 Win=28 K=10 batch_size=32 parallel_batches=4 epochs=10

@@ -299,7 +299,6 @@ if __name__ == '__main__':
 
     # Default Conf
     default_conf = 'spark.driver.maxResultSize=0 ' \
-                   'spark.akka.frameSize=128 ' \
                    'spark.network.timeout=6000s ' \
                    'spark.rpc.askTimeout=6000s ' \
                    'spark.memory.useLegacyMode=true ' \
@@ -356,7 +355,8 @@ if __name__ == '__main__':
                                       'set <force> option to skip conservative memory estimates '
                                       'and use GPU wherever possible', nargs='?', const='no_option')
     # Spark Configuration Option
-    cparser.add_argument('--master', help='local, yarn-client, yarn-cluster', metavar='')
+    cparser.add_argument('--master', help='local, yarn', metavar='')
+    cparser.add_argument('--deploy-mode', help='client, cluster', metavar='')
     cparser.add_argument('--driver-memory', help='Memory for driver (e.g. 512M)', metavar='')
     cparser.add_argument('--num-executors', help='Number of executors to launch', metavar='')
     cparser.add_argument('--executor-memory', help='Memory per executor', metavar='')

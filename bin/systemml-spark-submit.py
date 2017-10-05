@@ -129,7 +129,8 @@ if __name__ == '__main__':
     cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                       description='System-ML Spark Submit Script')
     # SPARK-SUBMIT Options
-    cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
+    cparser.add_argument('--master', default='local[*]', help='local, yarn', metavar='')
+    cparser.add_argument('--deploy-mode', default='client', help='client, cluster', metavar='')
     cparser.add_argument('--driver-memory', default='8G', help='Memory for driver (e.g. 512M, 1G)', metavar='')
     cparser.add_argument('--num-executors', nargs=1, help='Number of executors to launch', metavar='')
     cparser.add_argument('--executor-memory', nargs=1, help='Memory per executor', metavar='')

@@ -492,6 +492,10 @@ public class GPUContext {
 			LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
 		}
 		GPUStatistics.cudaEvictionCount.add(1);
+		if (LOG.isDebugEnabled()) {
+			printMemoryInfo("EVICTION_CUDA_FREE_SPACE");
+		}
+		
 		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
 		// to free up space
 		LRUCacheMap<Long, Set<Pointer>> lruCacheMap = freeCUDASpaceMap;
@@ -560,6 +564,9 @@ public class GPUContext {
 		});
 
 		while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
+			if (LOG.isDebugEnabled()) {
+				printMemoryInfo("EVICTION_UNLOCKED");
+			}
 			GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
 			if (toBeRemoved.isLocked()) {
 				throw new DMLRuntimeException(
@@ -569,7 +576,6 @@ public class GPUContext {
 			if (toBeRemoved.dirty) {
 				toBeRemoved.copyFromDeviceToHost();
 			}
-
 			toBeRemoved.clearData(true);
 		}
 	}

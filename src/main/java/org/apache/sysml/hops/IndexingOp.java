@@ -237,7 +237,8 @@ public class IndexingOp extends Hop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		// only dense right indexing supported on GPU
+		double sparsity =  isGPUEnabled() ? 1.0 : OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	

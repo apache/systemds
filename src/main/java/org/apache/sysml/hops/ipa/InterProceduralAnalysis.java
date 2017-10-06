@@ -96,6 +96,7 @@ public class InterProceduralAnalysis
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
 	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
+	protected static final boolean DIMENSION_PRESERVE_FUNCTIONOP  = true; //flag dimension preserving `FunctionOp`s during ipa
 	
 	static {
 		// for internal debugging only
@@ -136,6 +137,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassApplyStaticHopRewrites());
+		_passes.add(new IPAPassFlagDimensionPreserveFunctionOp());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {
@@ -171,6 +173,7 @@ public class InterProceduralAnalysis
 			throw new HopsException("Invalid number of IPA repetitions: " + repetitions);
 		
 		//perform number of requested IPA iterations
+		FunctionCallSizeInfo lastSizes = null;
 		for( int i=0; i<repetitions; i++ ) {
 			if( LOG.isDebugEnabled() )
 				LOG.debug("IPA: start IPA iteration " + (i+1) + "/" + repetitions +".");
@@ -200,6 +203,15 @@ public class InterProceduralAnalysis
 			for( IPAPass pass : _passes )
 				if( pass.isApplicable() )
 					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
+			
+			//early abort without functions or on reached fixpoint
+			if( _fgraph.getReachableFunctions().isEmpty() 
+				|| (lastSizes != null && lastSizes.equals(fcallSizes)) ) {
+				if( LOG.isDebugEnabled() )
+					LOG.debug("IPA: Early abort after " + (i+1) + "/" + repetitions
+						+ " repetitions due to reached fixpoint.");
+				break;
+			}
 		}
 		
 		//cleanup pass: remove unused functions
@@ -473,7 +485,7 @@ public class InterProceduralAnalysis
 		{
 			//maintain counters and investigate functions if not seen so far
 			FunctionOp fop = (FunctionOp) hop;
-			String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+			String fkey = fop.getFunctionKey();
 			
 			if( fop.getFunctionType() == FunctionType.DML )
 			{
@@ -527,7 +539,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
 		ArrayList<Hop> inputOps = fop.getInput();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		for( int i=0; i<inputVars.size(); i++ )
 		{
@@ -587,7 +599,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		try
 		{
@@ -650,7 +662,7 @@ public class InterProceduralAnalysis
 	{
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		String fkey = fop.getFunctionKey();
 		
 		try
 		{
@@ -661,7 +673,7 @@ public class InterProceduralAnalysis
 				
 				if( di.getDataType()==DataType.MATRIX )
 				{
-					MatrixObject moOut = createOutputMatrix(-1, -1, -1);	
+					MatrixObject moOut = createOutputMatrix(-1, -1, -1);
 					callVars.put(pvarname, moOut);
 				}
 			}
@@ -675,14 +687,14 @@ public class InterProceduralAnalysis
 	private void extractFunctionCallEquivalentReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
 		throws HopsException
 	{
-		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 		try {
 			Hop input = fop.getInput().get(0);
 			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(), -1);	
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
 		catch( Exception ex ) {
-			throw new HopsException( "Failed to extract output statistics for unary function "+fkey+".", ex);
+			throw new HopsException( "Failed to extract output statistics "
+				+ "for unary function "+fop.getFunctionKey()+".", ex);
 		}
 	}
 	

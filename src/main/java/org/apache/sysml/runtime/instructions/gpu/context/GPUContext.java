@@ -416,6 +416,7 @@ public class GPUContext {
 			if (DMLScript.STATISTICS)
 				t0 = System.nanoTime();
 			cudaFree(toFree);
+			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			cudaBlockSizeMap.remove(toFree);
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaDeAllocTime.add(System.nanoTime() - t0);

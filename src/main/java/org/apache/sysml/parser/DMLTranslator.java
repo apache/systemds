@@ -1424,7 +1424,6 @@ public class DMLTranslator
 						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()}, false);
 					output.add(fcall);
 					
-					//TODO function output dataops (phase 3)
 					//DataOp trFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), fcall, DataOpTypes.FUNCTIONOUTPUT, null);
 					//DataOp twFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), trFoutput, DataOpTypes.TRANSIENTWRITE, null);					
 				}
@@ -1460,12 +1459,11 @@ public class DMLTranslator
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
 					output.add(fcall);
-					
-					//TODO function output dataops (phase 3)
-					/*for ( DataIdentifier paramName : mas.getTargetList() ){
+
+				     	/*for ( DataIdentifier paramName : mas.getTargetList() ){
 						DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
 						output.add(twFoutput);
-					}*/
+					} */
 				}
 				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops

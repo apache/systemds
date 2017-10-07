@@ -55,6 +55,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 	private final static int intercept = 0;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
+	private final static double regular = 0.001;
 	
 	@Override
 	public void setUp() {
@@ -103,20 +104,17 @@ public class CompressedLinregCG extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain","-stats",
-					                    "-args", HOME + INPUT_DIR + "X",
-					                             HOME + INPUT_DIR + "y",
-					                             String.valueOf(intercept),
-					                             String.valueOf(epsilon),
-					                             String.valueOf(maxiter),
-					                            HOME + OUTPUT_DIR + "w"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
+			String HOME = SCRIPT_DIR + "functions/codegen/";
+			fullDMLScriptName = "scripts/algorithms/LinearRegCG.dml";
+			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
+					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
+					"maxi="+String.valueOf(maxiter), "reg="+String.valueOf(regular), "B="+output("w")};
+
+			fullRScriptName = HOME + "Algorithm_LinregCG.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + 
+			       HOME + INPUT_DIR + " " +
 			       String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
-			       String.valueOf(maxiter) + " " + HOME + EXPECTED_DIR;
+			       String.valueOf(maxiter) + " " + String.valueOf(regular) + HOME + EXPECTED_DIR;
 			
 			loadTestConfiguration(config);
 	

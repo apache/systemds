@@ -63,8 +63,6 @@ if(check_min != -1 | check_max != +1)
 positive_label = check_max
 negative_label = check_min
 
-continue = 1
-
 intercept = cmdLine_icpt
 if(intercept != 0 & intercept != 1)
   stop("Stopping due to invalid argument: Currently supported intercept options are 0 and 1")
@@ -101,15 +99,16 @@ s = g_old
 Xw = matrix(0, rows=nrow(X), cols=1)
 debug_str = "# Iter, Obj"
 iter = 0
-while(continue == 1 & iter < maxiterations)  {
+continue = TRUE
+while(continue & iter < maxiterations)  {
   # minimizing primal obj along direction s
   step_sz = 0
   Xd = X %*% s
   wd = lambda * sum(w * s)
   dd = lambda * sum(s * s)
   
-  continue1 = 1
-  while(continue1 == 1){
+  continue1 = TRUE
+  while(continue1){
     tmp_Xw = Xw + step_sz*Xd
     out = 1 - Y * (tmp_Xw)
     sv = (out > 0)
@@ -117,6 +116,7 @@ while(continue == 1 & iter < maxiterations)  {
     g = wd + step_sz*dd - sum(out * Y * Xd)
     h = dd + sum(Xd * sv * Xd)
     step_sz = step_sz - g/h
+    
     continue1 = (gg/h >= 0.0000000001);
   }
 
@@ -141,7 +141,7 @@ while(continue == 1 & iter < maxiterations)  {
   s = be * s + g_new
   g_old = g_new
   
-  if(sum(s^2) == 0) continue = 0;
+  continue = (sum(s^2) != 0);
     
   iter = iter + 1
 }

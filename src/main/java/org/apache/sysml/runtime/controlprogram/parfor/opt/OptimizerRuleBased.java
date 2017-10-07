@@ -1258,7 +1258,7 @@ public class OptimizerRuleBased extends Optimizer
 			//distribute remaining parallelism 
 			int remainParforK = getRemainingParallelismParFor(kMax, parforK);
 			int remainOpsK = getRemainingParallelismOps(_lkmaxCP, parforK);
-			rAssignRemainingParallelism( n, remainParforK, remainOpsK ); 
+			rAssignRemainingParallelism( n, remainParforK, remainOpsK );
 		}
 		else // ExecType.MR/ExecType.SPARK
 		{
@@ -1373,12 +1373,12 @@ public class OptimizerRuleBased extends Optimizer
 		}
 	}
 	
-	private static int getRemainingParallelismParFor(int parforK, int tmpK) {
+	protected static int getRemainingParallelismParFor(int parforK, int tmpK) {
 		//compute max remaining parfor parallelism k such that k * tmpK <= parforK
 		return (int)Math.ceil((double)(parforK-tmpK+1) / tmpK);
 	}
 	
-	private static int getRemainingParallelismOps(int opsK, int tmpK) {
+	protected static int getRemainingParallelismOps(int opsK, int tmpK) {
 		//compute max remaining operations parallelism k with slight over-provisioning 
 		//such that k * tmpK <= 1.5 * opsK; note that if parfor already exploits the
 		//maximum parallelism, this will not introduce any over-provisioning.

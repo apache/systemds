@@ -293,9 +293,16 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		// constraint awareness
 		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
+			//set parfor degree of parallelism
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 					.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 			pfpb.setDegreeOfParallelism(n.getK());
+			
+			//distribute remaining parallelism 
+			int remainParforK = getRemainingParallelismParFor(n.getK(), n.getK());
+			int remainOpsK = getRemainingParallelismOps(_lkmaxCP, n.getK());
+			rAssignRemainingParallelism( n, remainParforK, remainOpsK );
+			
 			LOG.debug(getOptMode()+" OPT: forced 'set degree of parallelism' - result=(see EXPLAIN)" );
 		}
 		else

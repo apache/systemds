@@ -55,6 +55,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 	private final static int intercept = 0;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
+	private final static double regular = 0.001;
 	
 	@Override
 	public void setUp() {

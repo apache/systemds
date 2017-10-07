@@ -103,17 +103,17 @@ public class CompressedLinregCG extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
+			String HOME = SCRIPT_DIR + "functions/codegen/";
 			fullDMLScriptName = "scripts/algorithms/LinearRegCG.dml";
 			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
-				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
-				"maxi="+String.valueOf(maxiter), "reg=0.001", "B="+output("w")};
-				
-			fullRScriptName = HOME + TEST_NAME + ".R";
+					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
+					"maxi="+String.valueOf(maxiter), "reg="+String.valueOf(regular), "B="+output("w")};
+
+			fullRScriptName = HOME + "Algorithm_LinregCG.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + 
+			       HOME + INPUT_DIR + " " +
 			       String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
-			       String.valueOf(maxiter) + " " + HOME + EXPECTED_DIR;
+			       String.valueOf(maxiter) + " " + String.valueOf(regular) + HOME + EXPECTED_DIR;
 			
 			loadTestConfiguration(config);
 	

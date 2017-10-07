@@ -60,6 +60,7 @@ import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.LRUCacheMap;
 
 import jcuda.Pointer;
+import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcusolver.cusolverDnHandle;
@@ -242,6 +243,10 @@ public class GPUContext {
 		if (kernels == null) {
 			kernels = new JCudaKernels();
 		}
+		// The CUDA binding methods will throw a CudaException if the CUDA function did not return cudaError.cudaSuccess.
+		JCuda.setExceptionsEnabled(true);
+		// The CUDA binding methods will throw a CudaException if the CUDA function did not return CUresult.CUDA_SUCCESS.
+		JCudaDriver.setExceptionsEnabled(true);
 	}
 
 	/**

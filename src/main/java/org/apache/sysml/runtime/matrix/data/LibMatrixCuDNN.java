@@ -23,11 +23,16 @@ import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
 import static jcuda.jcudnn.JCudnn.cudnnCreateActivationDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnPoolingBackward;
 import static jcuda.jcudnn.JCudnn.cudnnPoolingForward;
 import static jcuda.jcudnn.JCudnn.cudnnSetActivationDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
+import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -663,8 +668,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns()); // Allocated the dense output matrix
 		long t0=0;
-		cudnnTensorDescriptor srcTensorDesc = in.getGPUObject(gCtx).getTensorDescriptor();
-		if(N*CHW >= maxNumDoublesOfCuDNNTensor ||  srcTensorDesc == null) {
+		if(N*CHW >= maxNumDoublesOfCuDNNTensor) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
@@ -678,7 +682,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
 		}
 		else {
-			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), srcTensorDesc);
+			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
+			cudnnCreateTensorDescriptor(tensorDescriptor);
+			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, toInt(N), 1, 1, toInt(CHW));
+			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), tensorDescriptor);
+			cudnnDestroyTensorDescriptor(tensorDescriptor);
 		}
 	}
 

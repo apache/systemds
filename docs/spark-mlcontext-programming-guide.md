@@ -2814,5 +2814,5 @@ plt.title('PNMF Training Loss')
 
 # Recommended Spark Configuration Settings
 
-For best performance, we recommend setting the following flags when running SystemML with Spark:
-`--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128`.
+For best performance, we recommend setting the following configuration value when running SystemML with Spark:
+`--conf spark.driver.maxResultSize=0`.

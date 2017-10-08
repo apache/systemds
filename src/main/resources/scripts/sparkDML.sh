@@ -39,12 +39,13 @@ fi
 
 # Default Values
 
-master="--master yarn-client"
+master="--master yarn"
+deploy_mode="--deploy-mode client"
 driver_memory="--driver-memory 20G"
 num_executors="--num-executors 5"
 executor_memory="--executor-memory 60G"
 executor_cores="--executor-cores 24"
-conf="--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128"
+conf="--conf spark.driver.maxResultSize=0"
 
 
 # error help print
@@ -58,19 +59,19 @@ Usage: $0 [-h] [SPARK-SUBMIT OPTIONS] -f <dml-filename> [SYSTEMML OPTIONS]
    Examples:
       $0 -f genGNMF.dml --nvargs V=/tmp/V.mtx W=/tmp/W.mtx H=/tmp/H.mtx rows=100000 cols=800 k=50
       $0 --driver-memory 5G -f GNMF.dml --explain hops -nvargs ...
-      $0 --master yarn-cluster -f hdfs:/user/GNMF.dml
+      $0 --master yarn --deploy-mode cluster -f hdfs:/user/GNMF.dml
 
    -h | -?  Print this usage message and exit
 
    SPARK-SUBMIT OPTIONS:
    --conf <property>=<value>   Configuration settings:                  
                                  spark.driver.maxResultSize            Default: 0
-                                 spark.akka.frameSize                  Default: 128
-   --driver-memory <num>       Memory for driver (e.g. 512M)]          Default: 20G
-   --master <string>           local | yarn-client | yarn-cluster]     Default: yarn-client
+   --driver-memory <num>       Memory for driver (e.g. 512M)           Default: 20G
+   --master <string>           local | yarn                            Default: yarn
+   --deploy-mode <string>      client | cluster                        Default: client
    --num-executors <num>       Number of executors to launch (e.g. 2)  Default: 5
    --executor-memory <num>     Memory per executor (e.g. 1G)           Default: 60G
-   --executor-cores <num>      Memory per executor (e.g. )             Default: 24
+   --executor-cores <num>      Number of cores per executor (e.g. 1)   Default: 24
 
    -f                          DML script file name, e.g. hdfs:/user/biadmin/test.dml
 
@@ -90,6 +91,7 @@ while true ; do
   case "$1" in
     -h)                printUsageExit ; exit 1 ;;
     --master)          master="--master "$2 ; shift 2 ;;
+    --deploy-mode)     deploy_mode="--deploy-mode "$2 ; shift 2 ;;
     --driver-memory)   driver_memory="--driver-memory "$2 ; shift 2 ;;
     --num-executors)   num_executors="--num-executors "$2 ; shift 2 ;;
     --executor-memory) executor_memory="--executor-memory "$2 ; shift 2 ;;
@@ -109,6 +111,7 @@ done
 
 $SPARK_HOME/bin/spark-submit \
      ${master} \
+     ${deploy_mode} \
      ${driver_memory} \
      ${num_executors} \
      ${executor_memory} \

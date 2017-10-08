@@ -299,7 +299,6 @@ if __name__ == '__main__':
 
     # Default Conf
     default_conf = 'spark.driver.maxResultSize=0 ' \
-                   'spark.akka.frameSize=128 ' \
                    'spark.network.timeout=6000s ' \
                    'spark.rpc.askTimeout=6000s ' \
                    'spark.memory.useLegacyMode=true ' \

@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.IOException;
+import org.apache.sysml.hops.FunctionOp;
 
 
 public class FunctionCallIdentifier extends DataIdentifier 
@@ -64,7 +65,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 			
 		fci._name = this._name;
 		fci._namespace = this._namespace;
-		fci._opcode = this._opcode;	 
+		fci._opcode = this._opcode;
+		FunctionOp.refreshSizeInformation;
 		
 		return fci;
 	}
@@ -199,5 +201,3 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return true;
 	}
 }
-
-

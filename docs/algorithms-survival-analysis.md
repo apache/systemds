@@ -57,9 +57,9 @@ censored and uncensored survival times.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
@@ -152,9 +152,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
@@ -189,9 +189,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
@@ -461,9 +461,9 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
@@ -503,9 +503,9 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox-predict.dml
                                  -config SystemML-config.xml
@@ -612,9 +612,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
@@ -651,9 +651,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
@@ -691,9 +691,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Cox-predict.dml
                                  -config SystemML-config.xml

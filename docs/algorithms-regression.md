@@ -102,9 +102,9 @@ y_test = lr.fit(df_train)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
                                  -config SystemML-config.xml
@@ -147,9 +147,9 @@ y_test = lr.fit(df_train)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
                                  -config SystemML-config.xml
@@ -254,9 +254,9 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                     reg=1.0
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
                                  -config SystemML-config.xml
@@ -311,9 +311,9 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                     Log=/user/ml/log.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
                                  -config SystemML-config.xml
@@ -552,9 +552,9 @@ lowest AIC is computed.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
                                  -config SystemML-config.xml
@@ -623,9 +623,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
                                  -config SystemML-config.xml
@@ -755,9 +755,9 @@ distributions and link functions, see below for details.
                                     mii=[int]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
                                  -config SystemML-config.xml
@@ -893,9 +893,9 @@ if no maximum limit provided
                                     Log=/user/ml/log.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
                                  -config SystemML-config.xml
@@ -1230,9 +1230,9 @@ distribution family is supported (see below for details).
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
                                  -config SystemML-config.xml
@@ -1335,9 +1335,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
                                  -config SystemML-config.xml
@@ -1481,9 +1481,9 @@ this step outside the scope of `GLM-predict.dml` for now.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1620,9 +1620,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1656,9 +1656,9 @@ unknown (which sets it to `1.0`).
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1690,9 +1690,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1725,9 +1725,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1758,9 +1758,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1793,9 +1793,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
@@ -1832,9 +1832,9 @@ unknown (which sets it to `1.0`).
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml

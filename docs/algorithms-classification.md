@@ -160,9 +160,9 @@ val prediction = model.transform(X_test_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
                                  -config SystemML-config.xml
@@ -331,9 +331,9 @@ prediction.show()
                                     Log=/user/ml/log.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
                                  -config SystemML-config.xml
@@ -527,9 +527,9 @@ val model = svm.fit(X_train_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
                                  -config SystemML-config.xml
@@ -574,9 +574,9 @@ val prediction = model.transform(X_test_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
                                  -config SystemML-config.xml
@@ -658,9 +658,9 @@ more details on the Python API.
                                     Log=/user/ml/Log.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
                                  -config SystemML-config.xml
@@ -692,9 +692,9 @@ more details on the Python API.
                                     confusion=/user/ml/confusion.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
                                  -config SystemML-config.xml
@@ -797,9 +797,9 @@ val model = svm.fit(X_train_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
                                  -config SystemML-config.xml
@@ -844,9 +844,9 @@ val prediction = model.transform(X_test_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
                                  -config SystemML-config.xml
@@ -1009,9 +1009,9 @@ prediction.show()
                                     Log=/user/ml/Log.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
                                  -config SystemML-config.xml
@@ -1043,9 +1043,9 @@ prediction.show()
                                     confusion=/user/ml/confusion.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
                                  -config SystemML-config.xml
@@ -1148,9 +1148,9 @@ val model = nb.fit(X_train_df)
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
                                  -config SystemML-config.xml
@@ -1193,9 +1193,9 @@ val prediction = model.transform(X_test_df)
                                     probabilities=[file]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
                                  -config SystemML-config.xml
@@ -1284,9 +1284,9 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                     accuracy=/user/ml/accuracy.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
                                  -config SystemML-config.xml
@@ -1316,9 +1316,9 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                     confusion=/user/ml/confusion.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
                                  -config SystemML-config.xml
@@ -1415,9 +1415,9 @@ implementation is well-suited to handle large-scale data and builds a
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
                                  -config SystemML-config.xml
@@ -1453,9 +1453,9 @@ implementation is well-suited to handle large-scale data and builds a
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
                                  -config SystemML-config.xml
@@ -1553,9 +1553,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
                                  -config SystemML-config.xml
@@ -1588,9 +1588,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
                                  -config SystemML-config.xml
@@ -1823,9 +1823,9 @@ for classification in parallel.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
                                  -config SystemML-config.xml
@@ -1866,9 +1866,9 @@ for classification in parallel.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
                                  -config SystemML-config.xml
@@ -1989,9 +1989,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
                                  -config SystemML-config.xml
@@ -2027,9 +2027,9 @@ To compute predictions:
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
                                  -config SystemML-config.xml

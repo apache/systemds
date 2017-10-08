@@ -227,7 +227,7 @@ public class FunctionOp extends Hop
 		}
 	}
 	
-	@Override
+	//@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
 		long[] ret = null;
@@ -322,7 +322,7 @@ public class FunctionOp extends Hop
 		return _etype;
 	}
 
-	@Override
+	//@Override
 	public void refreshSizeInformation()
 	{
 		//only for refreshing the size of single output

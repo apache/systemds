@@ -110,9 +110,11 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
  			}
- 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
+ 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS ) {
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks	
- 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
+ 			        _sbRuleSet.add(new RewriteSplitDagFunctionOp()                   ); //dependency: ...
+			}	
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)

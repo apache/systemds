@@ -41,7 +41,7 @@ mode in more depth.
 
 # Spark Batch Mode Invocation Syntax
 
-SystemML can be invoked in Hadoop Batch mode using the following syntax:
+SystemML can be invoked in Spark Batch mode using the following syntax:
 
     spark-submit SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
 
@@ -63,7 +63,7 @@ to be deprecated. All the primary algorithm scripts included with SystemML use n
 # Execution modes
 
 SystemML works seamlessly with all Spark execution modes, including *local* (`--master local[*]`),
-*yarn client* (`--master yarn-client`), *yarn cluster* (`--master yarn-cluster`), *etc*.  More
+*yarn client* (`--master yarn --deploy-mode client`), *yarn cluster* (`--master yarn --deploy-mode cluster`), *etc*.  More
 information on Spark cluster execution modes can be found on the
 [official Spark cluster deployment documentation](https://spark.apache.org/docs/latest/cluster-overview.html).
 *Note* that Spark can be easily run on a laptop in local mode using the `--master local[*]` described
@@ -71,8 +71,8 @@ above, which SystemML supports.
 
 # Recommended Spark Configuration Settings
 
-For best performance, we recommend setting the following flags when running SystemML with Spark:
-`--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128`.
+For best performance, we recommend setting the following configuration value when running SystemML with Spark:
+`--conf spark.driver.maxResultSize=0`.
 
 # Examples
 

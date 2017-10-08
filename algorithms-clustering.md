@@ -129,9 +129,9 @@ apart is a "false negative" etc.
                                     verb=[boolean]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
@@ -163,9 +163,9 @@ apart is a "false negative" etc.
                                     O=[file]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
@@ -255,9 +255,9 @@ standard output
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
@@ -284,9 +284,9 @@ standard output
                                     verb=1
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
@@ -317,9 +317,9 @@ To predict Y given X and C:
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
@@ -343,9 +343,9 @@ given X and C:
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
@@ -368,9 +368,9 @@ labels prY:
                                     O=/user/ml/stats.csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml

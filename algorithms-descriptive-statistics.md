@@ -125,9 +125,9 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
                                     STATS=<file>
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Univar-Stats.dml
                                  -config SystemML-config.xml
@@ -164,9 +164,9 @@ be stored. The format of the output matrix is defined by
                                     STATS=/user/ml/stats.mtx
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Univar-Stats.dml
                                  -config SystemML-config.xml
@@ -585,9 +585,9 @@ attributes like ‘Hair Color’.
                                     OUTDIR=<directory>
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f bivar-stats.dml
                                  -config SystemML-config.xml
@@ -654,9 +654,9 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
                                     OUTDIR=/user/ml/stats.mtx
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f bivar-stats.dml
                                  -config SystemML-config.xml
@@ -1147,9 +1147,9 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
                                     fmt=[format]
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml
@@ -1355,9 +1355,9 @@ SystemML Language Reference for details.
                                     fmt=csv
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml
@@ -1383,9 +1383,9 @@ SystemML Language Reference for details.
                                     O=/user/ml/Out.mtx
 </div>
 <div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+    $SPARK_HOME/bin/spark-submit --master yarn
+                                 --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml

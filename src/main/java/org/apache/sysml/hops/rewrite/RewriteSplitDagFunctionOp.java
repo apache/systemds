@@ -77,19 +77,19 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
                 sb1.setLiveIn(new VariableSet());
                 sb1.setLiveOut(new VariableSet());
 
-                //move data-dependent ops incl transient writes to new statement block
+                //move functionops incl transient writes to new statement block
                 //(and replace original persistent read with transient read)
                 ArrayList<Hop> sb1hops = new ArrayList<Hop>();
                 for (Hop c : cand) {
                     //if there are already transient writes use them
-                    boolean hasTWrites = hasTransientWriteParents(c);
+                    boolean hasTWrites = hasTrasientWriteParents(c);
                     boolean moveTWrite = hasTWrites ? HopRewriteUtils.rHasSimpleReadChain(c,
                             getFirstTransientWriteParent(c).getName()) : false;
 
                     String varname = null;
                     long rlen = c.getDim1();
                     long clen = c.getDim2();
-                    long nnz = c.getNnz();
+                    //long nnz = c.getNnz();
                     UpdateType update = c.getUpdateType();
                     long brlen = c.getRowsInBlock();
                     long bclen = c.getColsInBlock();
@@ -104,7 +104,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
                     sb1.liveIn().addVariable(varname, new DataIdentifier(diVar));
 
                     //ensure disjoint operators across DAGs (prevent replicated operations)
-                    handleReplicationOperators(sb1hops, sb.get_hops(), sb1.liveOut(), sb.liveIn());
+                    handleReplicatedOperators(sb1hops, sb.get_hops(), sb1.liveOut(), sb.liveIn());
 
                     //deep copy new dag (in order to prevent any dangling references)
                     sb1.set_hops(Recompiler.deepCopyHopsDag(sb1hops));
@@ -112,7 +112,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
                     sb1.setSplitDag(true); //avoid later merge by other rewrites
 
                     //recursive application of rewrite rule
-                    List<StatementBlock> tmp = rewirteStatementBlock(sb1, state);
+                    List<StatementBlock> tmp = rewriteStatementBlocks((List<StatementBlock>) sb1, state);
 
                     //add new statement blocks to output
                     ret.addAll(tmp); //statement block with FunctionOp related
@@ -120,10 +120,10 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
                     sb.setSplitDag(true); //avoid later merge by rewrites
                 }
             } catch (Exception ex) {
-                throw new HopsException("Failed to split hops dag for data dependent operators with unknown size.", ex);
+                throw new HopsException("Failed to split hops dag for function operators with unknown size.", ex);
             }
 
-            LOG.debug("Applied splitDagDataDependentOperators (lines " + sb.getBeginLine() + "-" + sb.getEndLine() + ").");
+            LOG.debug("Applied splitDagFunctionOp (lines " + sb.getBeginLine() + "-" + sb.getEndLine() + ").");
         }
         //keep original hop dag
         else
@@ -132,6 +132,20 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
         }
 
         return ret;
+    }
+
+    private void collectCandidateChildFunctionOp(ArrayList<Hop> cand, HashSet<Hop> candChilds)
+    {
+        Hop.resetVisitStatus(cand);
+        if( cand != null )
+            for( Hop root : cand )
+                rCollectCandidateChildFunctionOp(root, cand, candChilds, false);
+
+        // Immediately reset the visit status because candidates might be inner nodes in the DAG.
+        // Subsequent resets on the root nodes of the DAG would otherwise not necessarily reach
+        // these nodes which could lead to missing checks on subsequent passes (e.g. when checking
+        // for replicated operators);
+        Hop.resetVisitStatus(cand);
     }
 
     private void collectFunctionOp( ArrayList<Hop> roots, ArrayList<Hop> cand )
@@ -144,7 +158,6 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
             rCollectFunctionOp(root, cand);
     }
 
-    @Override
     private void rCollectFunctionOp( Hop hop, ArrayList<Hop> cand )
     {
         if( hop.isVisited() )
@@ -155,12 +168,13 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
         boolean investigateChilds = true;
 
         //collect function operators(FunctionOp)
+        //change this snippet according to need(j143)
         //#1 removeEmpty
         if(   hop instanceof FunctionOp )
         {
             FunctionOp fop = (FunctionOp)hop;
             cand.add(fop);
-            investigaeChilds = false;
+            investigateChilds = false;
 
             //keep interesting consumer information, flag hop accordingly
             boolean noEmpltyBlocks = true;
@@ -171,7 +185,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
 
             //}
 
-            fop.setOutputEmptyBlocks(!noEmptyBlocks);
+            fop.setOutputEmptyBlocks(!noEmptyBlocks);//if EmptyBlocks are there
 
             if( onlyPMM && diagInput ) {
                 //configure rmEmpty to directly output selection vector
@@ -185,7 +199,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
         }
     }
 
-    private void hasTrasientWriteParents( Hop hop )
+    private boolean hasTrasientWriteParents(Hop hop )
     {
         for( Hop p : hop.getParent() )
             if( p instanceof FunctionOp )
@@ -205,9 +219,9 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
     {
         //step 1: create probe set SB1
         HashSet<Hop> probeSet = new HashSet<Hop>();
-        Hop.restVisitStatus(rootsSB1);
+        Hop.resetVisitStatus(rootsSB1);
         for( Hop h : rootsSB1 )
-            rAddHopsToProbSet( h, probeSet );
+            rAddHopsToProbeSet( h, probeSet );
 
         //step 2: probe SB2 operators top-down (collect cut candidates)
         HashSet<Pair<Hop,Hop>> candSet = new HashSet<Pair<Hop,Hop>>();
@@ -245,6 +259,12 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
         }
     }
 
+    /**
+     * NOTE: ProbeSet is..
+     *
+     * @param hop
+     * @param probeSet
+     */
     private void rAddHopsToProbeSet(Hop hop, HashSet<Hop> probeSet )
     {
         if( hop.isVisited() )
@@ -291,21 +311,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
     }
 
 
-    private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )
-    {
-        Hop.resetVisitStatus(cand);
-        if( cand != null )
-            for( Hop root : cand )
-                rCollectCandidateChildOperators(root, cand, candChilds, false);
-
-        // Immediately reset teh visit status because candidates might be inner nodes in the DAG.
-        // Subsequent resets on the root nodes of the DAG would otherwise not necessarily reach
-        // these nodes which could lead to missing checks on subsequent passes (e.g. when checking
-        // for replicated operators);
-        Hop.resetVisitStatus(cand);
-    }
-
-    private void rCollectCandidateChildOperators( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
+    private void rCollectCandidateChildFunctionOp( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
     {
         if( hop.isVisited() )
             return;
@@ -324,7 +330,7 @@ public class RewriteSplitDagFunctionOp extends StatementBlockRewriteRule {
         //process childs recursively
         if( hop.getInput() != null ) {
             for( Hop c: hop.getInput() )
-                rCollectCandidateChildOperators(c, cand, candChilds, passedFlag);
+                rCollectCandidateChildFunctionOp(c, cand, candChilds, passedFlag);
         }
 
         hop.setVisited();

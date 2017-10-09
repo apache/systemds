@@ -110,7 +110,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		MatrixBlock value = new MatrixBlock(brlen, bclen, sparse);
 		if( sparse ) {
 			value.allocateAndResetSparseRowsBlock(true, SparseBlock.Type.CSR);
-			value.getSparseBlock().allocate(0, 1024);
+			value.getSparseBlock().allocate(0, brlen*bclen);
 		}
 		return value;
 	}

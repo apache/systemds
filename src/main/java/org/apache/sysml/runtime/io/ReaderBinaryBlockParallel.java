@@ -62,10 +62,10 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-				
+		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
-	
+		
 		//core read 
 		readBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
 		
@@ -79,7 +79,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException
-	{			
+	{
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
@@ -95,7 +95,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			}
 
 			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);
 			
 			//check for exceptions and aggregate nnz
 			long lnnz = 0;
@@ -158,15 +158,15 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 					
 					int row_offset = (int)(key.getRowIndex()-1)*_brlen;
 					int col_offset = (int)(key.getColumnIndex()-1)*_bclen;
-					
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
 					
 					//bound check per block
-					if( row_offset + rows < 0 || row_offset + rows > _rlen || col_offset + cols<0 || col_offset + cols > _clen )
-					{
-						throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
-								              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
+					if( row_offset + rows < 0 || row_offset + rows > _rlen 
+						|| col_offset + cols<0 || col_offset + cols > _clen ) {
+						throw new IOException("Matrix block ["+(row_offset+1)+":"
+							+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
+							"out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
 					}
 			
 					//copy block to result
@@ -196,7 +196,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 					else
 					{
 						_dest.copy( row_offset, row_offset+rows-1, 
-								   col_offset, col_offset+cols-1, value, false );
+							col_offset, col_offset+cols-1, value, false );
 					}
 					
 					//aggregate nnz

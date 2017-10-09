@@ -725,11 +725,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			{
 				if( b.isEmpty(i) ) continue;
 				int aix = rowoffset+i;
-					
+				
 				//single block append (avoid re-allocations)
-				if( sparseBlock.isEmpty(aix) && coloffset==0
-					&& b instanceof SparseBlockMCSR ) { 
-					sparseBlock.set(aix, b.get(i), deep);
+				if( sparseBlock.isEmpty(aix) && coloffset==0 ) { 
+					//note: the deep copy flag is only relevant for MCSR due to
+					//shallow references of b.get(i); other block formats do not
+					//require a redundant copy because b.get(i) created a new row.
+					boolean ldeep = (deep && b instanceof SparseBlockMCSR);
+					sparseBlock.set(aix, b.get(i), ldeep);
 				}
 				else { //general case
 					int pos = b.pos(i);

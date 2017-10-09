@@ -102,5 +102,37 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 		//assertHeavyHitterPresent(heavyHitterOpCode);
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
+	
+	 /**
+    * Tests a single unary op with inputs and outputs of the specified size and sparsity
+	*
+	* @param scriptStr         script string
+	* @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	* @param inStr             name of input variable in provided script string
+	* @param outStr1           name of first output variable in script string
+	* @param outStr2           name of second output variable in script string
+	* @param outStr3           name of third output variable in script string
+	* @param seed              seed for the random number generator for the random input matrix
+	* @param row               number of rows of input matrix
+	* @param column            number of rows of input matrix
+	* @param sparsity          sparsity of the input matrix
+	*/
+	public void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr1,
+			String outStr2, String outStr3, int seed, int row, int column, double sparsity) {
+		System.out.println("Matrix of size [" + row + ", " + column + "], sparsity = " + sparsity);
+		Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put(inStr, in1);
+		List<Object> outCPU1 = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr1));
+		List<Object> outGPU1 = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr1));
+		List<Object> outCPU2 = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr2));
+		List<Object> outGPU2 = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr2));
+		List<Object> outCPU3 = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr3));
+		List<Object> outGPU3 = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr3));
+		//assertHeavyHitterPresent(heavyHitterOpCode);
+		assertEqualObjects(outCPU1.get(0), outGPU1.get(0));
+		assertEqualObjects(outCPU2.get(0), outGPU2.get(0));
+		assertEqualObjects(outCPU3.get(0), outGPU3.get(0));
+	}
 
 }

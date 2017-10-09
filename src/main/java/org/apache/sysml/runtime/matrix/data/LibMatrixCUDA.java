@@ -3022,14 +3022,13 @@ public class LibMatrixCUDA {
 
 
 		// step 6: compute |A - U*S*Vt|, here W = S* Vt
-		double R_fro = 0.0;
-		Pointer W = gCtx.allocate(instName, m * n * Sizeof.DOUBLE);
-		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		JCublas.cublasDgemm(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, n, n, Vt, lda, S, 1, W, lda);//todo find size of W
-		JCublas.cublasDgemm(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N, m, n, n, pointerTo(-1.0),
-				U, lda, W, lda, pointerTo(1.0), A, lda);
-
-		JCublas.cublasDnrm2(gCtx.getCublasHandle(), lda * n, A, 1.0, 0.0);//todo check the arguments
+//		Pointer W = gCtx.allocate(instName, m * n * Sizeof.DOUBLE);
+//		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+//		JCublas.cublasDgemm(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, n, n, Vt, lda, S, 1, W, lda);
+//		JCublas.cublasDgemm(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N, m, n, n, pointerTo(-1.0),
+//				U, lda, W, lda, pointerTo(1.0), A, lda);
+//
+//		JCublas.cublasDnrm2(gCtx.getCublasHandle(), lda * n, A, 1.0, 0.0);//todo check the arguments
 
 		// Free Resources
 		gCtx.cudaFreeHelper(instName, work);

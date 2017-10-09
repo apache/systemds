@@ -82,6 +82,11 @@ public class UnaryOpTests extends UnaryOpTestsBase {
 	}
 
 	@Test
+	public void testSVD() throws Exception {
+		testSimpleUnaryOpMatrixOutput("svd", "gpu_svd");
+	}
+
+	@Test
 	public void testExp() throws Exception {
 		testSimpleUnaryOpMatrixOutput("exp", "gpu_exp");
 	}

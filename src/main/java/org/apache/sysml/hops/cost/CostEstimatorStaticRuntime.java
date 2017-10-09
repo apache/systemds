@@ -913,7 +913,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 
 					
 				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
-					//TODO add cost functions for commons math builtins: inverse, cholesky
+					//TODO add cost functions for commons math builtins: inverse, cholesky, svd
 					if( optype.equals("print") ) //scalar only
 						return 1;
 					else
@@ -924,7 +924,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						
 						if( optype.equals("sin") || optype.equals("tan") || optype.equals("round")
 							|| optype.equals("abs") || optype.equals("sqrt") || optype.equals("sprop")
-							|| optype.equals("sigmoid") || optype.equals("sign") ) //sparse-safe
+							|| optype.equals("sigmoid") || optype.equals("sign") || optype.equals("svd") ) //sparse-safe
 						{
 							if( leftSparse ) //sparse
 								return xbu * d1m * d1n * d1s;	

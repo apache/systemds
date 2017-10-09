@@ -3037,7 +3037,7 @@ public class LibMatrixCUDA {
 		gCtx.cudaFreeHelper(instName, U);
 		gCtx.cudaFreeHelper(instName, Vt);
 		gCtx.cudaFreeHelper(instName, devInfo);
-		gCtx.cudaFreeHelper(instName, W);
+//		gCtx.cudaFreeHelper(instName, W);
 
 		ATobj.clearData();
 

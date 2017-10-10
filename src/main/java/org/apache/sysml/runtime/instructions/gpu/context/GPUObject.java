@@ -115,7 +115,6 @@ public class GPUObject {
 		GPUObject me = this;
 		GPUObject that = new GPUObject(me.gpuContext, me.mat);
 		that.dirty = me.dirty;
-		// TODO Nakul: Should the locks be cloned here ?
 		// The only place clone is getting called: LibMatrixCUDA's solve
 		that.readLocks.reset();
 		that.writeLock = false;

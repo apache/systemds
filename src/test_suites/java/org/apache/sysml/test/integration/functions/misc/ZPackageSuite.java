@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	FunctionInliningTest.class,
 	FunctionNamespaceTest.class,
 	IfTest.class,
+	InvalidBuiltinFunctionCallTest.class,
 	InvalidFunctionAssignmentTest.class,
 	InvalidFunctionSignatureTest.class,
 	IPAConstantFoldingScalarVariablePropagationTest.class,

@@ -545,24 +545,19 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		throws LanguageException, ParseException, IOException
 	{
 		_constVarsIn.putAll(constVars);
-		HashMap<String, ConstIdentifier> currConstVars = new HashMap<String,ConstIdentifier>();
-		currConstVars.putAll(constVars);
-
 		_statements = rewriteFunctionCallStatements(dmlProg, _statements);
 		_dmlProg = dmlProg;
-
-		for (Statement current : _statements){
-
-			if (current instanceof OutputStatement){
+		
+		HashMap<String, ConstIdentifier> currConstVars = new HashMap<String,ConstIdentifier>(constVars);
+		for (Statement current : _statements) {
+			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement)current;
-
 				// validate variable being written by output statement exists
 				DataIdentifier target = (DataIdentifier)os.getIdentifier();
 				if (ids.getVariable(target.getName()) == null) {
 					//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
 					raiseValidateError("Undefined Variable (" + target.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
-
 				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
 					boolean paramsOkay = true;
 					for (String key : os.getSource().getVarParams().keySet()){
@@ -577,197 +572,18 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				Expression source = os.getSource();
 				source.setOutput(target);
 				source.validateExpression(ids.getVariables(), currConstVars, conditional);
-
 				setStatementFormatType(os, conditional);
 				target.setDimensionValueProperties(ids.getVariable(target.getName()));
 			}
-
 			else if (current instanceof AssignmentStatement){
-				AssignmentStatement as = (AssignmentStatement)current;
-				DataIdentifier target = as.getTarget();
-			 	Expression source = as.getSource();
-
-				if (source instanceof FunctionCallIdentifier) {
-					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars, conditional);
-				}
-				else {
-					if( MLContextProxy.isActive() )
-						MLContextProxy.setAppropriateVarsForRead(source, target._name);
-
-					source.validateExpression(ids.getVariables(), currConstVars, conditional);
-				}
-
-				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ)
-					setStatementFormatType(as, conditional);
-
-				// Handle const vars: (a) basic constant propagation, and (b) transitive constant propagation over assignments
-				if (target != null) {
-					currConstVars.remove(target.getName());
-					if(source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){ //basic
-						currConstVars.put(target.getName(), (ConstIdentifier)source);
-					}
-					if( source instanceof DataIdentifier && !(target instanceof IndexedIdentifier) ){ //transitive
-						DataIdentifier diSource = (DataIdentifier) source;
-						if( currConstVars.containsKey(diSource.getName()) ){
-							currConstVars.put(target.getName(), currConstVars.get(diSource.getName()));
-						}
-					}
-				}
-
-				if (source instanceof BuiltinFunctionExpression){
-					BuiltinFunctionExpression bife = (BuiltinFunctionExpression)source;
-					if (   bife.getOpCode() == Expression.BuiltinFunctionOp.NROW
-						|| bife.getOpCode() == Expression.BuiltinFunctionOp.NCOL )
-					{
-						DataIdentifier id = (DataIdentifier)bife.getFirstExpr();
-						DataIdentifier currVal = ids.getVariable(id.getName());
-						if (currVal == null){
-							//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
-							bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
-						}
-						IntIdentifier intid = null;
-						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW) {
-							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
-									? ((IndexedIdentifier) currVal).getOrigDim1() : currVal.getDim1(), bife);
-						} else {
-							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
-									? ((IndexedIdentifier) currVal).getOrigDim2() : currVal.getDim2(), bife);
-						}
-
-						// handle case when nrow / ncol called on variable with size unknown (dims == -1)
-						//	--> const prop NOT possible
-						if (intid.getValue() != -1){
-							currConstVars.put(target.getName(), intid);
-						}
-					}
-				}
-				if (target == null) {
-					// function has no return value
-				}
-				// CASE: target NOT indexed identifier
-				else if (!(target instanceof IndexedIdentifier)){
-					target.setProperties(source.getOutput());
-					if (source.getOutput() instanceof IndexedIdentifier){
-						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
-					}
-
-				}
-				// CASE: target is indexed identifier
-				else
-				{
-					// process the "target" being indexed
-					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
-					if (targetAsSeen == null){
-						target.raiseValidateError("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName(), conditional);
-					}
-					target.setProperties(targetAsSeen);
-
-					// process the expressions for the indexing
-					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables(), currConstVars, conditional);
-					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
-						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables(), currConstVars, conditional);
-					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
-						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables(), currConstVars, conditional);
-					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
-						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars, conditional);
-
-					// validate that LHS indexed identifier is being assigned a matrix value
-//					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
-//						LOG.error(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-//						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-//					}
-
-					// validate that size of LHS index ranges is being assigned:
-					//	(a) a matrix value of same size as LHS
-					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
-					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars, conditional);
-
-					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
-						target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-								+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-								+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
-					}
-
-					if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
-						target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-								+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-								+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
-					}
-
-					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
-				}
-
-				if (target != null) {
-					ids.addVariable(target.getName(), target);
-				}
-
+				validateAssignmentStatement(current, dmlProg, ids, currConstVars, conditional);
 			}
-
 			else if (current instanceof MultiAssignmentStatement){
-				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
-				ArrayList<DataIdentifier> targetList = mas.getTargetList();
-
-				// perform validation of source expression
-				Expression source = mas.getSource();
-				/*
-				 * MultiAssignmentStatments currently supports only External,
-				 * User-defined, and Multi-return Builtin function expressions
-				 */
-				if (!(source instanceof DataIdentifier)
-						|| (source instanceof DataIdentifier && !((DataIdentifier)source).multipleReturns()) ) {
-				//if (!(source instanceof FunctionCallIdentifier) ) {
-						//|| !(source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).isMultiReturnBuiltinFunction()) ){
-					source.raiseValidateError("can only use user-defined functions with multi-assignment statement", conditional);
-				}
-
-				if ( source instanceof FunctionCallIdentifier) {
-					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-					fci.validateExpression(dmlProg, ids.getVariables(), currConstVars, conditional);
-				}
-				else if ( (source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression)
-						&& ((DataIdentifier)source).multipleReturns()) {
-					source.validateExpression(mas, ids.getVariables(), currConstVars, conditional);
-				}
-				else
-					throw new LanguageException("Unexpected error.");
-
-
-				if ( source instanceof FunctionCallIdentifier ) {
-					for (int j =0; j< targetList.size(); j++){
-
-						DataIdentifier target = targetList.get(j);
-							// set target properties (based on type info in function call statement return params)
-							FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-							FunctionStatement fstmt = (FunctionStatement)_dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-							if (fstmt == null){
-								fci.raiseValidateError(" function " + fci.getName() + " is undefined in namespace " + fci.getNamespace(), conditional);
-							}
-							if (!(target instanceof IndexedIdentifier)){
-								target.setProperties(fstmt.getOutputParams().get(j));
-							}
-							else{
-								DataIdentifier targetAsSeen = ids.getVariable(target.getName());
-								if (targetAsSeen == null){
-									raiseValidateError(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName(), conditional);
-								}
-								target.setProperties(targetAsSeen);
-							}
-							ids.addVariable(target.getName(), target);
-					}
-				}
-				else if ( source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression ) {
-					Identifier[] outputs = source.getOutputs();
-					for (int j=0; j < targetList.size(); j++) {
-						ids.addVariable(targetList.get(j).getName(), (DataIdentifier)outputs[j]);
-					}
-				}
+				validateMultiAssignmentStatement(current, dmlProg, ids, currConstVars, conditional);
 			}
-
 			else if(current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
 				raiseValidateError("control statement (WhileStatement, IfStatement, ForStatement) should not be in generic statement block. Likely a parsing error", conditional);
 			}
-
 			else if (current instanceof PrintStatement) {
 				PrintStatement pstmt = (PrintStatement) current;
 				List<Expression> expressions = pstmt.getExpressions();
@@ -782,22 +598,192 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					}
 				}
 			}
-
 			// no work to perform for PathStatement or ImportStatement
 			else if (current instanceof PathStatement){}
 			else if (current instanceof ImportStatement){}
-
-
 			else {
 				raiseValidateError("cannot process statement of type " + current.getClass().getSimpleName(), conditional);
 			}
-
-		} // end for (Statement current : _statements){
+		}
 		_constVarsOut.putAll(currConstVars);
 		return ids;
-
 	}
-
+	
+	private void validateAssignmentStatement(Statement current, DMLProgram dmlProg, 
+		VariableSet ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+			throws LanguageException, IOException, ParseException 
+	{
+		AssignmentStatement as = (AssignmentStatement)current;
+		DataIdentifier target = as.getTarget();
+		Expression source = as.getSource();
+		
+		if (source instanceof FunctionCallIdentifier) {
+			((FunctionCallIdentifier) source).validateExpression(
+				dmlProg, ids.getVariables(),currConstVars, conditional);
+		}
+		else { //all builtin functions and expressions
+			if( target == null  )
+				raiseValidateError("Missing variable assignment.", false);
+			
+			if( MLContextProxy.isActive() )
+				MLContextProxy.setAppropriateVarsForRead(source, target._name);
+			
+			source.validateExpression(ids.getVariables(), currConstVars, conditional);
+		}
+		
+		if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ)
+			setStatementFormatType(as, conditional);
+		
+		// Handle const vars: (a) basic constant propagation, and (b) transitive constant propagation over assignments
+		if (target != null) {
+			currConstVars.remove(target.getName());
+			if(source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){ //basic
+				currConstVars.put(target.getName(), (ConstIdentifier)source);
+			}
+			if( source instanceof DataIdentifier && !(target instanceof IndexedIdentifier) ){ //transitive
+				DataIdentifier diSource = (DataIdentifier) source;
+				if( currConstVars.containsKey(diSource.getName()) ){
+					currConstVars.put(target.getName(), currConstVars.get(diSource.getName()));
+				}
+			}
+		}
+		
+		if (source instanceof BuiltinFunctionExpression){
+			BuiltinFunctionExpression bife = (BuiltinFunctionExpression)source;
+			if (   bife.getOpCode() == Expression.BuiltinFunctionOp.NROW
+				|| bife.getOpCode() == Expression.BuiltinFunctionOp.NCOL )
+			{
+				DataIdentifier id = (DataIdentifier)bife.getFirstExpr();
+				DataIdentifier currVal = ids.getVariable(id.getName());
+				if (currVal == null){
+					//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
+					bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+				IntIdentifier intid = null;
+				if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW) {
+					intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
+							? ((IndexedIdentifier) currVal).getOrigDim1() : currVal.getDim1(), bife);
+				} else {
+					intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
+							? ((IndexedIdentifier) currVal).getOrigDim2() : currVal.getDim2(), bife);
+				}
+				
+				// handle case when nrow / ncol called on variable with size unknown (dims == -1)
+				//	--> const prop NOT possible
+				if (intid.getValue() != -1)
+					currConstVars.put(target.getName(), intid);
+			}
+		}
+		if (target == null) {
+			// function has no return value
+		}
+		// CASE: target NOT indexed identifier
+		else if (!(target instanceof IndexedIdentifier)){
+			target.setProperties(source.getOutput());
+			if (source.getOutput() instanceof IndexedIdentifier)
+				target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
+		}
+		// CASE: target is indexed identifier
+		else
+		{
+			// process the "target" being indexed
+			DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+			if (targetAsSeen == null){
+				target.raiseValidateError("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName(), conditional);
+			}
+			target.setProperties(targetAsSeen);
+			
+			// process the expressions for the indexing
+			if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
+				((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables(), currConstVars, conditional);
+			if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
+				((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables(), currConstVars, conditional);
+			if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
+				((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables(), currConstVars, conditional);
+			if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
+				((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars, conditional);
+			
+			// validate that size of LHS index ranges is being assigned:
+			//	(a) a matrix value of same size as LHS
+			//	(b) singleton value (semantics: initialize enitre submatrix with this value)
+			IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars, conditional);
+			
+			if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
+				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+			}
+			
+			if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
+				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+			}
+			((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
+		}
+		
+		if (target != null)
+			ids.addVariable(target.getName(), target);
+	}
+	
+	private void validateMultiAssignmentStatement(Statement current, DMLProgram dmlProg, 
+		VariableSet ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+			throws LanguageException, IOException 
+	{
+		MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
+		ArrayList<DataIdentifier> targetList = mas.getTargetList();
+		Expression source = mas.getSource();
+		
+		//MultiAssignmentStatments currently supports only External,
+		//User-defined, and Multi-return Builtin function expressions
+		if (!(source instanceof DataIdentifier)
+				|| (source instanceof DataIdentifier && !((DataIdentifier)source).multipleReturns()) ) {
+			source.raiseValidateError("can only use user-defined functions with multi-assignment statement", conditional);
+		}
+		if ( source instanceof FunctionCallIdentifier) {
+			FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
+			fci.validateExpression(dmlProg, ids.getVariables(), currConstVars, conditional);
+		}
+		else if ( (source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression)
+				&& ((DataIdentifier)source).multipleReturns()) {
+			source.validateExpression(mas, ids.getVariables(), currConstVars, conditional);
+		}
+		else
+			throw new LanguageException("Unexpected error.");
+		
+		if ( source instanceof FunctionCallIdentifier ) {
+			for (int j =0; j< targetList.size(); j++) {
+				DataIdentifier target = targetList.get(j);
+				// set target properties (based on type info in function call statement return params)
+				FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
+				FunctionStatement fstmt = (FunctionStatement)_dmlProg
+					.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+				if (fstmt == null){
+					fci.raiseValidateError(" function " + fci.getName() 
+						+ " is undefined in namespace " + fci.getNamespace(), conditional);
+				}
+				if (!(target instanceof IndexedIdentifier)){
+					target.setProperties(fstmt.getOutputParams().get(j));
+				}
+				else{
+					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+					if (targetAsSeen == null){
+						raiseValidateError(target.printErrorLocation() + "cannot assign value to indexed identifier " 
+							+ target.toString() + " without first initializing " + target.getName(), conditional);
+					}
+					target.setProperties(targetAsSeen);
+				}
+				ids.addVariable(target.getName(), target);
+			}
+		}
+		else if ( source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression ) {
+			Identifier[] outputs = source.getOutputs();
+			for (int j=0; j < targetList.size(); j++) {
+				ids.addVariable(targetList.get(j).getName(), (DataIdentifier)outputs[j]);
+			}
+		}
+	}
+	
 	public void setStatementFormatType(OutputStatement s, boolean conditionalValidate)
 		throws LanguageException, ParseException
 	{

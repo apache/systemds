@@ -269,10 +269,9 @@ public class CNodeBinary extends CNode
 		sb.append(_inputs.get(1).codegen(sparse));
 		
 		//generate binary operation (use sparse template, if data input)
-		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData 
-			&& (_inputs.get(0).getVarname().startsWith("a")
-				|| _inputs.get(1).getVarname().startsWith("a"))
-			&& !_inputs.get(0).isLiteral());
+		boolean lsparse = sparse 
+			&& ((_inputs.get(0) instanceof CNodeData && _inputs.get(0).getVarname().startsWith("a"))
+			||(_inputs.get(1) instanceof CNodeData && _inputs.get(1).getVarname().startsWith("a")));
 		boolean scalarInput = _inputs.get(0).getDataType().isScalar();
 		boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 			&& _inputs.get(1).getDataType().isMatrix());

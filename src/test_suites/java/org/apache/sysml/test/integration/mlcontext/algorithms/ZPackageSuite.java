@@ -28,8 +28,9 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ 
   MLContextUnivariateStatisticsTest.class,
-  MLContextGLMTest.class
-})
+  MLContextLinregTest.class,
+  MLContextGLMTest.class,
+    })
 
 /** This class is just a holder for the above JUnit annotations. */
 public class ZPackageSuite {

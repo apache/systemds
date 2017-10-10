@@ -26,11 +26,11 @@ import org.junit.runners.Suite;
  * Group together the tests in this package.
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({
-        MLContextUnivariateStatisticsTest.class,
-        MLContextLinregTest.class,      
-        MLContextSVMTest.class
-})
+@Suite.SuiteClasses({ 
+  MLContextUnivariateStatisticsTest.class,
+  MLContextLinregTest.class,
+  MLContextSVMTest.class,
+    })
 
 /** This class is just a holder for the above JUnit annotations. */
 public class ZPackageSuite {

@@ -41,8 +41,8 @@ def default_jars(systemml_home):
     return target_jars, systemml_jar
 
 
-def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
-                       executor_cores, conf,
+def spark_submit_entry(master, deploy_mode, driver_memory, num_executors,
+                       executor_memory, executor_cores, conf,
                        nvargs, args, config, explain, debug, stats, gpu, f):
     """
     This function is responsible for the execution of arguments via
@@ -100,7 +100,7 @@ def spark_submit_entry(master, driver_memory, num_executors, executor_memory,
 
     # stats, explain, target_jars
     cmd_spark = [spark_path, '--class', 'org.apache.sysml.api.DMLScript',
-                 '--master', master,
+                 '--master', master, '--deploy-mode', deploy_mode,
                  '--driver-memory', driver_memory,
                  '--conf', default_conf,
                  '--jars', cuda_jars, systemml_jars]
@@ -129,7 +129,8 @@ if __name__ == '__main__':
     cparser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                       description='System-ML Spark Submit Script')
     # SPARK-SUBMIT Options
-    cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
+    cparser.add_argument('--master', default='local[*]', help='local, yarn', metavar='')
+    cparser.add_argument('--deploy-mode', help='client, cluster', default='client', metavar='')
     cparser.add_argument('--driver-memory', default='8G', help='Memory for driver (e.g. 512M, 1G)', metavar='')
     cparser.add_argument('--num-executors', nargs=1, help='Number of executors to launch', metavar='')
     cparser.add_argument('--executor-memory', nargs=1, help='Memory per executor', metavar='')

@@ -84,6 +84,9 @@ def split_config_args(args):
         if args['master'] is not None:
             backend_args_dict['--master'] = args['master']
 
+        if args['deploy_mode'] is not None:
+            backend_args_dict['--deploy-mode'] = args['master']
+
         if args['num_executors'] is not None:
             backend_args_dict['--num-executors'] = args['num_executors']
 

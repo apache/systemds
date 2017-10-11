@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
@@ -111,19 +112,20 @@ public class LibMatrixMult
 	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
-	{	
+	{
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-			
+		
 		//Timing time = new Timing(true);
-			
+		
 		//pre-processing: output allocation
+		boolean ultraSparse = isUltraSparseMatrixMult(m1, m2);
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
-		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
+		ret.sparse = ultraSparse;
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
 		
@@ -133,7 +135,7 @@ public class LibMatrixMult
 		int cu = m2.clen;
 		
 		//core matrix mult computation
-		if( m1.isUltraSparse() || m2.isUltraSparse() )
+		if( ultraSparse )
 			matrixMultUltraSparse(m1, m2, ret, 0, ru2);
 		else if(!m1.sparse && !m2.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
@@ -147,13 +149,11 @@ public class LibMatrixMult
 		//post-processing: nnz/representation
 		if( !ret.sparse )
 			ret.recomputeNonZeros();
-		
 		if(examSparsity)
 			ret.examSparsity();
 		
-		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
-		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+		//		"("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
 	
 	/**
@@ -168,13 +168,13 @@ public class LibMatrixMult
 	 */
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) 
 		throws DMLRuntimeException
-	{	
+	{
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-			
+		
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
@@ -188,15 +188,13 @@ public class LibMatrixMult
 		
 		//pre-processing: output allocation (in contrast to single-threaded,
 		//we need to allocate sparse as well in order to prevent synchronization)
+		boolean ultraSparse = isUltraSparseMatrixMult(m1, m2);
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
-		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-		if( !ret.sparse )
-			ret.allocateDenseBlock();
-		else
-			ret.allocateSparseRowsBlock();
+		ret.sparse = ultraSparse;
+		ret.allocateBlock();
 		
-		if (!ret.isThreadSafe()){
+		if (!ret.isThreadSafe()) {
 			matrixMult(m1, m2, ret);
 			return;
 		}
@@ -216,7 +214,7 @@ public class LibMatrixMult
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, lb, lb+blklens.get(i)));
 			//execute tasks
-			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results (nnz, ret for vector/matrix)
 			ret.nonZeros = 0; //reset after execute
@@ -233,12 +231,11 @@ public class LibMatrixMult
 			throw new DMLRuntimeException(ex);
 		}
 		
-		
 		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();
 		
 		//System.out.println("MM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
-		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+		//		"("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
 	
 	/**
@@ -752,7 +749,7 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<MatrixMultWDivTask>();			
+			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<MatrixMultWDivTask>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
 			if( wt.isLeft() ) {
@@ -827,7 +824,7 @@ public class LibMatrixMult
 		ret.allocateDenseBlock();
 		
 		try 
-		{			
+		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
 			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<MatrixMultWCeTask>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
@@ -1476,9 +1473,8 @@ public class LibMatrixMult
 	private static void matrixMultUltraSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
-		//TODO perf sparse block, consider iterators
-		
-		boolean leftUS = m1.isUltraSparse();
+		final boolean leftUS = m1.isUltraSparse()
+			|| (m1.isUltraSparse(false) && !m2.isUltraSparse());
 		final int m  = m1.rlen;
 		final int cd = m1.clen;
 		final int n  = m2.clen;
@@ -1486,6 +1482,7 @@ public class LibMatrixMult
 		if( leftUS ) //left is ultra-sparse (IKJ)
 		{
 			SparseBlock a = m1.sparseBlock;
+			SparseBlock c = ret.sparseBlock;
 			boolean rightSparse = m2.sparse;
 			
 			for( int i=rl; i<ru; i++ )
@@ -1504,13 +1501,19 @@ public class LibMatrixMult
 							if( !m2.sparseBlock.isEmpty(aix) ) {
 								ret.rlen=m;
 								ret.allocateSparseRowsBlock(false); //allocation on demand
-								ret.sparseBlock.set(i, m2.sparseBlock.get(aix), true); 
+								boolean ldeep = (m2.sparseBlock instanceof SparseBlockMCSR);
+								ret.sparseBlock.set(i, m2.sparseBlock.get(aix), ldeep);
 								ret.nonZeros += ret.sparseBlock.size(i);
 							}
 						}
 						else { //dense right matrix (append all values)
-							for( int j=0; j<n; j++ )
-								ret.appendValue(i, j, m2.quickGetValue(aix, j));
+							int lnnz = (int)m2.recomputeNonZeros(aix, aix, 0, n-1);
+							if( lnnz > 0 ) {
+								c.allocate(i, lnnz); //allocate once
+								for( int j=0; j<n; j++ )
+									c.append(i, j, m2.quickGetValue(aix, j));
+								ret.nonZeros += lnnz;
+							}
 						}
 					}
 					else //GENERAL CASE
@@ -1536,13 +1539,13 @@ public class LibMatrixMult
 			SparseBlock b = m2.sparseBlock;
 			
 			for(int k = 0; k < cd; k++ ) 
-			{			
+			{
 				if( !b.isEmpty(k) ) 
 				{
 					int bpos = b.pos(k);
 					int blen = b.size(k);
 					int[] bixs = b.indexes(k);
-					double[] bvals = b.values(k);								
+					double[] bvals = b.values(k);
 					for( int j=bpos; j<bpos+blen; j++ )
 					{
 						double bval = bvals[j];
@@ -3552,6 +3555,14 @@ public class LibMatrixMult
 				&& m2.clen > k * 1024 && m1.rlen < k * 32 && !pm2r
 				&& 8*m1.rlen*m1.clen < 256*1024 ); //lhs fits in L2 cache
 	}
+	
+	public static boolean isUltraSparseMatrixMult(MatrixBlock m1, MatrixBlock m2) {
+		//note: ultra-sparse matrix mult implies also sparse outputs, hence we need
+		//to be conservative an cannot use this for all ultra-sparse matrices.
+		return (m1.isUltraSparse() || m2.isUltraSparse()) //base case
+			|| (m1.isUltraSparsePermutationMatrix() 
+				&& OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0);
+	}
 
 	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) 
 		throws DMLRuntimeException
@@ -3643,17 +3654,16 @@ public class LibMatrixMult
 
 	private static class MatrixMultTask implements Callable<Object> 
 	{
-		private MatrixBlock _m1  = null;
-		private MatrixBlock _m2  = null;
+		private final MatrixBlock _m1;
+		private final MatrixBlock _m2;
 		private MatrixBlock _ret = null;
-		private boolean _tm2 = false; //transposed m2
-		private boolean _pm2r = false; //par over m2 rows
-		private boolean _pm2c = false; //par over m2 rows
-		
-		private int _rl = -1;
-		private int _ru = -1;
+		private final boolean _tm2; //transposed m2
+		private final boolean _pm2r; //par over m2 rows
+		private final boolean _pm2c; //par over m2 rows
+		private final int _rl;
+		private final int _ru;
 
-		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 				boolean tm2, boolean pm2r, boolean pm2c, int rl, int ru )
 		{
 			_m1 = m1;
@@ -3687,7 +3697,7 @@ public class LibMatrixMult
 				_ret.allocateDenseBlock();
 			
 			//compute block matrix multiplication
-			if( _m1.isUltraSparse() || _m2.isUltraSparse() )
+			if( _ret.sparse ) //ultra-sparse
 				matrixMultUltraSparse(_m1, _m2, _ret, rl, ru);
 			else if(!_m1.sparse && !_m2.sparse)
 				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);

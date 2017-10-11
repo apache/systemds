@@ -916,16 +916,28 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @return true if sparse
 	 */
-	public boolean isInSparseFormat()
-	{
+	public boolean isInSparseFormat() {
 		return sparse;
 	}
+	
+	public boolean isUltraSparse() {
+		return isUltraSparse(true);
+	}
 
-	public boolean isUltraSparse()
-	{
+	public boolean isUltraSparse(boolean checkNnz) {
 		double sp = ((double)nonZeros/rlen)/clen;
 		//check for sparse representation in order to account for vectors in dense
-		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && nonZeros<40;
+		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && (!checkNnz || nonZeros<40);
+	}
+	
+	public boolean isUltraSparsePermutationMatrix() {
+		if( !isUltraSparse(false) )
+			return false;
+		boolean isPM = true;
+		SparseBlock sblock = getSparseBlock();
+		for( int i=0; i<rlen & isPM; i++ )
+			isPM &= sblock.isEmpty(i) || sblock.size(i) == 1;
+		return isPM;
 	}
 
 	/**

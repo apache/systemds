@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.io.MatrixWriterFactory;
 import org.apache.sysml.runtime.io.WriterBinaryBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -80,10 +79,9 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 		try
 		{
 			//write matrix partitions to hdfs
-			WriterBinaryBlock writer = (WriterBinaryBlock) MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
-			writer.writePartitionedBinaryBlockMatrixToHDFS(
-					   new Path(fname), new JobConf(ConfigurationManager.getCachedJobConf()), mb, moIn.getNumRows(), moIn.getNumColumns(), 
-					   (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), _pformat);
+			WriterBinaryBlock.writePartitionedBinaryBlockMatrixToHDFS(new Path(fname), 
+				new JobConf(ConfigurationManager.getCachedJobConf()), mb, moIn.getNumRows(), moIn.getNumColumns(),
+				(int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), _pformat);
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)
 			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), moIn.getNnz()); 

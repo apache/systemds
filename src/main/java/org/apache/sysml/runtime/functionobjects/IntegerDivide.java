@@ -59,7 +59,7 @@ public class IntegerDivide extends ValueFunction
 	 * @param in2 double input 2
 	 * @return result
 	 */
-	private double executeIntDiv( double in1, double in2 )
+	private static double executeIntDiv( double in1, double in2 )
 	{
 		//compute normal double devision
 		double ret = in1 / in2;

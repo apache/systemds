@@ -244,7 +244,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
+	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
 			int skip) throws LanguageException {
 		ArrayList<ParameterExpression> newParams = new ArrayList<>();
 
@@ -272,7 +272,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return newParams;
 	}
 
-	private ArrayList<ParameterExpression> replaceListParams(ArrayList<ParameterExpression> paramExpression,
+	private static ArrayList<ParameterExpression> replaceListParams(ArrayList<ParameterExpression> paramExpression,
 			String inputVarName, String outputVarName, int startIndex) throws LanguageException {
 		ArrayList<ParameterExpression> newParamExpression = new ArrayList<>();
 		int i = startIndex;
@@ -289,7 +289,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return newParamExpression;
 	}
 
-	private ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
+	private static ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
 			HashSet<String> paramsToExpand) throws LanguageException {
 		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<>();
 		for(ParameterExpression expr : paramExpression) {
@@ -1299,11 +1299,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private boolean isConstant(Expression expr) {
+	private static boolean isConstant(Expression expr) {
 		return ( expr != null && expr instanceof ConstIdentifier );
 	}
 	
-	private double getDoubleValue(Expression expr) 
+	private static double getDoubleValue(Expression expr) 
 		throws LanguageException 
 	{
 		if ( expr instanceof DoubleIdentifier )
@@ -1475,11 +1475,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private boolean is1DMatrix(Expression e) {
+	private static boolean is1DMatrix(Expression e) {
 		return (e.getOutput().getDim1() == 1 || e.getOutput().getDim2() == 1 );
 	}
 	
-	private boolean dimsKnown(Expression e) {
+	private static boolean dimsKnown(Expression e) {
 		return (e.getOutput().getDim1() != -1 && e.getOutput().getDim2() != -1);
 	}
 	

@@ -324,15 +324,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			: (denseBlock!=null);
 	}
 
-	public void allocateDenseBlock() {
+	public MatrixBlock allocateDenseBlock() {
 		allocateDenseBlock( true );
+		return this;
 	}
 
-	public void allocateDenseOrSparseBlock() {
+	public MatrixBlock allocateBlock() {
 		if( sparse )
 			allocateSparseRowsBlock();
 		else
 			allocateDenseBlock();
+		return this;
 	}
 	
 	public void allocateDenseBlock(boolean clearNNZ) 
@@ -2055,7 +2057,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	private void writeEmptyBlock(DataOutput out) 
+	private static void writeEmptyBlock(DataOutput out) 
 		throws IOException
 	{
 		//empty blocks do not need to materialize row information
@@ -2563,17 +2565,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatInMemory(finalRlen, finalClen, ennz); 
 	}
 	
-	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, long nnzm1, long rlenm2, long clenm2, long nnzm2)
-	{
+	private static boolean estimateSparsityOnLeftIndexing(
+		long rlenm1, long clenm1, long nnzm1, long rlenm2, long clenm2, long nnzm2) {
 		//min bound: nnzm1 - rlenm2*clenm2 + nnzm2
 		//max bound: min(rlenm1*rlenm2, nnzm1+nnzm2)
-		
 		long ennz = Math.min(rlenm1*clenm1, nnzm1+nnzm2);
 		return evalSparseFormatInMemory(rlenm1, clenm1, ennz);
 	}
 	
-	private boolean estimateSparsityOnGroupedAgg( long rlen, long groups )
-	{
+	private static boolean estimateSparsityOnGroupedAgg( long rlen, long groups ) {
 		long ennz = Math.min(groups, rlen);
 		return evalSparseFormatInMemory(groups, 1, ennz);
 	}
@@ -4342,7 +4342,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	
-	private void incrementalAggregateUnaryHelp(AggregateOperator aggOp, MatrixBlock result, int row, int column, 
+	private static void incrementalAggregateUnaryHelp(AggregateOperator aggOp, MatrixBlock result, int row, int column, 
 			double newvalue, KahanObject buffer) throws DMLRuntimeException
 	{
 		if(aggOp.correctionExists)

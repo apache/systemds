@@ -299,7 +299,7 @@ public class ExecutionContext {
 	 * @return valid d1 or d2
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private long validateDimensions(long d1, long d2) throws DMLRuntimeException {
+	private static long validateDimensions(long d1, long d2) throws DMLRuntimeException {
 		if(d1 >= 0 && d2 >= 0 && d1 != d2) {
 			throw new DMLRuntimeException("Incorrect dimensions:" + d1 + " != " + d2);
 		}

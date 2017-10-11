@@ -149,7 +149,7 @@ public class FrameCastingTest extends AutomatedTestBase
 		return ret;
 	}
 
-	private double[][] add(double[][] data, double val) {
+	private static double[][] add(double[][] data, double val) {
 		for( int i=0; i<data.length; i++ )
 			for( int j=0; j<data[i].length; j++ )
 				data[i][j] += val;

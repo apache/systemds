@@ -19,8 +19,9 @@
 
 package org.apache.sysml.api.mlcontext;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -94,16 +95,12 @@ public class FrameSchema {
 	 *            the frame schema as a string
 	 * @return the frame schema as a list of {@code ValueType} values
 	 */
-	private List<ValueType> schemaStringToListOfValueTypes(String schemaString) {
-		if (StringUtils.isBlank(schemaString)) {
+	private static List<ValueType> schemaStringToListOfValueTypes(String schemaString) {
+		if (StringUtils.isBlank(schemaString))
 			return null;
-		}
-		String[] cols = schemaString.split(",");
-		List<ValueType> list = new ArrayList<>();
-		for (String col : cols) {
-			list.add(ValueType.valueOf(col.toUpperCase()));
-		}
-		return list;
+		return Arrays.stream(schemaString.split(","))
+			.map(s -> ValueType.valueOf(s.toUpperCase()))
+			.collect(Collectors.toList());
 	}
 
 	/**

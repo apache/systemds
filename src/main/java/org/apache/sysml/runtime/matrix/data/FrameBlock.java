@@ -759,7 +759,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param value string value
 	 * @return in-memory size of string value
 	 */
-	private long getInMemoryStringSize(String value) {
+	private static long getInMemoryStringSize(String value) {
 		if( value == null )
 			return 0;
 		return 16 + 4 + 8 //object, hash, array ref

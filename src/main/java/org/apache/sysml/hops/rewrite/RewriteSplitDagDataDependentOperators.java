@@ -318,16 +318,14 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		hop.setVisited();
 	}
 
-	private boolean hasTransientWriteParents( Hop hop )
-	{
+	private static boolean hasTransientWriteParents( Hop hop ) {
 		for( Hop p : hop.getParent() )
 			if( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
 				return true;
 		return false;
 	}
 
-	private Hop getFirstTransientWriteParent( Hop hop )
-	{
+	private static Hop getFirstTransientWriteParent( Hop hop ) {
 		for( Hop p : hop.getParent() )
 			if( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
 				return p;

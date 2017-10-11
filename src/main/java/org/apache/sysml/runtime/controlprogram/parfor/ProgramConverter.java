@@ -1887,7 +1887,7 @@ public class ProgramConverter
 			return token;
 		}
 				
-		private int determineNextSameLevelIndexOf( String data, String pattern  )
+		private static int determineNextSameLevelIndexOf( String data, String pattern  )
 		{
 			String tmpdata = data;
 			int index      = 0;

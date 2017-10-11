@@ -227,7 +227,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			case COL_AGG: out.reset(1, n, false); break;
 			default: throw new DMLRuntimeException("Invalid cell type: "+_type);
 		}
-		out.allocateDenseOrSparseBlock();
+		out.allocateBlock();
 		
 		long lnnz = 0;
 		if( k <= 1 ) //SINGLE-THREADED

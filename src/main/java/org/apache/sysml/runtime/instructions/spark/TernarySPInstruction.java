@@ -285,7 +285,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 
 		private static final long serialVersionUID = 271459913267735850L;
 
-		private MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
+		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
 			for(MatrixBlock blk1 : blks) {
 				if(retVal != null) {
 					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
@@ -317,7 +317,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 
 		private static final long serialVersionUID = -4873754507037646974L;
 		
-		private MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
+		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
 			for(MatrixBlock blk1 : blks) {
 				if(retVal != null) {
 					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
@@ -369,7 +369,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			this.ignoreZeros = ignoreZeros;
 		}
 		
-		private void expectedALSize(int length, ArrayList<MatrixBlock> al) throws Exception {
+		private static void expectedALSize(int length, ArrayList<MatrixBlock> al) throws Exception {
 			if(al.size() != length) {
 				throw new Exception("Expected arraylist of size:" + length + ", but found " + al.size());
 			}

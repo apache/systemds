@@ -243,7 +243,7 @@ public class LeftIndexingOp  extends Hop
 		return (rightHandSide.getDataType() == DataType.SCALAR);
 	}
 	
-	private LixCacheType getSpLixCacheType(LeftIndexingMethod method) {
+	private static LixCacheType getSpLixCacheType(LeftIndexingMethod method) {
 		switch( method ) {
 			case SP_MLEFTINDEX_L: return LixCacheType.LEFT;
 			case SP_MLEFTINDEX_R: return LixCacheType.RIGHT;

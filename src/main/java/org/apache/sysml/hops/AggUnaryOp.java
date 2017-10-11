@@ -491,7 +491,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		return _etype;
 	}
 
-	private boolean requiresAggregation( Hop input, Direction dir ) 
+	private static boolean requiresAggregation( Hop input, Direction dir ) 
 	{
 		if( !ALLOW_UNARYAGG_WO_FINAL_AGG )
 			return false; //customization not allowed

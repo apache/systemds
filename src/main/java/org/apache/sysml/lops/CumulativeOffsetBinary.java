@@ -87,7 +87,7 @@ public class CumulativeOffsetBinary extends Lop
 		return "CumulativeOffsetBinary";
 	}
 
-	private void checkSupportedOperations(OperationTypes op) 
+	private static void checkSupportedOperations(OperationTypes op) 
 		throws LopsException
 	{
 		//sanity check for supported aggregates

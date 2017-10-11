@@ -205,7 +205,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		return ret;
 	}
 
-	private int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
+	private static int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
 		//set the number of mappers and reducers 
 		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
 		int ret = (int)Math.min( numRed, reducerGroups );
@@ -214,7 +214,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
+	private static void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
 		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 		JavaSparkContext sc = sec.getSparkContext();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) 

@@ -287,7 +287,7 @@ public class IndexingOp extends Hop
 	 * @param ubound uppser bound high-level operator
 	 * @return true if block indexing expression
 	 */
-	private boolean isBlockIndexingExpression(Hop lbound, Hop ubound) 
+	private static boolean isBlockIndexingExpression(Hop lbound, Hop ubound) 
 	{
 		boolean ret = false;
 		LiteralOp constant = null;
@@ -351,8 +351,7 @@ public class IndexingOp extends Hop
 		return OptimizerUtils.isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
 	}
 
-	private long getBlockIndexingExpressionSize(Hop lbound, Hop ubound) 
-	{
+	private static long getBlockIndexingExpressionSize(Hop lbound, Hop ubound) {
 		//NOTE: ensure consistency with isBlockIndexingExpression
 		LiteralOp c = (LiteralOp) ubound.getInput().get(0); //(c*i)
 		return HopRewriteUtils.getIntValueSafe(c);

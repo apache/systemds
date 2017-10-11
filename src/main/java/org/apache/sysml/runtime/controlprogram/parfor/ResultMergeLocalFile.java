@@ -205,7 +205,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
+	private static void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		try
@@ -307,7 +307,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	@SuppressWarnings("deprecation")
-	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
+	private static void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		try
@@ -498,7 +498,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void createTextCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
+	private static void createTextCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -560,7 +560,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	@SuppressWarnings("deprecation")
-	private void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
+	private static void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -605,7 +605,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
+	private static void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
 		throws DMLRuntimeException, IOException
 	{
 		HashMap<Long,HashMap<Long,LinkedList<Cell>>> sortedBuffer = new HashMap<>();
@@ -1004,7 +1004,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
+	private static void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
 		throws CacheException, IOException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());

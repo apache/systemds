@@ -97,7 +97,7 @@ public class ReaderTextCell extends MatrixReader
 		return ret;
 	}
 
-	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -159,7 +159,7 @@ public class ReaderTextCell extends MatrixReader
 		}
 	}
 
-	private void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException
 	{
 		//create input stream for path
@@ -169,7 +169,7 @@ public class ReaderTextCell extends MatrixReader
 		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, brlen, bclen, matrixMarket);
 	}
 
-	private void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 			throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	

@@ -369,7 +369,7 @@ public class ForStatementBlock extends StatementBlock
 			ip.setIncrementExpr(replacementExpr);
 	}
 	
-	private Expression replaceConstantVar(Expression expr, HashMap<String, ConstIdentifier> currConstVars)
+	private static Expression replaceConstantVar(Expression expr, HashMap<String, ConstIdentifier> currConstVars)
 	{
 		Expression ret = null;
 		

@@ -598,8 +598,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	// 			Control Statements - Guards & Loops
 	// -----------------------------------------------------------------
 
-	private StatementBlock getStatementBlock(Statement current) {
-		return getStatementBlock(current);
+	private static StatementBlock getStatementBlock(Statement current) {
+		return DMLParserWrapper.getStatementBlock(current);
 	}
 
 	@Override

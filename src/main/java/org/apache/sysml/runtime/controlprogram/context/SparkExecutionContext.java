@@ -1534,7 +1534,7 @@ public class SparkExecutionContext extends ExecutionContext
 		 *
 		 * @return spark version string
 		 */
-		private String getSparkVersionString() {
+		private static String getSparkVersionString() {
 			//check for existing spark context
 			if( isSparkContextCreated() )
 				return getSparkContextStatic().version();

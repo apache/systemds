@@ -218,11 +218,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 
-	private int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
 			throws DMLRuntimeException {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
-				aL.get(index).getValueType(), aL.get(index).isLiteral())
-				.getLongValue();
+			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
 	public void processReluBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
@@ -288,8 +287,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			// As we always fill the output first with bias
-			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), input.isInSparseFormat());
-			outputBlock.allocateDenseOrSparseBlock();
+			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), 
+				input.isInSparseFormat()).allocateBlock();
 			LibMatrixDNN.biasMultiply(input, bias, outputBlock, _numThreads);
 		}
 		
@@ -301,7 +300,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	// Assumption: enableNative && NativeHelper.isNativeLibraryLoaded() is true
 	// This increases the number of native calls. For example:the cases where filter is sparse but input is dense
-	private boolean isFilterSparse(MatrixBlock filter) throws DMLRuntimeException {
+	private static boolean isFilterSparse(MatrixBlock filter) throws DMLRuntimeException {
 		long numElems = filter.getNumRows()*filter.getNumColumns();
 		// if filter is less than 10 MB in dense format (which handles almost all the cases).
 		// In fact, using threshold of 1 MB is still sufficient for common CNNs.
@@ -354,7 +353,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(N, C*P*Q);
+				outputBlock = new MatrixBlock(N, C*P*Q, false).allocateBlock();
 				if(instOpcode.equalsIgnoreCase("maxpooling"))
 					Arrays.fill(outputBlock.getDenseBlock(), -Double.MAX_VALUE);
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
@@ -366,7 +365,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(N, C*H*W);
+				outputBlock = new MatrixBlock(N, C*H*W, false).allocateBlock();
 				if(instOpcode.equalsIgnoreCase("maxpooling_backward"))
 					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, false);
 				else
@@ -381,7 +380,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(N, K*P*Q);
+				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else
@@ -405,12 +404,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			else if(isOutputConvEmpty && !bias.isEmpty()) {
 				// Add bias to empty output block
 				// bias_add(empty mb, bias)
-				outputBlock = getDenseOutputBlock(N, K*P*Q);
+				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
 				for(int n = 0;  n < params.N; n++) 
 					ConvolutionUtils.fillBias(bias, outputBlock.getDenseBlock(), n, n+1, params.N, params.K, params.P*params.Q);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(N, K*P*Q);
+				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
 				if(!bias.isEmpty()) {
 					// Handle situation where both input and filter are non empty, but bias is empty
 					params.bias = bias;
@@ -429,7 +428,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(K, C*R*S);
+				outputBlock = new MatrixBlock(K, C*R*S, false).allocateBlock();
 				if(params.enableNative && !matBlock.isInSparseFormat() && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 				else
@@ -443,7 +442,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
 			}
 			else {
-				outputBlock = getDenseOutputBlock(N, C * H * W);
+				outputBlock = new MatrixBlock(N, C * H * W, false).allocateBlock();
 				if(params.enableNative && !isFilterSparse(matBlock) && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardData(matBlock, dout, outputBlock, params);
 				else
@@ -479,11 +478,5 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				warnedUnderUtilitization = true;
 			}
 		}
-	}
-	
-	private MatrixBlock getDenseOutputBlock(int numRows, int numCols) throws DMLRuntimeException {
-		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, false);
-		outputBlock.allocateDenseBlock();
-		return outputBlock;
 	}
 }

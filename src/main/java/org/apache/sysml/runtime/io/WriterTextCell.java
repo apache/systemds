@@ -79,7 +79,7 @@ public class WriterTextCell extends MatrixWriter
 		writeTextCellMatrixToFile(path, job, fs, src, 0, (int)rlen);
 	}
 
-	protected final void writeTextCellMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
+	protected static void writeTextCellMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();

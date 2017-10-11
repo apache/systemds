@@ -353,11 +353,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	}
 
 
-	private int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
 		throws DMLRuntimeException 
 	{
 		return (int) ec.getScalarInput(aL.get(index).getName(),
-				aL.get(index).getValueType(), aL.get(index).isLiteral())
-				.getLongValue();
+			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 }

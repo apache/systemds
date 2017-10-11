@@ -208,7 +208,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		}
 	}
 	
-	private void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		MatrixIndexes key = new MatrixIndexes(); 

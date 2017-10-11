@@ -126,7 +126,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	private boolean isApplicableForUpdateInPlace( Hop hop, String varname )
+	private static boolean isApplicableForUpdateInPlace( Hop hop, String varname )
 	{
 		if( !hop.getName().equals(varname) )
 			return true;

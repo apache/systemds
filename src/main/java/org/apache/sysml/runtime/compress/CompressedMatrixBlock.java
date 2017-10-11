@@ -645,8 +645,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 		
-		MatrixBlock ret = new MatrixBlock(rlen, clen, sparse, nonZeros);
-		ret.allocateDenseOrSparseBlock();
+		MatrixBlock ret = new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
 		
 		//multi-threaded decompression
 		try {
@@ -2322,7 +2321,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 	}
 	
-	private HashSet<Integer> seq(int from, int to, int incr) {
+	private static HashSet<Integer> seq(int from, int to, int incr) {
 		HashSet<Integer> ret = new HashSet<>();
 		for (int i = from; i <= to; i+=incr)
 			ret.add(i);

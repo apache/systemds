@@ -101,7 +101,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unused")
-	private void vectorizeRightIndexing( Hop hop )
+	private static void vectorizeRightIndexing( Hop hop )
 		throws HopsException
 	{
 		if( hop instanceof IndexingOp ) //right indexing
@@ -189,7 +189,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	}
 	
 	@SuppressWarnings("unchecked")
-	private Hop vectorizeLeftIndexing( Hop hop )
+	private static Hop vectorizeLeftIndexing( Hop hop )
 		throws HopsException
 	{
 		Hop ret = hop;

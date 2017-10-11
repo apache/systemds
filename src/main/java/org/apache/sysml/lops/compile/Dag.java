@@ -1256,7 +1256,7 @@ public class Dag<N extends Lop>
 	 * @param delteInst list of instructions
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException {
+	private static void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		for(Lop in : node.getInputs() ) {
@@ -2271,7 +2271,7 @@ public class Dag<N extends Lop>
 		return oinfo;
 	}
 	
-	private String prepareAssignVarInstruction(Lop input, Lop node) {
+	private static String prepareAssignVarInstruction(Lop input, Lop node) {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(ExecType.CP);

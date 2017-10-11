@@ -166,7 +166,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 				inputDir() + " " + expectedDir() + " " + Integer.toString((update||changedDim)?1:0);
 	
-	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
+			double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrix("V", V, true);
 	
 			runTest(true, false, null, -1);
@@ -188,15 +188,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param mb
-	 * @return
-	 */
-	private double computeMemoryUtilFactor( int mb )
-	{
-		double factor = Math.min(1, ((double)1024*1024*mb)/InfrastructureAnalyzer.getLocalMaxMemory());
-		//System.out.println("Setting max mem util factor: "+factor);
-		return factor;
+	private static double computeMemoryUtilFactor( int mb ) {
+		return Math.min(1, ((double)1024*1024*mb)/InfrastructureAnalyzer.getLocalMaxMemory());
 	}
 }

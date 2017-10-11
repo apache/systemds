@@ -82,7 +82,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		sec.addLineageBroadcast(output.getName(), input2.getName());
 	}
 
-	private boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, boolean cbind )
+	private static boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, boolean cbind )
 	{
 		long ncblksIn1 = cbind ?
 				(long)Math.ceil((double)mcIn1.getCols()/mcIn1.getColsPerBlock()) : 

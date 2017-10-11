@@ -93,7 +93,7 @@ public abstract class LiveVariableAnalysis
 		 updateLiveVariables(_liveOut,liveOut);
 	}
 	
-	private void updateLiveVariables(VariableSet origVars, VariableSet newVars){
+	private static void updateLiveVariables(VariableSet origVars, VariableSet newVars){
 		for (String var : newVars.getVariables().keySet()){
 			if (origVars.containsVariable(var)){
 				DataIdentifier varId = newVars.getVariable(var);

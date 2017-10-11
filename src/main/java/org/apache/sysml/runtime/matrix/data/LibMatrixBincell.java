@@ -411,7 +411,7 @@ public class LibMatrixBincell
 				
 				//prepare second input and allocate output
 				MatrixBlock b = m1.sparse ? m2 : m1;
-				ret.allocateDenseOrSparseBlock();
+				ret.allocateBlock();
 				
 				for( int i=0; i<a.numRows(); i++ ) {
 					if( a.isEmpty(i) ) continue;

@@ -103,7 +103,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return sbs;
 	}
 	
-	private StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
+	private static StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
 	{
 		StatementBlock ret = sb;
@@ -205,7 +205,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private StatementBlock vectorizeElementwiseBinary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
+	private static StatementBlock vectorizeElementwiseBinary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
 	{
 		StatementBlock ret = sb;
@@ -289,7 +289,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private StatementBlock vectorizeElementwiseUnary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
+	private static StatementBlock vectorizeElementwiseUnary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
 		throws HopsException
 	{
 		StatementBlock ret = sb;
@@ -349,7 +349,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private StatementBlock vectorizeIndexedCopy( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
+	private static StatementBlock vectorizeIndexedCopy( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
 		throws HopsException
 	{
 		StatementBlock ret = sb;

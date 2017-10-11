@@ -95,7 +95,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCUDA.matmult(ec, ec.getGPUContext(0), getExtendedOpcode(), m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
-        
+		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -103,13 +103,13 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	}
 
 	@SuppressWarnings("unused")
-	private MatrixBlock transpose(MatrixBlock m1) throws DMLRuntimeException {
+	private static MatrixBlock transpose(MatrixBlock m1) throws DMLRuntimeException {
 		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), 1);
 		return (MatrixBlock) (m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
 	}
 
 	@SuppressWarnings("unused")
-	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
+	private static boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
 		MatrixObject mo = ec.getMatrixObject(var);
 		return LibMatrixCUDA.isInSparseFormat(ec.getGPUContext(0), mo);
 	}

@@ -209,7 +209,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	 * @throws MathArithmeticException if MathArithmeticException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) throws MathArithmeticException, DMLRuntimeException {
+	private static double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) throws MathArithmeticException, DMLRuntimeException {
 		
 		// given value is "quantile" when inverse=false, and it is "probability" when inverse=true
 		double val = Double.parseDouble(params.get("target"));

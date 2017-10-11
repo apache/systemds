@@ -67,10 +67,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 			//create output matrices in correct format according to 
 			//the estimated number of non-zeros
 			long estnnz = getOutputNnzEstimate();
-			MatrixBlock outMBNew = new MatrixBlock(
-				outMB.getNumRows(), outMB.getNumColumns(), estnnz);
+			MatrixBlock outMBNew = new MatrixBlock(outMB.getNumRows(), 
+				outMB.getNumColumns(), estnnz).allocateBlock();
 			boolean appendOnly = outMBNew.isInSparseFormat();
-			outMBNew.allocateDenseOrSparseBlock();
 			
 			//create compare matrix if required (existing data in result)
 			_compare = createCompareMatrix(outMB);
@@ -218,16 +217,11 @@ public class ResultMergeLocalMemory extends ResultMerge
 		return moNew;		
 	}
 
-	private double[][] createCompareMatrix( MatrixBlock output )
-	{
-		double[][] ret = null;
-		
+	private static double[][] createCompareMatrix( MatrixBlock output ) {
 		//create compare matrix only if required
-		if( output.getNonZeros() > 0 ) {
-			ret = DataConverter.convertToDoubleMatrix( output );
-		}
-		
-		return ret;
+		if( output.getNonZeros() > 0 )
+			return DataConverter.convertToDoubleMatrix( output );
+		return null;
 	}
 
 	private MatrixObject createNewMatrixObject( MatrixBlock data ) 

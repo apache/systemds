@@ -240,7 +240,7 @@ public class WriterBinaryBlock extends MatrixWriter
 		
 							//copy submatrix to block
 							src.sliceOperations( row_offset, row_offset+maxRow-1, 
-									             col_offset, col_offset+maxCol-1, block );							
+								col_offset, col_offset+maxCol-1, block );
 						}
 						else //empty block (not on diagonal)
 						{
@@ -264,7 +264,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	}
 
 	@SuppressWarnings("deprecation")
-	public final void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
+	public static final void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
 			throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();

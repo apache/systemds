@@ -75,8 +75,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 			sec.getFrameObject(input2.getName())));
 	}
 
-	private boolean preservesPartitioning( boolean cbind )
-	{
+	private static boolean preservesPartitioning( boolean cbind ) {
 		//Partitions for input1 will be preserved in case of cbind, 
 		// where as in case of rbind partitions will not be preserved.
 		return cbind;

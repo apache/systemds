@@ -195,7 +195,7 @@ public class DMLParserWrapper extends ParserWrapper
 		return dmlPgm;
 	}
 	
-	private DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace) {
+	private static DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace) {
 
 		DMLProgram dmlPgm = new DMLProgram();
 		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0) ? sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;

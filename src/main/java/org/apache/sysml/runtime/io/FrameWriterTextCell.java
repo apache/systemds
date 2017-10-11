@@ -82,7 +82,7 @@ public class FrameWriterTextCell extends FrameWriter
 	 * @param ru upper row
 	 * @throws IOException if IOException occurs
 	 */
-	protected final void writeTextCellFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru ) 
+	protected static void writeTextCellFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru ) 
 		throws IOException
 	{
 		boolean entriesWritten = false;

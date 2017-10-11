@@ -166,7 +166,7 @@ public class RDDConverterUtilsExt
 
 	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
 		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		return ret;
 	}
 	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
@@ -392,7 +392,7 @@ public class RDDConverterUtilsExt
 			return ret;
 		}
 
-		private void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret )
+		private static void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret )
 			throws IOException, DMLRuntimeException
 		{
 			//temporary list of indexed matrix values to prevent library dependencies

@@ -164,10 +164,9 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in FrameIndexingSPInstruction.");		
 	}
 
-	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
-	{
+	private static boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange) {
 		return ( mcIn.dimsKnown() &&
-			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s			 
+			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s
 	}
 
 	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 

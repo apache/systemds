@@ -264,7 +264,7 @@ public class WriteSPInstruction extends SPInstruction {
 		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
 	}
 
-	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
+	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
 		throws DMLRuntimeException 
 	{
 		if(inSingleFile) {

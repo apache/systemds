@@ -68,7 +68,7 @@ public class ReaderBinaryCell extends MatrixReader
 	}
 	
 	@SuppressWarnings("deprecation")
-	private void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();		

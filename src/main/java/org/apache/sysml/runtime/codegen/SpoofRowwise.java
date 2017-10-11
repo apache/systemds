@@ -276,7 +276,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		out.allocateDenseBlock();
 	}
 	
-	private void fixTransposeDimensions(MatrixBlock out) {
+	private static void fixTransposeDimensions(MatrixBlock out) {
 		int rlen = out.getNumRows();
 		out.setNumRows(out.getNumColumns());
 		out.setNumColumns(rlen);

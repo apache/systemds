@@ -89,7 +89,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		writeMatrixMarketMatrixToFile(path, job, fs, src, 0, src.getNumRows());
 	}
 
-	protected final void writeMatrixMarketMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
+	protected static void writeMatrixMarketMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -165,7 +165,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		}
 	}
 
-	public final void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
+	public static void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		  Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());

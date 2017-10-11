@@ -222,7 +222,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				return createNewOutputObject(_src, _out, mc.getRows(), ret );
 		}
 
-		private MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
+		private static MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
 			throws DMLRuntimeException
 		{
 			String varName = out.getVarName();
@@ -409,7 +409,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			return diagBlocks;
 		}
 
-		private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
+		private static void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
 			throws DMLRuntimeException, IOException
 		{
 			HashMap<String,LinkedList<Cell>> sortedBuffer = new HashMap<>();

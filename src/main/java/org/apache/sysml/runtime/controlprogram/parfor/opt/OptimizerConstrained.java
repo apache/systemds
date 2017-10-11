@@ -414,8 +414,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			super.rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, vars);
 	}
 
-	private PExecMode getPExecMode( OptNode pn )
-	{
+	private static PExecMode getPExecMode( OptNode pn ) {
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			    .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 		return pfpb.getExecMode();

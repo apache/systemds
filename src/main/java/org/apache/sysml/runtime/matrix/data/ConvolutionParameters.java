@@ -43,10 +43,9 @@ public class ConvolutionParameters implements Serializable {
 	public MatrixBlock bias;
 	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 
 	
-	private int convertToInt(long val) throws DMLRuntimeException {
-		if( val > Integer.MAX_VALUE ) {
+	private static int convertToInt(long val) throws DMLRuntimeException {
+		if( val > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("The value for ConvolutionParameters is too large:" + val);
-		}
 		return (int) val;
 	}
 	

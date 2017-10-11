@@ -97,7 +97,7 @@ public class WriterTextCSV extends MatrixWriter
 		writeCSVMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows(), csvprops);
 	}
 
-	protected final void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
+	protected static void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();

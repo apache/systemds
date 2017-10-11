@@ -78,7 +78,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 	}
 
 	@SuppressWarnings({ "deprecation" })
-	protected final void readBinaryBlockFrameFromSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock dest )
+	protected static void readBinaryBlockFrameFromSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock dest )
 		throws IOException, DMLRuntimeException
 	{
 		int rlen = dest.getNumRows();

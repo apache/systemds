@@ -647,7 +647,7 @@ public class FrameRDDConverterUtils
 			return fb;
 		}
 
-		private void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
+		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
 		{			
 			if( fb != null && fb.getNumRows()>0 )

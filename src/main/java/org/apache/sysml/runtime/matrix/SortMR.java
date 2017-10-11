@@ -114,7 +114,7 @@ public class SortMR
 	 * @return list of writable comparables
 	 * @throws IOException if IOException occurs
 	 */
-    private ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
+    private static ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
     	throws IOException 
     {
     	ArrayList<WritableComparable> parts = new ArrayList<WritableComparable>();

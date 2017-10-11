@@ -132,7 +132,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		return getTopHosts(hosts);
 	}
 
-	private void countHosts( HashMap<String,Integer> hosts, String[] names )
+	private static void countHosts( HashMap<String,Integer> hosts, String[] names )
 	{
 		for( String name : names )
 		{
@@ -144,7 +144,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		}
 	}
 
-	private String[] getTopHosts( HashMap<String,Integer> hosts )
+	private static String[] getTopHosts( HashMap<String,Integer> hosts )
 	{
 		int max = Integer.MIN_VALUE;
 		HashSet<String> maxName = new HashSet<String>();

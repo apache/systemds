@@ -1897,7 +1897,7 @@ public class LibMatrixReorg
 		final long nnz = in.nonZeros;
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		ret.reset(rlen, clen, sp);
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		//execute rexpand columns
 		long rnnz = 0; //real nnz (due to cutoff max)

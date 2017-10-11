@@ -690,7 +690,7 @@ public class MRJobInstruction extends Instruction
 		LOG.debug("\nMRInstructions: \n" + this.toString());
 	}
 
-	private String getOps(String inst) {
+	private static String getOps(String inst) {
 		StringBuilder sb = new StringBuilder();
 		for ( String i : inst.split(Lop.INSTRUCTION_DELIMITOR)) {
 			sb.append(",");
@@ -1216,7 +1216,7 @@ public class MRJobInstruction extends Instruction
 	 * @param transMap transition map
 	 * @return result string
 	 */
-	private String replaceInstructionStringWithTransMap( String inst, HashMap<Byte,Byte> transMap )
+	private static String replaceInstructionStringWithTransMap( String inst, HashMap<Byte,Byte> transMap )
 	{
 		//prevent unnecessary parsing and reconstruction
 		if( inst == null || inst.isEmpty() || transMap.isEmpty() )
@@ -1253,7 +1253,7 @@ public class MRJobInstruction extends Instruction
 		return instOut.toString();
 	}
 
-	private String concatenateInstructions(String inst1, String inst2)
+	private static String concatenateInstructions(String inst1, String inst2)
 	{
 		boolean emptyInst1 = (inst1 == null || inst1.length()==0);
 		boolean emptyInst2 = (inst2 == null || inst2.length()==0);

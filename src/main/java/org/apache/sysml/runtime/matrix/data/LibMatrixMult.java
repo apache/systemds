@@ -595,7 +595,7 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = mW.sparse;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		//core weighted square sum mm computation
 		if( !mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
@@ -632,7 +632,7 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = mW.sparse;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		try 
 		{			
@@ -691,7 +691,7 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = wt.isBasic()?mW.sparse:false;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		//core weighted div mm computation
 		boolean scalarX = wt.hasScalar();
@@ -742,7 +742,7 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = wt.isBasic()?mW.sparse:false;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 
 		if (!ret.isThreadSafe()){
 			matrixMultWDivMM(mW, mU, mV, mX, ret, wt);
@@ -859,7 +859,7 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = mW.sparse;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		//core weighted square sum mm computation
 		if( !mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
@@ -896,10 +896,10 @@ public class LibMatrixMult
 
 		//pre-processing
 		ret.sparse = mW.sparse;
-		ret.allocateDenseOrSparseBlock();
+		ret.allocateBlock();
 		
 		try 
-		{			
+		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
 			ArrayList<MatrixMultWuTask> tasks = new ArrayList<MatrixMultWuTask>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));

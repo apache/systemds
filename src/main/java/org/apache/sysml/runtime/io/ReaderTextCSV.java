@@ -96,7 +96,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	@SuppressWarnings("unchecked")
-	private MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
+	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
 			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
 		throws IOException, DMLRuntimeException
 	{
@@ -130,7 +130,7 @@ public class ReaderTextCSV extends MatrixReader
 		return dest;
 	}
 	
-	private long readCSVMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos, 
+	private static long readCSVMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos, 
 			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue, boolean first )
 		throws IOException
 	{
@@ -221,7 +221,7 @@ public class ReaderTextCSV extends MatrixReader
 		return lnnz;
 	}
 
-	private MatrixBlock computeCSVSize( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) 
+	private static MatrixBlock computeCSVSize( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws IOException, DMLRuntimeException 
 	{		
 		int nrow = -1;

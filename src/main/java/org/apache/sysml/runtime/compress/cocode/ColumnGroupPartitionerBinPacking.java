@@ -71,7 +71,7 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 	 * @param itemWeights the weights of the items
 	 * @return
 	 */
-	private List<List<Integer>> packFirstFit(int[] items, double[] itemWeights) 
+	private static List<List<Integer>> packFirstFit(int[] items, double[] itemWeights) 
 	{
 		List<List<Integer>> bins = new ArrayList<>();
 		List<Double> binWeights = new ArrayList<>();

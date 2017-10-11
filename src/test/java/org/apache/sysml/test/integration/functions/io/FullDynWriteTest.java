@@ -192,7 +192,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 	 * @return
 	 * @throws IOException 
 	 */
-	private double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int brows, int bcols ) 
+	private static double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int brows, int bcols ) 
 		throws IOException
 	{
 		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, ii, rows, cols, brows, bcols);
@@ -212,7 +212,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
 		throws DMLRuntimeException, IOException
 	{
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
@@ -225,12 +225,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 			MapReduceTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
 	}
 	
-	/**
-	 * 
-	 * @param oinfo
-	 * @return
-	 */
-	private String getFormatString(OutputInfo oinfo)
+	private static String getFormatString(OutputInfo oinfo)
 	{
 		if( oinfo==OutputInfo.BinaryBlockOutputInfo )
 			return "binary";
@@ -244,20 +239,11 @@ public class FullDynWriteTest extends AutomatedTestBase
 		return null;
 	}
 	
-	/**
-	 * 
-	 * @param A
-	 * @return
-	 */
-	private long computeSum( double[][] A )
-	{
+	private static long computeSum( double[][] A ) {
 		double ret = 0;
-		
 		for( int i=0; i<A.length; i++ )
 			for( int j=0; j<A[i].length; j++ )
 				ret += A[i][j];
-		
 		return UtilFunctions.toLong(ret);
 	}
-	
 }

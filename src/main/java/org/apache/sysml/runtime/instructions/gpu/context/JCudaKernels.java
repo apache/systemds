@@ -119,7 +119,7 @@ public class JCudaKernels {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	private Pointer initKernels(String ptxFileName) throws DMLRuntimeException {
+	private static Pointer initKernels(String ptxFileName) throws DMLRuntimeException {
 		InputStream in = null;
 		ByteArrayOutputStream out = null;
 		try {

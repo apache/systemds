@@ -83,7 +83,7 @@ public class LibMatrixDNNConv2dHelper {
 		}
 		
 		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-		private void add(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
+		private static void add(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
 			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
 			// This is not required in Native implementation
 			if(!src.isEmptyBlock()) {
@@ -162,7 +162,7 @@ public class LibMatrixDNNConv2dHelper {
 		}
 		
 		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-		private void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
+		private static void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
 			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
 			// This is not required in Native implementation
 			if(!src.isEmptyBlock()) {

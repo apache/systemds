@@ -103,11 +103,11 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	private boolean isValidMMOperation(long rlen1, long rlen2, long clen1, long clen2) {
+	private static boolean isValidMMOperation(long rlen1, long rlen2, long clen1, long clen2) {
 		return rlen1 == rlen2 && clen1 == clen2; 
 	}
 	
-	private boolean isValidMVOperation(long rlen1, long rlen2, long clen1, long clen2) {
+	private static boolean isValidMVOperation(long rlen1, long rlen2, long clen1, long clen2) {
 		return (rlen1 == rlen2 && clen2 == 1) || (rlen2 == 1 && clen1 == clen2); 
 	}
 	

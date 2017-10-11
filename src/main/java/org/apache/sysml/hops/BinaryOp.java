@@ -1384,7 +1384,7 @@ public class BinaryOp extends Hop
 				||(left.getDim1() > 1 && right.getDim1()==1 && left.getDim1()>=left.getRowsInBlock() )); //row MV and more than 1 block
 	}
 
-	private MMBinaryMethod optFindMMBinaryMethodSpark(Hop left, Hop right) {
+	private static MMBinaryMethod optFindMMBinaryMethodSpark(Hop left, Hop right) {
 		long m1_dim1 = left.getDim1();
 		long m1_dim2 = left.getDim2();
 		long m2_dim1 =  right.getDim1();

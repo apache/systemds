@@ -157,7 +157,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	}
 
 	@SuppressWarnings("unchecked")
-	private HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) 
+	private static HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) 
 		throws DMLRuntimeException 
 	{
 		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
@@ -179,7 +179,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		return ret;
 	}
 
-	private double[][] generateData(int rows, int cols, HashMap<String,Long>[] RC) {
+	private static double[][] generateData(int rows, int cols, HashMap<String,Long>[] RC) {
 		double[][] ret = new double[rows][cols];
 		for( int i=0; i<rows; i++ ) 
 			for( int j=0; j<cols; j++ ) 

@@ -213,7 +213,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		}
 	}
 	
-	private JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) throws DMLRuntimeException {
+	private static JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( name );
 		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(name);
 		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
@@ -298,11 +298,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL,
-			int index) throws DMLRuntimeException {
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
+			throws DMLRuntimeException {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
-				aL.get(index).getValueType(), aL.get(index).isLiteral())
-				.getLongValue();
+			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
 	private static class RDDConv2dMapMMFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> {
@@ -331,7 +330,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					outputBlock = new MatrixBlock(params.N, params.K*params.P*params.Q, true);
 				}
 				else {
-					outputBlock = getDenseOutputBlock(params.N, params.K*params.P*params.Q);
+					outputBlock = new MatrixBlock(params.N, params.K*params.P*params.Q, false).allocateDenseBlock();
 					if(enableNative)
 						LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 					else
@@ -345,7 +344,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					outputBlock = new MatrixBlock(params.N, params.K*params.P*params.Q, true);
 				}
 				else {
-					outputBlock = getDenseOutputBlock(params.N, params.K*params.P*params.Q);
+					outputBlock = new MatrixBlock(params.N, params.K*params.P*params.Q, false).allocateDenseBlock();
 					if(!bias.isEmptyBlock())
 						params.bias = bias;
 					if(enableNative)
@@ -359,7 +358,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, true);
 				}
 				else {
-					outputBlock = getDenseOutputBlock(params.N, params.C*params.P*params.Q);
+					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, false).allocateBlock();
 					if(instOpcode.equalsIgnoreCase("maxpooling"))
 						Arrays.fill(outputBlock.getDenseBlock(), -Double.MAX_VALUE);
 					LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
@@ -368,12 +367,6 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			else {
 				throw new RuntimeException("Not implemented");
 			}
-			return outputBlock;
-		}
-		
-		private MatrixBlock getDenseOutputBlock(int numRows, int numCols) throws DMLRuntimeException {
-			MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, false);
-			outputBlock.allocateDenseBlock();
 			return outputBlock;
 		}
 

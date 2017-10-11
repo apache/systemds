@@ -1234,7 +1234,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param in array of input matrix objects
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in) 
+	private static void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in) 
 		throws DMLRuntimeException
 	{
 		for( MatrixObject tmp : in ) {
@@ -1255,7 +1255,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param sb statement block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void createEmptyUnscopedVariables( LocalVariableMap out, StatementBlock sb ) 
+	private static void createEmptyUnscopedVariables( LocalVariableMap out, StatementBlock sb ) 
 		throws DMLRuntimeException
 	{
 		VariableSet updated = sb.variablesUpdated();
@@ -1580,7 +1580,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			_childBlocks, tid, new HashSet<String>(), null);
 	}
 
-	private String writeTasksToFile(String fname, List<Task> tasks, int maxDigits)
+	private static String writeTasksToFile(String fname, List<Task> tasks, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;
@@ -1607,7 +1607,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		return fname;
 	}
 
-	private String writeTasksToFile(String fname, LocalTaskQueue<Task> queue, int maxDigits)
+	private static String writeTasksToFile(String fname, LocalTaskQueue<Task> queue, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;
@@ -1635,7 +1635,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		return fname;
 	}
 	
-	private String createTaskFileLine( Task t, int maxDigits, boolean flagFirst ) {
+	private static String createTaskFileLine( Task t, int maxDigits, boolean flagFirst ) {
 		//always pad to max digits in order to preserve task order	
 		return t.toCompactString(maxDigits) + (flagFirst?" ":"") + "\n";
 	}
@@ -1776,7 +1776,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private long computeNumIterations( IntObject from, IntObject to, IntObject incr ) {
+	private static long computeNumIterations( IntObject from, IntObject to, IntObject incr ) {
 		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 	}
 	

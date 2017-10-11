@@ -49,11 +49,12 @@ public class CumulativeSplitAggregate extends Lop
 		lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 	}
 
+	@Override
 	public String toString() {
 		return "CumulativeSplitAggregate";
 	}
 	
-	private String getOpcode() {
+	private static String getOpcode() {
 		return "ucumsplit";
 	}
 	

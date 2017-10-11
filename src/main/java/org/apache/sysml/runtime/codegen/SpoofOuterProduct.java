@@ -180,7 +180,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		//check for empty inputs; otherwise allocate result
 		if( inputs.get(0).isEmptyBlock(false) )
 			return out;
-		out.allocateDenseOrSparseBlock();
+		out.allocateBlock();
 		
 		//input preparation
 		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
@@ -249,7 +249,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		{
 			//assign it to the time and sparse representation of the major input matrix
 			out.reset(inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), inputs.get(0).isInSparseFormat());
-			out.allocateDenseOrSparseBlock();
+			out.allocateBlock();
 		}
 		else
 		{

@@ -67,9 +67,8 @@ public class ZeroOut  extends Lop
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
 	}
 	
-	private String getOpcode() {
-		
-			return "zeroOut";
+	private static String getOpcode() {
+		return "zeroOut";
 	}
 	
 	@Override

@@ -313,7 +313,7 @@ public class DMLYarnClient
 	 * 
 	 * @return null if the constant does not exists
 	 */
-	private String getLocalJarFileNameFromEnvConst()
+	private static String getLocalJarFileNameFromEnvConst()
 	{
 		String fname = null;
 		
@@ -353,7 +353,7 @@ public class DMLYarnClient
 	 * @throws IOException if IOException occurs
 	 * @throws InterruptedException if InterruptedException occurs
 	 */
-	private String createJar( String dir ) 
+	private static String createJar( String dir ) 
 		throws IOException, InterruptedException
 	{
 		//construct jar command
@@ -464,7 +464,7 @@ public class DMLYarnClient
 		return rMap;
 	}
 
-	private Map<String, String> constructEnvionmentMap(YarnConfiguration yconf) 
+	private static Map<String, String> constructEnvionmentMap(YarnConfiguration yconf) 
 		throws IOException
 	{
 		Map<String, String> eMap = new HashMap<>();
@@ -510,7 +510,7 @@ public class DMLYarnClient
 		return eMap;
 	}	
 
-	private String readMessageToHDFSWorkingDir(DMLConfig conf, YarnConfiguration yconf, ApplicationId appId)
+	private static String readMessageToHDFSWorkingDir(DMLConfig conf, YarnConfiguration yconf, ApplicationId appId)
 	{
 		String ret = null;
 		

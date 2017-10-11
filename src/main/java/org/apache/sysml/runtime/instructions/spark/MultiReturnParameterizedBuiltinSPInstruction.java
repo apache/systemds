@@ -172,7 +172,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		}
 	}
 
-	private boolean containsMVImputeEncoder(Encoder encoder) {
+	private static boolean containsMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
 				if( cencoder instanceof EncoderMVImpute )
@@ -180,7 +180,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		return false;	
 	}
 
-	private EncoderMVImpute getMVImputeEncoder(Encoder encoder) {
+	private static EncoderMVImpute getMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
 				if( cencoder instanceof EncoderMVImpute )

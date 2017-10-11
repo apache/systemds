@@ -157,7 +157,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	 * @return a summary of weighted quantiles
 	 * @throws DMLRuntimeException 
 	 */
-	private double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, Double... quantiles)
+	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, Double... quantiles)
 		throws DMLRuntimeException 
 	{
 		double[] ret = new double[3*quantiles.length + 1];
@@ -217,7 +217,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		return ret;
 	}
 
-	private double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
+	private static double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
 		throws DMLRuntimeException
 	{
 		long rix = UtilFunctions.computeBlockIndex(key, brlen);

@@ -210,8 +210,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			MatrixBlock mbin = arg0._2();
 			
 			boolean fullBlock = _type.isLeft() ? ixin.getColumnIndex() == 1 : ixin.getRowIndex() == 1;
-			MatrixBlock out = new MatrixBlock(_outputDim, _outputDim, !fullBlock);
-			out.allocateDenseOrSparseBlock();
+			MatrixBlock out = new MatrixBlock(_outputDim, _outputDim, !fullBlock).allocateBlock();
 			
 			//execute block tsmm operation
 			MatrixBlock out1 = mbin.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);

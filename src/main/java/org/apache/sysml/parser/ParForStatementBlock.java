@@ -1746,7 +1746,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param dat indexed identifier
 	 * @return string function id
 	 */
-	private String getFunctionID( IndexedIdentifier dat )
+	private static String getFunctionID( IndexedIdentifier dat )
 	{
 		/* note: using dat.hashCode can be different for same functions, 
 		 *       hence, we use a custom String ID
@@ -1777,17 +1777,13 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * 
 	 * @param f1 linear function
 	 */
-	private void cleanupFunction( LinearFunction f1 )
-	{
+	private static void cleanupFunction( LinearFunction f1 ) {
 		for( int i=0; i<f1._b.length; i++ )
-		{
-			if( f1._vars[i]==null )
-			{
+			if( f1._vars[i]==null ) {
 				f1.removeVar(i);
 				i--; 
 				continue;
-			}	
-		}
+			}
 	}
 	
 	/**
@@ -1829,7 +1825,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param f1 linear function 1
 	 * @param f2 linear function 2
 	 */
-	private void forceConsistency(LinearFunction f1, LinearFunction f2) 
+	private static void forceConsistency(LinearFunction f1, LinearFunction f2) 
 	{
 		boolean warn = false;
 
@@ -1979,7 +1975,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 
-	private Long parseLongConstant(Expression expr)
+	private static Long parseLongConstant(Expression expr)
 	{
 		Long ret = null;
 		

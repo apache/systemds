@@ -149,7 +149,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 		}
 	}
 	
-	private MatrixBlock allocateDenseMatrixBlock(Matrix mat) {
+	private static MatrixBlock allocateDenseMatrixBlock(Matrix mat) {
 		int rows = (int) mat.getNumRows();
 		int cols = (int) mat.getNumCols();
 		MatrixBlock mb = new MatrixBlock(rows, cols, false);
@@ -157,16 +157,13 @@ public class SGDNesterovUpdate extends PackageFunction {
 		return mb;
 	}
 	
-	
-	// out += constant*in
-	private void multiplyByConstant(double [] in, double constant, double [] out) {
+	private static void multiplyByConstant(double [] in, double constant, double [] out) {
 		for(int i = 0; i < out.length; i++) {
 			out[i] += in[i]*constant;
 		}
 	}
 	
-	// out += constant*in
-	private void multiplyByConstant(MatrixBlock in, double constant, double [] out) {
+	private static void multiplyByConstant(MatrixBlock in, double constant, double [] out) {
 		if(in.isInSparseFormat()) {
 			Iterator<IJV> iter = in.getSparseBlockIterator();
 			while(iter.hasNext()) {
@@ -186,7 +183,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 	}
 	
 	// Assumption dest is zero-ed out.
-	private void copy(MatrixBlock src, double [] dest) {
+	private static void copy(MatrixBlock src, double [] dest) {
 		if(src.isInSparseFormat()) {
 			Iterator<IJV> iter = src.getSparseBlockIterator();
 			while(iter.hasNext()) {

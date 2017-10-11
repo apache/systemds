@@ -729,24 +729,24 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
-	private double estimateSizeSparseRowBlock( long rows ) {
+	private static double estimateSizeSparseRowBlock( long rows ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		return 44 + rows * 8;
 	}
 
-	private double estimateSizeSparseRow( long cols, long nnz ) {
+	private static double estimateSizeSparseRow( long cols, long nnz ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		long cnnz = Math.max(SparseRowVector.initialCapacity, Math.max(cols, nnz));
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 
-	private double estimateSizeSparseRowMin( long cols ) {
+	private static  double estimateSizeSparseRowMin( long cols ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		long cnnz = Math.min(SparseRowVector.initialCapacity, cols);
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 
-	private int estimateNumTasksSparseCol( double budget, long rows ) {
+	private static int estimateNumTasksSparseCol( double budget, long rows ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		double lbudget = budget - rows * 116;
 		return (int) Math.floor( lbudget / 12 );
@@ -1740,7 +1740,7 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
-	private double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars, int k) {
+	private static double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars, int k) {
 		double sum = 1;
 		for( String var : retVars ) {
 			Data dat = vars.get(var);

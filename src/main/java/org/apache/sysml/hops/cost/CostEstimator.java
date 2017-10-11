@@ -217,7 +217,7 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	private void maintainVariableStatistics( LocalVariableMap vars, HashMap<String, VarStats> stats ) 
+	private static void maintainVariableStatistics( LocalVariableMap vars, HashMap<String, VarStats> stats ) 
 		throws DMLRuntimeException
 	{
 		for( String varname : vars.keySet() )
@@ -246,7 +246,7 @@ public abstract class CostEstimator
 		}
 	}
 	
-	private void maintainCPInstVariableStatistics( CPInstruction inst, HashMap<String, VarStats> stats )
+	private static void maintainCPInstVariableStatistics( CPInstruction inst, HashMap<String, VarStats> stats )
 	{
 		if( inst instanceof VariableCPInstruction )
 		{
@@ -427,7 +427,7 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	private Object[] extractCPInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
+	private static Object[] extractCPInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{		
 		Object[] ret = new Object[2]; //stats, attrs
 		VarStats[] vs = new VarStats[3];
@@ -575,13 +575,13 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	private void setUnknownStats(VarStats[] vs) {
+	private static void setUnknownStats(VarStats[] vs) {
 		vs[0] = _unknownStats;
 		vs[1] = _unknownStats;
 		vs[2] = _unknownStats;	
 	}
 	
-	private Object[] extractMRJobInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
+	private static Object[] extractMRJobInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{
 		Object[] ret = new Object[2]; //stats, attrs
 		VarStats[] vs = null;
@@ -614,7 +614,7 @@ public abstract class CostEstimator
 		return ret;
 	}	
 	
-	private void cleanupMRJobVariableStatistics( Instruction inst, HashMap<String, VarStats> stats )
+	private static void cleanupMRJobVariableStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{
 		MRJobInstruction jinst = (MRJobInstruction)inst;
 		
@@ -634,7 +634,7 @@ public abstract class CostEstimator
 		}
 	}
 	
-	private long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {
+	private static long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {
 		return OptimizerUtils.getNumIterations(pb, DEFAULT_NUMITER);
 	}
 

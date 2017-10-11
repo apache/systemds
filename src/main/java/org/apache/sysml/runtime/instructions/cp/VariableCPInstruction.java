@@ -905,8 +905,8 @@ public class VariableCPInstruction extends CPInstruction {
 			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					WriterMatrixMarket writer = new WriterMatrixMarket();
-					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
+					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(), 
+						fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}

@@ -651,14 +651,14 @@ public class SpoofSPInstruction extends SPInstruction {
 			return ret.iterator();
 		}
 		
-		private MatrixIndexes createOutputIndexes(MatrixIndexes in, SpoofOperator spoofOp) {
+		private static MatrixIndexes createOutputIndexes(MatrixIndexes in, SpoofOperator spoofOp) {
 			if( ((SpoofOuterProduct)spoofOp).getOuterProdType() == OutProdType.LEFT_OUTER_PRODUCT ) 
 				return new MatrixIndexes(in.getColumnIndex(), 1);
 			else if ( ((SpoofOuterProduct)spoofOp).getOuterProdType() == OutProdType.RIGHT_OUTER_PRODUCT)
 				return new MatrixIndexes(in.getRowIndex(), 1);
 			else 
 				return in;
-		}		
+		}
 	}
 	
 	public static class ReplicateRightFactorFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

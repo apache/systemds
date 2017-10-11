@@ -1773,7 +1773,7 @@ public class DMLTranslator
 		return null;
 	}
 
-	private DataIdentifier createTarget(Expression source) {
+	private static DataIdentifier createTarget(Expression source) {
 		Identifier id = source.getOutput();
 		if (id instanceof DataIdentifier && !(id instanceof DataExpression))
 			return (DataIdentifier) id;
@@ -1782,9 +1782,8 @@ public class DMLTranslator
 		return target;
 	}
 
-	private DataIdentifier createTarget() {
-		DataIdentifier target = new DataIdentifier(Expression.getTempName());
-		return target;
+	private static DataIdentifier createTarget() {
+		return new DataIdentifier(Expression.getTempName());
 	}
 	
 	 
@@ -2079,7 +2078,7 @@ public class DMLTranslator
 		}
 	}
 
-	private Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, HashMap<String,Hop> paramHops) throws HopsException {
+	private static Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, HashMap<String,Hop> paramHops) throws HopsException {
 		
 		// Add a hop to paramHops to store distribution information. 
 		// Distribution parameter hops would have been already present in paramHops.
@@ -3108,7 +3107,7 @@ public class DMLTranslator
 		return currBuiltinOp;
 	}
 	
-	private void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
+	private static void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
 		out.setOutputBlocksizes(in.getRowsInBlock(), in.getColsInBlock());
 		out.refreshSizeInformation();
 		HopRewriteUtils.copyLineNumbers(in, out);

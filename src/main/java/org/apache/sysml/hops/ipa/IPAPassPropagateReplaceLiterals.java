@@ -120,7 +120,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		}
 	}
 	
-	private void replaceLiterals(ArrayList<Hop> roots, LocalVariableMap constants) 
+	private static void replaceLiterals(ArrayList<Hop> roots, LocalVariableMap constants) 
 		throws HopsException 
 	{
 		if( roots == null )
@@ -137,7 +137,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		}
 	}
 	
-	private void replaceLiterals(Hop root, LocalVariableMap constants) 
+	private static void replaceLiterals(Hop root, LocalVariableMap constants) 
 		throws HopsException 
 	{
 		if( root == null )

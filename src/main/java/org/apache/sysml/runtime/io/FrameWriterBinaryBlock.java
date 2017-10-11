@@ -86,7 +86,7 @@ public class FrameWriterBinaryBlock extends FrameWriter
 	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
-	protected final void writeBinaryBlockFrameToSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int blen, int rl, int ru ) 
+	protected static void writeBinaryBlockFrameToSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int blen, int rl, int ru ) 
 		throws DMLRuntimeException, IOException
 	{
 		//1) create sequence file writer 

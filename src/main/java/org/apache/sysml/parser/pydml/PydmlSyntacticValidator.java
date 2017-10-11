@@ -560,7 +560,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 * @param ctx parameter expression
 	 * @return 0 (along rows), 1 (along column) or -1 (for error)
 	 */
-	private int getAxis(ParameterExpression ctx) {
+	private static int getAxis(ParameterExpression ctx) {
 		if(ctx.getName() != null && ctx.getName() != null) {
 			if(!ctx.getName().equals("axis")) {
 				return -1;
@@ -579,7 +579,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	}
 
 	// TODO : Clean up to use Map or some other structure
-	private String getPythonAggFunctionNames(String functionName, int axis) {
+	private static String getPythonAggFunctionNames(String functionName, int axis) {
 		if(axis != 0 && axis != 1) {
 			return functionName;
 		}
@@ -1216,8 +1216,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	// 			Control Statements - Guards & Loops
 	// -----------------------------------------------------------------
 
-	private StatementBlock getStatementBlock(Statement current) {
-		return getStatementBlock(current);
+	private static StatementBlock getStatementBlock(Statement current) {
+		return PyDMLParserWrapper.getStatementBlock(current);
 	}
 
 	@Override

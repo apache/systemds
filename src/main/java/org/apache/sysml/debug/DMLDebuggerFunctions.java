@@ -567,16 +567,8 @@ public class DMLDebuggerFunctions {
 		return range;
 	}
 	
-	/**
-	 * Returns minimum between two integers
-	 * @param a Integer value 
-	 * @param b Integer value
-	 * @return Minimum between a and b.
-	 */
-	private int min(int a, int b) {
-		if (a < b)
-			return a;
-		return b;
+	private static int min(int a, int b) {
+		return Math.min(a, b);
 	}
 	
 	/**
@@ -585,7 +577,7 @@ public class DMLDebuggerFunctions {
 	 * @param rowIndex if rowIndex == -1, then prints all rows
 	 * @param colIndex if colIndex == -1, then prints all columns
 	 */
-	private void prettyPrintMatrixBlock(MatrixBlock mb, int rowIndex, int colIndex) {
+	private static void prettyPrintMatrixBlock(MatrixBlock mb, int rowIndex, int colIndex) {
 		if(rowIndex <= 0 && colIndex <= 0) {
 			// Print entire matrix
 			for(int i=0; i<min(mb.getNumRows(), DISPLAY_MAX_ROWS); i++) {

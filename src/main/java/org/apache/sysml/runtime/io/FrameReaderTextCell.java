@@ -102,7 +102,7 @@ public class FrameReaderTextCell extends FrameReader
 		}
 	}
 
-	protected final void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
+	protected static void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
 		throws IOException
 	{
 		ValueType[] schema = dest.getSchema();
@@ -148,7 +148,7 @@ public class FrameReaderTextCell extends FrameReader
 		}		
 	}
 
-	protected final void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
+	protected static void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
@@ -159,7 +159,7 @@ public class FrameReaderTextCell extends FrameReader
 		readRawTextCellFrameFromInputStream(inputStream, dest, schema, names, rlen, clen);
 	}
 
-	protected final void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen)
+	protected static void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
 		//create buffered reader

@@ -702,15 +702,13 @@ public class DataPartitionerLocal extends DataPartitioner
 	//         read/write          //
 	/////////////////////////////////
 
-	private long getKeyFromFilePath( String dir )
-	{
+	private static long getKeyFromFilePath( String dir ) {
 		String[] dirparts = dir.split("/");
 		long key = Long.parseLong( dirparts[dirparts.length-1] );
 		return key;
 	}
 
-	private long getKey2FromFileName( String fname )
-	{
+	private static long getKey2FromFileName( String fname ) {
 		return Long.parseLong( fname.split("_")[1] );
 	}
 

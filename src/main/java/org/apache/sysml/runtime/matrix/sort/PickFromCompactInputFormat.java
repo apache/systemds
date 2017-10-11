@@ -260,9 +260,8 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	    	reader=new ReadWithZeros(currentStream, contain0s, numZeros);
 		}
 		
-		private int getIndexInTheArray(String name) {
-			int i=name.indexOf("part-");
-			return Integer.parseInt(name.substring(i+5));
+		private static int getIndexInTheArray(String name) {
+			return Integer.parseInt(name.substring(name.indexOf("part-")+5));
 		}
 		
 		private void parseSelectedRangeString(String str) {
@@ -385,10 +384,9 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		private boolean noRecordsNeeded=false;
 		ReadWithZeros reader=null;
 		
-		private int getIndexInTheArray(String name)
-		{
-			int i=name.indexOf("part-");
-			return Integer.parseInt(name.substring(i+5));
+		private static int getIndexInTheArray(String name) {
+			return Integer.parseInt(
+				name.substring(name.indexOf("part-")+5));
 		}
 		
 		public PickRecordReader(JobConf job, FileSplit split)

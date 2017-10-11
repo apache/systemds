@@ -748,12 +748,12 @@ public class RDDConverterUtils
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse, (int)(lrlen*lclen*_sparsity));
-				mb[cix-1].allocateDenseOrSparseBlock();
+				mb[cix-1].allocateBlock();
 			}
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws DMLRuntimeException
 		{
 			int len = ix.length;			
@@ -865,12 +865,12 @@ public class RDDConverterUtils
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, lsparse);
-				mb[cix-1].allocateDenseOrSparseBlock();
+				mb[cix-1].allocateBlock();
 			}
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws DMLRuntimeException
 		{
 			int len = ix.length;			
@@ -1107,12 +1107,12 @@ public class RDDConverterUtils
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse,(int)(lrlen*lclen*_sparsity));
-				mb[cix-1].allocateDenseOrSparseBlock();
+				mb[cix-1].allocateBlock();
 			}
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws DMLRuntimeException
 		{
 			int len = ix.length;			

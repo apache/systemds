@@ -462,7 +462,7 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
-	private void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
+	private static void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 		MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 		if ( cleanupRData )

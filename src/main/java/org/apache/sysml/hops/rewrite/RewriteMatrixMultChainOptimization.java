@@ -228,7 +228,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
-	private int[][] mmChainDP(double[] dimArray, int size) 
+	private static int[][] mmChainDP(double[] dimArray, int size) 
 	{
 		double[][] dpMatrix = new double[size][size]; //min cost table
 		int[][] split = new int[size][size]; //min cost index table
@@ -325,7 +325,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-	private void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
+	private static void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
 		throws HopsException 
 	{
 		for( int i=0; i < operators.size(); i++ ) {
@@ -354,7 +354,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @return true if all dimensions known
 	 * @throws HopsException if HopsException occurs
 	 */
-	private boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
+	private static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
 		throws HopsException 
 	{
 		boolean dimsKnown = true;
@@ -391,11 +391,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return dimsKnown;
 	}
 
-	private int inputCount( Hop p, Hop h ) {
+	private static int inputCount( Hop p, Hop h ) {
 		return CollectionUtils.cardinality(h, p.getInput());
 	}
 	
-	private void logTraceHop( Hop hop, int level ) {
+	private static void logTraceHop( Hop hop, int level ) {
 		if( LOG.isTraceEnabled() ) {
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 

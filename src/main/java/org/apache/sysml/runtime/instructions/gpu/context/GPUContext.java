@@ -401,8 +401,12 @@ public class GPUContext {
 	 */
 	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
 		Pointer dummy = new Pointer();
-		if (toFree == dummy) // trying to free a null pointer
+		if (toFree == dummy) { // trying to free a null pointer
+			if (LOG.isTraceEnabled()) {
+				LOG.trace("GPU : trying to free an empty pointer");
+			}
 			return;
+		}
 		long t0 = 0;
 		if (!cudaBlockSizeMap.containsKey(toFree))
 			throw new RuntimeException(
@@ -410,7 +414,7 @@ public class GPUContext {
 		long size = cudaBlockSizeMap.get(toFree);
 		if (eager) {
 			if (LOG.isTraceEnabled()) {
-				LOG.trace("GPU : eagerly freeing cuda memory [ " + toFree + " ] for instruction " + instructionName
+				LOG.trace("GPU : eagerly freeing cuda memory [ " + toFree + " ] of size " + size + " for instruction " + instructionName
 						+ " on " + this);
 			}
 			if (DMLScript.STATISTICS)
@@ -426,7 +430,7 @@ public class GPUContext {
 						System.nanoTime() - t0);
 		} else {
 			if (LOG.isTraceEnabled()) {
-				LOG.trace("GPU : lazily freeing cuda memory for instruction " + instructionName + " on " + this);
+				LOG.trace("GPU : lazily freeing cuda memory of size " + size + " for instruction " + instructionName + " on " + this);
 			}
 			Set<Pointer> freeList = freeCUDASpaceMap.get(size);
 			if (freeList == null) {
@@ -492,6 +496,10 @@ public class GPUContext {
 			LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
 		}
 		GPUStatistics.cudaEvictionCount.add(1);
+		if (LOG.isDebugEnabled()) {
+			printMemoryInfo("EVICTION_CUDA_FREE_SPACE");
+		}
+		
 		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
 		// to free up space
 		LRUCacheMap<Long, Set<Pointer>> lruCacheMap = freeCUDASpaceMap;
@@ -560,6 +568,9 @@ public class GPUContext {
 		});
 
 		while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
+			if (LOG.isDebugEnabled()) {
+				printMemoryInfo("EVICTION_UNLOCKED");
+			}
 			GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
 			if (toBeRemoved.isLocked()) {
 				throw new DMLRuntimeException(
@@ -569,7 +580,6 @@ public class GPUContext {
 			if (toBeRemoved.dirty) {
 				toBeRemoved.copyFromDeviceToHost();
 			}
-
 			toBeRemoved.clearData(true);
 		}
 	}

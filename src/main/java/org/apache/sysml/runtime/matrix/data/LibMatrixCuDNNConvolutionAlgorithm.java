@@ -31,9 +31,18 @@ import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
+import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
 /**
  * This class is a wrapper that contain necessary data structures to invoke 
@@ -48,6 +57,9 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
  *  
  */
 public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseable {
+	// Limit the workspace available to cudnn convolution operation to 1 GB
+	private static long MAX_WORKSPACE_LIMIT_BYTES = (long) 1e+9;
+	
 	public int algo = -1;
 	public Pointer workSpace = new Pointer();
 	public long sizeInBytes = 0;
@@ -61,12 +73,12 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
 		int padding[] = {pad_h, pad_w};
 		int strides[] = {stride_h, stride_w};
-		convDesc = LibMatrixCuDNN.allocateConvolutionDescriptor(padding, strides);
+		convDesc = allocateConvolutionDescriptor(padding, strides);
 		this.gCtx = gCtx;
 		this.instName = instName;
-		nchwTensorDesc = LibMatrixCuDNN.allocateTensorDescriptor(N, C, H, W);
-		nkpqTensorDesc = LibMatrixCuDNN.allocateTensorDescriptor(N, K, P, Q);
-		filterDesc = LibMatrixCuDNN.allocateFilterDescriptor(K, C, R, S);
+		nchwTensorDesc = allocateTensorDescriptor(N, C, H, W);
+		nkpqTensorDesc = allocateTensorDescriptor(N, K, P, Q);
+		filterDesc = allocateFilterDescriptor(K, C, R, S);
 	}
 	
 	/**
@@ -125,7 +137,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		}
 		else {
 			int[] algos = {-1};
-			long sizeInBytesArray[] = {workspaceLimit};
+			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
 			jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(LibMatrixCuDNN.getCudnnHandle(gCtx), 
 					ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc,
 					cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
@@ -177,7 +189,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		}
 		else {
 			int[] algos = {-1};
-			long sizeInBytesArray[] = {workspaceLimit};
+			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
 			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm(
 					LibMatrixCuDNN.getCudnnHandle(gCtx), 
 					ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, 
@@ -230,7 +242,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		}
 		else {
 			int[] algos = {-1};
-			long sizeInBytesArray[] = {workspaceLimit};
+			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
 			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
 					LibMatrixCuDNN.getCudnnHandle(gCtx), 
 					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
@@ -245,5 +257,35 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		if (GPUStatistics.DISPLAY_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 		return ret;
+	}
+	
+	/**
+	 * Convenience method to get tensor descriptor
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param H height
+	 * @param W width
+	 * @return cudnn tensor descriptor
+	 * @throws DMLRuntimeException if the input descriptor and matrix dimensions don't match
+	 */
+	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) throws DMLRuntimeException {
+		cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
+		cudnnCreateTensorDescriptor(tensorDescriptor);
+		cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
+		return tensorDescriptor;
+	}
+	
+	private static cudnnFilterDescriptor allocateFilterDescriptor(int K, int C, int R, int S) {
+		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
+		cudnnCreateFilterDescriptor(filterDesc);
+		cudnnSetFilter4dDescriptor(filterDesc, CUDNN_DATA_DOUBLE, CUDNN_TENSOR_NCHW, K, C, R, S);
+		return filterDesc;
+	}
+	
+	private static cudnnConvolutionDescriptor allocateConvolutionDescriptor(int padding [], int strides []) {
+		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
+		cudnnCreateConvolutionDescriptor(convDesc);
+		cudnnSetConvolution2dDescriptor(convDesc, padding[0], padding[1], strides[0], strides[1], 1, 1, CUDNN_CROSS_CORRELATION);
+		return convDesc;
 	}
 }

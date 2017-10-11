@@ -1161,7 +1161,7 @@ public class LibMatrixReorg
 			// * vector-matrix not really different from general
 			// * clen=1 and cols=1 will never be sparse.
 			
-			if( rows==1 ) //MATRIX->VECTOR	
+			if( rows==1 ) //MATRIX->VECTOR
 			{
 				//note: cache-friendly on a and c; append-only
 				c.allocate(0, estnnz, cols);
@@ -1174,6 +1174,26 @@ public class LibMatrixReorg
 						double[] avals = a.values(i);	
 						for( int j=apos; j<apos+alen; j++ )
 							c.append(0, cix+aix[j], avals[j]);
+					}
+				}
+			}
+			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
+				int n = cols/clen;
+				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
+					//allocate output row once (w/o re-allocations)
+					long lnnz = a.size(bi, bi+n);
+					c.allocate(ci, (int)lnnz);
+					//copy N input rows into output row
+					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
+						if(a.isEmpty(i)) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for( int j=apos; j<apos+alen; j++ ) {
+							int cj = (int)((cix+aix[j])%cols);
+							c.append(ci, cj, avals[j]);
+						}
 					}
 				}
 			}
@@ -1193,7 +1213,7 @@ public class LibMatrixReorg
 						for( int j=apos; j<apos+alen; j++ )
 						{
 							int ci = (int)((cix+aix[j])/cols);
-							int cj = (int)((cix+aix[j])%cols);       
+							int cj = (int)((cix+aix[j])%cols);
 							c.allocate(ci, estnnz, cols);
 							c.append(ci, cj, avals[j]);
 						}

@@ -38,7 +38,7 @@ public class CostEstimationWrapper
 	public enum CostType { 
 		NUM_MRJOBS, //based on number of MR jobs, [number MR jobs]
 		STATIC // based on FLOPS, read/write, etc, [time in sec]
-	};
+	}
 	
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(CostEstimationWrapper.class.getName());
@@ -72,7 +72,7 @@ public class CostEstimationWrapper
 	{
 		Timing time = new Timing(true);
 		
-		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();		
+		HashMap<String,VarStats> stats = new HashMap<>();
 		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
 		
 		double costs = _costEstim.getTimeEstimate(rtprog, vars, stats);
@@ -85,7 +85,7 @@ public class CostEstimationWrapper
 	{
 		Timing time = new Timing(true);
 		
-		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();		
+		HashMap<String,VarStats> stats = new HashMap<>();
 		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
 		
 		double costs = _costEstim.getTimeEstimate(pb, vars, stats, recursive);

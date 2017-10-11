@@ -45,7 +45,7 @@ public class Unary extends Lop
 		SPROP, SIGMOID, SELP, SUBTRACT_NZ, LOG_NZ,
 		CAST_AS_MATRIX, CAST_AS_FRAME,
 		NOTSUPPORTED
-	};
+	}
 
 	private OperationTypes operation;
 	private Lop valInput;

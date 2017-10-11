@@ -97,15 +97,15 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static HashMap<String, LinearFunction> _fncache; //slower for most (small cases) cases
 	
 	//instance members
-	private long 		      _ID         = -1;
-	private VariableSet       _vsParent   = null;  
+	private final long _ID;
+	private VariableSet       _vsParent   = null;
 	private ArrayList<String> _resultVars = null;
 	private Bounds            _bounds     = null;
 	
 	static
 	{
 		// populate parameter name lookup-table
-		_paramNames = new HashSet<String>();
+		_paramNames = new HashSet<>();
 		_paramNames.add( CHECK ); 
 		_paramNames.add( PAR ); 
 		_paramNames.add( TASK_PARTITIONER ); 
@@ -118,7 +118,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames.add( OPT_LOG ); 
 		
 		// populate defaults lookup-table
-		_paramDefaults = new HashMap<String, String>();
+		_paramDefaults = new HashMap<>();
 		_paramDefaults.put( CHECK,             "1" );
 		_paramDefaults.put( PAR,               String.valueOf(InfrastructureAnalyzer.getLocalParallelism()) );
 		_paramDefaults.put( TASK_PARTITIONER,  String.valueOf(PTaskPartitioner.FIXED) );
@@ -130,7 +130,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( PROFILE,           "0" );
 		_paramDefaults.put( OPT_LOG,           OptimizerUtils.getDefaultLogLevel().toString() );
 		
-		_paramDefaults2 = new HashMap<String, String>(); //OPT_MODE always specified
+		_paramDefaults2 = new HashMap<>(); //OPT_MODE always specified
 		_paramDefaults2.put( CHECK,            "1" );
 		_paramDefaults2.put( PAR,              "-1" );
 		_paramDefaults2.put( TASK_PARTITIONER, String.valueOf(PTaskPartitioner.UNSPECIFIED) );
@@ -146,7 +146,7 @@ public class ParForStatementBlock extends ForStatementBlock
 
 		//initialize function cache
 		if( USE_FN_CACHE ) {
-			_fncache = new HashMap<String, LinearFunction>();
+			_fncache = new HashMap<>();
 		}
 		
 		// for internal debugging only
@@ -156,10 +156,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 	}
 	
-	public ParForStatementBlock()
-	{
-		_ID         = _idSeq.getNextID();
-		_resultVars = new ArrayList<String>();
+	public ParForStatementBlock() {
+		_ID = _idSeq.getNextID();
+		_resultVars = new ArrayList<>();
 		
 		LOG.trace("PARFOR("+_ID+"): ParForStatementBlock instance created");
 	}
@@ -248,7 +247,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		else
 		{
 			//set all defaults
-			params = new HashMap<String, String>();
+			params = new HashMap<>();
 			params.putAll( _paramDefaults );
 			predicate.setParForParams(params);
 		}	
@@ -285,8 +284,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		LOG.trace("PARFOR: running loop dependency analysis ...");
 
 		//### Step 1 ###: determine candidate set C
-		HashSet<Candidate> C = new HashSet<Candidate>(); 
-		HashSet<Candidate> C2 = new HashSet<Candidate>(); 
+		HashSet<Candidate> C = new HashSet<>(); 
+		HashSet<Candidate> C2 = new HashSet<>(); 
 		Integer sCount = 0; //object for call by ref 
 		rDetermineCandidates(pfs.getBody(), C, sCount);
 
@@ -364,14 +363,14 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( check || var._dat.getDataType()!=DataType.SCALAR )
 				addToResultVariablesNoDup( var._var );
 		//b) get and add child result vars (if required)
-		ArrayList<String> tmp = new ArrayList<String>();
+		ArrayList<String> tmp = new ArrayList<>();
 		rConsolidateResultVars(pfs.getBody(), tmp);
 		for( String var : tmp )
 			if(_vsParent.containsVariable(var))
-				addToResultVariablesNoDup( var );			
+				addToResultVariablesNoDup( var );
 		if( LDEBUG )
 			for( String rvar : _resultVars )
-				LOG.debug("INFO: PARFOR final result variable: "+rvar);		
+				LOG.debug("INFO: PARFOR final result variable: "+rvar);
 		
 		//cleanup function cache in order to prevent side effects between parfor statements
 		if( USE_FN_CACHE )
@@ -382,17 +381,14 @@ public class ParForStatementBlock extends ForStatementBlock
 		return vs;
 	}
 	
-	public ArrayList<String> getReadOnlyParentVars() 
-	{
-		ArrayList<String> ret = new ArrayList<String>();
-
+	public ArrayList<String> getReadOnlyParentVars() {
+		ArrayList<String> ret = new ArrayList<>();
 		VariableSet read = variablesRead();
 		VariableSet updated = variablesUpdated();
 		VariableSet livein = liveIn();	
 		for( String var : livein.getVariableNames() ) //for all parent variables
 			if( read.containsVariable(var) && !updated.containsVariable(var) ) //read-only
 				ret.add( var );
-		
 		return ret;
 	}
 
@@ -408,7 +404,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	public PartitionFormat determineDataPartitionFormat(String var) 
 	{
 		PartitionFormat dpf = null;
-		List<PartitionFormat> dpfc = new LinkedList<PartitionFormat>();
+		List<PartitionFormat> dpfc = new LinkedList<>();
 		
 		try 
 		{
@@ -865,7 +861,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if (s instanceof PrintStatement)
 		{
 			PrintStatement s2 = (PrintStatement)s;
-			ret = new ArrayList<DataIdentifier>();
+			ret = new ArrayList<>();
 			for (Expression expression : s2.getExpressions()) {
 				List<DataIdentifier> dataIdentifiers = rGetDataIdentifiers(expression);
 				ret.addAll(dataIdentifiers);
@@ -918,7 +914,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	private List<DataIdentifier> rGetDataIdentifiers(Expression e)
 	{
-		List<DataIdentifier> ret = new ArrayList<DataIdentifier>();
+		List<DataIdentifier> ret = new ArrayList<>();
 		
 		if( e instanceof DataIdentifier && 
 			!(e instanceof FunctionCallIdentifier || e instanceof BuiltinFunctionExpression || e instanceof ParameterizedBuiltinFunctionExpression) )
@@ -2016,14 +2012,12 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * loop constructs. 
 	 *
 	 */
-	private static class Bounds
-	{
-		HashMap<String, Long> _lower     = new HashMap<String, Long>();
-		HashMap<String, Long> _upper     = new HashMap<String, Long>();
-		HashMap<String, Long> _increment = new HashMap<String, Long>();
-		
+	private static class Bounds {
+		HashMap<String, Long> _lower     = new HashMap<>();
+		HashMap<String, Long> _upper     = new HashMap<>();
+		HashMap<String, Long> _increment = new HashMap<>();
 		//contains all local variable names (subset of lower/upper/incr sets)
-		HashSet<String> _local = new HashSet<String>();
+		HashSet<String> _local = new HashSet<>();
 	}
 	
 	/**

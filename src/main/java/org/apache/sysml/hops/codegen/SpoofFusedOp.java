@@ -106,7 +106,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		
 		ExecType et = optFindExecType();
 		
-		ArrayList<Lop> inputs = new ArrayList<Lop>();
+		ArrayList<Lop> inputs = new ArrayList<>();
 		for( Hop c : getInput() )
 			inputs.add(c.constructLops());
 		

@@ -273,7 +273,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			informat.configure(job);
 			InputSplit[] splits = informat.getSplits(job, 1);
 		
-			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			LinkedList<Cell> buffer = new LinkedList<>();
 			
 			LongWritable key = new LongWritable();
 			Text value = new Text();
@@ -323,7 +323,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
 			
-			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			LinkedList<Cell> buffer = new LinkedList<>();
 			
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
@@ -396,7 +396,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						if( !value.isEmptyBlock() ) //skip empty blocks (important for diag)
 						{
 							String fname = stagingDir +"/"+key.getRowIndex()+"_"+key.getColumnIndex();
-							LocalFileUtils.writeMatrixBlockToLocal(fname, value);							
+							LocalFileUtils.writeMatrixBlockToLocal(fname, value);
 							diagBlocks &= (key.getRowIndex()==key.getColumnIndex());
 						}
 					}	
@@ -412,7 +412,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
 			throws DMLRuntimeException, IOException
 		{
-			HashMap<String,LinkedList<Cell>> sortedBuffer = new HashMap<String,LinkedList<Cell>>();
+			HashMap<String,LinkedList<Cell>> sortedBuffer = new HashMap<>();
 			
 			//sort cells in buffer wrt key
 			String key = null;
@@ -474,7 +474,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					} 
 			
 					//create and append key mapping
-					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					LinkedList<long[]> keyMapping = new LinkedList<>();
 					for( int i = 0; i<flags.length; i++ )
 						if( !flags[i] )
 							keyMapping.add(new long[]{blockRow*brlen+i, lastKey++});
@@ -514,7 +514,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					} 
 			
 					//create and append key mapping
-					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					LinkedList<long[]> keyMapping = new LinkedList<>();
 					for( int i = 0; i<flags.length; i++ )
 						if( !flags[i] )
 							keyMapping.add(new long[]{blockCol*bclen+i, lastKey++});
@@ -568,7 +568,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					 
 			
 					//create and append key mapping
-					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					LinkedList<long[]> keyMapping = new LinkedList<>();
 					for( int i = 0; i<flags.length; i++ )
 						if( !flags[i] )
 							keyMapping.add(new long[]{blockRow*brlen+i, lastKey++});
@@ -606,7 +606,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					 
 			
 					//create and append key mapping
-					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					LinkedList<long[]> keyMapping = new LinkedList<>();
 					for( int i = 0; i<flags.length; i++ )
 						if( !flags[i] )
 							keyMapping.add(new long[]{blockCol*bclen+i, lastKey++});
@@ -646,7 +646,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 
-			HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+			HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<>();
 			BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 			try
 			{
@@ -748,7 +748,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					
 					for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
 					{
-						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 						int maxCol = (int)(((long)blockCol*bclen + bclen < clen) ? bclen : clen - (long)blockCol*bclen);
 						
@@ -812,7 +812,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					
 					for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
 					{
-						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 						int maxRow = (int)(((long)blockRow*brlen + brlen < rlen) ? brlen : rlen - (long)blockRow*brlen);
 						
@@ -888,7 +888,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//prepare output
 			SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 			MatrixIndexes key = new MatrixIndexes(); 
-			HashSet<Long> writtenBlocks = new HashSet<Long>();
+			HashSet<Long> writtenBlocks = new HashSet<>();
 			
 			try
 			{
@@ -896,7 +896,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				{
 					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
 							                       MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
-					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;
 					int blockRowOut = 0;
@@ -954,7 +954,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				{
 					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
 							                     MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
-					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;
 					int blockColOut = 0;

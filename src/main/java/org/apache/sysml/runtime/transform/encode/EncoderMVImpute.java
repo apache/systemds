@@ -43,7 +43,7 @@ public class EncoderMVImpute extends Encoder
 {	
 	private static final long serialVersionUID = 9057868620144662194L;
 
-	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT };
+	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT }
 	
 	private MVMethod[] _mvMethodList = null;
 	private MVMethod[] _mvscMethodList = null;	// scaling methods for attributes that are imputed and also scaled

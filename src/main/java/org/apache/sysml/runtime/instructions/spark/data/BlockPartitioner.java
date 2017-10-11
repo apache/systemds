@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.spark.data;
 
+import java.util.Arrays;
+
 import org.apache.spark.Partitioner;
 
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -99,6 +101,12 @@ public class BlockPartitioner extends Partitioner
 	@Override
 	public int numPartitions() {
 		return _numParts;
+	}
+	
+	@Override 
+	public int hashCode() {
+		return Arrays.hashCode(new long[]{
+			_numParts, _ncparts, _rbPerPart, _cbPerPart});
 	}
 
 	@Override

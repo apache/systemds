@@ -37,13 +37,10 @@ import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
 
 public class CSVWriteMapper extends MapperBase implements Mapper<Writable, Writable, TaggedFirstSecondIndexes, MatrixBlock>
 {
-	
-	
-	HashMap<Byte, ArrayList<Byte>> inputOutputMap=new HashMap<Byte, ArrayList<Byte>>();
+	HashMap<Byte, ArrayList<Byte>> inputOutputMap=new HashMap<>();
 	TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public void map(Writable rawKey, Writable rawValue,
 			OutputCollector<TaggedFirstSecondIndexes, MatrixBlock> out,
 			Reporter reporter) throws IOException
@@ -88,9 +85,8 @@ public class CSVWriteMapper extends MapperBase implements Mapper<Writable, Writa
 			for(CSVWriteInstruction in: ins)
 			{
 				ArrayList<Byte> outputs=inputOutputMap.get(in.input);
-				if(outputs==null)
-				{
-					outputs=new ArrayList<Byte>();
+				if(outputs==null) {
+					outputs=new ArrayList<>();
 					inputOutputMap.put(in.input, outputs);
 				}
 				outputs.add(in.output);

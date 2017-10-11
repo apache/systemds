@@ -195,14 +195,14 @@ public class OptTreeConverter
 		}
 		else if( pb instanceof ParForProgramBlock )
 		{
-			ParForProgramBlock fpb = (ParForProgramBlock) pb;			
+			ParForProgramBlock fpb = (ParForProgramBlock) pb;
 			node = new OptNode( NodeType.PARFOR );
 			if(storeObjs)
 				_rtMap.putMapping(fpb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
 			long N = fpb.getNumIterations();
-			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
-															  String.valueOf(CostEstimatorRuntime.FACTOR_NUM_ITERATIONS));
+			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? 
+				String.valueOf(N) : String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
 			switch(fpb.getExecMode())
 			{

@@ -46,13 +46,13 @@ public class FunctionProgramBlock extends ProgramBlock
 	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) 
 	{
 		super(prog);
-		_childBlocks = new ArrayList<ProgramBlock>();
-		_inputParams = new ArrayList<DataIdentifier>();
+		_childBlocks = new ArrayList<>();
+		_inputParams = new ArrayList<>();
 		for (DataIdentifier id : inputParams){
 			_inputParams.add(new DataIdentifier(id));
 			
 		}
-		_outputParams = new ArrayList<DataIdentifier>();
+		_outputParams = new ArrayList<>();
 		for (DataIdentifier id : outputParams){
 			_outputParams.add(new DataIdentifier(id));
 		}

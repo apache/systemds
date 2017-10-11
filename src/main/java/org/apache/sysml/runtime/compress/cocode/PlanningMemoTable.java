@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.compress.estim.CompressedSizeEstimator;
 
 public class PlanningMemoTable 
 {
-	private HashMap<ColIndexes,PlanningCoCodingGroup> _memo = new HashMap<ColIndexes,PlanningCoCodingGroup>();
+	private HashMap<ColIndexes,PlanningCoCodingGroup> _memo = new HashMap<>();
 	private double _optChangeInSize = 0; 
 	private int[] _stats = new int[3];
 	

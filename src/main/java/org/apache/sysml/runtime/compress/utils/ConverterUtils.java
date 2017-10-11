@@ -75,7 +75,7 @@ public class ConverterUtils
 			ret = ((ColGroupUncompressed) group).getData();
 		}
 		else {
-			ArrayList<ColGroup> tmpGroup = new ArrayList<ColGroup>(Arrays.asList(group));
+			ArrayList<ColGroup> tmpGroup = new ArrayList<>(Arrays.asList(group));
 			ColGroupUncompressed decompressedCols = new ColGroupUncompressed(tmpGroup);
 			ret = decompressedCols.getData();
 		}

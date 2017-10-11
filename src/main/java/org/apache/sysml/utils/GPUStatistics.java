@@ -64,8 +64,8 @@ public class GPUStatistics {
 	// Per instruction miscellaneous timers.
 	// Used to record events in a CP Heavy Hitter instruction and
 	// provide a breakdown of how time was spent in that instruction
-	private static HashMap<String, HashMap<String, Long>> _cpInstMiscTime = new HashMap<String, HashMap<String, Long>> ();
-	private static HashMap<String, HashMap<String, Long>> _cpInstMiscCount = new HashMap<String, HashMap<String, Long>> ();
+	private static HashMap<String, HashMap<String, Long>> _cpInstMiscTime = new HashMap<> ();
+	private static HashMap<String, HashMap<String, Long>> _cpInstMiscCount = new HashMap<> ();
 
 	/**
 	 * Resets the miscellaneous timers & counters
@@ -122,7 +122,7 @@ public class GPUStatistics {
 
 		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);
 		if (miscTimesMap == null) {
-			miscTimesMap = new HashMap<String, Long>();
+			miscTimesMap = new HashMap<>();
 			_cpInstMiscTime.put(instructionName, miscTimesMap);
 		}
 		Long oldVal = miscTimesMap.get(miscTimer);
@@ -131,7 +131,7 @@ public class GPUStatistics {
 
 		HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(instructionName);
 		if (miscCountMap == null){
-			miscCountMap = new HashMap<String, Long>();
+			miscCountMap = new HashMap<>();
 			_cpInstMiscCount.put(instructionName, miscCountMap);
 		}
 		Long oldCnt = miscCountMap.get(miscTimer);
@@ -158,7 +158,7 @@ public class GPUStatistics {
 		StringBuffer sb = new StringBuffer();
 		HashMap<String, Long> miscTimerMap = _cpInstMiscTime.get(instructionName);
 		if (miscTimerMap != null) {
-			List<Map.Entry<String, Long>> sortedList = new ArrayList<Map.Entry<String, Long>>(miscTimerMap.entrySet());
+			List<Map.Entry<String, Long>> sortedList = new ArrayList<>(miscTimerMap.entrySet());
 			// Sort the times to display by the most expensive first
 			Collections.sort(sortedList, new Comparator<Map.Entry<String, Long>>() {
 				@Override

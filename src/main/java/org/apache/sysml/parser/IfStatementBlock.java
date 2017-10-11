@@ -55,8 +55,8 @@ public class IfStatementBlock extends StatementBlock
 			ifstmt.getConditionalPredicate().setPredicate(constVars.get(((DataIdentifier)pred).getName()));
 		}
 		
-		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier>(constVars);
-		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> (constVars);
+		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<>(constVars);
+		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<> (constVars);
 		
 		VariableSet idsIfCopy 	= new VariableSet(ids);
 		VariableSet idsElseCopy = new VariableSet(ids);
@@ -118,7 +118,7 @@ public class IfStatementBlock extends StatementBlock
 		//		b) ELSE leave out of reconciled set
 		/////////////////////////////////////////////////////////////////////////////////
 		
-		HashMap<String,ConstIdentifier> recConstVars = new HashMap<String,ConstIdentifier>();
+		HashMap<String,ConstIdentifier> recConstVars = new HashMap<>();
 		
 		// STEP 1:  (IF UNION ELSE) MINUS updated vars
 		for (Entry<String,ConstIdentifier> e : constVarsIfCopy.entrySet() ){

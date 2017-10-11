@@ -38,7 +38,7 @@ public class Transform extends Lop
 		Reshape,
 		Sort,
 		Rev
-	};
+	}
 	
 	private OperationTypes operation = null;
 	private boolean _bSortIndInMem = false;

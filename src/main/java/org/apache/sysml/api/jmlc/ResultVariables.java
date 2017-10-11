@@ -42,7 +42,7 @@ public class ResultVariables
 	private HashMap<String, Data> _out = null;
 	
 	public ResultVariables() {
-		_out = new HashMap<String, Data>();
+		_out = new HashMap<>();
 	}
 	
 	/**

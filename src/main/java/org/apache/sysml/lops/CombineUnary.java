@@ -80,7 +80,7 @@ public class CombineUnary extends Lop
 	public static CombineUnary constructCombineLop(Lop input1, 
 			DataType dt, ValueType vt) {
 		
-		HashSet<Lop> set1 = new HashSet<Lop>();
+		HashSet<Lop> set1 = new HashSet<>();
 		set1.addAll(input1.getOutputs());
 			
 		for (Lop lop  : set1) {

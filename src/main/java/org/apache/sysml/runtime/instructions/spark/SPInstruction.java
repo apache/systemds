@@ -38,7 +38,7 @@ public abstract class SPInstruction extends Instruction {
 		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
 		Write, SpoofFused, INVALID, 
 		Convolution
-	};
+	}
 
 	protected SPINSTRUCTION_TYPE _sptype;
 	protected Operator _optr;

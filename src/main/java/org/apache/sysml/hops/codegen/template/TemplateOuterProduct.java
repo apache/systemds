@@ -106,9 +106,9 @@ public class TemplateOuterProduct extends TemplateBase {
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//recursively process required cplan output
-		HashSet<Hop> inHops = new HashSet<Hop>();
-		HashMap<String,Hop> inHops2 = new HashMap<String, Hop>();
-		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
+		HashSet<Hop> inHops = new HashSet<>();
+		HashMap<String,Hop> inHops2 = new HashMap<>();
+		HashMap<Long, CNode> tmp = new HashMap<>();
 		hop.resetVisitStatus();
 		rConstructCplan(hop, memo, tmp, inHops, inHops2, compileLiterals);
 		hop.resetVisitStatus();
@@ -117,13 +117,13 @@ public class TemplateOuterProduct extends TemplateBase {
 		Hop X = inHops2.get("_X");
 		Hop U = inHops2.get("_U");
 		Hop V = inHops2.get("_V");
-		LinkedList<Hop> sinHops = new LinkedList<Hop>(inHops);
+		LinkedList<Hop> sinHops = new LinkedList<>(inHops);
 		sinHops.remove(V); sinHops.addFirst(V);
 		sinHops.remove(U); sinHops.addFirst(U);
 		sinHops.remove(X); sinHops.addFirst(X);
 		
 		//construct template node
-		ArrayList<CNode> inputs = new ArrayList<CNode>();
+		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
 			if( in != null )
 				inputs.add(tmp.get(in.getHopID()));
@@ -135,8 +135,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			&& tpl.getOutProdType()==OutProdType.LEFT_OUTER_PRODUCT);
 		tpl.setBeginLine(hop.getBeginLine());
 		
-		
-		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
+		return new Pair<>(sinHops.toArray(new Hop[0]), tpl);
 	}
 	
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 

@@ -73,8 +73,8 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 	 */
 	private List<List<Integer>> packFirstFit(int[] items, double[] itemWeights) 
 	{
-		List<List<Integer>> bins = new ArrayList<List<Integer>>();
-		List<Double> binWeights = new ArrayList<Double>(); 
+		List<List<Integer>> bins = new ArrayList<>();
+		List<Double> binWeights = new ArrayList<>();
 		
 		for( int i = 0; i < items.length; i++ ) {
 			//add to existing bin
@@ -90,7 +90,7 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 				
 			//create new bin at end of list
 			if( !assigned ) {
-				bins.add(new ArrayList<Integer>(Arrays.asList(items[i])));
+				bins.add(new ArrayList<>(Arrays.asList(items[i])));
 				binWeights.add(BIN_CAPACITY-itemWeights[i]);
 			}		
 		}

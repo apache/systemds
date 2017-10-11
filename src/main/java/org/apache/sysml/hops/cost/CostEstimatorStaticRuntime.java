@@ -480,7 +480,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//note: this is a simplified version of MRJobConfiguration.setUpOutputIndexesForMapper
 		
 		//map indices
-		HashSet<Byte> ixMap = new HashSet<Byte>();
+		HashSet<Byte> ixMap = new HashSet<>();
 		for( byte ix : inIx )
 			ixMap.add(ix);
 		
@@ -501,7 +501,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		}
 		
 		//reduce indices
-		HashSet<Byte> ixRed = new HashSet<Byte>();
+		HashSet<Byte> ixRed = new HashSet<>();
 		for( byte ix : retIx )
 			ixRed.add(ix);
 	
@@ -601,7 +601,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private int getDistcacheIndex(String inst) 
 		throws DMLRuntimeException
 	{
-		ArrayList<Byte> indexes = new ArrayList<Byte>();
+		ArrayList<Byte> indexes = new ArrayList<>();
 		
 		if( InstructionUtils.isDistributedCacheUsed(inst) ) {
 			MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(inst);

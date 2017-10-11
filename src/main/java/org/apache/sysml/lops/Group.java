@@ -30,7 +30,7 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Group extends Lop  
 {
-	public enum OperationTypes {Sort};
+	public enum OperationTypes {Sort}
 	
 	OperationTypes operation;
 	

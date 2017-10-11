@@ -73,8 +73,8 @@ public class CombineMR
 		protected MRInstruction[] comb_instructions=null;
 		private MatrixIndexes keyBuff=new MatrixIndexes();
 		private WeightedPair valueBuff=new WeightedPair();
-		private HashMap<Byte, Pair<Integer, Integer>> outputBlockSizes=new HashMap<Byte, Pair<Integer, Integer>>();
-		private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
+		private HashMap<Byte, Pair<Integer, Integer>> outputBlockSizes=new HashMap<>();
+		private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<>();
 		@Override
 		public void reduce(MatrixIndexes indexes,
 				Iterator<TaggedMatrixValue> values,

@@ -57,9 +57,9 @@ public class GMRCtableBuffer
 	public GMRCtableBuffer( CollectMultipleConvertedOutputs collector, boolean outputDimsKnown )
 	{
 		if ( outputDimsKnown )
-			_blockBuffer = new HashMap<Byte, MatrixBlock>();
+			_blockBuffer = new HashMap<>();
 		else
-			_mapBuffer = new HashMap<Byte, CTableMap>();
+			_mapBuffer = new HashMap<>();
 		_collector = collector;
 	}
 

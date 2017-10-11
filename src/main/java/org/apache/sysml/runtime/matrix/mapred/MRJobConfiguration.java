@@ -708,7 +708,7 @@ public class MRJobConfiguration
 		thisFile = thisFile.makeQualified(fs);
 		
 		Path thisDir=thisFile.getParent().makeQualified(fs);
-		ArrayList<Byte> representativeMatrixes=new ArrayList<Byte>();
+		ArrayList<Byte> representativeMatrixes=new ArrayList<>();
 		for(int i=0; i<matrices.length; i++)
 		{
 			Path p = new Path(matrices[i]).makeQualified(fs);
@@ -1008,8 +1008,8 @@ public class MRJobConfiguration
 		}
 		
 		//remove redundant inputs and pure broadcast variables
-		ArrayList<Path> lpaths = new ArrayList<Path>();
-		ArrayList<InputInfo> liinfos = new ArrayList<InputInfo>();
+		ArrayList<Path> lpaths = new ArrayList<>();
+		ArrayList<InputInfo> liinfos = new ArrayList<>();
 		for(int i=0; i<inputs.length; i++)
 		{
 			Path p = new Path(inputs[i]);
@@ -1092,7 +1092,7 @@ public class MRJobConfiguration
 		}
 		
 		//remove redundant input files
-		ArrayList<Path> paths=new ArrayList<Path>();
+		ArrayList<Path> paths=new ArrayList<>();
 		for(int i=0; i<inputs.length; i++)
 		{
 			String name=inputs[i];
@@ -1231,8 +1231,8 @@ public class MRJobConfiguration
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
 			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLRuntimeException
 	{
-		HashSet<Byte> intermediateMatrixIndexes=new HashSet<Byte>();
-		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<Byte, MatrixCharacteristics>();
+		HashSet<Byte> intermediateMatrixIndexes=new HashSet<>();
+		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<>();
 		for(byte i: inputIndexes){
 			MatrixCharacteristics dim=new MatrixCharacteristics(getNumRows(job, i), getNumColumns(job, i), 
 					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i), getNumNonZero(job, i));
@@ -1354,8 +1354,8 @@ public class MRJobConfiguration
 		if(!forMMCJ)
 		{
 			//store the skylines
-			ArrayList<Long> xs=new ArrayList<Long>(mapOutputIndexes.size());
-			ArrayList<Long> ys=new ArrayList<Long>(mapOutputIndexes.size());
+			ArrayList<Long> xs=new ArrayList<>(mapOutputIndexes.size());
+			ArrayList<Long> ys=new ArrayList<>(mapOutputIndexes.size());
 			for(byte idx: mapOutputIndexes)
 			{
 				MatrixCharacteristics dim=dims.get(idx);
@@ -1387,7 +1387,7 @@ public class MRJobConfiguration
 				}
 			}
 			//sort by x
-			TreeMap<Long, Long> map=new TreeMap<Long, Long>();
+			TreeMap<Long, Long> map=new TreeMap<>();
 			for(int i=0; i<xs.size(); i++)
 				map.put(xs.get(i), ys.get(i));
 			numReduceGroups=0;
@@ -1586,7 +1586,7 @@ public class MRJobConfiguration
 	{
 		//find out what results are needed to send to reducers
 		
-		HashSet<Byte> indexesInMapper=new HashSet<Byte>();
+		HashSet<Byte> indexesInMapper=new HashSet<>();
 		for(byte b: inputIndexes)
 			indexesInMapper.add(b);
 		
@@ -1602,7 +1602,7 @@ public class MRJobConfiguration
 		getIndexes(reblockIns, indexesInMapper);
 		
 		MRInstruction[] insReducer = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
-		HashSet<Byte> indexesInReducer=new HashSet<Byte>();
+		HashSet<Byte> indexesInReducer=new HashSet<>();
 		getIndexes(insReducer, indexesInReducer);
 		
 		insReducer = MRInstructionParser.parseMixedInstructions(otherInstructionsInReducer);
@@ -1622,14 +1622,14 @@ public class MRJobConfiguration
 		byte[] resultIndexes=MRJobConfiguration.getResultIndexes(job);
 		Converter[] outputConverters=new Converter[resultIndexes.length];
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
-		HashMap<Byte, ArrayList<Integer>> tagMapping=new HashMap<Byte, ArrayList<Integer>>();
+		HashMap<Byte, ArrayList<Integer>> tagMapping=new HashMap<>();
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];
 			ArrayList<Integer> vec=tagMapping.get(output);
 			if(vec==null)
 			{
-				vec=new ArrayList<Integer>();
+				vec=new ArrayList<>();
 				tagMapping.put(output, vec);
 			}
 			vec.add(i);

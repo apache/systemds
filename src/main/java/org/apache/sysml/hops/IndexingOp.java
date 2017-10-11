@@ -45,7 +45,7 @@ public class IndexingOp extends Hop
 		CP_RIX, //in-memory range index
 		MR_RIX, //general case range reindex
 		MR_VRIX, //vector (row/col) range index
-	};
+	}
 	
 	
 	private IndexingOp() {

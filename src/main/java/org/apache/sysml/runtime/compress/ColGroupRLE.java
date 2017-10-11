@@ -781,8 +781,7 @@ public class ColGroupRLE extends ColGroupOffset
 			apos = bix;
 			astart = start;
 		}
-		
-		return new Pair<Integer,Integer>(apos, astart);
+		return new Pair<>(apos, astart);
 	}
 	
 	@Override

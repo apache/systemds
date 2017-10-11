@@ -60,7 +60,7 @@ public class PlanSelectionFuseNoRedundancy extends PlanSelection
 		
 		//step 0: remove plans that refer to a common partial plan
 		if( memo.contains(current.getHopID()) ) {
-			HashSet<MemoTableEntry> rmSet = new HashSet<MemoTableEntry>();
+			HashSet<MemoTableEntry> rmSet = new HashSet<>();
 			List<MemoTableEntry> hopP = memo.get(current.getHopID());
 			for( MemoTableEntry e1 : hopP )
 				for( int i=0; i<3; i++ )
@@ -71,7 +71,7 @@ public class PlanSelectionFuseNoRedundancy extends PlanSelection
 		
 		//step 1: prune subsumed plans of same type
 		if( memo.contains(current.getHopID()) ) {
-			HashSet<MemoTableEntry> rmSet = new HashSet<MemoTableEntry>();
+			HashSet<MemoTableEntry> rmSet = new HashSet<>();
 			List<MemoTableEntry> hopP = memo.get(current.getHopID());
 			for( MemoTableEntry e1 : hopP )
 				for( MemoTableEntry e2 : hopP )

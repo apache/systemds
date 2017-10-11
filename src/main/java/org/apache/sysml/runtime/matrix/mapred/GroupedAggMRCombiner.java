@@ -43,11 +43,11 @@ public class GroupedAggMRCombiner extends ReduceBase
 	implements Reducer<TaggedMatrixIndexes, WeightedCell, TaggedMatrixIndexes, WeightedCell>
 {	
 	//grouped aggregate instructions
-	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions = new HashMap<Byte, GroupedAggregateInstruction>();
+	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions = new HashMap<>();
 	
 	//reused intermediate objects
 	private CM_COV_Object cmObj = new CM_COV_Object(); 
-	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
+	private HashMap<Byte, CM> cmFn = new HashMap<>();
 	private WeightedCell outCell = new WeightedCell();
 
 	@Override

@@ -37,7 +37,7 @@ public class UnaryCP extends Lop
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
 		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM
-	};
+	}
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
 	public static final String CAST_AS_MATRIX_OPCODE = "castdtm";

@@ -448,7 +448,7 @@ public class DMLYarnClient
 	private Map<String, LocalResource> constructLocalResourceMap(YarnConfiguration yconf) 
 		throws IOException 
 	{
-		Map<String, LocalResource> rMap = new HashMap<String, LocalResource>();
+		Map<String, LocalResource> rMap = new HashMap<>();
 		Path path = new Path(_hdfsJarFile); 
 		
 		LocalResource resource = Records.newRecord(LocalResource.class);
@@ -467,7 +467,7 @@ public class DMLYarnClient
 	private Map<String, String> constructEnvionmentMap(YarnConfiguration yconf) 
 		throws IOException
 	{
-		Map<String, String> eMap = new HashMap<String, String>();
+		Map<String, String> eMap = new HashMap<>();
 		
 		//setup default app master environment
 		StringBuilder classpath = new StringBuilder();

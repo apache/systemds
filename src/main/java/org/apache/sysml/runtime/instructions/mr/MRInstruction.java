@@ -35,7 +35,7 @@ public abstract class MRInstruction extends Instruction {
 		PickByCount, Partition, Ternary, Quaternary, CM_N_COV, MapGroupedAggregate, GroupedAggregate, RightIndex,
 		ZeroOut, MMTSJ, PMMJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain, CumsumAggregate, CumsumSplit,
 		CumsumOffset, BinUaggChain, UaggOuterChain, RemoveEmpty
-	};
+	}
 
 	protected MRINSTRUCTION_TYPE mrtype;
 	protected Operator optr;

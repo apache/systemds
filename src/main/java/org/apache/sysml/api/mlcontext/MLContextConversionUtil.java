@@ -398,7 +398,7 @@ public class MLContextConversionUtil {
 
 			// convert data frame and obtain column names / schema
 			// TODO extend frame schema by column names (right now dropped)
-			Pair<String[], ValueType[]> ret = new Pair<String[], ValueType[]>();
+			Pair<String[], ValueType[]> ret = new Pair<>();
 			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils.dataFrameToBinaryBlock(jsc(), dataFrame,
 					mc, containsID, ret);
 			frameMetadata.setFrameSchema(new FrameSchema(Arrays.asList(ret.getValue())));
@@ -1003,7 +1003,7 @@ public class MLContextConversionUtil {
 
 			int rows = mb.getNumRows();
 			int cols = mb.getNumColumns();
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 
 			if (mb.getNonZeros() > 0) {
 				if (mb.isInSparseFormat()) {
@@ -1068,7 +1068,7 @@ public class MLContextConversionUtil {
 
 			int rows = fb.getNumRows();
 			int cols = fb.getNumColumns();
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 
 			for (int i = 0; i < rows; i++) {
 				StringBuilder sb = new StringBuilder();
@@ -1103,7 +1103,7 @@ public class MLContextConversionUtil {
 
 			int rows = mb.getNumRows();
 			int cols = mb.getNumColumns();
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 
 			if (mb.getNonZeros() > 0) {
 				if (mb.isInSparseFormat()) {
@@ -1157,7 +1157,7 @@ public class MLContextConversionUtil {
 
 			int rows = fb.getNumRows();
 			int cols = fb.getNumColumns();
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 
 			StringBuilder sb = null;
 			for (int i = 0; i < rows; i++) {

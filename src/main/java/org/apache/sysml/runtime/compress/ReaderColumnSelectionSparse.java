@@ -69,7 +69,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection
 	public DblArray nextRow() {
 		if(_skipZeros) {
 			while ((nonZeroReturn = getNextRow()) != null
-				&& nonZeroReturn == ZERO_DBL_ARRAY);
+				&& nonZeroReturn == ZERO_DBL_ARRAY){}
 			return nonZeroReturn;
 		} else {
 			return getNextRow();

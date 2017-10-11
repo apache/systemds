@@ -161,7 +161,7 @@ public class MLContext {
 				return ExplainType.HOPS;
 			}
 		}
-	};
+	}
 
 	/**
 	 * The different types of execution environments supported by SystemML. The

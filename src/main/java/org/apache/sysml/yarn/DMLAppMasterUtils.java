@@ -45,7 +45,6 @@ import org.apache.sysml.yarn.ropt.YarnClusterConfig;
 
 public class DMLAppMasterUtils 
 {
-	
 	private static ResourceConfig _rc = null;
 	private static HashMap<ProgramBlock, Long> _rcMap = null;
 	
@@ -91,7 +90,7 @@ public class DMLAppMasterUtils
 					//see GMR and parfor EMR and DPEMR for runtime configuration
 					long mem = ((long)conf.getIntValue(DMLConfig.YARN_MAPREDUCEMEM)) * 1024 * 1024;
 					InfrastructureAnalyzer.setRemoteMaxMemoryMap(mem);
-					InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);		
+					InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);
 				}
 			}
 		}
@@ -105,7 +104,7 @@ public class DMLAppMasterUtils
 			ArrayList<ProgramBlock> pbProg = getRuntimeProgramBlocks( prog ); 
 			ArrayList<ProgramBlock> B = ResourceOptimizer.compileProgram( pbProg, _rc );
 			
-			_rcMap = new HashMap<ProgramBlock, Long>();
+			_rcMap = new HashMap<>();
 			for( int i=0; i<B.size(); i++ ){
 				_rcMap.put(B.get(i), _rc.getMRResources(i));
 			}
@@ -120,7 +119,7 @@ public class DMLAppMasterUtils
 				//set max map and reduce memory (to be used by the compiler)
 				long mem = _rcMap.get(pb);
 				InfrastructureAnalyzer.setRemoteMaxMemoryMap(mem);
-				InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);			
+				InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);
 				OptimizerUtils.resetDefaultSize();
 			}
 		}	
@@ -161,9 +160,9 @@ public class DMLAppMasterUtils
 
 	protected static ArrayList<ProgramBlock> getRuntimeProgramBlocks(Program prog) 
 		throws DMLRuntimeException
-	{			
+	{
 		//construct single list of all program blocks including functions
-		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
+		ArrayList<ProgramBlock> ret = new ArrayList<>();
 		ret.addAll(prog.getProgramBlocks());
 		ret.addAll(prog.getFunctionProgramBlocks().values());
 		

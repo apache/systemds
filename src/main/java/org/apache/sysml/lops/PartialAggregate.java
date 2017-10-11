@@ -40,7 +40,7 @@ public class PartialAggregate extends Lop
 		RowCol, 
 		Row, 
 		Col
-	};
+	}
 
 	public enum CorrectionLocationType { 
 		NONE, 

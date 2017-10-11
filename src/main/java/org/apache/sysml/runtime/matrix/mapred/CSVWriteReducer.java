@@ -173,7 +173,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 	{
 		super.configure(job);
 		byte maxIndex=0;
-		HashMap<Byte, CSVWriteInstruction> out2Ins=new HashMap<Byte, CSVWriteInstruction>();
+		HashMap<Byte, CSVWriteInstruction> out2Ins=new HashMap<>();
 		try {
 			CSVWriteInstruction[] ins = MRJobConfiguration.getCSVWriteInstructions(job);
 			for(CSVWriteInstruction in: ins)
@@ -252,7 +252,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			START, 
 			NEWLINE, 
 			MIDDLE
-		};
+		}
 		
 		private MatrixBlock _data = null;
 		private int _numCols = 0;

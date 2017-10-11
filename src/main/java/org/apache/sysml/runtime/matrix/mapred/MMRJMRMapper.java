@@ -45,9 +45,9 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	//the aggregate binary instruction for this mmcj job
 	private TripleIndexes triplebuffer=new TripleIndexes();
 	private TaggedMatrixValue taggedValue=null;
-	private HashMap<Byte, Long> numRepeats=new HashMap<Byte, Long>();
-	private HashSet<Byte> aggBinInput1s=new HashSet<Byte>();
-	private HashSet<Byte> aggBinInput2s=new HashSet<Byte>();
+	private HashMap<Byte, Long> numRepeats=new HashMap<>();
+	private HashSet<Byte> aggBinInput1s=new HashSet<>();
+	private HashSet<Byte> aggBinInput2s=new HashSet<>();
 	
 	@Override
 	protected void specialOperationsForActualMap(int index,

@@ -178,13 +178,11 @@ public class ResourceOptimizer
 	private static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ArrayList<ProgramBlock> B, double cp, double mr ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
-		if( B == null ) //init 
-		{
-			B = new ArrayList<ProgramBlock>();
-			
+		if( B == null ) { //init 
+			B = new ArrayList<>();
 			InfrastructureAnalyzer.setLocalMaxMemory( (long)cp );
 			InfrastructureAnalyzer.setRemoteMaxMemoryMap( (long)mr );
-			InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );	
+			InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );
 			OptimizerUtils.resetDefaultSize(); //dependent on cp, mr
 		}
 		
@@ -455,7 +453,7 @@ public class ResourceOptimizer
 	{
 		//prune all program blocks w/o mr instructions (mr budget does not matter)
 		if( PRUNING_SMALL ){
-			ArrayList<ProgramBlock> Bp = new ArrayList<ProgramBlock>();
+			ArrayList<ProgramBlock> Bp = new ArrayList<>();
 			for( ProgramBlock pb : B )
 				if( OptTreeConverter.containsMRJobInstruction(pb.getInstructions(), false, true) )
 					Bp.add( pb );
@@ -464,7 +462,7 @@ public class ResourceOptimizer
 		
 		//prune all program blocks, where all mr hops are due to unknowns
 		if( PRUNING_UNKNOWN ){
-			ArrayList<ProgramBlock> Bp = new ArrayList<ProgramBlock>();
+			ArrayList<ProgramBlock> Bp = new ArrayList<>();
 			for( ProgramBlock pb : B )
 				if( !pruneHasOnlyUnknownMR(pb) )
 					Bp.add( pb );

@@ -42,7 +42,7 @@ public class ReblockReducer extends ReduceBase
 	implements Reducer<MatrixIndexes, TaggedAdaptivePartialBlock, MatrixIndexes, MatrixBlock>
 {
 	
-	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<Byte, MatrixCharacteristics>();
+	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<>();
 	
 	@Override
 	public void reduce(MatrixIndexes indexes, Iterator<TaggedAdaptivePartialBlock> values,

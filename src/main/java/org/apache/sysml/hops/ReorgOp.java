@@ -331,7 +331,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					else
 					{
 						//small vector, use in-memory sort
-						ArrayList<Hop> sinputs = new ArrayList<Hop>();
+						ArrayList<Hop> sinputs = new ArrayList<>();
 						sinputs.add(vinput);
 						sinputs.add(new LiteralOp(1)); //by (always vector)
 						sinputs.add(desc);
@@ -341,7 +341,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
 						voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP, false) );
 						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-						setLops( voutput.constructLops() );								
+						setLops( voutput.constructLops() );
 					}
 					
 					//Step 3: Data permutation (only required for sorting data) 

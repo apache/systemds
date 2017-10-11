@@ -44,10 +44,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class ReduceBase extends MRBaseForCommonInstructions
 {
-		
 	//aggregate instructions
-	protected HashMap<Byte, ArrayList<AggregateInstruction>> 
-	agg_instructions=new HashMap<Byte, ArrayList<AggregateInstruction>>();
+	protected HashMap<Byte, ArrayList<AggregateInstruction>> agg_instructions=new HashMap<>();
 	
 	//default aggregate operation
 	protected static final AggregateOperator DEFAULT_AGG_OP = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -67,7 +65,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	protected CollectMultipleConvertedOutputs collectFinalMultipleOutputs;
 	
 	//a counter to calculate the time spent in a reducer or a combiner
-	public static enum Counters {COMBINE_OR_REDUCE_TIME };
+	public static enum Counters {COMBINE_OR_REDUCE_TIME }
 
 	//the counters to record how many nonZero cells have been produced for each output
 	protected long[] resultsNonZeros=null;
@@ -120,7 +118,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			//parse unary and binary operations
 			MRInstruction[] tmp = MRJobConfiguration.getInstructionsInReducer(job);
 			if( tmp != null ) {
-				mixed_instructions=new ArrayList<MRInstruction>();
+				mixed_instructions=new ArrayList<>();
 				Collections.addAll(mixed_instructions, tmp);
 			}
 			
@@ -147,7 +145,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				ArrayList<AggregateInstruction> vec=agg_instructions.get(ins.input);
 				if(vec==null)
 				{
-					vec = new ArrayList<AggregateInstruction>();
+					vec = new ArrayList<>();
 					agg_instructions.put(ins.input, vec);
 				}
 				vec.add(ins);
@@ -162,7 +160,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				vec=agg_instructions.get(partialIns.input);
 				if(vec==null)
 				{
-					vec=new ArrayList<AggregateInstruction>();
+					vec=new ArrayList<>();
 					agg_instructions.put(partialIns.input, vec);
 				}
 				vec.add(partialIns);
@@ -179,7 +177,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	
 	protected ArrayList<Integer> getOutputIndexes(byte outputTag)
 	{
-		ArrayList<Integer> ret = new ArrayList<Integer>();
+		ArrayList<Integer> ret = new ArrayList<>();
 		for(int i=0; i<resultIndexes.length; i++)
 			if(resultIndexes[i]==outputTag)
 				ret.add(i);
@@ -188,7 +186,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	
 	protected static ArrayList<Integer> getOutputIndexes(byte outputTag, byte[] resultIndexes)
 	{
-		ArrayList<Integer> ret=new ArrayList<Integer>();
+		ArrayList<Integer> ret=new ArrayList<>();
 		for(int i=0; i<resultIndexes.length; i++)
 			if(resultIndexes[i]==outputTag)
 				ret.add(i);

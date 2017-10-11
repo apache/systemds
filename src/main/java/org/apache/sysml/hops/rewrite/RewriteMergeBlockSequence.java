@@ -86,7 +86,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 							//rewire transient write and transient read
 							Hop tread = treads.get(root.getName());
 							Hop in = root.getInput().get(0);
-							for( Hop parent : new ArrayList<Hop>(tread.getParent()) )
+							for( Hop parent : new ArrayList<>(tread.getParent()) )
 								HopRewriteUtils.replaceChildReference(parent, tread, in);
 							HopRewriteUtils.removeAllChildReferences(root);
 							//add transient write if necessary

@@ -27,12 +27,10 @@ import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 
 public class PlanSet 
 {
-	
 	private ArrayList<Plan> _plans = null;
 	
-	public PlanSet()
-	{
-		_plans = new ArrayList<Plan>();
+	public PlanSet() {
+		_plans = new ArrayList<>();
 	}
 
 	public PlanSet(ArrayList<Plan> plans)
@@ -78,7 +76,7 @@ public class PlanSet
 			return pc;
 		}
 		
-		ArrayList<Plan> Pnew = new ArrayList<Plan>();  
+		ArrayList<Plan> Pnew = new ArrayList<>();  
 		
 		// create cross product of plansets between partial and child plans
 		for( Plan p : _plans )
@@ -97,7 +95,7 @@ public class PlanSet
 		String varname = (node.getNodeType()==NodeType.HOP_NODE) ? node.getHop().getName() :
 			            ((GDFCrossBlockNode)node).getName();
 		
-		ArrayList<Plan> Pnew = new ArrayList<Plan>();  
+		ArrayList<Plan> Pnew = new ArrayList<>();  
 		for( Plan p : _plans )
 			if( p.getNode().getHop()!=null 
 			   &&p.getNode().getHop().getName().equals(varname) )
@@ -110,7 +108,7 @@ public class PlanSet
 	
 	public PlanSet union( PlanSet ps )
 	{
-		ArrayList<Plan> Pnew = new ArrayList<Plan>(_plans);  
+		ArrayList<Plan> Pnew = new ArrayList<>(_plans);
 		for( Plan p : ps._plans )
 			Pnew.add( p );
 		

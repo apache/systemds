@@ -44,7 +44,7 @@ public class FunctionCallCP extends Lop
 	{
 		this(inputs, fnamespace, fname, outputs, et);
 		if(outputHops != null) {
-			_outputLops = new ArrayList<Lop>();
+			_outputLops = new ArrayList<>();
 			for(Hop h : outputHops)
 				_outputLops.add( h.constructLops() );
 		}

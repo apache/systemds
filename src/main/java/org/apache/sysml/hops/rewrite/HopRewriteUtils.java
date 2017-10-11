@@ -303,7 +303,7 @@ public class HopRewriteUtils
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
 		Hop val = new LiteralOp(value);
 		
-		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
@@ -359,14 +359,14 @@ public class HopRewriteUtils
 		Hop sminHop = new LiteralOp(smin);
 		Hop smaxHop = new LiteralOp(smax);
 		
-		HashMap<String, Hop> params2 = new HashMap<String, Hop>();
+		HashMap<String, Hop> params2 = new HashMap<>();
 		params2.put(DataExpression.RAND_ROWS, rows);
 		params2.put(DataExpression.RAND_COLS, cols);
 		params2.put(DataExpression.RAND_MIN, sminHop);
 		params2.put(DataExpression.RAND_MAX, smaxHop);
 		params2.put(DataExpression.RAND_PDF, pdf);
 		params2.put(DataExpression.RAND_LAMBDA, mean);
-		params2.put(DataExpression.RAND_SPARSITY, sparsity);		
+		params2.put(DataExpression.RAND_SPARSITY, sparsity);
 		params2.put(DataExpression.RAND_SEED, seed );
 		
 		//note internal refresh size information
@@ -389,7 +389,7 @@ public class HopRewriteUtils
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
-		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
@@ -422,7 +422,7 @@ public class HopRewriteUtils
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
-		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
@@ -448,7 +448,7 @@ public class HopRewriteUtils
 	{		
 		Hop val = new LiteralOp(value);
 		
-		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rowInput);
 		params.put(DataExpression.RAND_COLS, colInput);
 		params.put(DataExpression.RAND_MIN, val);
@@ -622,7 +622,7 @@ public class HopRewriteUtils
 		Hop to = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
-		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		HashMap<String, Hop> params = new HashMap<>();
 		if( asc ) {
 			params.put(Statement.SEQ_FROM, new LiteralOp(1));
 			params.put(Statement.SEQ_TO, to);

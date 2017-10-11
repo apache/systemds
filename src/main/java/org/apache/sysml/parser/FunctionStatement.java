@@ -36,10 +36,10 @@ public class FunctionStatement extends Statement
 	}
 	
 	public FunctionStatement(){
-		 _body = new ArrayList<StatementBlock>();
+		 _body = new ArrayList<>();
 		 _name = null;
-		 _inputParams = new ArrayList<DataIdentifier>();
-		 _outputParams = new ArrayList<DataIdentifier>();
+		 _inputParams = new ArrayList<>();
+		 _outputParams = new ArrayList<>();
 	}
 	
 	public ArrayList<DataIdentifier> getInputParams(){

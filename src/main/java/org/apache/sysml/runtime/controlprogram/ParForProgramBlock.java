@@ -197,6 +197,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			_N = N;
 		}
 		@Override
+		public int hashCode() {
+			return UtilFunctions.intHashCode(_dpf.ordinal(), _N);
+		}
+		@Override
 		public boolean equals(Object o) {
 			return (o instanceof PartitionFormat)
 				&& _dpf == ((PartitionFormat)o)._dpf

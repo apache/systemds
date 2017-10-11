@@ -36,7 +36,7 @@ public class SortKeys extends Lop
 		WithWeights, 
 		WithoutWeights,
 		Indexes,
-	};
+	}
 	
 	private OperationTypes operation;
 	private boolean descending = false;
@@ -160,7 +160,7 @@ public class SortKeys extends Lop
 	public static SortKeys constructSortByValueLop(Lop input1, Lop input2, OperationTypes op, 
 			DataType dt, ValueType vt, ExecType et) {
 		
-		HashSet<Lop> set1 = new HashSet<Lop>();
+		HashSet<Lop> set1 = new HashSet<>();
 		set1.addAll(input1.getOutputs());
 		// find intersection of input1.getOutputs() and input2.getOutputs();
 		set1.retainAll(input2.getOutputs());

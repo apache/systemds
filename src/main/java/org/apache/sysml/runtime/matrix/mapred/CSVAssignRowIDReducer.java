@@ -37,7 +37,7 @@ public class CSVAssignRowIDReducer extends MapReduceBase implements Reducer<Byte
 {
 	
 	
-	private ArrayList<OffsetCount> list = new ArrayList<OffsetCount>();
+	private ArrayList<OffsetCount> list = new ArrayList<>();
 	
 	@Override
 	@SuppressWarnings("unchecked")

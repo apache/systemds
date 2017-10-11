@@ -99,7 +99,7 @@ public class WriteCSVMR
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
 		OutputInfo[] outputInfos=new OutputInfo[outputs.length];
-		HashMap<Byte, Integer> indexmap=new HashMap<Byte, Integer>();
+		HashMap<Byte, Integer> indexmap=new HashMap<>();
 		for(int i=0; i<stats.length; i++)
 		{
 			indexmap.put(resultIndexes[i], i);

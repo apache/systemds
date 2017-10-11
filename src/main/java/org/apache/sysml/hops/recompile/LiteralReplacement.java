@@ -82,7 +82,7 @@ public class LiteralReplacement
 					//because hop c marked as visited, and (2) repeated evaluation of uagg ops
 					
 					if( c.getParent().size() > 1 ) { //multiple parents
-						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
+						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
 						for( Hop p : parents ) {
 							int pos = HopRewriteUtils.getChildReferencePos(p, c);
 							HopRewriteUtils.removeChildReferenceByPos(p, c, pos);

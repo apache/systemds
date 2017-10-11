@@ -37,9 +37,8 @@ public abstract class PlanSelection
 	private static final BasicPlanComparator BASE_COMPARE = new BasicPlanComparator();
 	private final TypedPlanComparator _typedCompare = new TypedPlanComparator();
 	
-	private final HashMap<Long, List<MemoTableEntry>> _bestPlans = 
-			new HashMap<Long, List<MemoTableEntry>>();
-	private final HashSet<VisitMark> _visited = new HashSet<VisitMark>();
+	private final HashMap<Long, List<MemoTableEntry>> _bestPlans = new HashMap<>();
+	private final HashSet<VisitMark> _visited = new HashSet<>();
 	
 	/**
 	 * Given a HOP DAG G, and a set of partial fusions plans P, find the set of optimal, 
@@ -95,7 +94,7 @@ public abstract class PlanSelection
 		
 		//step 1: prune subsumed plans of same type
 		if( memo.contains(current.getHopID()) ) {
-			HashSet<MemoTableEntry> rmSet = new HashSet<MemoTableEntry>();
+			HashSet<MemoTableEntry> rmSet = new HashSet<>();
 			List<MemoTableEntry> hopP = memo.get(current.getHopID());
 			for( MemoTableEntry e1 : hopP )
 				for( MemoTableEntry e2 : hopP )

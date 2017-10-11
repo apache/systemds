@@ -28,11 +28,11 @@ public class VariableSet
 	private HashMap<String,DataIdentifier> _variables;
 	
 	public VariableSet() {
-		_variables = new HashMap<String,DataIdentifier>();
+		_variables = new HashMap<>();
 	}
 	
 	public VariableSet( VariableSet vs ) {
-		_variables = new HashMap<String,DataIdentifier>();
+		_variables = new HashMap<>();
 		if (vs != null)
 			_variables.putAll(vs.getVariables());
 	}

@@ -48,14 +48,14 @@ public class AssignmentStatement extends Statement
 	}
 
 	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
-		_targetList = new ArrayList<DataIdentifier>();
+		_targetList = new ArrayList<>();
 		_targetList.add(di);
 		_source = exp;
 		setParseInfo(parseInfo);
 	}
 
 	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) throws LanguageException {
-		_targetList = new ArrayList<DataIdentifier>();
+		_targetList = new ArrayList<>();
 		_targetList.add(di);
 		_source = exp;
 		setCtxValues(ctx);

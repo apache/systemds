@@ -551,8 +551,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		//iterator state
 		private final Iterator<Integer>[] _iters;
 		private final IJV _ret = new IJV(); 
-		private final HashMap<Integer,Integer> _ixbuff = 
-			new HashMap<Integer,Integer>(); //<rowid-value>
+		private final HashMap<Integer,Integer> _ixbuff = new HashMap<>(); //<rowid-value>
 		private int _rpos;
 		private int _cpos;
 		private int _vpos;

@@ -195,7 +195,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	private void allocateColGroupList() {
-		_colGroups = new ArrayList<ColGroup>();
+		_colGroups = new ArrayList<>();
 	}
 	
 	@Override
@@ -259,9 +259,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 		// PHASE 1: Classify columns by compression type
 		// We start by determining which columns are amenable to compression
-		List<Integer> colsC = new ArrayList<Integer>();
-		List<Integer> colsUC = new ArrayList<Integer>();
-		HashMap<Integer, Double> compRatios = new HashMap<Integer, Double>();
+		List<Integer> colsC = new ArrayList<>();
+		List<Integer> colsUC = new ArrayList<>();
+		HashMap<Integer, Double> compRatios = new HashMap<>();
 		
 		// Classify columns according to ratio (size uncompressed / size compressed), 
 		// where a column is compressible if ratio > 1.
@@ -358,7 +358,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		// Phase 5: Cleanup
 		// The remaining columns are stored uncompressed as one big column group
 		if( !remainingCols.isEmpty() ) {
-			ArrayList<Integer> list = new ArrayList<Integer>(remainingCols);
+			ArrayList<Integer> list = new ArrayList<>(remainingCols);
 			ColGroupUncompressed ucgroup = new ColGroupUncompressed(list, rawblock);
 			_colGroups.add(ucgroup);
 		}
@@ -416,11 +416,11 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	{	
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<SizeEstimTask> tasks = new ArrayList<SizeEstimTask>();
+			ArrayList<SizeEstimTask> tasks = new ArrayList<>();
 			for( int col=0; col<clen; col++ )
 				tasks.add(new SizeEstimTask(estim, col));
 			List<Future<CompressedSizeInfo>> rtask = pool.invokeAll(tasks);	
-			ArrayList<CompressedSizeInfo> ret = new ArrayList<CompressedSizeInfo>();
+			ArrayList<CompressedSizeInfo> ret = new ArrayList<>();
 			for( Future<CompressedSizeInfo> lrtask : rtask )
 				ret.add(lrtask.get());
 			pool.shutdown();
@@ -445,11 +445,11 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	{
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<CompressTask> tasks = new ArrayList<CompressTask>();
+			ArrayList<CompressTask> tasks = new ArrayList<>();
 			for( int[] colIndexes : groups )
 				tasks.add(new CompressTask(in, estim, compRatios, rlen, colIndexes, denseEst));
-			List<Future<ColGroup>> rtask = pool.invokeAll(tasks);	
-			ArrayList<ColGroup> ret = new ArrayList<ColGroup>();
+			List<Future<ColGroup>> rtask = pool.invokeAll(tasks);
+			ArrayList<ColGroup> ret = new ArrayList<>();
 			for( Future<ColGroup> lrtask : rtask )
 				ret.add(lrtask.get());
 			pool.shutdown();
@@ -486,7 +486,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if (compRatioPQ == null) {
 				// first modification
 				allGroupIndices = colIndexes.clone();
-				compRatioPQ = new PriorityQueue<CompressedMatrixBlock.CompressedColumn>();
+				compRatioPQ = new PriorityQueue<>();
 				for (int i = 0; i < colIndexes.length; i++)
 					compRatioPQ.add(new CompressedColumn(i, compRatios.get(colIndexes[i])));
 			}
@@ -549,7 +549,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			return null;
 		
 		//create joint dictionary
-		HashSet<Double> tmp = new HashSet<Double>();
+		HashSet<Double> tmp = new HashSet<>();
 		int numQual = 0;
 		for( ColGroup grp : colGroups )
 			if( grp.getNumCols()==1 && grp instanceof ColGroupDDC1 ) {
@@ -654,7 +654,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
-			ArrayList<DecompressTask> tasks = new ArrayList<DecompressTask>();
+			ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new DecompressTask(_colGroups, ret, i*blklen, Math.min((i+1)*blklen,rlen)));
 			List<Future<Object>> rtasks = pool.invokeAll(tasks);
@@ -796,7 +796,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		_sharedDDC1Dict = in.readBoolean();
 		int ncolGroups = in.readInt();
 		
-		_colGroups = new ArrayList<ColGroup>(ncolGroups);
+		_colGroups = new ArrayList<>(ncolGroups);
 		double[] sharedDict = null;
 		for( int i=0; i<ncolGroups; i++ ) 
 		{
@@ -932,7 +932,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		// Apply the operation recursively to each of the column groups.
 		// Most implementations will only modify metadata.
-		ArrayList<ColGroup> newColGroups = new ArrayList<ColGroup>();
+		ArrayList<ColGroup> newColGroups = new ArrayList<>();
 		for (ColGroup grp : _colGroups) {
 			newColGroups.add(grp.scalarOperation(sop));
 		}
@@ -1190,7 +1190,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					 ret = (MatrixBlock)uc.getData().aggregateUnaryOperations(op, ret, blockingFactorRow, blockingFactorCol, indexesIn, false);					
 				//compute all compressed column groups
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
-				ArrayList<UnaryAggregateTask> tasks = new ArrayList<UnaryAggregateTask>();
+				ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
 				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
 					int blklen = BitmapEncoder.getAlignedBlocksize(
 						(int)(Math.ceil((double)rlen/op.getNumThreads())));
@@ -1280,7 +1280,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			
 		//process cache-conscious DDC1 groups (adds to output)
 		if( cacheDDC1 ) {
-			ArrayList<ColGroupDDC1> tmp = new ArrayList<ColGroupDDC1>();
+			ArrayList<ColGroupDDC1> tmp = new ArrayList<>();
 			for( ColGroup grp : groups )
 				if( grp instanceof ColGroupDDC1 )
 					tmp.add((ColGroupDDC1)grp);
@@ -1373,7 +1373,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			//compute matrix mult
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
+				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 				int numgrp = _colGroups.size();
 				int blklen = (int)(Math.ceil((double)numgrp/(2*k)));
 				for( int i=0; i<2*k & i*blklen<clen; i++ )
@@ -1448,7 +1448,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
-			ArrayList<RightMatrixMultTask> tasks = new ArrayList<RightMatrixMultTask>();
+			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new RightMatrixMultTask(_colGroups, vector, result, i*blklen, Math.min((i+1)*blklen,rlen)));
 			List<Future<Long>> ret = pool.invokeAll(tasks);	
@@ -1482,7 +1482,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//process cache-conscious DDC1 groups (adds to output)
 		if( cacheDDC1 ) {
-			ArrayList<ColGroupDDC1> tmp = new ArrayList<ColGroupDDC1>();
+			ArrayList<ColGroupDDC1> tmp = new ArrayList<>();
 			for( ColGroup grp : groups )
 				if( grp instanceof ColGroupDDC1 )
 					tmp.add((ColGroupDDC1)grp);
@@ -1593,7 +1593,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			//compute remaining compressed column groups in parallel
 			ExecutorService pool = Executors.newFixedThreadPool( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
 			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(4*k, false);
-			ArrayList<LeftMatrixMultTask> tasks = new ArrayList<LeftMatrixMultTask>();
+			ArrayList<LeftMatrixMultTask> tasks = new ArrayList<>();
 			for( ArrayList<ColGroup> groups : grpParts )
 				tasks.add(new LeftMatrixMultTask(groups, rowVector, result));
 			List<Future<Object>> ret = pool.invokeAll(tasks);	
@@ -1678,7 +1678,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		int pos = 0;
 		for( ColGroup grp : _colGroups ){
 			if( grpParts[pos]==null )
-				grpParts[pos] = new ArrayList<ColGroup>();
+				grpParts[pos] = new ArrayList<>();
 			if( inclUncompressed || !(grp instanceof ColGroupUncompressed) ) {
 				grpParts[pos].add(grp);
 				pos = (pos==numTasks-1) ? 0 : pos+1;
@@ -2323,7 +2323,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 	
 	private HashSet<Integer> seq(int from, int to, int incr) {
-		HashSet<Integer> ret = new HashSet<Integer>();
+		HashSet<Integer> ret = new HashSet<>();
 		for (int i = from; i <= to; i+=incr)
 			ret.add(i);
 		return ret;

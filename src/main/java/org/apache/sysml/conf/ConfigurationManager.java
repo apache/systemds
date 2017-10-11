@@ -200,13 +200,13 @@ public class ConfigurationManager
 	
 	private static class ThreadLocalDMLConfig extends ThreadLocal<DMLConfig> {
 		@Override 
-        protected DMLConfig initialValue() { 
+		protected DMLConfig initialValue() { 
 			//currently initialize by reference to avoid unnecessary deep copy via clone.
-	        if( _dmlconf != null )
-	        	return _dmlconf; 
-	        return null;
-        }
-    }
+			if( _dmlconf != null )
+				return _dmlconf; 
+			return null;
+		}
+	}
 	
 	private static class ThreadLocalCompilerConfig extends ThreadLocal<CompilerConfig> {
 		@Override 
@@ -215,5 +215,5 @@ public class ConfigurationManager
 				return _cconf.clone();
 			return null;
 		}
-    };
+	}
 }

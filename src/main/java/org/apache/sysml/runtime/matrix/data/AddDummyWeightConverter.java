@@ -61,7 +61,6 @@ public class AddDummyWeightConverter implements Converter<Writable, Writable, Ma
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public Pair<MatrixIndexes, WeightedPair> next() {
 		Pair<MatrixIndexes, MatrixCell> temp=toCellConverter.next();
 		pair.setKey(temp.getKey());
@@ -71,12 +70,11 @@ public class AddDummyWeightConverter implements Converter<Writable, Writable, Ma
 
 	@Override
 	public void setBlockSize(int rl, int cl) {
-		
-		if(toCellConverter==null)
-		{
+		if(toCellConverter==null) {
 			rlen=rl;
 			clen=cl;
-		}else
+		} 
+		else
 			toCellConverter.setBlockSize(rl, cl);
 	}
 

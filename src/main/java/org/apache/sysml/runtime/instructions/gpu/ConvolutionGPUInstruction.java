@@ -39,8 +39,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	private CPOperand _output;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
-	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
-	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
+	private ArrayList<CPOperand> _stride = new ArrayList<>();
+	private ArrayList<CPOperand> _padding = new ArrayList<>();
 	private double _intermediateMemoryBudget = 0;
 	
 	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
@@ -99,10 +99,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[15]);
 		
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[3]));
 			stride.add(new CPOperand(parts[4]));
 			padding.add(new CPOperand(parts[5]));
@@ -126,10 +126,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[16]);
 		
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[4]));
 			stride.add(new CPOperand(parts[5]));
 			padding.add(new CPOperand(parts[6]));
@@ -151,10 +151,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
 		
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[2]));
 			stride.add(new CPOperand(parts[3]));
 			padding.add(new CPOperand(parts[4]));

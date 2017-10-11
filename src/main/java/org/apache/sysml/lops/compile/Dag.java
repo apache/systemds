@@ -138,9 +138,9 @@ public class Dag<N extends Lop>
 			fileName = null;
 			varName = null;
 			outInfo = null;
-			preInstructions = new ArrayList<Instruction>(); 
-			postInstructions = new ArrayList<Instruction>(); 
-			lastInstructions = new ArrayList<Instruction>();
+			preInstructions = new ArrayList<>(); 
+			postInstructions = new ArrayList<>(); 
+			lastInstructions = new ArrayList<>();
 		}
 		
 		public String getFileName() {
@@ -184,8 +184,8 @@ public class Dag<N extends Lop>
 	public Dag() 
 	{
 		//allocate internal data structures
-		nodes = new ArrayList<Lop>();
-		IDMap = new HashMap<Long, Integer>();
+		nodes = new ArrayList<>();
+		IDMap = new HashMap<>();
 
 		// get number of reducers from dml config
 		total_reducers = ConfigurationManager.getNumReducers();
@@ -254,7 +254,7 @@ public class Dag<N extends Lop>
 		}
 		
 		// hold all nodes in a vector (needed for ordering)
-		ArrayList<Lop> node_v = new ArrayList<Lop>();
+		ArrayList<Lop> node_v = new ArrayList<>();
 		node_v.addAll(nodes);
 		
 		/*
@@ -286,12 +286,12 @@ public class Dag<N extends Lop>
 			LOG.trace("In delete updated variables");
 
 		// CANDIDATE list of variables which could have been updated in this statement block 
-		HashMap<String, Lop> labelNodeMapping = new HashMap<String, Lop>();
+		HashMap<String, Lop> labelNodeMapping = new HashMap<>();
 		
 		// ACTUAL list of variables whose value is updated, AND the old value of the variable 
 		// is no longer accessible/used.
-		HashSet<String> updatedLabels = new HashSet<String>();
-		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<String, Lop>();
+		HashSet<String> updatedLabels = new HashSet<>();
+		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<>();
 		
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
@@ -377,7 +377,7 @@ public class Dag<N extends Lop>
 	}
 
 	private static ArrayList<ArrayList<Lop>> createNodeVectors(int size) {
-		ArrayList<ArrayList<Lop>> arr = new ArrayList<ArrayList<Lop>>();
+		ArrayList<ArrayList<Lop>> arr = new ArrayList<>();
 
 		// for each job type, we need to create a vector.
 		// additionally, create another vector for execNodes
@@ -552,7 +552,7 @@ public class Dag<N extends Lop>
 		 * If the input of a MMCJ/MMRJ job (must have executed in a Mapper) is used
 		 * by multiple lops then we should mark it as not-finished.
 		 */
-		ArrayList<Lop> nodesWithUnfinishedOutputs = new ArrayList<Lop>();
+		ArrayList<Lop> nodesWithUnfinishedOutputs = new ArrayList<>();
 		int[] jobIndices = {JobType.MMCJ.getId()};
 		Lop.Type[] lopTypes = { Lop.Type.MMCJ};
 		
@@ -786,21 +786,21 @@ public class Dag<N extends Lop>
 			LOG.trace("Grouping DAG ============");
 
 		// nodes to be executed in current iteration
-		ArrayList<Lop> execNodes = new ArrayList<Lop>();
+		ArrayList<Lop> execNodes = new ArrayList<>();
 		// nodes that have already been processed
-		ArrayList<Lop> finishedNodes = new ArrayList<Lop>();
+		ArrayList<Lop> finishedNodes = new ArrayList<>();
 		// nodes that are queued for the following iteration
-		ArrayList<Lop> queuedNodes = new ArrayList<Lop>();
+		ArrayList<Lop> queuedNodes = new ArrayList<>();
 
 		ArrayList<ArrayList<Lop>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
 		
 		// list of instructions
-		ArrayList<Instruction> inst = new ArrayList<Instruction>();
+		ArrayList<Instruction> inst = new ArrayList<>();
 
 		//ArrayList<Instruction> preWriteDeleteInst = new ArrayList<Instruction>();
-		ArrayList<Instruction> writeInst = new ArrayList<Instruction>();
-		ArrayList<Instruction> deleteInst = new ArrayList<Instruction>();
-		ArrayList<Instruction> endOfBlockInst = new ArrayList<Instruction>();
+		ArrayList<Instruction> writeInst = new ArrayList<>();
+		ArrayList<Instruction> deleteInst = new ArrayList<>();
+		ArrayList<Instruction> endOfBlockInst = new ArrayList<>();
 
 		// remove files for transient reads that are updated.
 		deleteUpdatedTransientReadVariables(sb, node_v, writeInst);
@@ -1305,11 +1305,11 @@ public class Dag<N extends Lop>
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException, DMLRuntimeException {
 
 		// nodes to be deleted from execnodes
-		ArrayList<Lop> markedNodes = new ArrayList<Lop>();
+		ArrayList<Lop> markedNodes = new ArrayList<>();
 
 		// variable names to be deleted
-		ArrayList<String> var_deletions = new ArrayList<String>();
-		HashMap<String, Lop> var_deletionsLineNum =  new HashMap<String, Lop>();
+		ArrayList<String> var_deletions = new ArrayList<>();
+		HashMap<String, Lop> var_deletionsLineNum =  new HashMap<>();
 		
 		boolean doRmVar = false;
 
@@ -1640,7 +1640,7 @@ public class Dag<N extends Lop>
 		// Evaluate each lop in <code>execNodes</code> for removal.
 		// Add lops to be removed to <code>markedNodes</code>.
 		
-		ArrayList<Lop> markedNodes = new ArrayList<Lop>();
+		ArrayList<Lop> markedNodes = new ArrayList<>();
 		for (Lop tmpNode : execNodes ) {
 
 			if (LOG.isTraceEnabled()) {
@@ -2015,7 +2015,7 @@ public class Dag<N extends Lop>
 	private ArrayList<ArrayList<Lop>> splitGMRNodesByRecordReader(ArrayList<Lop> gmrnodes) 
 	{
 		// obtain the list of record reader nodes
-		ArrayList<Lop> rrnodes = new ArrayList<Lop>();
+		ArrayList<Lop> rrnodes = new ArrayList<>();
 		for (Lop gmrnode : gmrnodes ) {
 			if (gmrnode.getExecLocation() == ExecLocation.RecordReader)
 				rrnodes.add(gmrnode);
@@ -2080,7 +2080,7 @@ public class Dag<N extends Lop>
 	{
 		printJobNodes(jobNodes);
 		
-		ArrayList<Instruction> rmvarinst = new ArrayList<Instruction>();
+		ArrayList<Instruction> rmvarinst = new ArrayList<>();
 		for (JobType jt : JobType.values()) { 
 			
 			// do nothing, if jt = INVALID or ANY
@@ -2108,7 +2108,7 @@ public class Dag<N extends Lop>
 					// We should split the nodes so that a separate job is produced for each shuffle instruction.
 					Lop.Type splittingLopType = jt.getShuffleLopType();
 					
-					ArrayList<Lop> nodesForASingleJob = new ArrayList<Lop>();
+					ArrayList<Lop> nodesForASingleJob = new ArrayList<>();
 					for (int i = 0; i < jobNodes.get(index).size(); i++) {
 						if (jobNodes.get(index).get(i).getType() == splittingLopType) {
 							nodesForASingleJob.clear();
@@ -2669,36 +2669,36 @@ public class Dag<N extends Lop>
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
 			JobType jt) throws LopsException, DMLRuntimeException
 	{
-		ArrayList<Byte> resultIndices = new ArrayList<Byte>();
-		ArrayList<String> inputs = new ArrayList<String>();
-		ArrayList<String> outputs = new ArrayList<String>();
-		ArrayList<InputInfo> inputInfos = new ArrayList<InputInfo>();
-		ArrayList<OutputInfo> outputInfos = new ArrayList<OutputInfo>();
-		ArrayList<Long> numRows = new ArrayList<Long>();
-		ArrayList<Long> numCols = new ArrayList<Long>();
-		ArrayList<Long> numRowsPerBlock = new ArrayList<Long>();
-		ArrayList<Long> numColsPerBlock = new ArrayList<Long>();
-		ArrayList<String> mapperInstructions = new ArrayList<String>();
-		ArrayList<String> randInstructions = new ArrayList<String>();
-		ArrayList<String> recordReaderInstructions = new ArrayList<String>();
+		ArrayList<Byte> resultIndices = new ArrayList<>();
+		ArrayList<String> inputs = new ArrayList<>();
+		ArrayList<String> outputs = new ArrayList<>();
+		ArrayList<InputInfo> inputInfos = new ArrayList<>();
+		ArrayList<OutputInfo> outputInfos = new ArrayList<>();
+		ArrayList<Long> numRows = new ArrayList<>();
+		ArrayList<Long> numCols = new ArrayList<>();
+		ArrayList<Long> numRowsPerBlock = new ArrayList<>();
+		ArrayList<Long> numColsPerBlock = new ArrayList<>();
+		ArrayList<String> mapperInstructions = new ArrayList<>();
+		ArrayList<String> randInstructions = new ArrayList<>();
+		ArrayList<String> recordReaderInstructions = new ArrayList<>();
 		int numReducers = 0;
 		int replication = 1;
-		ArrayList<String> inputLabels = new ArrayList<String>();
-		ArrayList<String> outputLabels = new ArrayList<String>();
-		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
-		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
-		ArrayList<Instruction> postInstructions = new ArrayList<Instruction>();
+		ArrayList<String> inputLabels = new ArrayList<>();
+		ArrayList<String> outputLabels = new ArrayList<>();
+		ArrayList<Instruction> renameInstructions = new ArrayList<>();
+		ArrayList<Instruction> variableInstructions = new ArrayList<>();
+		ArrayList<Instruction> postInstructions = new ArrayList<>();
 		ArrayList<Integer> MRJobLineNumbers = null;
 		if(DMLScript.ENABLE_DEBUG_MODE) {
-			MRJobLineNumbers = new ArrayList<Integer>();
+			MRJobLineNumbers = new ArrayList<>();
 		}
 		
-		ArrayList<Lop> inputLops = new ArrayList<Lop>();
+		ArrayList<Lop> inputLops = new ArrayList<>();
 		
 		boolean cellModeOverride = false;
 		
 		/* Find the nodes that produce an output */
-		ArrayList<Lop> rootNodes = new ArrayList<Lop>();
+		ArrayList<Lop> rootNodes = new ArrayList<>();
 		getOutputNodes(execNodes, rootNodes, jt);
 		if( LOG.isTraceEnabled() )
 			LOG.trace("# of root nodes = " + rootNodes.size());
@@ -2706,7 +2706,7 @@ public class Dag<N extends Lop>
 		
 		/* Remove transient writes that are simple copy of transient reads */
 		if (jt == JobType.GMR || jt == JobType.GMRCELL) {
-			ArrayList<Lop> markedNodes = new ArrayList<Lop>();
+			ArrayList<Lop> markedNodes = new ArrayList<>();
 			// only keep data nodes that are results of some computation.
 			for ( Lop rnode : rootNodes ) {
 				if (rnode.getExecLocation() == ExecLocation.Data
@@ -2731,7 +2731,7 @@ public class Dag<N extends Lop>
 		}
 		
 		// structure that maps node to their indices that will be used in the instructions
-		HashMap<Lop, Integer> nodeIndexMapping = new HashMap<Lop, Integer>();
+		HashMap<Lop, Integer> nodeIndexMapping = new HashMap<>();
 		
 		/* Determine all input data files */
 		
@@ -2799,9 +2799,9 @@ public class Dag<N extends Lop>
 
 		/* Get Shuffle and Reducer Instructions */
 		
-		ArrayList<String> shuffleInstructions = new ArrayList<String>();
-		ArrayList<String> aggInstructionsReducer = new ArrayList<String>();
-		ArrayList<String> otherInstructionsReducer = new ArrayList<String>();
+		ArrayList<String> shuffleInstructions = new ArrayList<>();
+		ArrayList<String> aggInstructionsReducer = new ArrayList<>();
+		ArrayList<String> otherInstructionsReducer = new ArrayList<>();
 
 		for( Lop rn : rootNodes ) {
 			int resultIndex = getAggAndOtherInstructions(
@@ -2962,7 +2962,7 @@ public class Dag<N extends Lop>
 		if (!execNodes.contains(node))
 			return ret_val;
 
-		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
+		ArrayList<Integer> inputIndices = new ArrayList<>();
 
 		// recurse
 		// For WRITE, since the first element from input is the real input (the other elements
@@ -3216,7 +3216,7 @@ public class Dag<N extends Lop>
 		if (!execNodes.contains(node))
 			return -1;
 
-		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
+		ArrayList<Integer> inputIndices = new ArrayList<>();
 		int max_input_index = -1;
 		//N child_for_max_input_index = null;
 
@@ -3317,7 +3317,7 @@ public class Dag<N extends Lop>
 		if (!execNodes.contains(node))
 			return -1;
 
-		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
+		ArrayList<Integer> inputIndices = new ArrayList<>();
 		int max_input_index = -1;
 		// get mapper instructions
 		for( Lop childNode : node.getInputs()) {
@@ -3844,7 +3844,7 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> collapseAssignvarAndRmvarInstructions(ArrayList<Instruction> insts) 
 		throws DMLRuntimeException 
 	{
-		ArrayList<Instruction> ret = new ArrayList<Instruction>();
+		ArrayList<Instruction> ret = new ArrayList<>();
 		Iterator<Instruction> iter = insts.iterator();
 		while( iter.hasNext() ) {
 			Instruction inst = iter.next();
@@ -3874,8 +3874,8 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> createPackedRmvarInstructions(ArrayList<Instruction> insts) 
 		throws DMLRuntimeException 
 	{
-		ArrayList<Instruction> ret = new ArrayList<Instruction>();
-		ArrayList<String> currRmVar = new ArrayList<String>();
+		ArrayList<Instruction> ret = new ArrayList<>();
+		ArrayList<String> currRmVar = new ArrayList<>();
 		for( Instruction inst : insts ) {
 			if( inst instanceof VariableCPInstruction 
 				&& ((VariableCPInstruction)inst).isRemoveVariableNoFile() ) {

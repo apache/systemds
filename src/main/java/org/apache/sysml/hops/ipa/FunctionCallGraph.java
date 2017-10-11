@@ -66,9 +66,9 @@ public class FunctionCallGraph
 	 * @param prog dml program of given script
 	 */
 	public FunctionCallGraph(DMLProgram prog) {
-		_fGraph = new HashMap<String, HashSet<String>>();
-		_fCalls = new HashMap<String, ArrayList<FunctionOp>>();
-		_fRecursive = new HashSet<String>();
+		_fGraph = new HashMap<>();
+		_fCalls = new HashMap<>();
+		_fRecursive = new HashSet<>();
 		
 		constructFunctionCallGraph(prog);
 	}
@@ -80,9 +80,9 @@ public class FunctionCallGraph
 	 * @param sb statement block (potentially hierarchical)
 	 */
 	public FunctionCallGraph(StatementBlock sb) {
-		_fGraph = new HashMap<String, HashSet<String>>();
-		_fCalls = new HashMap<String, ArrayList<FunctionOp>>();
-		_fRecursive = new HashSet<String>();
+		_fGraph = new HashMap<>();
+		_fCalls = new HashMap<>();
+		_fRecursive = new HashSet<>();
 		
 		constructFunctionCallGraph(sb);
 	}
@@ -96,7 +96,7 @@ public class FunctionCallGraph
 	 */
 	public Set<String> getCalledFunctions(String fnamespace, String fname) {
 		return getCalledFunctions(
-			DMLProgram.constructFunctionKey(fnamespace, fname));				
+			DMLProgram.constructFunctionKey(fnamespace, fname));
 	}
 	
 	/**
@@ -205,8 +205,8 @@ public class FunctionCallGraph
 			return; //early abort if prog without functions
 		
 		try {
-			Stack<String> fstack = new Stack<String>();
-			HashSet<String> lfset = new HashSet<String>();
+			Stack<String> fstack = new Stack<>();
+			HashSet<String> lfset = new HashSet<>();
 			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
 			for( StatementBlock sblk : prog.getStatementBlocks() )
 				rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sblk, fstack, lfset);
@@ -221,8 +221,8 @@ public class FunctionCallGraph
 			return; //early abort if prog without functions
 		
 		try {
-			Stack<String> fstack = new Stack<String>();
-			HashSet<String> lfset = new HashSet<String>();
+			Stack<String> fstack = new Stack<>();
+			HashSet<String> lfset = new HashSet<>();
 			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
 			rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sb, fstack, lfset);
 		}

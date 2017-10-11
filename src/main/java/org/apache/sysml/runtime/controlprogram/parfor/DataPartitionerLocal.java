@@ -141,7 +141,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		
 		try 
 		{
-			//STEP 1: read matrix from HDFS and write blocks to local staging area			
+			//STEP 1: read matrix from HDFS and write blocks to local staging area
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
@@ -150,7 +150,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			informat.configure(job);
 			InputSplit[] splits = informat.getSplits(job, 1);
 			
-			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			LinkedList<Cell> buffer = new LinkedList<>();
 			LongWritable key = new LongWritable();
 			Text value = new Text();
 			FastStringTokenizer st = new FastStringTokenizer(' ');
@@ -241,7 +241,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			
 			//prepare sequence file reader, and write to local staging area	
-			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			LinkedList<Cell> buffer = new LinkedList<>();
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 	
@@ -405,7 +405,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
-			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			LinkedList<Cell> buffer = new LinkedList<>();
 			
 			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
@@ -547,7 +547,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
 		throws DMLRuntimeException, IOException
 	{
-		HashMap<Long,LinkedList<Cell>> sortedBuffer = new HashMap<Long,LinkedList<Cell>>();
+		HashMap<Long,LinkedList<Cell>> sortedBuffer = new HashMap<>();
 		
 		//sort cells in buffer wrt key
 		long key = -1;

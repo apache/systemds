@@ -330,7 +330,7 @@ public class UtilFunctions
 	 * @return list of integers
 	 */
 	public static List<Integer> getSeqList(int low, int up, int incr) {
-		ArrayList<Integer> ret = new ArrayList<Integer>();
+		ArrayList<Integer> ret = new ArrayList<>();
 		for( int i=low; i<=up; i+=incr )
 			ret.add(i);
 		return ret;

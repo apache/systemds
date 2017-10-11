@@ -48,10 +48,10 @@ public class GroupedAggMRReducer extends ReduceBase
 	
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
 	private MatrixCell outCell=new MatrixCell();
-	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions=new HashMap<Byte, GroupedAggregateInstruction>();
+	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions=new HashMap<>();
 	private CM_COV_Object cmObj=new CM_COV_Object(); 
-	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
-	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
+	private HashMap<Byte, CM> cmFn = new HashMap<>();
+	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<>();
 	
 	@Override
 	public void reduce(TaggedMatrixIndexes key,Iterator<WeightedCell> values,

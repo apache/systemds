@@ -33,7 +33,7 @@ public class GDFLoopNode extends GDFNode
 	
 	public GDFLoopNode( ProgramBlock pb, GDFNode predicate, HashMap<String, GDFNode> inputs, HashMap<String,GDFNode> outputs )
 	{
-		super(null, pb, new ArrayList<GDFNode>(inputs.values()));
+		super(null, pb, new ArrayList<>(inputs.values()));
 		_type = NodeType.LOOP_NODE;
 		_predicate = predicate;
 		_linputs = inputs;

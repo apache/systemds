@@ -46,9 +46,9 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	public enum ParameterizedBuiltinCode { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
-		TRANSFORMAPPLY, TRANSFORMDECODE };
+		TRANSFORMAPPLY, TRANSFORMDECODE }
 	public enum ProbabilityDistributionCode { 
-		INVALID, NORMAL, EXP, CHISQ, F, T };
+		INVALID, NORMAL, EXP, CHISQ, F, T }
 	
 	public ParameterizedBuiltinCode bFunc;
 	public ProbabilityDistributionCode distFunc;

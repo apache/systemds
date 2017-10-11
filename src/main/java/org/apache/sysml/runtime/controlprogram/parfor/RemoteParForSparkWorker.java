@@ -93,8 +93,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		return ret.iterator();
 	}
-
-	@SuppressWarnings("unchecked")
+	
 	private void configureWorker(long taskID) 
 		throws DMLRuntimeException, IOException
 	{

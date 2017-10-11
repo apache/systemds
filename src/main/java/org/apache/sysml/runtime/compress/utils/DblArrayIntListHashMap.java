@@ -80,7 +80,7 @@ public class DblArrayIntListHashMap
 	}
 
 	public ArrayList<DArrayIListEntry> extractValues() {
-		ArrayList<DArrayIListEntry> ret = new ArrayList<DArrayIListEntry>();
+		ArrayList<DArrayIListEntry> ret = new ArrayList<>();
 		for( DArrayIListEntry e : _data ) {
 			if( e != null ) {
 				while( e.next != null ) {

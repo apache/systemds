@@ -42,7 +42,7 @@ public class GroupedAggMRMapper extends MapperBase
 {
 		
 	//block instructions that need to be performed in part by mapper
-	protected ArrayList<ArrayList<GroupedAggregateInstruction>> groupAgg_instructions=new ArrayList<ArrayList<GroupedAggregateInstruction>>();
+	protected ArrayList<ArrayList<GroupedAggregateInstruction>> groupAgg_instructions=new ArrayList<>();
 	private MatrixIndexes outKeyValue=new MatrixIndexes();
 	private TaggedMatrixIndexes outKey=new TaggedMatrixIndexes(outKeyValue, (byte)0);
 	private WeightedCell outValue=new WeightedCell();

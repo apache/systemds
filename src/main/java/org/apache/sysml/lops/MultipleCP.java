@@ -33,7 +33,7 @@ public class MultipleCP extends Lop {
 
 	public enum OperationType {
 		PRINTF
-	};
+	}
 
 	OperationType operationType;
 

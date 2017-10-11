@@ -106,7 +106,7 @@ public class BitmapEncoder
 			return new char[0]; //empty list
 
 		// Use an ArrayList for correctness at the expense of temp space
-		ArrayList<Character> buf = new ArrayList<Character>();
+		ArrayList<Character> buf = new ArrayList<>();
 
 		// 1 + (position of last 1 in the previous run of 1's)
 		// We add 1 because runs may be of length zero.

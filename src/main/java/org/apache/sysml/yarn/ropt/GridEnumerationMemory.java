@@ -46,12 +46,10 @@ public class GridEnumerationMemory extends GridEnumeration
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
-		
 		_nsteps = DEFAULT_NSTEPS;
 	}
 	
-	public void setNumSteps( int steps )
-	{
+	public void setNumSteps( int steps ) {
 		_nsteps = steps;
 	}
 	
@@ -59,15 +57,15 @@ public class GridEnumerationMemory extends GridEnumeration
 	public ArrayList<Long> enumerateGridPoints() 
 		throws DMLRuntimeException, HopsException
 	{
-		ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = new ArrayList<>();
 		long gap = (long)(_max - _min) / (_nsteps-1);
 		
 		//get memory estimates
-		ArrayList<Long> mem = new ArrayList<Long>();
+		ArrayList<Long> mem = new ArrayList<>();
 		getMemoryEstimates( _prog, mem );
 		
 		//binning memory estimates to equi grid 
-		HashSet<Long> preRet = new HashSet<Long>();
+		HashSet<Long> preRet = new HashSet<>();
 		for( Long val : mem )
 		{
 			if( val < _min ) 

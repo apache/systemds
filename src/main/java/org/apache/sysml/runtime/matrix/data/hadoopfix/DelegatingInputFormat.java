@@ -51,12 +51,11 @@ public class DelegatingInputFormat<K, V> implements InputFormat<K, V> {
   public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException {
 
     JobConf confCopy = new JobConf(conf);
-    List<InputSplit> splits = new ArrayList<InputSplit>();
+    List<InputSplit> splits = new ArrayList<>();
     Map<Path, InputFormat> formatMap = MultipleInputs.getInputFormatMap(conf);
     Map<Path, Class<? extends Mapper>> mapperMap = MultipleInputs
        .getMapperTypeMap(conf);
-    Map<Class<? extends InputFormat>, List<Path>> formatPaths
-        = new HashMap<Class<? extends InputFormat>, List<Path>>();
+    Map<Class<? extends InputFormat>, List<Path>> formatPaths = new HashMap<>();
 
     // First, build a map of InputFormats to Paths
     for (Entry<Path, InputFormat> entry : formatMap.entrySet()) {
@@ -74,8 +73,7 @@ public class DelegatingInputFormat<K, V> implements InputFormat<K, V> {
          formatClass, conf);
       List<Path> paths = formatEntry.getValue();
 
-      Map<Class<? extends Mapper>, List<Path>> mapperPaths
-          = new HashMap<Class<? extends Mapper>, List<Path>>();
+      Map<Class<? extends Mapper>, List<Path>> mapperPaths = new HashMap<>();
 
       // Now, for each set of paths that have a common InputFormat, build
       // a map of Mappers to the paths they're used for

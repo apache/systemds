@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -36,12 +37,9 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
 
-
-
 @SuppressWarnings("rawtypes")
 public class OutputInfo implements Serializable 
 {
-
 	private static final long serialVersionUID = -3115943514779675817L;
 
 	public Class<? extends OutputFormat> outputFormatClass;
@@ -154,6 +152,15 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;
 		else
 			return "specialized";
+	}
+	
+	@Override 
+	public int hashCode() {
+		return Arrays.hashCode(new int[] {
+			outputFormatClass.hashCode(),
+			outputKeyClass.hashCode(),
+			outputValueClass.hashCode()
+		});
 	}
 	
 	@Override

@@ -154,7 +154,7 @@ public class StagingFileUtils
 	{
 		FileInputStream fis = new FileInputStream( fname );
 		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
-		LinkedList<Cell> buffer = new LinkedList<Cell>();
+		LinkedList<Cell> buffer = new LinkedList<>();
 		try 
 		{
 			String value = null;

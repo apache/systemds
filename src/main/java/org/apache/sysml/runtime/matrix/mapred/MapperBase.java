@@ -66,19 +66,19 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	protected int[] lastblockclens=null;
 	
 	//rand instructions that need to be performed in mapper
-	protected ArrayList<DataGenMRInstruction> dataGen_instructions=new ArrayList<DataGenMRInstruction>();
+	protected ArrayList<DataGenMRInstruction> dataGen_instructions=new ArrayList<>();
 	
 	//instructions that need to be performed in mapper
-	protected ArrayList<ArrayList<MRInstruction>> mapper_instructions=new ArrayList<ArrayList<MRInstruction>>();
+	protected ArrayList<ArrayList<MRInstruction>> mapper_instructions=new ArrayList<>();
 	
 	//block instructions that need to be performed in part by mapper
-	protected ArrayList<ArrayList<ReblockInstruction>> reblock_instructions=new ArrayList<ArrayList<ReblockInstruction>>();
+	protected ArrayList<ArrayList<ReblockInstruction>> reblock_instructions=new ArrayList<>();
 	
 	//csv block instructions that need to be performed in part by mapper
-	protected ArrayList<ArrayList<CSVReblockInstruction>> csv_reblock_instructions=new ArrayList<ArrayList<CSVReblockInstruction>>();
+	protected ArrayList<ArrayList<CSVReblockInstruction>> csv_reblock_instructions=new ArrayList<>();
 	
 	//the indexes of the matrices that needed to be outputted
-	protected ArrayList<ArrayList<Byte>> outputIndexes=new ArrayList<ArrayList<Byte>>();
+	protected ArrayList<ArrayList<Byte>> outputIndexes=new ArrayList<>();
 	
 	//converter to convert the input record into indexes and matrix value (can be a cell or a block)
 	protected Converter inputConverter=null;
@@ -86,7 +86,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	//a counter to measure the time spent in a mapper
 	protected static enum Counters {
 		MAP_TIME 
-	};
+	}
 	
 	
 	@SuppressWarnings("unchecked")
@@ -280,14 +280,14 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		}
 
 		//collect unary instructions for each representative matrix
-		HashSet<Byte> set=new HashSet<Byte>();
+		HashSet<Byte> set=new HashSet<>();
 		for(int i=0; i<representativeMatrixes.size(); i++)
 		{
 			set.clear();
 			set.add(representativeMatrixes.get(i));
 			
 			//collect the relavent datagen instructions for this representative matrix
-			ArrayList<DataGenMRInstruction> dataGensForThisMatrix=new ArrayList<DataGenMRInstruction>();
+			ArrayList<DataGenMRInstruction> dataGensForThisMatrix=new ArrayList<>();
 			if(allDataGenIns!=null)
 			{
 				for(DataGenMRInstruction ins:allDataGenIns)
@@ -307,7 +307,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 				dataGen_instructions.add(dataGensForThisMatrix.get(0));
 						
 			//collect the relavent instructions for this representative matrix
-			ArrayList<MRInstruction> opsForThisMatrix=new ArrayList<MRInstruction>();
+			ArrayList<MRInstruction> opsForThisMatrix=new ArrayList<>();
 			
 			if(allMapperIns!=null)
 			{
@@ -345,7 +345,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			mapper_instructions.add(opsForThisMatrix);
 			
 			//collect the relavent reblock instructions for this representative matrix
-			ArrayList<ReblockInstruction> reblocksForThisMatrix=new ArrayList<ReblockInstruction>();
+			ArrayList<ReblockInstruction> reblocksForThisMatrix=new ArrayList<>();
 			if(allReblockIns!=null)
 			{
 				for(ReblockInstruction ins:allReblockIns)
@@ -361,7 +361,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			reblock_instructions.add(reblocksForThisMatrix);
 			
 			//collect the relavent reblock instructions for this representative matrix
-			ArrayList<CSVReblockInstruction> csvReblocksForThisMatrix=new ArrayList<CSVReblockInstruction>();
+			ArrayList<CSVReblockInstruction> csvReblocksForThisMatrix=new ArrayList<>();
 			if(allCSVReblockIns!=null)
 			{
 				for(CSVReblockInstruction ins:allCSVReblockIns)
@@ -377,7 +377,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			csv_reblock_instructions.add(csvReblocksForThisMatrix);
 			
 			//collect the output indexes for this representative matrix
-			ArrayList<Byte> outsForThisMatrix=new ArrayList<Byte>();
+			ArrayList<Byte> outsForThisMatrix=new ArrayList<>();
 			for(byte output: outputs)
 			{
 				if(set.contains(output))

@@ -48,7 +48,7 @@ public class CPlanCSERewriter
 			rSetStrictDataNodeComparision(out, true);
 		
 		//step 2: perform common subexpression elimination
-		HashMap<CNode,CNode> cseSet = new HashMap<CNode,CNode>();
+		HashMap<CNode,CNode> cseSet = new HashMap<>();
 		tpl.resetVisitStatusOutputs();
 		for( CNode out : outputs )
 			rEliminateCommonSubexpression(out, cseSet);

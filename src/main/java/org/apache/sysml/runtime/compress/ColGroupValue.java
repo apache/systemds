@@ -50,7 +50,7 @@ public abstract class ColGroupValue extends ColGroup
 	
 	//thread-local pairs of reusable temporary vectors for positions and values
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
-		@Override protected Pair<int[], double[]> initialValue() { return new Pair<int[], double[]>(); }
+		@Override protected Pair<int[], double[]> initialValue() { return new Pair<>(); }
 	};
 	
 	/** Distinct values associated with individual bitmaps. */
@@ -375,7 +375,7 @@ public abstract class ColGroupValue extends ColGroup
 	//dynamic memory management
 	
 	public static void setupThreadLocalMemory(int len) {
-		Pair<int[], double[]> p = new Pair<int[], double[]>();
+		Pair<int[], double[]> p = new Pair<>();
 		p.setKey(new int[len]);
 		p.setValue(new double[len]);
 		memPool.set(p);

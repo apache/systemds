@@ -33,7 +33,6 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
  */
 public class GridEnumerationHybrid extends GridEnumeration
 {
-	
 	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, long min, long max ) 
 		throws DMLRuntimeException
 	{
@@ -48,12 +47,12 @@ public class GridEnumerationHybrid extends GridEnumeration
 		GridEnumeration ge2 = new GridEnumerationExp(_prog, _min, _max);
 		
 		//ensure distinct points
-		HashSet<Long> hs = new HashSet<Long>();
+		HashSet<Long> hs = new HashSet<>();
 		hs.addAll( ge1.enumerateGridPoints() );
 		hs.addAll( ge2.enumerateGridPoints() );
 		
 		//create sorted output list
-		ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = new ArrayList<>();
 		for( Long val : hs )
 			ret.add(val);
 		Collections.sort(ret); //asc

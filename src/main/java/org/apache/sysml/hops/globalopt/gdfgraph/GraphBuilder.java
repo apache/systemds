@@ -67,12 +67,12 @@ public class GraphBuilder
 	{
 		Timing time = new Timing(true);
 		
-		HashMap<String, GDFNode> roots = new HashMap<String, GDFNode>();		
+		HashMap<String, GDFNode> roots = new HashMap<>();
 		for( ProgramBlock pb : prog.getProgramBlocks() )
 			constructGDFGraph( pb, roots );
 		
 		//create GDF graph root nodes 
-		ArrayList<GDFNode> ret = new ArrayList<GDFNode>();
+		ArrayList<GDFNode> ret = new ArrayList<>();
 		for( GDFNode root : roots.values() )
 			if( !(root instanceof GDFCrossBlockNode) )
 				ret.add(root);
@@ -80,7 +80,7 @@ public class GraphBuilder
 		//create GDF graph
 		GDFGraph graph = new GDFGraph(prog, ret);
 		
-		summary.setTimeGDFGraph(time.stop());		
+		summary.setTimeGDFGraph(time.stop());
 		return graph;
 	}
 	
@@ -151,7 +151,7 @@ public class GraphBuilder
 			if( hops != null )
 			{
 				//create new local memo structure for local dag
-				HashMap<Long, GDFNode> lmemo = new HashMap<Long, GDFNode>();
+				HashMap<Long, GDFNode> lmemo = new HashMap<>();
 				for( Hop hop : hops )
 				{
 					//recursively construct GDF graph for hop dag root
@@ -177,7 +177,7 @@ public class GraphBuilder
 			return lmemo.get(hop.getHopID());
 		
 		//process childs recursively first
-		ArrayList<GDFNode> inputs = new ArrayList<GDFNode>();
+		ArrayList<GDFNode> inputs = new ArrayList<>();
 		for( Hop c : hop.getInput() )
 			inputs.add( constructGDFGraph(c, pb, lmemo, roots) );
 		
@@ -206,11 +206,11 @@ public class GraphBuilder
 	
 	private static GDFNode constructForPredicateNode(ForProgramBlock fpb, ForStatementBlock fsb, HashMap<String, GDFNode> roots)
 	{
-		HashMap<Long, GDFNode> memo = new HashMap<Long, GDFNode>();
+		HashMap<Long, GDFNode> memo = new HashMap<>();
 		GDFNode from = (fsb.getFromHops()!=null)? constructGDFGraph(fsb.getFromHops(), fpb, memo, roots) : null;
 		GDFNode to = (fsb.getToHops()!=null)? constructGDFGraph(fsb.getToHops(), fpb, memo, roots) : null;
 		GDFNode incr = (fsb.getIncrementHops()!=null)? constructGDFGraph(fsb.getIncrementHops(), fpb, memo, roots) : null;
-		ArrayList<GDFNode> inputs = new ArrayList<GDFNode>();
+		ArrayList<GDFNode> inputs = new ArrayList<>();
 		inputs.add(from);
 		inputs.add(to);
 		inputs.add(incr);
@@ -223,7 +223,7 @@ public class GraphBuilder
 	private static HashMap<String, GDFNode> constructLoopInputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots ) 
 		throws DMLRuntimeException
 	{
-		HashMap<String, GDFNode> ret = new HashMap<String, GDFNode>();
+		HashMap<String, GDFNode> ret = new HashMap<>();
 		Set<String> invars = fsb.variablesRead().getVariableNames();
 		for( String var : invars ) {
 			if( fsb.liveIn().containsVariable(var) ) {
@@ -240,7 +240,7 @@ public class GraphBuilder
 	private static HashMap<String, GDFNode> constructLoopOutputNodes( StatementBlock fsb, HashMap<String, GDFNode> roots ) 
 		throws HopsException
 	{
-		HashMap<String, GDFNode> ret = new HashMap<String, GDFNode>();
+		HashMap<String, GDFNode> ret = new HashMap<>();
 		
 		Set<String> outvars = fsb.variablesUpdated().getVariableNames();
 		for( String var : outvars ) 

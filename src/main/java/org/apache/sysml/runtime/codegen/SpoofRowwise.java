@@ -208,7 +208,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		{
 			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
-				ArrayList<ParColAggTask> tasks = new ArrayList<ParColAggTask>();
+				ArrayList<ParColAggTask> tasks = new ArrayList<>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParColAggTask(a, b, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
@@ -220,7 +220,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			}
 			else {
 				//execute tasks
-				ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
+				ArrayList<ParExecTask> tasks = new ArrayList<>();
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParExecTask(a, b, out, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<Long>> taskret = pool.invokeAll(tasks);

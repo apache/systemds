@@ -44,7 +44,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getMaxPoolingWorkers(ConvolutionParameters params) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		for(int i = 0; i*taskSize < params.N; i++) {
@@ -65,7 +65,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getMaxPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		for(int i = 0; i*taskSize < params.N; i++) {
@@ -93,7 +93,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getReluBackwardWorkers(ConvolutionParameters params) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		for(int i = 0; i*taskSize < params.N; i++) {
@@ -110,7 +110,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create as many tasks as threads. 
 		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
@@ -148,7 +148,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(ConvolutionParameters params) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create as many tasks as threads. 
 		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
 		// data structures such as im2col blocks.
@@ -177,7 +177,7 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) throws DMLRuntimeException {
-		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create as many tasks as threads. 
 		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
@@ -256,7 +256,7 @@ public class LibMatrixDNNHelper {
 	
 	//Split a filter of size [K, CRS] into c filters of [K, RS]
 	private static ArrayList<MatrixBlock> splitFilter(ConvolutionParameters _params) {
-		ArrayList<MatrixBlock> ret = new ArrayList<MatrixBlock>();
+		ArrayList<MatrixBlock> ret = new ArrayList<>();
 		int RS = _params.R*_params.S; int CRS = _params.C*_params.R*_params.S;
 		double [] filter = _params.input2.getDenseBlock(); int S = _params.S;
 		for(int c = 0; c < _params.C; c++) {

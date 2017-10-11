@@ -61,8 +61,8 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 		throws HopsException
 	{
 		//approach: scan over top-level program (guaranteed to be unconditional),
-		//collect ones=matrix(1,...); remove b(*)ones if not outer operation		
-		HashMap<String, Hop> mOnes = new HashMap<String, Hop>();
+		//collect ones=matrix(1,...); remove b(*)ones if not outer operation
+		HashMap<String, Hop> mOnes = new HashMap<>();
 		
 		for( StatementBlock sb : prog.getStatementBlocks() ) 
 		{

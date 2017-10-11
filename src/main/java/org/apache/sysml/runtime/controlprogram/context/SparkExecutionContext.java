@@ -1124,7 +1124,7 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes" })
 	private void rCleanupLineageObject(LineageObject lob)
 		throws IOException
 	{

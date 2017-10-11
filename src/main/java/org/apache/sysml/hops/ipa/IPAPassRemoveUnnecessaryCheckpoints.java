@@ -76,12 +76,12 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		//collect checkpoints; determine if used before update; remove first checkpoint
 		//on second checkpoint if update in between and not used before update
 		
-		HashMap<String, Hop> chkpointCand = new HashMap<String, Hop>();
+		HashMap<String, Hop> chkpointCand = new HashMap<>();
 		
 		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
 		{
 			//prune candidates (used before updated)
-			Set<String> cands = new HashSet<String>(chkpointCand.keySet());
+			Set<String> cands = new HashSet<>(chkpointCand.keySet());
 			for( String cand : cands )
 				if( sb.variablesRead().containsVariable(cand) 
 					&& !sb.variablesUpdated().containsVariable(cand) ) 
@@ -101,7 +101,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 				}
 			
 			//prune candidates (updated in conditional control flow)
-			Set<String> cands2 = new HashSet<String>(chkpointCand.keySet());
+			Set<String> cands2 = new HashSet<>(chkpointCand.keySet());
 			if( sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
 				|| sb instanceof ForStatementBlock )
 			{
@@ -129,7 +129,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
 			for( Hop chkpoint : tmp ) {
 				if( chkpointCand.containsKey(chkpoint.getName()) ) {
-					chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);		
+					chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);
 				}
 				chkpointCand.put(chkpoint.getName(), chkpoint);
 			}
@@ -145,12 +145,12 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		//after update if not used before update (best effort move which often avoids
 		//the second checkpoint on loops even though used in between)
 		
-		HashMap<String, Hop> chkpointCand = new HashMap<String, Hop>();
+		HashMap<String, Hop> chkpointCand = new HashMap<>();
 		
 		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
 		{
 			//prune candidates (used before updated)
-			Set<String> cands = new HashSet<String>(chkpointCand.keySet());
+			Set<String> cands = new HashSet<>(chkpointCand.keySet());
 			for( String cand : cands )
 				if( sb.variablesRead().containsVariable(cand) 
 					&& !sb.variablesUpdated().containsVariable(cand) ) 
@@ -170,7 +170,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 				}
 			
 			//prune candidates (updated in conditional control flow)
-			Set<String> cands2 = new HashSet<String>(chkpointCand.keySet());
+			Set<String> cands2 = new HashSet<>(chkpointCand.keySet());
 			if( sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
 				|| sb instanceof ForStatementBlock )
 			{
@@ -228,7 +228,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 	
 	private static ArrayList<Hop> collectCheckpoints(ArrayList<Hop> roots)
 	{
-		ArrayList<Hop> ret = new ArrayList<Hop>();	
+		ArrayList<Hop> ret = new ArrayList<>();
 		if( roots != null ) {
 			Hop.resetVisitStatus(roots);
 			for( Hop root : roots )

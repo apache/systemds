@@ -85,11 +85,11 @@ public class PreparedScript
 		_vars = new LocalVariableMap();
 		
 		//populate input/output vars
-		_inVarnames = new HashSet<String>();
+		_inVarnames = new HashSet<>();
 		Collections.addAll(_inVarnames, inputs);
-		_outVarnames = new HashSet<String>();
+		_outVarnames = new HashSet<>();
 		Collections.addAll(_outVarnames, outputs);
-		_inVarReuse = new HashMap<String, Data>();
+		_inVarReuse = new HashMap<>();
 	}
 	
 	/**

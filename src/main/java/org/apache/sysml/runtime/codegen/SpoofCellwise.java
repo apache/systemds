@@ -147,7 +147,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		{
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<ParAggTask> tasks = new ArrayList<ParAggTask>();
+				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = (a instanceof CompressedMatrixBlock) ? k :
 					UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
@@ -243,7 +243,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		{
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
+				ArrayList<ParExecTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
 				if( a instanceof CompressedMatrixBlock )

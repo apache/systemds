@@ -21,10 +21,9 @@ package org.apache.sysml.runtime.matrix.data;
 
 public class FileFormatProperties 
 {
-	
 	private String description;
 	
-	public enum FileFormat { CSV, NATIVE };
+	public enum FileFormat { CSV, NATIVE }
 	
 	FileFormat fmt;
 	

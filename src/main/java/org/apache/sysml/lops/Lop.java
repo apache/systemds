@@ -61,14 +61,14 @@ public abstract class Lop
 		SpoofFused,                                         //CP/SP generated fused operator
 		/** CP operation on a variable number of operands */
 		MULTIPLE_CP
-	};
+	}
 
 	/**
 	 * Lop types
 	 */
 	public enum SimpleInstType {
 		Scalar
-	};
+	}
 
 	public enum VisitStatus {
 		DONE, NOTVISITED
@@ -138,8 +138,8 @@ public abstract class Lop
 		type = t;
 		_dataType = dt; // data type of the output produced from this LOP
 		_valueType = vt; // value type of the output produced from this LOP
-		inputs = new ArrayList<Lop>();
-		outputs = new ArrayList<Lop>();
+		inputs = new ArrayList<>();
+		outputs = new ArrayList<>();
 		outParams = new OutputParameters();
 		lps = new LopProperties();
 	}

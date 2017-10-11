@@ -61,7 +61,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		
 		if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock ) //incl parfor 
 		{
-			ArrayList<String> candidates = new ArrayList<String>(); 
+			ArrayList<String> candidates = new ArrayList<>();
 			VariableSet updated = sb.variablesUpdated();
 			VariableSet liveout = sb.liveOut();
 			

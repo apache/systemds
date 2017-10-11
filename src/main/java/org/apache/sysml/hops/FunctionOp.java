@@ -236,7 +236,7 @@ public class FunctionOp extends Hop
 		ExecType et = optFindExecType();
 		
 		//construct input lops (recursive)
-		ArrayList<Lop> tmp = new ArrayList<Lop>();
+		ArrayList<Lop> tmp = new ArrayList<>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
 		 

@@ -331,8 +331,7 @@ public class SpoofCompiler
 	public static Hop optimize( Hop root, boolean recompile ) throws DMLRuntimeException {
 		if( root == null )
 			return root;
-		
-		return optimize(new ArrayList<Hop>(
+		return optimize(new ArrayList<>(
 			Collections.singleton(root)), recompile).get(0);
 	}
 	
@@ -370,7 +369,7 @@ public class SpoofCompiler
 			//note: we do not use the hop visit status due to jumps over fused operators which would
 			//corrupt subsequent resets, leaving partial hops dags in visited status
 			HashMap<Long, Pair<Hop[],CNodeTpl>> cplans = new LinkedHashMap<>();
-			HashSet<Long> visited = new HashSet<Long>();
+			HashSet<Long> visited = new HashSet<>();
 			for( Hop hop : roots )
 				rConstructCPlans(hop, memo, cplans, compileLiterals, visited);
 			
@@ -385,7 +384,7 @@ public class SpoofCompiler
 			}
 			
 			//source code generation for all cplans
-			HashMap<Long, Pair<Hop[],Class<?>>> clas = new HashMap<Long, Pair<Hop[],Class<?>>>();
+			HashMap<Long, Pair<Hop[],Class<?>>> clas = new HashMap<>();
 			for( Entry<Long, Pair<Hop[],CNodeTpl>> cplan : cplans.entrySet() ) 
 			{
 				Pair<Hop[],CNodeTpl> tmp = cplan.getValue();
@@ -597,7 +596,7 @@ public class SpoofCompiler
 	private static ArrayList<Hop> constructModifiedHopDag(ArrayList<Hop> orig, 
 			HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, HashMap<Long, Pair<Hop[],Class<?>>> cla)
 	{
-		HashSet<Long> memo = new HashSet<Long>();
+		HashSet<Long> memo = new HashSet<>();
 		for( int i=0; i<orig.size(); i++ ) {
 			Hop hop = orig.get(i); //w/o iterator because modified
 			rConstructModifiedHopDag(hop, cplans, cla, memo);
@@ -678,7 +677,7 @@ public class SpoofCompiler
 	 */
 	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
 	{
-		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<Long, Pair<Hop[],CNodeTpl>>();
+		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<>();
 		CPlanCSERewriter cse = new CPlanCSERewriter();
 		
 		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) {
@@ -693,7 +692,7 @@ public class SpoofCompiler
 			inHops = Arrays.stream(inHops)
 				.filter(p -> inputHopIDs.contains(p.getHopID()))
 				.toArray(Hop[]::new);
-			cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(inHops, tpl));
+			cplans2.put(e.getKey(), new Pair<>(inHops, tpl));
 			
 			//remove invalid plans with column indexing on main input
 			if( tpl instanceof CNodeCell || tpl instanceof CNodeRow ) {
@@ -836,7 +835,7 @@ public class SpoofCompiler
 		private final int _maxSize;
 		
 		public PlanCache(int maxSize) {
-			 _plans = new LinkedHashMap<CNode, Class<?>>();	
+			 _plans = new LinkedHashMap<>();
 			 _maxSize = maxSize;
 		}
 		

@@ -51,7 +51,7 @@ public class JMLCUtils
 	public static void cleanupRuntimeProgram( Program prog, String[] outputs)
 	{
 		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
-		HashSet<String> blacklist = new HashSet<String>(Arrays.asList(outputs));
+		HashSet<String> blacklist = new HashSet<>(Arrays.asList(outputs));
 		
 		if( funcMap != null && !funcMap.isEmpty() )
 		{
@@ -110,7 +110,7 @@ public class JMLCUtils
 	 * @return list of instructions
 	 */
 	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String... outputs ) {
-		return cleanupRuntimeInstructions(insts, new HashSet<String>(Arrays.asList(outputs)));
+		return cleanupRuntimeInstructions(insts, new HashSet<>(Arrays.asList(outputs)));
 	}
 	
 	/**
@@ -123,12 +123,12 @@ public class JMLCUtils
 	 */
 	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, HashSet<String> outputs )
 	{
-		ArrayList<Instruction> ret = new ArrayList<Instruction>();
+		ArrayList<Instruction> ret = new ArrayList<>();
 		
 		for( Instruction inst : insts ) {
 			if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() )
 			{
-				ArrayList<String> currRmVar = new ArrayList<String>();
+				ArrayList<String> currRmVar = new ArrayList<>();
 				for( CPOperand input : ((VariableCPInstruction)inst).getInputs() )
 					if( !outputs.contains(input.getName()) )
 						currRmVar.add(input.getName());

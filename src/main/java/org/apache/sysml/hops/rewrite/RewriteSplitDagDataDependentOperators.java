@@ -76,12 +76,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	{
 		//DAG splits not required for forced single node
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return new ArrayList<StatementBlock>(Arrays.asList(sb));
+			return new ArrayList<>(Arrays.asList(sb));
 		
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
+		ArrayList<StatementBlock> ret = new ArrayList<>();
 	
 		//collect all unknown csv reads hops
-		ArrayList<Hop> cand = new ArrayList<Hop>();
+		ArrayList<Hop> cand = new ArrayList<>();
 		collectDataDependentOperators( sb.get_hops(), cand );
 		Hop.resetVisitStatus(sb.get_hops());
 		
@@ -89,7 +89,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		if( !cand.isEmpty() )
 		{
 			//collect child operators of candidates (to prevent rewrite anomalies)
-			HashSet<Hop> candChilds = new HashSet<Hop>();
+			HashSet<Hop> candChilds = new HashSet<>();
 			collectCandidateChildOperators( cand, candChilds );
 			
 			try
@@ -103,7 +103,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				
 				//move data-dependent ops incl transient writes to new statement block
 				//(and replace original persistent read with transient read)
-				ArrayList<Hop> sb1hops = new ArrayList<Hop>();			
+				ArrayList<Hop> sb1hops = new ArrayList<>();
 				for( Hop c : cand )
 				{
 					//if there are already transient writes use them and don't introduce artificial variables; 
@@ -128,12 +128,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						
 						//create new transient read
 						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
-			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
+							DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
 						tread.setVisited();
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
-						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
+						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
 						for( int i=0; i<parents.size(); i++ ) {
 							//prevent concurrent modification by index access
 							Hop parent = parents.get(i);
@@ -154,12 +154,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						
 						//create new transient read
 						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
-			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
+							DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
 						tread.setVisited();
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
-						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());						
+						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
 						for( int i=0; i<parents.size(); i++ ) {
 							//prevent concurrent modification by index access
 							Hop parent = parents.get(i);
@@ -337,13 +337,13 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2, VariableSet sb1out, VariableSet sb2in )
 	{
 		//step 1: create probe set SB1
-		HashSet<Hop> probeSet = new HashSet<Hop>();
+		HashSet<Hop> probeSet = new HashSet<>();
 		Hop.resetVisitStatus(rootsSB1);
 		for( Hop h : rootsSB1 )
 			rAddHopsToProbeSet( h, probeSet );
 		
 		//step 2: probe SB2 operators top-down (collect cut candidates)
-		HashSet<Pair<Hop,Hop>> candSet = new HashSet<Pair<Hop,Hop>>();
+		HashSet<Pair<Hop,Hop>> candSet = new HashSet<>();
 		Hop.resetVisitStatus(rootsSB2);
 		for( Hop h : rootsSB2 )
 			rProbeAndAddHopsToCandidateSet(h, probeSet, candSet);
@@ -424,7 +424,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					rProbeAndAddHopsToCandidateSet(c, probeSet, candSet);
 				else
 				{
-					candSet.add(new Pair<Hop,Hop>(hop,c)); 
+					candSet.add(new Pair<>(hop,c)); 
 				}
 			}
 		

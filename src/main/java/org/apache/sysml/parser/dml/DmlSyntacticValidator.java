@@ -123,7 +123,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public String falseStringLiteral() { return "FALSE"; }
 
 	protected ArrayList<ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
-		ArrayList<ParameterExpression> retVal = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> retVal = new ArrayList<>();
 		for(ParameterizedExpressionContext ctx : paramExprs) {
 			String paramName = null;
 			if(ctx.paramName != null && ctx.paramName.getText() != null && !ctx.paramName.getText().isEmpty()) {
@@ -287,10 +287,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		setFileLineColumn(ctx.dataInfo.expr, ctx);
 
 		try {
-			ArrayList< ArrayList<Expression> > exprList = new ArrayList< ArrayList<Expression> >();
+			ArrayList< ArrayList<Expression> > exprList = new ArrayList<>();
 
-			ArrayList<Expression> rowIndices = new ArrayList<Expression>();
-			ArrayList<Expression> colIndices = new ArrayList<Expression>();
+			ArrayList<Expression> rowIndices = new ArrayList<>();
+			ArrayList<Expression> colIndices = new ArrayList<>();
 
 
 			if(!isRowLower && !isRowUpper) {
@@ -417,7 +417,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				return;
 			}
 			else {
-				ctx.info.namespaces = new HashMap<String, DMLProgram>();
+				ctx.info.namespaces = new HashMap<>();
 				ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
 				ctx.info.stmt = new ImportStatement();
 				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
@@ -430,7 +430,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			// Skip redundant parsing (to prevent potential infinite recursion) and
 			// create empty program for this context to allow processing to continue.
 			prog = new DMLProgram();
-			ctx.info.namespaces = new HashMap<String, DMLProgram>();
+			ctx.info.namespaces = new HashMap<>();
 			ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
 			ctx.info.stmt = new ImportStatement();
 			((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
@@ -473,11 +473,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
 
-		Set<String> printStatements = new  HashSet<String>();
+		Set<String> printStatements = new  HashSet<>();
 		printStatements.add("print");
 		printStatements.add("stop");
 
-		Set<String> outputStatements = new HashSet<String>();
+		Set<String> outputStatements = new HashSet<>();
 		outputStatements.add("write");
 
 		String [] fnNames = getQualifiedNames (ctx.name.getText());
@@ -565,7 +565,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		functCall.setFunctionName(functionName);
 		functCall.setFunctionNamespace(namespace);
 
-		final ArrayList<DataIdentifier> targetList = new ArrayList<DataIdentifier>();
+		final ArrayList<DataIdentifier> targetList = new ArrayList<>();
 		for(DataIdentifierContext dataCtx : ctx.targetList) {
 			if(dataCtx.dataInfo.expr instanceof DataIdentifier) {
 				targetList.add((DataIdentifier) dataCtx.dataInfo.expr);
@@ -599,7 +599,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	// -----------------------------------------------------------------
 
 	private StatementBlock getStatementBlock(Statement current) {
-		return DMLParserWrapper.getStatementBlock(current);
+		return getStatementBlock(current);
 	}
 
 	@Override
@@ -673,7 +673,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ParForStatement parForStmt = new ParForStatement();
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
-		HashMap<String, String> parForParamValues = new HashMap<String, String>();
+		HashMap<String, String> parForParamValues = new HashMap<>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
 				String paramVal = parForParamCtx.paramVal.getText();
@@ -700,7 +700,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	}
 
 	private ArrayList<DataIdentifier> getFunctionParameters(List<TypedArgNoAssignContext> ctx) {
-		ArrayList<DataIdentifier> retVal = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> retVal = new ArrayList<>();
 		for(TypedArgNoAssignContext paramCtx : ctx) {
 			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
 			String dataType = null;
@@ -792,7 +792,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
-			ArrayList<StatementBlock> body = new ArrayList<StatementBlock>();
+			ArrayList<StatementBlock> body = new ArrayList<>();
 			for(StatementContext stmtCtx : ctx.body) {
 				body.add(getStatementBlock(stmtCtx.info.stmt));
 			}
@@ -824,7 +824,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		functionStmt.setName(ctx.name.getText());
 
 		// set other parameters
-		HashMap<String, String> otherParams = new HashMap<String,String>();
+		HashMap<String, String> otherParams = new HashMap<>();
 		boolean atleastOneClassName = false;
 		for(StrictParameterizedKeyValueStringContext otherParamCtx : ctx.otherParams){
 			String paramName = otherParamCtx.paramName.getText();
@@ -1042,7 +1042,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override
 	public void exitMultiIdExpression(MultiIdExpressionContext ctx) {
-		ArrayList<Expression> values = new ArrayList<Expression>();
+		ArrayList<Expression> values = new ArrayList<>();
 		for(ExpressionContext elem : ctx.targetList) {
 			values.add(elem.info.expr);
 		}

@@ -53,8 +53,8 @@ public class PlanningCoCoder
 		// filtering out non-groupable columns as singleton groups
 		// weight is the ratio of its cardinality to the number of rows 
 		int numCols = cols.size();
-		List<Integer> groupCols = new ArrayList<Integer>();
-		HashMap<Integer, GroupableColInfo> groupColsInfo = new HashMap<Integer, GroupableColInfo>();
+		List<Integer> groupCols = new ArrayList<>();
+		HashMap<Integer, GroupableColInfo> groupColsInfo = new HashMap<>();
 		for (int i = 0; i < numCols; i++) {
 			int colIx = cols.get(i);
 			double cardinality = colInfos[colIx].getEstCard();
@@ -75,10 +75,10 @@ public class PlanningCoCoder
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) 
 	{
-		List<int[]> retGroups = new ArrayList<int[]>();		
+		List<int[]> retGroups = new ArrayList<>();
 		for (List<Integer> bin : bins) {
 			// building an array of singleton CoCodingGroup
-			ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<PlanningCoCodingGroup>();
+			ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<>();
 			for (Integer col : bin)
 				sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
 			// brute force co-coding	
@@ -94,13 +94,13 @@ public class PlanningCoCoder
 	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
 		throws DMLRuntimeException 
 	{
-		List<int[]> retGroups = new ArrayList<int[]>();		
+		List<int[]> retGroups = new ArrayList<>();
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<CocodeTask> tasks = new ArrayList<CocodeTask>();
+			ArrayList<CocodeTask> tasks = new ArrayList<>();
 			for (List<Integer> bin : bins) {
 				// building an array of singleton CoCodingGroup
-				ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<PlanningCoCodingGroup>();
+				ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<>();
 				for (Integer col : bin)
 					sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
 				tasks.add(new CocodeTask(estim, sgroups, rlen));
@@ -136,7 +136,7 @@ public class PlanningCoCoder
 			LOG.trace("Cocoding: process "+singletonGroups.length);
 		
 		List<PlanningCoCodingGroup> workset = 
-				new ArrayList<PlanningCoCodingGroup>(Arrays.asList(singletonGroups));
+			new ArrayList<>(Arrays.asList(singletonGroups));
 		
 		//establish memo table for extracted column groups
 		PlanningMemoTable memo = new PlanningMemoTable();

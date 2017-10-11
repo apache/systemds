@@ -1059,7 +1059,7 @@ public class LibMatrixOuterAgg
 		int cnt = 0;
 		
 		if( ix >= 0 ){ //match, scan to next val
-			while( value==bv[ix++] && ix<bv.length );
+			while( value==bv[ix++] && ix<bv.length ) {}
 			ix += (value==bv[bv.length-1])?1:0;
 		}
 			

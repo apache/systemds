@@ -51,9 +51,9 @@ public class CPlanMemoTable
 	protected HashSet<Long> _plansBlacklist;
 	
 	public CPlanMemoTable() {
-		_plans = new HashMap<Long, List<MemoTableEntry>>();
-		_hopRefs = new HashMap<Long, Hop>();
-		_plansBlacklist = new HashSet<Long>();
+		_plans = new HashMap<>();
+		_hopRefs = new HashMap<>();
+		_plansBlacklist = new HashSet<>();
 	}
 	
 	public HashMap<Long, List<MemoTableEntry>> getPlans() {
@@ -182,7 +182,7 @@ public class CPlanMemoTable
 		//if single consumer of input; however this only applies to fusion
 		//heuristic that only consider materialization points)
 		if( pruneDominated ) {
-			HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
+			HashSet<MemoTableEntry> rmList = new HashSet<>();
 			List<MemoTableEntry> list = _plans.get(hopID);
 			Hop hop = _hopRefs.get(hopID);
 			for( MemoTableEntry e1 : list )
@@ -210,7 +210,7 @@ public class CPlanMemoTable
 			LOG.trace("#1: Memo before plan selection ("+size()+" plans)\n"+this);
 		
 		//build index of referenced entries
-		HashSet<Long> ix = new HashSet<Long>();
+		HashSet<Long> ix = new HashSet<>();
 		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
 			for( MemoTableEntry me : e.getValue() ) {
 				ix.add(me.input1); 
@@ -433,7 +433,7 @@ public class CPlanMemoTable
 	
 	public static class MemoTableEntrySet 
 	{
-		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
+		public ArrayList<MemoTableEntry> plans = new ArrayList<>();
 		
 		public MemoTableEntrySet(Hop hop, Hop c, TemplateBase tpl) {
 			int pos = (c != null) ? hop.getInput().indexOf(c) : -1;
@@ -445,7 +445,7 @@ public class CPlanMemoTable
 		public void crossProduct(int pos, Long... refs) {
 			if( refs.length==1 && refs[0] == -1 )
 				return; //unmodified plan set
-			ArrayList<MemoTableEntry> tmp = new ArrayList<MemoTableEntry>();
+			ArrayList<MemoTableEntry> tmp = new ArrayList<>();
 			for( MemoTableEntry me : plans )
 				for( Long ref : refs )
 					tmp.add(new MemoTableEntry(me.type, (pos==0)?ref:me.input1, 

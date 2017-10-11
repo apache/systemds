@@ -74,7 +74,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	 * i.e., getInput().get(_paramIndexMap.get(parameterName)) refers to the Hop
 	 * that is associated with parameterName.
 	 */
-	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
+	private HashMap<String, Integer> _paramIndexMap = new HashMap<>();
 
 	private ParameterizedBuiltinOp() {
 		//default constructor for clone
@@ -170,7 +170,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			return getLops();
 		
 		// construct lops for all input parameters
-		HashMap<String, Lop> inputlops = new HashMap<String, Lop>();
+		HashMap<String, Lop> inputlops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet())
 			inputlops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 
@@ -641,7 +641,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					setLineNumbers(group2);
 					group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
 				
-					HashMap<String, Lop> inMap = new HashMap<String, Lop>();
+					HashMap<String, Lop> inMap = new HashMap<>();
 					inMap.put("target", group1);
 					inMap.put("offset", group2);
 					inMap.put("maxdim", lmaxdim);
@@ -726,7 +726,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			Lop loffset = offsets.constructLops();
 			Lop lmaxdim = maxDim.constructLops();
 			
-			HashMap<String, Lop> inMap = new HashMap<String, Lop>();
+			HashMap<String, Lop> inMap = new HashMap<>();
 			inMap.put("target", linput);
 			inMap.put("offset", loffset);
 			inMap.put("maxdim", lmaxdim);

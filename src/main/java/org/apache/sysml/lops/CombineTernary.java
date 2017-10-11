@@ -37,7 +37,7 @@ public class CombineTernary extends Lop
 	
 	public enum OperationTypes {
 		PreCovWeighted
-	};
+	}
 
 	OperationTypes operation;
 
@@ -97,7 +97,7 @@ public class CombineTernary extends Lop
 
 	public static CombineTernary constructCombineLop( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
 
-		HashSet<Lop> set1 = new HashSet<Lop>();
+		HashSet<Lop> set1 = new HashSet<>();
 		set1.addAll(input1.getOutputs());
 
 		// find intersection of input1.getOutputs() and input2.getOutputs()

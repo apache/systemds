@@ -56,8 +56,8 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		if( roots == null )
 			return null;
 		
-		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>(); //key: <VALUETYPE>_<LITERAL>
+		HashMap<String, Hop> dataops = new HashMap<>();
+		HashMap<String, Hop> literalops = new HashMap<>(); //key: <VALUETYPE>_<LITERAL>
 		for (Hop h : roots) 
 		{
 			int cseMerged = 0;
@@ -81,8 +81,8 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		if( root == null )
 			return null;
 		
-		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>(); //key: <VALUETYPE>_<LITERAL>
+		HashMap<String, Hop> dataops = new HashMap<>();
+		HashMap<String, Hop> literalops = new HashMap<>(); //key: <VALUETYPE>_<LITERAL>
 		int cseMerged = 0;
 		if( _mergeLeafs ) {
 			cseMerged += rule_CommonSubexpressionElimination_MergeLeafs(root, dataops, literalops);

@@ -562,7 +562,7 @@ public class GenerateClassesForMLContext {
 			}
 			Map<String, FunctionStatementBlock> defaultNsFsbsMap = dmlProgram
 					.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE);
-			List<FunctionStatementBlock> fsbs = new ArrayList<FunctionStatementBlock>();
+			List<FunctionStatementBlock> fsbs = new ArrayList<>();
 			fsbs.addAll(defaultNsFsbsMap.values());
 			for (FunctionStatementBlock fsb : fsbs) {
 				ArrayList<Statement> sts = fsb.getStatements();

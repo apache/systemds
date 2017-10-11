@@ -40,7 +40,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class Data extends Lop  
 {
 	
-	public enum OperationTypes {READ,WRITE};
+	public enum OperationTypes {READ,WRITE}
 	
 	FileFormatTypes formatType = FileFormatTypes.BINARY;
 	OperationTypes operation;

@@ -192,7 +192,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		resultsMaxRowDims=new long[resultIndexes.length];
 		resultsMaxColDims=new long[resultIndexes.length];
 		
-		tagMapping=new HashMap<Byte, ArrayList<Integer>>();
+		tagMapping=new HashMap<>();
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];

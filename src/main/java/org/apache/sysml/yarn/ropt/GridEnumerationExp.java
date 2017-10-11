@@ -35,19 +35,17 @@ public class GridEnumerationExp extends GridEnumeration
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
-		
 		_factor = DEFAULT_FACTOR;
 	}
 	
-	public void setFactor( double factor )
-	{
+	public void setFactor( double factor ) {
 		_factor = factor;
 	}
 	
 	@Override
 	public ArrayList<Long> enumerateGridPoints() 
 	{
-		ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = new ArrayList<>();
 		long v = _min;
 		while( v < _max ) {
 			ret.add( v );

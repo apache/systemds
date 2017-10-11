@@ -56,10 +56,10 @@ public class CodegenUtils
 	private static final Log LOG = LogFactory.getLog(CodegenUtils.class.getName());
 	
 	//cache to reuse compiled and loaded classes 
-	private static ConcurrentHashMap<String, Class<?>> _cache = new ConcurrentHashMap<String,Class<?>>();
+	private static ConcurrentHashMap<String, Class<?>> _cache = new ConcurrentHashMap<>();
 	
 	//janino-specific map of source code transfer/recompile on-demand
-	private static ConcurrentHashMap<String, String> _src = new ConcurrentHashMap<String,String>();
+	private static ConcurrentHashMap<String, String> _src = new ConcurrentHashMap<>();
 	
 	//javac-specific working directory for src/class files
 	private static String _workingDir = null;
@@ -200,7 +200,7 @@ public class CodegenUtils
 				throw new RuntimeException("Unable to obtain system java compiler.");
 		
 			//prepare file manager
-			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>(); 
+			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>(); 
 			StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
 			
 			//prepare input source code

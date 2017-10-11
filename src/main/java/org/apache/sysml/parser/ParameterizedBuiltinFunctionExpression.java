@@ -43,7 +43,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	
 	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
 	static {
-		opcodeMap = new HashMap<String, Expression.ParameterizedBuiltinFunctionOp>();
+		opcodeMap = new HashMap<>();
 		opcodeMap.put("aggregate", Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
 		opcodeMap.put("groupedAggregate", Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
 		opcodeMap.put("removeEmpty",Expression.ParameterizedBuiltinFunctionOp.RMEMPTY);
@@ -78,7 +78,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
 	static {
-		pbHopMap = new HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp>();
+		pbHopMap = new HashMap<>();
 		
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.RMEMPTY, ParamBuiltinOp.RMEMPTY);
@@ -116,7 +116,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if ( pbifop == null ) 
 			return null;
 		
-		HashMap<String,Expression> varParams = new HashMap<String,Expression>();
+		HashMap<String,Expression> varParams = new HashMap<>();
 		for (ParameterExpression pexpr : paramExprsPassed)
 			varParams.put(pexpr.getName(), pexpr.getExpr());
 		
@@ -141,15 +141,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-		
-		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
+		HashMap<String,Expression> newVarParams = new HashMap<>();
 		for (String key : _varParams.keySet()){
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
-		}	
-		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(_opcode,
-				newVarParams, this);
-
+		}
+		ParameterizedBuiltinFunctionExpression retVal = 
+			new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams, this);
 		return retVal;
 	}
 
@@ -704,7 +702,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		// check validate parameter names
 		String[] validArgsArr = {"target", "rows", "cols", "decimal", "sparse", "sep", "linesep"};
-		HashSet<String> validArgs = new HashSet<String>(Arrays.asList(validArgsArr));
+		HashSet<String> validArgs = new HashSet<>(Arrays.asList(validArgsArr));
 		for( String k : varParams.keySet() ) {
 			if( !validArgs.contains(k) ) {
 				raiseValidateError("Invalid parameter " + k + " for toString, valid parameters are " + 

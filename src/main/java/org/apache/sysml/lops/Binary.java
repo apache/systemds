@@ -32,13 +32,12 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Binary extends Lop 
 {
-	
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MINUS1_MULTIPLY, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		MAX, MIN, POW, SOLVE, NOTSUPPORTED
-	};	
+	}
 
 	private OperationTypes operation;
 	private int numThreads = -1;

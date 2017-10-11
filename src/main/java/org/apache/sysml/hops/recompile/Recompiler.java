@@ -237,7 +237,7 @@ public class Recompiler
 			}
 			
 			// construct lops
-			Dag<Lop> dag = new Dag<Lop>();
+			Dag<Lop> dag = new Dag<>();
 			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);	
@@ -352,7 +352,7 @@ public class Recompiler
 			}
 			
 			// construct lops
-			Dag<Lop> dag = new Dag<Lop>();
+			Dag<Lop> dag = new Dag<>();
 			Lop lops = hops.constructLops();
 			lops.addToDag(dag);
 			
@@ -413,14 +413,14 @@ public class Recompiler
 			Hop.resetVisitStatus(hops);
 			
 			// construct lops			
-			Dag<Lop> dag = new Dag<Lop>();
+			Dag<Lop> dag = new Dag<>();
 			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);	
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());			
+			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -465,10 +465,10 @@ public class Recompiler
 			rSetExecType( hops, et );
 			hops.resetVisitStatus();
 			
-			// construct lops			
-			Dag<Lop> dag = new Dag<Lop>();
+			// construct lops	
+			Dag<Lop> dag = new Dag<>();
 			Lop lops = hops.constructLops();
-			lops.addToDag(dag);		
+			lops.addToDag(dag);
 			
 			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
@@ -498,8 +498,8 @@ public class Recompiler
 			for( Hop hopRoot : hops )
 				rClearLops( hopRoot );
 			
-			// construct lops			
-			Dag<Lop> dag = new Dag<Lop>();
+			// construct lops	
+			Dag<Lop> dag = new Dag<>();
 			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);	
@@ -537,10 +537,10 @@ public class Recompiler
 			hops.resetVisitStatus();
 			rClearLops( hops );	
 
-			// construct lops			
-			Dag<Lop> dag = new Dag<Lop>();
+			// construct lops
+			Dag<Lop> dag = new Dag<>();
 			Lop lops = hops.constructLops();
-			lops.addToDag(dag);		
+			lops.addToDag(dag);
 			
 			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
@@ -702,12 +702,12 @@ public class Recompiler
 	public static ArrayList<Hop> deepCopyHopsDag( ArrayList<Hop> hops ) 
 		throws HopsException 
 	{
-		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ArrayList<Hop> ret = new ArrayList<>();
 		
 		try {
 			//note: need memo table over all independent DAGs in order to 
 			//account for shared transient reads (otherwise more instructions generated)
-			HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
+			HashMap<Long, Hop> memo = new HashMap<>(); //orig ID, new clone
 			for( Hop hopRoot : hops )
 				ret.add(rDeepCopyHopsDag(hopRoot, memo));
 		}
@@ -732,7 +732,7 @@ public class Recompiler
 		Hop ret = null;
 		
 		try {
-			HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
+			HashMap<Long, Hop> memo = new HashMap<>(); //orig ID, new clone
 			ret = rDeepCopyHopsDag(hops, memo);
 		}
 		catch(Exception ex)
@@ -752,7 +752,7 @@ public class Recompiler
 		if( ret == null ) 
 		{
 			ret = (Hop) hops.clone();
-			ArrayList<Hop> tmp = new ArrayList<Hop>();
+			ArrayList<Hop> tmp = new ArrayList<>();
 			
 			//create new childs
 			for( Hop in : hops.getInput() )

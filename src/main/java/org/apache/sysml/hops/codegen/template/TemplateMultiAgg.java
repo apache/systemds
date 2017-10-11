@@ -75,15 +75,15 @@ public class TemplateMultiAgg extends TemplateCell
 	{
 		//get all root nodes for multi aggregation
 		MemoTableEntry multiAgg = memo.getBest(hop.getHopID(), TemplateType.MAGG);
-		ArrayList<Hop> roots = new ArrayList<Hop>();
+		ArrayList<Hop> roots = new ArrayList<>();
 		for( int i=0; i<3; i++ )
 			if( multiAgg.isPlanRef(i) )
 				roots.add(memo._hopRefs.get(multiAgg.input(i)));
 		Hop.resetVisitStatus(roots);
 		
 		//recursively process required cplan outputs
-		HashSet<Hop> inHops = new HashSet<Hop>();
-		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
+		HashSet<Hop> inHops = new HashSet<>();
+		HashMap<Long, CNode> tmp = new HashMap<>();
 		for( Hop root : roots ) //use celltpl cplan construction
 			super.rConstructCplan(root, memo, tmp, inHops, compileLiterals);
 		Hop.resetVisitStatus(roots);
@@ -97,11 +97,11 @@ public class TemplateMultiAgg extends TemplateCell
 			.sorted(new HopInputComparator(shared)).toArray(Hop[]::new);
 		
 		//construct template node
-		ArrayList<CNode> inputs = new ArrayList<CNode>();
+		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
 			inputs.add(tmp.get(in.getHopID()));
-		ArrayList<CNode> outputs = new ArrayList<CNode>();
-		ArrayList<AggOp> aggOps = new ArrayList<AggOp>();
+		ArrayList<CNode> outputs = new ArrayList<>();
+		ArrayList<AggOp> aggOps = new ArrayList<>();
 		for( Hop root : roots ) {
 			CNode node = tmp.get(root.getHopID());
 			if( node instanceof CNodeData //add indexing ops for sideways data inputs
@@ -119,7 +119,7 @@ public class TemplateMultiAgg extends TemplateCell
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
+		return new Pair<>(sinHops, tpl);
 	}
 	
 	private Hop getSparseSafeSharedInput(ArrayList<Hop> roots, HashSet<Hop> inHops) {

@@ -57,11 +57,11 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	public static enum SCRIPT_TYPE {
 		DML, PYDML
-	};
+	}
 
 	public static enum IO_TYPE {
 		ANY, FILE, JAVA_RDD_STR_CSV, JAVA_RDD_STR_IJV, RDD_STR_CSV, RDD_STR_IJV, DATAFRAME
-	};
+	}
 
 	private static String CSV_DELIM = ",";
 

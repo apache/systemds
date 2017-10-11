@@ -188,7 +188,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.getDataType(), bop.getValueType(), bop, DataOpTypes.TRANSIENTWRITE, TMP_VARNAME);
 		
 		//generate runtime instruction
-		Dag<Lop> dag = new Dag<Lop>();
+		Dag<Lop> dag = new Dag<>();
 		Recompiler.rClearLops(tmpWrite); //prevent lops reuse
 		Lop lops = tmpWrite.constructLops(); //reconstruct lops
 		lops.addToDag( dag );

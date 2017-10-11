@@ -128,7 +128,7 @@ public class BuildLiteExecution {
 		Connection conn = getConfiguredConnection();
 
 		String dml = conn.readScript("scripts/algorithms/Univar-Stats.dml");
-		Map<String, String> m = new HashMap<String, String>();
+		Map<String, String> m = new HashMap<>();
 		m.put("$CONSOLE_OUTPUT", "TRUE");
 
 		PreparedScript script = conn.prepareScript(dml, m, new String[] { "A", "K" }, new String[] { "baseStats" },
@@ -325,7 +325,7 @@ public class BuildLiteExecution {
 		log.debug(debugString);
 
 		String s = conn.readScript("scripts/algorithms/l2-svm-predict.dml");
-		Map<String, String> m = new HashMap<String, String>();
+		Map<String, String> m = new HashMap<>();
 		m.put("$Y", "temp/1.csv");
 		m.put("$confusion", "temp/2.csv");
 		m.put("$scores", "temp/3.csv");
@@ -443,7 +443,7 @@ public class BuildLiteExecution {
 
 		String dataGen = conn.readScript("scripts/datagen/genRandData4ALS.dml");
 
-		Map<String, String> m = new HashMap<String, String>();
+		Map<String, String> m = new HashMap<>();
 		m.put("$rows", "1000");
 		m.put("$cols", "1000");
 		m.put("$rank", "100");
@@ -456,7 +456,7 @@ public class BuildLiteExecution {
 		double[][] x = dataGenResults.getMatrix("X");
 		log.debug(displayMatrix(x));
 
-		Map<String, String> m2 = new HashMap<String, String>();
+		Map<String, String> m2 = new HashMap<>();
 		m2.put("$rank", "100");
 		String alsCg = conn.readScript("scripts/algorithms/ALS-CG.dml");
 		PreparedScript alsCgScript = conn.prepareScript(alsCg, m2, new String[] { "X" }, new String[] { "U", "V" },
@@ -488,8 +488,7 @@ public class BuildLiteExecution {
 	public static void jmlcKmeans() throws Exception {
 
 		Connection conn = getConfiguredConnection();
-
-		Map<String, String> m = new HashMap<String, String>();
+		Map<String, String> m = new HashMap<>();
 		m.put("$k", "5");
 		m.put("$isY", "TRUE");
 		m.put("$verb", "TRUE");

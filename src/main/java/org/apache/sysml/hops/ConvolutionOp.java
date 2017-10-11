@@ -343,8 +343,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	protected double computeIntermediateMemEstimate( long ignoreDim1, long ignoreDim2, long ignoreNnz )
 	{	
-		ArrayList<IntermediateDimensions> gpuIntermediates = new ArrayList<IntermediateDimensions>();
-		ArrayList<IntermediateDimensions> cpIntermediates = new ArrayList<IntermediateDimensions>();
+		ArrayList<IntermediateDimensions> gpuIntermediates = new ArrayList<>();
+		ArrayList<IntermediateDimensions> cpIntermediates = new ArrayList<>();
 		if(getOp() == ConvOp.DIRECT_CONV2D) {
 			// Assumption: To compile a GPU conv2d operator, following should fit on the GPU:
 			// 1. output in dense format (i.e. computeOutputMemEstimate) 

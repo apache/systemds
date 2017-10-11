@@ -33,7 +33,7 @@ public class RecompileStatus
 	}
 	
 	public RecompileStatus(boolean initialCodegen) {
-		_lastTWrites = new HashMap<String,MatrixCharacteristics>();
+		_lastTWrites = new HashMap<>();
 		_initialCodegen = initialCodegen;
 	}
 	

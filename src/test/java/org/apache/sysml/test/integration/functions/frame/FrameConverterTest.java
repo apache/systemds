@@ -87,13 +87,11 @@ public class FrameConverterTest extends AutomatedTestBase
 	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(200, ValueType.INT);
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(200, ValueType.BOOLEAN);
 	
-	@SuppressWarnings("unchecked")
 	private static final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(CollectionUtils.union(
 					CollectionUtils.union(schemaMixedLargeListStr, schemaMixedLargeListDble),
 					CollectionUtils.union(schemaMixedLargeListInt, schemaMixedLargeListBool)));
 	private static final ValueType[] schemaMixedLarge = schemaMixedLargeList.toArray(new ValueType[0]);
 	
-	@SuppressWarnings("unchecked")
 	private static final List<ValueType> schemaMixedLargeListDFrame = new ArrayList<ValueType>(CollectionUtils.union(
 					CollectionUtils.union(schemaMixedLargeListStr.subList(0, 100), schemaMixedLargeListDble.subList(0, 100)),
 					CollectionUtils.union(schemaMixedLargeListInt.subList(0, 100), schemaMixedLargeListBool.subList(0, 100))));

@@ -86,7 +86,7 @@ public class CompilerConfig
 	private HashMap<ConfigType, Integer> _imap = null;
 	
 	public CompilerConfig() {
-		_bmap = new HashMap<ConfigType, Boolean>();
+		_bmap = new HashMap<>();
 		_bmap.put(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, FLAG_PARREADWRITE_TEXT);
 		_bmap.put(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, FLAG_PARREADWRITE_TEXT);
 		_bmap.put(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, FLAG_PARREADWRITE_BINARY);
@@ -103,7 +103,7 @@ public class CompilerConfig
 		_bmap.put(ConfigType.MLCONTEXT, false);
 		_bmap.put(ConfigType.CODEGEN_ENABLED, false);
 		
-		_imap = new HashMap<CompilerConfig.ConfigType, Integer>();
+		_imap = new HashMap<>();
 		_imap.put(ConfigType.BLOCK_SIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 		_imap.put(ConfigType.OPT_LEVEL, OptimizerUtils.DEFAULT_OPTLEVEL.ordinal());
 	}

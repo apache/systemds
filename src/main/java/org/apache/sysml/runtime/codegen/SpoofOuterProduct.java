@@ -130,7 +130,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<ParOuterProdAggTask> tasks = new ArrayList<ParOuterProdAggTask>();
+			ArrayList<ParOuterProdAggTask> tasks = new ArrayList<>();
 			int numThreads2 = getPreferredNumberOfTasks(m, n, nnz, k, numThreads);
 			int blklen = (int)(Math.ceil((double)m/numThreads2));
 			for( int i=0; i<numThreads2 & i*blklen<m; i++ )
@@ -280,7 +280,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
+			ArrayList<ParExecTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
 			

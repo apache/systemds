@@ -57,23 +57,23 @@ public class Script {
 	/**
 	 * All inputs (input parameters ($) and input variables).
 	 */
-	private Map<String, Object> inputs = new LinkedHashMap<String, Object>();
+	private Map<String, Object> inputs = new LinkedHashMap<>();
 	/**
 	 * The input parameters ($).
 	 */
-	private Map<String, Object> inputParameters = new LinkedHashMap<String, Object>();
+	private Map<String, Object> inputParameters = new LinkedHashMap<>();
 	/**
 	 * The input variables.
 	 */
-	private Set<String> inputVariables = new LinkedHashSet<String>();
+	private Set<String> inputVariables = new LinkedHashSet<>();
 	/**
 	 * The input matrix or frame metadata if present.
 	 */
-	private Map<String, Metadata> inputMetadata = new LinkedHashMap<String, Metadata>();
+	private Map<String, Metadata> inputMetadata = new LinkedHashMap<>();
 	/**
 	 * The output variables.
 	 */
-	private Set<String> outputVariables = new LinkedHashSet<String>();
+	private Set<String> outputVariables = new LinkedHashSet<>();
 	/**
 	 * The symbol table containing the data associated with variables.
 	 */
@@ -332,14 +332,14 @@ public class Script {
 
 		MLContextUtil.checkInputValueType(name, value);
 		if (inputs == null) {
-			inputs = new LinkedHashMap<String, Object>();
+			inputs = new LinkedHashMap<>();
 		}
 		inputs.put(name, value);
 
 		if (name.startsWith("$")) {
 			MLContextUtil.checkInputParameterType(name, value);
 			if (inputParameters == null) {
-				inputParameters = new LinkedHashMap<String, Object>();
+				inputParameters = new LinkedHashMap<>();
 			}
 			inputParameters.put(name, value);
 		} else {

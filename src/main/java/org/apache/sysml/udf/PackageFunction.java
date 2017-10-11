@@ -40,7 +40,7 @@ public abstract class PackageFunction implements Serializable
 	private IDSequence _seq = null;
 
 	public PackageFunction() {
-		_function_inputs = new ArrayList<FunctionParameter>();
+		_function_inputs = new ArrayList<>();
 		_seq = new IDSequence();
 	}
 

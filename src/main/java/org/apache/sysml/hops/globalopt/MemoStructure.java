@@ -47,8 +47,8 @@ public class MemoStructure
 	
 	public MemoStructure()
 	{
-		_entries = new HashMap<Long, PlanSet>();
-		_nodeIDs = new HashMap<Long, Long>();
+		_entries = new HashMap<>();
+		_nodeIDs = new HashMap<>();
 	}
 	
 	///////////////////////////////////////////////////

@@ -89,7 +89,7 @@ public abstract class AutomatedTestBase
 		public String lowerCase() {
 			return super.toString().toLowerCase();
 		}
-	};
+	}
 
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;

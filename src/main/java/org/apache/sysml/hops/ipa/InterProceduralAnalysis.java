@@ -129,7 +129,7 @@ public class InterProceduralAnalysis
 		_fgraph = new FunctionCallGraph(dmlp);
 		
 		//create order list of IPA passes
-		_passes = new ArrayList<IPAPass>();
+		_passes = new ArrayList<>();
 		_passes.add(new IPAPassRemoveUnusedFunctions());
 		_passes.add(new IPAPassFlagFunctionsRecompileOnce());
 		_passes.add(new IPAPassRemoveUnnecessaryCheckpoints());
@@ -145,7 +145,7 @@ public class InterProceduralAnalysis
 		_fgraph = new FunctionCallGraph(sb);
 		
 		//create order list of IPA passes
-		_passes = new ArrayList<IPAPass>();
+		_passes = new ArrayList<>();
 	}
 	
 	/**
@@ -251,7 +251,7 @@ public class InterProceduralAnalysis
 		//check size-preserving characteristic
 		if( ret ) {
 			FunctionCallSizeInfo fcallSizes = new FunctionCallSizeInfo(_fgraph, false);
-			HashSet<String> fnStack = new HashSet<String>();
+			HashSet<String> fnStack = new HashSet<>();
 			LocalVariableMap callVars = new LocalVariableMap();
 			
 			//populate input

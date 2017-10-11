@@ -53,7 +53,7 @@ public class Plan
 		if( childs != null && !childs.isEmpty() )
 			_childs = childs;
 		else
-			_childs = new ArrayList<Plan>();
+			_childs = new ArrayList<>();
 	}
 	
 	public Plan( Plan p )
@@ -65,9 +65,9 @@ public class Plan
 		_costs = p._costs;
 		
 		if( p._childs != null && !p._childs.isEmpty() )
-			_childs = new ArrayList<Plan>(p._childs);
+			_childs = new ArrayList<>(p._childs);
 		else
-			_childs = new ArrayList<Plan>();
+			_childs = new ArrayList<>();
 	}
 	
 	public GDFNode getNode()

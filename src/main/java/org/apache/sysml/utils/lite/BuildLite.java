@@ -84,7 +84,7 @@ public class BuildLite {
 	 * include resources such as service files and shutdown hooks that aren't
 	 * detected by query to the classloader.
 	 */
-	public static List<String> additionalResources = new ArrayList<String>();
+	public static List<String> additionalResources = new ArrayList<>();
 	static {
 		// avoid "No FileSystem for scheme: file" error in JMLC
 		additionalResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
@@ -92,15 +92,15 @@ public class BuildLite {
 		additionalResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
 
 		additionalResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
-	};
+	}
 
 	/**
 	 * Map jars to the additional resources files in order to build the
 	 * dependency sets required by lite.xml.
 	 */
-	public static SortedMap<String, SortedSet<String>> additionalJarToFileMappingsForDependencySets = new TreeMap<String, SortedSet<String>>();
+	public static SortedMap<String, SortedSet<String>> additionalJarToFileMappingsForDependencySets = new TreeMap<>();
 	static {
-		SortedSet<String> hadoopCommonResources = new TreeSet<String>();
+		SortedSet<String> hadoopCommonResources = new TreeSet<>();
 		hadoopCommonResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
 		hadoopCommonResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
 		hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
@@ -111,7 +111,7 @@ public class BuildLite {
 	 * Scan project *.java files for these packages/classes that should
 	 * definitely be included in the lite jar.
 	 */
-	public static List<String> additionalPackages = new ArrayList<String>();
+	public static List<String> additionalPackages = new ArrayList<>();
 	static {
 		// math3, lang3, io, etc.
 		additionalPackages.add("org.apache.commons");
@@ -120,7 +120,7 @@ public class BuildLite {
 	/**
 	 * Exclude classes of the following packages from the lite jar.
 	 */
-	public static List<String> packagesToExclude = new ArrayList<String>();
+	public static List<String> packagesToExclude = new ArrayList<>();
 	static {
 		packagesToExclude.add("com.sun.proxy");
 		// these can be added if test suite code is run
@@ -140,12 +140,12 @@ public class BuildLite {
 	 * a sorted map and sorted sets of the class names are the values in the
 	 * sorted map.
 	 */
-	public static SortedMap<String, SortedSet<String>> jarsAndClasses = new TreeMap<String, SortedSet<String>>();
+	public static SortedMap<String, SortedSet<String>> jarsAndClasses = new TreeMap<>();
 
 	/**
 	 * The jar dependencies and their sizes for comparison purposes.
 	 */
-	public static SortedMap<String, Long> jarSizes = new TreeMap<String, Long>();
+	public static SortedMap<String, Long> jarSizes = new TreeMap<>();
 
 	/**
 	 * Dummy logger to fill in log4j info for things such as the jar sizes.
@@ -274,7 +274,7 @@ public class BuildLite {
 	private static Set<String> consolidateClassPathNames(List<Class<?>> loadedClasses, List<String> log4jClassPathNames,
 			List<String> commonsMath3ClassPathNames) {
 
-		SortedSet<String> allClassPathNames = new TreeSet<String>(log4jClassPathNames);
+		SortedSet<String> allClassPathNames = new TreeSet<>(log4jClassPathNames);
 		if (includeAllCommonsMath3) {
 			System.out.println("\nConsolidating loaded class names, log4j class names, and commons-math3 class names");
 			allClassPathNames.addAll(commonsMath3ClassPathNames);
@@ -424,7 +424,7 @@ public class BuildLite {
 	 *             if a ClassNotFoundException occurs
 	 */
 	private static List<String> getAllClassesInJar(Class<?> classInJarFile) throws IOException, ClassNotFoundException {
-		List<String> classPathNames = new ArrayList<String>();
+		List<String> classPathNames = new ArrayList<>();
 		String jarLocation = classInJarFile.getProtectionDomain().getCodeSource().getLocation().getPath();
 		File f = new File(jarLocation);
 		try (FileInputStream fis = new FileInputStream(f);
@@ -519,7 +519,7 @@ public class BuildLite {
 		f.setAccessible(true);
 		@SuppressWarnings("unchecked")
 		Vector<Class<?>> classes = (Vector<Class<?>>) f.get(cl);
-		List<Class<?>> list = new ArrayList<Class<?>>(classes);
+		List<Class<?>> list = new ArrayList<>(classes);
 
 		return list;
 	}
@@ -569,7 +569,7 @@ public class BuildLite {
 			SortedSet<String> classNames = jarsAndClasses.get(jarName);
 			classNames.add(className);
 		} else {
-			SortedSet<String> classNames = new TreeSet<String>();
+			SortedSet<String> classNames = new TreeSet<>();
 			classNames.add(className);
 			jarsAndClasses.put(jarName, classNames);
 		}
@@ -649,7 +649,7 @@ public class BuildLite {
 	private static void scanJavaFilesForClassesToLoad() throws IOException, ClassNotFoundException {
 		System.out.println("\nScanning java files for additional classes to load");
 		int totalMatches = 0;
-		SortedSet<String> uniqueMatches = new TreeSet<String>();
+		SortedSet<String> uniqueMatches = new TreeSet<>();
 		File base = new File(BASE_SRC_DIR);
 		List<File> javaFiles = (List<File>) FileUtils.listFiles(base, new String[] { "java" }, true);
 		for (File javaFile : javaFiles) {

@@ -36,8 +36,8 @@ public class IfStatement extends Statement
 	
 	public IfStatement(){
 		 _predicate = null;
-		 _ifBody = new ArrayList<StatementBlock>();
-		 _elseBody = new ArrayList<StatementBlock>();
+		 _ifBody = new ArrayList<>();
+		 _elseBody = new ArrayList<>();
 	}
 	
 	public void setConditionalPredicate(ConditionalPredicate pred){

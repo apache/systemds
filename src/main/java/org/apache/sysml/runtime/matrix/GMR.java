@@ -330,12 +330,12 @@ public class GMR
 			&& InstructionUtils.isDistributedCacheUsed(allInsts) ) 
 		{
 			//get all indexes of distributed cache inputs
-			ArrayList<Byte> indexList = new ArrayList<Byte>();
+			ArrayList<Byte> indexList = new ArrayList<>();
 			String[] inst = allInsts.split(Instruction.INSTRUCTION_DELIM);
 			for( String tmp : inst ) {
 				if( InstructionUtils.isDistributedCacheUsed(tmp) )
 				{
-					ArrayList<Byte> tmpindexList = new ArrayList<Byte>();
+					ArrayList<Byte> tmpindexList = new ArrayList<>();
 					
 					MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(tmp);
 					if( mrinst instanceof IDistributedCacheConsumer )
@@ -349,7 +349,7 @@ public class GMR
 			}
 
 			//construct index and path strings
-			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
+			ArrayList<String> pathList = new ArrayList<>(); // list of paths to be placed in Distributed cache
 			StringBuilder indexString = new StringBuilder(); // input indices to be placed in Distributed Cache (concatenated) 
 			StringBuilder pathString = new StringBuilder();  // input paths to be placed in Distributed Cache (concatenated) 
 			for( byte index : indexList )

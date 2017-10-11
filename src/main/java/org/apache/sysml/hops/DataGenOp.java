@@ -60,7 +60,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	 * i.e., getInput().get(_paramIndexMap.get(parameterName)) refers to the Hop
 	 * that is associated with parameterName.
 	 */
-	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
+	private HashMap<String, Integer> _paramIndexMap = new HashMap<>();
 		
 
 	/** target identifier which will hold the random object */
@@ -160,7 +160,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 
 		ExecType et = optFindExecType();
 		
-		HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
+		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 			if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
 				inputLops.put(cur.getKey(), new LiteralOp(_dim1).constructLops());

@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.instructions.Instruction;
 public class BreakPointInstruction extends Instruction
 {
 
-	public enum BPINSTRUCTION_STATUS { INVISIBLE, ENABLED, DISABLED };
+	public enum BPINSTRUCTION_STATUS { INVISIBLE, ENABLED, DISABLED }
 	
 	private BPINSTRUCTION_STATUS bpStatus; //indicates breakpoint status	
 	private String location=null; //namespace and name of function containing breakpoint

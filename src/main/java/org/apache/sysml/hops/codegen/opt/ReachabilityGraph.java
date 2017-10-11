@@ -333,6 +333,15 @@ public class ReachabilityGraph
 		}
 		
 		@Override
+		public int hashCode() {
+			return Arrays.hashCode(new int[]{
+				_inputs.hashCode(),
+				Long.hashCode(_ID),
+				_p.hashCode()
+			});
+		}
+		
+		@Override
 		public boolean equals(Object o) {
 			if( !(o instanceof NodeLink) )
 				return false;

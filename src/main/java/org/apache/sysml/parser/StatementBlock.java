@@ -60,16 +60,16 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public StatementBlock() {
 		_dmlProg = null;
-		_statements = new ArrayList<Statement>();
+		_statements = new ArrayList<>();
 		_read = new VariableSet();
 		_updated = new VariableSet();
 		_gen = new VariableSet();
 		_kill = new VariableSet();
 		_warnSet = new VariableSet();
 		_initialized = true;
-		_constVarsIn = new HashMap<String,ConstIdentifier>();
-		_constVarsOut = new HashMap<String,ConstIdentifier>();
-		_updateInPlaceVars = new ArrayList<String>();
+		_constVarsIn = new HashMap<>();
+		_constVarsOut = new HashMap<>();
+		_updateInPlaceVars = new ArrayList<>();
 	}
 
 	public void setDMLProg(DMLProgram dmlProg){
@@ -322,8 +322,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			}
 		}
 
-		ArrayList<StatementBlock> result = new ArrayList<StatementBlock>();
-
+		ArrayList<StatementBlock> result = new ArrayList<>();
 		StatementBlock currentBlock = null;
 
 		for (int i = 0; i < body.size(); i++){
@@ -367,13 +366,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	public static ArrayList<StatementBlock> mergeStatementBlocks(ArrayList<StatementBlock> sb){
+		if (sb == null || sb.isEmpty())
+			return new ArrayList<>();
 
-		ArrayList<StatementBlock> result = new ArrayList<StatementBlock>();
-
-		if (sb == null || sb.isEmpty()) {
-			return new ArrayList<StatementBlock>();
-		}
-
+		ArrayList<StatementBlock> result = new ArrayList<>();
 		StatementBlock currentBlock = null;
 
 		for (int i = 0; i < sb.size(); i++){
@@ -404,7 +400,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public ArrayList<Statement> rewriteFunctionCallStatements (DMLProgram dmlProg, ArrayList<Statement> statements) throws LanguageException {
 
-		ArrayList<Statement> newStatements = new ArrayList<Statement>();
+		ArrayList<Statement> newStatements = new ArrayList<>();
 		for (Statement current : statements){
 			if (isRewritableFunctionCall(current, dmlProg)){
 
@@ -548,7 +544,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		_statements = rewriteFunctionCallStatements(dmlProg, _statements);
 		_dmlProg = dmlProg;
 		
-		HashMap<String, ConstIdentifier> currConstVars = new HashMap<String,ConstIdentifier>(constVars);
+		HashMap<String, ConstIdentifier> currConstVars = new HashMap<>(constVars);
 		for (Statement current : _statements) {
 			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement)current;

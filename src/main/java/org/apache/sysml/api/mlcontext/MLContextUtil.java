@@ -467,7 +467,7 @@ public final class MLContextUtil {
 		if (scriptType == null) {
 			throw new MLContextException("ScriptType needs to be specified");
 		}
-		Map<String, String> convertedMap = new HashMap<String, String>();
+		Map<String, String> convertedMap = new HashMap<>();
 		for (Entry<String, Object> entry : basicInputParameterMap.entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
@@ -1250,7 +1250,7 @@ public final class MLContextUtil {
 			scriptExecutor.compile(script, performHOPRewrites);
 			Explain.reset();
 			// To deal with potential Py4J issues
-			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<Integer>() : lines;
+			lines = lines.size() == 1 && lines.get(0) == -1 ? new ArrayList<>() : lines;
 			return Explain.getHopDAG(scriptExecutor.dmlProgram, lines, withSubgraph);
 		} catch (RuntimeException e) {
 			throw new MLContextException("Exception when compiling script", e);

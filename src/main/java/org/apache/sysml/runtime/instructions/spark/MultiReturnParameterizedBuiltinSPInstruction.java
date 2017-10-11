@@ -81,7 +81,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		ArrayList<CPOperand> outputs = new ArrayList<CPOperand>();
+		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("transformencode") ) {
@@ -265,11 +265,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			
 			//output recode maps as columnID - token pairs
-			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<Tuple2<Integer,Object>>();
+			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();
 			HashMap<Integer,HashSet<Object>> tmp = _raEncoder.getCPRecodeMapsPartial();
 			for( Entry<Integer,HashSet<Object>> e1 : tmp.entrySet() )
 				for( Object token : e1.getValue() )
-					ret.add(new Tuple2<Integer,Object>(e1.getKey(), token));
+					ret.add(new Tuple2<>(e1.getKey(), token));
 			_raEncoder.getCPRecodeMapsPartial().clear();
 		
 			return ret.iterator();
@@ -301,7 +301,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			String colID = String.valueOf(arg0._1());
 			Iterator<Object> iter = arg0._2().iterator();
 			
-			ArrayList<String> ret = new ArrayList<String>();
+			ArrayList<String> ret = new ArrayList<>();
 			StringBuilder sb = new StringBuilder();
 			long rowID = 1;
 			while( iter.hasNext() ) {
@@ -342,21 +342,21 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			
 			//extract meta data
-			ArrayList<Tuple2<Integer,ColumnMetadata>> ret = new ArrayList<Tuple2<Integer,ColumnMetadata>>();
+			ArrayList<Tuple2<Integer,ColumnMetadata>> ret = new ArrayList<>();
 			int[] collist = _encoder.getColList();
 			for( int j=0; j<collist.length; j++ ) {
 				if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MODE ) {
 					HashMap<String,Long> hist = _encoder.getHistogram(collist[j]);
 					for( Entry<String,Long> e : hist.entrySet() )
-						ret.add(new Tuple2<Integer,ColumnMetadata>(collist[j], 
+						ret.add(new Tuple2<>(collist[j], 
 								new ColumnMetadata(e.getValue(), e.getKey())));
 				}
 				else if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MEAN ) {
-					ret.add(new Tuple2<Integer,ColumnMetadata>(collist[j], 
+					ret.add(new Tuple2<>(collist[j], 
 							new ColumnMetadata(_encoder.getNonMVCount(collist[j]), String.valueOf(_encoder.getMeans()[j]._sum))));
 				}
 				else if( _encoder.getMethod(collist[j]) == MVMethod.CONSTANT ) {
-					ret.add(new Tuple2<Integer,ColumnMetadata>(collist[j],
+					ret.add(new Tuple2<>(collist[j],
 							new ColumnMetadata(0, _encoder.getReplacement(collist[j]))));
 				}
 			}
@@ -381,11 +381,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		{
 			int colix = arg0._1();
 			Iterator<ColumnMetadata> iter = arg0._2().iterator();
-			ArrayList<String> ret = new ArrayList<String>();
+			ArrayList<String> ret = new ArrayList<>();
 			
 			//compute global mode of categorical feature, i.e., value with highest frequency
 			if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MODE ) {
-				HashMap<String, Long> hist = new HashMap<String,Long>();
+				HashMap<String, Long> hist = new HashMap<>();
 				while( iter.hasNext() ) {
 					ColumnMetadata cmeta = iter.next(); 
 					Long tmp = hist.get(cmeta.getMvValue());

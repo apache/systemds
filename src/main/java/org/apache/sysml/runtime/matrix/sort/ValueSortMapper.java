@@ -40,10 +40,9 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 @SuppressWarnings("rawtypes")
-public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writable, KOUT extends WritableComparable, VOUT extends Writable> extends MapReduceBase 
-      implements Mapper<KIN, VIN, KOUT, VOUT>
+public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writable, KOUT extends WritableComparable, VOUT extends Writable> 
+	extends MapReduceBase implements Mapper<KIN, VIN, KOUT, VOUT>
 {
-	
 	private int brlen;
 	private int bclen;
 	private CombineUnaryInstruction combineInstruction=null;
@@ -78,16 +77,14 @@ public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writabl
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public void configure(JobConf job)
 	{
-		try 
-		{
+		try  {
 			brlen = MRJobConfiguration.getNumRowsPerBlock(job, (byte) 0);
 			bclen = MRJobConfiguration.getNumColumnsPerBlock(job, (byte) 0);
 			String str=job.get(SortMR.COMBINE_INSTRUCTION, null);
 			if(str!=null && !str.isEmpty() && !"null".equals(str))
-					combineInstruction=(CombineUnaryInstruction) CombineUnaryInstruction.parseInstruction(str);
+				combineInstruction=(CombineUnaryInstruction) CombineUnaryInstruction.parseInstruction(str);
 			inputConverter = MRJobConfiguration.getInputConverter(job, (byte) 0);
 			inputConverter.setBlockSize(brlen, bclen);
 		} 

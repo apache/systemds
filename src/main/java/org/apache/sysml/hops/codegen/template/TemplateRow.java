@@ -175,9 +175,9 @@ public class TemplateRow extends TemplateBase
 	@Override
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) {
 		//recursively process required cplan output
-		HashSet<Hop> inHops = new HashSet<Hop>();
-		HashMap<String, Hop> inHops2 = new HashMap<String,Hop>();
-		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
+		HashSet<Hop> inHops = new HashSet<>();
+		HashMap<String, Hop> inHops2 = new HashMap<>();
+		HashMap<Long, CNode> tmp = new HashMap<>();
 		hop.resetVisitStatus();
 		rConstructCplan(hop, memo, tmp, inHops, inHops2, compileLiterals);
 		hop.resetVisitStatus();
@@ -189,7 +189,7 @@ public class TemplateRow extends TemplateBase
 		inHops2.putIfAbsent("X", sinHops[0]); //robustness special cases
 		
 		//construct template node
-		ArrayList<CNode> inputs = new ArrayList<CNode>();
+		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
 			inputs.add(tmp.get(in.getHopID()));
 		CNode output = tmp.get(hop.getHopID());
@@ -205,7 +205,7 @@ public class TemplateRow extends TemplateBase
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
+		return new Pair<>(sinHops, tpl);
 	}
 
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 

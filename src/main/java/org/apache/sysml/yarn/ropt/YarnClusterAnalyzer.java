@@ -46,7 +46,6 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
  */
 public class YarnClusterAnalyzer 
 {
-	
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
 	public static final int CPU_HYPER_FACTOR = 1; 
 	
@@ -65,8 +64,8 @@ public class YarnClusterAnalyzer
 	
 	// Map from StatementBlock.ID to remoteJVMMaxMem (in bytes)
 	// Encodes MR job memory settings in the execution plan, if not found here, use the default MR setting in _remoteJVMMaxMem
-	public static HashMap<Long, Long> remoteJVMMaxMemPlan = new HashMap<Long, Long>();
-	public static HashSet<Long> probedSb = new HashSet<Long>();
+	public static HashMap<Long, Long> remoteJVMMaxMemPlan = new HashMap<>();
+	public static HashSet<Long> probedSb = new HashSet<>();
 	
 	public static List<Long> nodesMaxPhySorted = null;		// Original maximum physical memory per node in Byte, sorted
 	public static List<Double> nodesMaxBudgetSorted = null;	// Converted to maximum budget per node in Byte, sorted
@@ -368,7 +367,7 @@ public class YarnClusterAnalyzer
 	}
 	
 	public static void printProbedSet(String message) {
-		ArrayList<Long> probed = new ArrayList<Long> (probedSb);
+		ArrayList<Long> probed = new ArrayList<> (probedSb);
 		Collections.sort(probed);
 		System.out.print(message);
 		for (Long id : probed)
@@ -614,7 +613,7 @@ public class YarnClusterAnalyzer
 			if( nodesReport.isEmpty() )
 				throw new YarnException("There are zero available nodes in the yarn cluster");
 			
-			nodesMaxPhySorted = new ArrayList<Long> (nodesReport.size());
+			nodesMaxPhySorted = new ArrayList<> (nodesReport.size());
 			clusterTotalMem = 0;
 			clusterTotalCores = 0;
 			clusterTotalNodes = 0;
@@ -644,7 +643,7 @@ public class YarnClusterAnalyzer
 			}
 			Collections.sort(nodesMaxPhySorted, Collections.reverseOrder());
 			
-			nodesMaxBudgetSorted = new ArrayList<Double> (nodesMaxPhySorted.size());
+			nodesMaxBudgetSorted = new ArrayList<> (nodesMaxPhySorted.size());
 			for (int i = 0; i < nodesMaxPhySorted.size(); i++)
 				nodesMaxBudgetSorted.add(ResourceOptimizer.phyToBudget(nodesMaxPhySorted.get(i)));
 			

@@ -49,12 +49,12 @@ public class ReblockMapper extends MapperBase
 	//state of reblock mapper
 	private OutputCollector<Writable, Writable> cachedCollector = null;
 	private JobConf cachedJobConf = null;
-	private HashMap<Byte, MatrixCharacteristics> dimensionsOut = new HashMap<Byte, MatrixCharacteristics>();
-	private HashMap<Byte, MatrixCharacteristics> dimensionsIn = new HashMap<Byte, MatrixCharacteristics>();
-	private HashMap<Byte, Boolean> emptyBlocks = new HashMap<Byte, Boolean>();
+	private HashMap<Byte, MatrixCharacteristics> dimensionsOut = new HashMap<>();
+	private HashMap<Byte, MatrixCharacteristics> dimensionsIn = new HashMap<>();
+	private HashMap<Byte, Boolean> emptyBlocks = new HashMap<>();
 	
 	//reblock buffer
-	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<Byte,ReblockBuffer>();
+	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<>();
 	private int buffersize =-1;
 	
 	@Override

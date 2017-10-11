@@ -56,8 +56,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private CPOperand _in3;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
-	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
-	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
+	private ArrayList<CPOperand> _stride = new ArrayList<>();
+	private ArrayList<CPOperand> _padding = new ArrayList<>();
 
 	private ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
@@ -115,10 +115,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			in.split(parts[1]);
 			out.split(parts[14]);
 
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[2]));
 			stride.add(new CPOperand(parts[3]));
 			padding.add(new CPOperand(parts[4]));
@@ -148,10 +148,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			in2.split(parts[2]);
 			out.split(parts[15]);
 
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[3]));
 			stride.add(new CPOperand(parts[4]));
 			padding.add(new CPOperand(parts[5]));
@@ -180,10 +180,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			in3.split(parts[3]);
 			out.split(parts[16]);
 
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
 			stride.add(new CPOperand(parts[4]));
 			stride.add(new CPOperand(parts[5]));
 			padding.add(new CPOperand(parts[6]));
@@ -396,10 +396,9 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					throw new RuntimeException("Expected the inputs to be reblocked as rectangular RDD");
 				}
 				MatrixBlock out = processRectangularBlock(arg._2);
-				if(out.getNumRows() != 1) {
+				if(out.getNumRows() != 1)
 					throw new RuntimeException("Expected the output to have 1 row");
-				}
-				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, out);
+				return new Tuple2<>(arg._1, out);
 			}
 		}
 		

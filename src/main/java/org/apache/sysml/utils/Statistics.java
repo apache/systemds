@@ -105,8 +105,8 @@ public class Statistics
 	private static long parforMergeTime = 0; //in milli sec
 	
 	//heavy hitter counts and times 
-	private static HashMap<String,Long> _cpInstTime = new HashMap<String, Long>();
-	private static HashMap<String,Long> _cpInstCounts = new HashMap<String, Long>();
+	private static HashMap<String,Long> _cpInstTime = new HashMap<>();
+	private static HashMap<String,Long> _cpInstCounts = new HashMap<>();
 
 	private static final LongAdder lTotalUIPVar = new LongAdder();
 	private static final LongAdder lTotalLix = new LongAdder();
@@ -558,7 +558,6 @@ public class Statistics
 	 * @return string representing the heavy hitter instructions in tabular
 	 *         format
 	 */
-	@SuppressWarnings("unchecked")
 	public static String getHeavyHitters(int num) {
 		int len = _cpInstTime.size();
 		if (num <= 0 || len <= 0)

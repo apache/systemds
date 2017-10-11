@@ -25,13 +25,11 @@ import java.util.LinkedList;
 
 public class PageCache 
 {
-	
 	private static final int CLEANUP_THRESHOLD = 128;
 	private static HashMap<Integer, LinkedList<SoftReference<byte[]>>> _pool;
 
-	public static void init()
-	{
-		_pool = new HashMap<Integer, LinkedList<SoftReference<byte[]>>>();
+	public static void init() {
+		_pool = new HashMap<>();
 	}
 
 	public static void clear()
@@ -47,10 +45,10 @@ public class PageCache
 		
 		LinkedList<SoftReference<byte[]>> list = _pool.get( data.length );
 		if( list==null ){
-			list = new LinkedList<SoftReference<byte[]>>();
+			list = new LinkedList<>();
 			_pool.put(data.length, list);
 		}
-		list.addLast(new SoftReference<byte[]>(data));	
+		list.addLast(new SoftReference<>(data));	
 	}
 
 	public static byte[] getPage( int size )

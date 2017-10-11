@@ -383,7 +383,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 					
 					//rewire all parents (avoid anomalies with replicated datagen)
-					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
@@ -415,7 +415,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 					
 					//rewire all parents (avoid anomalies with replicated datagen)
-					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
@@ -465,12 +465,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(inputGen, newMax, ixMax);
 					
 					//rewire all parents (avoid anomalies with replicated datagen)
-					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, bop, inputGen);
 					
 					hi = inputGen;
-					LOG.debug("Applied fuseDatagenAndMinusOperation (line "+bop.getBeginLine()+").");		
+					LOG.debug("Applied fuseDatagenAndMinusOperation (line "+bop.getBeginLine()+").");
 				}
 			}
 		}
@@ -553,7 +553,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private Hop canonicalizeMatrixMultScalarAdd( Hop hi ) 
 		throws HopsException
 	{
-		//pattern: binary operation (+ or -) of matrix mult and scalar 		
+		//pattern: binary operation (+ or -) of matrix mult and scalar 
 		if( hi instanceof BinaryOp )
 		{
 			BinaryOp bop = (BinaryOp)hi;
@@ -1641,11 +1641,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.createTranspose(hi.getInput().get(1)) ) : //create v via t(v')
 						hi.getInput().get(0);                                     //get v directly 
 				Hop seq = isPatternB ?
-						hi.getInput().get(0) : hi.getInput().get(1).getInput().get(0);					
+						hi.getInput().get(0) : hi.getInput().get(1).getInput().get(0);
 				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "rows" : "cols";
 				
 				//setup input parameter hops
-				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
+				HashMap<String,Hop> inputargs = new HashMap<>();
 				inputargs.put("target", trgt);
 				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMax(seq));
 				inputargs.put("dir", new LiteralOp(direction));

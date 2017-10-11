@@ -111,7 +111,7 @@ public class DMLConfig
 	
 	static
 	{
-		_defaultVals = new HashMap<String, String>();
+		_defaultVals = new HashMap<>();
 		_defaultVals.put(LOCAL_TMP_DIR,          "/tmp/systemml" );
 		_defaultVals.put(SCRATCH_SPACE,          "scratch_space" );
 		_defaultVals.put(OPTIMIZATION_LEVEL,     String.valueOf(OptimizerUtils.DEFAULT_OPTLEVEL.ordinal()) );
@@ -303,7 +303,7 @@ public class DMLConfig
 	 */
 	public Map<String, String> getCustomMRConfig()
 	{
-		HashMap<String, String> ret = new HashMap<String, String>();
+		HashMap<String, String> ret = new HashMap<>();
 	
 		//check for non-existing config xml tree
 		if( _xmlRoot == null )

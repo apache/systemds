@@ -80,7 +80,7 @@ public class DoubleIntListHashMap
 	}
 
 	public ArrayList<DIListEntry> extractValues() {
-		ArrayList<DIListEntry> ret = new ArrayList<DIListEntry>();
+		ArrayList<DIListEntry> ret = new ArrayList<>();
 		for( DIListEntry e : _data ) {
 			if (e != null) {
 				while( e.next != null ) {

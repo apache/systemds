@@ -50,8 +50,8 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 			return null;
 		
 		//collect all persistent reads and writes
-		HashMap<String,Hop> reads = new HashMap<String,Hop>();
-		HashMap<String,Hop> writes = new HashMap<String,Hop>();
+		HashMap<String,Hop> reads = new HashMap<>();
+		HashMap<String,Hop> writes = new HashMap<>();
 		for( Hop h : roots ) 
 			collectPersistentReadWriteOps( h, writes, reads );
 		

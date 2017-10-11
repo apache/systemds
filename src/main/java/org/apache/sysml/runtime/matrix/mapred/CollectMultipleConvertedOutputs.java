@@ -53,26 +53,19 @@ public class CollectMultipleConvertedOutputs
 		Converter<Writable, Writable, Writable, Writable> conv=outputConverters[output];
 		conv.setBlockSize(matrixStats[output].getRowsPerBlock(), matrixStats[output].getColsPerBlock());
 		conv.convert(key, value);
-	//	System.out.println("output before convert: "+key+" "+value);
-		while(conv.hasNext())
-		{
+		while(conv.hasNext()) {
 			Pair<Writable, Writable> outpair=conv.next();
 			multipleOutputs.getCollector(Integer.toString(output), reporter).collect(outpair.getKey(), outpair.getValue());
-		//	System.out.println("output in collectOutput "+outpair.getKey().toString()+":"+outpair.getValue());
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void directOutput(Writable key, Writable value, int output, Reporter reporter) 
 		throws IOException
 	{
 		multipleOutputs.getCollector(Integer.toString(output), reporter).collect(key, value);
 	}
 
-	public void close() 
-		throws IOException 
-	{
+	public void close() throws IOException {
 		multipleOutputs.close();
 	}
-
 }

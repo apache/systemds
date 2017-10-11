@@ -42,7 +42,7 @@ public class CustomErrorListener extends BaseErrorListener {
 	/**
 	 * List of parse issues.
 	 */
-	private List<ParseIssue> parseIssues = new ArrayList<ParseIssue>();
+	private List<ParseIssue> parseIssues = new ArrayList<>();
 
 	public void setCurrentFileName(String currentFilePath) {
 		currentFileName = currentFilePath;

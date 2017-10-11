@@ -122,7 +122,7 @@ public class VariableCPInstruction extends CPInstruction {
 		super(sopcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.Variable;
 		opcode = op;
-		inputs = new ArrayList<CPOperand>();
+		inputs = new ArrayList<>();
 		addInput(in1);
 		addInput(in2);
 		addInput(in3);

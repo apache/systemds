@@ -79,9 +79,9 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		String functionName = parts[2];
 		int numInputs = Integer.valueOf(parts[3]);
 		int numOutputs = Integer.valueOf(parts[4]);
-		ArrayList<CPOperand> boundInParamOperands = new ArrayList<CPOperand>();
-		ArrayList<String> boundInParamNames = new ArrayList<String>();
-		ArrayList<String> boundOutParamNames = new ArrayList<String>();
+		ArrayList<CPOperand> boundInParamOperands = new ArrayList<>();
+		ArrayList<String> boundInParamNames = new ArrayList<>();
+		ArrayList<String> boundOutParamNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
 			CPOperand operand = new CPOperand(parts[5 + i]);
 			boundInParamOperands.add(operand);
@@ -188,8 +188,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 
-		Collection<String> retVarnames = new LinkedList<String>(retVars.keySet());
-		HashSet<String> probeVars = new HashSet<String>();
+		Collection<String> retVarnames = new LinkedList<>(retVars.keySet());
+		HashSet<String> probeVars = new HashSet<>();
 		for(DataIdentifier di : fpb.getOutputParams())
 			probeVars.add(di.getName());
 		for( String var : retVarnames ) {

@@ -38,21 +38,21 @@ public abstract class Expression implements ParseInfo
 	 */
 	public enum BinaryOp {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
-	};
+	}
 
 	/**
 	 * Relational operators.
 	 */
 	public enum RelationalOp {
 		LESSEQUAL, LESS, GREATEREQUAL, GREATER, EQUAL, NOTEQUAL, INVALID
-	};
+	}
 
 	/**
 	 * Boolean operators.
 	 */
 	public enum BooleanOp {
 		CONDITIONALAND, CONDITIONALOR, LOGICALAND, LOGICALOR, NOT, INVALID
-	};
+	}
 
 	/**
 	 * Built-in function operators.
@@ -136,7 +136,7 @@ public abstract class Expression implements ParseInfo
 		TRACE, 
 		TRANS,
 		VAR
-	};
+	}
 
 	/**
 	 * Parameterized built-in function operators.
@@ -148,7 +148,7 @@ public abstract class Expression implements ParseInfo
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING,	// The "toString" method for DML; named arguments accepted to format output
 		INVALID
-	};
+	}
 	
 	/**
 	 * Data operators.
@@ -162,7 +162,7 @@ public abstract class Expression implements ParseInfo
 	 */
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
-	};
+	}
 
 	/**
 	 * Data types (matrix, scalar, frame, object, unknown).
@@ -176,21 +176,21 @@ public abstract class Expression implements ParseInfo
 		public boolean isScalar() {
 			return (this == SCALAR);
 		}
-	};
+	}
 
 	/**
 	 * Value types (int, double, string, boolean, object, unknown).
 	 */
 	public enum ValueType {
 		INT, DOUBLE, STRING, BOOLEAN, OBJECT, UNKNOWN
-	};
+	}
 
 	/**
 	 * Format types (text, binary, matrix market, csv, unknown).
 	 */
 	public enum FormatType {
 		TEXT, BINARY, MM, CSV
-	};
+	}
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 	
@@ -594,7 +594,7 @@ public abstract class Expression implements ParseInfo
 	private int _beginLine, _beginColumn;
 	private int _endLine, _endColumn;
 	private String _text;
-	private ArrayList<String> _parseExceptionList = new ArrayList<String>();
+	private ArrayList<String> _parseExceptionList = new ArrayList<>();
 	
 	public void setFilename(String passed)  { _filename = passed;   }
 	public void setBeginLine(int passed)    { _beginLine = passed;   }

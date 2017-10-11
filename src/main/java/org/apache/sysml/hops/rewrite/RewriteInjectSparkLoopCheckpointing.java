@@ -76,7 +76,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 		    && (_checkCtx ? !status.isInParforContext() : true)  )
 		{
 			//step 1: determine checkpointing candidates
-			ArrayList<String> candidates = new ArrayList<String>(); 
+			ArrayList<String> candidates = new ArrayList<>();
 			VariableSet read = sb.variablesRead();
 			VariableSet updated = sb.variablesUpdated();
 			
@@ -90,7 +90,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 				StatementBlock sb0 = new StatementBlock();
 				sb0.setDMLProg(sb.getDMLProg());
 				sb0.setParseInfo(sb);
-				ArrayList<Hop> hops = new ArrayList<Hop>();
+				ArrayList<Hop> hops = new ArrayList<>();
 				VariableSet livein = new VariableSet();
 				VariableSet liveout = new VariableSet();
 				for( String var : candidates ) 

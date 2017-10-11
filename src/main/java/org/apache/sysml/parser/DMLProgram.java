@@ -38,9 +38,9 @@ public class DMLProgram
 	private static final Log LOG = LogFactory.getLog(DMLProgram.class.getName());
 	
 	public DMLProgram(){
-		_blocks = new ArrayList<StatementBlock>();
-		_functionBlocks = new HashMap<String,FunctionStatementBlock>();
-		_namespaces = new HashMap<String,DMLProgram>();
+		_blocks = new ArrayList<>();
+		_functionBlocks = new HashMap<>();
+		_namespaces = new HashMap<>();
 	}
 	
 	public HashMap<String,DMLProgram> getNamespaces(){
@@ -97,7 +97,7 @@ public class DMLProgram
 	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() 
 		throws LanguageException
 	{
-		ArrayList<FunctionStatementBlock> ret = new ArrayList<FunctionStatementBlock>();
+		ArrayList<FunctionStatementBlock> ret = new ArrayList<>();
 		
 		for( DMLProgram nsProg : _namespaces.values() )
 			ret.addAll(nsProg._functionBlocks.values());

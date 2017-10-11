@@ -56,7 +56,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		ArrayList<CPOperand> outputs = new ArrayList<CPOperand>();
+		ArrayList<CPOperand> outputs = new ArrayList<>();
 		// first part is always the opcode
 		String opcode = parts[0];
 		

@@ -53,11 +53,11 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 	private CM_N_COVInstruction[] cmNcovInstructions=null;
 	private CM_N_COVCell cmNcovCell=new CM_N_COVCell(); 
 	private COV covFn=COV.getCOMFnObject();
-	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
+	private HashMap<Byte, CM> cmFn = new HashMap<>();
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
 	private MatrixCell outCell=new MatrixCell();
-	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
-	protected HashSet<Byte> covTags=new HashSet<Byte>();
+	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<>();
+	protected HashSet<Byte> covTags=new HashSet<>();
 	private CM_COV_Object zeroObj=null;
 	
 	//the dimension for all the representative matrices 
@@ -137,8 +137,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
-		rlens=new HashMap<Byte, Long>();
-		clens=new HashMap<Byte, Long>();
+		rlens=new HashMap<>();
+		clens=new HashMap<>();
 		for(CM_N_COVInstruction ins: cmNcovInstructions)
 		{
 			if(ins.getOperator() instanceof COVOperator)

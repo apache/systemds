@@ -36,7 +36,7 @@ public class CombineBinary extends Lop
 {
 
 	
-	public enum OperationTypes {PreSort, PreCentralMoment, PreCovUnweighted, PreGroupedAggUnweighted}; // (PreCovWeighted,PreGroupedAggWeighted) will be CombineTertiary	
+	public enum OperationTypes {PreSort, PreCentralMoment, PreCovUnweighted, PreGroupedAggUnweighted}
 	OperationTypes operation;
 
 	/**
@@ -109,7 +109,7 @@ public class CombineBinary extends Lop
 	public static CombineBinary constructCombineLop(OperationTypes op, Lop input1, 
 			Lop input2, DataType dt, ValueType vt) {
 		
-		HashSet<Lop> set1 = new HashSet<Lop>();
+		HashSet<Lop> set1 = new HashSet<>();
 		set1.addAll(input1.getOutputs());
 		
 		// find intersection of input1.getOutputs() and input2.getOutputs();

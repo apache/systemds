@@ -44,7 +44,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 public class NativeHelper {
 	private static boolean isSystemMLLoaded = false;
 	private static final Log LOG = LogFactory.getLog(NativeHelper.class.getName());
-	private static HashMap<String, String> supportedArchitectures = new HashMap<String, String>();
+	private static HashMap<String, String> supportedArchitectures = new HashMap<>();
 	public static String blasType;
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;

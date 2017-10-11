@@ -248,7 +248,7 @@ public class OptimizerUtils
 		O3_LOCAL_RESOURCE_TIME_MEMORY,
 		O4_GLOBAL_TIME_MEMORY,
 		O5_DEBUG_MODE,
-	};
+	}
 		
 	public static OptimizationLevel getOptLevel() {
 		int optlevel = ConfigurationManager.getCompilerConfig().getInt(ConfigType.OPT_LEVEL);
@@ -1131,7 +1131,7 @@ public class OptimizerUtils
 			return defaultValue;
 		ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 		try {
-			HashMap<Long,Long> memo = new HashMap<Long,Long>();
+			HashMap<Long,Long> memo = new HashMap<>();
 			long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo);
 			long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo);
 			long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 : 
@@ -1148,7 +1148,7 @@ public class OptimizerUtils
 			return defaultValue;
 		ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 		try {
-			HashMap<Long,Long> memo = new HashMap<Long,Long>();
+			HashMap<Long,Long> memo = new HashMap<>();
 			long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo, vars);
 			long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo, vars);
 			long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 : 
@@ -1177,7 +1177,7 @@ public class OptimizerUtils
 		long ret = Long.MAX_VALUE;
 		
 		//for simplicity and robustness call double and cast.
-		HashMap<Long, Double> dvalMemo = new HashMap<Long, Double>();
+		HashMap<Long, Double> dvalMemo = new HashMap<>();
 		double tmp = rEvalSimpleDoubleExpression(root, dvalMemo);
 		if( tmp!=Double.MAX_VALUE )
 			ret = UtilFunctions.toLong( tmp );
@@ -1191,7 +1191,7 @@ public class OptimizerUtils
 		long ret = Long.MAX_VALUE;
 		
 		//for simplicity and robustness call double and cast.
-		HashMap<Long, Double> dvalMemo = new HashMap<Long, Double>();
+		HashMap<Long, Double> dvalMemo = new HashMap<>();
 		double tmp = rEvalSimpleDoubleExpression(root, dvalMemo, vars);
 		if( tmp!=Double.MAX_VALUE )
 			ret = UtilFunctions.toLong( tmp );

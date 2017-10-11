@@ -34,7 +34,6 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Ternary extends Lop 
 {
-	
 	private boolean _ignoreZeros = false;
 	
 	public enum OperationTypes { 
@@ -43,7 +42,8 @@ public class Ternary extends Lop
 		CTABLE_TRANSFORM_HISTOGRAM, 
 		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, 
 		CTABLE_EXPAND_SCALAR_WEIGHT, 
-		INVALID };	
+		INVALID 
+	}
 	
 	OperationTypes operation;
 	

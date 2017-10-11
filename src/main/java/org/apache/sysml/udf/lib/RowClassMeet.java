@@ -163,7 +163,7 @@ public class RowClassMeet extends PackageFunction {
 					getRow(B, bRow, i);
 				
 				// Create class labels
-				TreeMap<ClassLabels, ArrayList<Integer>> classLabelMapping = new TreeMap<ClassLabels, ArrayList<Integer>>(new ClassLabelComparator());
+				TreeMap<ClassLabels, ArrayList<Integer>> classLabelMapping = new TreeMap<>(new ClassLabelComparator());
 				if(A.isInSparseFormat()) {
 					Iterator<IJV> iter = A.getSparseBlockIterator(i, i+1);
 					while(iter.hasNext()) {

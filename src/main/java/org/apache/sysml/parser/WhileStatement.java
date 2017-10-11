@@ -25,8 +25,6 @@ import java.util.ArrayList;
 
 public class WhileStatement extends Statement
 {
-		
-	
 	private ConditionalPredicate _predicate;
 	private ArrayList<StatementBlock> _body;
 	
@@ -35,16 +33,15 @@ public class WhileStatement extends Statement
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
 	}
 	
-	public WhileStatement(){
-		 _predicate = null;
-		 _body = new ArrayList<StatementBlock>();
+	public WhileStatement() {
+		_predicate = null;
+		_body = new ArrayList<>();
 	}
 	
 	public void setPredicate(ConditionalPredicate pred){
 		_predicate = pred;
 	}
-	
-	
+		
 	public void addStatementBlock(StatementBlock sb){
 		_body.add(sb);
 	}
@@ -66,7 +63,6 @@ public class WhileStatement extends Statement
 		return true;
 	}
 	
-
 	public void mergeStatementBlocks(){
 		_body = StatementBlock.mergeStatementBlocks(_body);
 	}

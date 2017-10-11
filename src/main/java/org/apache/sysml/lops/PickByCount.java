@@ -36,7 +36,7 @@ public class PickByCount extends Lop
 		RANGEPICK, 
 		IQM, 
 		MEDIAN
-	};	
+	}
 	
 	private OperationTypes operation;
 	private boolean inMemoryInput = false;

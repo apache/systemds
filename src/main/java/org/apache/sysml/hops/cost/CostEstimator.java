@@ -351,7 +351,7 @@ public abstract class CostEstimator
 		}
 		
 		//compute intermediate result indices
-		HashMap<Byte,MatrixCharacteristics> dims = new HashMap<Byte, MatrixCharacteristics>();
+		HashMap<Byte,MatrixCharacteristics> dims = new HashMap<>();
 		//populate input indices
 		for( Entry<String,VarStats> e : stats.entrySet() )
 		{

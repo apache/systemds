@@ -87,7 +87,7 @@ public class DmlPreprocessor implements DmlListener {
 
 	public DmlPreprocessor(CustomErrorListener errorListener) {
 		this.errorListener = errorListener;
-		functions = new HashSet<String>();
+		functions = new HashSet<>();
 	}
 
 	public Set<String> getFunctionDefs() {

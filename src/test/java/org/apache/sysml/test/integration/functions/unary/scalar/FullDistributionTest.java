@@ -45,7 +45,7 @@ public class FullDistributionTest extends AutomatedTestBase
 	private enum TEST_TYPE { 
 		NORMAL, NORMAL_NOPARAMS, NORMAL_MEAN, 
 		NORMAL_SD, F, T, CHISQ, EXP, EXP_NOPARAMS 
-	};
+	}
 	
 	
 	@Override

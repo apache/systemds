@@ -29,7 +29,6 @@ import java.util.TreeMap;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression.DataType;
@@ -110,11 +109,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		_baseDir = baseDir;
 		
 		// copy other params
-		_otherParams = new HashMap<String, String>();
+		_otherParams = new HashMap<>();
 		_otherParams.putAll(otherParams);
 
-		_unblockedFileNames = new HashMap<String, String>();
-		_blockedFileNames = new HashMap<String, String>();
+		_unblockedFileNames = new HashMap<>();
+		_blockedFileNames = new HashMap<>();
 	
 		// generate instructions
 		createInstructions();
@@ -185,7 +184,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// convert block to cell
 		if( block2CellInst != null )
 		{
-			ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
+			ArrayList<Instruction> tempInst = new ArrayList<>();
 			tempInst.addAll(block2CellInst);
 			try {
 				this.executeInstructions(tempInst,ec);
@@ -212,7 +211,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// convert cell to block
 		if( cell2BlockInst != null )
 		{
-			ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
+			ArrayList<Instruction> tempInst = new ArrayList<>();
 			try {
 				tempInst.clear();
 				tempInst.addAll(cell2BlockInst);
@@ -276,7 +275,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 */
 	protected void createInstructions() {
 
-		_inst = new ArrayList<Instruction>();
+		_inst = new ArrayList<>();
 
 		// unblock all input matrices
 		block2CellInst = getBlock2CellInstructions(getInputParams(),_unblockedFileNames);
@@ -327,8 +326,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		ArrayList<Instruction> c2binst = null;
 		
 		//list of matrices that need to be reblocked
-		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
-		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> matrices = new ArrayList<>();
+		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<>();
 
 		// identify outputs that are matrices
 		for (int i = 0; i < outputParams.size(); i++) {
@@ -342,15 +341,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 		if( !matrices.isEmpty() )
 		{
-			c2binst = new ArrayList<Instruction>();
+			c2binst = new ArrayList<>();
 			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK);
 			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
 			if(DMLScript.ENABLE_DEBUG_MODE) {
-				MRJobLineNumbers = new TreeMap<Integer, ArrayList<String>>();
+				MRJobLineNumbers = new TreeMap<>();
 			}
 			
-			ArrayList<String> inLabels = new ArrayList<String>();
-			ArrayList<String> outLabels = new ArrayList<String>();
+			ArrayList<String> inLabels = new ArrayList<>();
+			ArrayList<String> outLabels = new ArrayList<>();
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 			String reblock = "";
@@ -364,25 +363,25 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					inLabels.add(matrices.get(i).getName());
 					outLabels.add(matrices.get(i).getName() + "_extFnOutput");
 					outputs[i] = scratchSpaceLoc +
-					             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-		                         _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Output";
+							Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+							_otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Output";
 					blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 					resultIndex[i] = (byte) i; // (matrices.size()+i);
 		
 					if (i > 0)
 						reblock += Lop.INSTRUCTION_DELIMITOR;
 		
-					reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
-									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-									ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + "true";
+					reblock += "MR" + Lop.OPERAND_DELIMITOR + "rblk" + Lop.OPERAND_DELIMITOR + 
+									i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+									i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+									ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + "true";
 					
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						//Create a copy of reblock instruction but as a single instruction (FOR DEBUGGER)
-						reblockStr = "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
-										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-										ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize()  + ReBlock.OPERAND_DELIMITOR + "true";					
+						reblockStr = "MR" + Lop.OPERAND_DELIMITOR + "rblk" + Lop.OPERAND_DELIMITOR + 
+										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+										ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize()  + Lop.OPERAND_DELIMITOR + "true";					
 						//Set MR reblock instruction line number (FOR DEBUGGER)
 						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
 							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
@@ -448,8 +447,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		ArrayList<Instruction> b2cinst = null;
 		
 		//list of input matrices
-		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
-		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> matrices = new ArrayList<>();
+		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<>();
 
 		// find all inputs that are matrices
 		for (int i = 0; i < inputParams.size(); i++) {
@@ -463,15 +462,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		
 		if( !matrices.isEmpty() )
 		{
-			b2cinst = new ArrayList<Instruction>();
+			b2cinst = new ArrayList<>();
 			MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
 			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
 			if(DMLScript.ENABLE_DEBUG_MODE) {
-				MRJobLineNumbers = new TreeMap<Integer, ArrayList<String>>();
+				MRJobLineNumbers = new TreeMap<>();
 			}
 			String gmrStr="";
-			ArrayList<String> inLabels = new ArrayList<String>();
-			ArrayList<String> outLabels = new ArrayList<String>();
+			ArrayList<String> inLabels = new ArrayList<>();
+			ArrayList<String> outLabels = new ArrayList<>();
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 	
@@ -632,7 +631,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// iterate over each output and verify that type matches
 		for (int i = 0; i < outputs.size(); i++) {
 			StringTokenizer tk = new StringTokenizer(outputs.get(i), ":");
-			ArrayList<String> tokens = new ArrayList<String>();
+			ArrayList<String> tokens = new ArrayList<>();
 			while (tk.hasMoreTokens()) {
 				tokens.add(tk.nextToken());
 			}
@@ -760,10 +759,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 */
 	protected ArrayList<FunctionParameter> getInputObjects(ArrayList<String> inputs,
 			LocalVariableMap variableMapping) {
-		ArrayList<FunctionParameter> inputObjects = new ArrayList<FunctionParameter>();
+		ArrayList<FunctionParameter> inputObjects = new ArrayList<>();
 
 		for (int i = 0; i < inputs.size(); i++) {
-			ArrayList<String> tokens = new ArrayList<String>();
+			ArrayList<String> tokens = new ArrayList<>();
 			StringTokenizer tk = new StringTokenizer(inputs.get(i), ":");
 			while (tk.hasMoreTokens()) {
 				tokens.add(tk.nextToken());
@@ -848,7 +847,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return list of string inputs
 	 */
 	protected ArrayList<String> getParameters(String inputParams) {
-		ArrayList<String> inputs = new ArrayList<String>();
+		ArrayList<String> inputs = new ArrayList<>();
 
 		StringTokenizer tk = new StringTokenizer(inputParams, ",");
 		while (tk.hasMoreTokens()) {
@@ -925,13 +924,13 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	
 	//FUNCTION PATCH
 	
-	private Collection<String> _skipInReblock = new HashSet<String>();
-	private Collection<String> _skipOutReblock = new HashSet<String>();
+	private Collection<String> _skipInReblock = new HashSet<>();
+	private Collection<String> _skipOutReblock = new HashSet<>();
 	
 	@Override
 	public ArrayList<Instruction> getInstructions()
 	{
-		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		ArrayList<Instruction> tmp = new ArrayList<>();
 		if( cell2BlockInst != null )
 			tmp.addAll(cell2BlockInst);
 		if( block2CellInst != null )

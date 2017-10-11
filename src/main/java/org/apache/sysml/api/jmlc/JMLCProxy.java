@@ -40,7 +40,7 @@ public class JMLCProxy
 	
 	public static void setActive(String[] output) {
 		if( output != null )
-			_outputs.set(new HashSet<String>(Arrays.asList(output)));
+			_outputs.set(new HashSet<>(Arrays.asList(output)));
 		else
 			_outputs.remove();
 	}

@@ -54,7 +54,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 			
-		ArrayList<ParameterExpression> newParameterExpressions = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> newParameterExpressions = new ArrayList<>();
 		for (ParameterExpression paramExpr : _paramExprs)
 			newParameterExpressions.add(new ParameterExpression(paramExpr.getName(), paramExpr.getExpr().rewriteExpression(prefix)));
 		

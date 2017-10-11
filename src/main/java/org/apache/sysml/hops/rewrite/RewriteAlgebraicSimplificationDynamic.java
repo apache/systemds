@@ -1092,7 +1092,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//remove all parent links to binary op (since we want to reorder
 				//we cannot just look at the current parent)
 				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
-				ArrayList<Integer> parentspos = new ArrayList<Integer>(); 
+				ArrayList<Integer> parentspos = new ArrayList<>(); 
 				for(Hop lparent : parents) {
 					int lpos = HopRewriteUtils.getChildReferencePos(lparent, hi);
 					HopRewriteUtils.removeChildReferenceByPos(lparent, hi, lpos);
@@ -2559,7 +2559,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), second.getDim1()) )
 			{
 				//setup input parameter hops
-				HashMap<String,Hop> args = new HashMap<String,Hop>();
+				HashMap<String,Hop> args = new HashMap<>();
 				args.put("target", second);
 				args.put("max", hi.getInput().get(4));
 				args.put("dir", new LiteralOp("cols"));
@@ -2580,7 +2580,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(4), first.getDim1()) )
 			{
 				//setup input parameter hops
-				HashMap<String,Hop> args = new HashMap<String,Hop>();
+				HashMap<String,Hop> args = new HashMap<>();
 				args.put("target", first);
 				args.put("max", hi.getInput().get(3));
 				args.put("dir", new LiteralOp("rows"));

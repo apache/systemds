@@ -115,8 +115,8 @@ public class TemplateCell extends TemplateBase
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//recursively process required cplan output
-		HashSet<Hop> inHops = new HashSet<Hop>();
-		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
+		HashSet<Hop> inHops = new HashSet<>();
+		HashMap<Long, CNode> tmp = new HashMap<>();
 		hop.resetVisitStatus();
 		rConstructCplan(hop, memo, tmp, inHops, compileLiterals);
 		hop.resetVisitStatus();
@@ -129,7 +129,7 @@ public class TemplateCell extends TemplateBase
 			.sorted(new HopInputComparator()).toArray(Hop[]::new);
 		
 		//construct template node
-		ArrayList<CNode> inputs = new ArrayList<CNode>();
+		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
 			inputs.add(tmp.get(in.getHopID()));
 		CNode output = tmp.get(hop.getHopID());
@@ -142,7 +142,7 @@ public class TemplateCell extends TemplateBase
 		tpl.setBeginLine(hop.getBeginLine());
 		
 		// return cplan instance
-		return new Pair<Hop[],CNodeTpl>(sinHops, tpl);
+		return new Pair<>(sinHops, tpl);
 	}
 	
 	protected void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 

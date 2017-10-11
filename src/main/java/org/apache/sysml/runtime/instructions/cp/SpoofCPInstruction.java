@@ -53,7 +53,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
-		ArrayList<CPOperand> inlist = new ArrayList<CPOperand>();
+		ArrayList<CPOperand> inlist = new ArrayList<>();
 		Class<?> cla = CodegenUtils.getClass(parts[1]);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
 		String opcode =  parts[0] + op.getSpoofType();
@@ -71,8 +71,8 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		throws DMLRuntimeException 
 	{
 		//get input matrices and scalars, incl pinning of matrices
-		ArrayList<MatrixBlock> inputs = new ArrayList<MatrixBlock>();
-		ArrayList<ScalarObject> scalars = new ArrayList<ScalarObject>();
+		ArrayList<MatrixBlock> inputs = new ArrayList<>();
+		ArrayList<ScalarObject> scalars = new ArrayList<>();
 		for (CPOperand input : _in) {
 			if(input.getDataType()==DataType.MATRIX)
 				inputs.add(ec.getMatrixInput(input.getName(), getExtendedOpcode()));

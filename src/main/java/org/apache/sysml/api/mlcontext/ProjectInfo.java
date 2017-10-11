@@ -57,7 +57,7 @@ public class ProjectInfo {
 			systemMlJar = new JarFile(path);
 			Manifest manifest = systemMlJar.getManifest();
 			Attributes mainAttributes = manifest.getMainAttributes();
-			properties = new TreeMap<String, String>();
+			properties = new TreeMap<>();
 			for (Object key : mainAttributes.keySet()) {
 				String value = mainAttributes.getValue((Name) key);
 				properties.put(key.toString(), value);

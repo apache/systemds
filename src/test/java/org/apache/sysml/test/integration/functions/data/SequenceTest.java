@@ -47,7 +47,7 @@ public class SequenceTest extends AutomatedTestBase
 	private final static String TEST_NAME = "Sequence";
 	private final static String TEST_CLASS_DIR = TEST_DIR + SequenceTest.class.getSimpleName() + "/";
 	
-	private enum TEST_TYPE { THREE_INPUTS, TWO_INPUTS, ERROR };
+	private enum TEST_TYPE { THREE_INPUTS, TWO_INPUTS, ERROR }
 	
 	private final static double eps = 1e-10;
 	

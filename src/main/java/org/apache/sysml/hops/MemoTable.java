@@ -38,7 +38,7 @@ public class MemoTable
 	
 	public MemoTable()
 	{
-		_memo = new HashMap<Long, MatrixCharacteristics>();
+		_memo = new HashMap<>();
 	}
 
 	public void init( ArrayList<Hop> hops, RecompileStatus status)

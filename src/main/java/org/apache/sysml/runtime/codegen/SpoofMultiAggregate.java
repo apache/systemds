@@ -117,7 +117,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		{
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<ParAggTask> tasks = new ArrayList<ParAggTask>();
+				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
 				for( int i=0; i<nk & i*blklen<m; i++ )
@@ -128,7 +128,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 				pool.shutdown();
 			
 				//aggregate partial results
-				ArrayList<double[]> pret = new ArrayList<double[]>();
+				ArrayList<double[]> pret = new ArrayList<>();
 				for( Future<double[]> task : taskret )
 					pret.add(task.get());
 				aggregatePartialResults(c, pret);

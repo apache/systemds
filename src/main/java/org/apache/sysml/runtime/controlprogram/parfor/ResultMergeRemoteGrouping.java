@@ -25,21 +25,17 @@ import org.apache.hadoop.io.WritableComparator;
 
 public class ResultMergeRemoteGrouping extends WritableComparator
 {
-	
-	
-	protected ResultMergeRemoteGrouping()
-	{
+	protected ResultMergeRemoteGrouping() {
 		super(ResultMergeTaggedMatrixIndexes.class,true);
 	}
 	
-	@SuppressWarnings("rawtypes") 
 	@Override
 	public int compare(WritableComparable k1, WritableComparable k2) 
 	{
 		ResultMergeTaggedMatrixIndexes key1 = (ResultMergeTaggedMatrixIndexes)k1;
 		ResultMergeTaggedMatrixIndexes key2 = (ResultMergeTaggedMatrixIndexes)k2;
-	    
+		
 		//group by matrix indexes only (including all tags)
- 	    return key1.getIndexes().compareTo(key2.getIndexes());
+		return key1.getIndexes().compareTo(key2.getIndexes());
 	}
 }

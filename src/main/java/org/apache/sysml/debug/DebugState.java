@@ -29,7 +29,7 @@ public class DebugState
 {
 	
 	public String [] dmlScript;
-	public Stack<DMLFrame> callStack = new Stack<DMLFrame>();
+	public Stack<DMLFrame> callStack = new Stack<>();
 	public DMLProgramCounter pc = null, prevPC = null;
 	public LocalVariableMap frameVariables=null;
 	public String dbCommand=null;

@@ -67,9 +67,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	
 	//distributed cache data handling
 	public static boolean isJobLocal = false; //set from MapperBase
-	public static HashMap<Byte, DistributedCacheInput> dcValues = new HashMap<Byte, DistributedCacheInput>();
+	public static HashMap<Byte, DistributedCacheInput> dcValues = new HashMap<>();
  	
-	protected HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
+	protected HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<>();
 	
 	//temporary variables
 	protected IndexedMatrixValue tempValue=null;

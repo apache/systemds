@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCT
 public class DMLBreakpointManager {
 	
 	/** Map between DML script line numbers and breakpoint instructions */
-	private static TreeMap<Integer, BreakPointInstruction> breakpoints = new TreeMap<Integer, BreakPointInstruction>();
+	private static TreeMap<Integer, BreakPointInstruction> breakpoints = new TreeMap<>();
 	
 	
 	/**

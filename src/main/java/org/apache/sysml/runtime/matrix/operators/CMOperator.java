@@ -38,7 +38,7 @@ public class CMOperator extends Operator
 		CM4,
 		VARIANCE,
 		INVALID
-	};
+	}
 
 	public ValueFunction fn;
 	public AggregateOperationTypes aggOpType;

@@ -45,12 +45,12 @@ implements Mapper<Writable, Writable, Writable, Writable>
 {
 	
 	private boolean firsttime=true;
-	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
+	private HashMap<Byte, CM> cmFn = new HashMap<>();
 	private COV covFn=COV.getCOMFnObject();
 	private OutputCollector<Writable, Writable> cachedCollector=null;
 	private CachedValueMap cmNcovCache=new CachedValueMap();
-	protected HashSet<Byte> cmTags=new HashSet<Byte>();
-	protected HashSet<Byte> covTags=new HashSet<Byte>();
+	protected HashSet<Byte> cmTags=new HashSet<>();
+	protected HashSet<Byte> covTags=new HashSet<>();
 	@Override
 	public void map(Writable index, Writable cell,
 			OutputCollector<Writable, Writable> out, Reporter report)

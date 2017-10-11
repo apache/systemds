@@ -341,7 +341,7 @@ public class DataConverter
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		long nnz = mb.getNonZeros();
-		ArrayList<Double> ret = new ArrayList<Double>();
+		ArrayList<Double> ret = new ArrayList<>();
 		
 		if( mb.isInSparseFormat() )
 		{

@@ -87,7 +87,7 @@ public class PydmlPreprocessor implements PydmlListener {
 
 	public PydmlPreprocessor(CustomErrorListener errorListener) {
 		this.errorListener = errorListener;
-		functions = new HashSet<String>();
+		functions = new HashSet<>();
 	}
 
 	public Set<String> getFunctionDefs() {

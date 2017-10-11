@@ -28,14 +28,13 @@ import org.apache.sysml.debug.DMLBreakpointManager;
 
 public class MultiAssignmentStatement extends Statement
 {
-		
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
 		
 	// rewrites statement to support function inlining (creates deep copy) 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 				
-		ArrayList<DataIdentifier> newTargetList = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> newTargetList = new ArrayList<>();
 		
 		// rewrite targetList (deep copy)
 		for (DataIdentifier target : _targetList){

@@ -41,12 +41,11 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 //sorted by first index, tag, and second index
 public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstSecondIndexes>
 {
-	
 	protected long first=-1;
 	protected byte tag=-1;
 	protected long second=-1;
 	
-	public TaggedFirstSecondIndexes(){};
+	public TaggedFirstSecondIndexes(){}
 	public TaggedFirstSecondIndexes(long i1, byte t, long i2)
 	{
 		setIndexes(i1,i2);
@@ -182,7 +181,7 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 			for(int i=0; i<matrices.length; i++)
 				inRstep[i]=(long) Math.ceil((double)MRJobConfiguration.getNumRows(job, (byte)i)/(double)partitions);
 			byte maxIndex=0;
-			HashMap<Byte, Long> outRsteps=new HashMap<Byte, Long>();
+			HashMap<Byte, Long> outRsteps=new HashMap<>();
 			try {
 				CSVWriteInstruction[] ins = MRJobConfiguration.getCSVWriteInstructions(job);
 				for(CSVWriteInstruction in: ins)

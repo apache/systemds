@@ -842,7 +842,7 @@ public class DMLScript
 	{
 		//analyze local configuration
 		String userName = System.getProperty( "user.name" );
-		HashSet<String> groupNames = new HashSet<String>();
+		HashSet<String> groupNames = new HashSet<>();
 		try{
 			//check existence, for backwards compatibility to < hadoop 0.21
 			if( UserGroupInformation.class.getMethod("getCurrentUser") != null ){

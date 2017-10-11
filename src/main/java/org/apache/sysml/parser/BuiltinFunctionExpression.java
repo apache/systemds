@@ -246,7 +246,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
 			int skip) throws LanguageException {
-		ArrayList<ParameterExpression> newParams = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> newParams = new ArrayList<>();
 
 		for(int i = 0; i < skip; i++)
 			newParams.add(paramExpression.get(i));
@@ -274,7 +274,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	private ArrayList<ParameterExpression> replaceListParams(ArrayList<ParameterExpression> paramExpression,
 			String inputVarName, String outputVarName, int startIndex) throws LanguageException {
-		ArrayList<ParameterExpression> newParamExpression = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> newParamExpression = new ArrayList<>();
 		int i = startIndex;
 		int j = 1; // Assumption: sequential ordering pool_size1, pool_size2 
 		for (ParameterExpression expr : paramExpression) {
@@ -291,7 +291,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	private ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
 			HashSet<String> paramsToExpand) throws LanguageException {
-		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<>();
 		for(ParameterExpression expr : paramExpression) {
 			if(paramsToExpand.contains(expr.getName())) {
 				if(expr.getExpr() instanceof ExpressionList) {
@@ -316,14 +316,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		try {
 			if(_opcode == BuiltinFunctionOp.CONV2D || _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER 
 					|| _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
-				HashSet<String> expand = new HashSet<String>();
+				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression = orderConvolutionParams(paramExpression, 2);
 			}
 			else if(_opcode == BuiltinFunctionOp.MAX_POOL || 
 					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD) {
-				HashSet<String> expand = new HashSet<String>();
+				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression.add(new ParameterExpression("filter_shape1", new IntIdentifier(1, this)));

@@ -80,7 +80,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		TSMM2,    //transpose-self matrix multiplication, 2-pass w/o shuffle (sp)
 		ZIPMM,    //zip matrix multiplication (sp)
 		MM        //in-memory matrix multiplication (cp)
-	};
+	}
 	
 	public enum SparkAggType{
 		NONE,

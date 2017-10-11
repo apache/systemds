@@ -55,7 +55,7 @@ public class Matrix extends FunctionParameter
 	public enum ValueType {
 		Double,
 		Integer
-	};
+	}
 	
 	/**
 	 * This constructor invokes Matrix(String path, long rows, long cols, ValueType vType)

@@ -68,7 +68,7 @@ public class PlanAnalyzer
 	private static Collection<HashSet<Long>> getConnectedSubGraphs(CPlanMemoTable memo, ArrayList<Hop> roots) 
 	{
 		//build inverted index for 'referenced by' relationship 
-		HashMap<Long, HashSet<Long>> refBy = new HashMap<Long, HashSet<Long>>();
+		HashMap<Long, HashSet<Long>> refBy = new HashMap<>();
 		for( Entry<Long, List<MemoTableEntry>> e : memo.getPlans().entrySet() )
 			for( MemoTableEntry me : e.getValue() ) 
 				for( int i=0; i<3; i++ )
@@ -80,8 +80,8 @@ public class PlanAnalyzer
 		
 		//create a single partition per root node, if reachable over refBy of 
 		//other root node the resulting partition is empty and can be discarded
-		ArrayList<HashSet<Long>> parts = new ArrayList<HashSet<Long>>();
-		HashSet<Long> visited = new HashSet<Long>();
+		ArrayList<HashSet<Long>> parts = new ArrayList<>();
+		HashSet<Long> visited = new HashSet<>();
 		for( Entry<Long, List<MemoTableEntry>> e : memo.getPlans().entrySet() )
 			if( !refBy.containsKey(e.getKey()) ) { //root node
 				HashSet<Long> part = rGetConnectedSubGraphs(e.getKey(), 
@@ -99,7 +99,7 @@ public class PlanAnalyzer
 	private static HashSet<Long> getPartitionRootNodes(CPlanMemoTable memo, HashSet<Long> partition) 
 	{
 		//build inverted index of references entries 
-		HashSet<Long> ix = new HashSet<Long>();
+		HashSet<Long> ix = new HashSet<>();
 		for( Long hopID : partition )
 			if( memo.contains(hopID) )
 				for( MemoTableEntry me : memo.get(hopID) ) {
@@ -108,7 +108,7 @@ public class PlanAnalyzer
 					ix.add(me.input3);
 				}
 		
-		HashSet<Long> roots = new HashSet<Long>();
+		HashSet<Long> roots = new HashSet<>();
 		for( Long hopID : partition )
 			if( !ix.contains(hopID) )
 				roots.add(hopID);
@@ -125,8 +125,8 @@ public class PlanAnalyzer
 			HashSet<Long> partition, CPlanMemoTable memo) 
 	{
 		//collect materialization points bottom-up
-		ArrayList<Long> ret = new ArrayList<Long>();
-		HashSet<Long> visited = new HashSet<Long>();
+		ArrayList<Long> ret = new ArrayList<>();
+		HashSet<Long> visited = new HashSet<>();
 		for( Long hopID : roots )
 			rCollectMaterializationPoints(memo.getHopRefs().get(hopID), 
 					visited, partition, roots, ret);

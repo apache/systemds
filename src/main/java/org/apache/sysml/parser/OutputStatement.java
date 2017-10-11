@@ -90,7 +90,7 @@ public class OutputStatement extends Statement
 		
 		// rewrite parameter expressions (creates deep copy)
 		DataOp op = _paramsExpr.getOpCode();
-		HashMap<String,Expression> newExprParams = new HashMap<String,Expression>();
+		HashMap<String,Expression> newExprParams = new HashMap<>();
 		for (String key : _paramsExpr.getVarParams().keySet()){
 			Expression newExpr = _paramsExpr.getVarParam(key).rewriteExpression(prefix);
 			newExprParams.put(key, newExpr);

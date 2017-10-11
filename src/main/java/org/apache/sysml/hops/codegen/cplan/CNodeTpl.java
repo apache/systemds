@@ -56,7 +56,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 	
 	public HashSet<Long> getInputHopIDs(boolean inclLiterals) {
-		HashSet<Long> ret = new HashSet<Long>();
+		HashSet<Long> ret = new HashSet<>();
 		for( CNode input : _inputs )
 			if( !input.isLiteral() || inclLiterals )
 				ret.add(((CNodeData)input).getHopID());
@@ -90,7 +90,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	
 	protected void renameInputs(List<CNode> outputs, ArrayList<CNode> inputs, int startIndex) {
 		//create map of hopID to new names used for code generation
-		HashMap<Long, String> newNames = new HashMap<Long, String>();
+		HashMap<Long, String> newNames = new HashMap<>();
 		for(int i=startIndex, sPos=0, mPos=0; i < inputs.size(); i++) {
 			CNode cnode = inputs.get(i);
 			if( cnode instanceof CNodeData && ((CNodeData)cnode).isLiteral() )
@@ -114,7 +114,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 			return;
 		
 		//create temporary name mapping
-		HashMap<Long, String> newNames = new HashMap<Long, String>();
+		HashMap<Long, String> newNames = new HashMap<>();
 		newNames.put(((CNodeData)input).getHopID(), newName);
 		
 		//single pass to replace all names

@@ -74,10 +74,10 @@ public class ProgramRewriter
 	public ProgramRewriter( boolean staticRewrites, boolean dynamicRewrites )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
-		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet = new ArrayList<>();
 		
 		//initialize StatementBlock rewrite ruleSet (with fixed rewrite order)
-		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet = new ArrayList<>();
 		
 		
 		//STATIC REWRITES (which do not rely on size information)
@@ -145,11 +145,11 @@ public class ProgramRewriter
 	 */
 	public ProgramRewriter( HopRewriteRule... rewrites ) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
-		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet = new ArrayList<>();
 		for( HopRewriteRule rewrite : rewrites )
-			_dagRuleSet.add( rewrite );		
+			_dagRuleSet.add( rewrite );
 		
-		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet = new ArrayList<>();
 	}
 	
 	/**
@@ -159,9 +159,9 @@ public class ProgramRewriter
 	 */
 	public ProgramRewriter( StatementBlockRewriteRule... rewrites ) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
-		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet = new ArrayList<>();
 		
-		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet = new ArrayList<>();
 		for( StatementBlockRewriteRule rewrite : rewrites )
 			_sbRuleSet.add( rewrite );
 	}
@@ -174,10 +174,10 @@ public class ProgramRewriter
 	 */
 	public ProgramRewriter(ArrayList<HopRewriteRule> hRewrites, ArrayList<StatementBlockRewriteRule> sbRewrites) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
-		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet = new ArrayList<>();
 		_dagRuleSet.addAll( hRewrites );
 		
-		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet = new ArrayList<>();
 		_sbRuleSet.addAll( sbRewrites );
 	}
 	
@@ -300,7 +300,7 @@ public class ProgramRewriter
 			tmp = r.rewriteStatementBlocks(tmp, status);
 		
 		//recursively rewrite statement blocks (with potential expansion)
-		List<StatementBlock> tmp2 = new ArrayList<StatementBlock>();
+		List<StatementBlock> tmp2 = new ArrayList<>();
 		for( StatementBlock sb : tmp )
 			tmp2.addAll( rRewriteStatementBlock(sb, status) );
 		
@@ -317,7 +317,7 @@ public class ProgramRewriter
 	public ArrayList<StatementBlock> rRewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus status ) 
 		throws HopsException
 	{
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
+		ArrayList<StatementBlock> ret = new ArrayList<>();
 		ret.add(sb);
 		
 		//recursive invocation
@@ -356,7 +356,7 @@ public class ProgramRewriter
 		
 		//apply rewrite rules to individual statement blocks
 		for( StatementBlockRewriteRule r : _sbRuleSet ) {
-			ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for( StatementBlock sbc : ret )
 				tmp.addAll( r.rewriteStatementBlock(sbc, status) );
 			

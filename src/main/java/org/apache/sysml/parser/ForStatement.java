@@ -24,10 +24,8 @@ import java.util.ArrayList;
 
 
 public class ForStatement extends Statement
-{	
-
-	
-	protected IterablePredicate 		_predicate;
+{
+	protected IterablePredicate _predicate;
 	protected ArrayList<StatementBlock> _body;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
@@ -37,7 +35,7 @@ public class ForStatement extends Statement
 	
 	public ForStatement(){
 		 _predicate = null;
-		 _body = new ArrayList<StatementBlock>();
+		 _body = new ArrayList<>();
 	}
 	
 	public void setPredicate(IterablePredicate pred){

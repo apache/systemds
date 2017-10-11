@@ -50,7 +50,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		ArrayList<CPOperand> outputs = new ArrayList<CPOperand>();
+		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("transformencode") ) {

@@ -29,10 +29,9 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 
 public class OutputParameters 
 {
-	
 	public enum Format {
 		TEXT, BINARY, MM, CSV
-	};
+	}
 
 	private boolean _blocked = true;
 	private long _num_rows = -1;

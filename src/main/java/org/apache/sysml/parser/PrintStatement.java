@@ -37,7 +37,7 @@ public class PrintStatement extends Statement
 	 */
 	public enum PRINTTYPE {
 		PRINT, PRINTF, STOP
-	};
+	}
 
 	protected PRINTTYPE _type; // print, printf, or stop
 	protected List<Expression> expressions;
@@ -75,14 +75,14 @@ public class PrintStatement extends Statement
 			throws LanguageException {
 		_type = type;
 		if (expressions == null) {
-			this.expressions = new ArrayList<Expression>();
+			this.expressions = new ArrayList<>();
 		} else {
 			this.expressions = expressions;
 		}
 	}
 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		List<Expression> newExpressions = new ArrayList<Expression>();
+		List<Expression> newExpressions = new ArrayList<>();
 		for (Expression oldExpression : expressions) {
 			Expression newExpression = oldExpression.rewriteExpression(prefix);
 			newExpressions.add(newExpression);

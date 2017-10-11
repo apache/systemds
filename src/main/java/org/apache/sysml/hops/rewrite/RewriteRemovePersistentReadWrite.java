@@ -59,15 +59,15 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 	public RewriteRemovePersistentReadWrite( String[] in, String[] out, LocalVariableMap vars )
 	{
 		//store input and output names
-		_inputs = new HashSet<String>();
+		_inputs = new HashSet<>();
 		for( String var : in )
 			_inputs.add( var );
-		_outputs = new HashSet<String>();
+		_outputs = new HashSet<>();
 		for( String var : out )
 			_outputs.add( var );
 		
 		//store input meta data
-		_inputsMeta = new HashMap<String, MetaData>();
+		_inputsMeta = new HashMap<>();
 		if( vars != null ) {
 			for( String varname : in ) {
 				Data dat = vars.get(varname);

@@ -47,7 +47,7 @@ public abstract class CNode
 	
 	public CNode() {
 		_ID = _seqID.getNextID();
-		_inputs = new ArrayList<CNode>();
+		_inputs = new ArrayList<>();
 		_generated = false;
 	}
 	

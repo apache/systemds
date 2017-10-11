@@ -41,7 +41,7 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
-		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
+		ArrayList<StatementBlock> ret = new ArrayList<>();
 		
 		if( sb instanceof IfStatementBlock )
 		{

@@ -382,7 +382,7 @@ public class DataExpression extends DataIdentifier
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
-		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
+		HashMap<String,Expression> newVarParams = new HashMap<>();
 		for( Entry<String, Expression> e : _varParams.entrySet() ){
 			String key = e.getKey();
 			Expression newExpr = e.getValue().rewriteExpression(prefix);

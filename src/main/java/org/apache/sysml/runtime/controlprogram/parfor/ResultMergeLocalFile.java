@@ -104,7 +104,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			
 			//collect all relevant inputs
-			ArrayList<MatrixObject> inMO = new ArrayList<MatrixObject>();
+			ArrayList<MatrixObject> inMO = new ArrayList<>();
 			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
@@ -508,7 +508,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
 		
-		LinkedList<Cell> buffer = new LinkedList<Cell>();
+		LinkedList<Cell> buffer = new LinkedList<>();
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 
@@ -567,7 +567,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path(mo.getFileName());
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
-		LinkedList<Cell> buffer = new LinkedList<Cell>();
+		LinkedList<Cell> buffer = new LinkedList<>();
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
 	
@@ -608,7 +608,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
 		throws DMLRuntimeException, IOException
 	{
-		HashMap<Long,HashMap<Long,LinkedList<Cell>>> sortedBuffer = new HashMap<Long, HashMap<Long,LinkedList<Cell>>>();
+		HashMap<Long,HashMap<Long,LinkedList<Cell>>> sortedBuffer = new HashMap<>();
 		long brow, bcol, row_offset, col_offset;
 		
 		for( Cell c : buffer )

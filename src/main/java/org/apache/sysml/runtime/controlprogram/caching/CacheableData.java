@@ -108,7 +108,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
     	MODIFY, 
     	CACHED,
     	CACHED_NOWRITE,
-    };
+    }
 	
 	/** Global flag indicating if caching is enabled (controls eviction) */
 	private static boolean _activeFlag = false;

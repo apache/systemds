@@ -66,7 +66,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 		SIZE(int s) {
 			size = s;
 		}
-	};
+	}
 
 	/** Ranges of values passed to aggregates in different tests. */
 	protected enum RANGE {
@@ -77,7 +77,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			min = mn;
 			max = mx;
 		}
-	};
+	}
 
 	/**
 	 * Actual sparsity values used in the "dense" and "sparse" variants of the
@@ -90,7 +90,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 		SPARSITY(double sp) {
 			sparsity = sp;
 		}
-	};
+	}
 	
 	/** Shared setup code for test harness configurations */
 	@Override

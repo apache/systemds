@@ -38,7 +38,7 @@ public class RoundTest extends AutomatedTestBase
 		TEST_TYPE(String name) {
 			this.scriptName = name;
 		}
-	};
+	}
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RoundTest.class.getSimpleName() + "/";

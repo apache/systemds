@@ -35,19 +35,17 @@ public class GridEnumerationEqui extends GridEnumeration
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
-		
 		_nsteps = DEFAULT_NSTEPS;
 	}
 	
-	public void setNumSteps( int steps )
-	{
+	public void setNumSteps( int steps ) {
 		_nsteps = steps;
 	}
 	
 	@Override
 	public ArrayList<Long> enumerateGridPoints() 
 	{
-		ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = new ArrayList<>();
 		long gap = (_max - _min) / (_nsteps-1);
 		long v = _min;
 		for (int i = 0; i < _nsteps; i++) {

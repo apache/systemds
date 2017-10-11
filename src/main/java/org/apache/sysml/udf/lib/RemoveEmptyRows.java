@@ -71,7 +71,7 @@ public class RemoveEmptyRows extends PackageFunction
 		Matrix mat = (Matrix) this.getFunctionInput(0);
 		String fnameOld = mat.getFilePath(); 
 		
-		HashMap<Long,Long> keyMap = new HashMap<Long,Long>(); //old,new rowID
+		HashMap<Long,Long> keyMap = new HashMap<>(); //old,new rowID
 			
 		try
 		{		

@@ -99,7 +99,7 @@ public class FrameSchema {
 			return null;
 		}
 		String[] cols = schemaString.split(",");
-		List<ValueType> list = new ArrayList<ValueType>();
+		List<ValueType> list = new ArrayList<>();
 		for (String col : cols) {
 			list.add(ValueType.valueOf(col.toUpperCase()));
 		}

@@ -56,7 +56,7 @@ public class DMLDebuggerProgramInfo
 	 * Constructor for DMLDebuggerProgramInfo class.
 	 */
 	public DMLDebuggerProgramInfo() {
-		disassembler = new TreeMap<Integer, ArrayList<Instruction>>();
+		disassembler = new TreeMap<>();
 	}
 	
 	/** 
@@ -236,7 +236,7 @@ public class DMLDebuggerProgramInfo
 	 */
 	public void setDMLInstMap() 
 	{
-		disassembler = new TreeMap<Integer, ArrayList<Instruction>>();		
+		disassembler = new TreeMap<>();
 		if (this.rtprog != null)  
 		{
 			//Functions: For each function program block (if any), get instructions corresponding to each line number

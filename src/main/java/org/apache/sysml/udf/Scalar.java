@@ -27,13 +27,11 @@ package org.apache.sysml.udf;
  */
 public class Scalar extends FunctionParameter 
 {
-	
-
 	private static final long serialVersionUID = 55239661026793046L;
 
 	public enum ScalarValueType {
 		Integer, Double, Boolean, Text
-	};
+	}
 
 	protected String _value;
 	protected ScalarValueType _sType;

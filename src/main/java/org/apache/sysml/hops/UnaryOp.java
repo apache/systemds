@@ -403,7 +403,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		
 		Lop X = input.constructLops();
 		Lop TEMP = X;
-		ArrayList<Lop> DATA = new ArrayList<Lop>();
+		ArrayList<Lop> DATA = new ArrayList<>();
 		int level = 0;
 		
 		//recursive preaggregation until aggregates fit into CP memory budget
@@ -479,7 +479,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		
 		Lop X = input.constructLops();
 		Lop TEMP = X;
-		ArrayList<Lop> DATA = new ArrayList<Lop>();
+		ArrayList<Lop> DATA = new ArrayList<>();
 		int level = 0;
 		
 		//recursive preaggregation until aggregates fit into CP memory budget

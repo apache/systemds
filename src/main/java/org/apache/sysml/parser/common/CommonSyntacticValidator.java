@@ -68,7 +68,7 @@ public abstract class CommonSyntacticValidator {
 	protected String sourceNamespace = null;
 	// Track imported scripts to prevent infinite recursion
 	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
-		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
+		@Override protected HashMap<String, String> initialValue() { return new HashMap<>(); }
 	};
 	// Map namespaces to full paths as defined only from source statements in this script (i.e., currentFile)
 	protected HashMap<String, String> sources;
@@ -84,8 +84,8 @@ public abstract class CommonSyntacticValidator {
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
 		this.sourceNamespace = sourceNamespace;
-		sources = new HashMap<String, String>();
-		functions = (null != prepFunctions) ? prepFunctions : new HashSet<String>();
+		sources = new HashMap<>();
+		functions = (null != prepFunctions) ? prepFunctions : new HashSet<>();
 	}
 
 	protected void notifyErrorListeners(String message, Token op) {
@@ -466,7 +466,7 @@ public abstract class CommonSyntacticValidator {
 				return;
 			}
 			try {
-				List<Expression> expList = new ArrayList<Expression>();
+				List<Expression> expList = new ArrayList<>();
 				expList.add(expr);
 				thisinfo.stmt = new PrintStatement(ctx, functionName, expList, currentFile);
 			} catch (LanguageException e) {
@@ -489,7 +489,7 @@ public abstract class CommonSyntacticValidator {
 				return;
 			}
 			try {
-				List<Expression> expressions = new ArrayList<Expression>();
+				List<Expression> expressions = new ArrayList<>();
 				for (ParameterExpression pe : paramExpression) {
 					Expression expression = pe.getExpr();
 					expressions.add(expression);
@@ -509,7 +509,7 @@ public abstract class CommonSyntacticValidator {
 			return;
 		}
 		if(paramExpression.get(0).getExpr() instanceof DataIdentifier) {
-			HashMap<String, Expression> varParams = new HashMap<String, Expression>();
+			HashMap<String, Expression> varParams = new HashMap<>();
 			varParams.put(DataExpression.IO_FILENAME, paramExpression.get(1).getExpr());
 			for(int i = 2; i < paramExpression.size(); i++) {
 				// DataExpression.FORMAT_TYPE, DataExpression.DELIM_DELIMITER, DataExpression.DELIM_HAS_HEADER_ROW,  DataExpression.DELIM_SPARSE
@@ -550,7 +550,7 @@ public abstract class CommonSyntacticValidator {
 			this.functionName = functionName;
 			this.paramExpression = paramExpression;
 		}
-	};
+	}
 
 	/**
 	 * Converts PyDML/DML built in functions to a common format for the runtime.

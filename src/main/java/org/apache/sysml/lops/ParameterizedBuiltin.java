@@ -40,7 +40,7 @@ public class ParameterizedBuiltin extends Lop
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING
-	};
+	}
 	
 	private OperationTypes _operation;
 	private HashMap<String, Lop> _inputParams;

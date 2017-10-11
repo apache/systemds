@@ -52,7 +52,7 @@ public class ResourceConfig
 		_cpres = init;
 		
 		//init mr memory
-		_mrres = new ArrayList<Long>();
+		_mrres = new ArrayList<>();
 		addProgramBlocks(prog, init);
 	}
 	
@@ -132,7 +132,7 @@ public class ResourceConfig
 		long cp = YarnOptimizerUtils.toB(Long.valueOf(parts[0]));
 		
 		//deserialize mr
-		ArrayList<Long> mr = new ArrayList<Long>();
+		ArrayList<Long> mr = new ArrayList<>();
 		for (int i=1; i<parts.length; i++) 
 		{
 			long val = YarnOptimizerUtils.toB(Long.parseLong(parts[i]));

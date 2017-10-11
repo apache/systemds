@@ -58,7 +58,7 @@ public class DataOp extends Hop
 	 * i.e., getInput().get(_paramIndexMap.get(parameterName)) refers to the Hop
 	 * that is associated with parameterName.
 	 */
-	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
+	private HashMap<String, Integer> _paramIndexMap = new HashMap<>();
 
 	private DataOp() {
 		//default constructor for clone
@@ -257,7 +257,7 @@ public class DataOp extends Hop
 		Lop l = null;
 		
 		// construct lops for all input parameters
-		HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
+		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 			inputLops.put(cur.getKey(), getInput().get(cur.getValue())
 					.constructLops());

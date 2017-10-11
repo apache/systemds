@@ -125,8 +125,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				+ ", " + hop.getHopID() + ", " + hop.getName() + ")");
 		}
 		
-		ArrayList<Hop> mmChain = new ArrayList<Hop>();
-		ArrayList<Hop> mmOperators = new ArrayList<Hop>();
+		ArrayList<Hop> mmChain = new ArrayList<>();
+		ArrayList<Hop> mmOperators = new ArrayList<>();
 		ArrayList<Hop> tempList;
 
 		// Step 1: Identify the chain (mmChain) & clear all links among the Hops

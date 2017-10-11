@@ -44,8 +44,7 @@ public class EncoderFactory
 		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
-
-	@SuppressWarnings("unchecked")
+	
 	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{

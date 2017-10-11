@@ -100,7 +100,7 @@ public class Explain
 		public boolean isRuntimeType(boolean recompile) {
 			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME));
 		}
-	};
+	}
 	
 	public static class ExplainCounts {
 		public int numCPInst = 0;
@@ -484,12 +484,10 @@ public class Explain
 		throws DMLRuntimeException
 	{
 		StringBuilder sb = new StringBuilder();
-		
-		HashSet<Long> memo = new HashSet<Long>();
+		HashSet<Long> memo = new HashSet<>();
 		for( GDFNode gnode : gdfnodes )
 			sb.append(explainGDFNode(gnode, level, memo));
-		
-		return sb.toString();		
+		return sb.toString();
 	}
 	
 	/**

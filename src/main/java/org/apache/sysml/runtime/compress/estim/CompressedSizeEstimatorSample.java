@@ -67,7 +67,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		}
 		
 		//establish estimator-local cache for numeric solve
-		_solveCache = new HashMap<Integer, Double>();
+		_solveCache = new HashMap<>();
 	}
 
 	@Override
@@ -546,7 +546,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 
 	private static HashMap<DblArray, Integer> getValCounts(ReaderColumnSelection sampleRowsReader) 
 	{
-		HashMap<DblArray, Integer> valsCount = new HashMap<DblArray, Integer>();
+		HashMap<DblArray, Integer> valsCount = new HashMap<>();
 		DblArray val = null;
 		Integer cnt;
 		while (null != (val = sampleRowsReader.nextRow())) {

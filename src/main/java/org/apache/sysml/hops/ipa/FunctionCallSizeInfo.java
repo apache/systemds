@@ -88,10 +88,10 @@ public class FunctionCallSizeInfo
 		throws HopsException 
 	{
 		_fgraph = fgraph;
-		_fcand = new HashSet<String>();
-		_fcandUnary = new HashSet<String>();
-		_fcandSafeNNZ =  new HashMap<String, Set<Integer>>();
-		_fSafeLiterals = new HashMap<String, Set<Integer>>();
+		_fcand = new HashSet<>();
+		_fcandUnary = new HashSet<>();
+		_fcandSafeNNZ =  new HashMap<>();
+		_fSafeLiterals = new HashMap<>();
 		
 		constructFunctionCallSizeInfo();
 	}
@@ -254,7 +254,7 @@ public class FunctionCallSizeInfo
 		//(considered for valid functions only)
 		for( String fkey : _fcand ) {
 			FunctionOp first = _fgraph.getFunctionCalls(fkey).get(0);
-			HashSet<Integer> tmp = new HashSet<Integer>();
+			HashSet<Integer> tmp = new HashSet<>();
 			for( int j=0; j<first.getInput().size(); j++ ) {
 				//if nnz known it is safe to propagate those nnz because for multiple calls 
 				//we checked of equivalence and hence all calls have the same nnz
@@ -271,7 +271,7 @@ public class FunctionCallSizeInfo
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
 			FunctionOp first = flist.get(0);
 			//initialize w/ all literals of first call
-			HashSet<Integer> tmp = new HashSet<Integer>();
+			HashSet<Integer> tmp = new HashSet<>();
 			for( int j=0; j<first.getInput().size(); j++ )
 				if( first.getInput().get(j) instanceof LiteralOp )
 					tmp.add(j);
@@ -289,6 +289,17 @@ public class FunctionCallSizeInfo
 			}
 			_fSafeLiterals.put(fkey, tmp);
 		}
+	}
+	
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(new int[] {
+				_fgraph.hashCode(),
+				_fcand.hashCode(),
+				_fcandUnary.hashCode(),
+				_fcandSafeNNZ.hashCode(),
+				_fSafeLiterals.hashCode()
+			});
 	}
 	
 	@Override

@@ -45,7 +45,7 @@ public class SampleTest extends AutomatedTestBase
 	private final static String TEST_NAME = "Sample";
 	private final static String TEST_CLASS_DIR = TEST_DIR + SampleTest.class.getSimpleName() + "/";
 	
-	private enum TEST_TYPE { FOUR_INPUTS, THREE_INPUTS1, THREE_INPUTS2, TWO_INPUTS, ERROR };
+	private enum TEST_TYPE { FOUR_INPUTS, THREE_INPUTS1, THREE_INPUTS2, TWO_INPUTS, ERROR }
 	
 	private TEST_TYPE test_type;
 	private final static long RANGE=5000, SIZE=100, SIZE2=RANGE+10;

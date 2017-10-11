@@ -52,7 +52,7 @@ public class GDFCrossBlockNode extends GDFNode
 	{
 		super(hop, pb, null);
 		_type = NodeType.CROSS_BLOCK_NODE;
-		_inputs = new ArrayList<GDFNode>();
+		_inputs = new ArrayList<>();
 		_inputs.add( input );
 		
 		_cbtype = CrossBlockNodeType.PLAIN;
@@ -72,7 +72,7 @@ public class GDFCrossBlockNode extends GDFNode
 	{
 		super(hop, pb, null);
 		_type = NodeType.CROSS_BLOCK_NODE;
-		_inputs = new ArrayList<GDFNode>();
+		_inputs = new ArrayList<>();
 		_inputs.add( input1 );
 		_inputs.add( input2 );
 		

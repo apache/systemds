@@ -287,13 +287,13 @@ public class CNodeBinary extends CNode
 			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
 			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
 			tmp = tmp.replace("%IN"+(j+1)+"%", 
-				varj.startsWith("b") ? varj + ".ddat" : varj );
+				varj.startsWith("b") ? varj + ".values(rix)" : varj );
 			
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
 				&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
 				(TemplateUtils.isMatrix(_inputs.get(j)) && _type!=BinType.VECT_MATRIXMULT) ? 
-				"rowIndex*"+((_type==BinType.VECT_OUTERMULT_ADD)?"%LEN"+(j+1)+"%":"%LEN%") : "0" : "0");
+				varj + ".pos(rix)" : "0" : "0");
 		}
 		//replace length information (e.g., after matrix mult)
 		if( _type == BinType.VECT_OUTERMULT_ADD ) {

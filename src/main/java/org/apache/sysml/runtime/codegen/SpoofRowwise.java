@@ -112,7 +112,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	@Override
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
 		throws DMLRuntimeException 
 	{
 		return execute(inputs, scalarObjects, out, true, false);
@@ -138,7 +138,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			&& LibSpoofPrimitives.isFlipOuter(out.getNumRows(), out.getNumColumns());
 		
 		//input preparation
-		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, true, _tB1);
+		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, false, _tB1);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//setup thread-local memory if necessary
@@ -168,7 +168,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	@Override
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)
 		throws DMLRuntimeException
 	{
 		//redirect to serial execution
@@ -193,7 +193,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
-		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, true, _tB1);
+		SideInput[] b = prepInputMatrices(inputs, 1, inputs.size()-1, false, _tB1);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core parallel execute
@@ -287,14 +287,16 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( a == null )
 			return;
 		
+		SideInput[] lb = createSparseSideInputs(b, true);
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			//call generated method
-			genexec( a, aix, b, scalars, c, n, i );
+			genexec( a, aix, lb, scalars, c, n, i );
 		}
 	}
 	
 	private void executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
+		SideInput[] lb = createSparseSideInputs(b, true);
 		SparseRow empty = new SparseRowVector(1);
 		for( int i=rl; i<ru; i++ ) {
 			if( sblock!=null && !sblock.isEmpty(i) ) {
@@ -304,11 +306,11 @@ public abstract class SpoofRowwise extends SpoofOperator
 				int alen = sblock.size(i);
 				
 				//call generated method
-				genexec(avals, aix, apos, b, scalars, c, alen, n, i);
+				genexec(avals, aix, apos, lb, scalars, c, alen, n, i);
 			}
 			else
-				genexec(empty.values(), 
-					empty.indexes(), 0, b, scalars, c, 0, n, i);	
+				genexec(empty.values(),
+					empty.indexes(), 0, lb, scalars, c, 0, n, i);
 		}
 	}
 	
@@ -317,9 +319,10 @@ public abstract class SpoofRowwise extends SpoofOperator
 		if( a.isEmptyBlock(false) )
 			return;
 		
+		SideInput[] lb = createSparseSideInputs(b, true);
 		Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
 		for( int i=rl; iter.hasNext(); i++ ) {
-			genexec(iter.next(), 0, b, scalars, c, n, i);
+			genexec(iter.next(), 0, lb, scalars, c, n, i);
 		}
 	}
 	

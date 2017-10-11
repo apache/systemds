@@ -41,17 +41,17 @@ public class CNodeRow extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n"
 			+ "  }\n"
-			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int len, int rowIndex) { \n"
+			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int len, int rix) { \n"
 			+ "%BODY_dense%"
 			+ "  }\n"
-			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int alen, int len, int rowIndex) { \n"
+			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int alen, int len, int rix) { \n"
 			+ "%BODY_sparse%"
 			+ "  }\n"			
 			+ "}\n";
 
-	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rowIndex] = %IN%;\n";
+	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
-	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*%LEN%, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, rix*%LEN%, %LEN%);\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);

@@ -41,7 +41,7 @@ public class CNodeCell extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %AGG_OP%);\n"
 			+ "  }\n"
-			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, int rowIndex, int colIndex) { \n"
+			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, int rix, int cix) { \n"
 			+ "%BODY_dense%"
 			+ "    return %OUT%;\n"
 			+ "  }\n"

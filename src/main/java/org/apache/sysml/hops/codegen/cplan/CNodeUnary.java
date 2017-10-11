@@ -90,11 +90,11 @@ public class CNodeUnary extends CNode
 			    case LOOKUP_R:
 			    	return sparse ?
 			    		"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
-			    		"    double %TMP% = getValue(%IN1%, rowIndex);\n";
+			    		"    double %TMP% = getValue(%IN1%, rix);\n";
 			    case LOOKUP_C:
-			    	return "    double %TMP% = getValue(%IN1%, n, 0, colIndex);\n";
+			    	return "    double %TMP% = getValue(%IN1%, n, 0, cix);\n";
 			    case LOOKUP_RC:
-			    	return "    double %TMP% = getValue(%IN1%, n, rowIndex, colIndex);\n";	
+			    	return "    double %TMP% = getValue(%IN1%, n, rix, cix);\n";	
 				case LOOKUP0:
 					return "    double %TMP% = %IN1%[0];\n" ;
 				case POW2:
@@ -216,12 +216,12 @@ public class CNodeUnary extends CNode
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
 		tmp = tmp.replace("%IN1%", varj.startsWith("b") && !_type.isScalarLookup()
-			&& TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".ddat" : varj );
+			&& TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".values(rix)" : varj );
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 
 			&& _inputs.get(0).getDataType().isMatrix()) ? !varj.startsWith("b") ? 
-			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? "rowIndex*%LEN%" : "0" : "0";
+			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".pos(rix)" : "0" : "0";
 		
 		tmp = tmp.replace("%POS1%", spos);
 		tmp = tmp.replace("%POS2%", spos);

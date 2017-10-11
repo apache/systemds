@@ -17,35 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.binary.scalar;
+package org.apache.sysml.runtime.functionobjects;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.io.Serializable;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	AdditionTest.class,
-	AndTest.class,
-	DivisionTest.class,
-	EqualTest.class,
-	FullStringComparisonTest.class,
-	GreaterThanOrEqualTest.class,
-	GreaterThanTest.class,
-	LessThanOrEqualTest.class,
-	LessThanTest.class,
-	LogarithmTest.class,
-	ModulusTest.class,
-	MultiplicationTest.class,
-	OrTest.class,
-	XorTest.class,
-	PowerTest.class,
-	SubtractionTest.class
-})
+public class Xor extends ValueFunction implements Serializable
+{
+	private static final long serialVersionUID = 6523146102263905602L;
+		
+	private static Xor singleObj = null;
 
+	private Xor() {
+		// nothing to do here
+	}
+	
+	public static Xor getXorFnObject() {
+		if ( singleObj == null )
+			singleObj = new Xor();
+		return singleObj;
+	}
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
+	@Override
+	public boolean execute(boolean in1, boolean in2) {
+		return (in1 == !in2);
+	}
 }

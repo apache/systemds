@@ -59,6 +59,7 @@ import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
+import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.Power2;
@@ -2021,7 +2022,7 @@ public class LibMatrixCUDA {
 	 * and the appropriate binary operation is performed on the GPU.
 	 * op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 	 * 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
-	 * 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
+	 * 11=min, 12=max, 13=and, 14=or, 19=xor, 15=minus1multiply, 16=minusnz,
 	 * 17=modulus, 18=integer division}
 	 */
 	private static int getBinaryOp(ValueFunction fn) throws DMLRuntimeException {
@@ -2038,6 +2039,7 @@ public class LibMatrixCUDA {
 		else if(fn instanceof NotEquals) return 10;
 		else if(fn instanceof And) return 13;
 		else if(fn instanceof Or) return 14;
+		else if(fn instanceof Xor) return 19;
 		else if(fn instanceof Multiply2) return 2;
 		else if(fn instanceof Power2) return 4;
 		else if(fn instanceof Minus1Multiply) return 15;

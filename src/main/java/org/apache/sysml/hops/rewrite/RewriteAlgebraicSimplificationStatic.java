@@ -76,7 +76,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static final OpOp2[] LOOKUP_VALID_SCALAR_BINARY = new OpOp2[] {OpOp2.AND, OpOp2.DIV, 
 		OpOp2.EQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL, OpOp2.INTDIV, OpOp2.LESS, OpOp2.LESSEQUAL, 
 		OpOp2.LOG, OpOp2.MAX, OpOp2.MIN, OpOp2.MINUS, OpOp2.MODULUS, OpOp2.MULT, OpOp2.NOTEQUAL, 
-		OpOp2.OR, OpOp2.PLUS, OpOp2.POW};
+		OpOp2.OR, OpOp2.XOR, OpOp2.PLUS, OpOp2.POW};
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 

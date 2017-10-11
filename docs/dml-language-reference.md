@@ -155,7 +155,7 @@ SystemML follows same associativity and precedence order as R as described in be
 | / * | Matrix or Scalar | Matrix or Scalar<sup>1, 2</sup> | Multiplication and Division
 | + - | Matrix or Scalar | Matrix or Scalar<sup>1, 2</sup> | Addition (or string concatenation) and Subtraction
 | < > == != <= >= | Matrix or Scalar (any value type) | Matrix or Scalar<sup>1, 2</sup> (boolean type) | Relational operators
-| & \| ! | Scalar | Scalar | Boolean operators (Note: operators && and \|\| are not supported)
+| & \| ! xor()| Scalar | Scalar | Boolean operators (Note: operators && and \|\| conditional_xor() are not supported)
 | = | - | - | Assignment (Lowest precendence). Note: associativity of assignment "a = b = 3" is not supported
 
 1 If one of the operands is a matrix, output is matrix; otherwise it is scalar.

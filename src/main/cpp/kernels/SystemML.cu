@@ -165,7 +165,7 @@ __forceinline__ __device__ double getBoolean(int val) {
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 // 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
-// 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
+// 11=min, 12=max, 13=and, 14=or, 19=xor, 15=minus1multiply, 16=minusnz,
 // 17=modulus, 18=integer division}
 extern "C"
 __forceinline__ __device__ double binaryOp(double x, double y, int op) {
@@ -185,6 +185,7 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
         case 12 : return max(x, y);
         case 13 : return getBoolean((int)llrint(x) & (int)llrint(y));
         case 14 : return getBoolean((int)llrint(x) | (int)llrint(y));
+	case 19 : return getBoolean(x ^ y);
         case 15 : return 1 - x * y;
         case 16 : return (x != 0.0 ? x - y : 0.0);
         case 17 : {

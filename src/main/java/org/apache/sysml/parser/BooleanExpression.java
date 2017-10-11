@@ -112,13 +112,12 @@ public class BooleanExpression extends Expression
 		
 		output.setBooleanProperties();
 		this.setOutput(output);
-		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) || (_opcode == Expression.BooleanOp.CONDITIONALOR)) {
-			// always unconditional (because unsupported operation)
+		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) || (_opcode == Expression.BooleanOp.CONDITIONALOR)) { 
 			if (_opcode == Expression.BooleanOp.CONDITIONALAND) {
 				raiseValidateError("Conditional AND (&&) not supported.", false);
 			} else if (_opcode == Expression.BooleanOp.CONDITIONALOR) {
 				raiseValidateError("Conditional OR (||) not supported.", false);
-			}
+			} 
 		}
 	}
 

@@ -58,7 +58,7 @@ The operators supported are:
 1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
     (i.e. matrix multiplication)
 2.  Indexing in the matrix
-3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|
+3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|, xor()
 
 This class also supports several input/output formats such as NumPy arrays, Pandas DataFrame, SciPy sparse matrix and PySpark DataFrame.
 

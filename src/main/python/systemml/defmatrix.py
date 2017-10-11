@@ -350,7 +350,7 @@ class matrix(object):
     
     1. Arithmetic operators: +, -, *, /, //, %, ** as well as dot (i.e. matrix multiplication)
     2. Indexing in the matrix
-    3. Relational/Boolean operators: <, <=, >, >=, ==, !=, &, |
+    3. Relational/Boolean operators: <, <=, >, >=, ==, !=, &, |, xor
     
     In addition, following functions are supported for matrix:
     
@@ -978,6 +978,9 @@ class matrix(object):
 
     def __or__(self, other):
         return binary_op(other, self, ' | ')
+    
+     def __xor__(self, other):
+        return binary_op(other, self, ' xor ')
 
     def logical_not(self):
         inputs = []

@@ -130,7 +130,11 @@ public class RewriteConstantFolding extends HopRewriteRule
 		{
 			literal = new LiteralOp(true);
 		}
-		
+		//fold biconditional predicate if both the inputs are same
+		else if(isApplicableFalseBiconditionalPredicate(root) )
+		{
+		        literal = new LiteralOp(false); //TODO: find a way to do this.
+		}
 		//replace binary operator with folded constant
 		if( literal != null ) 
 		{
@@ -283,4 +287,14 @@ public class RewriteConstantFolding extends HopRewriteRule
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
+	
+	private boolean isApplicableFalseBiconditionalPredicate( Hop hop )
+	        throws HopsException
+        {
+	        ArrayList<Hop> in = hop.getInput();
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.XOR)
+		                && ( (in.get(0) instanceof LiteralOp &&  ((LiteralOp)in.get(0)).getBooleanValue())
+				   ==(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
+	}
+	
 }

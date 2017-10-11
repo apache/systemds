@@ -208,7 +208,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	public void exitBooleanOrExpression(BooleanOrExpressionContext ctx) {
 		booleanExpressionHelper(ctx, ctx.left.info, ctx.right.info, ctx.info, ctx.op.getText());
 	}
-
+	
 	@Override
 	public void exitBooleanNotExpression(BooleanNotExpressionContext ctx) {
 		unaryBooleanExpressionHelper(ctx, ctx.left.info, ctx.info, ctx.op.getText());
@@ -1036,7 +1036,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {}
 
 	@Override public void enterBooleanOrExpression(BooleanOrExpressionContext ctx) {}
-
+	
 	@Override
 	public void enterMultiIdExpression(MultiIdExpressionContext ctx) { }
 

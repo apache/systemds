@@ -19,11 +19,6 @@
 package org.apache.sysml.runtime.instructions.gpu.context;
 
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
-import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
-import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
-import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
 import static jcuda.jcusparse.JCusparse.cusparseDnnz;
 import static jcuda.runtime.JCuda.cudaMemcpy;
@@ -32,7 +27,6 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -55,7 +49,6 @@ import org.apache.sysml.utils.GPUStatistics;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
-import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
@@ -82,17 +75,6 @@ public class GPUObject {
 	 * Pointer to the underlying sparse matrix block on GPU
 	 */
 	private CSRPointer jcudaSparseMatrixPtr = null;
-
-	/**
-	 * An optional tensor descriptor (and shape) that can be set by a tensor instruction such as convolution,
-	 * maxpooling and exploited by a subsequent non-tensor instruction such as relu
-	 */
-	private cudnnTensorDescriptor tensorDescriptor = null;
-
-	/**
-	 * the shape of this tensor, if in fact this is a tensor
-	 */
-	private int[] tensorShape = null;
 
 	/**
 	 * whether the block attached to this {@link GPUContext} is dirty on the device and needs to be copied back to host
@@ -132,13 +114,7 @@ public class GPUObject {
 	public Object clone() {
 		GPUObject me = this;
 		GPUObject that = new GPUObject(me.gpuContext, me.mat);
-		if (me.tensorShape != null) {
-			that.tensorShape = new int[me.tensorShape.length];
-			System.arraycopy(me.tensorShape, 0, that.tensorShape, 0, me.tensorShape.length);
-			that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
-		}
 		that.dirty = me.dirty;
-		// TODO Nakul: Should the locks be cloned here ?
 		// The only place clone is getting called: LibMatrixCUDA's solve
 		that.readLocks.reset();
 		that.writeLock = false;
@@ -498,51 +474,7 @@ public class GPUObject {
 	public boolean isSparse() {
 		return isSparse;
 	}
-
-	/**
-	 * Returns a previously allocated tensor shape or null
-	 *
-	 * @return int array of four elements or null
-	 */
-	public int[] getTensorShape() {
-		return tensorShape;
-	}
-
-	/**
-	 * Returns a previously allocated tensor descriptor or null
-	 *
-	 * @return cudnn tensor descriptor
-	 */
-	public cudnnTensorDescriptor getTensorDescriptor() {
-		return tensorDescriptor;
-	}
-
-	/**
-	 * Returns a previously allocated or allocates and returns a tensor descriptor
-	 *
-	 * @param N number of images
-	 * @param C number of channels
-	 * @param H height
-	 * @param W width
-	 * @return cudnn tensor descriptor
-	 */
-	public cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : allocateTensorDescriptor with [N=" + N + ",C=" + C + ",H=" + H + ",W=" + W + "] on " + this);
-		}
-		if (tensorDescriptor == null) {
-			tensorDescriptor = new cudnnTensorDescriptor();
-			cudnnCreateTensorDescriptor(tensorDescriptor);
-			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
-			tensorShape = new int[4];
-			tensorShape[0] = N;
-			tensorShape[1] = C;
-			tensorShape[2] = H;
-			tensorShape[3] = W;
-		}
-		return tensorDescriptor;
-	}
-
+	
 	private static long getDoubleSizeOf(long numElems) {
 		return numElems * ((long) jcuda.Sizeof.DOUBLE);
 	}
@@ -829,10 +761,6 @@ public class GPUObject {
 		}
 		jcudaDenseMatrixPtr = null;
 		jcudaSparseMatrixPtr = null;
-		if (tensorDescriptor != null) {
-			cudnnDestroyTensorDescriptor(tensorDescriptor);
-			tensorDescriptor = null;
-		}
 		resetReadWriteLock();
 		getGPUContext().removeRecordedUsage(this);
 	}
@@ -1094,7 +1022,6 @@ public class GPUObject {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("GPUObject{");
-		sb.append(", tensorShape=").append(Arrays.toString(tensorShape));
 		sb.append(", dirty=").append(dirty);
 		sb.append(", readLocks=").append(readLocks.longValue());
 		sb.append(", writeLock=").append(writeLock);

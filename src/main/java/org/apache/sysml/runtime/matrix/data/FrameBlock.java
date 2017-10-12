@@ -554,6 +554,20 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * Get a row iterator over the frame where all fields are encoded
+	 * as boxed objects according to the value types of the provided
+	 * target schema.
+	 * 
+	 * @param schema target schema of objects
+	 * @return object array iterator
+	 */
+	public Iterator<Object[]> getObjectRowIterator(ValueType[] schema) {
+		ObjectRowIterator iter = new ObjectRowIterator(0, _numRows);
+		iter.setSchema(schema);
+		return iter;
+	}
+	
+	/**
 	 * Get a row iterator over the frame where all selected fields are 
 	 * encoded as boxed objects according to their value types.  
 	 * 
@@ -992,7 +1006,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._coldata = new Array[getNumColumns()];
 			for( int j=0; j<getNumColumns(); j++ )
 				ret._coldata[j] = _coldata[j].clone();
-			Iterator<Object[]> iter = that.getObjectRowIterator();
+			Iterator<Object[]> iter = that.getObjectRowIterator(_schema);
 			while( iter.hasNext() )
 				ret.appendRow(iter.next());
 		}
@@ -1221,12 +1235,18 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 
 	private class ObjectRowIterator extends RowIterator<Object> {
+		private ValueType[] _tgtSchema = null;
+		
 		public ObjectRowIterator(int rl, int ru) {
 			super(rl, ru);
 		}
 		
 		public ObjectRowIterator(int rl, int ru, int[] cols) {
 			super(rl, ru, cols);
+		}
+		
+		public void setSchema(ValueType[] schema) {
+			_tgtSchema = schema;
 		}
 		
 		@Override
@@ -1237,9 +1257,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		@Override
 		public Object[] next( ) {
 			for( int j=0; j<_cols.length; j++ )
-				_curRow[j] = get(_curPos, _cols[j]-1);
+				_curRow[j] = getValue(_curPos, _cols[j]-1);
 			_curPos++;
 			return _curRow;
+		}
+		
+		private Object getValue(int i, int j) {
+			Object val = get(i, j);
+			if( _tgtSchema != null )
+				val = UtilFunctions.objectToObject(_tgtSchema[j], val);
+			return val;
 		}
 	}
 	

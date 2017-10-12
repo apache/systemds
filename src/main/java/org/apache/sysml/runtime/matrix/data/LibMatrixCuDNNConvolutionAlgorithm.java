@@ -130,24 +130,17 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
-		if(workspaceLimit <= 0) {
-			// If overhead is greater than intermediate allocated memory, prefer the cudnn operator with no memory requirement, 
-			// i.e. CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM
-			ret.algo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-		}
-		else {
-			int[] algos = {-1};
-			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc,
-					cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc, algos[0], sizeInBytesArray);
-			if (sizeInBytesArray[0] != 0)
-				ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
-			ret.sizeInBytes = sizeInBytesArray[0];
-			ret.algo = algos[0];
-		}
+		int[] algos = {-1};
+		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+				ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc,
+				cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+				ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc, algos[0], sizeInBytesArray);
+		if (sizeInBytesArray[0] != 0)
+			ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
+		ret.sizeInBytes = sizeInBytesArray[0];
+		ret.algo = algos[0];
 		if (GPUStatistics.DISPLAY_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 		return ret;
@@ -182,25 +175,19 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
 		
-		if(workspaceLimit <= 0) {
-			// If overhead is greater than intermediate allocated memory, prefer the cudnn operator with no memory requirement
-			// i.e. CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0
-			ret.algo = jcuda.jcudnn.cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-		}
-		else {
-			int[] algos = {-1};
-			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm(
-					LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, 
-					cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, algos[0], sizeInBytesArray);
-			if (sizeInBytesArray[0] != 0)
-				ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
-			ret.sizeInBytes = sizeInBytesArray[0];
-			ret.algo = algos[0];
-		}
+		int[] algos = {-1};
+		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm(
+				LibMatrixCuDNN.getCudnnHandle(gCtx), 
+				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, 
+				cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, algos[0], sizeInBytesArray);
+		if (sizeInBytesArray[0] != 0)
+			ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
+		ret.sizeInBytes = sizeInBytesArray[0];
+		ret.algo = algos[0];
+		
 		if (GPUStatistics.DISPLAY_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 		return ret;
@@ -235,27 +222,25 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
 		
-		if(workspaceLimit <= 0) {
-			// If overhead is greater than intermediate allocated memory, prefer the cudnn operator with no memory requirement
-			// i.e. CUDNN_CONVOLUTION_BWD_DATA_ALGO_0
-			ret.algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-		}
-		else {
-			int[] algos = {-1};
-			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
-					LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
-					cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
-			if (sizeInBytesArray[0] != 0)
-				ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
-			ret.sizeInBytes = sizeInBytesArray[0];
-			ret.algo = algos[0];
-		}
-		if (GPUStatistics.DISPLAY_STATISTICS)
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+		// CuDNN's cudnnGetConvolutionBackwardDataAlgorithm returns CUDNN_CONVOLUTION_BWD_DATA_ALGO_1 for atleast one scenario 
+		// for sentence CNN (N=1, C=1, H=2060, W=300, F=500, Hf=5, Wf=300, sparsity=0.1).
+		// This causes more than 100x slowdown when compared with CUDNN_CONVOLUTION_BWD_DATA_ALGO_0.
+		// To keep things simple for now, we will always prefer to use memory-less operator: CUDNN_CONVOLUTION_BWD_DATA_ALGO_0
+		ret.algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+//		int[] algos = {-1};
+//		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+//		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
+//				LibMatrixCuDNN.getCudnnHandle(gCtx), 
+//				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
+//				cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
+//		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+//				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
+//		if (sizeInBytesArray[0] != 0)
+//			ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
+//		ret.sizeInBytes = sizeInBytesArray[0];
+//		ret.algo = algos[0];
+//		if (GPUStatistics.DISPLAY_STATISTICS)
+//			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 		return ret;
 	}
 	

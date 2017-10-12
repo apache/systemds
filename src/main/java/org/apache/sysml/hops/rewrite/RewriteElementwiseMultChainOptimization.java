@@ -310,7 +310,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		final ArrayList<Hop> parents = child.getParent();
 		if (parents.size() > 1)
 			for (final Hop parent : parents)
-				if (parent instanceof BinaryOp && !emults.contains(parent))
+				if (!(parent instanceof BinaryOp) || !emults.contains(parent))
 					return false;
 		// child does not have foreign parents
 

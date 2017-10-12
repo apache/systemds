@@ -31,61 +31,38 @@ public class LibMatrixDNNIm2ColHelper {
 	static interface Im2colWorker {
 		public void execute(int n);
 		public void execute(int n, int c);
-		public static Im2colWorker getWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean allChannels) {
-			if(allChannels) {
-				if(!input.isInSparseFormat()) {
-					// Note: Only dense im2col operators require the im2ColOutBlock to be allocated in the dense format.
-					im2ColOutBlock.allocateDenseBlock();
-					if (params.stride_h == 1 && params.stride_w == 1 && params.pad_h == 0 && params.pad_w == 0)  {
-						if(LOG.isTraceEnabled()) LOG.trace("Using DenseIm2colWorkerStride1Pad0AllChannels operator to perform im2col.");
-						return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlock(), im2ColOutBlock.getDenseBlock(), params);
-					}
-					else {
-						if(LOG.isTraceEnabled()) LOG.trace("Using DenseIm2colWorkerAllChannels operator to perform im2col.");
-						return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), im2ColOutBlock.getDenseBlock(), params);
-					}
-				}
-				else {
-					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorkerAllChannels operator to perform im2col.");
-					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
-					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
-					return new SparseSparseIm2colWorkerAllChannels(input, im2ColOutBlock, params);
-				}
+		public static Im2colWorker getWorker(MatrixBlock input, MatrixBlock out, ConvolutionParameters params, boolean allChannels) {
+			if(!input.isInSparseFormat()) {
+				boolean stride1Pad0 = params.stride_h == 1 && params.stride_w == 1 
+						&& params.pad_h == 0 && params.pad_w == 0;
+				// Note: Only dense im2col operators require the im2ColOutBlock to be allocated in the dense format.
+				out.reset(out.rlen, out.clen, false);
+				out.allocateDenseBlock();
+				if( LOG.isTraceEnabled() ) 
+					LOG.trace("Using DenseIm2colWorkerAllChannels operator to perform "
+						+ "im2col (stride1pad0="+stride1Pad0+", allChannels="+allChannels+").");
+				if(allChannels && stride1Pad0 )
+					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
+				else if( allChannels )
+					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
+				else if( stride1Pad0 )
+					return new DenseIm2colWorkerStride1Pad0(input.getDenseBlock(), out.getDenseBlock(), params);
+				else
+					return new DenseIm2colWorker(input.getDenseBlock(), out.getDenseBlock(), params);
 			}
 			else {
-				if(!input.isInSparseFormat()) {
-					// Note: Only dense im2col operators require the im2ColOutBlock to be allocated in the dense format.
-					im2ColOutBlock.allocateDenseBlock();
-					if (params.stride_h == 1 && params.stride_w == 1 && params.pad_h == 0 && params.pad_w == 0) {
-						if(LOG.isTraceEnabled()) LOG.trace("Using DenseIm2colWorkerStride1Pad0 operator to perform im2col.");
-						return new DenseIm2colWorkerStride1Pad0(input.getDenseBlock(), im2ColOutBlock.getDenseBlock(), params);
-					}
-					else {
-						if(LOG.isTraceEnabled()) LOG.trace("Using DenseIm2colWorker operator to perform im2col.");
-						return new DenseIm2colWorker(input.getDenseBlock(), im2ColOutBlock.getDenseBlock(), params);
-					}
-				}
-				else {
-					if(LOG.isTraceEnabled()) LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-					double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
-					initializeSparseIm2ColBlock(im2ColOutBlock, (long)Math.ceil(params.P*params.Q*sparsity));
-					return new SparseSparseIm2colWorker(input, im2ColOutBlock, params);
-				}
+				if(LOG.isTraceEnabled()) 
+					LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
+				out.reset(out.rlen, out.clen, true);
+				out.allocateSparseRowsBlock();
+				//preallocate sparse-rows
+				double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, 
+					(input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+				for(int r = 0; r < out.rlen; r++)
+					out.getSparseBlock().allocate(r, (int)Math.ceil(params.P*params.Q*sparsity));
+				
+				return new SparseSparseIm2colWorkerAllChannels(input, out, params);
 			}
-		}
-		
-		static void initializeSparseIm2ColBlock(MatrixBlock im2ColOutBlock, long worstCaseNNPerRow) {
-			if(worstCaseNNPerRow >= Integer.MAX_VALUE)
-				throw new RuntimeException("The dimension of intermediate im2col matrix exceeded:" + worstCaseNNPerRow);
-			// Set to sparse
-			im2ColOutBlock.sparse = true;
-			im2ColOutBlock.denseBlock = null;
-			im2ColOutBlock.allocateSparseRowsBlock();
-			
-			for(int r = 0; r < im2ColOutBlock.getNumRows(); r++) {
-				im2ColOutBlock.getSparseBlock().allocate(r, (int) worstCaseNNPerRow);
-			}
-			im2ColOutBlock.setNonZeros(0);
 		}
 	}
 	
@@ -275,17 +252,15 @@ public class LibMatrixDNNIm2ColHelper {
 	/**
 	 * Performing sparse im2col for all channels for a given row n of the input matrix.
 	 */
-	static class SparseSparseIm2colWorkerAllChannels implements Im2colWorker {
-		MatrixBlock input;  MatrixBlock output;
-		int CRS; int S; int R; int P; int Q; int H; int W; int RS; int HW;
-		int stride_h; int stride_w; int pad_h; int pad_w;
+	private static class SparseSparseIm2colWorkerAllChannels implements Im2colWorker {
+		final MatrixBlock input, output;
+		final int S, R, P, Q, W, HW;
+		final int stride_h, stride_w, pad_h, pad_w;
 		public SparseSparseIm2colWorkerAllChannels(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params) {
 			this.input = input;
 			this.output = im2ColOutBlock;
-			this.CRS = params.C * params.R * params.S;
-			this.RS = params.R * params.S;
 			this.HW = params.H * params.W;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
+			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			if(!input.isInSparseFormat()) 
@@ -299,33 +274,32 @@ public class LibMatrixDNNIm2ColHelper {
 
 		@Override
 		public void execute(int n) {
-			if( !input.sparseBlock.isEmpty(n) ) {
-				output.sparseBlock.reset();
-				output.setNonZeros(0);
-				int apos = input.sparseBlock.pos(n);
-				int alen = input.sparseBlock.size(n);
-				int[] aix = input.sparseBlock.indexes(n);
-				double[] avals = input.sparseBlock.values(n);
+			output.reset();
+			
+			SparseBlock sblock = input.sparseBlock;
+			if( sblock.isEmpty(n) ) {
+				return;
+			}
+			
+			int apos = input.sparseBlock.pos(n);
+			int alen = input.sparseBlock.size(n);
+			int[] aix = input.sparseBlock.indexes(n);
+			double[] avals = input.sparseBlock.values(n);
+			
+			// Iterate over the sparse block
+			for(int j=apos; j<apos+alen; j++) {
+				// Note: the input is of shape [N, CHW]
+				int chw = aix[j];
 				
-				// Iterate over the sparse block
-				for(int j=apos; j<apos+alen; j++) {
-					// Note: the input is of shape [N, CHW]
-					int chw = aix[j];
-					
-					// Get individual zero-based c,h,w indexes from zero-based 'chw'
-					int cInput = chw / HW;
-					int hInput = (chw - cInput*HW)/W;
-					int wInput = chw % W; 
-					
-					appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
-							R, S, P, Q, stride_h, stride_w, pad_h, pad_w);
-				}
-				// Since the chw are appended in sorted order, no need to sort the output rows
-				// if(meta.sortRows) output.sortSparseRows();
+				// Get individual zero-based c,h,w indexes from zero-based 'chw'
+				int cInput = chw / HW;
+				int hInput = (chw - cInput*HW)/W;
+				int wInput = chw % W; 
+				
+				appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
+						R, S, P, Q, stride_h, stride_w, pad_h, pad_w);
 			}
-			else {
-				output.setNonZeros(0);
-			}
+			// Since the chw are appended in sorted order, no need to sort the output rows
 		}
 	}
 	
@@ -365,7 +339,7 @@ public class LibMatrixDNNIm2ColHelper {
 		int sMax = Math.min(S-1, wInput + pad_w);
 		// Constraint 3: (hInput - r + pad_h) % stride_h == 0
 		while((hInput - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
-		while((wInput - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;	
+		while((wInput - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;
 		
 		for(int r = rMin; r <= rMax; r += stride_h) {
 			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
@@ -378,8 +352,6 @@ public class LibMatrixDNNIm2ColHelper {
 				// chw -> [crs, pq]
 				output.appendValue(outRowIndex + s, pQ + q, value);
 				// Since the chw are appended in sorted order, no need to sort the output rows
-				// if(meta.lastIndexPerRow[outRowIndex + s] > p*Q + q) meta.sortRows = true;
-				// meta.lastIndexPerRow[outRowIndex + s] = p*Q + q;
 			}
 		}
 	}

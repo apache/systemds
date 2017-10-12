@@ -128,8 +128,10 @@ public class LibMatrixDNNConv2dHelper {
 		@Override
 		public Long call() throws Exception {
 			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);
+			MatrixBlock outIm2col = new MatrixBlock(CRS, PQ, false);
+			MatrixBlock outMM = new MatrixBlock(K, PQ, false);
+			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = 
+					LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, outIm2col, _params, true);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
 				// im2col(input) => _im2ColOutBlock
@@ -138,8 +140,8 @@ public class LibMatrixDNNConv2dHelper {
 				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
 				// filter %*% _im2ColOutBlock => matMultOutBlock
-				MatrixBlock matMultOutBlock = new MatrixBlock(K, PQ, false);
-				LibMatrixDNNHelper.singleThreadedMatMult(_params.input2, im2ColOutBlock, matMultOutBlock, false, true, _params);
+				outMM.reset(outMM.rlen, outMM.clen, false);
+				LibMatrixDNNHelper.singleThreadedMatMult(_params.input2, outIm2col, outMM, false, true, _params);
 				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
 				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
@@ -148,7 +150,7 @@ public class LibMatrixDNNConv2dHelper {
 				}
 				
 				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-				partialCopy1(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
+				partialCopy1(outMM, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
 			}
 			if(_params.bias != null) {
 				// bias is always converted to dense format
@@ -165,27 +167,23 @@ public class LibMatrixDNNConv2dHelper {
 		private static void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
 			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
 			// This is not required in Native implementation
-			if(!src.isEmptyBlock()) {
-				if(src.isInSparseFormat()) {
-					// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
-					// params.output.denseBlock + destPos
-					for(int k = 0; k < src.getNumRows(); k++) {
-						if( !src.sparseBlock.isEmpty(k) ) {
-							int apos = src.sparseBlock.pos(k);
-							int alen = src.sparseBlock.size(k);
-							int[] aix = src.sparseBlock.indexes(k);
-							double[] avals = src.sparseBlock.values(k);
-							int desPosK = destPos + k*PQ;
-							for(int j = apos; j < apos+alen; j++) {
-								int pqIndex = aix[j];
-								dest[desPosK + pqIndex ] = avals[j];
-							}
-						}
-					}
+			if( src.isEmptyBlock() )
+				return;
+			if(src.isInSparseFormat()) {
+				SparseBlock sblock = src.sparseBlock;
+				for(int k = 0; k < src.getNumRows(); k++) {
+					if( sblock.isEmpty(k) ) continue;
+					int apos = sblock.pos(k);
+					int alen = sblock.size(k);
+					int[] aix = sblock.indexes(k);
+					double[] avals = sblock.values(k);
+					int desPosK = destPos + k*PQ;
+					for(int j = apos; j < apos+alen; j++)
+						dest[desPosK+aix[j]] = avals[j];
 				}
-				else 
-					System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
 			}
+			else 
+				System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
 		}
 	}
 	

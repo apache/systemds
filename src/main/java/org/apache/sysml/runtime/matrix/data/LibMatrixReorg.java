@@ -71,6 +71,9 @@ public class LibMatrixReorg
 	//allow reuse of temporary blocks for certain operations
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
+	//use csr instead of mcsr sparse block for rexpand columns
+	public static final boolean REXPAND_COLS_IN_CSR = true;
+	
 	private enum ReorgType {
 		TRANSPOSE,
 		REV,
@@ -1907,7 +1910,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-
+	
 	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int k) 
 		throws DMLRuntimeException
 	{
@@ -1921,7 +1924,8 @@ public class LibMatrixReorg
 		
 		//execute rexpand columns
 		long rnnz = 0; //real nnz (due to cutoff max)
-		if( k <= 1 || in.getNumRows() <= PAR_NUMCELL_THRESHOLD ) {
+		if( k <= 1 || in.getNumRows() <= PAR_NUMCELL_THRESHOLD
+			|| (sp && REXPAND_COLS_IN_CSR) ) {
 			rnnz = rexpandColumns(in, ret, max, cast, ignore, 0, rlen);
 		}
 		else {
@@ -1951,6 +1955,14 @@ public class LibMatrixReorg
 	private static long rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int rl, int ru) 
 		throws DMLRuntimeException
 	{
+		//initialize auxiliary data structures 
+		int lnnz = 0;
+		int[] cix = null;
+		if( ret.sparse && REXPAND_COLS_IN_CSR ) {
+			cix = new int[in.rlen];
+			Arrays.fill(cix, -1);
+		}
+		
 		//expand input horizontally (input vector likely dense 
 		//but generic implementation for general case)
 		for( int i=rl; i<ru; i++ )
@@ -1967,17 +1979,25 @@ public class LibMatrixReorg
 			//set expanded value if matching
 			if( val == Math.floor(val) && val >= 1 && val <= max ) {
 				//update target without global nnz maintenance
-				if( ret.isInSparseFormat() ) {
+				if( cix != null ) {
+					cix[i] = (int)(val-1);
+				}
+				else if( ret.isInSparseFormat() ) {
 					ret.sparseBlock.allocate(i, 1);
 					ret.sparseBlock.append(i, (int)(val-1), 1);
 				}
 				else
 					ret.setValueDenseUnsafe(i, (int)(val-1), 1);
+				lnnz ++;
 			}
 		}
 		
+		//init CSR block once to avoid repeated updates of row pointers on append
+		if( cix != null )
+			ret.sparseBlock = new SparseBlockCSR(in.rlen, lnnz, cix);
+		
 		//recompute nnz of partition
-		return ret.recomputeNonZeros(rl, ru-1, 0, ret.getNumColumns()-1);
+		return ret.setNonZeros(lnnz);
 	}
 	
 	private static void copyColVector( MatrixBlock in, int ixin, double[] tmp, int[] tmpi, int len)

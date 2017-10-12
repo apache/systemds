@@ -56,7 +56,7 @@ public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
 	 * Copy the nth row and return the dense pointer
 	 * @param n zero-based row index
 	 * @return dense pointer containing the nth row. This row is reused in the next iteration
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException ?
 	 */
 	public Pointer getNthRow(int n) throws DMLRuntimeException {
 		if(isInputInSparseFormat) {

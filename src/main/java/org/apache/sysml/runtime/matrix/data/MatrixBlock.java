@@ -463,8 +463,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return nonZeros;
 	}
 	
-	public void setNonZeros(long nnz) {
-		nonZeros = nnz;
+	public long setNonZeros(long nnz) {
+		return (nonZeros = nnz);
 	}
 	
 	public boolean isVector() {
@@ -4810,7 +4810,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * This function computes the total weight
 	 * 
 	 * @return sum weight for quantile
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException on error
 	 */
 	public double sumWeightForQuantile() 
 		throws DMLRuntimeException 

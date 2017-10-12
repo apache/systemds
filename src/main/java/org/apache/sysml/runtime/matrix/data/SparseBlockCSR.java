@@ -166,6 +166,33 @@ public class SparseBlockCSR extends SparseBlock
 	}
 	
 	/**
+	 * Copy constructor for given array of column indexes, which
+	 * identifies rows by position and implies values of 1.
+	 * 
+	 * @param rows number of rows
+	 * @param nnz number of non-zeros
+	 * @param colInd column indexes
+	 */
+	public SparseBlockCSR(int rows, int nnz, int[] colInd) {
+		_ptr = new int[rows+1];
+		_indexes = (rows==nnz) ? colInd : new int[nnz];
+		_values = new double[nnz];
+		Arrays.fill(_values, 1);
+		_size = nnz;
+		
+		//single-pass construction of row pointers
+		//and copy of column indexes if necessary
+		for(int i=0, pos=0; i<rows; i++) {
+			if( colInd[i] >= 0 ) {
+				if( rows > nnz )
+					_indexes[pos] = colInd[i];
+				pos++;
+			}
+			_ptr[i+1] = pos;
+		}
+	}
+	
+	/**
 	 * Initializes the CSR sparse block from an ordered input
 	 * stream of ultra-sparse ijv triples. 
 	 * 

@@ -226,22 +226,21 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		// for sentence CNN (N=1, C=1, H=2060, W=300, F=500, Hf=5, Wf=300, sparsity=0.1).
 		// This causes more than 100x slowdown when compared with CUDNN_CONVOLUTION_BWD_DATA_ALGO_0.
 		// To keep things simple for now, we will always prefer to use memory-less operator: CUDNN_CONVOLUTION_BWD_DATA_ALGO_0
-		workspaceLimit = 0;
-		
-		int[] algos = {-1};
-		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
-				LibMatrixCuDNN.getCudnnHandle(gCtx), 
-				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
-				cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
-		if (sizeInBytesArray[0] != 0)
-			ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
-		ret.sizeInBytes = sizeInBytesArray[0];
-		ret.algo = algos[0];
-		if (GPUStatistics.DISPLAY_STATISTICS)
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+		ret.algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+//		int[] algos = {-1};
+//		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+//		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
+//				LibMatrixCuDNN.getCudnnHandle(gCtx), 
+//				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
+//				cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
+//		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+//				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
+//		if (sizeInBytesArray[0] != 0)
+//			ret.workSpace = gCtx.allocate(sizeInBytesArray[0]);
+//		ret.sizeInBytes = sizeInBytesArray[0];
+//		ret.algo = algos[0];
+//		if (GPUStatistics.DISPLAY_STATISTICS)
+//			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 		return ret;
 	}
 	

@@ -1217,6 +1217,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return nonZeros;
 	}
 	
+	public long recomputeNonZeros(int rl, int ru) {
+		return recomputeNonZeros(rl, ru, 0, clen-1);
+	}
+	
 	/**
 	 * Recomputes the number of non-zero values of a specified 
 	 * range of the matrix block. NOTE: This call does not materialize

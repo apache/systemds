@@ -164,10 +164,10 @@ public class LibMatrixDNN {
 		if(isEligibleForConv2dSparse(params))
 			Statistics.numNativeSparseConv2dCalls.increment();
 		
-		execute(LibMatrixDNNHelper.getConv2dWorkers(params), params);
+		long nnz = execute(LibMatrixDNNHelper.getConv2dWorkers(params), params);
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros(); 
+		outputBlock.setNonZeros(nnz);
 		outputBlock.examSparsity();
 	}
 	
@@ -552,14 +552,15 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 * @throws DMLRuntimeException if the error occurs
 	 */
-	private static void execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) throws DMLRuntimeException {
+	private static long execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) throws DMLRuntimeException {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		long lnnz = 0;
 		try {
 			if(k == 1) {
 				// Single-threaded execution when called in parfor
 				// this avoid unnecessary creation of threadpool.
 				for(Callable<Long> task : tasks) {
-					task.call();
+					lnnz += task.call();
 				}
 			}
 			else {
@@ -567,12 +568,14 @@ public class LibMatrixDNN {
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				pool.shutdown();
 				for( Future<Long> task : taskret )
-					task.get();
+					lnnz += task.get();
 			}
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException("Error while executing multi-threaded tasks", e);
 		}
+		
+		return lnnz;
 	}
 	
 	static boolean isEligibleForConv2dBackwardFilterSparseDense(ConvolutionParameters params) {

@@ -70,16 +70,17 @@ public class LibMatrixDNNConv2dHelper {
 					// Add the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
 					add(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
 				}
-			}
-			if(_params.bias != null) {
-				// bias is always converted to dense format
-				LibMatrixDNNHelper.addBias(_rl, _ru, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
+				// Add bias to current row if necessary, always dense
+				if(_params.bias != null)
+					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
 			}
 			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
 			}
-			return 0L;
+			
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 		
 		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
@@ -105,9 +106,7 @@ public class LibMatrixDNNConv2dHelper {
 					}
 				}
 				else {
-					for(int i = 0; i < K * PQ; i++) {
-						dest[destPos+i] += src.denseBlock[i];
-					}
+					LibMatrixMult.vectAdd(src.denseBlock, dest, 0, destPos, K*PQ);
 				}
 			}
 		}
@@ -151,16 +150,19 @@ public class LibMatrixDNNConv2dHelper {
 				
 				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
 				partialCopy1(outMM, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
+				
+				// Add bias to current row if necessary, always dense
+				if(_params.bias != null)
+					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
 			}
-			if(_params.bias != null) {
-				// bias is always converted to dense format
-				LibMatrixDNNHelper.addBias(_rl, _ru, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
-			}
+			
 			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
 			}
-			return 0L;
+			
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 		
 		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
@@ -216,7 +218,8 @@ public class LibMatrixDNNConv2dHelper {
 					System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
 				}
 			}
-			return 0L;
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 	}
 }

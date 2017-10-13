@@ -95,13 +95,13 @@ public class LibMatrixMult
 	 * @param m1 first matrix
 	 * @param m2 second matrix
 	 * @param ret result matrix
-	 * @param examSparsity if false, sparsity examination is disabled
+	 * @param maintainNnz if false, nnzs are not recomputed and evaluated
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean examSparsity) 
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean maintainNnz) 
 			throws DMLRuntimeException
 	{	
-		matrixMult(m1, m2, ret, 0, m1.rlen, examSparsity);
+		matrixMult(m1, m2, ret, 0, m1.rlen, maintainNnz);
 	}
 	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
@@ -110,7 +110,7 @@ public class LibMatrixMult
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean maintainNnz) 
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
@@ -146,10 +146,11 @@ public class LibMatrixMult
 			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
 		
 		//post-processing: nnz/representation
-		if( !ret.sparse )
-			ret.recomputeNonZeros();
-		if(examSparsity)
+		if( maintainNnz ) {
+			if( !ret.sparse )
+				ret.recomputeNonZeros();
 			ret.examSparsity();
+		}
 		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		"("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
@@ -3280,6 +3281,20 @@ public class LibMatrixMult
 			c[ ci+5 ] += a1[ ai+5 ] + a2[ ai+5 ] + a3[ ai+5 ] + a4[ ai+5 ];
 			c[ ci+6 ] += a1[ ai+6 ] + a2[ ai+6 ] + a3[ ai+6 ] + a4[ ai+6 ];
 			c[ ci+7 ] += a1[ ai+7 ] + a2[ ai+7 ] + a3[ ai+7 ] + a4[ ai+7 ];
+		}
+	}
+	
+	public static void vectAddInPlace(double aval, double[] c, final int ci, final int len) {
+		final int bn = len%8;
+		//rest, not aligned to 8-blocks
+		for( int j = ci; j < ci+bn; j++)
+			c[ j ] += aval;
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = ci+bn; j < ci+len; j+=8) {
+			c[ j+0 ] += aval; c[ j+1 ] += aval; 
+			c[ j+2 ] += aval; c[ j+3 ] += aval;
+			c[ j+4 ] += aval; c[ j+5 ] += aval;
+			c[ j+6 ] += aval; c[ j+7 ] += aval;
 		}
 	}
 

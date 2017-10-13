@@ -308,6 +308,7 @@ public class LibMatrixDNNHelper {
 			prepNonZerosForMatrixMult(m1, recomputeNNZM1);
 			prepNonZerosForMatrixMult(m2, recomputeNNZM2);
 			LibMatrixMult.matrixMult(m1, m2, ret, false);
+			ret.setNonZeros((long)ret.rlen*ret.clen);
 		}
 		else {
 			ret.sparse = false;
@@ -319,17 +320,9 @@ public class LibMatrixDNNHelper {
 		}
 	}
 	
-	static void addBias(int _rl, int _ru, double [] outputArr, double [] biasArr, int K, int PQ) {
-		// double [] biasArr = _params.bias.getDenseBlock();
-		
-		int index = _rl*K*PQ;
-		for(int n = _rl; n < _ru; n++) {
-			for(int k = 0; k < K; k++) {
-				for(int pq = 0; pq < PQ; pq++, index++) {
-					outputArr[index] += biasArr[k];
-				}
-			}
-		}
+	static void addBias(int r, double [] out, double [] bias, int K, int PQ) {
+		for(int k=0, cix=r*K*PQ; k<K; k++, cix+=PQ)
+			LibMatrixMult.vectAddInPlace(bias[k], out, cix, PQ);
 	}
 	
 	/**
@@ -555,8 +548,8 @@ public class LibMatrixDNNHelper {
 		//non-zeros are not evaluated for dense matrix multiplies
 		//so we simply need to ensure the block is not marked empty 
 		if( !mb.isInSparseFormat() )
-			mb.setNonZeros(mb.getNumRows() * mb.getNumColumns());
+			mb.setNonZeros((long)mb.getNumRows() * mb.getNumColumns());
 		else
-			mb.recomputeNonZeros();	
+			mb.recomputeNonZeros();
 	}
 }

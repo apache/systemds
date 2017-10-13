@@ -250,15 +250,7 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param A
-	 * @param rix
-	 * @param cix
-	 * @param type
-	 * @return
-	 */
-	private int getFirstIx( double[][] A, int rix, int cix, IndexType type ) {
+	private static int getFirstIx( double[][] A, int rix, int cix, IndexType type ) {
 		if( type==IndexType.GT ) {
 			for( int j=cix+1; j<cols; j++ )
 				if( A[rix][j] != 0 )

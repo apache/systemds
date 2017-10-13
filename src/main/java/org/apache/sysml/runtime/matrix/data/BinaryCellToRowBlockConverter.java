@@ -26,7 +26,7 @@ public class BinaryCellToRowBlockConverter implements Converter<MatrixIndexes, M
 	
 	private MatrixIndexes returnIndexes=new MatrixIndexes();
 	private MatrixBlock rowBlock = new MatrixBlock();
-	private Pair<MatrixIndexes, MatrixBlock> pair=new Pair<MatrixIndexes, MatrixBlock>(returnIndexes, rowBlock);
+	private Pair<MatrixIndexes, MatrixBlock> pair=new Pair<>(returnIndexes, rowBlock);
 	private boolean hasValue=false;
 
 	@Override

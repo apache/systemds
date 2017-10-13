@@ -85,6 +85,7 @@ public class WeightedSquaredLoss extends Lop
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = WeightedSquaredLoss";
 	}

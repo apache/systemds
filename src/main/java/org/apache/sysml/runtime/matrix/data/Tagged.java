@@ -72,8 +72,8 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 		base.write(out);
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return base.toString()+" ~~ tag: "+tag;
 	}
 

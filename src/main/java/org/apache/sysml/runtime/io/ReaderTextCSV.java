@@ -101,7 +101,7 @@ public class ReaderTextCSV extends MatrixReader
 		throws IOException, DMLRuntimeException
 	{
 		//prepare file paths in alphanumeric order
-		ArrayList<Path> files=new ArrayList<Path>();
+		ArrayList<Path> files=new ArrayList<>();
 		if(fs.isDirectory(path)) {
 			for(FileStatus stat: fs.listStatus(path, CSVReblockMR.hiddenFileFilter))
 				files.add(stat.getPath());

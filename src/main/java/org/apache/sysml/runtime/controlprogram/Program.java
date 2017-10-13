@@ -39,8 +39,8 @@ public class Program
 	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
 	
 	public Program() throws DMLRuntimeException {
-		_namespaceFunctions = new HashMap<String, HashMap<String,FunctionProgramBlock>>(); 
-		_programBlocks = new ArrayList<ProgramBlock>();
+		_namespaceFunctions = new HashMap<>(); 
+		_programBlocks = new ArrayList<>();
 	}
 
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb)
@@ -51,18 +51,16 @@ public class Program
 		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
 		namespaceBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceBlocks == null){
-			namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
+			namespaceBlocks = new HashMap<>();
 			_namespaceFunctions.put(namespace,namespaceBlocks);
 		}
 		
 		namespaceBlocks.put(fname,fpb);
 	}
 
-	public synchronized void removeFunctionProgramBlock(String namespace, String fname) 
-	{	
+	public synchronized void removeFunctionProgramBlock(String namespace, String fname) {
 		if (namespace == null) 
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
-		
 		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
 		if( _namespaceFunctions.containsKey(namespace) ){
 			namespaceBlocks = _namespaceFunctions.get(namespace);
@@ -72,8 +70,7 @@ public class Program
 	}
 
 	public synchronized HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
-		
-		HashMap<String,FunctionProgramBlock> retVal = new HashMap<String,FunctionProgramBlock>();
+		HashMap<String,FunctionProgramBlock> retVal = new HashMap<>();
 		
 		//create copy of function program blocks
 		for (String namespace : _namespaceFunctions.keySet()){
@@ -90,7 +87,6 @@ public class Program
 	}
 
 	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
-		
 		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
 		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);

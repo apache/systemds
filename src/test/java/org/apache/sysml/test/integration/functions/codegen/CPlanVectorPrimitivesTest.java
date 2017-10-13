@@ -646,7 +646,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	}
 	
 	@SuppressWarnings("incomplete-switch")
-	private void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
+	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{
 		try {
 			//generate input data
@@ -684,7 +684,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		}
 	}
 	
-	private void testVectorUnaryPrimitive(UnaryType utype, InputType type1)
+	private static void testVectorUnaryPrimitive(UnaryType utype, InputType type1)
 	{
 		try {
 			//generate input data
@@ -720,7 +720,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		}
 	}
 	
-	private void testVectorBinaryPrimitive(BinType bintype, InputType type1, InputType type2)
+	private static void testVectorBinaryPrimitive(BinType bintype, InputType type1, InputType type2)
 	{
 		try {
 			//generate input data (scalar later derived if needed)

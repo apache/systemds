@@ -155,13 +155,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param frame
-	 * @param data
-	 * @param lschema
-	 */
-	private void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
+	private static void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
 		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
 			for( int j=0; j<lschema.length; j++ )
@@ -171,13 +165,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param lschema
-	 * @param wildcard
-	 * @return
-	 */
-	private String getSchemaString( ValueType[] lschema, boolean wildcard ) {
+	private static String getSchemaString( ValueType[] lschema, boolean wildcard ) {
 		if( wildcard )
 			return "*";		
 		StringBuilder ret = new StringBuilder();

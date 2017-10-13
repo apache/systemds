@@ -68,7 +68,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<WriteMMTask> tasks = new ArrayList<WriteMMTask>();
+			ArrayList<WriteMMTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));

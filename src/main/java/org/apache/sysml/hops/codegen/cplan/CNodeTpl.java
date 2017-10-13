@@ -76,6 +76,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		return codegen(false);
 	}
 	
+	@Override
 	public abstract CNodeTpl clone();
 	
 	public abstract SpoofOutputDimsType getOutputDimType();

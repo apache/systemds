@@ -455,13 +455,12 @@ public class IfStatementBlock extends StatementBlock
 		_predicateHops = hops;
 	}
 	
+	@Override
 	public ArrayList<Hop> get_hops() throws HopsException{
-	
 		if (_hops != null && _hops.size() > 0){
 			LOG.error(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 		}
-			
 		return _hops;
 	}
 	
@@ -477,6 +476,7 @@ public class IfStatementBlock extends StatementBlock
 		_predicateLops = predicateLops;
 	}
 
+	@Override
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
 	 	
 		VariableSet predVars = ((IfStatement)_statements.get(0)).getConditionalPredicate().variablesRead();

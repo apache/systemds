@@ -229,7 +229,7 @@ public class OptimizerRuleBased extends Optimizer
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX and flag opt nodes)
-		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<String, PartitionFormat>();
+		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<>();
 		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
@@ -288,7 +288,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<String>();
+			HashSet<String> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			// rewrite 15: disable caching
@@ -303,7 +303,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<String>();
+			HashSet<String> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
@@ -415,7 +415,7 @@ public class OptimizerRuleBased extends Optimizer
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
-			HashMap<String, PartitionFormat> cand2 = new HashMap<String, PartitionFormat>();
+			HashMap<String, PartitionFormat> cand2 = new HashMap<>();
 			for( String c : cand )
 			{
 				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
@@ -785,7 +785,7 @@ public class OptimizerRuleBased extends Optimizer
 
 	protected HashMap<Hop, Double> getPartitionedRIXEstimates(OptNode parent)
 	{
-		HashMap<Hop, Double> estimates = new HashMap<Hop, Double>();
+		HashMap<Hop, Double> estimates = new HashMap<>();
 		for( OptNode n : parent.getChilds() )
 			if( n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 			{
@@ -937,8 +937,8 @@ public class OptimizerRuleBased extends Optimizer
 		if( recompile && count<=0 )
 			LOG.warn("OPT: Forced set operations exec type 'CP', but no operation requires recompile.");
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                                  .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
-		HashSet<String> fnStack = new HashSet<String>();
+			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		HashSet<String> fnStack = new HashSet<>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(pfpb.getChildBlocks(), 0, fnStack, LopProperties.ExecType.CP);
 		
 		//debug output
@@ -985,13 +985,13 @@ public class OptimizerRuleBased extends Optimizer
 		String varname = null;
 		String partitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		if(   partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString())
 			&& n.getExecType()==ExecType.MR )
 		{
 			//find all candidates matrices (at least one partitioned access via iterVar)
-			HashSet<String> cand = new HashSet<String>();
+			HashSet<String> cand = new HashSet<>();
 			rFindDataColocationCandidates(n, cand, pfpb.getIterVar());
 			
 			//select largest matrix for colocation (based on nnz to account for sparsity)
@@ -1826,9 +1826,8 @@ public class OptimizerRuleBased extends Optimizer
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
-
-		HashSet<String> sharedVars = new HashSet<String>();
+				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		HashSet<String> sharedVars = new HashSet<>();
 		boolean apply = false; 
 		
 		//enable runtime piggybacking if MR jobs on shared read-only data set
@@ -1936,29 +1935,27 @@ public class OptimizerRuleBased extends Optimizer
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
 		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
-		
-		ArrayList<String> ret = new ArrayList<String>();
+		ArrayList<String> ret = new ArrayList<>();
 		
 		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
 			&& n.getExecType() == ExecType.CP		 //local parfor 
-			&& _N > 1                            )   //at least 2 iterations                             
+			&& _N > 1                            )   //at least 2 iterations
 		{
 			//collect candidates from zipmm spark instructions
-			HashSet<String> cand = new HashSet<String>();
+			HashSet<String> cand = new HashSet<>();
 			rCollectZipmmPartitioningCandidates(n, cand);
 			
 			//prune updated candidates
-			HashSet<String> probe = new HashSet<String>(pfsb.getReadOnlyParentVars());				
+			HashSet<String> probe = new HashSet<>(pfsb.getReadOnlyParentVars());
 			for( String var : cand )
 				if( probe.contains( var ) )
 					ret.add( var );
-				
+			
 			//prune small candidates
-			ArrayList<String> tmp = new ArrayList<String>(ret);
+			ArrayList<String> tmp = new ArrayList<>(ret);
 			ret.clear();
 			for( String var : tmp )
-				if( vars.get(var) instanceof MatrixObject )
-				{
+				if( vars.get(var) instanceof MatrixObject ) {
 					MatrixObject mo = (MatrixObject) vars.get(var);
 					double sp = OptimizerUtils.getSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 					double size = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), sp);
@@ -2016,7 +2013,7 @@ public class OptimizerRuleBased extends Optimizer
 		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 		
-		ArrayList<String> ret = new ArrayList<String>();
+		ArrayList<String> ret = new ArrayList<>();
 		
 		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
 			&& n.getExecType() == ExecType.CP		 //local parfor 
@@ -2065,7 +2062,7 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
-		ArrayList<String> cleanedVars = new ArrayList<String>();
+		ArrayList<String> cleanedVars = new ArrayList<>();
 		ArrayList<String> resultVars = pfpb.getResultVariables();
 		String itervar = pfpb.getIterVar();
 		
@@ -2465,7 +2462,7 @@ public class OptimizerRuleBased extends Optimizer
 		int count = 0; //num removed parfor
 		
 		//find recursive parfor
-		HashSet<ParForProgramBlock> recPBs = new HashSet<ParForProgramBlock>();
+		HashSet<ParForProgramBlock> recPBs = new HashSet<>();
 		rFindRecursiveParFor( n, recPBs, false );
 
 		if( !recPBs.isEmpty() )
@@ -2547,7 +2544,7 @@ public class OptimizerRuleBased extends Optimizer
 				nNew.addParam(ParamType.OPSTRING, fnameNewKey);
 				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
 				OptTreeConverter.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
-				HashSet<String> memo = new HashSet<String>();
+				HashSet<String> memo = new HashSet<>();
 				memo.add(fnameKey); //required if functionop not shared (because not replaced yet)
 				memo.add(fnameNewKey); //requied if functionop shared (indirectly replaced)
 				for( int i=0; i<copyfpb.getChildBlocks().size() /*&& i<len*/; i++ )

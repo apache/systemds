@@ -28,6 +28,7 @@ public class WhileStatement extends Statement
 	private ConditionalPredicate _predicate;
 	private ArrayList<StatementBlock> _body;
 	
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
@@ -67,6 +68,7 @@ public class WhileStatement extends Statement
 		_body = StatementBlock.mergeStatementBlocks(_body);
 	}
 	
+	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("while ( ");
@@ -79,15 +81,16 @@ public class WhileStatement extends Statement
 		return sb.toString();
 	}
 
+	@Override
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
 	}
 	
+	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
-		
 	}
 	
 	@Override

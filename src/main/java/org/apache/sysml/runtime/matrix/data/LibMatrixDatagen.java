@@ -342,7 +342,7 @@ public class LibMatrixDatagen
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<RandTask> tasks = new ArrayList<RandTask>();
+			ArrayList<RandTask> tasks = new ArrayList<>();
 			int blklen = ((int)(Math.ceil((double)parnb/k)));
 			for( int i=0; i<k & i*blklen<parnb; i++ ) {
 				int rl = parcol ? 0 : i*blklen; 

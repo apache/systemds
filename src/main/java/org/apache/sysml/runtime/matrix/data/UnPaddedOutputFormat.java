@@ -62,6 +62,6 @@ public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extend
 		Path file = FileOutputFormat.getTaskOutputPath(job, name);
 	    FileSystem fs = file.getFileSystem(job);
 	    FSDataOutputStream fileOut = fs.create(file, true, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096), progress);
-		return new UnpaddedRecordWriter<K, V>(fileOut);
+		return new UnpaddedRecordWriter<>(fileOut);
 	}
 }

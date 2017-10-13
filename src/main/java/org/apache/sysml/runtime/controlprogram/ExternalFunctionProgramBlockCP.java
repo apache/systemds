@@ -30,7 +30,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -77,7 +76,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		super(prog, inputParams, outputParams, baseDir); //w/o instruction generation
 		
 		// copy other params 
-		_otherParams = new HashMap<String, String>();
+		_otherParams = new HashMap<>();
 		_otherParams.putAll(otherParams);
 
 		// generate instructions (overwritten)
@@ -131,7 +130,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	@Override
 	protected void createInstructions() 
 	{
-		_inst = new ArrayList<Instruction>();
+		_inst = new ArrayList<>();
 
 		// assemble information provided through keyvalue pairs
 		String className = _otherParams.get(ExternalFunctionStatement.CLASS_NAME);
@@ -180,16 +179,14 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		}
 			
 		return ret;
-	}	
+	}
 	
-	
-	public String createDefaultOutputFilePathAndName( )
-	{
+	public String createDefaultOutputFilePathAndName( ) {
 		return _baseDir + DEFAULT_FILENAME + _defaultSeq.getNextID();
-	}	
+	}
 
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in external function program block (for CP) generated from external function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
-	
 }

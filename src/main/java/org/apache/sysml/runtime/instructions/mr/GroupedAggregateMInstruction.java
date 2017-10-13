@@ -88,7 +88,7 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 			int bclen = dcInput.getNumColsPerBlock();
 			
 			//execute map grouped aggregate operations
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 			OperationsOnMatrixValues.performMapGroupedAggregate(getOperator(), in1, groups, _ngroups, brlen, bclen, outlist);
 			
 			//output all result blocks

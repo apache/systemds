@@ -271,13 +271,7 @@ public class FullPowerTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param name
-	 * @param matrix
-	 * @param includeR
-	 */
-	private void writeScalarInputMatrixWithMTD(String name, double[][] matrix, boolean includeR) 
+	private static void writeScalarInputMatrixWithMTD(String name, double[][] matrix, boolean includeR) 
 	{
 		try
 		{
@@ -301,26 +295,17 @@ public class FullPowerTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param name
-	 * @return
-	 */
-	private HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) 
+	private static HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) 
 	{
 		HashMap<CellIndex,Double> dmlfile = new HashMap<CellIndex,Double>();
-		try
-		{
+		try {
 			Double val = MapReduceTool.readDoubleFromHDFSFile(baseDirectory + OUTPUT_DIR + name);
 			dmlfile.put(new CellIndex(1,1), val);
 		}
-		catch(IOException e)
-		{
+		catch(IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
 		return dmlfile;
 	}
-		
 }

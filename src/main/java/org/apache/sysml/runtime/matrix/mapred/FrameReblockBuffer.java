@@ -141,7 +141,7 @@ public class FrameReblockBuffer
 			return;
 		
 		//output block
-		out.add(new Pair<Long, FrameBlock>(new Long(key), value));
+		out.add(new Pair<>(new Long(key), value));
 	}
 	
 	private static class FrameCell 

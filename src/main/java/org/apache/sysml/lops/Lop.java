@@ -277,7 +277,7 @@ public abstract class Lop
 	/**
 	 * Method to have Lops print their state. This is for debugging purposes.
 	 */
-
+	@Override
 	public abstract String toString();
 
 	public void resetVisitStatus() {

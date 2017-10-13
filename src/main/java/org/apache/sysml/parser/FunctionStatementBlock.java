@@ -202,14 +202,13 @@ public class FunctionStatementBlock extends StatementBlock
 		return ret;
 	}
 	
+	@Override
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
-		
 		FunctionStatement fstmt = (FunctionStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 		}
-		
 		_read = new VariableSet();
 		_gen = new VariableSet();
 				
@@ -247,6 +246,7 @@ public class FunctionStatementBlock extends StatementBlock
 		return _liveOut;
 	}
 
+	@Override
 	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
 		
 		FunctionStatement wstmt = (FunctionStatement)_statements.get(0);
@@ -266,7 +266,7 @@ public class FunctionStatementBlock extends StatementBlock
 	
 	}
 	
-	
+	@Override
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
@@ -277,12 +277,11 @@ public class FunctionStatementBlock extends StatementBlock
 		return _hops;
 	}
 	
-	
+	@Override
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
 		LOG.error(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
 		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");	
 	}
-	
 	
 	public VariableSet analyze(VariableSet liPassed, VariableSet loPassed) throws LanguageException{
  		

@@ -79,6 +79,7 @@ public class WeightedUnaryMMR extends Lop
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = WeightedUMMR";
 	}

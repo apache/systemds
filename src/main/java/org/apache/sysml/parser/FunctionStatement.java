@@ -30,6 +30,7 @@ public class FunctionStatement extends Statement
 	protected ArrayList <DataIdentifier> _inputParams;
 	protected ArrayList <DataIdentifier> _outputParams;
 	
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
@@ -84,6 +85,7 @@ public class FunctionStatement extends Statement
 		_body = StatementBlock.mergeStatementBlocks(_body);
 	}
 	
+	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append(_name + " = ");
@@ -110,15 +112,16 @@ public class FunctionStatement extends Statement
 		return sb.toString();
 	}
 
+	@Override
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 	}
 	
+	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
-		
 	}
 	
 	@Override

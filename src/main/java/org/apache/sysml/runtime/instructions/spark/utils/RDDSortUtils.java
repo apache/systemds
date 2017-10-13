@@ -182,10 +182,10 @@ public class RDDSortUtils
 		//flip sort indices from <source ix in target pos> to <target ix in source pos>
 		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 
 		for (int i=0; i < sortedIx.getNumRows(); i++) 
-			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);			
+			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);
 
 		//broadcast index vector
-		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<MatrixBlock>(sortedIxSrc, brlen, bclen);		
+		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, brlen, bclen);
 		Broadcast<PartitionedBlock<MatrixBlock>> _pmb = sec.getSparkContext().broadcast(pmb);	
 
 		//sort data with broadcast index vector
@@ -214,7 +214,7 @@ public class RDDSortUtils
 		public Iterator<DoublePair> call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
 			throws Exception 
 		{
-			ArrayList<DoublePair> ret = new ArrayList<DoublePair>(); 
+			ArrayList<DoublePair> ret = new ArrayList<>(); 
 			MatrixBlock mb1 = arg0._1();
 			MatrixBlock mb2 = arg0._2();
 			
@@ -243,19 +243,18 @@ public class RDDSortUtils
 		public Iterator<Tuple2<ValueIndexPair,Double>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<ValueIndexPair,Double>> ret = new ArrayList<Tuple2<ValueIndexPair,Double>>(); 
+			ArrayList<Tuple2<ValueIndexPair,Double>> ret = new ArrayList<>(); 
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
 			
 			long ixoffset = (ix.getRowIndex()-1)*_brlen;
 			for( int i=0; i<mb.getNumRows(); i++) {
 				double val = mb.quickGetValue(i, 0);
-				ret.add(new Tuple2<ValueIndexPair,Double>(
-						new ValueIndexPair(val,ixoffset+i+1), val));
+				ret.add(new Tuple2<>(new ValueIndexPair(val,ixoffset+i+1), val));
 			}
 			
 			return ret.iterator();
-		}		
+		}
 	}
 
 	private static class CreateDoubleKeyFunction implements Function<Double,Double> 
@@ -290,7 +289,7 @@ public class RDDSortUtils
 		public Tuple2<Long, Long> call(Tuple2<ValueIndexPair,Long> arg0)
 				throws Exception 
 		{
-			return new Tuple2<Long,Long>(arg0._1().ix, arg0._2());
+			return new Tuple2<>(arg0._1().ix, arg0._2());
 		}
 
 	}
@@ -311,8 +310,7 @@ public class RDDSortUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-			
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			MatrixIndexes ix = null;
 			MatrixBlock mb = null;
 			
@@ -326,7 +324,7 @@ public class RDDSortUtils
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
-						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
@@ -337,8 +335,7 @@ public class RDDSortUtils
 			
 			//flush last block
 			if( mb!=null && mb.getNonZeros() != 0 )
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
-			
+				ret.add(new Tuple2<>(ix,mb));
 			return ret.iterator();
 		}
 	}
@@ -359,7 +356,7 @@ public class RDDSortUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
 			throws Exception
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ix = null;
 			MatrixBlock mb = null;
@@ -374,10 +371,10 @@ public class RDDSortUtils
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
-						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock((int)len, 2, false);	
+					mb = new MatrixBlock((int)len, 2, false);
 				}
 				
 				mb.quickSetValue(pos, 0, val._1.val1);
@@ -386,7 +383,7 @@ public class RDDSortUtils
 			
 			//flush last block
 			if( mb!=null && mb.getNonZeros() != 0 )
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+				ret.add(new Tuple2<>(ix,mb));
 			
 			return ret.iterator();
 		}
@@ -408,7 +405,7 @@ public class RDDSortUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
 			throws Exception
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ix = null;
 			MatrixBlock mb = null;
@@ -423,7 +420,7 @@ public class RDDSortUtils
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
-						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
@@ -434,7 +431,7 @@ public class RDDSortUtils
 			
 			//flush last block
 			if( mb!=null && mb.getNonZeros() != 0 )
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+				ret.add(new Tuple2<>(ix,mb));
 			
 			return ret.iterator();
 		}
@@ -456,7 +453,7 @@ public class RDDSortUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Long,Long>> arg0) 
 			throws Exception
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ix = null;
 			MatrixBlock mb = null;
@@ -471,7 +468,7 @@ public class RDDSortUtils
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
-						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
@@ -482,7 +479,7 @@ public class RDDSortUtils
 			
 			//flush last block
 			if( mb!=null && mb.getNonZeros() != 0 )
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+				ret.add(new Tuple2<>(ix,mb));
 			
 			return ret.iterator();
 		}
@@ -560,7 +557,7 @@ public class RDDSortUtils
 						_currBlk = null;
 					}
 					
-					return new Tuple2<MatrixIndexes,RowMatrixBlock>(lix, new RowMatrixBlock(len, pos, tmp));
+					return new Tuple2<>(lix, new RowMatrixBlock(len, pos, tmp));
 				}
 				catch(Exception ex) {
 					throw new RuntimeException(ex);
@@ -649,7 +646,7 @@ public class RDDSortUtils
 						_currBlk = null;
 					}
 					
-					return new Tuple2<MatrixIndexes,RowMatrixBlock>(lix, new RowMatrixBlock(len, pos, tmp));
+					return new Tuple2<>(lix, new RowMatrixBlock(len, pos, tmp));
 				}
 				catch(Exception ex) {
 					throw new RuntimeException(ex);

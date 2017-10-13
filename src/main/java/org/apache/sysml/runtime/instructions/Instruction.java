@@ -157,6 +157,7 @@ public abstract class Instruction
 		LOG.debug(instString);
 	}
 	
+	@Override
 	public String toString() {
 		return instString;
 	}

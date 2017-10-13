@@ -83,6 +83,7 @@ public class WeightedCrossEntropy extends Lop
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = WeightedCrossEntropy";
 	}

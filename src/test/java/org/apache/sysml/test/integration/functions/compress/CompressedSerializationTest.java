@@ -140,13 +140,7 @@ public class CompressedSerializationTest extends AutomatedTestBase
 		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runCompressedSerializationTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runCompressedSerializationTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

@@ -191,7 +191,7 @@ public class LibMatrixReorg
 			//pre-processing (compute nnz per column once for sparse)
 			int[] cnt = null;
 			if( in.sparse && out.sparse ) {
-				ArrayList<CountNnzTask> tasks = new ArrayList<CountNnzTask>();
+				ArrayList<CountNnzTask> tasks = new ArrayList<>();
 				int blklen = (int)(Math.ceil((double)in.rlen/k));
 				for( int i=0; i<k & i*blklen<in.rlen; i++ )
 					tasks.add(new CountNnzTask(in, i*blklen, Math.min((i+1)*blklen, in.rlen)));
@@ -200,7 +200,7 @@ public class LibMatrixReorg
 					cnt = mergeNnzCounts(cnt, rtask.get());
 			} 
 			//compute actual transpose and check for errors
-			ArrayList<TransposeTask> tasks = new ArrayList<TransposeTask>();
+			ArrayList<TransposeTask> tasks = new ArrayList<>();
 			boolean row = (in.sparse || in.rlen >= in.clen) && !out.sparse;
 			int len = row ? in.rlen : in.clen;
 			int blklen = (int)(Math.ceil((double)len/k));
@@ -504,7 +504,7 @@ public class LibMatrixReorg
 			reshapeDense(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 
 		//prepare output
-		out = new ArrayList<IndexedMatrixValue>();
+		out = new ArrayList<>();
 		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
 			out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
 		
@@ -567,7 +567,7 @@ public class LibMatrixReorg
 		}
 		
 		//compute outputs (at most two output blocks)
-		HashMap<MatrixIndexes,IndexedMatrixValue> out = new HashMap<MatrixIndexes,IndexedMatrixValue>();
+		HashMap<MatrixIndexes,IndexedMatrixValue> out = new HashMap<>();
 		MatrixBlock linData = (MatrixBlock) data.getValue();
 		MatrixBlock linOffset = (MatrixBlock) offset.getValue();
 		MatrixIndexes tmpIx = new MatrixIndexes(-1,-1);
@@ -1429,7 +1429,7 @@ public class LibMatrixReorg
 	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
 		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
-		HashSet<MatrixIndexes> ret = new HashSet<MatrixIndexes>();
+		HashSet<MatrixIndexes> ret = new HashSet<>();
 		
 		long row_offset = (ixin.getRowIndex()-1)*mcOut.getRowsPerBlock();
 		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
@@ -1661,7 +1661,7 @@ public class LibMatrixReorg
 			
 			if( in.sparse ) //SPARSE 
 			{
-				SparseBlock a = in.sparseBlock;				
+				SparseBlock a = in.sparseBlock;
 				for ( int i=0; i < m; i++ )
 					rlen2 += (flags[i] = !a.isEmpty(i)) ? 1 : 0;
 			}
@@ -1931,7 +1931,7 @@ public class LibMatrixReorg
 		else {
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<RExpandColsTask> tasks = new ArrayList<RExpandColsTask>();
+				ArrayList<RExpandColsTask> tasks = new ArrayList<>();
 				int blklen = (int)(Math.ceil((double)rlen/k/8));
 				for( int i=0; i<8*k & i*blklen<rlen; i++ )
 					tasks.add(new RExpandColsTask(in, ret, 

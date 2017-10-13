@@ -40,6 +40,6 @@ public class CopyBinaryCellFunction implements PairFunction<Tuple2<MatrixIndexes
 		MatrixIndexes ix = new MatrixIndexes(arg0._1());
 		MatrixCell cell = new MatrixCell();
 		cell.copy(arg0._2());
-		return new Tuple2<MatrixIndexes,MatrixCell>(ix,cell);
+		return new Tuple2<>(ix,cell);
 	}
 }

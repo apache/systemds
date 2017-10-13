@@ -458,6 +458,7 @@ public class DMLConfig
 		return _defaultVals.get( key );
 	}
 	
+	@Override
 	public DMLConfig clone() {
 		DMLConfig conf = new DMLConfig();
 		conf._fileName = _fileName;

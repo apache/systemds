@@ -51,22 +51,21 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 		this.tag=that.tag;
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "("+first+", "+second+") k: "+third+", tag: "+tag;
 	}
 	
-	public long getThirdIndex()
-	{
+	public long getThirdIndex() {
 		return third;
 	}
 	
-	public void setIndexes(long i1, long i2, long i3)
-	{
+	public void setIndexes(long i1, long i2, long i3) {
 		super.setIndexes(i1, i2);
 		third=i3;
 	}
 	
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		first=in.readLong();
 		second=in.readLong();
@@ -74,6 +73,7 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 		tag=in.readByte();
 	}
 	
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(first);
 		out.writeLong(second);

@@ -132,7 +132,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -149,8 +149,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 					for( int j=0; j<blkIn.getNumColumns(); j++ )
 						tmpblk.appendValue(0, j, _initValue);
 				}
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(tmpix, tmpblk));
-			}	
+				ret.add(new Tuple2<>(tmpix, tmpblk));
+			}
 			
 			//output splitting (shift by one), preaggregated offset used by subsequent block
 			for( int i=0; i<blkIn.getNumRows(); i++ )
@@ -159,7 +159,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 					MatrixIndexes tmpix = new MatrixIndexes(rixOffset+i+2, ixIn.getColumnIndex());
 					MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
 					blkIn.sliceOperations(i, i, 0, blkIn.getNumColumns()-1, tmpblk);	
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(tmpix, tmpblk));
+					ret.add(new Tuple2<>(tmpix, tmpblk));
 				}
 			
 			return ret.iterator();

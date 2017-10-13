@@ -100,7 +100,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 					continue;
 	
 				//process instruction (incl block allocation)
-				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 				if( _forLeft )
 					OperationsOnMatrixValues.performShift(in, _ixrange, blockRowFactor, blockColFactor, _rlenLhs, _clenLhs, outlist);
 				else

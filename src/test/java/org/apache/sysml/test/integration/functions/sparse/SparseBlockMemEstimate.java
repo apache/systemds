@@ -53,13 +53,8 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 	public void testSparseBlockUltraSparse()  {
 		runSparseBlockMemoryTest(sparsity2);
 	}
-		
-	/**
-	 * 
-	 * @param btype
-	 * @param sparsity
-	 */
-	private void runSparseBlockMemoryTest( double sparsity)
+	
+	private static void runSparseBlockMemoryTest( double sparsity)
 	{
 		double memMCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.MCSR, rows, cols, sparsity);
 		double memCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.CSR, rows, cols, sparsity);

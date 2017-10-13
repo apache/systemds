@@ -248,7 +248,7 @@ public class LibMatrixAgg
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<AggTask> tasks = new ArrayList<AggTask>();
+			ArrayList<AggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)m/k));
 			for( int i=0; i<k & i*blklen<m; i++ ) {
 				tasks.add( (uaop.indexFn instanceof ReduceCol) ? 
@@ -346,10 +346,10 @@ public class LibMatrixAgg
 			
 			//step 1: compute aggregates per row partition
 			AggType uaoptype = getAggType(uaop);
-			ArrayList<PartialAggTask> tasks = new ArrayList<PartialAggTask>();
+			ArrayList<PartialAggTask> tasks = new ArrayList<>();
 			for( int i=0; i<k & i*blklen<m; i++ )
 				tasks.add( new PartialAggTask(in, new MatrixBlock(mk,n2,false), uaoptype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
-			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			for( Future<Object> task : taskret )
 				task.get(); //check for errors
 			
@@ -364,7 +364,7 @@ public class LibMatrixAgg
 			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);
 			
 			//step 3: compute final cumulative aggregate
-			ArrayList<CumAggTask> tasks2 = new ArrayList<CumAggTask>();
+			ArrayList<CumAggTask> tasks2 = new ArrayList<>();
 			for( int i=0; i<k & i*blklen<m; i++ ) {
 				double[] agg = (i==0)? null : 
 					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()), false);
@@ -437,7 +437,7 @@ public class LibMatrixAgg
 		
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<AggTernaryTask> tasks = new ArrayList<AggTernaryTask>();
+			ArrayList<AggTernaryTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)in1.rlen/k));
 			IndexFunction ixFn = op.indexFn;
 			for( int i=0; i<k & i*blklen<in1.rlen; i++ )
@@ -511,7 +511,7 @@ public class LibMatrixAgg
 		//(currently: parallelization over columns to avoid additional memory requirements)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<GrpAggTask> tasks = new ArrayList<GrpAggTask>();
+			ArrayList<GrpAggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)target.clen/k));
 			for( int i=0; i<k & i*blklen<target.clen; i++ )
 				tasks.add( new GrpAggTask(groups, target, weights, result, numGroups, op, i*blklen, Math.min((i+1)*blklen, target.clen)) );

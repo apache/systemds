@@ -170,17 +170,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param fname
-	 * @param ofmt
-	 * @param rows
-	 * @param cols
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private double[][] readFrameInput(String fname, String ofmt, int rows, int cols) 
+	private static double[][] readFrameInput(String fname, String ofmt, int rows, int cols) 
 		throws DMLRuntimeException, IOException 
 	{
 		//read input data

@@ -78,7 +78,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	
 	public static HashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
-		HashMap<String,String> paramMap = new HashMap<String,String>();
+		HashMap<String,String> paramMap = new HashMap<>();
 		
 		// all parameters are of form <name=value>
 		String[] parts;

@@ -54,6 +54,7 @@ public final class SparseRowScalar extends SparseRow implements Serializable
 		return new double[]{value};
 	}
 	
+	@Override
 	public int[] indexes() {
 		return new int[]{index};
 	}
@@ -86,10 +87,12 @@ public final class SparseRowScalar extends SparseRow implements Serializable
 		value = v;
 	}
 	
+	@Override
 	public double get(int col) {
 		return (index==col) ? value : 0;
 	}
 	
+	@Override
 	public void sort() {
 		//do nothing
 	}

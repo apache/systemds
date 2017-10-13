@@ -190,7 +190,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	private static MatrixBlock multiBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
 			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) throws DMLRuntimeException {
 		//create list of all required matrix indexes
-		List<MatrixIndexes> filter = new ArrayList<MatrixIndexes>();
+		List<MatrixIndexes> filter = new ArrayList<>();
 		long rlix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
 		long ruix = UtilFunctions.computeBlockIndex(ixrange.rowEnd, mcIn.getRowsPerBlock());
 		long clix = UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock());
@@ -324,8 +324,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> rightKV) 
 			throws Exception 
 		{
-			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(rightKV);			
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(rightKV);
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}		
@@ -361,7 +361,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			}
 			
 			MatrixBlock zeroBlk = (MatrixBlock) kv._2.zeroOutOperations(new MatrixBlock(), range, _complement);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, zeroBlk);
+			return new Tuple2<>(kv._1, zeroBlk);
 		}
 	}
 
@@ -421,7 +421,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 					MatrixBlock tmp = left.leftIndexingOperations(right, 
 							rl, ru, cl, cu, new MatrixBlock(), UpdateType.COPY);
 					
-					return new Tuple2<MatrixIndexes, MatrixBlock>(ix, tmp);
+					return new Tuple2<>(ix, tmp);
 				}
 				else //LixCacheType.RIGHT
 				{
@@ -446,7 +446,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 					int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, _bclen);
 					int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, _bclen);
 					MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), UpdateType.COPY);
-					return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
+					return new Tuple2<>(arg._1, ret);
 				}
 			}
 		}
@@ -490,10 +490,10 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			//create return matrix block (via shallow copy or slice)
 			if( lrl == 0 && lru == block.getNumRows()-1
 				&& lcl == 0 && lcu == block.getNumColumns()-1 ) {
-				return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, block);
+				return new Tuple2<>(ixOut, block);
 			}
 			else {
-				return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, 
+				return new Tuple2<>(ixOut, 
 					block.sliceOperations(lrl, lru, lcl, lcu, new MatrixBlock()));
 			}
 		}		
@@ -518,7 +518,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throws Exception 
 		{	
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(kv);
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
 			return SparkUtils.fromIndexedMatrixBlock(outlist).iterator();
 		}		
@@ -546,7 +546,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throws Exception 
 		{	
 			IndexedMatrixValue in = new IndexedMatrixValue(kv._1(), kv._2());
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
 			return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
 		}		
@@ -585,12 +585,12 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			{
 				IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg);
 				
-				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 				OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
 				
 				assert(outlist.size() == 1); //1-1 row/column block indexing
 				return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
-			}			
+			}
 		}
 	}
 	
@@ -607,7 +607,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in, List<MatrixIndexes> filter )
 	{
 		//build hashset of required partition ids
-		HashSet<Integer> flags = new HashSet<Integer>();
+		HashSet<Integer> flags = new HashSet<>();
 		Partitioner partitioner = in.rdd().partitioner().get();
 		for( MatrixIndexes key : filter )
 			flags.add(partitioner.getPartition(key));
@@ -618,7 +618,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				PartitionPruningRDD.create(in.rdd(), f);
 
 		//wrap output into java pair rdd
-		return new JavaPairRDD<MatrixIndexes,MatrixBlock>(ppRDD, 
+		return new JavaPairRDD<>(ppRDD, 
 				ClassManifestFactory.fromClass(MatrixIndexes.class), 
 				ClassManifestFactory.fromClass(MatrixBlock.class));
 	}

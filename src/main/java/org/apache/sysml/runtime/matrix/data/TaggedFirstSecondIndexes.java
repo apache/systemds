@@ -61,27 +61,23 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		setTag(other.tag);
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "("+first+", "+second+") tag: "+tag;
 	}
 	
-	public byte getTag()
-	{
+	public byte getTag() {
 		return tag;
 	}
 	
-	public long getFirstIndex()
-	{
+	public long getFirstIndex() {
 		return first;
 	}
-	public long getSecondIndex()
-	{
+	public long getSecondIndex() {
 		return second;
 	}
 	
-	public void setIndexes(long i1, long i2)
-	{
+	public void setIndexes(long i1, long i2) {
 		first=i1;
 		second=i2;
 	}
@@ -91,7 +87,6 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		first=in.readLong();
 		tag=in.readByte();
 		second=in.readLong();
-		
 	}
 
 	@Override
@@ -99,7 +94,6 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		out.writeLong(first);
 		out.writeByte(tag);
 		out.writeLong(second);
-		
 	}
 	
 	public int compareTo(TaggedFirstSecondIndexes other)

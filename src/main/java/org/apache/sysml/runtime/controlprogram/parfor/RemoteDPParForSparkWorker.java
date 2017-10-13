@@ -99,7 +99,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	public Iterator<Tuple2<Long, String>> call(Iterator<Tuple2<Long, Iterable<Writable>>> arg0)
 		throws Exception 
 	{
-		ArrayList<Tuple2<Long,String>> ret = new ArrayList<Tuple2<Long,String>>();
+		ArrayList<Tuple2<Long,String>> ret = new ArrayList<>();
 		
 		//lazy parworker initialization
 		configureWorker( TaskContext.get().taskAttemptId() );
@@ -119,15 +119,15 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			//update in-memory matrix partition
 			MatrixObject mo = _ec.getMatrixObject( _inputVar );
 			mo.setInMemoryPartition( partition );
-					
+			
 			//create tasks for input data
 			Task lTask = new Task(TaskType.SET);
 			lTask.addIteration( new IntObject(_iterVar, larg._1()) );
-						
+			
 			//execute program
 			long numIter = getExecutedIterations();
 			super.executeTask( lTask );
-					
+			
 			//maintain accumulators
 			_aTasks.add( 1 );
 			_aIters.add( (int)(getExecutedIterations()-numIter) );
@@ -136,7 +136,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		//write output if required (matrix indexed write) 
 		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
 		for( String val : tmp )
-			ret.add(new Tuple2<Long,String>(_workerID, val));
+			ret.add(new Tuple2<>(_workerID, val));
 		
 		return ret.iterator();
 	}

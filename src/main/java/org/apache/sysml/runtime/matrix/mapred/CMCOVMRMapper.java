@@ -111,6 +111,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		}
 	}
 	
+	@Override
 	public void close() throws IOException
 	{
 		if(cachedCollector!=null)
@@ -131,6 +132,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		}
 	}
 
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

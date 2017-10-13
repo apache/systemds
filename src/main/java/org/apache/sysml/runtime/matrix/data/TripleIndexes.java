@@ -44,26 +44,24 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>, Seriali
 	private long third=-1;
 
 	public TripleIndexes(){}
-	public TripleIndexes(long i1, long i2, long i3)
-	{
+	
+	public TripleIndexes(long i1, long i2, long i3) {
 		first=i1;
 		second=i2;
 		third=i3;
 	}
 	
-	public TripleIndexes(TripleIndexes that)
-	{
+	public TripleIndexes(TripleIndexes that) {
 		setIndexes(that);
 	}
 	public void setIndexes(TripleIndexes that) {
-		
 		this.first=that.first;
 		this.second=that.second;
 		this.third=that.third;
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "("+first+", "+second+") k: "+third;
 	}
 	

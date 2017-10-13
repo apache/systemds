@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
@@ -117,7 +117,7 @@ public class SortMR
     private static ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
     	throws IOException 
     {
-    	ArrayList<WritableComparable> parts = new ArrayList<WritableComparable>();
+    	ArrayList<WritableComparable> parts = new ArrayList<>();
     	SequenceFile.Reader reader = null;
     	try 
     	{
@@ -189,7 +189,7 @@ public class SortMR
 	    //setup input/output paths
 	    Path inputDir = new Path(input);
 	    inputDir = inputDir.makeQualified(inputDir.getFileSystem(job));
-	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
+	    FileInputFormat.setInputPaths(job, inputDir);
 	    Path outpath = new Path(tmpOutput);
 	    FileOutputFormat.setOutputPath(job, outpath);	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
@@ -336,58 +336,58 @@ public class SortMR
 
 	private static boolean runStitchupJob(String input, long rlen, long clen, int brlen, int bclen, long[] counts,
 			int numReducers, int replication, String output) 
-	  throws Exception 
-	  {
-	    JobConf job = new JobConf(SortMR.class);
-	    job.setJobName("SortIndexesMR");
-	   
-	    //setup input/output paths
-	    Path inpath = new Path(input);
-	    Path outpath = new Path(output);
-	    FileInputFormat.setInputPaths(job, inpath);
-	    FileOutputFormat.setOutputPath(job, outpath);	    
-	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    
-	    //set number of reducers (1 if local mode)
-	    if( InfrastructureAnalyzer.isLocalMode(job) )
-	    	job.setNumReduceTasks(1);
-	    else
-	    	MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
-	    	    
-	    //setup input/output format
-	    InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
-	    OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-	    job.setInputFormat(iinfo.inputFormatClass);
-	    job.setOutputFormat(oinfo.outputFormatClass);
-	    CompactInputFormat.setKeyValueClasses(job, MatrixIndexes.class, MatrixBlock.class);
-	    
-	    //setup mapper/reducer/output classes
-	    MRJobConfiguration.setInputInfo(job, (byte)0, InputInfo.BinaryBlockInputInfo, brlen, bclen, ConvertTarget.BLOCK);
-	    job.setMapperClass(IndexSortStitchupMapper.class);
+		throws Exception 
+	{
+		JobConf job = new JobConf(SortMR.class);
+		job.setJobName("SortIndexesMR");
+
+		//setup input/output paths
+		Path inpath = new Path(input);
+		Path outpath = new Path(output);
+		FileInputFormat.setInputPaths(job, inpath);
+		FileOutputFormat.setOutputPath(job, outpath);	    
+		MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
+		
+		//set number of reducers (1 if local mode)
+		if( InfrastructureAnalyzer.isLocalMode(job) )
+			job.setNumReduceTasks(1);
+		else
+			MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
+		
+		//setup input/output format
+		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+		OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+		job.setInputFormat(iinfo.inputFormatClass);
+		job.setOutputFormat(oinfo.outputFormatClass);
+		CompactInputFormat.setKeyValueClasses(job, MatrixIndexes.class, MatrixBlock.class);
+		
+		//setup mapper/reducer/output classes
+		MRJobConfiguration.setInputInfo(job, (byte)0, InputInfo.BinaryBlockInputInfo, brlen, bclen, ConvertTarget.BLOCK);
+		job.setMapperClass(IndexSortStitchupMapper.class);
 		job.setReducerClass(IndexSortStitchupReducer.class);	
 		job.setOutputKeyClass(oinfo.outputKeyClass);
 		job.setOutputValueClass(oinfo.outputValueClass); 
-	    MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
-	    MRJobConfiguration.setMatricesDimensions(job, new byte[]{0}, new long[]{rlen}, new long[]{clen});
-	    
-	    //compute shifted prefix sum of offsets and put into configuration
-	    long[] cumsumCounts = new long[counts.length];
-	    long sum = 0;
-	    for( int i=0; i<counts.length; i++ ) {
-	    	cumsumCounts[i] = sum;
-	    	sum += counts[i];
-	    }
-	    job.set(SORT_INDEXES_OFFSETS, Arrays.toString(cumsumCounts));
-	    
-	    //setup replication factor
-	    job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
-	    
+		MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
+		MRJobConfiguration.setMatricesDimensions(job, new byte[]{0}, new long[]{rlen}, new long[]{clen});
+		
+		//compute shifted prefix sum of offsets and put into configuration
+		long[] cumsumCounts = new long[counts.length];
+		long sum = 0;
+		for( int i=0; i<counts.length; i++ ) {
+			cumsumCounts[i] = sum;
+			sum += counts[i];
+		}
+		job.set(SORT_INDEXES_OFFSETS, Arrays.toString(cumsumCounts));
+		
+		//setup replication factor
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
+		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		//run mr job
-	    RunningJob runJob = JobClient.runJob(job);
-	    
-	    return runJob.isSuccessful();
+		RunningJob runJob = JobClient.runJob(job);
+		
+		return runJob.isSuccessful();
 	}
 }

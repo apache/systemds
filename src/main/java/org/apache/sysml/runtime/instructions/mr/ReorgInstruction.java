@@ -150,7 +150,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase {
 				else if( ((ReorgOperator)optr).fn instanceof RevIndex ) 
 				{
 					//execute reverse operation
-					ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+					ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 					LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
 					
 					//output indexed matrix values

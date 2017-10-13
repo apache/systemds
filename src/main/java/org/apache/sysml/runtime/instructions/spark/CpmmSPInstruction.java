@@ -139,7 +139,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			value.set(arg0._1(), new MatrixBlock(arg0._2()));
 			
 			Long key = _left ? arg0._1.getColumnIndex() : arg0._1.getRowIndex();
-			return new Tuple2<Long, IndexedMatrixValue>(key, value);
+			return new Tuple2<>(key, value);
 		}	
 	}
 
@@ -169,8 +169,8 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			
 			//return target block
 			ixOut.setIndexes(arg0._2()._1().getIndexes().getRowIndex(), 
-					         arg0._2()._2().getIndexes().getColumnIndex());
-			return new Tuple2<MatrixIndexes, MatrixBlock>( ixOut, blkOut );
+				arg0._2()._2().getIndexes().getColumnIndex());
+			return new Tuple2<>( ixOut, blkOut );
 		}
 	}
 }

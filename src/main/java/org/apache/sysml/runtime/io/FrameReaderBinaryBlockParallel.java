@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 {
-
+	@Override
 	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -51,12 +51,12 @@ public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 		{
 			//create read tasks for all files
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
+			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 				tasks.add(new ReadFileTask(lpath, job, fs, dest));
 
 			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);
 			pool.shutdown();
 			
 			//check for exceptions

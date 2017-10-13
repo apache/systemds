@@ -47,9 +47,9 @@ public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
 	 */
 	public LibMatrixCuDNNInputRowFetcher(GPUContext gCtx, String instName, MatrixObject image) throws DMLRuntimeException {
 		this.gCtx = gCtx; this.instName = instName;
-		numColumns = LibMatrixCuDNN.toInt(image.getNumColumns());
-		isInputInSparseFormat = LibMatrixCuDNN.isInSparseFormat(gCtx, image);
-		inPointer = isInputInSparseFormat ? LibMatrixCuDNN.getSparsePointer(gCtx, image, instName) : LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
+		numColumns = LibMatrixCUDA.toInt(image.getNumColumns());
+		isInputInSparseFormat = LibMatrixCUDA.isInSparseFormat(gCtx, image);
+		inPointer = isInputInSparseFormat ? LibMatrixCUDA.getSparsePointer(gCtx, image, instName) : LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
 		outPointer = gCtx.allocate(numColumns*Sizeof.DOUBLE);
 	}
 	/**
@@ -65,10 +65,10 @@ public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
 			cudaMemset(outPointer, 0, numColumns*Sizeof.DOUBLE);
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			if(GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
-			LibMatrixCuDNN.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCuDNN.toInt(numColumns-1), numColumns);
+			LibMatrixCUDA.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);
 		}
 		else {
-			LibMatrixCuDNN.sliceDenseDense(gCtx, instName, (Pointer)inPointer, outPointer, n, n, 0, LibMatrixCuDNN.toInt(numColumns-1), numColumns);
+			LibMatrixCUDA.sliceDenseDense(gCtx, instName, (Pointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);
 		}
 		return outPointer;
 	}

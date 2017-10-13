@@ -299,7 +299,7 @@ public class OperationsOnMatrixValues
 			throws DMLRuntimeException
 	{
 		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), (MatrixBlock)in);
-		ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+		ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 		performSlice(imv, ixrange, brlen, bclen, outlist);
 	
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
@@ -452,8 +452,8 @@ public class OperationsOnMatrixValues
 	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, FrameBlock in) 
 			throws DMLRuntimeException
 	{
-		Pair<Long, FrameBlock> lfp = new Pair<Long, FrameBlock>(new Long(((iix-1)*brlen)+1), in);
-		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
+		Pair<Long, FrameBlock> lfp = new Pair<>(new Long(((iix-1)*brlen)+1), in);
+		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<>();
 		performSlice(lfp, ixrange, brlen, bclen, outlist);
 	
 		return outlist;
@@ -512,7 +512,7 @@ public class OperationsOnMatrixValues
 		{
 			ValueType[] schema = Arrays.copyOfRange(block.getSchema(), (int)tmpRange.colStart, (int)tmpRange.colEnd+1);
 			long iResultIndex = Math.max(((r-1)*brlen - ixrange.rowStart + 1), 0);
-			Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
+			Pair<Long,FrameBlock> out=new Pair<>(new Long(iResultIndex+1), new FrameBlock(schema));
 			outlist.add(out);
 		}
 		
@@ -571,7 +571,7 @@ public class OperationsOnMatrixValues
 			resultBlock.ensureAllocatedColumns(iRHSRows);
 			
 			resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new FrameBlock());
-			outlist.add(new Pair<Long, FrameBlock>((leftRowIndex-1)*brlenLeft+1, resultBlock));
+			outlist.add(new Pair<>((leftRowIndex-1)*brlenLeft+1, resultBlock));
 		}
 	}
 

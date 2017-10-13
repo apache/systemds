@@ -41,11 +41,10 @@ public class IfProgramBlock extends ProgramBlock
 	
 	public IfProgramBlock(Program prog, ArrayList<Instruction> predicate) {
 		super(prog);
-		
-		_childBlocksIfBody = new ArrayList<ProgramBlock>();
-		_childBlocksElseBody = new ArrayList<ProgramBlock>();
+		_childBlocksIfBody = new ArrayList<>();
+		_childBlocksElseBody = new ArrayList<>();
 		_predicate = predicate;
-		_exitInstructions = new ArrayList<Instruction>();
+		_exitInstructions = new ArrayList<>();
 	}
 	
 	public ArrayList<ProgramBlock> getChildBlocksIfBody() { 
@@ -177,6 +176,7 @@ public class IfProgramBlock extends ProgramBlock
 		return result;
 	}
 	
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in if program block generated from if statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

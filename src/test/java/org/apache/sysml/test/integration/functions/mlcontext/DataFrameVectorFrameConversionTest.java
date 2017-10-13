@@ -291,7 +291,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 	}
 
 	@SuppressWarnings("resource")
-	private Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) 
+	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) 
 		throws DMLRuntimeException
 	{
 		//create in-memory list of rows

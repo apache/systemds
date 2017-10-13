@@ -111,6 +111,7 @@ public class CombineMR
 			
 		}
 		
+		@Override
 		public void configure(JobConf job)
 		{	
 			super.configure(job);
@@ -123,7 +124,7 @@ public class CombineMR
 			for(int i=0; i<resultIndexes.length; i++)
 			{
 				MatrixCharacteristics stat=MRJobConfiguration.getMatrixCharacteristicsForOutput(job, resultIndexes[i]);
-				outputBlockSizes.put(resultIndexes[i], new Pair<Integer, Integer>(stat.getRowsPerBlock(), stat.getColsPerBlock()));
+				outputBlockSizes.put(resultIndexes[i], new Pair<>(stat.getRowsPerBlock(), stat.getColsPerBlock()));
 			}
 			for(MRInstruction ins: comb_instructions)
 			{

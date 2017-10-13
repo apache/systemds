@@ -97,7 +97,7 @@ public class FrameIndexingAppendTest extends AutomatedTestBase
 					Assert.assertEquals("Wrong result: "+data[i][j]+".", data[i][j], F1s[i][j]);
 	}
 
-	private ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, String[][] M, boolean modelReuse) 
+	private static ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, String[][] M, boolean modelReuse) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -106,7 +106,7 @@ public class FrameIndexingAppendTest extends AutomatedTestBase
 		
 		//establish connection to SystemML
 		Connection conn = new Connection();
-				
+		
 		try
 		{
 			//prepare input arguments

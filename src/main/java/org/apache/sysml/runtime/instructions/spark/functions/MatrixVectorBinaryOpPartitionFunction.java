@@ -80,7 +80,7 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 				
 			//execute the binary operation
 			MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ix, ret);	
+			return new Tuple2<>(ix, ret);	
 		}			
 	}
 }

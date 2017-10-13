@@ -40,7 +40,7 @@ public class ExecutionConfig {
 	public int sharedMemBytes = 0;
 	public CUstream stream = null;
 
-	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<Integer, Integer>();
+	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<>();
 
 	/**
 	 * Convenience constructor for setting the number of blocks, number of threads and the

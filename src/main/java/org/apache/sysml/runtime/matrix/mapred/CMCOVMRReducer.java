@@ -129,6 +129,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 		}
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

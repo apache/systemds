@@ -73,14 +73,17 @@ public class ImportStatement extends Statement
 		_completePath = filePath;
 	}
 	
-	
+
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");
 		throw new LanguageException(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");
 	}
-		
+	
+	@Override
 	public void initializeforwardLV(VariableSet activeIn){}
 	
+	@Override
 	public VariableSet initializebackwardLV(VariableSet lo){
 		return lo;
 	}
@@ -100,6 +103,7 @@ public class ImportStatement extends Statement
 		return false;
 	}
 
+	@Override
 	public String toString(){
 		 StringBuilder sb = new StringBuilder();
 		 sb.append(Statement.SOURCE + "(");
@@ -111,5 +115,4 @@ public class ImportStatement extends Statement
 		 sb.append(";");
 		 return sb.toString(); 
 	}
-	 
 }

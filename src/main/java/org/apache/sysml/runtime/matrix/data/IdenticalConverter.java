@@ -24,8 +24,7 @@ import org.apache.hadoop.io.Writable;
 
 public class IdenticalConverter implements Converter<Writable, Writable, Writable, Writable>
 {
-	
-	private Pair<Writable, Writable> pair=new Pair<Writable, Writable>();
+	private Pair<Writable, Writable> pair=new Pair<>();
 	private boolean hasValue=false;
 	
 	@Override

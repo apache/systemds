@@ -49,8 +49,8 @@ public class MMCJMRCombinerReducerBase extends ReduceBase
 	protected byte tagForRight=1;
 	protected MatrixCharacteristics dim1;
 	protected MatrixCharacteristics dim2;
-//	protected int elementSize=8;
 
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

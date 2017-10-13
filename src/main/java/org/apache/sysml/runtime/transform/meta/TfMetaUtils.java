@@ -169,8 +169,8 @@ public class TfMetaUtils
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit, impute)
 		//note: recode/binning and impute might be applied on the same column
-		HashMap<String,String> meta = new HashMap<String,String>();
-		HashMap<String,String> mvmeta = new HashMap<String,String>();
+		HashMap<String,String> meta = new HashMap<>();
+		HashMap<String,String> mvmeta = new HashMap<>();
 		int rows = 0;
 		for( int j=0; j<colnames.length; j++ ) {
 			String colName = colnames[j];
@@ -223,8 +223,8 @@ public class TfMetaUtils
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit)
 		//note: recode/binning and impute might be applied on the same column
-		HashMap<String,String> meta = new HashMap<String,String>();
-		HashMap<String,String> mvmeta = new HashMap<String,String>();
+		HashMap<String,String> meta = new HashMap<>();
+		HashMap<String,String> mvmeta = new HashMap<>();
 		int rows = 0;
 		for( int j=0; j<colnames.length; j++ ) {
 			String colName = colnames[j];
@@ -289,7 +289,7 @@ public class TfMetaUtils
 			
 			InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			Pair<String,String> pair = new Pair<String,String>();
+			Pair<String,String> pair = new Pair<>();
 			String line; int rpos = 0; 
 			while( (line = br.readLine()) != null ) {
 				DecoderRecode.parseRecodeMapEntry(line, pair);

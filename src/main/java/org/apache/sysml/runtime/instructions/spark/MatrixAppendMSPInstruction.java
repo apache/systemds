@@ -124,7 +124,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			
 			IndexedMatrixValue in1 = SparkUtils.toIndexedMatrixBlock(kv);
 			MatrixIndexes ix = in1.getIndexes();
@@ -143,21 +143,19 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				
 				//output shallow copy of rhs block
 				if( _cbind ) {
-					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(
-							new MatrixIndexes(ix.getRowIndex(), ix.getColumnIndex()+1),
-							_pm.getBlock((int)ix.getRowIndex(), 1)) );
+					ret.add( new Tuple2<>(new MatrixIndexes(ix.getRowIndex(), ix.getColumnIndex()+1),
+						_pm.getBlock((int)ix.getRowIndex(), 1)) );
 				}
 				else { //rbind
-					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(
-							new MatrixIndexes(ix.getRowIndex()+1, ix.getColumnIndex()),
-							_pm.getBlock(1, (int)ix.getColumnIndex())) );	
+					ret.add( new Tuple2<>(new MatrixIndexes(ix.getRowIndex()+1, ix.getColumnIndex()),
+						_pm.getBlock(1, (int)ix.getColumnIndex())) );
 				}
 			}
 			//case 3: append operation on boundary block
 			else 
 			{
 				//allocate space for the output value
-				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
+				ArrayList<IndexedMatrixValue> outlist=new ArrayList<>(2);
 				IndexedMatrixValue first = new IndexedMatrixValue(new MatrixIndexes(ix), new MatrixBlock());
 				outlist.add(first);
 				
@@ -237,12 +235,12 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				//case 3: append operation on boundary block
 				else {
 					int rowix = _cbind ? (int)ix.getRowIndex() : 1;
-					int colix = _cbind ? 1 : (int)ix.getColumnIndex();					
+					int colix = _cbind ? 1 : (int)ix.getColumnIndex();
 					MatrixBlock in2 = _pm.getBlock(rowix, colix);
 					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock(), _cbind);
-					return new Tuple2<MatrixIndexes,MatrixBlock>(ix, out);
-				}	
-			}			
+					return new Tuple2<>(ix, out);
+				}
+			}
 		}
 	}
 }

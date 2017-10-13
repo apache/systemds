@@ -55,8 +55,8 @@ public class RuntimePiggybacking
 	static
 	{
 		//initialize mr-job instruction pool
-		_pool = new HashMap<JobType, LinkedList<Long>>();	
-		_jobs = new HashMap<Long, MRJobInstruction>();
+		_pool = new HashMap<>();	
+		_jobs = new HashMap<>();
 		
 		//init id sequence
 		_idSeq = new IDSequence();
@@ -200,10 +200,10 @@ public class RuntimePiggybacking
 				return null;
 				
 			//create working set and remove from pool
-			ret = new LinkedList<Pair<Long,MRJobInstruction>>();
+			ret = new LinkedList<>();
 			LinkedList<Long> tmp = _pool.remove(currType);
 			for( Long id : tmp )
-				ret.add( new Pair<Long, MRJobInstruction>(id,_jobs.get(id)) );
+				ret.add( new Pair<>(id,_jobs.get(id)) );
 		}
 		
 		return ret;

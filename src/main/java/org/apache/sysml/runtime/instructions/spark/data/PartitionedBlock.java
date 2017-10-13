@@ -109,7 +109,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 
 	public PartitionedBlock<T> createPartition( int offset, int numBlks, T block )
 	{
-		PartitionedBlock<T> ret = new PartitionedBlock<T>();
+		PartitionedBlock<T> ret = new PartitionedBlock<>();
 		ret._rlen = _rlen;
 		ret._clen = _clen;
 		ret._brlen = _brlen;

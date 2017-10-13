@@ -489,22 +489,12 @@ public class FullReblockTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			
-		    if( !success )
+			if( !success )
 				LOG.error("FullReblockTest failed with seed="+seed1+", seed2="+seed2);
 		}
 	}
 	
-	/**
-	 * 
-	 * @param ii
-	 * @param rows
-	 * @param cols
-	 * @param brows
-	 * @param bcols
-	 * @return
-	 * @throws IOException 
-	 */
-	private double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int brows, int bcols ) 
+	private static double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int brows, int bcols ) 
 		throws IOException
 	{
 		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, ii, rows, cols, brows, bcols);
@@ -512,19 +502,7 @@ public class FullReblockTest extends AutomatedTestBase
 		return C;
 	}
 	
-	/**
-	 * 
-	 * @param A
-	 * @param dir
-	 * @param oi
-	 * @param rows
-	 * @param cols
-	 * @param brows
-	 * @param bcols
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols ) 
+	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols ) 
 		throws DMLRuntimeException, IOException
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols);

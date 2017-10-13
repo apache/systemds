@@ -19,8 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.spark.functions;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -53,7 +53,7 @@ public class ReplicateBlockFunction implements PairFlatMapFunction<Tuple2<Matrix
 	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 		throws Exception 
 	{
-		LinkedList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<MatrixIndexes, MatrixBlock>>();
+		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 		MatrixIndexes ixIn = arg0._1();
 		MatrixBlock blkIn = arg0._2();
 		
@@ -66,7 +66,7 @@ public class ReplicateBlockFunction implements PairFlatMapFunction<Tuple2<Matrix
 			for( long j=1; j<=numBlocks; j++ ) {
 				MatrixIndexes tmpix = new MatrixIndexes(i, j);
 				MatrixBlock tmpblk = _deep ? new MatrixBlock(blkIn) : blkIn;
-				ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(tmpix, tmpblk) );
+				ret.add( new Tuple2<>(tmpix, tmpblk) );
 			}
 		} 
 		else // RHS MATRIX
@@ -76,7 +76,7 @@ public class ReplicateBlockFunction implements PairFlatMapFunction<Tuple2<Matrix
 			for( long i=1; i<=numBlocks; i++ ) {
 				MatrixIndexes tmpix = new MatrixIndexes(i, j);
 				MatrixBlock tmpblk = _deep ? new MatrixBlock(blkIn) : blkIn;
-				ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(tmpix, tmpblk) );
+				ret.add( new Tuple2<>(tmpix, tmpblk) );
 			}
 		}
 		

@@ -157,6 +157,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);
@@ -199,7 +200,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 			ArrayList<Integer> vec=tagMapping.get(output);
 			if(vec==null)
 			{
-				vec=new ArrayList<Integer>();
+				vec=new ArrayList<>();
 				tagMapping.put(output, vec);
 			}
 			vec.add(i);
@@ -208,6 +209,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		collectFinalMultipleOutputs=MRJobConfiguration.getMultipleConvertedOutputs(job);
 	}
 	
+	@Override
 	public void close() throws IOException
 	{
 		if( cachedReporter!=null && mapOnlyJob )

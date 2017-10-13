@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
  * 
  */
 public class LocalVariableMap implements Cloneable
-{	
+{
 	private static String eol = System.getProperty ("line.separator");
 	private static String ELEMENT_DELIM = org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
 	private static IDSequence _seq = new IDSequence();
@@ -45,12 +45,12 @@ public class LocalVariableMap implements Cloneable
 	private final long localID;
 	
 	public LocalVariableMap() {
-		localMap = new HashMap <String, Data>();
+		localMap = new HashMap<>();
 		localID = _seq.getNextID();
 	}
 	
 	public LocalVariableMap(LocalVariableMap vars) {
-		localMap = new HashMap <String, Data>(vars.localMap);
+		localMap = new HashMap<>(vars.localMap);
 		localID = _seq.getNextID();
 	}
 

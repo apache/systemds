@@ -68,11 +68,11 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
-        round(A);
-        round(B);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
+		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
+		TestUtils.floor(A);
+		TestUtils.floor(B);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
 
@@ -97,11 +97,6 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 		}
 	}
 	
-	private void round(double[][] weight) {
-		for(int i=0; i<weight.length; i++)
-			weight[i][0]=Math.floor(weight[i][0]);
-	}
-
 	@Test
 	public void testOrdinalOrdinalWithWeights() {
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS);
@@ -117,13 +112,13 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis());
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
-        round(A);
-        round(B);
-        round(WM);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
+		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis());
+		double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
+		TestUtils.floor(A);
+		TestUtils.floor(B);
+		TestUtils.floor(WM);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
 		writeInputMatrix("WM", WM, true);

@@ -59,14 +59,13 @@ public class ReplicateVectorFunction implements PairFlatMapFunction<Tuple2<Matri
 			throw new Exception("Expected a column vector in ReplicateVector");
 		}
 		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<>();
 		for(int i = 1; i <= _numReplicas; i++) {
 			if( _byRow )
-				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(i, ix.getColumnIndex()), mb));
+				retVal.add(new Tuple2<>(new MatrixIndexes(i, ix.getColumnIndex()), mb));
 			else
-				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(ix.getRowIndex(), i), mb));
+				retVal.add(new Tuple2<>(new MatrixIndexes(ix.getRowIndex(), i), mb));
 		}
-		
 		return retVal.iterator();
 	}
 }

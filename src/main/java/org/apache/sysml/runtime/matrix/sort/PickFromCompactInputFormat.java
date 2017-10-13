@@ -57,6 +57,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	public static final String PARTITION_OF_ZERO="partition.of.zero";
 	public static final String NUMBER_OF_ZERO="number.of.zero";
 	
+	@Override
 	protected  boolean isSplitable(FileSystem fs, Path filename) {
 		return false;
 	}
@@ -128,23 +129,21 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			ArrayList<Pair<Integer, Integer>> vec=posMap.get(currentPart);
 			if(vec==null)
 			{
-				vec=new ArrayList<Pair<Integer, Integer>>();
+				vec=new ArrayList<>();
 				posMap.put(currentPart, vec);
 			}
 			
 			//set the actual position starting from 0
 			if(currentPart>0)
-				vec.add( new Pair<Integer, Integer>( (int)(pos-ranges[currentPart-1]-1), e.index));
+				vec.add( new Pair<>( (int)(pos-ranges[currentPart-1]-1), e.index));
 			else
-				vec.add( new Pair<Integer, Integer>( (int)pos-1,  e.index));
+				vec.add( new Pair<>( (int)pos-1,  e.index));
 		}
 	}
 	
 	public static Set<Integer> setPickRecordsInEachPartFile(JobConf job, NumItemsByEachReducerMetaData metadata, double[] probs)
 	{
-		HashMap<Integer, ArrayList<Pair<Integer, Integer>>> posMap
-		=new HashMap<Integer, ArrayList<Pair<Integer, Integer>>>();
-		
+		HashMap<Integer, ArrayList<Pair<Integer, Integer>>> posMap = new HashMap<>();
 		getPointsInEachPartFile(metadata.getNumItemsArray(), probs, posMap);
 		
 		for(Entry<Integer, ArrayList<Pair<Integer, Integer>>> e: posMap.entrySet())
@@ -209,6 +208,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		return sb.substring(0, sb.length()-1);
 	}
 
+	@Override
 	public RecordReader<MatrixIndexes, MatrixCell> getRecordReader(InputSplit split
 			, JobConf job, Reporter reporter) throws IOException {
 		if(job.getBoolean(INPUT_IS_VECTOR, true))
@@ -269,7 +269,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			String[] f2 = null;
 			
 			// Each field of the form: "pid,wt" where wt is the total wt until the part pid
-			partWeights = new HashMap<Integer,Double>();
+			partWeights = new HashMap<>();
 			for(int i=0; i < f1.length-1; i++) {
 				f2 = f1[i].split(",");
 				if(i==0) {

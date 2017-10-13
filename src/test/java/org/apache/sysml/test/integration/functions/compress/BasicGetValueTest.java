@@ -137,12 +137,7 @@ public class BasicGetValueTest extends AutomatedTestBase
 		runGetValueTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runGetValueTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runGetValueTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

@@ -125,22 +125,19 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 				OperationsOnMatrixValues.incrementalAggregation(out.getValue(), null, resultblock, 
 						((AggregateBinaryOperator) aggBinInstruction.getOperator()).aggOp, false);
 
-		//		System.out.println("agg: \n"+out.getValue());
 			} catch (Exception e) {
 				throw new IOException(e);
 			}
 		}
 	}
 	
+	@Override
 	public void close() throws IOException
 	{
 		long start=System.currentTimeMillis();
 		
-//		System.out.println("cacheValues before processReducerInstructions: \n"+cachedValues);
 		//perform mixed operations
 		processReducerInstructions();
-		
-//		System.out.println("cacheValues before output: \n"+cachedValues);
 		
 		//output results
 		outputResultsFromCachedValues(cachedReporter);
@@ -150,7 +147,7 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		super.close();
 	}
 	
-
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

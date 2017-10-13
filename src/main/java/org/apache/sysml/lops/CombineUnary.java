@@ -54,9 +54,9 @@ public class CombineUnary extends Lop
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 	
-	public String toString()
-	{
-		return "combineunary";		
+	@Override
+	public String toString() {
+		return "combineunary";
 	}
 
 	@Override

@@ -53,7 +53,7 @@ public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairF
 			mergeWithComp(out, din.next(), compare);
 		
 		//create output tuple
-		return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(ixin), out);
+		return new Tuple2<>(new MatrixIndexes(ixin), out);
 	}
 
 	@Override

@@ -352,11 +352,9 @@ public class ReplaceTest extends AutomatedTestBase
 		}
 	}
 	
-	private void replaceRandom( double[][] A, int rows, int cols, double replacement, int len )
-	{
+	private static void replaceRandom( double[][] A, int rows, int cols, double replacement, int len ) {
 		Random rand = new Random();
 		for( int i=0; i<len; i++ )
 			A[rand.nextInt(rows-1)][rand.nextInt(cols-1)] = replacement;
 	}
-	
 }

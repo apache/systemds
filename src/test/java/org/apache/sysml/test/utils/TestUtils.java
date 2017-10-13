@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2011,7 +2010,7 @@ public class TestUtils
 	 * @return string representation
 	 */
 	public static String getStringRepresentationForDouble(double value) {
-		NumberFormat nf = DecimalFormat.getInstance(new Locale("EN"));
+		NumberFormat nf = NumberFormat.getInstance(new Locale("EN"));
 		nf.setGroupingUsed(false);
 		nf.setMinimumFractionDigits(1);
 		nf.setMaximumFractionDigits(20);
@@ -2051,27 +2050,32 @@ public class TestUtils
 		return matrix;
 	}
 	
-	/**
-	 * 
-	 * @param data
-	 * @return
-	 */
-	public static double[][] round(double[][] data) 
-	{
+	public static double[][] round(double[][] data) {
 		for(int i=0; i<data.length; i++)
 			for(int j=0; j<data[i].length; j++)
 				data[i][j]=Math.round(data[i][j]);
-		
 		return data;
 	}
 	
-	/**
-	 * 
-	 * @param data
-	 * @param rows
-	 * @param cols
-	 * @return
-	 */
+	public static double[][] round(double[][] data, int col) {
+		for(int i=0; i<data.length; i++)
+			data[i][col]=Math.round(data[i][col]);
+		return data;
+	}
+	
+	public static double[][] floor(double[][] data) {
+		for(int i=0; i<data.length; i++)
+			for(int j=0; j<data[i].length; j++)
+				data[i][j]=Math.floor(data[i][j]);
+		return data;
+	}
+	
+	public static double[][] floor(double[][] data, int col) {
+		for(int i=0; i<data.length; i++)
+			data[i][col]=Math.floor(data[i][col]);
+		return data;
+	}
+	
 	public static double sum(double[][] data, int rows, int cols)
 	{
 		double sum = 0;

@@ -210,7 +210,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_uniqueID = (int)_seq.getNextID();		
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
-		_gpuObjects = new HashMap<GPUContext, GPUObject>();
+		_gpuObjects = new HashMap<>();
 	}
 	
 	/**
@@ -1254,7 +1254,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * referenced cache block.  
 	 */
 	protected void createCache( ) {
-		_cache = new SoftReference<T>( _data );	
+		_cache = new SoftReference<>( _data );	
 	}
 
 	/**
@@ -1420,6 +1420,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return ret;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder str = new StringBuilder();
 		str.append(getClass().getSimpleName());

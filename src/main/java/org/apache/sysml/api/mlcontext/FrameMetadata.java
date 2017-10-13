@@ -508,12 +508,9 @@ public class FrameMetadata extends Metadata {
 	 * @param matrixCharacteristics
 	 *            the frame metadata as a MatrixCharacteristics object
 	 */
+	@Override
 	public void setMatrixCharacteristics(MatrixCharacteristics matrixCharacteristics) {
-		this.numRows = matrixCharacteristics.getRows();
-		this.numColumns = matrixCharacteristics.getCols();
-		this.numNonZeros = matrixCharacteristics.getNonZeros();
-		this.numRowsPerBlock = matrixCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = matrixCharacteristics.getColsPerBlock();
+		super.setMatrixCharacteristics(matrixCharacteristics);
 	}
 
 	/**

@@ -55,12 +55,10 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	public List<Task> createTasks() 
 		throws DMLRuntimeException 
 	{
-		LinkedList<Task> tasks = new LinkedList<Task>();
-		
+		LinkedList<Task> tasks = new LinkedList<>();
 		long lFrom = _fromVal.getLongValue();
 		long lTo = _toVal.getLongValue();
 		long lIncr = _incrVal.getLongValue();
-		
 		int P = _numThreads;  // number of parallel workers
 		long N = _numIter;    // total number of iterations
 		long R = N;           // remaining number of iterations

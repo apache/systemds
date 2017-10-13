@@ -67,7 +67,7 @@ public class WriterTextCellParallel extends WriterTextCell
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<WriteTextTask> tasks = new ArrayList<WriteTextTask>();
+			ArrayList<WriteTextTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));

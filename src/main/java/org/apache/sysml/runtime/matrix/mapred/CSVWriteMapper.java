@@ -77,6 +77,7 @@ public class CSVWriteMapper extends MapperBase implements Mapper<Writable, Writa
 		reporter.incrCounter(Counters.MAP_TIME, System.currentTimeMillis()-start);
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

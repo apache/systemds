@@ -200,8 +200,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 		
 		//tracking of rdds and broadcasts (for lineage maintenance)
-		ArrayList<String> rddVars = new ArrayList<String>();
-		ArrayList<String> bcVars = new ArrayList<String>();
+		ArrayList<String> rddVars = new ArrayList<>();
+		ArrayList<String> bcVars = new ArrayList<>();
 
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
@@ -399,8 +399,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 				
 				//create return tuple
 				MatrixIndexes ixOut = createOutputIndexes(ixIn);
-				return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
-			}			
+				return new Tuple2<>(ixOut, blkOut);
+			}
 			
 		}
 	}
@@ -433,8 +433,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
 			
 			//create return tuple
-			MatrixIndexes ixOut = createOutputIndexes(ixIn);			
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
+			MatrixIndexes ixOut = createOutputIndexes(ixIn);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 
@@ -470,7 +470,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			//create return tuple
 			MatrixIndexes ixOut = createOutputIndexes(ixIn);
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 	
@@ -504,7 +504,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			//create return tuple
 			MatrixIndexes ixOut = createOutputIndexes(ixIn1);
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 	
@@ -524,7 +524,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock blkOut = new MatrixBlock(blkIn);
 			
 			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut);
+			return new Tuple2<>(ixOut,blkOut);
 		}
 	}
 }

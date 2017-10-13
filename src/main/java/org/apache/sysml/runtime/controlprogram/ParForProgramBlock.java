@@ -426,7 +426,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 		//initialize program block cache if necessary
 		if( USE_PB_CACHE ) 
-			_pbcache = new HashMap<Long, ArrayList<ProgramBlock>>();
+			_pbcache = new HashMap<>();
 		
 		//created profiling report after parfor exec
 		_monitorReport = _monitor;
@@ -751,11 +751,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			// Step 1) init parallel workers, task queue and threads
-			LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
+			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			for( int i=0; i<_numThreads; i++ )
-			{
+			for( int i=0; i<_numThreads; i++ ) {
 				//create parallel workers as (lazy) deep copies
 				//including preparation of update-in-place variables
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
@@ -781,7 +780,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( USE_STREAMING_TASK_CREATION )
 			{
 				//put tasks into queue (parworker start work on first tasks while creating tasks) 
-				numCreatedTasks = partitioner.createTasks(queue);		
+				numCreatedTasks = partitioner.createTasks(queue);
 			}
 			else
 			{
@@ -793,7 +792,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					queue.enqueueTask( t );
 				
 				// mark end of task input stream
-				queue.closeInput();		
+				queue.closeInput();
 			}
 			if( _monitor )
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
@@ -810,9 +809,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
 			for( int i=0; i<_numThreads; i++ ) {
 				localVariables[i] = workers[i].getVariables();
-				localVariables[i].removeAllNotIn(new HashSet<String>(_resultVars));
+				localVariables[i].removeAllNotIn(new HashSet<>(_resultVars));
 				numExecutedTasks += workers[i].getExecutedTasks();
-				numExecutedIterations += workers[i].getExecutedIterations();			
+				numExecutedIterations += workers[i].getExecutedIterations();
 			}
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
@@ -891,7 +890,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		int maxDigits = (int)Math.log10(to.getLongValue()) + 1;
 		long numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION ) {
-			LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
+			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			
 			//put tasks into queue and start writing to taskFile
 			numCreatedTasks = partitioner.createTasks(queue);
@@ -1025,7 +1024,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single 
 		// job, cannot reuse serialized string, since variables are serialized as well.
 		ParForBody body = new ParForBody(_childBlocks, _resultVars, ec);
-		HashMap<String, byte[]> clsMap = new HashMap<String, byte[]>();
+		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeParForBody(body, clsMap);
 		
 		if( _monitor ) 
@@ -1087,7 +1086,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single
 		// job, cannot reuse serialized string, since variables are serialized as well.
 		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
-		HashMap<String, byte[]> clsMap = new HashMap<String, byte[]>(); 
+		HashMap<String, byte[]> clsMap = new HashMap<>(); 
 		String program = ProgramConverter.serializeParForBody( body, clsMap );
 		
 		if( _monitor ) 
@@ -1302,7 +1301,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws CacheException 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		HashSet<String> blacklist = new HashSet<String>(Arrays.asList(blacklistNames));
+		HashSet<String> blacklist = new HashSet<>(Arrays.asList(blacklistNames));
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
@@ -1358,7 +1357,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			//create deep copies of required elements child blocks
 			ArrayList<ProgramBlock> cpChildBlocks = null;	
-			HashSet<String> fnNames = new HashSet<String>();
+			HashSet<String> fnNames = new HashSet<>();
 			if( USE_PB_CACHE )
 			{
 				if( _pbcache.containsKey(pwID) ) {
@@ -1568,7 +1567,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//try recompile MR instructions to CP
-		HashSet<String> fnStack = new HashSet<String>();
+		HashSet<String> fnStack = new HashSet<>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
 		return true;
 	}
@@ -1660,7 +1659,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			try
 			{
 				//enqueue all result vars as tasks
-				LocalTaskQueue<String> q = new LocalTaskQueue<String>();
+				LocalTaskQueue<String> q = new LocalTaskQueue<>();
 				for( String var : _resultVars ) //foreach non-local write
 					if( ec.getVariable(var) instanceof MatrixObject ) //robustness scalars
 						q.enqueueTask(var);
@@ -1971,6 +1970,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

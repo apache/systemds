@@ -244,7 +244,7 @@ public class RemoteDPParForMR
 	public static LocalVariableMap [] readResultFile( JobConf job, String fname )
 		throws DMLRuntimeException, IOException
 	{
-		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
+		HashMap<Long,LocalVariableMap> tmp = new HashMap<>();
 
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);

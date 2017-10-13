@@ -64,12 +64,10 @@ public class ProgramBlock implements ParseInfo
 	protected StatementBlock _sb = null;
 	protected long _tid = 0; //by default _t0
 
-
 	public ProgramBlock(Program prog) {
 		_prog = prog;
-		_inst = new ArrayList<Instruction>();
+		_inst = new ArrayList<>();
 	}
-
 
 	////////////////////////////////////////////////
 	// getters, setters and similar functionality

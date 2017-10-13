@@ -37,7 +37,7 @@ public abstract class LineageObject
 	protected LineageObject(String varName) {
 		_varName = varName;
 		_numRef = 0;
-		_childs = new ArrayList<LineageObject>();
+		_childs = new ArrayList<>();
 	}
 	
 	public String getVarName() {

@@ -128,7 +128,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			ixOut.setIndexes(rixOut, ixOut.getColumnIndex());
 			
 			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut2);
+			return new Tuple2<>(ixOut, blkOut2);
 		}
 	}
 }

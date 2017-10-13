@@ -141,12 +141,7 @@ public class LargeParMatrixVectorMultTest extends AutomatedTestBase
 		runMatrixVectorMultTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runMatrixVectorMultTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runMatrixVectorMultTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

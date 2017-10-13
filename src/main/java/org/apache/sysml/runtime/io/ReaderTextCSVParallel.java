@@ -133,7 +133,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		try 
 		{
 			// create read tasks for all splits
-			ArrayList<CSVReadTask> tasks = new ArrayList<CSVReadTask>();
+			ArrayList<CSVReadTask> tasks = new ArrayList<>();
 			int splitCount = 0;
 			for (InputSplit split : splits) {
 				tasks.add( new CSVReadTask(split, _offsets, informat, job, dest, 
@@ -188,7 +188,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
-			ArrayList<CountRowsTask> tasks = new ArrayList<CountRowsTask>();
+			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for (InputSplit split : splits) {
 				tasks.add(new CountRowsTask(split, informat, job, hasHeader));
 				hasHeader = false;

@@ -23,9 +23,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 public class StringIdentifier extends ConstIdentifier 
 {
-	
 	private String _val;
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		return this;
 	}
@@ -53,6 +53,7 @@ public class StringIdentifier extends ConstIdentifier
 		return _val;
 	}
 	
+	@Override
 	public String toString(){
 		return _val;
 	}

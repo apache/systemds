@@ -58,6 +58,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 		return new ScalarInstruction(sop, in, out, str);
 	}
 	
+	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 		throws DMLRuntimeException

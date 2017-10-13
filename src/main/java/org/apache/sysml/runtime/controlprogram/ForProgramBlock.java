@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 public class ForProgramBlock extends ProgramBlock
-{	
+{
 	protected ArrayList<Instruction> _fromInstructions;
 	protected ArrayList<Instruction> _toInstructions;
 	protected ArrayList<Instruction> _incrementInstructions;
@@ -46,9 +46,8 @@ public class ForProgramBlock extends ProgramBlock
 	
 	public ForProgramBlock(Program prog, String iterPredVar) {
 		super(prog);
-		
-		_exitInstructions = new ArrayList<Instruction>();
-		_childBlocks = new ArrayList<ProgramBlock>();
+		_exitInstructions = new ArrayList<>();
+		_childBlocks = new ArrayList<>();
 		_iterPredVar = iterPredVar;
 	}
 	
@@ -211,6 +210,7 @@ public class ForProgramBlock extends ProgramBlock
 		return ret;
 	}
 	
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in for program block generated from for statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

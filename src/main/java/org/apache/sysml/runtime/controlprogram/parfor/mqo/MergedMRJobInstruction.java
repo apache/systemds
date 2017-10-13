@@ -41,9 +41,9 @@ public class MergedMRJobInstruction
 	
 	public MergedMRJobInstruction()
 	{
-		ids = new LinkedList<Long>();
-		outIxOffs = new HashMap<Long,Integer>();
-		outIxLens = new HashMap<Long,Integer>();
+		ids = new LinkedList<>();
+		outIxOffs = new HashMap<>();
+		outIxLens = new HashMap<>();
 	}
 	
 	public void addInstructionMetaData(long instID, int outIxOffset, int outIxLen)

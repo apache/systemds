@@ -76,7 +76,7 @@ public class CopyBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple
 					block = new MatrixBlock(arg._2, SparseBlock.Type.CSR, true);
 				else
 					block = new MatrixBlock(arg._2());
-				return new Tuple2<MatrixIndexes,MatrixBlock>(ix,block);
+				return new Tuple2<>(ix,block);
 			}
 			else {
 				return arg;

@@ -62,7 +62,7 @@ public class RepMat extends Lop
 		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 
-
+	@Override
 	public String toString() {
 		return "Operation = RepMat";
 	}

@@ -44,7 +44,7 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 	private int bcolumn;
 	
 	private Text value=new Text();
-	private Pair<NullWritable, Text> pair=new Pair<NullWritable, Text>(NullWritable.get(), value);
+	private Pair<NullWritable, Text> pair=new Pair<>(NullWritable.get(), value);
 	
 	private void reset()
 	{

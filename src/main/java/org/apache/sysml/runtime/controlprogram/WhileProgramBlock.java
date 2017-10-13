@@ -43,8 +43,8 @@ public class WhileProgramBlock extends ProgramBlock
 	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) {
 		super(prog);
 		_predicate = predicate;
-		_exitInstructions = new ArrayList<Instruction>();
-		_childBlocks = new ArrayList<ProgramBlock>(); 
+		_exitInstructions = new ArrayList<>();
+		_childBlocks = new ArrayList<>(); 
 	}
 	
 	public void addProgramBlock(ProgramBlock childBlock) {
@@ -98,6 +98,7 @@ public class WhileProgramBlock extends ProgramBlock
 		return result;
 	}
 	
+	@Override
 	public void execute(ExecutionContext ec) throws DMLRuntimeException 
 	{
 		//execute while loop
@@ -143,6 +144,7 @@ public class WhileProgramBlock extends ProgramBlock
 		_childBlocks = childs;
 	}
 	
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in while program block generated from while statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

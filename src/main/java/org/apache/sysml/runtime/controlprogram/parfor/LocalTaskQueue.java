@@ -48,7 +48,7 @@ public class LocalTaskQueue<T>
 	
 	public LocalTaskQueue()
 	{
-		_data        = new LinkedList<T>();
+		_data        = new LinkedList<>();
 		_closedInput = false;
 	}
 	

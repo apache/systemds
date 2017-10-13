@@ -164,7 +164,7 @@ public class WhileStatementBlock extends StatementBlock
 		return ids;
 	}
 
-
+	@Override
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
@@ -223,6 +223,7 @@ public class WhileStatementBlock extends StatementBlock
 		return _liveOut;
 	}
 
+	@Override
 	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
@@ -246,6 +247,7 @@ public class WhileStatementBlock extends StatementBlock
 		_predicateHops = hops;
 	}
 	
+	@Override
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && !_hops.isEmpty()){
@@ -268,8 +270,8 @@ public class WhileStatementBlock extends StatementBlock
 		_predicateLops = predicateLops;
 	}
 	
+	@Override
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
-	 		
 		VariableSet predVars = new VariableSet();
 		predVars.addVariables(((WhileStatement)_statements.get(0)).getConditionalPredicate().variablesRead());
 		predVars.addVariables(((WhileStatement)_statements.get(0)).getConditionalPredicate().variablesUpdated());

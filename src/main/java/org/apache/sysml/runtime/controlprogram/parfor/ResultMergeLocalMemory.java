@@ -151,9 +151,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 		{
 			//get matrix blocks through caching 
 			MatrixBlock outMB = _output.acquireRead();
-			ArrayList<MatrixObject> inMO = new ArrayList<MatrixObject>();
-			for( MatrixObject in : _inputs )
-			{
+			ArrayList<MatrixObject> inMO = new ArrayList<>();
+			for( MatrixObject in : _inputs ) {
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
 					inMO.add( in );

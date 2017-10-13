@@ -56,7 +56,8 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, TaggedMatrix
 		
 		report.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
-
+	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

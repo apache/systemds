@@ -153,8 +153,8 @@ public class MatrixCharacteristics implements Serializable
 		return (long) Math.ceil((double)getCols() / getColsPerBlock());
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "["+numRows+" x "+numColumns+", nnz="+nonZero
 		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}

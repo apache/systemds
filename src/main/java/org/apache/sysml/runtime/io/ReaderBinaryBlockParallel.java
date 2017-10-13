@@ -88,7 +88,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		{
 			//create read tasks for all files
 			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
-			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
+			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
 				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen);
 				tasks.add(t);

@@ -45,7 +45,7 @@ public class DecoderFactory
 		{
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Decoder> ldecoders = new ArrayList<Decoder>();
+			List<Decoder> ldecoders = new ArrayList<>();
 		
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(

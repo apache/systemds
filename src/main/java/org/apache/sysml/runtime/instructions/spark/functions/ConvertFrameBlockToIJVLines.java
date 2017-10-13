@@ -37,8 +37,7 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,
 	{
 		long rowoffset = kv._1;
 		FrameBlock block = kv._2;
-		
-		ArrayList<String> cells = new ArrayList<String>();
+		ArrayList<String> cells = new ArrayList<>();
 		
 		//write frame meta data
 		if( rowoffset == 1 ) {

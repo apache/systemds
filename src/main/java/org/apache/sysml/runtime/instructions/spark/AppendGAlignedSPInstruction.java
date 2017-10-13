@@ -109,8 +109,8 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 			throws Exception 
 		{	
 			long rix = _cbind ? kv._1.getRowIndex() : kv._1.getRowIndex() + _shiftBy;
-			long cix = _cbind ? kv._1.getColumnIndex() + _shiftBy : kv._1.getColumnIndex();			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, cix), kv._2);
+			long cix = _cbind ? kv._1.getColumnIndex() + _shiftBy : kv._1.getColumnIndex();
+			return new Tuple2<>(new MatrixIndexes(rix, cix), kv._2);
 		}
 	}
 }

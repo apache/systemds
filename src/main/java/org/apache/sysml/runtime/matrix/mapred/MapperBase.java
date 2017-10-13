@@ -174,6 +174,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		return ret && count>0;
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

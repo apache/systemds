@@ -60,16 +60,13 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 	{
 		MatrixIndexes ixIn = arg0._1();
 		MatrixBlock blkIn = arg0._2();
-
 		//swap the matrix indexes
 		MatrixIndexes ixOut = new MatrixIndexes(ixIn);
 		_indexFnObject.execute(ixIn, ixOut);
-		
 		//swap the matrix block data
 		MatrixBlock blkOut = (MatrixBlock) blkIn.reorgOperations(_reorgOp, new MatrixBlock(), -1, -1, -1);
-		
 		//output new tuple
-		return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut);
+		return new Tuple2<>(ixOut,blkOut);
 	}
 	
 }

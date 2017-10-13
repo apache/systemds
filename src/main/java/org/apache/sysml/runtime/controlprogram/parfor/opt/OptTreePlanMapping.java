@@ -38,7 +38,7 @@ public class OptTreePlanMapping
 	public OptTreePlanMapping()
 	{
 		_idSeq = new IDSequence();
-		_id_optnode = new HashMap<Long, OptNode>();
+		_id_optnode = new HashMap<>();
 	}
 
 	public OptNode getOptNode( long id )

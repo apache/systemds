@@ -30,6 +30,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class TableOutputTest extends AutomatedTestBase 
 {
@@ -145,9 +146,9 @@ public class TableOutputTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset (always dense because values <=0 invalid)
-			double[][] A = floor(getRandomMatrix(rows, 1, 1, maxVal1, 1.0, -1), rows, 1); 
+			double[][] A = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal1, 1.0, -1)); 
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = floor(getRandomMatrix(rows, 1, 1, maxVal2, 1.0, -1), rows, 1); 
+			double[][] B = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal2, 1.0, -1)); 
 			writeInputMatrixWithMTD("B", B, true);
 			
 			runTest(true, false, null, -1); 
@@ -199,20 +200,5 @@ public class TableOutputTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}
-
-	/**
-	 * 
-	 * @param X
-	 * @param rows
-	 * @param cols
-	 * @return
-	 */
-	private double[][] floor( double[][] X, int rows, int cols )
-	{
-		for( int i=0; i<rows; i++ )
-			for( int j=0; j<cols; j++ )
-				X[i][j] = Math.floor(X[i][j]);
-		return X;
 	}
 } 

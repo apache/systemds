@@ -30,8 +30,9 @@ public class MultiAssignmentStatement extends Statement
 {
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
-		
+	
 	// rewrites statement to support function inlining (creates deep copy) 
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 				
 		ArrayList<DataIdentifier> newTargetList = new ArrayList<>();
@@ -75,17 +76,17 @@ public class MultiAssignmentStatement extends Statement
 		return true;
 	}
 	
-	public void initializeforwardLV(VariableSet activeIn){}
-	public VariableSet initializebackwardLV(VariableSet lo){
-		return lo;
-	}
+	@Override
+	public void initializeforwardLV(VariableSet activeIn) { }
 	
+	@Override
+	public VariableSet initializebackwardLV(VariableSet lo) { return lo; }
+	
+	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		
 		// add variables read by source expression
 		result.addVariables(_source.variablesRead());
-		
 		// for any IndexedIdentifier on LHS, add variables for indexing expressions
 		for (int i=0; i<_targetList.size(); i++){
 			if (_targetList.get(i) instanceof IndexedIdentifier) {
@@ -93,10 +94,10 @@ public class MultiAssignmentStatement extends Statement
 				result.addVariables(target.variablesRead());
 			}
 		}
-			
 		return result;
 	}
 	
+	@Override
 	public  VariableSet variablesUpdated() {
 	
 		VariableSet result =  new VariableSet();

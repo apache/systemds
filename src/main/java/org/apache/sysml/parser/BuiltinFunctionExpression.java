@@ -61,6 +61,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		setCtxValuesAndFilename(ctx, fname);
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		Expression[] newArgs = new Expression[_args.length];
 		for (int i = 0; i < _args.length; i++) {
@@ -1375,6 +1376,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_opcode.toString() + "(");
 		if (_args != null) {

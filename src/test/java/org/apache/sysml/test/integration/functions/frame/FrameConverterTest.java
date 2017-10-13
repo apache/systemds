@@ -386,13 +386,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param frame
-	 * @param data
-	 * @param lschema
-	 */
-	private void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
+	private static void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
 		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
 			for( int j=0; j<lschema.length; j++ )
@@ -401,30 +395,19 @@ public class FrameConverterTest extends AutomatedTestBase
 			frame.appendRow(row1);
 		}
 	}
-
-	/**
-	 * 
-	 * @param frame1
-	 * @param frame2
-	 */
-	private void verifyFrameData(FrameBlock frame1, FrameBlock frame2) {
+	
+	private static void verifyFrameData(FrameBlock frame1, FrameBlock frame2) {
 		for ( int i=0; i<frame1.getNumRows(); i++ )
 			for( int j=0; j<frame1.getNumColumns(); j++ )	{
 				String val1 = UtilFunctions.objectToString(frame1.get(i, j));
-				String val2 = UtilFunctions.objectToString(frame2.get(i, j));				
+				String val2 = UtilFunctions.objectToString(frame2.get(i, j));
 				if( UtilFunctions.compareTo(ValueType.STRING, val1, val2) != 0)
 					Assert.fail("The original data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the converted value " + val2);
 			}
 	}
-
-
-	/**
-	 * 
-	 * @param frame1
-	 * @param frame2
-	 */
-	private void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
+	
+	private static void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
 		for ( int i=0; i<frame.getNumRows(); i++ )
 			for( int j=0; j<frame.getNumColumns(); j++ )	{
 				Object val1 = UtilFunctions.doubleToObject(frame.getSchema()[j],
@@ -448,11 +431,11 @@ public class FrameConverterTest extends AutomatedTestBase
 	 */
 
 	@SuppressWarnings("unchecked")
-	private void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix, 
+	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix, 
 			List<ValueType> schema, String fnameIn, String fnameOut)
 		throws DMLRuntimeException, IOException
 	{
-		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
+		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();
 		JavaSparkContext sc = sec.getSparkContext();
 		ValueType[] lschema = schema.toArray(new ValueType[0]);
 		

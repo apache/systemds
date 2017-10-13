@@ -263,7 +263,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock mb = arg0._2(); //col-vector
 			
 			//create an output cell per matrix block row (aligned w/ original source position)
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes,Double>>();
+			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
 			CTable ctab = CTable.getCTableFnObject();
 			for( int i=0; i<mb.getNumRows(); i++ )
 			{
@@ -274,7 +274,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 				
 				//indirect construction over pair to avoid tuple2 dependency in general ctable obj
 				if( p.getKey().getRowIndex() >= 1 ) //filter rejected entries
-					retVal.add(new Tuple2<MatrixIndexes,Double>(p.getKey(), p.getValue()));
+					retVal.add(new Tuple2<>(p.getKey(), p.getValue()));
 			}
 			
 			return retVal.iterator();
@@ -306,9 +306,9 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			in1 = extractBlock(kv._2._1, in1);
 			in2 = extractBlock(kv._2._2, in2);
 			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<MatrixBlock>();
+			ArrayList<MatrixBlock> inputs = new ArrayList<>();
 			inputs.add(in1); inputs.add(in2);  
-			return new Tuple2<MatrixIndexes, ArrayList<MatrixBlock>>(kv._1, inputs);
+			return new Tuple2<>(kv._1, inputs);
 		}
 		
 	}
@@ -343,9 +343,9 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			in3 = extractBlock(kv._2._2, in3);
 			
 			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<MatrixBlock>();
+			ArrayList<MatrixBlock> inputs = new ArrayList<>();
 			inputs.add(in1); inputs.add(in2); inputs.add(in3);  
-			return new Tuple2<MatrixIndexes, ArrayList<MatrixBlock>>(kv._1, inputs);
+			return new Tuple2<>(kv._1, inputs);
 		}
 		
 	}
@@ -430,10 +430,9 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 					break;
 				}
 				default:
-					throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);		
+					throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);
 			}
-			
-			return new Tuple2<MatrixIndexes, CTableMap>(kv._1, ctableResult);
+			return new Tuple2<>(kv._1, ctableResult);
 		}
 		
 	}
@@ -445,9 +444,9 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		@Override
 		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
 				Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			ArrayList<MatrixBlock> retVal = new ArrayList<MatrixBlock>();
+			ArrayList<MatrixBlock> retVal = new ArrayList<>();
 			retVal.add(kv._2);
-			return new Tuple2<MatrixIndexes, ArrayList<MatrixBlock>>(kv._1, retVal);
+			return new Tuple2<>(kv._1, retVal);
 		}
 		
 	}
@@ -459,14 +458,14 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		@Override
 		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
 				throws Exception {
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes, Double>>();
+			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
 			Iterator<LLDoubleEntry> iter = ctableMap.getIterator();
 			while( iter.hasNext() ) {
 				LLDoubleEntry ijv = iter.next();
 				long i = ijv.key1;
 				long j =  ijv.key2;
 				double v =  ijv.value;
-				retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), v));
+				retVal.add(new Tuple2<>(new MatrixIndexes(i, j), v));
 			}
 			return retVal.iterator();
 		}
@@ -482,7 +481,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 				Tuple2<MatrixIndexes, Double> kv) throws Exception {
 			
 			MatrixCell cell = new MatrixCell(kv._2().doubleValue());
-			return new Tuple2<MatrixIndexes, MatrixCell>(kv._1(), cell);
+			return new Tuple2<>(kv._1(), cell);
 		}
 		
 	}

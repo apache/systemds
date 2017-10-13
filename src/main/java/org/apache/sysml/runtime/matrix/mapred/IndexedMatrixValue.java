@@ -80,8 +80,8 @@ public class IndexedMatrixValue implements Serializable
 		_value = block2;
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "("+_indexes.getRowIndex()+", "+_indexes.getColumnIndex()+"): \n"+_value;
 	}
 }

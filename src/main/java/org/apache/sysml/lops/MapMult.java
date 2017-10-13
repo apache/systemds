@@ -133,6 +133,7 @@ public class MapMult extends Lop
 		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = MapMM";
 	}

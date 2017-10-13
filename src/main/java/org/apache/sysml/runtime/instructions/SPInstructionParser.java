@@ -89,7 +89,7 @@ public class SPInstructionParser extends InstructionParser
 {	
 	public static final HashMap<String, SPINSTRUCTION_TYPE> String2SPInstructionType;
 	static {
-		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
+		String2SPInstructionType = new HashMap<>();
 		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);

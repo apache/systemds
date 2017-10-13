@@ -152,7 +152,7 @@ public class OptTreePlanChecker
 		root.resetVisitStatus();
 		
 		//get all function op in this dag
-		HashMap<String, FunctionOp> fops = new HashMap<String, FunctionOp>();
+		HashMap<String, FunctionOp> fops = new HashMap<>();
 		getAllFunctionOps(root, fops);
 		
 		for( Instruction linst : inst )

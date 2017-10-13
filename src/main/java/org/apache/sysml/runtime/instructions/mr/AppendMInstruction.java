@@ -120,7 +120,7 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 				
 				//allocate space for the output value
-				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
+				ArrayList<IndexedMatrixValue> outlist=new ArrayList<>(2);
 				IndexedMatrixValue first=cachedValues.holdPlace(output, valueClass);
 				first.getIndexes().setIndexes(ix);
 				outlist.add(first);

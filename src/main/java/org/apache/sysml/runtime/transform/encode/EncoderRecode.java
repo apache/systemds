@@ -37,7 +37,7 @@ public class EncoderRecode extends Encoder
 	private static final long serialVersionUID = 8213163881283341874L;
 	
 	//recode maps and custom map for partial recode maps 
-	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
+	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<>();
 	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	
 	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen)
@@ -105,7 +105,7 @@ public class EncoderRecode extends Encoder
 
 		//ensure allocated partial recode map
 		if( _rcdMapsPart == null )
-			_rcdMapsPart = new HashMap<Integer, HashSet<Object>>();
+			_rcdMapsPart = new HashMap<>();
 		
 		//construct partial recode map (tokens w/o codes)
 		//iterate over columns for sequential access
@@ -113,7 +113,7 @@ public class EncoderRecode extends Encoder
 			int colID = _colList[j]; //1-based
 			//allocate column map if necessary
 			if( !_rcdMapsPart.containsKey(colID) ) 
-				_rcdMapsPart.put(colID, new HashSet<Object>());
+				_rcdMapsPart.put(colID, new HashSet<>());
 			HashSet<Object> map = _rcdMapsPart.get(colID);
 			//probe and build column map
 			for( int i=0; i<in.getNumRows(); i++ )
@@ -178,6 +178,7 @@ public class EncoderRecode extends Encoder
 	 * 
 	 * @param meta frame block
 	 */
+	@Override
 	public void initMetaData( FrameBlock meta ) {
 		if( meta == null || meta.getNumRows()<=0 )
 			return;

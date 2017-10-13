@@ -23,7 +23,6 @@ package org.apache.sysml.parser;
  
 public class PathStatement extends Statement
 {
-		
 	// Set of file system paths to packages
 	private String _pathValue;
 	
@@ -35,12 +34,15 @@ public class PathStatement extends Statement
 		return _pathValue;
 	}
 	
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		return this;	
+		return this;
 	}
-		
+	
+	@Override
 	public void initializeforwardLV(VariableSet activeIn){}
 	
+	@Override
 	public VariableSet initializebackwardLV(VariableSet lo){
 		return lo;
 	}
@@ -60,13 +62,13 @@ public class PathStatement extends Statement
 		return false;
 	}
 
+	@Override
 	public String toString(){
 		 StringBuilder sb = new StringBuilder();
 		 sb.append(Statement.SETWD + "(");
 		 sb.append(_pathValue);
 		 sb.append(")");
 		 sb.append(";");
-		 return sb.toString(); 
+		 return sb.toString();
 	}
-	 
 }

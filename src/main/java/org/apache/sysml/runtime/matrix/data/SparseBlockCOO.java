@@ -234,6 +234,7 @@ public class SparseBlockCOO extends SparseBlock
 		return pos(ru) - pos(rl);
 	}
 	
+	@Override
 	public long size(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
 		for(int i=rl; i<ru; i++)

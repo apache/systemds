@@ -534,7 +534,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
-			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<MatrixBlock>(mb, brlen, bclen);
+			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(mb, brlen, bclen);
 			mo.release();
 
 			//determine coarse-grained partitioning
@@ -559,8 +559,8 @@ public class SparkExecutionContext extends ExecutionContext
 					pmb.clearBlocks();
 			}
 			
-			bret = new PartitionedBroadcast<MatrixBlock>(ret);
-			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bret, varname,
+			bret = new PartitionedBroadcast<>(ret);
+			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<>(bret, varname,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
 			mo.setBroadcastHandle(bchandle);
 			CacheableData.addBroadcastSize(bchandle.getSize());
@@ -604,7 +604,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//create partitioned frame block and release memory consumed by input
 			FrameBlock mb = fo.acquireRead();
-			PartitionedBlock<FrameBlock> pmb = new PartitionedBlock<FrameBlock>(mb, brlen, bclen);
+			PartitionedBlock<FrameBlock> pmb = new PartitionedBlock<>(mb, brlen, bclen);
 			fo.release();
 
 			//determine coarse-grained partitioning
@@ -629,8 +629,8 @@ public class SparkExecutionContext extends ExecutionContext
 					pmb.clearBlocks();
 			}
 
-			bret = new PartitionedBroadcast<FrameBlock>(ret);
-			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<FrameBlock>(bret, varname,
+			bret = new PartitionedBroadcast<>(ret);
+			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<>(bret, varname,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
 			fo.setBroadcastHandle(bchandle);
 			CacheableData.addBroadcastSize(bchandle.getSize());
@@ -674,12 +674,12 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		LinkedList<Tuple2<MatrixIndexes,MatrixBlock>> list = new LinkedList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		LinkedList<Tuple2<MatrixIndexes,MatrixBlock>> list = new LinkedList<>();
 
 		if(    src.getNumRows() <= brlen
 		    && src.getNumColumns() <= bclen )
 		{
-			list.addLast(new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(1,1), src));
+			list.addLast(new Tuple2<>(new MatrixIndexes(1,1), src));
 		}
 		else
 		{
@@ -703,7 +703,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 					//append block to sequence file
 					MatrixIndexes indexes = new MatrixIndexes(blockRow+1, blockCol+1);
-					list.addLast(new Tuple2<MatrixIndexes,MatrixBlock>(indexes, block));
+					list.addLast(new Tuple2<>(indexes, block));
 				}
 		}
 
@@ -720,7 +720,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		LinkedList<Tuple2<Long,FrameBlock>> list = new LinkedList<Tuple2<Long,FrameBlock>>();
+		LinkedList<Tuple2<Long,FrameBlock>> list = new LinkedList<>();
 
 		//create and write subblocks of matrix
 		int blksize = ConfigurationManager.getBlocksize();
@@ -737,7 +737,7 @@ public class SparkExecutionContext extends ExecutionContext
 				block.setColumnMetadata(src.getColumnMetadata());
 
 			//append block to sequence file
-			list.addLast(new Tuple2<Long,FrameBlock>((long)roffset+1, block));
+			list.addLast(new Tuple2<>((long)roffset+1, block));
 		}
 
 		JavaPairRDD<Long,FrameBlock> result = sc.parallelizePairs(list);
@@ -930,7 +930,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<MatrixBlock>(rlen, clen, brlen, bclen);
+		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<>(rlen, clen, brlen, bclen);
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 
 		//copy blocks one-at-a-time into output matrix block
@@ -1567,7 +1567,7 @@ public class SparkExecutionContext extends ExecutionContext
 		public MemoryManagerParRDDs(double fractionMem) {
 			_limit = (long)(fractionMem * InfrastructureAnalyzer.getLocalMaxMemory());
 			_size = 0;
-			_rdds = new HashMap<Integer, Long>();
+			_rdds = new HashMap<>();
 		}
 
 		public synchronized boolean reserve(long rddSize) {

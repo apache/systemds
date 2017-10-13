@@ -437,6 +437,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// Metadata information 
 	
+	@Override
 	public int getNumRows() {
 		return rlen;
 	}
@@ -451,6 +452,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		rlen = r;
 	}
 	
+	@Override
 	public int getNumColumns() {
 		return clen;
 	}
@@ -459,6 +461,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		clen = c;
 	}
 	
+	@Override
 	public long getNonZeros() {
 		return nonZeros;
 	}
@@ -916,6 +919,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @return true if sparse
 	 */
+	@Override
 	public boolean isInSparseFormat() {
 		return sparse;
 	}
@@ -2898,6 +2902,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
+	@Override
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 		throws DMLRuntimeException
 	{
@@ -2927,6 +2932,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 
+	@Override
 	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
 		throws DMLRuntimeException
 	{
@@ -2946,9 +2952,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//core binary cell operation
 		LibMatrixBincell.bincellOpInPlace(this, that, op);
 	}
-
-
 	
+	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
 			MatrixValue newWithCorrection)
 	throws DMLRuntimeException
@@ -3193,6 +3198,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
+	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
 		throws DMLRuntimeException
 	{
@@ -3940,6 +3946,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		dest.recomputeNonZeros();
 	}
 	
+	@Override
 	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
 	{
@@ -4095,6 +4102,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
+	@Override
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 			throws DMLRuntimeException 
 	{
@@ -4203,6 +4211,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 	
+	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
 		throws DMLRuntimeException
@@ -4211,7 +4220,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				blockingFactorRow, blockingFactorCol, indexesIn, false);
 	}
 	
-	
+	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
 		throws DMLRuntimeException
@@ -4835,12 +4844,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return sum_wt;
 	}
 	
+	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op ) throws DMLRuntimeException
 	{
 		return aggregateBinaryOperations(m1Value, m2Value, result, op);
 	}
 
+	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
 		throws DMLRuntimeException
 	{

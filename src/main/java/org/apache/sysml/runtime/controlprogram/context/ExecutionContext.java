@@ -320,28 +320,28 @@ public class ExecutionContext {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
-		return new Pair<MatrixObject, Boolean>(mo, allocated);
+		return new Pair<>(mo, allocated);
 	}
 
 	/**
-     * Allocates a sparse matrix in CSR format on the GPU.
-     * Assumes that mat.getNumRows() returns a valid number
-     * 
-     * @param varName variable name
-     * @param numRows number of rows of matrix object
+	 * Allocates a sparse matrix in CSR format on the GPU.
+	 * Assumes that mat.getNumRows() returns a valid number
+	 * 
+	 * @param varName variable name
+	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
-     * @param nnz number of non zeroes
-     * @return matrix object
-     * @throws DMLRuntimeException if DMLRuntimeException occurs
-     */
-    public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz)
-        throws DMLRuntimeException
-    {
-    	MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-        mo.getMatrixCharacteristics().setNonZeros(nnz);
+	 * @param nnz number of non zeroes
+	 * @return matrix object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz)
+		throws DMLRuntimeException
+	{
+		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
+		mo.getMatrixCharacteristics().setNonZeros(nnz);
 				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
-        return new Pair<MatrixObject, Boolean>(mo, allocated);
-    } 
+		return new Pair<>(mo, allocated);
+	}
 
     /**
 	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
@@ -535,7 +535,7 @@ public class ExecutionContext {
 	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
 	{
 		//2-pass approach since multiple vars might refer to same matrix object
-		HashMap<String, Boolean> varsState = new HashMap<String,Boolean>();
+		HashMap<String, Boolean> varsState = new HashMap<>();
 		
 		//step 1) get current information
 		for( String var : varList )

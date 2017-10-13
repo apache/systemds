@@ -136,12 +136,7 @@ public class BasicTransposeSelfLeftMatrixMultTest extends AutomatedTestBase
 		runTransposeSelfMatrixMultTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runTransposeSelfMatrixMultTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runTransposeSelfMatrixMultTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

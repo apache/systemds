@@ -104,11 +104,12 @@ public class BreakPointInstruction extends Instruction
 		if( DMLScript.ENABLE_DEBUG_MODE && isBPInstructionEnabled()) {
 			DebugState dbState = ec.getDebugState();
 			
-			System.out.format("Breakpoint reached at %s.\n", dbState.getPC().toString());					
+			System.out.format("Breakpoint reached at %s.\n", dbState.getPC().toString());
 			dbState.suspend = true;
 		}
 	}
 	
+	@Override
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();

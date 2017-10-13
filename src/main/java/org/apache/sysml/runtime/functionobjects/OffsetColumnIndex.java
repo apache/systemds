@@ -63,6 +63,7 @@ public class OffsetColumnIndex extends IndexFunction
 		return false;
 	}
 
+	@Override
 	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(numRowsInOutput, numColumnsInOutput, in.getRowsPerBlock(), in.getColsPerBlock());
 		return false;

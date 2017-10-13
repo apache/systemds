@@ -35,7 +35,6 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
  */
 public class TaskPartitionerFixedsize extends TaskPartitioner
 {
-	
 	protected int _firstnPlus1 = 0; //add one to these firstn tasks
  	
 	public TaskPartitionerFixedsize( long taskSize, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
@@ -47,7 +46,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 	public List<Task> createTasks() 
 		throws DMLRuntimeException 
 	{
-		LinkedList<Task> tasks = new LinkedList<Task>();
+		LinkedList<Task> tasks = new LinkedList<>();
 		
 		//range tasks (similar to run-length encoding) make only sense if taskSize>3
 		TaskType type = (ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL && _taskSize>3 ) ? 

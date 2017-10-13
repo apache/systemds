@@ -27,10 +27,9 @@ import org.apache.sysml.runtime.util.FastStringTokenizer;
 
 public class TextCellToRowBlockConverter implements Converter<LongWritable, Text, MatrixIndexes, MatrixBlock>
 {
-	
 	private MatrixIndexes indexes=new MatrixIndexes();
 	private MatrixBlock rowBlock=new MatrixBlock();
-	private Pair<MatrixIndexes, MatrixBlock> pair=new Pair<MatrixIndexes, MatrixBlock>(indexes, rowBlock);
+	private Pair<MatrixIndexes, MatrixBlock> pair=new Pair<>(indexes, rowBlock);
 	private FastStringTokenizer st = new FastStringTokenizer(' '); 
 	private boolean hasValue=false;
 	private boolean toIgnore=false;

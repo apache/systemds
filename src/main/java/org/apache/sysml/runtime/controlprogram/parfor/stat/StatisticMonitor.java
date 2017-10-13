@@ -46,9 +46,9 @@ public class StatisticMonitor
 	
 	static
 	{
-		_mapPwPf  = new HashMap<Long, Long>();
-		_pfstats  = new HashMap<Long, HashMap<Stat,LinkedList<Double>>>();
-		_pwstats  = new HashMap<Long, HashMap<Stat,LinkedList<Double>>>();
+		_mapPwPf  = new HashMap<>();
+		_pfstats  = new HashMap<>();
+		_pwstats  = new HashMap<>();
 	}
 	
 	/**

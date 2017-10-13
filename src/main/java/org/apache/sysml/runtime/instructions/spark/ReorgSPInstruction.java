@@ -242,7 +242,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -251,16 +251,16 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			long rix = ixIn.getRowIndex();
 			MatrixIndexes ixOut = new MatrixIndexes(rix, rix);
 			MatrixBlock blkOut = (MatrixBlock) blkIn.reorgOperations(_reorgOp, new MatrixBlock(), -1, -1, -1);
-			ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut));
+			ret.add(new Tuple2<>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row
 			int numBlocks = (int) Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
 			for(int i = 1; i <= numBlocks; i++) {
 				if(i != ixOut.getColumnIndex()) {
 					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getRowsPerBlock());
-		    		int lclen = UtilFunctions.computeBlockSize(_mcIn.getRows(), i, _mcIn.getRowsPerBlock());
-		    		MatrixBlock emptyBlk = new MatrixBlock(lrlen, lclen, true);
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, i), emptyBlk));
+					int lclen = UtilFunctions.computeBlockSize(_mcIn.getRows(), i, _mcIn.getRowsPerBlock());
+					MatrixBlock emptyBlk = new MatrixBlock(lrlen, lclen, true);
+					ret.add(new Tuple2<>(new MatrixIndexes(rix, i), emptyBlk));
 				}
 			}
 			
@@ -288,7 +288,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
 			
 			//execute reverse operation
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
 			
 			//construct output

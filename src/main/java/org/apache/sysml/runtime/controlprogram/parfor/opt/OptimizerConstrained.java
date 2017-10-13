@@ -108,7 +108,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		//OPTIMIZE PARFOR PLAN
 
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<String, PartitionFormat>();
+		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<>();
 		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 
@@ -167,7 +167,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			super.rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 
 			//rewrite 14:
-			HashSet<String> inplaceResultVars = new HashSet<String>();
+			HashSet<String> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 
 			//rewrite 15:
@@ -183,7 +183,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<String>();
+			HashSet<String> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 
 			if( !OptimizerUtils.isSparkExecutionMode() ) {

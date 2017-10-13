@@ -66,7 +66,7 @@ public class MultipleInputs {
    * @return A map of paths to inputformats for the job
    */
   static Map<Path, InputFormat> getInputFormatMap(JobConf conf) {
-    Map<Path, InputFormat> m = new HashMap<Path, InputFormat>();
+    Map<Path, InputFormat> m = new HashMap<>();
     String[] pathMappings = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS).split(",");
     for (String pathMapping : pathMappings) {
       String[] split = pathMapping.split(";");
@@ -95,7 +95,7 @@ public class MultipleInputs {
     if (conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS) == null) {
       return Collections.emptyMap();
     }
-    Map<Path, Class<? extends Mapper>> m = new HashMap<Path, Class<? extends Mapper>>();
+    Map<Path, Class<? extends Mapper>> m = new HashMap<>();
     String[] pathMappings = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS).split(",");
     for (String pathMapping : pathMappings) {
       String[] split = pathMapping.split(";");

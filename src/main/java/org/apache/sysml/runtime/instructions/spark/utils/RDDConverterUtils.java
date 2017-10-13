@@ -281,7 +281,7 @@ public class RDDConverterUtils
 			.groupByKey().map(new ConvertRowBlocksToRows((int)mc.getCols(), mc.getColsPerBlock(), toVector));
 		
 		//create data frame schema
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(DF_ID_COLUMN, DataTypes.DoubleType, false));
 		if( toVector )
 			fields.add(DataTypes.createStructField("C1", new VectorUDT(), false));
@@ -441,7 +441,7 @@ public class RDDConverterUtils
 		public Iterator<LabeledPoint> call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			ArrayList<LabeledPoint> ret = new ArrayList<LabeledPoint>();
+			ArrayList<LabeledPoint> ret = new ArrayList<>();
 			for( int i=0; i<arg0.getNumRows(); i++ ) {
 				MatrixBlock tmp = arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
 				ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), createVector(tmp)));
@@ -482,7 +482,7 @@ public class RDDConverterUtils
 			throws IOException, DMLRuntimeException
 		{
 			//temporary list of indexed matrix values to prevent library dependencies
-			ArrayList<IndexedMatrixValue> rettmp = new ArrayList<IndexedMatrixValue>();					
+			ArrayList<IndexedMatrixValue> rettmp = new ArrayList<>();
 			rbuff.flushBufferToBinaryBlocks(rettmp);
 			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
 		}
@@ -500,7 +500,7 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			
@@ -541,8 +541,8 @@ public class RDDConverterUtils
 			throws Exception 
 		{
 			SerLongWritable slarg = new SerLongWritable(arg0._1());
-			SerText starg = new SerText(arg0._2());			
-			return new Tuple2<LongWritable,Text>(slarg, starg);
+			SerText starg = new SerText(arg0._2());	
+			return new Tuple2<>(slarg, starg);
 		}
 	}
 
@@ -555,8 +555,8 @@ public class RDDConverterUtils
 			throws Exception 
 		{
 			SerLongWritable slarg = new SerLongWritable(1L);
-			SerText starg = new SerText(arg0);			
-			return new Tuple2<LongWritable,Text>(slarg, starg);
+			SerText starg = new SerText(arg0);
+			return new Tuple2<>(slarg, starg);
 		}
 	}
 	
@@ -575,7 +575,7 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes,MatrixCell>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
 			
 			while( arg0.hasNext() )
@@ -679,7 +679,7 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 
 			int ncblks = (int)Math.ceil((double)_clen/_bclen);
 			MatrixIndexes[] ix = new MatrixIndexes[ncblks];
@@ -759,7 +759,7 @@ public class RDDConverterUtils
 			int len = ix.length;			
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix[i],mb[i]));
+					ret.add(new Tuple2<>(ix[i],mb[i]));
 					mb[i].examSparsity(); //ensure right representation
 				}	
 		}
@@ -792,7 +792,7 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<org.apache.spark.mllib.regression.LabeledPoint,Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 
 			int ncblks = (int)Math.ceil((double)_clen/_bclen);
 			MatrixIndexes[] ix = new MatrixIndexes[ncblks];
@@ -873,10 +873,10 @@ public class RDDConverterUtils
 		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws DMLRuntimeException
 		{
-			int len = ix.length;			
+			int len = ix.length;
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix[i],mb[i]));
+					ret.add(new Tuple2<>(ix[i],mb[i]));
 					mb[i].examSparsity(); //ensure right representation
 				}	
 		}
@@ -899,7 +899,7 @@ public class RDDConverterUtils
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock blk = arg0._2();
 			
-			ArrayList<String> ret = new ArrayList<String>();
+			ArrayList<String> ret = new ArrayList<>();
 			
 			//handle header information
 			if(_props.hasHeader() && ix.getRowIndex()==1 ) {
@@ -944,19 +944,14 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>> ret = 
-					new ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>>();
-			
+			ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>> ret = new ArrayList<>();
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock blk = arg0._2();
-			
 			for( int i=0; i<blk.getNumRows(); i++ ) {
 				MatrixBlock tmpBlk = blk.sliceOperations(i, i, 0, blk.getNumColumns()-1, new MatrixBlock());
 				long rix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
-				ret.add(new Tuple2<Long,Tuple2<Long,MatrixBlock>>(rix, 
-						new Tuple2<Long,MatrixBlock>(ix.getColumnIndex(),tmpBlk)));
+				ret.add(new Tuple2<>(rix, new Tuple2<>(ix.getColumnIndex(),tmpBlk)));
 			}
-			
 			return ret.iterator();
 		}
 		
@@ -982,24 +977,20 @@ public class RDDConverterUtils
 		{
 			long rowIndex = arg0._1();
 			MatrixBlock[] tmpBlks = new MatrixBlock[_ncblks];
-			
 			//collect and sort input blocks
 			Iterator<Tuple2<Long, MatrixBlock>> iter = arg0._2().iterator();
 			while( iter.hasNext() ) {
 				Tuple2<Long, MatrixBlock> entry = iter.next();
 				tmpBlks[entry._1().intValue()-1] = entry._2();
 			}
-		
 			//concatenate blocks
 			MatrixBlock out = new MatrixBlock(1,(int)_clen, tmpBlks[0].isInSparseFormat());
-			for( int i=0; i<_ncblks; i++ ) {				
-				out.copy(0, 0, i*_bclen, (int)Math.min((i+1)*_bclen, _clen)-1, tmpBlks[i], false);				
-			}
+			for( int i=0; i<_ncblks; i++ )
+				out.copy(0, 0, i*_bclen, (int)Math.min((i+1)*_bclen, _clen)-1, tmpBlks[i], false);
 			out.recomputeNonZeros();
-			
 			//output row block
-			return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(rowIndex, 1),out);
-		}		
+			return new Tuple2<>(new MatrixIndexes(rowIndex, 1),out);
+		}
 	}
 
 	/////////////////////////////////
@@ -1033,7 +1024,7 @@ public class RDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			
 			int ncblks = (int)Math.ceil((double)_clen/_bclen);
 			MatrixIndexes[] ix = new MatrixIndexes[ncblks];
@@ -1059,7 +1050,7 @@ public class RDDConverterUtils
 				int off = _containsID ? 1: 0;
 				Object obj = _isVector ? tmp._1().get(off) : tmp._1();
 				for( int cix=1, pix=_isVector?0:off; cix<=ncblks; cix++ ) {
-					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
+					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
 					//allocate sparse row once (avoid re-allocations)
 					if( mb[cix-1].isInSparseFormat() ) {
 						int lnnz = countNnz(obj, _isVector, pix, lclen);
@@ -1118,7 +1109,7 @@ public class RDDConverterUtils
 			int len = ix.length;			
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix[i],mb[i]));
+					ret.add(new Tuple2<>(ix[i],mb[i]));
 					mb[i].examSparsity(); //ensure right representation
 				}	
 		}
@@ -1169,7 +1160,7 @@ public class RDDConverterUtils
 				throw new DMLRuntimeException("ID Column '" + DF_ID_COLUMN 
 						+ "' expected to be 1-based, but found value: "+id);
 			}
-			return new Tuple2<Row,Long>(arg0, id-1);
+			return new Tuple2<>(arg0, id-1);
 		}
 	}
 

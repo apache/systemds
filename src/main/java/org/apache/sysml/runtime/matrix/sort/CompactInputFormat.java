@@ -50,12 +50,14 @@ public class CompactInputFormat<K extends WritableComparable, V extends Writable
 		job.setClass(VALUE_CLASS, valueClass, Writable.class);
 	}
 	
+	@Override
 	public RecordReader<K,V> getRecordReader(InputSplit split
 			, JobConf job, Reporter reporter) throws IOException {
-		return new CompactInputRecordReader<K,V>(job, (FileSplit) split);
+		return new CompactInputRecordReader<>(job, (FileSplit) split);
 	}
 	
 	//the files are not splitable
+	@Override
 	protected boolean isSplitable(FileSystem fs, Path filename)
 	{
 		return false;

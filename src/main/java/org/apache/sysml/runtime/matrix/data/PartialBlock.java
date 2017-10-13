@@ -75,8 +75,8 @@ public class PartialBlock implements WritableComparable<PartialBlock>
 		out.writeDouble(value);
 	}
 
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "["+row+", "+column+"]:"+value;
 	}
 

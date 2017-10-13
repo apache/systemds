@@ -184,18 +184,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param fname
-	 * @param A
-	 * @param rows
-	 * @param cols
-	 * @param dt
-	 * @param vt
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private void writeMatrixOrFrameInput(String fname, double[][] A, int rows, int cols, DataType dt, ValueType vt) 
+	private static void writeMatrixOrFrameInput(String fname, double[][] A, int rows, int cols, DataType dt, ValueType vt) 
 		throws DMLRuntimeException, IOException 
 	{
 		int blksize = ConfigurationManager.getBlocksize();
@@ -218,17 +207,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	
 	}
 	
-	/**
-	 * 
-	 * @param fname
-	 * @param rows
-	 * @param cols
-	 * @param dt
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private double[][] readMatrixOrFrameInput(String fname, int rows, int cols, DataType dt) 
+	private static double[][] readMatrixOrFrameInput(String fname, int rows, int cols, DataType dt) 
 		throws DMLRuntimeException, IOException 
 	{
 		MatrixBlock ret = null;

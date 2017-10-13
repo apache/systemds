@@ -87,7 +87,7 @@ public class RandJobRecompileTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = estSizeEval;
 			
-			double[][] V = round( getRandomMatrix(rows, cols, min, max, 1.0d, 7) );
+			double[][] V = TestUtils.round( getRandomMatrix(rows, cols, min, max, 1.0d, 7) );
 			writeInputMatrix("X", V, true);
 			
 			runTest(true, false, null, -1); 
@@ -109,18 +109,5 @@ public class RandJobRecompileTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagSizeEval;
 		}
-	}
-	
-	/**
-	 * 
-	 * @param data
-	 * @return
-	 */
-	private double[][] round( double[][] data )
-	{
-		for( int i=0; i<data.length; i++ )
-			for( int j=0; j<data[i].length; j++ )
-				data[i][j] = Math.round(data[i][j]);
-		return data;
 	}
 }

@@ -257,7 +257,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset (always dense because values <=0 invalid)
-			double[][] A = floor(getRandomMatrix(rows, 1, 1, maxVal, 1.0, 7), rows, 1); 
+			double[][] A = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal, 1.0, 7)); 
 			writeInputMatrix("A", A, true);
 	
 			runTest(true, false, null, -1); 
@@ -274,28 +274,11 @@ public class CTableSequenceTest extends AutomatedTestBase
 				int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 4 : 6))+(withAgg ? 1 : 0);
 				checkNumCompiledMRJobs(expectedNumCompiled);
 			}
-			
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
 		}
-	}
-
-	/**
-	 * 
-	 * @param X
-	 * @param rows
-	 * @param cols
-	 * @return
-	 */
-	private double[][] floor( double[][] X, int rows, int cols )
-	{
-		for( int i=0; i<rows; i++ )
-			for( int j=0; j<cols; j++ )
-				X[i][j] = Math.floor(X[i][j]);
-		return X;
 	}
 }

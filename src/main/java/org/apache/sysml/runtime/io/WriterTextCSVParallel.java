@@ -45,6 +45,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		super( props );
 	}
 
+	@Override
 	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
 		throws IOException 
 	{
@@ -70,7 +71,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<WriteCSVTask> tasks = new ArrayList<WriteCSVTask>();
+			ArrayList<WriteCSVTask> tasks = new ArrayList<>();
 			int rlen = src.getNumRows();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {

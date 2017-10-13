@@ -48,7 +48,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
  */
 public class RemoteParForColocatedFileSplit extends FileSplit
 {
-	
 	private String _fname = null;
 	private int    _blen  = 1;
 	
@@ -57,9 +56,8 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 	 * via reflection (since private not inherited from FileSplit).
 	 */
 	@SuppressWarnings("unused")
-	private RemoteParForColocatedFileSplit()
-	{
-		super( null, -1, -1, new String[]{} );	
+	private RemoteParForColocatedFileSplit() {
+		super( null, -1, -1, new String[]{} );
 	}
 	
 	public RemoteParForColocatedFileSplit( FileSplit split, String fname, int blen ) 
@@ -99,7 +97,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		Task t = Task.parseCompactString( value.toString() );
 		
 		//get all locations
-		HashMap<String, Integer> hosts = new HashMap<String,Integer>();
+		HashMap<String, Integer> hosts = new HashMap<>();
 		
 		if( t.getType() == TaskType.SET )
 		{
@@ -132,10 +130,8 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		return getTopHosts(hosts);
 	}
 
-	private static void countHosts( HashMap<String,Integer> hosts, String[] names )
-	{
-		for( String name : names )
-		{
+	private static void countHosts( HashMap<String,Integer> hosts, String[] names ) {
+		for( String name : names ) {
 			Integer tmp = hosts.get(name);
 			if( tmp != null )
 				hosts.put(name, tmp+1);
@@ -144,11 +140,9 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		}
 	}
 
-	private static String[] getTopHosts( HashMap<String,Integer> hosts )
-	{
+	private static String[] getTopHosts( HashMap<String,Integer> hosts ) {
 		int max = Integer.MIN_VALUE;
-		HashSet<String> maxName = new HashSet<String>();
-		
+		HashSet<String> maxName = new HashSet<>();
 		for( Entry<String,Integer> e : hosts.entrySet() )
 			if( e.getValue() > max ) {
 				maxName.clear();
@@ -157,8 +151,6 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 			}
 			else if( e.getValue() == max )
 				maxName.add(e.getKey());
-		
-		//System.out.println("HOSTS: "+ProgramConverter.serializeStringHashSet(maxName));
 		return maxName.toArray(new String[0]);
 	}
 }

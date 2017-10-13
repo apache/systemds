@@ -28,6 +28,7 @@ public class BinaryExpression extends Expression
 	private Expression _right;
 	private BinaryOp _opcode;
 	
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		BinaryExpression newExpr = new BinaryExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
@@ -181,6 +182,7 @@ public class BinaryExpression extends Expression
 		}
 	}
 	
+	@Override
 	public String toString() {
 		String leftString;
 		String rightString;

@@ -51,6 +51,7 @@ public class IJV
 		return _v;
 	}
 	
+	@Override
 	public String toString() {
 		return "("+_i+", "+_j+"): "+_v;
 	}

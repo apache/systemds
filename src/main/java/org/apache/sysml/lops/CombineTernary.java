@@ -62,6 +62,7 @@ public class CombineTernary extends Lop
 		this.lps.setProducesIntermediateOutput(true);
 	}
 
+	@Override
 	public String toString() {
 		return "combineternary";
 	}

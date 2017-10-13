@@ -134,6 +134,7 @@ public class CompilerConfig
 		return -1;
 	}
 	
+	@Override
 	public CompilerConfig clone() {
 		return new CompilerConfig(this);
 	}

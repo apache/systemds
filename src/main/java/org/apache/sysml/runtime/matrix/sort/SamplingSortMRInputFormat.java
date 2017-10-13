@@ -71,7 +71,7 @@ extends SequenceFileInputFormat<K,V>
     {
 		if(reporter!=null)
 			reporter.setStatus(split.toString());
-		return new SequenceFileRecordReader<K,V>(job, (FileSplit) split);
+		return new SequenceFileRecordReader<>(job, (FileSplit) split);
     }
 
 	/**
@@ -188,7 +188,7 @@ extends SequenceFileInputFormat<K,V>
 
 	private static class Sampler implements IndexedSortable 
 	{
-		private ArrayList<WritableComparable> records = new ArrayList<WritableComparable>();
+		private ArrayList<WritableComparable> records = new ArrayList<>();
 		
 		@SuppressWarnings("unchecked")
 		public int compare(int i, int j) {
@@ -204,13 +204,12 @@ extends SequenceFileInputFormat<K,V>
 			records.set(i, right);
 		}
 		
-		public void addValue(WritableComparable r)
-		{
+		public void addValue(WritableComparable r) {
 			records.add(r);
 		}
 		
-		public String toString()
-		{
+		@Override
+		public String toString() {
 			return records.toString();
 		}
 
@@ -233,7 +232,7 @@ extends SequenceFileInputFormat<K,V>
 			//System.out.println("after sort: "+ toString());
 			float stepSize = numRecords / (float) numPartitions;
 			//System.out.println("Step size is " + stepSize);
-			ArrayList<WritableComparable> result = new ArrayList<WritableComparable>(numPartitions-1);
+			ArrayList<WritableComparable> result = new ArrayList<>(numPartitions-1);
 			for(int i=1; i < numPartitions; i++) {
 				result.add(records.get(Math.round(stepSize * i)));
 			}

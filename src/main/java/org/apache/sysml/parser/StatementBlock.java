@@ -349,6 +349,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return result;
 	}
 
+	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("statements\n");
@@ -926,10 +927,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _constVarsOut;
 	}
 
-
+	@Override
 	public VariableSet analyze(VariableSet loPassed)
-		throws LanguageException{
-
+		throws LanguageException {
 		VariableSet candidateLO = new VariableSet();
 		candidateLO.addVariables(loPassed);
 		//candidateLO.addVariables(_gen);

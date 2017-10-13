@@ -80,6 +80,7 @@ public class WeightedCrossEntropyR extends Lop
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = WeightedCrossEntropyR";
 	}

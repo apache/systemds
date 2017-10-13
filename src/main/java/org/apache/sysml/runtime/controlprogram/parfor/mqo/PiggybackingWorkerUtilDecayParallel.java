@@ -149,7 +149,7 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 					LOG.error("Failed to run merged mr-job instruction:\n"+_minst.inst.toString()); 
 				
 				// split job return
-				LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
+				LinkedList<JobReturn> ret = new LinkedList<>();
 				for( Long id : _minst.ids ){
 					ret.add( _minst.constructJobReturn(id, mret) );
 					Statistics.decrementNoOfExecutedMRJobs();
@@ -163,7 +163,7 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 				
 				//handle unsuccessful job returns for failed job 
 				//(otherwise clients would literally wait forever for results)
-				LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
+				LinkedList<JobReturn> ret = new LinkedList<>();
 				for( Long id : _minst.ids ){
 					JobReturn fret = new JobReturn(new MatrixCharacteristics[_minst.outIxLens.get(id)], false); 
 					ret.add( _minst.constructJobReturn(id, fret) );

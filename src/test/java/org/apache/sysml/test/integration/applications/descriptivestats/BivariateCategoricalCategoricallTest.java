@@ -82,11 +82,11 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 3);
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, 7);
-        round(A);
-        round(B);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 3);
+		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, 7);
+		TestUtils.round(A);
+		TestUtils.round(B);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
 
@@ -121,11 +121,6 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		
 	}
 	
-	private void round(double[][] weight) {
-		for(int i=0; i<weight.length; i++)
-			weight[i][0]=Math.round(weight[i][0]);
-	}
-
 	@Test
 	public void testCategoricalCategoricalWithWeights() {
 		TestConfiguration config = getTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS);
@@ -141,18 +136,18 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis()+2);
-        round(A);
-        round(B);
-        round(WM);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
+		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
+		double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis()+2);
+		TestUtils.round(A);
+		TestUtils.round(B);
+		TestUtils.round(WM);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
 		writeInputMatrix("WM", WM, true);
-        createHelperMatrix();
-        
+		createHelperMatrix();
+		
 		/*
 		 * Expected number of jobs:
 		 * Mean etc - 2 jobs (reblock & gmr)
@@ -210,11 +205,11 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 
 		// current test works only for 2x2 contingency tables => #categories must be 2
 		int numCat = 2;
-        double[][] A = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis()+1);
-        round(A);
-        round(B);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis());
+		double[][] B = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis()+1);
+		TestUtils.round(A);
+		TestUtils.round(B);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
 

@@ -62,7 +62,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	//removeEmpty hints
-	private boolean _outputEmptyBlocks = true;
 	private boolean _outputPermutationMatrix = false;
 	private boolean _bRmEmptyBC = false;
 	
@@ -127,10 +126,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	
 	public ParamBuiltinOp getOp() {
 		return _op;
-	}
-
-	public void setOutputEmptyBlocks(boolean flag) {
-		_outputEmptyBlocks = flag;
 	}
 	
 	public void setOutputPermutationMatrix(boolean flag) {

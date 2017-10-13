@@ -322,11 +322,11 @@ public class OptimizationWrapper
 	private static ProgramRewriter createProgramRewriterWithRuleSets()
 	{
 		//create hop rewrite set
-		ArrayList<HopRewriteRule> hRewrites = new ArrayList<HopRewriteRule>();
+		ArrayList<HopRewriteRule> hRewrites = new ArrayList<>();
 		hRewrites.add( new RewriteConstantFolding() );
 		
 		//create statementblock rewrite set
-		ArrayList<StatementBlockRewriteRule> sbRewrites = new ArrayList<StatementBlockRewriteRule>();
+		ArrayList<StatementBlockRewriteRule> sbRewrites = new ArrayList<>();
 		sbRewrites.add( new RewriteRemoveUnnecessaryBranches() );
 		
 		ProgramRewriter rewriter = new ProgramRewriter( hRewrites, sbRewrites );

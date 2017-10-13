@@ -61,6 +61,7 @@ public class DoubleIdentifier extends ConstIdentifier
 		setValueType(ValueType.DOUBLE);
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}
@@ -78,6 +79,7 @@ public class DoubleIdentifier extends ConstIdentifier
 		_val = v;
 	}
 	
+	@Override
 	public String toString(){
 		return Double.toString(_val);
 	}

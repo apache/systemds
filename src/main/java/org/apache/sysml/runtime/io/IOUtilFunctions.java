@@ -171,7 +171,7 @@ public class IOUtilFunctions
 			return new String[]{""};
 		
 		// scan string and create individual tokens
-		ArrayList<String> tokens = new ArrayList<String>();
+		ArrayList<String> tokens = new ArrayList<>();
 		int from = 0, to = 0; 
 		int len = str.length();
 		int dlen = delim.length();
@@ -464,7 +464,7 @@ public class IOUtilFunctions
 		if( fs.isDirectory(file) 
 			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
 		{
-			LinkedList<Path> tmp = new LinkedList<Path>();
+			LinkedList<Path> tmp = new LinkedList<>();
 			FileStatus[] dStatus = fs.listStatus(file);
 			for( FileStatus fdStatus : dStatus )
 				if( !fdStatus.getPath().getName().startsWith("_") //skip internal files

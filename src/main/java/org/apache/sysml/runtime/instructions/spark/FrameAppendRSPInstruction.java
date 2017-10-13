@@ -110,7 +110,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> arg0)
 			throws Exception 
 		{
-			return new Tuple2<Long, FrameBlock>(arg0._1()+_offset, arg0._2());
+			return new Tuple2<>(arg0._1()+_offset, arg0._2());
 		}
 	}
 
@@ -129,14 +129,11 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 			throws Exception 
 		{
 			FrameBlock resultBlock = new FrameBlock(arg0._2().getSchema());
-						
 			long index = (arg0._1()/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE)*OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1;
 			int maxRows = (int) (_rows - index+1 >= OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE?OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE:_rows - index+1);
-
 			resultBlock.ensureAllocatedColumns(maxRows);
 			resultBlock = resultBlock.leftIndexingOperations(arg0._2(), 0, maxRows-1, 0, arg0._2().getNumColumns()-1, new FrameBlock());
-			
-			return new Tuple2<Long, FrameBlock>(index, resultBlock);
+			return new Tuple2<>(index, resultBlock);
 		}
 	}
 

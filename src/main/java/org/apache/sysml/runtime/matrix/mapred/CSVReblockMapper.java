@@ -48,7 +48,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 	private long rowOffset=0;
 	private boolean first=true;
 	private long num=0;
-	private HashMap<Long, Long> offsetMap=new HashMap<Long, Long>();
+	private HashMap<Long, Long> offsetMap=new HashMap<>();
 	private String _delim=" ";
 	private boolean ignoreFirstLine=false;
 	private boolean headerFile=false;

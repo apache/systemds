@@ -36,27 +36,26 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 public class CompactOutputFormat<K extends Writable, V extends Writable> extends FileOutputFormat<K,V> 
 {
-
-	
 	static final String FINAL_SYNC_ATTRIBUTE = "final.sync";
 
-	  /**
-	   * Does the user want a final sync at close?
-	   * 
-	   * @param conf job configuration
-	   * @return true if final sync at close
-	   */
-	  public static boolean getFinalSync(JobConf conf) {
-	    return conf.getBoolean(FINAL_SYNC_ATTRIBUTE, false);
-	  }
+	/**
+	 * Does the user want a final sync at close?
+	 * 
+	 * @param conf job configuration
+	 * @return true if final sync at close
+	*/
+	public static boolean getFinalSync(JobConf conf) {
+		return conf.getBoolean(FINAL_SYNC_ATTRIBUTE, false);
+	}
 	
+	@Override
 	public RecordWriter<K,V> getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) 
 	throws IOException {
 		
 		Path file = FileOutputFormat.getTaskOutputPath(job, name);
 		FileSystem fs = file.getFileSystem(job);
 		FSDataOutputStream fileOut = fs.create(file, progress);
-		return new FixedLengthRecordWriter<K,V>(fileOut, job);
+		return new FixedLengthRecordWriter<>(fileOut, job);
 	}
 	
 	public static class FixedLengthRecordWriter<K extends Writable, V extends Writable> implements RecordWriter<K, V> {

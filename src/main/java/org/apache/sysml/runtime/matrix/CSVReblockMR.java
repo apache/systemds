@@ -26,7 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 
-import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -118,8 +118,8 @@ public class CSVReblockMR
 			out.writeLong(count);
 		}
 		
-		public String toString()
-		{
+		@Override
+		public String toString() {
 			return filename+", "+fileOffset+", "+count;
 		}
 
@@ -180,8 +180,8 @@ public class CSVReblockMR
 		public long[] rlens=null;
 		public long[] clens=null;
 		
-		public String toString()
-		{
+		@Override
+		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append(counterFile.toString());
 			sb.append("\n");

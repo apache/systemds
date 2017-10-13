@@ -61,6 +61,7 @@ public abstract class MatrixValue implements WritableComparable
 			return (this.row == cthat.row && this.column == cthat.column);
 		}
 
+		@Override
 		public int hashCode() {
 			return UtilFunctions.longHashCode((row << 16) + column);
 		}
@@ -69,8 +70,9 @@ public abstract class MatrixValue implements WritableComparable
 			row = r;
 			column = c;
 		}
-		public String toString()
-		{
+		
+		@Override
+		public String toString() {
 			return "("+row+","+column+")";
 		}
 	}

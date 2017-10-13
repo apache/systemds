@@ -38,8 +38,8 @@ public class WeightedCell extends MatrixCell
 	
 	protected double weight=0;
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return value+": "+weight;
 	}
 	
@@ -62,6 +62,8 @@ public class WeightedCell extends MatrixCell
 			throw new DMLRuntimeException("the Matrix Value is not WeightedCell!");
 		return (WeightedCell) cell;
 	}
+	
+	@Override
 	public void copy(MatrixValue that){
 		WeightedCell c2;
 		try {
@@ -102,18 +104,16 @@ public class WeightedCell extends MatrixCell
 		throw new RuntimeException("hashCode() should never be called on instances of this class.");
 	}
 	
-	public void setWeight(double w)
-	{
+	public void setWeight(double w) {
 		weight=w;
 	}
 	
-	public double getWeight()
-	{
+	public double getWeight() {
 		return weight;
 	}
 
-	public double getValue()
-	{
+	@Override
+	public double getValue() {
 		return value;
 	}
 	
@@ -128,6 +128,7 @@ public class WeightedCell extends MatrixCell
 	}
 
 	//TODO: how to handle -minus left vs. minus right
+	@Override
 	public void denseScalarOperationsInPlace(ScalarOperator op)
 			throws DMLRuntimeException {
 		value=op.executeScalar(value);
@@ -153,11 +154,13 @@ public class WeightedCell extends MatrixCell
 		return c3;
 	}
 
+	@Override
 	public void sparseScalarOperationsInPlace(ScalarOperator op)
 			throws DMLRuntimeException {
 		value=op.executeScalar(value);
 	}
 
+	@Override
 	public void sparseUnaryOperationsInPlace(UnaryOperator op)
 			throws DMLRuntimeException {
 		value=op.fn.execute(value);

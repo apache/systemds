@@ -254,24 +254,10 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 	}
 	
-	
-	/**
-	 * 
-	 * @param A
-	 * @param dir
-	 * @param oi
-	 * @param rows
-	 * @param cols
-	 * @param brows
-	 * @param bcols
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
 		throws DMLRuntimeException, IOException
 	{
 		MapReduceTool.deleteFileWithMTDIfExistOnHDFS(fname);
-		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);

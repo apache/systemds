@@ -43,8 +43,8 @@ public class ValueSortReducer<K extends WritableComparable, V extends Writable> 
 	private boolean valueIsWeight=false;
 	private long count=0;
 	
-	public void configure(JobConf job)
-	{
+	@Override
+	public void configure(JobConf job) {
 		taskID=MapReduceTool.getUniqueKeyPerTask(job, false);
 		valueIsWeight=job.getBoolean(SortMR.VALUE_IS_WEIGHT, false);
 	}

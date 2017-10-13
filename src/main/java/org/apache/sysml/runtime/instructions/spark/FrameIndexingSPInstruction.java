@@ -199,11 +199,11 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> rightKV) 
 			throws Exception 
 		{
-			Pair<Long,FrameBlock> in = SparkUtils.toIndexedFrameBlock(rightKV);			
-			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
+			Pair<Long,FrameBlock> in = SparkUtils.toIndexedFrameBlock(rightKV);
+			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<>();
 			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
 			return SparkUtils.fromIndexedFrameBlock(out).iterator();
-		}		
+		}
 	}
 
 	private static class ZeroOutLHS implements PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long,FrameBlock> 
@@ -228,7 +228,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
 			throws Exception 
 		{
-			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
+			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<>();
 
 			IndexRange curBlockRange = new IndexRange(_ixrange.rowStart, _ixrange.rowEnd, _ixrange.colStart, _ixrange.colEnd);
 			
@@ -240,7 +240,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			// Starting local location (0-based) of target block where to start copy. 
 			int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _brlen);
 			for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _brlen) {
-				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new Pair<Long, FrameBlock>(kv._1, kv._2), _brlen, _bclen, curBlockRange, lGblStartRow-1, lGblStartRow);
+				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new Pair<>(kv._1, kv._2), _brlen, _bclen, curBlockRange, lGblStartRow-1, lGblStartRow);
 				if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
 					throw new Exception("Error while getting range for zero-out");
 				}
@@ -253,7 +253,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				
 				// Zero out the applicable range in this block
 				zeroBlk = (FrameBlock) kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
-				out.add(new Pair<Long, FrameBlock>(lGblStartRow, zeroBlk));
+				out.add(new Pair<>(lGblStartRow, zeroBlk));
 				curBlockRange.rowStart =  lGblStartRow + _brlen;
 				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
 			}
@@ -331,7 +331,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 					rhs_ru_pb = Math.min(rhs_ru, rhs_ru_pb+brlen);
 				}
 				
-				return new Tuple2<Long, FrameBlock>(arg._1, ret);
+				return new Tuple2<>(arg._1, ret);
 			}
 		}
 	}
@@ -364,7 +364,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			
 			//return block with shifted row index
 			long rowindex2 = (rowindex > _ixrange.rowStart) ? rowindex-_ixrange.rowStart+1 : 1; 
-			return new Tuple2<Long,FrameBlock>(rowindex2, out);
+			return new Tuple2<>(rowindex2, out);
 		}		
 	}
 
@@ -407,7 +407,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 						(int)_ixrange.colStart-1, (int)_ixrange.colEnd-1, new FrameBlock());
 				
 				//return block with shifted row index
-				return new Tuple2<Long,FrameBlock>(rowindex, out);		
+				return new Tuple2<>(rowindex, out);
 			}			
 		}
 	}

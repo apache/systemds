@@ -138,12 +138,7 @@ public class BasicScalarOperationsTest extends AutomatedTestBase
 		runScalarOperationsTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runScalarOperationsTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runScalarOperationsTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

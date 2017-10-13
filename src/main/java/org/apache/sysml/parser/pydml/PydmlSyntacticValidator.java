@@ -57,6 +57,7 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParameterExpression;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.parser.PathStatement;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
@@ -1217,7 +1218,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	// -----------------------------------------------------------------
 
 	private static StatementBlock getStatementBlock(Statement current) {
-		return PyDMLParserWrapper.getStatementBlock(current);
+		return ParserWrapper.getStatementBlock(current);
 	}
 
 	@Override

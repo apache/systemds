@@ -243,7 +243,7 @@ public class CPlanComparisonTest extends AutomatedTestBase
 			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000L, 1000L);
 	}
 	
-	private Hop createDataOp(String name, DataType dt) {
+	private static Hop createDataOp(String name, DataType dt) {
 		return new DataOp(name, dt, ValueType.DOUBLE, 
 			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000L, 1000L);
 	}

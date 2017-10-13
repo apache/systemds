@@ -73,7 +73,7 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<WriteFileTask> tasks = new ArrayList<WriteFileTask>();
+			ArrayList<WriteFileTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / blen / numThreads) * blen;
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));

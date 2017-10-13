@@ -140,7 +140,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		public Iterator<Tuple2<TripleIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			LinkedList<Tuple2<TripleIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<TripleIndexes, MatrixBlock>>();
+			LinkedList<Tuple2<TripleIndexes, MatrixBlock>> ret = new LinkedList<>();
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 			
@@ -153,7 +153,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 				long k = ixIn.getColumnIndex();
 				for( long j=1; j<=numBlocks; j++ ) {
 					TripleIndexes tmptix = new TripleIndexes(i, j, k);
-					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, blkIn) );
+					ret.add( new Tuple2<>(tmptix, blkIn) );
 				}
 			} 
 			else // RHS MATRIX
@@ -163,7 +163,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 				long j = ixIn.getColumnIndex();
 				for( long i=1; i<=numBlocks; i++ ) {
 					TripleIndexes tmptix = new TripleIndexes(i, j, k);
-					ret.add( new Tuple2<TripleIndexes, MatrixBlock>(tmptix, blkIn) );
+					ret.add( new Tuple2<>(tmptix, blkIn) );
 				}
 			}
 			
@@ -197,9 +197,9 @@ public class RmmSPInstruction extends BinarySPInstruction {
 			
 			//core block matrix multiplication 
 			blkIn1.aggregateBinaryOperations(blkIn1, blkIn2, blkOut, _op);
-							
+			
 			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 }

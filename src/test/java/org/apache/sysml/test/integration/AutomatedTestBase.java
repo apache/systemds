@@ -1712,18 +1712,13 @@ public abstract class AutomatedTestBase
 		}
 	}
 
-	private String getSourceDirectory(String testDirectory) {
+	private static String getSourceDirectory(String testDirectory) {
 		String sourceDirectory = "";
-
-		if (null != testDirectory)
-		{
+		if (null != testDirectory) {
 			if (testDirectory.endsWith("/"))
-			{
 				testDirectory = testDirectory.substring(0, testDirectory.length() - "/".length());
-			}
 			sourceDirectory = testDirectory.substring(0, testDirectory.lastIndexOf("/") + "/".length());
 		}
-
 		return sourceDirectory;
 	}
 

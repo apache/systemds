@@ -56,8 +56,7 @@ public class Builtin extends ValueFunction
 	
 	static public HashMap<String, BuiltinCode> String2BuiltinCode;
 	static {
-		String2BuiltinCode = new HashMap<String, BuiltinCode>();
-		
+		String2BuiltinCode = new HashMap<>();
 		String2BuiltinCode.put( "sin"    , BuiltinCode.SIN);
 		String2BuiltinCode.put( "cos"    , BuiltinCode.COS);
 		String2BuiltinCode.put( "tan"    , BuiltinCode.TAN);

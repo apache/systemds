@@ -88,15 +88,15 @@ public class EncoderMVImpute extends Encoder
 		parseMethodsAndReplacments(parsedSpec);
 		
 		//create reuse histograms
-		_hist = new HashMap<Integer, HashMap<String,Long>>();
+		_hist = new HashMap<>();
 	}
-			
+	
 	public EncoderMVImpute(JSONObject parsedSpec, String[] colnames, String[] NAstrings, int clen)
 		throws JSONException 
 	{
-		super(null, clen);	
+		super(null, clen);
 		boolean isMV = parsedSpec.containsKey(TfUtils.TXMETHOD_IMPUTE);
-		boolean isSC = parsedSpec.containsKey(TfUtils.TXMETHOD_SCALE);		
+		boolean isSC = parsedSpec.containsKey(TfUtils.TXMETHOD_SCALE);
 		_NAstrings = NAstrings;
 		
 		if(!isMV) {
@@ -314,7 +314,7 @@ public class EncoderMVImpute extends Encoder
 				else if( _mvMethodList[j] == MVMethod.GLOBAL_MODE ) {
 					//compute global column mode (categorical), i.e., most frequent category
 					HashMap<String,Long> hist = _hist.containsKey(colID) ? 
-							_hist.get(colID) : new HashMap<String,Long>();
+							_hist.get(colID) : new HashMap<>();
 					for( int i=0; i<in.getNumRows(); i++ ) {
 						String key = String.valueOf(in.get(i, colID-1));
 						if( key != null && !key.isEmpty() ) {
@@ -358,6 +358,7 @@ public class EncoderMVImpute extends Encoder
 		return out;
 	}
 
+	@Override
 	public void initMetaData(FrameBlock meta) {
 		//init replacement lists, replace recoded values to
 		//apply mv imputation potentially after recoding

@@ -56,7 +56,8 @@ public class Plus extends ValueFunction implements Serializable
 		return in1 + in2;
 	}
 
+	@Override
 	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
 		return in1 + in2;
-	}	
+	}
 }

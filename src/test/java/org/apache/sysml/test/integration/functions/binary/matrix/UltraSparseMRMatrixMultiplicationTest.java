@@ -183,7 +183,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparseM1?sparsity2:sparsity1, 7); 
 			writeInputMatrix("A", A, true);
 			double[][] B = getRandomMatrix(rows, 1, 0.51, 3.49, 1.0, 3); 
-			B = round(B);
+			B = TestUtils.round(B);
 			writeInputMatrix("B", B, true);
 	
 			boolean exceptionExpected = false;
@@ -195,19 +195,10 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			AggBinaryOp.FORCED_MMULT_METHOD = null;
 		}
 	}
-
-	
-	private double[][] round(double[][] data) {
-		for(int i=0; i<data.length; i++)
-			data[i][0]=Math.round(data[i][0]);
-		return data;
-	}
-	
 }

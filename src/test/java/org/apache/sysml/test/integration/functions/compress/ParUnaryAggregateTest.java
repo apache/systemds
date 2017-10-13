@@ -1033,12 +1033,8 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	public void testMinSparseConstDataNoCompression() {
 		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MIN, false);
 	}
-		
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runUnaryAggregateTest(SparsityType sptype, ValueType vtype, AggType aggtype, boolean compress)
+	
+	private static void runUnaryAggregateTest(SparsityType sptype, ValueType vtype, AggType aggtype, boolean compress)
 	{
 		try
 		{

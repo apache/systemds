@@ -45,6 +45,7 @@ public class RelationalExpression extends Expression
 		setParseInfo(parseInfo);
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		RelationalExpression newExpr = new RelationalExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
@@ -188,6 +189,7 @@ public class RelationalExpression extends Expression
 		}
 	}
 
+	@Override
 	public String toString(){
 		String leftString;
 		String rightString;
@@ -220,5 +222,4 @@ public class RelationalExpression extends Expression
 		result.addVariables(_right.variablesUpdated());
 		return result;
 	}
-	
 }

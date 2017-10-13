@@ -149,7 +149,8 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		value=0;
 	}
 	
-	public void reset(int rl, int cl, boolean sp, long nnzs) {		
+	@Override
+	public void reset(int rl, int cl, boolean sp, long nnzs) {
 		value=0;
 	}
 

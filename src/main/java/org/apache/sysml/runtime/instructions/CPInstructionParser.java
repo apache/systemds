@@ -77,8 +77,7 @@ public class CPInstructionParser extends InstructionParser
 	public static final HashMap<String, CPINSTRUCTION_TYPE> String2CPFileInstructionType;
 	
 	static {
-		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
-
+		String2CPInstructionType = new HashMap<>();
 		String2CPInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "tak+*"   , CPINSTRUCTION_TYPE.AggregateTernary);
 		String2CPInstructionType.put( "tack+*"  , CPINSTRUCTION_TYPE.AggregateTernary);
@@ -281,8 +280,7 @@ public class CPInstructionParser extends InstructionParser
 
 		
 		//CP FILE instruction
-		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
-
+		String2CPFileInstructionType = new HashMap<>();
 		String2CPFileInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 	}
 

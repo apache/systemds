@@ -73,18 +73,14 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase
 		fullRScriptName = SC_HOME + TEST_SCALE_NOMINAL + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis()) ; 
-        round(A);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis()) ; 
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis()) ; 
+		TestUtils.floor(A);
+		double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis()) ; 
 
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("Y", Y, true);
 
 		boolean exceptionExpected = false;
-		/*
-		 * Expected number of jobs:
-		 */
-		// int expectedNumberOfJobs = 5;
 		runTest(true, exceptionExpected, null, -1);
 		
 		runRScript(true);
@@ -106,11 +102,6 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
 	}
-	
-	private void round(double[][] weight) {
-		for(int i=0; i<weight.length; i++)
-			weight[i][0]=Math.floor(weight[i][0]);
-	}
 
 	@Test
 	public void testScaleCategoricalWithWeights() {
@@ -129,12 +120,12 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase
 		fullRScriptName = SC_HOME + TEST_SCALE_NOMINAL_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
-        round(A);
-        round(WM);
-        
+		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
+		double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+		double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
+		TestUtils.floor(A);
+		TestUtils.floor(WM);
+
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("Y", Y, true);
 		writeInputMatrix("WM", WM, true);

@@ -285,7 +285,7 @@ public class WriterTextCSV extends MatrixWriter
 		if (fs.isDirectory(srcFilePath)) {
 
 			// compute sorted order among part files
-			ArrayList<Path> files=new ArrayList<Path>();
+			ArrayList<Path> files=new ArrayList<>();
 			for(FileStatus stat: fs.listStatus(srcFilePath, CSVReblockMR.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);

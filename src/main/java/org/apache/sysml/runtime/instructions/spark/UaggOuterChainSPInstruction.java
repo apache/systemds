@@ -265,21 +265,18 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			{
 				MatrixIndexes in1Ix = arg._1();
 				MatrixBlock in1Val  = arg._2();
-
 				MatrixIndexes outIx = new MatrixIndexes();
 				MatrixBlock outVal = new MatrixBlock();
 				
 				int [] bvi = null;
 				if((LibMatrixOuterAgg.isRowIndexMax(_uaggOp)) || (LibMatrixOuterAgg.isRowIndexMin(_uaggOp)))
-				{
 					bvi = _bvi.getValue();
-				}
 
 				LibMatrixOuterAgg.resetOutputMatix(in1Ix, in1Val, outIx, outVal, _uaggOp);
 				LibMatrixOuterAgg.aggregateMatrix(in1Val, outVal, _bv.value(), bvi, _bOp, _uaggOp);
 
-				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);	
-			}			
+				return new Tuple2<>(outIx, outVal);
+			}
 		}
 	}
 
@@ -366,9 +363,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 					else 
 						OperationsOnMatrixValues.incrementalAggregation(outVal, null, _tmpVal2, _aggOp, true);
 				}
-				
-				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
-			}			
-		}	
+				return new Tuple2<>(outIx, outVal);
+			}
+		}
 	}
 }

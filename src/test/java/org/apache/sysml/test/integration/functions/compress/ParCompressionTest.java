@@ -138,12 +138,7 @@ public class ParCompressionTest extends AutomatedTestBase
 		runCompressionTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runCompressionTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runCompressionTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

@@ -117,7 +117,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		}
 	}
 
-	private ArrayList<double[][]> execDMLScriptviaJMLC( ArrayList<double[][]> X) 
+	private static ArrayList<double[][]> execDMLScriptviaJMLC( ArrayList<double[][]> X) 
 		throws IOException
 	{
 		Timing time = new Timing(true);

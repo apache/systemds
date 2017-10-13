@@ -100,7 +100,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	
 	public static HashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
-		HashMap<String,String> paramMap = new HashMap<String,String>();
+		HashMap<String,String> paramMap = new HashMap<>();
 		
 		// all parameters are of form <name=value>
 		String[] parts;
@@ -125,14 +125,14 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			CPOperand groups = new CPOperand( parts[2] );
 			CPOperand out = new CPOperand( parts[3] );
 
-			HashMap<String,String> paramsMap = new HashMap<String, String>();
+			HashMap<String,String> paramsMap = new HashMap<>();
 			paramsMap.put(Statement.GAGG_TARGET, target.getName());
 			paramsMap.put(Statement.GAGG_GROUPS, groups.getName());
 			paramsMap.put(Statement.GAGG_NUM_GROUPS, parts[4]);
 			
 			Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			
-			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);		
+			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
 		}
 		else
 		{
@@ -544,7 +544,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
 			
 			//execute remove empty operations
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _brlen, _bclen, out);
 
 			//prepare and return outputs
@@ -586,7 +586,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _brlen, _bclen, out);
 
 			//prepare and return outputs
@@ -623,7 +623,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2());
 			
 			//execute rexpand operations
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rexpand(data, _maxVal, _dirRows, _cast, _ignore, _brlen, _bclen, out);
 			
 			//prepare and return outputs
@@ -661,7 +661,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			//execute map grouped aggregate operations
 			IndexedMatrixValue in1 = SparkUtils.toIndexedMatrixBlock(ix, target);
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 			OperationsOnMatrixValues.performMapGroupedAggregate(_op, in1, groups, _ngroups, _brlen, _bclen, outlist);
 			
 			//output all result blocks
@@ -781,7 +781,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			
 			//convert to frameblock to reuse frame-matrix reblock
-			return new Tuple2<Long, FrameBlock>(key, 
+			return new Tuple2<>(key, 
 					DataConverter.convertToFrameBlock(tmp));
 		}
 	}
@@ -821,7 +821,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				rmRows += valid ? 0 : 1;
 			}
 			
-			return new Tuple2<Long, Long>(key, rmRows);
+			return new Tuple2<>(key, rmRows);
 		}
 	}
 
@@ -844,7 +844,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			long rix = UtilFunctions.computeCellIndex(in._1().getRowIndex(), _brlen, 0);
 			FrameBlock fbout = _decoder.decode(in._2(), new FrameBlock(_decoder.getSchema()));
 			fbout.setColumnNames(Arrays.copyOfRange(_decoder.getColnames(), 0, fbout.getNumColumns()));
-			return new Tuple2<Long, FrameBlock>(rix, fbout);
+			return new Tuple2<>(rix, fbout);
 		}
 	}
 	
@@ -873,7 +873,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MatrixBlock out = new MatrixBlock(inBlk.getNumRows(), _clen, false);
 			out = out.leftIndexingOperations(inBlk, 0, inBlk.getNumRows()-1, cl, cu, null, UpdateType.INPLACE_PINNED);
 			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(inIx.getRowIndex(), 1), out);
+			return new Tuple2<>(new MatrixIndexes(inIx.getRowIndex(), 1), out);
 		}
 	}
 

@@ -119,7 +119,7 @@ public class StopTestCtrlStr extends AutomatedTestBase
 		rtplatform = oldRT;
 	}
 	
-	private int findIndexAtCutoff(double[][] vector, double cutoff) {
+	private static int findIndexAtCutoff(double[][] vector, double cutoff) {
 		int i=1;
 		while(i<=vector.length) {
 			if(vector[i-1][0] > cutoff)
@@ -128,5 +128,4 @@ public class StopTestCtrlStr extends AutomatedTestBase
 		}
 		return i;
 	}
-	
 }

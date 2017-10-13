@@ -133,7 +133,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
 			
 			//execute actual reshape operation
-			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();			
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			out = LibMatrixReorg.reshape(in, _mcIn, out, _mcOut, _byrow);
 
 			//output conversion (for compatibility w/ rdd schema)

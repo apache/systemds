@@ -130,17 +130,12 @@ public class CTable extends ValueFunction
 	{
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple
-		if ( Double.isNaN(v2) || Double.isNaN(w) ) {
-			return new Pair<MatrixIndexes,Double>(new MatrixIndexes(-1,-1), w);
-		}
-		
+		if ( Double.isNaN(v2) || Double.isNaN(w) )
+			return new Pair<>(new MatrixIndexes(-1,-1), w);
 		// safe casts to long for consistent behavior with indexing
 		long col = UtilFunctions.toLong( v2 );
-				
-		if( col <= 0 ) {
+		if( col <= 0 )
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): "+v2);
-		} 
-		
-		return new Pair<MatrixIndexes,Double>(new MatrixIndexes(row, col), w);
+		return new Pair<>(new MatrixIndexes(row, col), w);
 	}
 }

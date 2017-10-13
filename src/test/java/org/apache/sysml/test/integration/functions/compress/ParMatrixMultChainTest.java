@@ -216,12 +216,8 @@ public class ParMatrixMultChainTest extends AutomatedTestBase
 	public void testSparseConstDataWeightsNoCompression() {
 		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.CONST, ChainType.XtwXv, false);
 	}
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runMatrixMultChainTest(SparsityType sptype, ValueType vtype, ChainType ctype, boolean compress)
+	
+	private static void runMatrixMultChainTest(SparsityType sptype, ValueType vtype, ChainType ctype, boolean compress)
 	{
 		try
 		{

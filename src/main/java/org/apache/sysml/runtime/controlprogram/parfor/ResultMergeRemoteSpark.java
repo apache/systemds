@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 
+import java.util.Arrays;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -101,7 +103,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				InputInfo iiOld = metadata.getInputInfo();
 				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
 						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
-				mc.setNonZeros( computeNonZeros(_output, convertToList(_inputs)) );
+				mc.setNonZeros( computeNonZeros(_output, Arrays.asList(_inputs)) );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
 				moNew.setRDDHandle( ro );

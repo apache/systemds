@@ -143,8 +143,8 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		
 		//generate actual dataset
 		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
-		double[][] y = round(getRandomMatrix(rows, 1, 0.51, numclasses+0.49, 1.0, 7)); 
-		double[][] P = round(getRandomMatrix(rows, 1, 0.51, k+0.49, 1.0, 3)); 
+		double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 0.51, numclasses+0.49, 1.0, 7)); 
+		double[][] P = TestUtils.round(getRandomMatrix(rows, 1, 0.51, k+0.49, 1.0, 3)); 
 
 		MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,-1,-1);
 		writeInputMatrixWithMTD("X", X, true, mc1);
@@ -162,11 +162,5 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("stats");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("stats");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
-	}
-	
-	private double[][] round(double[][] data) {
-		for(int i=0; i<data.length; i++)
-			data[i][0]=Math.round(data[i][0]);
-		return data;
 	}
 }

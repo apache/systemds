@@ -81,9 +81,9 @@ public class Aggregate extends Lop
 		}
 	}
 	
-	public String toString()
-	{
-		return "Operation: " + operation;		
+	@Override
+	public String toString() {
+		return "Operation: " + operation;
 	}
 
 	/**

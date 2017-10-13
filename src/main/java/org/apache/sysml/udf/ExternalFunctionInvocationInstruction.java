@@ -67,11 +67,12 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 		return outputParams;
 	}
 
+	@Override
 	public String toString() {
 		return className + ELEMENT_DELIM + 
-		       configFile + ELEMENT_DELIM + 
-		       inputParams + ELEMENT_DELIM + 
-		       outputParams;
+			configFile + ELEMENT_DELIM + 
+			inputParams + ELEMENT_DELIM + 
+			outputParams;
 	}
 
 	@Override

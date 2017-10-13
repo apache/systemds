@@ -142,8 +142,7 @@ public class GroupedAggMRMapper extends MapperBase
 			GroupedAggregateInstruction[] grpaggIns = MRJobConfiguration.getGroupedAggregateInstructions(job);
 			if( grpaggIns == null )
 				throw new RuntimeException("no GroupAggregate Instructions found!");
-			
-			ArrayList<GroupedAggregateInstruction> vec = new ArrayList<GroupedAggregateInstruction>();
+			ArrayList<GroupedAggregateInstruction> vec = new ArrayList<>();
 			for(int i=0; i<representativeMatrixes.size(); i++)
 			{
 				byte input=representativeMatrixes.get(i);

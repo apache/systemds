@@ -58,7 +58,7 @@ public abstract class ExtractGroup implements Serializable
 		}
 		
 		//output weighted cells
-		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<MatrixIndexes, WeightedCell>>();
+		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<>();
 		long coloff = (ix.getColumnIndex()-1)*_bclen;
 		
 		//local pre-aggregation for sum w/ known output dimensions
@@ -75,7 +75,7 @@ public abstract class ExtractGroup implements Serializable
 						weightedCell.setValue(tmpval);
 						weightedCell.setWeight(1);
 						MatrixIndexes ixout = new MatrixIndexes(i+1,coloff+j+1);
-						groupValuePairs.add(new Tuple2<MatrixIndexes, WeightedCell>(ixout, weightedCell));
+						groupValuePairs.add(new Tuple2<>(ixout, weightedCell));
 					}
 				}
 			}
@@ -93,7 +93,7 @@ public abstract class ExtractGroup implements Serializable
 					weightedCell.setValue(target.quickGetValue(i, j));
 					weightedCell.setWeight(1);
 					MatrixIndexes ixout = new MatrixIndexes(groupVal,coloff+j+1);
-					groupValuePairs.add(new Tuple2<MatrixIndexes, WeightedCell>(ixout, weightedCell));
+					groupValuePairs.add(new Tuple2<>(ixout, weightedCell));
 				}
 			}
 		}

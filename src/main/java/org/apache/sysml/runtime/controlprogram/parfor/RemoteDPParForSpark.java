@@ -197,7 +197,7 @@ public class RemoteDPParForSpark
 
 		@Override
 		public Tuple2<Long, Iterable<Writable>> call(Tuple2<Long, Writable> arg0) throws Exception {
-			return new Tuple2<Long, Iterable<Writable>>(arg0._1(), Collections.singletonList(arg0._2()));
+			return new Tuple2<>(arg0._1(), Collections.singletonList(arg0._2()));
 		}
 	}
 	
@@ -247,9 +247,7 @@ public class RemoteDPParForSpark
 					mb.appendValue(0, j-off, UtilFunctions.getDouble(row.get(j)));
 			}
 			mb.examSparsity();
-			
-			return new Tuple2<Long, Writable>(rowix, 
-					new PairWritableBlock(new MatrixIndexes(1,1),mb));
+			return new Tuple2<>(rowix, new PairWritableBlock(new MatrixIndexes(1,1),mb));
 		}
 	}
 }

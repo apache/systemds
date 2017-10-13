@@ -54,42 +54,33 @@ public class Task implements Serializable
 		//default constructor for serialize
 	}
 	
-	public Task( TaskType type )
-	{
+	public Task( TaskType type ) {
 		_type = type;
-		
-		_iterations = new LinkedList<IntObject>();
+		_iterations = new LinkedList<>();
 	}
 	
-	public void addIteration( IntObject indexVal ) 
-	{
+	public void addIteration( IntObject indexVal )  {
 		if( indexVal.getName().length() > MAX_VARNAME_SIZE )
 			throw new RuntimeException("Cannot add iteration, MAX_VARNAME_SIZE exceeded.");
-		
 		if( size() >= MAX_TASK_SIZE )
 			throw new RuntimeException("Cannot add iteration, MAX_TASK_SIZE reached.");
-			
 		_iterations.addLast( indexVal );
 	}
 	
-	public List<IntObject> getIterations()
-	{
+	public List<IntObject> getIterations() {
 		return _iterations;
 	}
 	
-	public TaskType getType()
-	{
+	public TaskType getType() {
 		return _type;
 	}
 	
-	public int size()
-	{
+	public int size() {
 		return _iterations.size();
 	}
 
 	@Override
-	public String toString() 
-	{
+	public String toString() {
 		return toFormatedString();
 	}
 
@@ -176,7 +167,7 @@ public class Task implements Serializable
 
 	public static Task parseCompactString( String stask )
 	{
-		StringTokenizer st = new StringTokenizer( stask.trim(), "." );		
+		StringTokenizer st = new StringTokenizer( stask.trim(), "." );
 		
 		Task newTask = new Task( TaskType.valueOf(st.nextToken()) );
 		String meta = st.nextToken();

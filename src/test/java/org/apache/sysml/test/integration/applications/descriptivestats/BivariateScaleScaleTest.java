@@ -103,11 +103,6 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 		}
 	}
 	
-	private void round(double[][] weight) {
-		for(int i=0; i<weight.length; i++)
-			weight[i][0]=Math.floor(weight[i][0]);
-	}
-
 	@Test
 	public void testPearsonRWithWeights() {
 
@@ -124,17 +119,15 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 		fullRScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-		//long seed = System.currentTimeMillis();
-		//System.out.println("Seed = " + seed);
-        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
-        round(WM);
-        
+		double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+		double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+		double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
+		TestUtils.floor(WM);
+
 		writeInputMatrix("X", X, true);
 		writeInputMatrix("Y", Y, true);
 		writeInputMatrix("WM", WM, true);
-        createHelperMatrix();
+		createHelperMatrix();
 		
 		boolean exceptionExpected = false;
 		/*

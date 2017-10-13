@@ -66,9 +66,9 @@ public class CombineBinary extends Lop
 		this.lps.setProducesIntermediateOutput(true);
 	}
 	
-	public String toString()
-	{
-		return "combinebinary";		
+	@Override
+	public String toString() {
+		return "combinebinary";
 	}
 
 	@Override

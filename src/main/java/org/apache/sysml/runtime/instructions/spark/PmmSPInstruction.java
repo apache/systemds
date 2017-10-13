@@ -131,7 +131,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock mb2 = arg0._2();
 			
@@ -163,9 +163,9 @@ public class PmmSPInstruction extends BinarySPInstruction {
 				//hence we do a meta data correction afterwards)
 				mb1.permutationMatrixMultOperations(mb2, out1, out2);
 				out1.setNumRows(UtilFunctions.computeBlockSize(_rlen, rowIX1, _brlen));
-				ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rowIX1, ixIn.getColumnIndex()), out1));
+				ret.add(new Tuple2<>(new MatrixIndexes(rowIX1, ixIn.getColumnIndex()), out1));
 				if( out2 != null )
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rowIX2, ixIn.getColumnIndex()), out2));
+					ret.add(new Tuple2<>(new MatrixIndexes(rowIX2, ixIn.getColumnIndex()), out2));
 			}
 			
 			return ret.iterator();

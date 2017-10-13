@@ -93,6 +93,7 @@ public class COV extends ValueFunction
 	 * @param v ?
 	 * @return result
 	 */
+	@Override
 	public Data execute(Data in1, double u, double v) 
 		throws DMLRuntimeException 
 	{
@@ -117,6 +118,7 @@ public class COV extends ValueFunction
 		return cov1;
 	}
 	
+	@Override
 	public Data execute(Data in1, Data in2) throws DMLRuntimeException 
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;

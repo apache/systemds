@@ -32,7 +32,7 @@ public class BroadcastObject<T extends CacheBlock> extends LineageObject
 	
 	public BroadcastObject( PartitionedBroadcast<T> bvar, String varName, long size ) {
 		super(varName);
-		_bcHandle = new SoftReference<PartitionedBroadcast<T>>(bvar);
+		_bcHandle = new SoftReference<>(bvar);
 		_size = size;
 	}
 

@@ -80,7 +80,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SPARK, true);
 	}
 
-	private void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
+	private static void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
 	{
 		RUNTIME_PLATFORM oldplatform = DMLScript.rtplatform;
 		DMLScript.rtplatform = platform;

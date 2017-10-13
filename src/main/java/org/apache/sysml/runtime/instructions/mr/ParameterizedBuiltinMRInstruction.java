@@ -157,7 +157,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 				else if( _opcode.equalsIgnoreCase("rexpand") )
 				{
 					//process instruction
-					ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+					ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 					LibMatrixReorg.rexpand(imv, _max, _dirRows, _cast, _ignore, blockRowFactor, blockColFactor, out);
 					
 					//put the output values in the cache

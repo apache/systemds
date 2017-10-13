@@ -78,7 +78,7 @@ public class DecoderRecode extends Decoder
 		//initialize recode maps according to schema
 		_rcMaps = new HashMap[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
-			HashMap<Long, Object> map = new HashMap<Long, Object>();
+			HashMap<Long, Object> map = new HashMap<>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
 				if( meta.get(i, _colList[j]-1)==null )
 					break; //reached end of recode map

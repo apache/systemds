@@ -157,7 +157,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 		{
 			long rix = arg0._1().getRowIndex()-_offset;
 			MatrixIndexes ixout = new MatrixIndexes(rix, arg0._1().getColumnIndex());
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ixout, arg0._2());
+			return new Tuple2<>(ixout, arg0._2());
 		}
 	}
 
@@ -191,7 +191,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 			MatrixIndexes ixOut = new MatrixIndexes();
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			
 			//get the right hand side matrix
 			for( int i=1; i<=pm.getNumRowBlocks(); i++ ) {
@@ -199,11 +199,11 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 			
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 
-						new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);						
+						new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
 				
 				//output new tuple
 				ixOut.setIndexes(_offset+i, ixOut.getColumnIndex());
-				ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+				ret.add(new Tuple2<>(ixOut, blkOut));
 			}
 			
 			return ret.iterator();

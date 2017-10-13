@@ -214,7 +214,7 @@ public class ProgramConverter
 	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException 
 	{
-		ArrayList<ProgramBlock> tmp = new ArrayList<ProgramBlock>();
+		ArrayList<ProgramBlock> tmp = new ArrayList<>();
 		
 		for( ProgramBlock pb : childBlocks )
 		{
@@ -380,8 +380,8 @@ public class ProgramConverter
 		
 		//create deep copy
 		FunctionProgramBlock copy = null;
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(); 
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(); 
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(); 
 		if( fpb.getInputParams()!= null )
 			tmp1.addAll(fpb.getInputParams());
 		if( fpb.getOutputParams()!= null )
@@ -435,8 +435,8 @@ public class ProgramConverter
 	
 		//create deep copy
 		FunctionProgramBlock copy = null;
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(); 
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(); 
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(); 
 		if( fpb.getInputParams()!= null )
 			tmp1.addAll(fpb.getInputParams());
 		if( fpb.getOutputParams()!= null )
@@ -472,7 +472,7 @@ public class ProgramConverter
 	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean cpFunctions) 
 		throws DMLRuntimeException
 	{
-		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		ArrayList<Instruction> tmp = new ArrayList<>();
 		for( Instruction inst : instSet )
 		{
 			if( inst instanceof FunctionCallCPInstruction && cpFunctions )
@@ -795,7 +795,7 @@ public class ProgramConverter
 		//but in order to avoid redundancy, we only serialize function program blocks
 		
 		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks();
-		HashSet<String> cand = new HashSet<String>();
+		HashSet<String> cand = new HashSet<>();
 		rFindSerializationCandidates(pbs, cand);
 		
 		return rSerializeFunctionProgramBlocks( fpb, cand, clsMap );
@@ -1381,7 +1381,7 @@ public class ProgramConverter
 	private static HashMap<String,FunctionProgramBlock> parseFunctionProgramBlocks( String in, Program prog, int id ) 
 		throws DMLRuntimeException
 	{
-		HashMap<String,FunctionProgramBlock> ret = new HashMap<String, FunctionProgramBlock>();
+		HashMap<String,FunctionProgramBlock> ret = new HashMap<>();
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer( in, ELEMENT_DELIM );
 		
 		while( st.hasMoreTokens() )
@@ -1401,7 +1401,7 @@ public class ProgramConverter
 	private static ArrayList<ProgramBlock> rParseProgramBlocks(String in, Program prog, int id) 
 		throws DMLRuntimeException
 	{
-		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
+		ArrayList<ProgramBlock> pbs = new ArrayList<>();
 		String tmpdata = in.substring(PARFOR_PBS_BEGIN.length(),in.length()-PARFOR_PBS_END.length());
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(tmpdata, ELEMENT_DELIM);
 		
@@ -1564,8 +1564,8 @@ public class ProgramConverter
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(dat1);
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(dat2);
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(dat1);
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(dat2);
 		FunctionProgramBlock fpb = new FunctionProgramBlock(prog, tmp1, tmp2);
 		fpb.setInstructions(inst);
 		fpb.setChildBlocks(pbs);
@@ -1595,8 +1595,8 @@ public class ProgramConverter
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(dat1);
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(dat2);
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(dat1);
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(dat2);
 		
 		//only CP external functions, because no nested MR jobs for reblocks
 		ExternalFunctionProgramBlockCP efpb = new ExternalFunctionProgramBlockCP(prog, tmp1, tmp2, dat3, basedir);
@@ -1622,49 +1622,40 @@ public class ProgramConverter
 	private static ArrayList<Instruction> parseInstructions( String in, int id ) 
 		throws DMLRuntimeException
 	{
-		ArrayList<Instruction> insts = new ArrayList<Instruction>();  
-
+		ArrayList<Instruction> insts = new ArrayList<>();
 		String lin = in.substring( PARFOR_INST_BEGIN.length(),in.length()-PARFOR_INST_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin, ELEMENT_DELIM);
-		while(st.hasMoreTokens())
-		{
+		while(st.hasMoreTokens()) {
 			//Note that at this point only CP instructions and External function instruction can occur
 			String instStr = st.nextToken(); 
-			
-			try
-			{
+			try {
 				Instruction tmpinst = CPInstructionParser.parseSingleInstruction(instStr);
 				tmpinst = saveReplaceThreadID(tmpinst, CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id );
 				insts.add( tmpinst );
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				throw new DMLRuntimeException("Failed to parse instruction: " + instStr, ex);
 			}
 		}
-		
 		return insts;
 	}
 
-	private static HashMap<String,String> parseStringHashMap( String in )
-	{
-		HashMap<String,String> vars = new HashMap<String, String>();
+	private static HashMap<String,String> parseStringHashMap( String in ) {
+		HashMap<String,String> vars = new HashMap<>();
 		StringTokenizer st = new StringTokenizer(in,ELEMENT_DELIM);
-		while( st.hasMoreTokens() )
-		{
+		while( st.hasMoreTokens() ) {
 			String lin = st.nextToken();
 			int index = lin.indexOf( KEY_VALUE_DELIM );
 			String tmp1 = lin.substring(0, index);
-			String tmp2 = lin.substring(index + 1);			
+			String tmp2 = lin.substring(index + 1);
 			vars.put(tmp1, tmp2);
 		}
-		
 		return vars;
 	}
 
 	private static ArrayList<String> parseStringArrayList( String in )
 	{
-		ArrayList<String> vars = new ArrayList<String>();
+		ArrayList<String> vars = new ArrayList<>();
 		StringTokenizer st = new StringTokenizer(in,ELEMENT_DELIM);
 		while( st.hasMoreTokens() ) {
 			String tmp = st.nextToken();
@@ -1676,7 +1667,7 @@ public class ProgramConverter
 
 	private static ArrayList<DataIdentifier> parseDataIdentifiers( String in )
 	{
-		ArrayList<DataIdentifier> vars = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> vars = new ArrayList<>();
 		StringTokenizer st = new StringTokenizer(in, ELEMENT_DELIM);
 		while( st.hasMoreTokens() ) {
 			String tmp = st.nextToken();

@@ -103,6 +103,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			return CloseType.OPEN;
 	}
 
+	@Override
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//recursively process required cplan output

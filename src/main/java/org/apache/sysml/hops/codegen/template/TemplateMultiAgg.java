@@ -71,6 +71,7 @@ public class TemplateMultiAgg extends TemplateCell
 		return CloseType.CLOSED_INVALID;
 	}
 
+	@Override
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
 	{
 		//get all root nodes for multi aggregation

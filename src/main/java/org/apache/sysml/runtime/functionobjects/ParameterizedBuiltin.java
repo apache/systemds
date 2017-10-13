@@ -55,8 +55,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	static public HashMap<String, ParameterizedBuiltinCode> String2ParameterizedBuiltinCode;
 	static {
-		String2ParameterizedBuiltinCode = new HashMap<String, ParameterizedBuiltinCode>();
-		
+		String2ParameterizedBuiltinCode = new HashMap<>();
 		String2ParameterizedBuiltinCode.put( "cdf", ParameterizedBuiltinCode.CDF);
 		String2ParameterizedBuiltinCode.put( "invcdf", ParameterizedBuiltinCode.INVCDF);
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
@@ -68,8 +67,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	static public HashMap<String, ProbabilityDistributionCode> String2DistCode;
 	static {
-		String2DistCode = new HashMap<String,ProbabilityDistributionCode>();
-		
+		String2DistCode = new HashMap<>();
 		String2DistCode.put("normal"	, ProbabilityDistributionCode.NORMAL);
 		String2DistCode.put("exp"		, ProbabilityDistributionCode.EXP);
 		String2DistCode.put("chisq"		, ProbabilityDistributionCode.CHISQ);
@@ -179,6 +177,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		}
 	}
 	
+	@Override
 	public double execute(HashMap<String,String> params) throws DMLRuntimeException {
 		switch(bFunc) {
 		case CDF:

@@ -86,7 +86,7 @@ public class MRInstructionParser extends InstructionParser
 {	
 	static public HashMap<String, MRINSTRUCTION_TYPE> String2MRInstructionType;
 	static {
-		String2MRInstructionType = new HashMap<String, MRINSTRUCTION_TYPE>();
+		String2MRInstructionType = new HashMap<>();
 		
 		// AGG Instruction Opcodes 
 		String2MRInstructionType.put( "a+"    , MRINSTRUCTION_TYPE.Aggregate);

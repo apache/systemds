@@ -42,6 +42,7 @@ public class TaggedMatrixIndexes extends Tagged<MatrixIndexes>
 		return "k: "+base+", tag: "+tag;
 	}
 	
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		if( base == null ){
 			base = new MatrixIndexes();
@@ -50,6 +51,7 @@ public class TaggedMatrixIndexes extends Tagged<MatrixIndexes>
 		tag=in.readByte();
 	}
 	
+	@Override
 	public void write(DataOutput out) throws IOException {
 		base.write(out);
 		out.writeByte(tag);

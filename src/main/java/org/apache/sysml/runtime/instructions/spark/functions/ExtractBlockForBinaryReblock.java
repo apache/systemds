@@ -80,7 +80,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		long out_endColBlockIndex = UtilFunctions.computeBlockIndex(endColGlobalCellIndex, out_bclen);
 		assert(out_startRowBlockIndex <= out_endRowBlockIndex && out_startColBlockIndex <= out_endColBlockIndex);
 		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<>();
 		
 		for(long i = out_startRowBlockIndex; i <= out_endRowBlockIndex; i++) {
 			for(long j = out_startColBlockIndex; j <= out_endColBlockIndex; j++) {
@@ -105,7 +105,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 						blk.appendValue(out_i1, out_j1, val);
 					}
 				}
-				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(indx, blk));
+				retVal.add(new Tuple2<>(indx, blk));
 			}
 		}
 		return retVal.iterator();

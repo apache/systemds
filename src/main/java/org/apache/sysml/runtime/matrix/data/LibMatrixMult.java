@@ -208,7 +208,7 @@ public class LibMatrixMult
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
+			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
 			int nk = (pm2r||pm2c) ? k : UtilFunctions.roundToNext(Math.min(8*k,num/32), k);
 			ArrayList<Integer> blklens = getBalancedBlockSizes(num, nk);
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -321,7 +321,7 @@ public class LibMatrixMult
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<MatrixMultChainTask> tasks = new ArrayList<MatrixMultChainTask>();
+			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			blklen += (blklen%24 != 0)?24-blklen%24:0;
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
@@ -403,7 +403,7 @@ public class LibMatrixMult
 		//core multi-threaded matrix mult computation
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
+			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 			//load balance via #tasks=2k due to triangular shape 
 			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
 			for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
@@ -483,7 +483,7 @@ public class LibMatrixMult
 		try
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultPermuteTask> tasks = new ArrayList<MatrixMultPermuteTask>();
+			ArrayList<MatrixMultPermuteTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)pm1.rlen/k));
 			for( int i=0; i<k & i*blklen<pm1.rlen; i++ )
 				tasks.add(new MatrixMultPermuteTask(pm1, m2, ret1, ret2, i*blklen, Math.min((i+1)*blklen, pm1.rlen)));
@@ -558,7 +558,7 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<MatrixMultWSLossTask>();
+			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultWSLossTask(mX, mU, mV, mW, wt, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
@@ -634,7 +634,7 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<MatrixMultWSigmoidTask>();
+			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWSigmoidTask(mW, mU, mV, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
@@ -749,7 +749,7 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<MatrixMultWDivTask>();
+			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
 			if( wt.isLeft() ) {
@@ -826,7 +826,7 @@ public class LibMatrixMult
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<MatrixMultWCeTask>();
+			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWCeTask(mW, mU, mV, eps, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
@@ -898,7 +898,7 @@ public class LibMatrixMult
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWuTask> tasks = new ArrayList<MatrixMultWuTask>();
+			ArrayList<MatrixMultWuTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWuTask(mW, mU, mV, ret, wt, fn, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
@@ -3646,7 +3646,7 @@ public class LibMatrixMult
 	}
 
 	private static ArrayList<Integer> getBalancedBlockSizes(int len, int k) {
-		ArrayList<Integer> ret = new ArrayList<Integer>();
+		ArrayList<Integer> ret = new ArrayList<>();
 		int base = len / k;
 		int rest = len % k;
 		for( int i=0; i<k; i++ ) {

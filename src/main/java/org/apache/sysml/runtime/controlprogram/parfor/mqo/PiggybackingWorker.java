@@ -41,7 +41,7 @@ public abstract class PiggybackingWorker extends Thread
 	
 	protected PiggybackingWorker()
 	{
-		_results = new HashMap<Long, JobReturn>();
+		_results = new HashMap<>();
 		_stop = false;
 	}
 
@@ -80,7 +80,7 @@ public abstract class PiggybackingWorker extends Thread
 	protected LinkedList<MergedMRJobInstruction> mergeMRJobInstructions( LinkedList<Pair<Long,MRJobInstruction>> workingSet ) 
 		throws IllegalAccessException
 	{
-		LinkedList<MergedMRJobInstruction> ret = new LinkedList<MergedMRJobInstruction>();
+		LinkedList<MergedMRJobInstruction> ret = new LinkedList<>();
 		Timing time = new Timing(true);
 		
 		//NOTE currently all merged into one (might be invalid due to memory constraints)

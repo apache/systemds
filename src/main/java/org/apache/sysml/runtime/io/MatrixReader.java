@@ -119,7 +119,7 @@ public abstract class MatrixReader
 		throws InterruptedException, ExecutionException
 	{
 		//create sort tasks (increase number of tasks for better load balance)
-		ArrayList<SortRowsTask> tasks = new ArrayList<SortRowsTask>();
+		ArrayList<SortRowsTask> tasks = new ArrayList<>();
 		int k2 = (int) Math.min(8*k, rlen); 
 		int blklen = (int)(Math.ceil((double)rlen/k2));
 		for( int i=0; i<k2 & i*blklen<rlen; i++ )

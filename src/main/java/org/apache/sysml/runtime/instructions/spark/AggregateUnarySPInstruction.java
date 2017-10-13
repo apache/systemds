@@ -159,10 +159,10 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			
 			//unary aggregate operation (always keep the correction)
 			OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, 
-					  ixOut, blkOut, _op, _brlen, _bclen);
+					ixOut, blkOut, _op, _brlen, _bclen);
 			
 			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 

@@ -66,47 +66,47 @@ public class SparkUtils
 	}
 
 	public static Tuple2<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlock( IndexedMatrixValue in ){
-		return new Tuple2<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
+		return new Tuple2<>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
 	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in ) {
-		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 		for( IndexedMatrixValue imv : in )
 			ret.add(fromIndexedMatrixBlock(imv));
 		return ret;
 	}
 
 	public static Pair<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlockToPair( IndexedMatrixValue in ){
-		return new Pair<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
+		return new Pair<>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
 	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in ) {
-		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
+		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 		for( IndexedMatrixValue imv : in )
 			ret.add(fromIndexedMatrixBlockToPair(imv));
 		return ret;
 	}
 
 	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
-		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
+		return new Tuple2<>(in.getKey(), in.getValue());
 	}
 
 	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in ) {
-		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<Tuple2<Long, FrameBlock>>();
+		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<>();
 		for( Pair<Long, FrameBlock> ifv : in )
 			ret.add(fromIndexedFrameBlock(ifv));
 		return ret;
 	}
 
 	public static ArrayList<Pair<Long,Long>> toIndexedLong( List<Tuple2<Long, Long>> in ) {
-		ArrayList<Pair<Long, Long>> ret = new ArrayList<Pair<Long, Long>>();
+		ArrayList<Pair<Long, Long>> ret = new ArrayList<>();
 		for( Tuple2<Long, Long> e : in )
-			ret.add(new Pair<Long,Long>(e._1(), e._2()));
+			ret.add(new Pair<>(e._1(), e._2()));
 		return ret;
 	}
 
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Tuple2<Long,FrameBlock> in ) {
-		return new Pair<Long,FrameBlock>(in._1(), in._2());
+		return new Pair<>(in._1(), in._2());
 	}
 
 	/**
@@ -281,7 +281,7 @@ public class SparkUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Long arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> list = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> list = new ArrayList<>();
 			long ncblks = _mc.getNumColBlocks();
 			long nblocksU = Math.min(arg0+_pNumBlocks, _mc.getNumBlocks());
 			for( long i=arg0; i<nblocksU; i++ ) {
@@ -289,9 +289,8 @@ public class SparkUtils
 				long cix = 1 + i % ncblks;
 				int lrlen = UtilFunctions.computeBlockSize(_mc.getRows(), rix, _mc.getRowsPerBlock());
 				int lclen = UtilFunctions.computeBlockSize(_mc.getCols(), cix, _mc.getColsPerBlock());
-				list.add(new Tuple2<MatrixIndexes,MatrixBlock>(
-						new MatrixIndexes(rix,cix), 
-						new MatrixBlock(lrlen, lclen, true)));
+				list.add(new Tuple2<>(new MatrixIndexes(rix,cix), 
+					new MatrixBlock(lrlen, lclen, true)));
 			}
 			return list.iterator();
 		}

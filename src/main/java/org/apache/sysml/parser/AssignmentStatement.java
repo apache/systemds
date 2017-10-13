@@ -28,22 +28,18 @@ import org.apache.sysml.debug.DMLBreakpointManager;
 
 public class AssignmentStatement extends Statement
 {
-		
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
 	 
 	// rewrites statement to support function inlining (creates deep copy)
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException {
-
 		// rewrite target (deep copy)
 		DataIdentifier newTarget = (DataIdentifier) _targetList.get(0).rewriteExpression(prefix);
-
 		// rewrite source (deep copy)
 		Expression newSource = _source.rewriteExpression(prefix);
-
 		// create rewritten assignment statement (deep copy)
 		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource, this);
-
 		return retVal;
 	}
 
@@ -96,15 +92,18 @@ public class AssignmentStatement extends Statement
 		
 		return false;
 	}
-	
+
+	@Override
 	public void initializeforwardLV(VariableSet activeIn){
 		//do nothing
 	}
 	
+	@Override
 	public VariableSet initializebackwardLV(VariableSet lo){
 		return lo;
 	}
 	
+	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
 		
@@ -121,6 +120,7 @@ public class AssignmentStatement extends Statement
 		return result;
 	}
 	
+	@Override
 	public  VariableSet variablesUpdated() {
 		VariableSet result =  new VariableSet();
 		
@@ -132,6 +132,7 @@ public class AssignmentStatement extends Statement
 		return result;
 	}
 	
+	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		for (int i=0; i< _targetList.size(); i++){

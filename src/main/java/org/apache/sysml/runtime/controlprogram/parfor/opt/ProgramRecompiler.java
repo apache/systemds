@@ -60,7 +60,7 @@ public class ProgramRecompiler
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
 		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
-		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
+		ArrayList<ProgramBlock> ret = new ArrayList<>();
 		DMLConfig config = ConfigurationManager.getDMLConfig();
 		
 		//construct lops from hops if not existing
@@ -476,7 +476,7 @@ public class ProgramRecompiler
 		String str = sb.toString(); 
 		
 		//create instruction set
-		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		ArrayList<Instruction> tmp = new ArrayList<>();
 		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
 		tmp.add(inst);
 		

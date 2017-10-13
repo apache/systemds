@@ -527,11 +527,11 @@ public class IndexedIdentifier extends DataIdentifier
 	public long getOrigDim2() { return this._origDim2; }
 	
 	
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-		
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
 		newIndexedIdentifier.setParseInfo(this);
-			
+		
 		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);
 		newIndexedIdentifier.setOriginalDimensions(this._origDim1, this._origDim2);
@@ -675,6 +675,7 @@ public class IndexedIdentifier extends DataIdentifier
 		return result;
 	}
 	
+	@Override
 	public void setProperties(Identifier i){
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();

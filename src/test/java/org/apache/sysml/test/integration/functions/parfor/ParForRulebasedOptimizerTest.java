@@ -313,15 +313,15 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		{
 			Dkind[i]=(i%3)+1;//kind 1,2,3
 			if( Dkind[i]!=1 )
-				round(D,i); //for ordinal and categorical vars
+				TestUtils.floor(D,i); //for ordinal and categorical vars
 		}
 		writeInputMatrix("D", D, true);
 		
 		//generate attribute sets		
-        double[][] S1 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1112);
-        double[][] S2 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1113);
-        round(S1);
-        round(S2);
+		double[][] S1 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1112);
+		double[][] S2 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1113);
+		TestUtils.floor(S1);
+		TestUtils.floor(S2);
 		writeInputMatrix("S1", S1, true);
 		writeInputMatrix("S2", S2, true);	
 
@@ -350,16 +350,4 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 	}
-	
-	private void round(double[][] data) {
-		for(int i=0; i<data.length; i++)
-			for(int j=0; j<data[i].length; j++)
-				data[i][j]=Math.floor(data[i][j]);
-	}
-	
-	private void round(double[][] data, int col) {
-		for(int i=0; i<data.length; i++)
-			data[i][col]=Math.floor(data[i][col]);
-	}
-
 }

@@ -90,6 +90,7 @@ public class KahanPlus extends KahanFunction implements Serializable
 	 * @param in1 kahan object input
 	 * @param in2 double input
 	 */
+	@Override
 	public void execute2(KahanObject in1, double in2) 
 	{
 		//fast path for INF/-INF in order to ensure result correctness

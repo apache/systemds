@@ -43,6 +43,7 @@ public class IterablePredicate extends Expression
 		setCtxValuesAndFilename(ctx, filename);
 	}
 	
+	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
 		result.addVariables(_fromExpr.variablesRead());
@@ -52,6 +53,7 @@ public class IterablePredicate extends Expression
 		return result;
 	}
 	
+	@Override
 	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
 		result.addVariable(_iterVar.getName(), _iterVar);

@@ -43,11 +43,11 @@ import org.apache.sysml.runtime.util.IndexRange;
 
 @SuppressWarnings("rawtypes")
 public class CM_N_COVCell extends MatrixValue implements WritableComparable
-{	
+{
 	private CM_COV_Object cm=new CM_COV_Object();
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return cm.toString();
 	}
 

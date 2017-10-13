@@ -149,13 +149,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 		}
 	}	
 	
-	/**
-	 * 
-	 * @param input
-	 * @param groupBy
-	 * @return
-	 */
-	private HashMap<String, Long> getCounts(FrameBlock input, int groupBy) {
+	private static HashMap<String, Long> getCounts(FrameBlock input, int groupBy) {
 		HashMap<String, Long> ret = new HashMap<String, Long>();
 		for( int i=0; i<input.getNumRows(); i++ ) {
 			String key = input.get(i, groupBy).toString();

@@ -87,7 +87,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block collection
-		ArrayList<IndexedMatrixValue> ret = new ArrayList<IndexedMatrixValue>();
+		ArrayList<IndexedMatrixValue> ret = new ArrayList<>();
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());

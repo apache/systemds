@@ -88,7 +88,7 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction {
 		IndexedMatrixValue inOffset = cachedValues.getFirst(input2);
 
 		//execute remove empty operations
-		ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+		ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 		LibMatrixReorg.rmempty(inData, inOffset, _rmRows, _len, blockRowFactor, blockColFactor, out);
 		
 		//put results into cache map

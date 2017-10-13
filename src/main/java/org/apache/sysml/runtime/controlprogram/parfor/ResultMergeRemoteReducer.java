@@ -132,7 +132,7 @@ public class ResultMergeRemoteReducer
 				//scan for compare object (incl result merge if compare available)
 				MatrixIndexes key2 = (MatrixIndexes) key;
 				Double cellCompare = null;
-				Collection<Double> cellList = new LinkedList<Double>();
+				Collection<Double> cellList = new LinkedList<>();
 				boolean found = false;
 				while( valueList.hasNext() ) {
 					TaggedMatrixCell tVal = (TaggedMatrixCell) valueList.next();
@@ -228,7 +228,7 @@ public class ResultMergeRemoteReducer
 				
 				//scan for compare object (incl result merge if compare available)
 				Double cellCompare = null;
-				Collection<Double> cellList = new LinkedList<Double>();
+				Collection<Double> cellList = new LinkedList<>();
 				boolean found = false;
 				while( valueList.hasNext() ) {
 					TaggedMatrixCell tVal = (TaggedMatrixCell) valueList.next();

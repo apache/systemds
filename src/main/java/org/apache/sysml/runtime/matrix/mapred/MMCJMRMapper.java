@@ -58,6 +58,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		commonMap(rawKey, rawValue, out, reporter);
 	}
 
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);

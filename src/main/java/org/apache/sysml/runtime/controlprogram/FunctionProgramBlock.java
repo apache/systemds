@@ -152,8 +152,8 @@ public class FunctionProgramBlock extends ProgramBlock
 		return _recompileOnce;
 	}
 	
+	@Override
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in function program block generated from function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
-	
 }

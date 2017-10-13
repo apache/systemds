@@ -54,7 +54,7 @@ public class EncoderFactory
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Encoder> lencoders = new ArrayList<Encoder>();
+			List<Encoder> lencoders = new ArrayList<>();
 		
 			//prepare basic id lists (recode, dummycode, pass-through)
 			//note: any dummycode column requires recode as preparation

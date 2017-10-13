@@ -23,9 +23,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 public class IntIdentifier extends ConstIdentifier 
 {
-	
 	private long _val;
 	
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}
@@ -71,6 +71,7 @@ public class IntIdentifier extends ConstIdentifier
 		return _val;
 	}
 	
+	@Override
 	public String toString(){
 		return Long.toString(_val);
 	}

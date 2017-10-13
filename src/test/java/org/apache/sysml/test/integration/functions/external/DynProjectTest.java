@@ -99,11 +99,11 @@ public class DynProjectTest extends AutomatedTestBase
 		rCmd = getRCmd(inputDir(), expectedDir());
 		
 		long seed = System.nanoTime();
-        double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
-        double[][] c = round(getRandomMatrix(1, size, 1-0.49, rows+0.49, 1, seed));
-        
-        writeInputMatrix("X", X, true);
-        writeInputMatrix("c", c, true);
+		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+		double[][] c = TestUtils.round(getRandomMatrix(1, size, 1-0.49, rows+0.49, 1, seed));
+		
+		writeInputMatrix("X", X, true);
+		writeInputMatrix("c", c, true);
 		
 		runTest(true, false, null, -1);
 		runRScript(true);
@@ -112,18 +112,5 @@ public class DynProjectTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("Y");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Y.mtx");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
-	}
-	
-	/**
-	 * 
-	 * @param data
-	 * @return
-	 */
-	private double[][] round(double[][] data) 
-	{
-		for(int i=0; i<data.length; i++)
-			for(int j=0; j<data[i].length; j++)
-				data[i][j]=Math.round(data[i][j]);
-		return data;
 	}
 }

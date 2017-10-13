@@ -453,13 +453,11 @@ public abstract class Hop implements ParseInfo
 		return offset;
 	}
 	
-	public void setOutputEmptyBlocks(boolean flag)
-	{
+	public void setOutputEmptyBlocks(boolean flag) {
 		_outputEmptyBlocks = flag;
 	}
 	
-	public boolean isOutputEmptyBlocks()
-	{
+	public boolean isOutputEmptyBlocks() {
 		return _outputEmptyBlocks;
 	}
 	
@@ -1854,7 +1852,8 @@ public abstract class Hop implements ParseInfo
 		_endLine = that._endLine;
 		_endColumn = that._endColumn;
 	}
-
+	
+	@Override
 	public abstract Object clone() throws CloneNotSupportedException;
 	
 	public abstract boolean compare( Hop that );

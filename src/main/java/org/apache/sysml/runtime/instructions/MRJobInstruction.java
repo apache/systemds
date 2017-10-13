@@ -437,8 +437,8 @@ public class MRJobInstruction extends Instruction
 		return sb.toString();
 	}
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		String instruction = "";
 		instruction += "jobtype = " + jobType + " \n";
 		instruction += "input labels = " + Arrays.toString(inputVars) + " \n";
@@ -686,6 +686,7 @@ public class MRJobInstruction extends Instruction
 		return sb.toString();
 	}
 	
+	@Override
 	public void printMe() {
 		LOG.debug("\nMRInstructions: \n" + this.toString());
 	}

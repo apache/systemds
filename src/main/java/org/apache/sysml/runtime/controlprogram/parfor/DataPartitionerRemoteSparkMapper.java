@@ -72,7 +72,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	public Iterator<Tuple2<Long, Writable>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{	
-		List<Tuple2<Long, Writable>> ret = new LinkedList<Tuple2<Long, Writable>>();
+		List<Tuple2<Long, Writable>> ret = new LinkedList<>();
 		
 		MatrixIndexes key2 =  arg0._1();
 		MatrixBlock value2 = arg0._2();

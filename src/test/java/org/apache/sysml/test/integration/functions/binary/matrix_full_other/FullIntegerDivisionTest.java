@@ -387,56 +387,37 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param name
-	 * @param matrix
-	 * @param includeR
-	 */
-	private void writeScalarInputMatrixWithMTD(String name, double[][] matrix, boolean includeR) 
+	private static void writeScalarInputMatrixWithMTD(String name, double[][] matrix, boolean includeR) 
 	{
-		try
-		{
+		try {
 			//write DML scalar
 			String fname = baseDirectory + INPUT_DIR + name; // + "/in";
 			MapReduceTool.deleteFileIfExistOnHDFS(fname);
 			MapReduceTool.writeDoubleToHDFS(matrix[0][0], fname);
 			MapReduceTool.writeScalarMetaDataFile(baseDirectory + INPUT_DIR + name + ".mtd", ValueType.DOUBLE);
 		
-			
 			//write R matrix
 			if( includeR ){
 				String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
 				TestUtils.writeTestMatrix(completeRPath, matrix, true);
 			}
 		}
-		catch(IOException e)
-		{
+		catch(IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 	}
 	
-	/**
-	 * 
-	 * @param name
-	 * @return
-	 */
-	private HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) 
-	{
+	private static HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) {
 		HashMap<CellIndex,Double> dmlfile = new HashMap<CellIndex,Double>();
-		try
-		{
+		try {
 			Double val = MapReduceTool.readDoubleFromHDFSFile(baseDirectory + OUTPUT_DIR + name);
 			dmlfile.put(new CellIndex(1,1), val);
 		}
-		catch(IOException e)
-		{
+		catch(IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
 		return dmlfile;
 	}
-		
 }

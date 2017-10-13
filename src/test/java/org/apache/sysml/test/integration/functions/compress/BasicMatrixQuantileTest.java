@@ -135,12 +135,7 @@ public class BasicMatrixQuantileTest extends AutomatedTestBase
 		runMatrixAppendTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-
-	/**
-	 * 
-	 * @param mb
-	 */
-	private void runMatrixAppendTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private static void runMatrixAppendTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
 		try
 		{

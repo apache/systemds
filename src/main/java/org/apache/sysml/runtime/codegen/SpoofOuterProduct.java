@@ -149,6 +149,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		return new DoubleObject(sum);
 	}
 	
+	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
 		throws DMLRuntimeException
 	{

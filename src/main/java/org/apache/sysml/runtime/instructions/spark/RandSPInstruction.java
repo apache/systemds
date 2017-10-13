@@ -354,26 +354,25 @@ public class RandSPInstruction extends UnarySPInstruction {
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long numBlocks = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock).getNumBlocks();
 		long numColBlocks = (long)Math.ceil((double)cols/(double)colsInBlock);
-				
+		
 		//a) in-memory seed rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
 			ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>> seeds = 
-					new ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>>();
+					new ArrayList<>();
 			for( long i=0; i<numBlocks; i++ ) {
 				long r = 1 + i/numColBlocks;
 				long c = 1 + i%numColBlocks;
 				MatrixIndexes indx = new MatrixIndexes(r, c);
 				Long seedForBlock = bigrand.nextLong();
-				seeds.add(new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(indx, 
-						new Tuple2<Long, Long>(seedForBlock, nnzIter.nextLong())));
+				seeds.add(new Tuple2<>(indx, new Tuple2<>(seedForBlock, nnzIter.nextLong())));
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
 			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
 				
 			//create seeds rdd 
-			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);				
+			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
 		}
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
 		else
@@ -454,7 +453,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		//a) in-memory offset rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
-			ArrayList<Double> offsets = new ArrayList<Double>();
+			ArrayList<Double> offsets = new ArrayList<>();
 			for( long i=0; i<numBlocks; i++ ) {
 				double off = seq_from + seq_incr*i*rowsInBlock;
 				offsets.add(off);
@@ -539,13 +538,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
 		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
 
-		ArrayList<SampleTask> offsets = new ArrayList<SampleTask>();
+		ArrayList<SampleTask> offsets = new ArrayList<>();
 		long st = 1;
 		while ( st <= maxValue ) {
 			SampleTask s = new SampleTask();
 			s.range_start = st;
 			s.seed = bigrand.nextLong();
-			
 			offsets.add(s);
 			st = st + partitionSize;
 		}
@@ -585,7 +583,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = -725284524434342939L;
 		long seed;
 		long range_start;
-		
+		@Override
 		public String toString() { return "(" + seed + "," + range_start +")"; } 
 	}
 	
@@ -630,7 +628,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 			long st = t.range_start;
 			long end = Math.min(t.range_start+_partitionSize, _maxValue);
-			ArrayList<Double> retList = new ArrayList<Double>();
+			ArrayList<Double> retList = new ArrayList<>();
 			
 			if ( _frac == 1.0 ) 
 			{
@@ -696,8 +694,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			long rowID = t._2()+1;
 			MatrixIndexes mi = new MatrixIndexes(rowID, 1);
 			MatrixCell mc = new MatrixCell(t._1());
-			
-			return new Tuple2<MatrixIndexes, MatrixCell>(mi, mc);
+			return new Tuple2<>(mi, mc);
 		}
 	}
 	
@@ -714,7 +711,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 		@Override
 		public Tuple2<Double, Double> call(Double t) throws Exception {
-			return new Tuple2<Double,Double>( r.nextDouble(), t );
+			return new Tuple2<>( r.nextDouble(), t );
 		}
 	}
 
@@ -728,10 +725,9 @@ public class RandSPInstruction extends UnarySPInstruction {
 			String[] parts = IOUtilFunctions.split(arg, ",");
 			MatrixIndexes ix = new MatrixIndexes(
 					Long.parseLong(parts[0]), Long.parseLong(parts[1]));
-			Tuple2<Long,Long> seed = new Tuple2<Long,Long>(
+			Tuple2<Long,Long> seed = new Tuple2<>(
 					Long.parseLong(parts[2]), Long.parseLong(parts[3]));
-			
-			return new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(ix,seed);
+			return new Tuple2<>(ix,seed);
 		}
 	}
 
@@ -780,19 +776,15 @@ public class RandSPInstruction extends UnarySPInstruction {
 			long blockColIndex = ix.getColumnIndex();
 			int lrlen = UtilFunctions.computeBlockSize(_rlen, blockRowIndex, _brlen);
 			int lclen = UtilFunctions.computeBlockSize(_clen, blockColIndex, _bclen);
-			
 			long seed = kv._2._1;
 			long blockNNZ = kv._2._2;
 			
 			MatrixBlock blk = new MatrixBlock();
-			
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 					_pdf, lrlen, lclen, lrlen, lclen,   
 					_sparsity, _min, _max, _pdfParams );
-			
 			blk.randOperationsInPlace(rgen, LongStream.of(blockNNZ), null, seed);
-
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, blk);
+			return new Tuple2<>(kv._1, blk);
 		}
 	}
 
@@ -819,12 +811,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 			double seq_to = (_seq_incr > 0) ?
 				Math.min(_global_seq_end, seq_from + _seq_incr*(_brlen-1)) :
 				Math.max(_global_seq_end, seq_from + _seq_incr*(_brlen+1));
-			long globalRow = (long)Math.round((seq_from-_global_seq_start)/_seq_incr)+1;			
+			long globalRow = (long)Math.round((seq_from-_global_seq_start)/_seq_incr)+1;
 			long rowIndex = UtilFunctions.computeBlockIndex(globalRow, _brlen);
 			
 			MatrixIndexes indx = new MatrixIndexes(rowIndex, 1);
 			MatrixBlock blk = MatrixBlock.seqOperations(seq_from, seq_to, _seq_incr);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(indx, blk);
+			return new Tuple2<>(indx, blk);
 		}	
 	}
 	
@@ -841,7 +833,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 	private boolean isMemAvail(long lRows, long lCols, double sparsity, double min, double max) 
 	{
 		double size = (min == 0 && max == 0) ? OptimizerUtils.estimateSizeEmptyBlock(rows, cols):
-												OptimizerUtils.estimateSizeExactSparsity(rows, cols, sparsity);
+			OptimizerUtils.estimateSizeExactSparsity(rows, cols, sparsity);
 		
 		return ( OptimizerUtils.isValidCPDimensions(rows, cols)
 				 && OptimizerUtils.isValidCPMatrixSize(rows, cols, sparsity) 

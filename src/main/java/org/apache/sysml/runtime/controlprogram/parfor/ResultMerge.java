@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -149,26 +149,16 @@ public abstract class ResultMerge
 		}	
 	}
 
-	protected long computeNonZeros( MatrixObject out, ArrayList<MatrixObject> in )
+	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in )
 	{
 		MatrixCharacteristics mc = out.getMatrixCharacteristics();
 		long outNNZ = mc.getNonZeros();	
 		long ret = outNNZ;
-		for( MatrixObject tmp : in )
-		{
+		for( MatrixObject tmp : in ) {
 			MatrixCharacteristics tmpmc = tmp.getMatrixCharacteristics();
 			long inNNZ = tmpmc.getNonZeros();
-			ret +=  (inNNZ - outNNZ);			
+			ret +=  (inNNZ - outNNZ);
 		}
-		
-		return ret;
-	}
-
-	protected ArrayList<MatrixObject> convertToList(MatrixObject[] in)
-	{
-		ArrayList<MatrixObject> ret = new ArrayList<MatrixObject>();
-		for( MatrixObject mo : in )
-			ret.add( mo );
 		
 		return ret;
 	}

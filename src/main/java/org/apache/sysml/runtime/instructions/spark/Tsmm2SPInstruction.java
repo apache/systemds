@@ -147,14 +147,14 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
-			List<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			List<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			MatrixIndexes ixin = arg0._1();
 			MatrixBlock mbin = arg0._2();
 			
 			//execute block tsmm operation
 			MatrixBlock out1 = mbin.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
 			long ixout = _type.isLeft() ? ixin.getColumnIndex() : ixin.getRowIndex();
-			ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(ixout, ixout), out1));
+			ret.add(new Tuple2<>(new MatrixIndexes(ixout, ixout), out1));
 			
 			if( _type.isLeft() ? ixin.getColumnIndex() == 1 : ixin.getRowIndex() == 1 ) {
 				//execute block mapmm operation for full block only (output two blocks, due to symmetry)
@@ -166,11 +166,11 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 				MatrixBlock out2 = (MatrixBlock) OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes( //mm
 						_type.isLeft() ? mbin2t : mbin, _type.isLeft() ? mbin : mbin2t, new MatrixBlock(), _op);
 				MatrixIndexes ixout2 = _type.isLeft() ? new MatrixIndexes(2,1) : new MatrixIndexes(1,2);
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ixout2, out2));
+				ret.add(new Tuple2<>(ixout2, out2));
 				
 				MatrixBlock out3 = transpose(out2, new MatrixBlock()); 
 				MatrixIndexes ixout3 = _type.isLeft() ? new MatrixIndexes(1,2) : new MatrixIndexes(2,1);
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ixout3, out3));
+				ret.add(new Tuple2<>(ixout3, out3));
 			}
 			
 			return ret.iterator();
@@ -254,9 +254,9 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			throws Exception 
 		{
 			if( _type.isLeft() )
-				return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(arg0._1().getRowIndex(), 1), arg0._2());
+				return new Tuple2<>(new MatrixIndexes(arg0._1().getRowIndex(), 1), arg0._2());
 			else
-				return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(1, arg0._1().getColumnIndex()), arg0._2());	
+				return new Tuple2<>(new MatrixIndexes(1, arg0._1().getColumnIndex()), arg0._2());	
 		}
 	}	
 	

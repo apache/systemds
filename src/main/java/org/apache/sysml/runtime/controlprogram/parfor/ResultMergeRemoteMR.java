@@ -97,26 +97,20 @@ public class ResultMergeRemoteMR extends ResultMerge
 		throws DMLRuntimeException 
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
-
-		//Timing time = null;
-		LOG.trace("ResultMerge (remote, mr): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-		//	time = new Timing();
-		//	time.start();
-		
+		if( LOG.isTraceEnabled() )
+			LOG.trace("ResultMerge (remote, mr): Execute serial merge for output "
+				+_output.getVarName()+" (fname="+_output.getFileName()+")");
 		
 		try
 		{
 			//collect all relevant inputs
-			Collection<String> srcFnames = new LinkedList<String>();
-			ArrayList<MatrixObject> inMO = new ArrayList<MatrixObject>();
-			for( MatrixObject in : _inputs )
-			{
+			Collection<String> srcFnames = new LinkedList<>();
+			ArrayList<MatrixObject> inMO = new ArrayList<>();
+			for( MatrixObject in : _inputs ) {
 				//check for empty inputs (no iterations executed)
-				if( in !=null && in != _output ) 
-				{
+				if( in !=null && in != _output )  {
 					//ensure that input file resides on disk
 					in.exportData();
-					
 					//add to merge list
 					srcFnames.add( in.getFileName() );
 					inMO.add(in);
@@ -166,7 +160,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 
 		//LOG.trace("ResultMerge (local, file): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 		
-		return moNew;		
+		return moNew;
 	}
 
 	@SuppressWarnings({ "unused", "deprecation" })
@@ -316,12 +310,11 @@ public class ResultMergeRemoteMR extends ResultMerge
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException(ex);
-		}		
+		}
 		
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
 		}
 	}
-	
 }

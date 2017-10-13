@@ -33,14 +33,9 @@ public class GetMIMBFromRow implements PairFunction<Row, MatrixIndexes, MatrixBl
 
 	@Override	
 	public Tuple2<MatrixIndexes, MatrixBlock> call(Row row) throws Exception {
-//		try {
 			MatrixIndexes indx = (MatrixIndexes) row.apply(0);
 			MatrixBlock blk = (MatrixBlock) row.apply(1);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(indx, blk);
-//		}
-//		catch(Exception e) {
-//			throw new Exception("Incorrect type of DataFrame passed to MLMatrix:" + e.getMessage());
-//		}
+			return new Tuple2<>(indx, blk);
 	}
 
 }

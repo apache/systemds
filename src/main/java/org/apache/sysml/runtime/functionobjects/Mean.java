@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.instructions.cp.KahanObject;
 
 public class Mean extends ValueFunction 
 {
-
 	private static final long serialVersionUID = 1967222020396371269L;
 
 	private static Mean singleObj = null;
@@ -43,7 +42,7 @@ public class Mean extends ValueFunction
 		return singleObj;
 	}
 	
-	//overwride in1
+	@Override
 	public Data execute(Data in1, double in2, double count) throws DMLRuntimeException {
 		KahanObject kahanObj=(KahanObject)in1;
 		double delta = (in2-kahanObj._sum)/count;

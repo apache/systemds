@@ -130,7 +130,7 @@ public class ReaderTextCellParallel extends MatrixReader
 			//create read tasks for all splits
 			ExecutorService pool = Executors.newFixedThreadPool(par);
 			InputSplit[] splits = informat.getSplits(job, par);
-			ArrayList<ReadTask> tasks = new ArrayList<ReadTask>();
+			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits ){
 				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, matrixMarket);
 				tasks.add(t);

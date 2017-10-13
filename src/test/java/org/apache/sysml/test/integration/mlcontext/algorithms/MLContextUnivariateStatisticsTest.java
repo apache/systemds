@@ -82,7 +82,7 @@ public class MLContextUnivariateStatisticsTest extends MLContextTestBase {
 		Assert.assertEquals(1.0, stats[16][0], 0); // number of modes
 	}
 
-	private void replaceColumnWithRandomInts(double[][] matrix, int whichColumn, int lowValue, int highValue) {
+	private static void replaceColumnWithRandomInts(double[][] matrix, int whichColumn, int lowValue, int highValue) {
 		for (int i = 0; i < matrix.length; i++) {
 			double[] row = matrix[i];
 			row[whichColumn] = ThreadLocalRandom.current().nextInt(lowValue, highValue + 1);

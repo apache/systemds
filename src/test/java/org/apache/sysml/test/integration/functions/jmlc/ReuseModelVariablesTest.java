@@ -113,7 +113,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		Assert.assertEquals(Xset.size(), Yset.size());
 	}
 
-	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, ArrayList<double[][]> X, boolean modelReuse) 
+	private static ArrayList<double[][]> execDMLScriptviaJMLC( String testname, ArrayList<double[][]> X, boolean modelReuse) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -122,7 +122,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		
 		//establish connection to SystemML
 		Connection conn = new Connection();
-				
+		
 		try
 		{
 			// For now, JMLC pipeline only allows dml

@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -143,7 +142,7 @@ public class OptNode
 	
 	public void addParam(ParamType ptype, String val) {
 		if( _params == null )
-			_params = new HashMap<ParamType, String>();
+			_params = new HashMap<>();
 		_params.put(ptype, val);
 	}
 
@@ -179,13 +178,13 @@ public class OptNode
 	
 	public void addChild( OptNode child ) {
 		if( _childs==null )
-			_childs = new ArrayList<OptNode>();
+			_childs = new ArrayList<>();
 		_childs.add( child );
 	}
 	
 	public void addChilds( ArrayList<OptNode> childs ) {
 		if( _childs==null )
-			_childs = new ArrayList<OptNode>();
+			_childs = new ArrayList<>();
 		_childs.addAll( childs );
 	}
 	
@@ -260,7 +259,7 @@ public class OptNode
 	//recursive methods
 
 	public Collection<OptNode> getNodeList() {
-		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		Collection<OptNode> nodes = new ArrayList<>();
 		if(!isLeaf())
 			for( OptNode n : _childs )
 				nodes.addAll( n.getNodeList() );
@@ -269,7 +268,7 @@ public class OptNode
 	}
 
 	public Collection<OptNode> getNodeList( ExecType et ) {
-		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		Collection<OptNode> nodes = new ArrayList<>();
 		if(!isLeaf())
 			for( OptNode n : _childs )
 				nodes.addAll( n.getNodeList( et ) );
@@ -279,7 +278,7 @@ public class OptNode
 	}
 
 	public Collection<OptNode> getRelevantNodeList() {
-		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		Collection<OptNode> nodes = new ArrayList<>();
 		if( !isLeaf() )
 			for( OptNode n : _childs )
 				nodes.addAll( n.getRelevantNodeList() );

@@ -64,9 +64,9 @@ public abstract class MMCJMRCache
 		_bufferCapacity = buffCapacity;
 		_buffer = new Pair[_bufferCapacity];
 		for(int i=0; i<_bufferCapacity; i++)
-			_buffer[i] = new Pair<MatrixIndexes, MatrixValue>(new MatrixIndexes(), valueClass.newInstance());
+			_buffer[i] = new Pair<>(new MatrixIndexes(), valueClass.newInstance());
 		if( buffMap )
-			_bufferMap = new HashMap<MatrixIndexes, Integer>();
+			_bufferMap = new HashMap<>();
 	
 		//System.out.println("allocated buffer: "+_bufferCapacity);
 	}

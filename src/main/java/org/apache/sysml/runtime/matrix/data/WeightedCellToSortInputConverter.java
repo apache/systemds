@@ -26,10 +26,9 @@ import org.apache.hadoop.io.IntWritable;
 public class WeightedCellToSortInputConverter implements 
 Converter<MatrixIndexes, WeightedCell, DoubleWritable, IntWritable>
 {
-	
 	private DoubleWritable outKey=new DoubleWritable();
 	private IntWritable outValue=new IntWritable();
-	private Pair<DoubleWritable, IntWritable> pair=new Pair<DoubleWritable, IntWritable>(outKey, outValue);
+	private Pair<DoubleWritable, IntWritable> pair=new Pair<>(outKey, outValue);
 	private boolean hasValue=false;
 	@Override
 	public void convert(MatrixIndexes k1, WeightedCell v1) {

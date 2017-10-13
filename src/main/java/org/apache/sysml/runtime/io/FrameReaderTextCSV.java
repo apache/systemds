@@ -225,7 +225,6 @@ public class FrameReaderTextCSV extends FrameReader
 				IOUtilFunctions.closeSilently(reader);
 			}
 		}
-		
-		return new Pair<Integer,Integer>(nrow, ncol);
+		return new Pair<>(nrow, ncol);
 	}
 }

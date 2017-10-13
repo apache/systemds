@@ -29,10 +29,9 @@ import org.apache.sysml.runtime.util.FastStringTokenizer;
 public class TextToBinaryCellConverter 
 implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 {
-	
 	private MatrixIndexes indexes = new MatrixIndexes();
 	private MatrixCell value = new MatrixCell();
-	private Pair<MatrixIndexes, MatrixCell> pair = new Pair<MatrixIndexes, MatrixCell>(indexes, value);
+	private Pair<MatrixIndexes, MatrixCell> pair = new Pair<>(indexes, value);
 	private FastStringTokenizer st = new FastStringTokenizer(' '); 
 	private boolean hasValue = false;
 	private boolean toIgnore = false;

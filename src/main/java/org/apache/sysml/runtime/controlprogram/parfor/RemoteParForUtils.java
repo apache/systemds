@@ -164,7 +164,7 @@ public class RemoteParForUtils
 	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars) 
 		throws DMLRuntimeException, IOException
 	{
-		ArrayList<String> ret = new ArrayList<String>();
+		ArrayList<String> ret = new ArrayList<>();
 		
 		//foreach result variables probe if export necessary
 		for( String rvar : resultVars )
@@ -225,7 +225,7 @@ public class RemoteParForUtils
 	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
 		throws DMLRuntimeException
 	{
-		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
+		HashMap<Long,LocalVariableMap> tmp = new HashMap<>();
 
 		int countAll = 0;
 		for( Tuple2<Long,String> entry : out )

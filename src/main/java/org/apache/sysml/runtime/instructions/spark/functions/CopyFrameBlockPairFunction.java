@@ -51,10 +51,10 @@ public class CopyFrameBlockPairFunction implements PairFunction<Tuple2<LongWrita
 	{	
 		if( _deepCopy ) {
 			FrameBlock block = new FrameBlock(arg0._2());
-			return new Tuple2<Long,FrameBlock>(arg0._1().get(), block);
+			return new Tuple2<>(arg0._1().get(), block);
 		}
 		else {
-			return new Tuple2<Long,FrameBlock>(arg0._1().get(), arg0._2());
+			return new Tuple2<>(arg0._1().get(), arg0._2());
 		}
 	}
 }

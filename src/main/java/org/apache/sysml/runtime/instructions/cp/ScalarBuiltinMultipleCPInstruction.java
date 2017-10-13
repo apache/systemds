@@ -46,7 +46,7 @@ public class ScalarBuiltinMultipleCPInstruction extends BuiltinMultipleCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		if (MultipleCP.OperationType.PRINTF.toString().equalsIgnoreCase(getOpcode())) {
-			List<ScalarObject> scalarObjects = new ArrayList<ScalarObject>();
+			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
 				ScalarObject so = ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral());
 				scalarObjects.add(so);

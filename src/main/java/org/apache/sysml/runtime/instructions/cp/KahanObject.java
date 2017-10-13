@@ -41,8 +41,8 @@ public class KahanObject extends Data
 		_correction=cor;
 	}
 
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "("+_sum+", "+_correction+")";
 	}
 	

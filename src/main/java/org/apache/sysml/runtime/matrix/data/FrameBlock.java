@@ -233,7 +233,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return map of column name keys and id values
 	 */
 	public Map<String,Integer> getColumnNameIDMap() {
-		Map<String, Integer> ret = new HashMap<String, Integer>();
+		Map<String, Integer> ret = new HashMap<>();
 		for( int j=0; j<getNumColumns(); j++ )
 			ret.put(getColumnName(j), j+1);
 		return ret;	
@@ -1058,7 +1058,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		
 		//construct recode map
-		HashMap<String,Long> map = new HashMap<String,Long>();
+		HashMap<String,Long> map = new HashMap<>();
 		Array ldata = _coldata[col]; 
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
@@ -1292,6 +1292,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public abstract void setNz(int rl, int ru, Array value);
 		public abstract void append(String value);
 		public abstract void append(T value);
+		@Override
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
 		public abstract void reset(int size); 
@@ -1303,25 +1304,31 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public StringArray(String[] data) {
 			_data = data;
 			_size = _data.length;
-		}		
+		}
+		@Override
 		public String get(int index) {
 			return _data[index];
 		}
+		@Override
 		public void set(int index, String value) {
 			_data[index] = value;
 		}
+		@Override
 		public void set(int rl, int ru, Array value) {
 			set(rl, ru, value, 0);
 		}
+		@Override
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
+		@Override
 		public void setNz(int rl, int ru, Array value) {
 			String[] data2 = ((StringArray)value)._data;
 			for( int i=rl; i<ru+1; i++ )
 				if( data2[i]!=null )
 					_data[i] = data2[i];
 		}
+		@Override
 		public void append(String value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
@@ -1338,12 +1345,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				_data[i] = (!tmp.isEmpty()) ? tmp : null;
 			}
 		}
+		@Override
 		public Array clone() {
 			return new StringArray(Arrays.copyOf(_data, _size));
 		}
+		@Override
 		public Array slice(int rl, int ru) {
 			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		@Override
 		public void reset(int size) {
 			if( _data.length < size )
 				_data = new String[size];
@@ -1357,28 +1367,35 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public BooleanArray(boolean[] data) {
 			_data = data;
 			_size = _data.length;
-		}		
+		}
+		@Override
 		public Boolean get(int index) {
 			return _data[index];
 		}
+		@Override
 		public void set(int index, Boolean value) {
 			_data[index] = (value!=null) ? value : false;
 		}
+		@Override
 		public void set(int rl, int ru, Array value) {
 			set(rl, ru, value, 0);
 		}
+		@Override
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
+		@Override
 		public void setNz(int rl, int ru, Array value) {
 			boolean[] data2 = ((BooleanArray)value)._data;
 			for( int i=rl; i<ru+1; i++ )
 				if( data2[i] )
 					_data[i] = data2[i];
 		}
+		@Override
 		public void append(String value) {
 			append(Boolean.parseBoolean(value));
 		}
+		@Override
 		public void append(Boolean value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
@@ -1393,12 +1410,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readBoolean();
 		}
+		@Override
 		public Array clone() {
 			return new BooleanArray(Arrays.copyOf(_data, _size));
 		}
+		@Override
 		public Array slice(int rl, int ru) {
 			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		@Override
 		public void reset(int size) {
 			if( _data.length < size )
 				_data = new boolean[size];
@@ -1412,28 +1432,35 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public LongArray(long[] data) {
 			_data = data;
 			_size = _data.length;
-		}		
+		}
+		@Override
 		public Long get(int index) {
 			return _data[index];
 		}
+		@Override
 		public void set(int index, Long value) {
 			_data[index] = (value!=null) ? value : 0L;
 		}
+		@Override
 		public void set(int rl, int ru, Array value) {
 			set(rl, ru, value, 0);
 		}
+		@Override
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
+		@Override
 		public void setNz(int rl, int ru, Array value) {
 			long[] data2 = ((LongArray)value)._data;
 			for( int i=rl; i<ru+1; i++ )
 				if( data2[i]!=0 )
 					_data[i] = data2[i];
 		}
+		@Override
 		public void append(String value) {
 			append((value!=null)?Long.parseLong(value):null);
 		}
+		@Override
 		public void append(Long value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
@@ -1448,12 +1475,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readLong();
 		}
+		@Override
 		public Array clone() {
 			return new LongArray(Arrays.copyOf(_data, _size));
 		}
+		@Override
 		public Array slice(int rl, int ru) {
 			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		@Override
 		public void reset(int size) {
 			if( _data.length < size )
 				_data = new long[size];
@@ -1467,28 +1497,35 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public DoubleArray(double[] data) {
 			_data = data;
 			_size = _data.length;
-		}		
+		}
+		@Override
 		public Double get(int index) {
 			return _data[index];
 		}
+		@Override
 		public void set(int index, Double value) {
 			_data[index] = (value!=null) ? value : 0d;
 		}
+		@Override
 		public void set(int rl, int ru, Array value) {
 			set(rl,ru, value, 0);
 		}
+		@Override
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
+		@Override
 		public void setNz(int rl, int ru, Array value) {
 			double[] data2 = ((DoubleArray)value)._data;
 			for( int i=rl; i<ru+1; i++ )
 				if( data2[i]!=0 )
 					_data[i] = data2[i];
 		}
+		@Override
 		public void append(String value) {
 			append((value!=null)?Double.parseDouble(value):null);
 		}
+		@Override
 		public void append(Double value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
@@ -1503,12 +1540,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readDouble();
 		}
+		@Override
 		public Array clone() {
 			return new DoubleArray(Arrays.copyOf(_data, _size));
 		}
+		@Override
 		public Array slice(int rl, int ru) {
 			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
+		@Override
 		public void reset(int size) {
 			if( _data.length < size )
 				_data = new double[size];

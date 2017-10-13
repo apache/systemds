@@ -63,10 +63,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	protected String  _stringID       = null; 
 	protected HashMap<String, String> _rvarFnames = null; 
 	
-	static
-	{
+	static {
 		//init cache (once per JVM)
-		_sCache = new HashMap<String, RemoteParWorkerMapper>();
+		_sCache = new HashMap<>();
 	}
 	
 	
@@ -74,7 +73,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	{
 		//only used if JVM reuse is enabled in order to ensure consistent output 
 		//filenames across tasks of one reused worker (preaggregation)
-		_rvarFnames = new HashMap<String, String>();
+		_rvarFnames = new HashMap<>();
 	}
 
 	@Override

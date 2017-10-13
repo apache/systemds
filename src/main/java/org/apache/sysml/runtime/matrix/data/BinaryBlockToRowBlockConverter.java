@@ -43,7 +43,7 @@ public class BinaryBlockToRowBlockConverter implements Converter<MatrixIndexes, 
 	{
 		_destIx = new MatrixIndexes();
 		_destBlock = new MatrixBlock();
-		_pair=new Pair<MatrixIndexes, MatrixBlock>(_destIx, _destBlock);
+		_pair=new Pair<>(_destIx, _destBlock);
 	}
 	
 	private void reset()

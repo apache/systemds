@@ -77,6 +77,7 @@ public class WeightedSigmoidR extends Lop
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Operation = WeightedSigmoidR";
 	}

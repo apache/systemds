@@ -140,6 +140,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		setParseInfo(parseInfo);
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		HashMap<String,Expression> newVarParams = new HashMap<>();
 		for (String key : _varParams.keySet()){
@@ -737,6 +738,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 					+ "It is of type '"+data.getOutput().getDataType().toString()+"', '"+data.getOutput().getValueType().toString()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_opcode.toString() + "(");
 

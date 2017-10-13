@@ -143,7 +143,7 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 		{
 			Dkind[i]=(i%3)+1;//kind 1,2,3
 			if( Dkind[i]!=1 )
-				round(D,i); //for ordinal and categorical vars
+				TestUtils.floor(D,i); //for ordinal and categorical vars
 		}
 		MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,-1,-1);
 		writeInputMatrixWithMTD("D", D, true, mc1);
@@ -171,10 +171,5 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(out);
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-	}
-	
-	private void round(double[][] data, int col) {
-		for(int i=0; i<data.length; i++)
-			data[i][col]=Math.floor(data[i][col]);
 	}
 }

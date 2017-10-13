@@ -52,6 +52,7 @@ public class BooleanIdentifier extends ConstIdentifier
 		setValueType(ValueType.BOOLEAN);
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}
@@ -60,6 +61,7 @@ public class BooleanIdentifier extends ConstIdentifier
 		return _val;
 	}
 	
+	@Override
 	public String toString(){
 		return Boolean.toString(_val);
 	}

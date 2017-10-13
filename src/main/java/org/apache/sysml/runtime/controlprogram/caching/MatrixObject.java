@@ -329,7 +329,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			{
 				//put block into cache
 				_partitionCacheName = fname;
-				_cache = new SoftReference<MatrixBlock>(mb);
+				_cache = new SoftReference<>(mb);
 				
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{

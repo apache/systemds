@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class BinaryBlockToBinaryCellConverter implements 
 Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>
 {
-	
 	private Iterator<IJV> sparseIterator=null;
 	private double[] denseArray=null;
 	private int denseArraySize=0;
@@ -43,7 +42,7 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>
 	
 	private MatrixIndexes returnIndexes=new MatrixIndexes();
 	private MatrixCell cell=new MatrixCell();
-	private Pair<MatrixIndexes, MatrixCell> pair=new Pair<MatrixIndexes, MatrixCell>(returnIndexes, cell);
+	private Pair<MatrixIndexes, MatrixCell> pair=new Pair<>(returnIndexes, cell);
 	
 	private void reset()
 	{

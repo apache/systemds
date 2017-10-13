@@ -148,7 +148,7 @@ public class PiggybackingWorkerUtilTimeParallel extends PiggybackingWorker
 					LOG.error("Failed to run merged mr-job instruction:\n"+_minst.inst.toString()); 
 				
 				// split job return
-				LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
+				LinkedList<JobReturn> ret = new LinkedList<>();
 				for( Long id : _minst.ids ){
 					ret.add( _minst.constructJobReturn(id, mret) );
 					Statistics.decrementNoOfExecutedMRJobs();

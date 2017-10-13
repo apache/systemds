@@ -243,10 +243,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		LOG.debug("ExternalBuiltInFunction: " + this.toString());
 	}
 
-	public String getGraphString() {
-		return "ExtBuiltinFunc: " + _functionName;
-	}
-	
 	public ArrayList<String> getBoundInputParamNames()
 	{
 		return _boundInputParamNames;

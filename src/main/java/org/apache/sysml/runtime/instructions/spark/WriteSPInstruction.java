@@ -168,9 +168,9 @@ public class WriteSPInstruction extends SPInstruction {
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 			
-			JavaRDD<String> header = null;				
+			JavaRDD<String> header = null;
 			if( oi == OutputInfo.MatrixMarketOutputInfo  ) {
-				ArrayList<String> headerContainer = new ArrayList<String>(1);
+				ArrayList<String> headerContainer = new ArrayList<>(1);
 				// First output MM header
 				String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
 						// output number of rows, number of columns and number of nnz

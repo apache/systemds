@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 
 public class CM_COV_Object extends Data 
 {
-
 	private static final long serialVersionUID = -5814207545197934085L;
 
 	//for central moment
@@ -42,8 +41,8 @@ public class CM_COV_Object extends Data
 	public KahanObject mean_v;
 	public KahanObject c2;
 	
-	public String toString()
-	{
+	@Override
+	public String toString() {
 		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", mean2: "+mean_v+", c2: "+c2;
 	}
 	

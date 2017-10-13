@@ -92,6 +92,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		}
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{	
 		super.configure(job);
@@ -193,6 +194,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		return ret;
 	}
 	
+	@Override
 	public void close() throws IOException
 	{
 		if(cachedReporter!=null)

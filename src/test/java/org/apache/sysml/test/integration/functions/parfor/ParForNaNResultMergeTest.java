@@ -118,7 +118,7 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	 * 
 	 * @param ret
 	 */
-	private HashMap<CellIndex, Double> replaceNaNValues(HashMap<CellIndex, Double> in) 
+	private static HashMap<CellIndex, Double> replaceNaNValues(HashMap<CellIndex, Double> in) 
 	{
 		HashMap<CellIndex, Double> out = new HashMap<CellIndex, Double>();
 		double NaN = 0d/0d;

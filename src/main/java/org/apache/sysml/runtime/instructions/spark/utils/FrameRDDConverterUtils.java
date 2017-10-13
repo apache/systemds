@@ -305,7 +305,7 @@ public class FrameRDDConverterUtils
 	public static StructType convertFrameSchemaToDFSchema(ValueType[] fschema, boolean containsID)
 	{
 		// generate the schema based on the string of schema
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		
 		// add id column type
 		if( containsID )
@@ -474,9 +474,8 @@ public class FrameRDDConverterUtils
 			while( max >= 0 && arg0.hasNext() ) {
 				long val = arg0.next();
 				max = (val < max) ? -1 : val;
-			}			
-			
-			ArrayList<Long> ret = new ArrayList<Long>();	
+			}
+			ArrayList<Long> ret = new ArrayList<>();
 			ret.add(max);
 			return ret.iterator();
 		}
@@ -492,7 +491,7 @@ public class FrameRDDConverterUtils
 
 		@Override
 		public Tuple2<LongWritable, Text> call(String arg0) throws Exception {
-			return new Tuple2<LongWritable,Text>(new SerLongWritable(1L), new SerText(arg0));
+			return new Tuple2<>(new SerLongWritable(1L), new SerText(arg0));
 		}
 	}
 
@@ -502,7 +501,7 @@ public class FrameRDDConverterUtils
 		
 		@Override
 		public Tuple2<LongWritable, FrameBlock> call(Tuple2<LongWritable, FrameBlock> arg0) throws Exception  {
-			return new Tuple2<LongWritable,FrameBlock>(new SerLongWritable(arg0._1.get()), arg0._2);
+			return new Tuple2<>(new SerLongWritable(arg0._1.get()), arg0._2);
 		}
 	}
 
@@ -512,7 +511,7 @@ public class FrameRDDConverterUtils
 
 		@Override
 		public Tuple2<Long, Text> call(Tuple2<LongWritable, Text> arg0) throws Exception  {
-			return new Tuple2<Long,Text>(new Long(arg0._1.get()), arg0._2);
+			return new Tuple2<>(new Long(arg0._1.get()), arg0._2);
 		}
 	}
 
@@ -522,7 +521,7 @@ public class FrameRDDConverterUtils
 
 		@Override
 		public Tuple2<LongWritable, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception  {
-			return new Tuple2<LongWritable, FrameBlock>(new LongWritable(arg0._1), arg0._2);
+			return new Tuple2<>(new LongWritable(arg0._1), arg0._2);
 		}
 	}
 
@@ -532,7 +531,7 @@ public class FrameRDDConverterUtils
 
 		@Override
 		public Tuple2<Long, FrameBlock> call(Tuple2<LongWritable, FrameBlock> arg0) throws Exception  {
-			return new Tuple2<Long, FrameBlock>(arg0._1.get(), arg0._2);
+			return new Tuple2<>(arg0._1.get(), arg0._2);
 		}
 	}
 
@@ -579,7 +578,7 @@ public class FrameRDDConverterUtils
 		public Iterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<>();
 
 			long ix = -1;
 			FrameBlock fb = null;
@@ -651,7 +650,7 @@ public class FrameRDDConverterUtils
 			throws DMLRuntimeException
 		{			
 			if( fb != null && fb.getNumRows()>0 )
-				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
+				ret.add(new Tuple2<>(ix, fb));
 		}
 	}
 
@@ -672,7 +671,7 @@ public class FrameRDDConverterUtils
 			Long ix = arg0._1();
 			FrameBlock blk = arg0._2();
 			
-			ArrayList<String> ret = new ArrayList<String>();
+			ArrayList<String> ret = new ArrayList<>();
 			StringBuilder sb = new StringBuilder();
 			
 			//handle header information and frame meta data
@@ -745,7 +744,7 @@ public class FrameRDDConverterUtils
 		public Iterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<>();
 
 			long ix = -1;
 			FrameBlock fb = null;
@@ -791,7 +790,7 @@ public class FrameRDDConverterUtils
 			throws DMLRuntimeException
 		{			
 			if( fb != null && fb.getNumRows()>0 )
-				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
+				ret.add(new Tuple2<>(ix, fb));
 		}
 	}
 
@@ -805,7 +804,7 @@ public class FrameRDDConverterUtils
 		{
 			long rowIndex = arg0._1();
 			FrameBlock blk = arg0._2();
-			ArrayList<Row> ret = new ArrayList<Row>();
+			ArrayList<Row> ret = new ArrayList<>();
 
 			//handle Frame block data
 			int rows = blk.getNumRows();
@@ -846,7 +845,7 @@ public class FrameRDDConverterUtils
 			throws IOException, DMLRuntimeException
 		{
 			//temporary list of indexed matrix values to prevent library dependencies
-			ArrayList<Pair<Long, FrameBlock>> rettmp = new ArrayList<Pair<Long, FrameBlock>>();
+			ArrayList<Pair<Long, FrameBlock>> rettmp = new ArrayList<>();
 			rbuff.flushBufferToBinaryBlocks(rettmp);
 			ret.addAll(SparkUtils.fromIndexedFrameBlock(rettmp));
 		}
@@ -866,7 +865,7 @@ public class FrameRDDConverterUtils
 		public Iterator<Tuple2<Long, FrameBlock>> call(Iterator<Text> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<>();
 			FrameReblockBuffer rbuff = new FrameReblockBuffer(_bufflen, _rlen, _clen, _schema );
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			
@@ -922,7 +921,7 @@ public class FrameRDDConverterUtils
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
 			MatrixBlock mbreuse = new MatrixBlock();
@@ -944,7 +943,7 @@ public class FrameRDDConverterUtils
 				out.copy(0, out.getNumRows()-1, (int)cl, (int)cu, 
 					mb.sliceOperations(i, ru, 0, mb.getNumColumns()-1, mbreuse), true);
 				out.examSparsity();
-				ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixout,out));				
+				ret.add(new Tuple2<>(ixout,out));
 			}
 
 			return ret.iterator();
@@ -982,7 +981,7 @@ public class FrameRDDConverterUtils
 			throws Exception 
 		{
 			FrameBlock fb = DataConverter.convertToFrameBlock(arg0._2());
-			return  new Tuple2<Long, FrameBlock>(
+			return  new Tuple2<>(
 				(arg0._1().getRowIndex()-1)*_brlen+1, fb);
 		}
 	}
@@ -994,7 +993,7 @@ public class FrameRDDConverterUtils
 		private MatrixCharacteristics _mcIn;
 		private MatrixCharacteristics _mcOut;
 
-		public BinaryBlockToMatrixBlockFunction(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {			
+		public BinaryBlockToMatrixBlockFunction(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {
 			_mcIn = mcIn;		//Frame Characteristics
 			_mcOut = mcOut;		//Matrix Characteristics
 		}
@@ -1006,7 +1005,7 @@ public class FrameRDDConverterUtils
 			long rowIndex = arg0._1();
 			FrameBlock blk = arg0._2();
 			
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			long rlen = _mcIn.getRows();
 			long clen = _mcIn.getCols();
 			int brlen = _mcOut.getRowsPerBlock();
@@ -1030,7 +1029,7 @@ public class FrameRDDConverterUtils
 					FrameBlock frame = blk.sliceOperations(fix, fix2, 
 							(int)cpos-1, (int)cpos+lclen-2, new FrameBlock());
 					MatrixBlock mframe = DataConverter.convertToMatrixBlock(frame);
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, cix), 
+					ret.add(new Tuple2<>(new MatrixIndexes(rix, cix), 
 							matrix.leftIndexingOperations(mframe, mix, mix2, 0, lclen-1, 
 							new MatrixBlock(), UpdateType.INPLACE_PINNED)));
 				}

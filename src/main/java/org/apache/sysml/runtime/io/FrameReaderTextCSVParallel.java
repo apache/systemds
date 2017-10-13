@@ -71,21 +71,21 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 				Math.min(numThreads, splits.length));
 			
 			//compute num rows per split
-			ArrayList<CountRowsTask> tasks = new ArrayList<CountRowsTask>();
+			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
 			List<Future<Long>> cret = pool.invokeAll(tasks);
 
 			//compute row offset per split via cumsum on row counts
 			long offset = 0;
-			List<Long> offsets = new ArrayList<Long>();
+			List<Long> offsets = new ArrayList<>();
 			for( Future<Long> count : cret ) {
 				offsets.add(offset);
 				offset += count.get();
 			}
 			
 			//read individual splits
-			ArrayList<ReadRowsTask> tasks2 = new ArrayList<ReadRowsTask>();
+			ArrayList<ReadRowsTask> tasks2 = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks2.add( new ReadRowsTask(splits[i], informat, job, dest, offsets.get(i).intValue(), i==0));
 			List<Future<Object>> rret = pool.invokeAll(tasks2);
@@ -103,7 +103,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 	@Override
 	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
 		throws IOException 
-	{	
+	{
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		
 		TextInputFormat informat = new TextInputFormat();
@@ -117,7 +117,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		int nrow = 0;
 		ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 		try {
-			ArrayList<CountRowsTask> tasks = new ArrayList<CountRowsTask>();
+			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
 			List<Future<Long>> cret = pool.invokeAll(tasks);
@@ -130,8 +130,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		finally {
 			pool.shutdown();
 		}
-		
-		return new Pair<Integer,Integer>(nrow, ncol);
+		return new Pair<>(nrow, ncol);
 	}
 
 	private static class CountRowsTask implements Callable<Long> 

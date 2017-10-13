@@ -277,6 +277,7 @@ public class PartialAggregate extends Lop
 		}
 	}
 	
+	@Override
 	public String toString() {
 		return "Partial Aggregate " + operation;
 	}

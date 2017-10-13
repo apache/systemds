@@ -62,11 +62,11 @@ public class Append extends Lop
 	
 	@Override
 	public String toString() {
-
 		return " Append: ";
 	}
 
 	//called when append executes in CP
+	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) 
 		throws LopsException
 	{

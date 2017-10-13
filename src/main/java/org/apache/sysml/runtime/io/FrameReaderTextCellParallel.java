@@ -60,12 +60,12 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 			//create read tasks for all splits
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			InputSplit[] splits = informat.getSplits(job, numThreads);
-			ArrayList<ReadTask> tasks = new ArrayList<ReadTask>();
+			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits )
 				tasks.add(new ReadTask(split, informat, job, dest));
 			
 			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);
 			pool.shutdown();
 				
 			//check for exceptions

@@ -97,7 +97,7 @@ public class FrameCastingTest extends AutomatedTestBase
 					Assert.assertEquals("Wrong result: "+data[i][j]+".", new Double(data[i][j]), new Double(cF1[i][j]));
 	}
 
-	private ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, boolean modelReuse) 
+	private static ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, boolean modelReuse) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -106,7 +106,7 @@ public class FrameCastingTest extends AutomatedTestBase
 		
 		//establish connection to SystemML
 		Connection conn = new Connection();
-				
+		
 		try
 		{
 			//prepare input arguments

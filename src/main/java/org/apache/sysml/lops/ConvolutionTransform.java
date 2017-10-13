@@ -148,6 +148,7 @@ public class ConvolutionTransform extends Lop
 		}
 	}
 	
+	@Override
 	public String getInstructions(String input, String bias, String output) throws LopsException {
 		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();

@@ -70,7 +70,7 @@ public class FrameWriterTextCellParallel extends FrameWriterTextCell
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<WriteFileTask> tasks = new ArrayList<WriteFileTask>();
+			ArrayList<WriteFileTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));

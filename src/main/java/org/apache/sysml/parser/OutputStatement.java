@@ -81,6 +81,7 @@ public class OutputStatement extends Statement
 	}
 	
 	// rewrites statement to support function inlining (create deep copy)
+	@Override
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 
 		OutputStatement newStatement = new OutputStatement(null, Expression.DataOp.WRITE, this);
@@ -107,11 +108,12 @@ public class OutputStatement extends Statement
 		return _paramsExpr.getVarParam(key);
 	}
 	
+	@Override
 	public void initializeforwardLV(VariableSet activeIn){}
-	public VariableSet initializebackwardLV(VariableSet lo){
-		return lo;
-	}
+	@Override
+	public VariableSet initializebackwardLV(VariableSet lo){return lo;}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(Statement.OUTPUTSTATEMENT + "(");

@@ -278,7 +278,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 
-						new MatrixIndexes(1,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);						
+						new MatrixIndexes(1,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
 			}
 			else //if( _type == CacheType.RIGHT )
 			{
@@ -287,11 +287,11 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary(
-						ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),1), right, ixOut, blkOut, _op);					
+						ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),1), right, ixOut, blkOut, _op);
 			}
 			
 			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			return new Tuple2<>(ixOut, blkOut);
 		}
 	}
 
@@ -394,7 +394,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 					
 					//execute index preserving matrix multiplication
-					left.aggregateBinaryOperations(left, blkIn, blkOut, _op);						
+					left.aggregateBinaryOperations(left, blkIn, blkOut, _op);
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
@@ -405,8 +405,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					blkIn.aggregateBinaryOperations(blkIn, right, blkOut, _op);	
 				}
 			
-				return new Tuple2<MatrixIndexes,MatrixBlock>(ixIn, blkOut);
-			}			
+				return new Tuple2<>(ixIn, blkOut);
+			}
 		}
 	}
 
@@ -432,7 +432,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -449,9 +449,9 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					
 					//execute matrix-vector mult
 					OperationsOnMatrixValues.performAggregateBinary( 
-							new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);	
+							new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
 					
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+					ret.add(new Tuple2<>(ixOut, blkOut));
 				}
 			}
 			else //if( _type == CacheType.RIGHT )
@@ -467,9 +467,9 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					
 					//execute matrix-vector mult
 					OperationsOnMatrixValues.performAggregateBinary(
-							ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),j), right, ixOut, blkOut, _op);					
+							ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),j), right, ixOut, blkOut, _op);
 				
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+					ret.add(new Tuple2<>(ixOut, blkOut));
 				}
 			}
 			

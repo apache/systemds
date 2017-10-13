@@ -179,13 +179,6 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		runFrameReblockTest(TEST_NAME1, true, true, "csv", ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param multColBlks
-	 * @param ofmt
-	 * @param et
-	 */
 	private void runFrameReblockTest( String testname, boolean multColBlks, boolean sparse, String ofmt, ExecType et)
 	{
 		//rtplatform for MR
@@ -233,17 +226,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param fname
-	 * @param ofmt
-	 * @param frame
-	 * @param rows
-	 * @param cols
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private void writeFrameInput(String fname, String ofmt, double[][] frame, int rows, int cols) 
+	private static void writeFrameInput(String fname, String ofmt, double[][] frame, int rows, int cols) 
 		throws DMLRuntimeException, IOException 
 	{
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(frame);
@@ -255,17 +238,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		writer.writeFrameToHDFS(fb, fname, rows, cols);
 	}
 	
-	/**
-	 * 
-	 * @param fname
-	 * @param rows
-	 * @param cols
-	 * @param ofmt
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private double[][] readMatrixOutput(String fname, String ofmt, int rows, int cols) 
+	private static double[][] readMatrixOutput(String fname, String ofmt, int rows, int cols) 
 		throws DMLRuntimeException, IOException 
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.stringExternalToInputInfo(ofmt));

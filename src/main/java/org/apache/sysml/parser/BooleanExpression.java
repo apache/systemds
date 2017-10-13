@@ -75,6 +75,7 @@ public class BooleanExpression extends Expression
 		return _right;
 	}
 
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		BooleanExpression newExpr = new BooleanExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
@@ -122,6 +123,7 @@ public class BooleanExpression extends Expression
 		}
 	}
 
+	@Override
 	public String toString(){
 		if (_opcode == BooleanOp.NOT) {
 			return "(" + _opcode.toString() + " " + _left.toString() + ")";

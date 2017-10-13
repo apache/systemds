@@ -96,7 +96,7 @@ public class OptTreeConverter
 		{
 			case ABSTRACT_PLAN:
 				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
-				Set<String> memo = new HashSet<String>();
+				Set<String> memo = new HashSet<>();
 				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, memo);	
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
 				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
@@ -249,7 +249,7 @@ public class OptTreeConverter
 	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, boolean storeObjs) 
 		throws DMLRuntimeException
 	{
-		ArrayList<OptNode> tmp = new ArrayList<OptNode>(instset.size());
+		ArrayList<OptNode> tmp = new ArrayList<>(instset.size());
 		for( Instruction inst : instset )
 			tmp.add( createOptNode(inst,vars,storeObjs) );
 		return tmp;
@@ -481,7 +481,7 @@ public class OptTreeConverter
 	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, Set<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
-		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
+		ArrayList<OptNode> ret = new ArrayList<>(); 
 		
 		//reset all hops
 		Hop.resetVisitStatus(hops);
@@ -497,7 +497,7 @@ public class OptTreeConverter
 	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, Set<String> memo) 
 		throws DMLRuntimeException, HopsException 
 	{
-		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
+		ArrayList<OptNode> ret = new ArrayList<>(); 
 		ArrayList<Hop> in = hop.getInput();
 	
 		if( hop.isVisited() )

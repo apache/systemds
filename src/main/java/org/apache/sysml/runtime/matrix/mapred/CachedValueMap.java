@@ -103,7 +103,7 @@ public class CachedValueMap //extends CachedMap<IndexedMatrixValue>
 		ArrayList<IndexedMatrixValue> list = map.get(tag);
 		
 		if( list == null ){
-			list = new ArrayList<IndexedMatrixValue>();
+			list = new ArrayList<>();
 			map.put(tag, list);	
 		}
 		

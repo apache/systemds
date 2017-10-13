@@ -52,20 +52,17 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return _paramExprs;
 	}
 	
+	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-			
 		ArrayList<ParameterExpression> newParameterExpressions = new ArrayList<>();
 		for (ParameterExpression paramExpr : _paramExprs)
 			newParameterExpressions.add(new ParameterExpression(paramExpr.getName(), paramExpr.getExpr().rewriteExpression(prefix)));
-		
 		// rewrite each output expression
 		FunctionCallIdentifier fci = new FunctionCallIdentifier(newParameterExpressions);
 		fci.setParseInfo(this);
-			
 		fci._name = this._name;
 		fci._namespace = this._namespace;
-		fci._opcode = this._opcode;	 
-		
+		fci._opcode = this._opcode;
 		return fci;
 	}
 	

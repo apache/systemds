@@ -89,8 +89,8 @@ public abstract class ID3Test extends AutomatedTestBase
 		rCmd = getRCmd(inputDir(), expectedDir());
 
         // prepare training data set
-        double[][] X = round(getRandomMatrix(rows, cols, 1, 10, 1.0, 3));
-        double[][] y = round(getRandomMatrix(rows, 1, 1, 10, 1.0, 7));
+        double[][] X = TestUtils.round(getRandomMatrix(rows, cols, 1, 10, 1.0, 3));
+        double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 1, 10, 1.0, 7));
         writeInputMatrixWithMTD("X", X, true);
         writeInputMatrixWithMTD("y", y, true);
         
@@ -114,12 +114,4 @@ public abstract class ID3Test extends AutomatedTestBase
         TestUtils.compareMatrices(nR, nSYSTEMML, Math.pow(10, -14), "nR", "nSYSTEMML");
         TestUtils.compareMatrices(eR, eSYSTEMML, Math.pow(10, -14), "eR", "eSYSTEMML");      
     }
-    
-    private double[][] round( double[][] data )
-	{
-		for( int i=0; i<data.length; i++ )
-			for( int j=0; j<data[i].length; j++ )
-				data[i][j] = Math.round(data[i][j]);
-		return data;
-	}
 }

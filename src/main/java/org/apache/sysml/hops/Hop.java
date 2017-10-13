@@ -195,13 +195,23 @@ public abstract class Hop implements ParseInfo
 	public void checkAndSetForcedPlatform()
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
-			_etypeForced = ExecType.GPU;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			_etypeForced = ExecType.CP;
+			_etypeForced = ExecType.GPU; // enabled with -gpu force option
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
+				// enabled with -exec singlenode -gpu option
+				_etypeForced = findExecTypeByMemEstimate();
+				if(_etypeForced != ExecType.CP && _etypeForced != ExecType.GPU)
+					_etypeForced = ExecType.CP;
+			}
+			else {
+				// enabled with -exec singlenode option
+				_etypeForced = ExecType.CP;  
+			}
+		}
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			_etypeForced = ExecType.MR;
+			_etypeForced = ExecType.MR; // enabled with -exec hadoop option
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
-			_etypeForced = ExecType.SPARK;
+			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()

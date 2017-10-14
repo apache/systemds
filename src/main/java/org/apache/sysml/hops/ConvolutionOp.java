@@ -511,6 +511,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			getCHWPQFromParentOp();
 		}
 		
+		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
+			_cachedParams.P = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
+		}
+		if(_cachedParams.Q < 0 && _cachedParams.W >= 0 && _cachedParams.S >= 0 && _cachedParams.stride_w >= 0 && _cachedParams.pad_w >= 0) {
+			_cachedParams.Q = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w);
+		}
+		
 		return _cachedParams;
 	}
 	
@@ -550,14 +557,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.K : _cachedParams.C;
 			_cachedParams.H = (_cachedParams.H < 0) ? parentParam.P : _cachedParams.H;
 			_cachedParams.W = (_cachedParams.W < 0) ? parentParam.Q : _cachedParams.W;
-		}
-		
-		// Now that we know 
-		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
-			_cachedParams.P = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
-		}
-		if(_cachedParams.Q < 0 && _cachedParams.W >= 0 && _cachedParams.S >= 0 && _cachedParams.stride_w >= 0 && _cachedParams.pad_w >= 0) {
-			_cachedParams.Q = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w);
 		}
 	}
 	

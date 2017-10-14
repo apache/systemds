@@ -485,17 +485,21 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 	ConvolutionParameters parseInput() throws DMLRuntimeException {
+		
+		Hop imageHeightHop = null; Hop filterHeightHop = null;
 		if(op == ConvOp.MAX_POOLING_BACKWARD 
 				|| op == ConvOp.DIRECT_CONV2D 
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
+			imageHeightHop = getInput().get(8);
+			filterHeightHop = getInput().get(12);
 			_cachedParams.setIfUnknown(
 					getInput().get(6),
 					getInput().get(7), 
-					getInput().get(8), 
+					imageHeightHop, 
 					getInput().get(9), 
 					getInput().get(10), 
-					getInput().get(12), 
+					filterHeightHop, 
 					getInput().get(13), 
 					getInput().get(2), 
 					getInput().get(3), 
@@ -503,13 +507,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					getInput().get(5), _maxNumThreads);
 		}
 		else {
+			imageHeightHop = getInput().get(7);
+			filterHeightHop = getInput().get(11);
 			_cachedParams.setIfUnknown(
 					getInput().get(5),
 					getInput().get(6), 
-					getInput().get(7), 
+					imageHeightHop, 
 					getInput().get(8), 
 					getInput().get(9), 
-					getInput().get(11), 
+					filterHeightHop, 
 					getInput().get(12), 
 					getInput().get(1), 
 					getInput().get(2), 
@@ -525,6 +531,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				// Only infer input shape for convolution and maxpool
 				inferCHWPQFromParentOp();
 			}
+		}
+		
+		if(imageHeightHop == filterHeightHop && _cachedParams.R < 0 && _cachedParams.H > 0) {
+			// Unknown R, but known H and both are equal
+			// This happens for one-dimensional conv2d where H=R and H can be inferred from the parent hop
+			_cachedParams.R = _cachedParams.H;
 		}
 		
 		// Compute P and Q if unknown. At script level, they are computed using following script:

@@ -32,7 +32,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
-
 import java.util.ArrayList;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
@@ -506,7 +505,60 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					getInput().get(3), 
 					getInput().get(4), _maxNumThreads);
 		}
+		
+		if(	(getOp() == ConvOp.MAX_POOLING && (_cachedParams.C < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0)) || 
+			(getOp() == ConvOp.DIRECT_CONV2D && (_cachedParams.P < 0 || _cachedParams.Q < 0))) {
+			getCHWPQFromParentOp();
+		}
+		
 		return _cachedParams;
+	}
+	
+	private static boolean isInputBiasAdd(Hop hop) {
+		if(hop instanceof ConvolutionOp && ((ConvolutionOp) hop).getOp() == ConvOp.BIAS_ADD) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Gets the values for the parameters C, H, W, P, Q from parent hops
+	 * 
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	private void getCHWPQFromParentOp() throws DMLRuntimeException {
+		Hop tmp = getInput().get(0);
+		while(isInputReLU(tmp) || isInputBiasAdd(tmp)) {
+			// Skip ReLU and bias_add and go to its parent
+			tmp = tmp.getInput().get(0);
+		}
+		// Cast tmp as parent
+		ConvolutionOp parentOp = (tmp instanceof ConvolutionOp) ? ((ConvolutionOp) tmp) : null; 
+		
+		if(parentOp == null)
+			return;
+		else if(parentOp.getOp() == ConvOp.MAX_POOLING) {
+			ConvolutionParameters parentParam = parentOp.parseInput();
+			// [C, P, Q] from maxpool becomes [C, H, W] of next op
+			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.C : _cachedParams.C;
+			_cachedParams.H = (_cachedParams.H < 0) ? parentParam.P : _cachedParams.H;
+			_cachedParams.W = (_cachedParams.W < 0) ? parentParam.Q : _cachedParams.W;
+		}
+		else if(parentOp.getOp() == ConvOp.DIRECT_CONV2D) {
+			ConvolutionParameters parentParam = parentOp.parseInput();
+			// [K, P, Q] from convolution becomes [C, H, W] of next op
+			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.K : _cachedParams.C;
+			_cachedParams.H = (_cachedParams.H < 0) ? parentParam.P : _cachedParams.H;
+			_cachedParams.W = (_cachedParams.W < 0) ? parentParam.Q : _cachedParams.W;
+		}
+		
+		// Now that we know 
+		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
+			_cachedParams.P = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
+		}
+		if(_cachedParams.Q < 0 && _cachedParams.W >= 0 && _cachedParams.S >= 0 && _cachedParams.stride_w >= 0 && _cachedParams.pad_w >= 0) {
+			_cachedParams.Q = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w);
+		}
 	}
 	
 	@Override

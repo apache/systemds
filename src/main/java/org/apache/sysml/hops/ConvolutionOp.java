@@ -810,7 +810,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if(LOG.isDebugEnabled() && ret < 0) {
 			LOG.debug("Unknown dimension " + dimString + " for ConvolutionOp:" + op.name() + 
 					" img_dim=[" + _cachedParams.N + " " + _cachedParams.C + " " + _cachedParams.H + " " + _cachedParams.W + "]" +
-					" filter_dim=[" + _cachedParams.K + " " + _cachedParams.C + " " + _cachedParams.H + " " + _cachedParams.W + "]" + 
+					" filter_dim=[" + _cachedParams.K + " " + _cachedParams.C + " " + _cachedParams.R + " " + _cachedParams.S + "]" + 
 					" output_feature_map=[" + _cachedParams.P + " " + _cachedParams.Q + "] stride=[" + _cachedParams.stride_h + " " + _cachedParams.stride_w + "]" +
 					" pad=[" + _cachedParams.pad_h + " " + _cachedParams.pad_w + "]");
 		}

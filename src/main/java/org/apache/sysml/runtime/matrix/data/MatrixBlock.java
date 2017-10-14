@@ -3833,10 +3833,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 
-	public final MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
+	public MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
 		return sliceOperations(
-				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
-				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
+			(int)ixrange.rowStart, (int)ixrange.rowEnd, 
+			(int)ixrange.colStart, (int)ixrange.colEnd, true, ret);
+	}
+	
+	@Override
+	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock ret) throws DMLRuntimeException {
+		return sliceOperations(rl, ru, cl, cu, true, ret);
 	}
 	
 	/**
@@ -3851,7 +3856,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock ret) 
+	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) 
 		throws DMLRuntimeException 
 	{	
 		// check the validity of bounds
@@ -3880,7 +3885,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//core slicing operation (nnz maintained internally)
 			if (sparse) 
-				sliceSparse(rl, ru, cl, cu, result);
+				sliceSparse(rl, ru, cl, cu, deep, result);
 			else 
 				sliceDense(rl, ru, cl, cu, result);
 		}
@@ -3888,7 +3893,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
-	private void sliceSparse(int rl, int ru, int cl, int cu, MatrixBlock dest) 
+	private void sliceSparse(int rl, int ru, int cl, int cu, boolean deep, MatrixBlock dest) 
 		throws DMLRuntimeException
 	{
 		//check for early abort
@@ -3909,10 +3914,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				}
 			}
 		}
-		else if( rl==ru && cl==0 && cu==clen-1 ) //ROW VECTOR 
+		else if( cl==0 && cu==clen-1 ) //ROW batch
 		{
 			//note: always sparse dest, but also works for dense
-			dest.appendRow(0, sparseBlock.get(rl));
+			boolean ldeep = (deep && sparseBlock instanceof SparseBlockMCSR);
+			for(int i = rl; i <= ru; i++)
+				dest.appendRow(i-rl, sparseBlock.get(i), ldeep);
 		}
 		else //general case (sparse/dense dest)
 		{
@@ -3926,7 +3933,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					int astart = (cl>0)?sparseBlock.posFIndexGTE(i, cl) : apos;
 					if( astart != -1 )
 						for( int j=astart; j<apos+alen && aix[j] <= cu; j++ )
-							dest.appendValue(i-rl, aix[j]-cl, avals[j]);	
+							dest.appendValue(i-rl, aix[j]-cl, avals[j]);
 				}
 		}
 	}

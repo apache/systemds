@@ -48,7 +48,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
-	{	
+	{
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec);
 		
@@ -64,17 +64,19 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				resultBlock = mo.readMatrixPartition(ixrange.add(1));
 			else //via slicing the in-memory matrix
 			{
-				//execute right indexing operation
+				//execute right indexing operation (with shallow row copies for range
+				//of entire sparse rows, which is safe due to copy on update)
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-				resultBlock = matBlock.sliceOperations(ixrange, new MatrixBlock());	
+				resultBlock = matBlock.sliceOperations((int)ixrange.rowStart, (int)ixrange.rowEnd, 
+					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
 				
 				//unpin rhs input
 				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 				
 				//ensure correct sparse/dense output representation
-				//(memory guarded by release of input)
-				resultBlock.examSparsity(getExtendedOpcode());
-			}	
+				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
+					resultBlock.examSparsity(getExtendedOpcode());
+			}
 			
 			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
@@ -119,6 +121,6 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			ec.setMatrixOutput(output.getName(), resultBlock, updateType, getExtendedOpcode());
 		}
 		else
-			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");		
+			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
 	}
 }

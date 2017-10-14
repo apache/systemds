@@ -52,7 +52,7 @@ public class ByteBuffer
 	public void serializeBlock( CacheBlock cb ) 
 		throws IOException
 	{	
-		_shallow = cb.isShallowSerialize();
+		_shallow = cb.isShallowSerialize(true);
 		_matrix = (cb instanceof MatrixBlock);
 		
 		try
@@ -69,6 +69,10 @@ public class ByteBuffer
 			}
 			else //SPARSE/DENSE -> DENSE
 			{
+				//convert to shallow serialize block if necessary
+				if( !cb.isShallowSerialize() )
+					cb.toShallowSerializeBlock();
+				
 				//shallow serialize
 				_cdata = cb;
 			}
@@ -160,14 +164,15 @@ public class ByteBuffer
 	 */
 	public static boolean isValidCapacity( long size, CacheBlock cb )
 	{
-		if( !cb.isShallowSerialize() ) { //SPARSE matrix blocks
+		if( !cb.isShallowSerialize(true) ) { //SPARSE matrix blocks
 			// since cache blocks are serialized into a byte representation
 			// the buffer buffer can hold at most 2GB in size 
-			return ( size <= Integer.MAX_VALUE );	
+			return ( size <= Integer.MAX_VALUE );
 		}
-		else {//DENSE matrix / frame blocks
-			// since for dense matrix blocks we use a shallow serialize (strong reference), 
-			// the byte buffer can hold any size (currently upper bounded by 16GB) 
+		else {//DENSE/SPARSE matrix / frame blocks
+			// for dense and under special conditions also sparse matrix blocks 
+			// we use a shallow serialize (strong reference), there is no additional
+			// capacity constraint for serializing these blocks into byte arrays
 			return true;
 		}
 	}

@@ -59,6 +59,26 @@ public interface CacheBlock extends Writable
 	public boolean isShallowSerialize();
 	
 	/**
+	 * Indicates if the cache block is subject to shallow serialized,
+	 * which is generally true if in-memory size and serialized size
+	 * are almost identical allowing to avoid unnecessary deep serialize.
+	 * 
+	 * @param inclConvert if true report blocks as shallow serialize that are
+	 * currently not amenable but can be brought into an amenable form
+	 * via {@link #toShallowSerializeBlock() toShallowSerializeBlock}.
+	 * 
+	 * @return true if shallow serialized
+	 */
+	public boolean isShallowSerialize(boolean inclConvert);
+	
+	/**
+	 * Converts a cache block that is not shallow serializable into
+	 * a form that is shallow serializable. This methods has no affect
+	 * if the given cache block is not amenable.
+	 */
+	public void toShallowSerializeBlock();
+	
+	/**
 	 * Free unnecessarily allocated empty block.
 	 */
 	public void compactEmptyBlock();

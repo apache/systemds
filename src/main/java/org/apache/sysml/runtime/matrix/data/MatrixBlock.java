@@ -105,6 +105,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//allowed overhead for shallow serialize in terms of in-memory-size/x <= serialized-size 
 	public static final double MAX_SHALLOW_SERIALIZE_OVERHEAD = 1.3;
+	//flag if MCSR blocks that do not qualify for shallow serialize should be converted to CSR
+	public static final boolean CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE = true;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
@@ -947,6 +949,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			isPM &= sblock.isEmpty(i) || sblock.size(i) == 1;
 		return isPM;
 	}
+	
+	private boolean isUltraSparseSerialize(boolean sparseDst) {
+		return nonZeros<rlen && sparseDst;
+	}
 
 	/**
 	 * Evaluates if this matrix block should be in sparse format in
@@ -1004,7 +1010,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//ensure exact size estimates for write
 		if( nonZeros <= 0 ) {
 			recomputeNonZeros();
-		}	
+		}
 		
 		//decide on in-memory representation
 		return evalSparseFormatOnDisk(lrlen, lclen, nonZeros);
@@ -1674,8 +1680,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				if( !a.isEmpty(i) ) {
 					boolean update = a.set(i, cl, 0);
 					if( updateNNZ )
-						nonZeros -= update ? 1 : 0;							
-				}			
+						nonZeros -= update ? 1 : 0;
+				}
 		}
 		else
 		{
@@ -1685,7 +1691,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					a.deleteIndexRange(i, cl, cu+1);
 					if( updateNNZ )
 						nonZeros += (a.size(i)-lnnz);
-				}	
+				}
 		}
 	}
 	
@@ -2028,7 +2034,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			for(long i=0; i<nonZeros; i++) {
 				int r = in.readInt();
 				int c = in.readInt();
-				double val = in.readDouble();			
+				double val = in.readDouble();
 				denseBlock[r*clen+c] = val;
 			}
 		}
@@ -2037,7 +2043,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//col: read iv-pairs
 			for(long i=0; i<nonZeros; i++) {
 				int r = in.readInt();
-				double val = in.readDouble();			
+				double val = in.readDouble();
 				denseBlock[r] = val;
 			}
 		}
@@ -2060,7 +2066,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//write sparse to *
 			if( sparseBlock==null || nonZeros==0 ) 
 				writeEmptyBlock(out);
-			else if( nonZeros<rlen && sparseDst ) 
+			else if( isUltraSparseSerialize(sparseDst) ) 
 				writeSparseToUltraSparse(out); 
 			else if( sparseDst ) 
 				writeSparseBlock(out);
@@ -2072,7 +2078,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//write dense to *
 			if( denseBlock==null || nonZeros==0 ) 
 				writeEmptyBlock(out);
-			else if( nonZeros<rlen && sparseDst )
+			else if( isUltraSparseSerialize(sparseDst) )
 				writeDenseToUltraSparse(out);
 			else if( sparseDst )
 				writeDenseToSparse(out);
@@ -2127,8 +2133,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					for(int j=pos; j<pos+nr; j++) {
 						out.writeInt(cols[j]);
 						out.writeDouble(values[j]);
-					}					
-				}	
+					}
+				}
 			}
 			for(;r<rlen; r++)
 				out.writeInt(0);
@@ -2206,14 +2212,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						for( ; j<aix[apos+j2]; j++ )
 							out.writeDouble( 0 );
 						out.writeDouble( avals[apos+j2] );
-					}					
+					}
 					//remaining 0 values in row
 					for( int j=aix[apos+alen-1]+1; j<clen; j++)
 						out.writeDouble( 0 );
 				}
 				else //empty row
 					for( int j=0; j<clen; j++ )
-						out.writeDouble( 0 );	
+						out.writeDouble( 0 );
 			}
 		}
 	}
@@ -2361,7 +2367,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else {
 			//default serialize (general case)
-			write(os);	
+			write(os);
 		}
 	}
 	
@@ -2621,12 +2627,30 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	@Override
 	public boolean isShallowSerialize() {
+		return isShallowSerialize(false);
+	}
+	
+	@Override
+	public boolean isShallowSerialize(boolean inclConvert) {
 		//shallow serialize if dense, dense in serialized form or already in CSR
-		return !sparse || !evalSparseFormatOnDisk()
+		boolean sparseDst = evalSparseFormatOnDisk();
+		return !sparse || !sparseDst
 			|| (sparse && sparseBlock instanceof SparseBlockCSR)
 			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& getInMemorySize()/MAX_SHALLOW_SERIALIZE_OVERHEAD 
-				<= getExactSerializedSize());
+				&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
+				<= getExactSerializedSize())
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR
+				&& nonZeros < Integer.MAX_VALUE //CSR constraint
+				&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
+				&& !isUltraSparseSerialize(sparseDst));
+	}
+	
+	@Override 
+	public void toShallowSerializeBlock() {
+		if( isShallowSerialize() || !isShallowSerialize(true) )
+			return;
+		sparseBlock = SparseBlockFactory.copySparseBlock(
+			SparseBlock.Type.CSR, sparseBlock, false);
 	}
 	
 	@Override

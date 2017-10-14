@@ -753,13 +753,22 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	@Override
 	public boolean isShallowSerialize() {
+		return isShallowSerialize(false);
+	}
+	
+	@Override
+	public boolean isShallowSerialize(boolean inclConvert) {
 		//shallow serialize if non-string schema because a frame block
 		//is always dense but strings have large array overhead per cell
 		boolean ret = true;
 		for( int j=0; j<_schema.length && ret; j++ )
 			ret &= (_schema[j] != ValueType.STRING);
-		
 		return ret;
+	}
+	
+	@Override 
+	public void toShallowSerializeBlock() {
+		//do nothing (not applicable).
 	}
 	
 	@Override

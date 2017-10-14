@@ -36,6 +36,17 @@ import java.util.ArrayList;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
+	// -------------------------------------------------------------------------
+	// This flag allows us to compile plans with less unknowns and also serves as future tensorblock integration.
+	// By default, these flags are turned on.
+	
+	// When this flag is turned on, we attempt to check the parent convolution hop for unknown dimensions.
+	// For example: in case of conv -> maxpool, the input channel/height/width of maxpool will match output channel/height/width of conv.
+	private static final boolean INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP = true;
+	// This guards us from cases where the user provides incorrect C,H,W parameters.
+	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
+	// -------------------------------------------------------------------------
+	
 	private Hop.ConvOp op;
 
 	private int _maxNumThreads = -1; //-1 for unlimited
@@ -506,11 +517,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					getInput().get(4), _maxNumThreads);
 		}
 		
-		if(	(getOp() == ConvOp.MAX_POOLING && (_cachedParams.C < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0)) || 
+		if(INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP &&	
+			(getOp() == ConvOp.MAX_POOLING && (_cachedParams.C < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0)) || 
 			(getOp() == ConvOp.DIRECT_CONV2D && (_cachedParams.P < 0 || _cachedParams.Q < 0))) {
-			getCHWPQFromParentOp();
+			inferCHWPQFromParentOp();
 		}
 		
+		// Compute P and Q if unknown. At script level, they are computed using following script:
+		// P = as.integer(floor((H + 2*pad_h - R)/stride_h + 1))
+		// Q = as.integer(floor((W + 2*pad_w - S)/stride_w + 1))
 		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
 			_cachedParams.P = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
 		}
@@ -521,6 +536,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return _cachedParams;
 	}
 	
+	/**
+	 * Utility method to check if the given hop is a BIAS_ADD hop
+	 * 
+	 * @param hop the given hop
+	 * @return true if the given hop is BIAS_ADD
+	 */
 	private static boolean isInputBiasAdd(Hop hop) {
 		if(hop instanceof ConvolutionOp && ((ConvolutionOp) hop).getOp() == ConvOp.BIAS_ADD) {
 			return true;
@@ -529,11 +550,25 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	/**
+	 * Utility method to check if the inferred shapes are equal to the given shape with a guard for unknown
+	 * 
+	 * @param dim1 inferred shape
+	 * @param dim2 given shape
+	 * @param paramType string denoting the parameter for pretty printing of the error message
+	 * @throws DMLRuntimeException if dim1 != dim2
+	 */
+	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) throws DMLRuntimeException {
+		if(dim1 >= 0 && dim2 >= 0 && dim1 != dim2) {
+			throw new DMLRuntimeException("Inferred " + paramType + " from parent doesn't match with given " + paramType + ":" + dim1 + " != " + dim2);
+		}
+	}
+	
+	/**
 	 * Gets the values for the parameters C, H, W, P, Q from parent hops
 	 * 
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private void getCHWPQFromParentOp() throws DMLRuntimeException {
+	private void inferCHWPQFromParentOp() throws DMLRuntimeException {
 		Hop tmp = getInput().get(0);
 		while(isInputReLU(tmp) || isInputBiasAdd(tmp)) {
 			// Skip ReLU and bias_add and go to its parent
@@ -546,17 +581,35 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			return;
 		else if(parentOp.getOp() == ConvOp.MAX_POOLING) {
 			ConvolutionParameters parentParam = parentOp.parseInput();
+			int prevC = _cachedParams.C; int prevH = _cachedParams.H; int prevW = _cachedParams.W;
 			// [C, P, Q] from maxpool becomes [C, H, W] of next op
 			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.C : _cachedParams.C;
 			_cachedParams.H = (_cachedParams.H < 0) ? parentParam.P : _cachedParams.H;
 			_cachedParams.W = (_cachedParams.W < 0) ? parentParam.Q : _cachedParams.W;
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("Inferring [C,H,W] from maxpool parent: [" + prevC + "," + prevH + "," + prevW + "]-> [" + _cachedParams.C + "," + _cachedParams.H + "," + _cachedParams.W + "]");
+			}
+			if(THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH) {
+				throwExceptionIfNotEqual(prevC, _cachedParams.C, "C");
+				throwExceptionIfNotEqual(prevH, _cachedParams.H, "H");
+				throwExceptionIfNotEqual(prevW, _cachedParams.W, "W");
+			}
 		}
 		else if(parentOp.getOp() == ConvOp.DIRECT_CONV2D) {
 			ConvolutionParameters parentParam = parentOp.parseInput();
+			int prevC = _cachedParams.C; int prevH = _cachedParams.H; int prevW = _cachedParams.W;
 			// [K, P, Q] from convolution becomes [C, H, W] of next op
 			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.K : _cachedParams.C;
 			_cachedParams.H = (_cachedParams.H < 0) ? parentParam.P : _cachedParams.H;
 			_cachedParams.W = (_cachedParams.W < 0) ? parentParam.Q : _cachedParams.W;
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("Inferring [C,H,W] from maxpool parent: [" + prevC + "," + prevH + "," + prevW + "]-> [" + _cachedParams.C + "," + _cachedParams.H + "," + _cachedParams.W + "]");
+			}
+			if(THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH) {
+				throwExceptionIfNotEqual(prevC, _cachedParams.C, "C");
+				throwExceptionIfNotEqual(prevH, _cachedParams.H, "H");
+				throwExceptionIfNotEqual(prevW, _cachedParams.W, "W");
+			}
 		}
 	}
 	

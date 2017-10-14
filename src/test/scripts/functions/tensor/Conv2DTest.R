@@ -33,13 +33,13 @@ x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize
 w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), numFilters, numChannels*filterSize*filterSize, byrow=TRUE)
 
 if(as.logical(args[9])) {
-	zero_mask = (x - mean(x)) > 0 
+	zero_mask = (x - mean(x)*1.5) > 0 
 	x = x * zero_mask
 } else {
 	x = x - mean(x)
 }
 if(as.logical(args[10])) {
-	zero_mask = (w - mean(w)) > 0 
+	zero_mask = (w - mean(w)*1.5) > 0 
 	w = w * zero_mask
 } else {
 	w = w - mean(w)

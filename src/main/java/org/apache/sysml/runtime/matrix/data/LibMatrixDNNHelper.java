@@ -125,15 +125,28 @@ public class LibMatrixDNNHelper {
 			filters = splitFilter(params);
 		}
 		
-		boolean isEmptyDenseInput = !params.input1.isInSparseFormat() && params.input1.denseBlock == null;
+		MatrixBlock in1 = params.input1;
+		boolean isEmptyDenseInput = !in1.isInSparseFormat() && in1.denseBlock == null;
+		boolean isTransPref = in1.sparse && !params.input2.sparse && 
+			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
+		
+		//transpose filter once for efficient sparse-dense multiplies in LoopedIm2ColConv2dTransAllChan
+		//in order to share the temporary object and its creation costs across threads
+		if( !LibMatrixDNN.isEligibleForConv2dSparse(params) 
+			&& !isEmptyDenseInput && allChannels && isTransPref ) {
+			params.input2 = LibMatrixReorg.transpose(params.input2, 
+				new MatrixBlock(params.input2.clen, params.input2.rlen, false), k);
+		}
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(LibMatrixDNN.isEligibleForConv2dSparse(params)) 
 				ret.add(new LibMatrixDNNConv2dHelper.SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if(!isEmptyDenseInput && allChannels && isTransPref)
+				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels)
-				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dAllChannels(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && !allChannels)
-				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dOneChannel(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
+				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dOneChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}

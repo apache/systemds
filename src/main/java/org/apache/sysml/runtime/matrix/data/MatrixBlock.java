@@ -112,7 +112,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		EMPTY_BLOCK,  
 		ULTRA_SPARSE_BLOCK, //ultra sparse representation, in-mem same as sparse
 		SPARSE_BLOCK, //sparse representation, see sparseRows 
-		DENSE_BLOCK, //dense representation, see denseBlock			
+		DENSE_BLOCK, //dense representation, see denseBlock
 	}
 	
 	//matrix meta data
@@ -470,6 +470,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (nonZeros = nnz);
 	}
 	
+	public double getSparsity() {
+		return OptimizerUtils.getSparsity(rlen, clen, nonZeros);
+	}
+	
 	public boolean isVector() {
 		return (rlen == 1 || clen == 1);
 	}
@@ -776,7 +780,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public void sortSparseRows() {
 		if( !sparse || sparseBlock==null )
-			return;		
+			return;
 		sparseBlock.sort();
 	}
 	
@@ -2413,10 +2417,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// Estimates size and sparsity
 
-	public long estimateSizeInMemory() 
-	{
-		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
-		return estimateSizeInMemory(rlen, clen, sp);
+	public long estimateSizeInMemory() {
+		return estimateSizeInMemory(rlen, clen, getSparsity());
 	}
 
 	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity)
@@ -2607,9 +2609,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( !isAllocated() ) 
 			return 44;
 		//in-memory size of dense/sparse representation
-		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
-			estimateSizeSparseInMemory(rlen, clen, sp,
+			estimateSizeSparseInMemory(rlen, clen, getSparsity(),
 			SparseBlockFactory.getSparseBlockType(sparseBlock));
 	}
 	

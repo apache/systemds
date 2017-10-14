@@ -37,8 +37,8 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		throws DMLRuntimeException
 	{
 		// Read input matrices
-        MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-        MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		// Perform computation using input matrices, and produce the result matrix
 		BinaryOperator bop = (BinaryOperator) _optr;

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -54,11 +53,12 @@ public abstract class ComputationCPInstruction extends CPInstruction {
 		return checkGuardedRepresentationChange(in1, null, out);
 	}
 
-	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out )
-	{
-		double memDense = OptimizerUtils.estimateSize(out.getNumRows(), out.getNumColumns());
+	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out ) {
 		double memIn1 = (in1 != null) ? in1.getInMemorySize() : 0;
 		double memIn2 = (in2 != null) ? in2.getInMemorySize() : 0;
-		return ( memDense < memIn1 + memIn2 );	
+		double memReq = out.isInSparseFormat() ? 
+			MatrixBlock.estimateSizeDenseInMemory(out.getNumRows(), out.getNumColumns()) :
+			MatrixBlock.estimateSizeSparseInMemory(out.getNumRows(), out.getNumColumns(), out.getSparsity());
+		return ( memReq < memIn1 + memIn2 );
 	}
 }

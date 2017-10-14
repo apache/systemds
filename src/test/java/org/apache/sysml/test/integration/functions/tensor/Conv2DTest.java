@@ -31,7 +31,6 @@ import org.junit.Test;
 
 public class Conv2DTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME = "Conv2DTest";
 	private final static String TEST_DIR = "functions/tensor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DTest.class.getSimpleName() + "/";
@@ -39,77 +38,134 @@ public class Conv2DTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
-				new String[] {"B"}));
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 	
 	@Test
-	public void testConv2DDense1() 
-	{
+	public void testConv2DDense1() {
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	
 	@Test
-	public void testConv2DDense2() 
-	{
+	public void testConv2DDense2() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DDense3() 
-	{
+	public void testConv2DDense3() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DDense4() 
-	{
+	public void testConv2DDense4() {
 		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DDense5() 
-	{
+	public void testConv2DDense5() {
 		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DDense6() 
-	{
+	public void testConv2DDense6() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DDense7() 
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
+	public void testConv2DDense7() {
+		int numImg = 3; int imgSize = 64; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
 	}
 	
 	@Test
-	public void testConv2DSparse1() 
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+	public void testConv2DSparse1a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse2a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse3a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse4a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse5a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse6a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse7a() {
+		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testConv2DSparse1b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
 	}
 	
 	@Test
-	public void testConv2DSparse2() 
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	public void testConv2DSparse2b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
 	}
 	
-	public void testConv2DSparse3() 
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+	@Test
+	public void testConv2DSparse3b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	@Test
+	public void testConv2DSparse4b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	@Test
+	public void testConv2DSparse5b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	@Test
+	public void testConv2DSparse6b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	@Test
+	public void testConv2DSparse7b() {
+		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
 	}
 	
@@ -192,66 +248,49 @@ public class Conv2DTest extends AutomatedTestBase
 		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, true);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 * @param sparse
-	 */
 	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
 			int filterSize, int stride, int pad, boolean sparse1, boolean sparse2) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-			
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
-			String sparseVal1 = (""+sparse1).toUpperCase();
-			String sparseVal2 = (""+sparse2).toUpperCase();
-			
-	    TestConfiguration config = getTestConfiguration(TEST_NAME);
-	    if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-	    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			
+			String sparseVal1 = String.valueOf(sparse1).toUpperCase();
+			String sparseVal2 = String.valueOf(sparse2).toUpperCase();
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
-	        
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			
-			
-			programArgs = new String[]{"-explain", "recompile_runtime", "-args",  "" + imgSize, "" + numImg, 
-				"" + numChannels, "" + numFilters, 
-				"" + filterSize, "" + stride, "" + pad, 
+			programArgs = new String[]{"-explain", "recompile_runtime", "-args", 
+				String.valueOf(imgSize), String.valueOf(numImg), 
+				String.valueOf(numChannels), String.valueOf(numFilters), 
+				String.valueOf(filterSize), String.valueOf(stride), String.valueOf(pad), 
 				output("B"), sparseVal1, sparseVal2};
-			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
 					" " + numChannels + " " + numFilters + 
 					" " + filterSize + " " + stride + " " + pad + " " + expectedDir() +
 					" " + sparseVal1 + " " + sparseVal2; 
 			
-			boolean exceptionExpected = false;
-			int expectedNumberOfJobs = -1;
-			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
-
-			// Run comparison R script
+			// Run DML and R scripts
+			runTest(true, false, null, -1);
 			runRScript(true);
-			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
 			
+			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "B-R");
-			
 		}
-		finally
-		{
-			rtplatform = oldRTP;
+		finally {
+			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

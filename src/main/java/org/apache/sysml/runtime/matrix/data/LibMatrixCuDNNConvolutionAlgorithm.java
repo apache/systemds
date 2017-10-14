@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
 
 import jcuda.Pointer;
-import jcuda.jcudnn.cudnnConvolutionBwdDataPreference;
 import jcuda.jcudnn.cudnnConvolutionBwdFilterPreference;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
@@ -218,7 +217,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardDataAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) throws DMLRuntimeException {
-		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		//long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
 		

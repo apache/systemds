@@ -948,7 +948,7 @@ public class LibMatrixReorg
 		
 		//compute rest (not aligned to 8-blocks)
 		for( int j=0; j<bn; j++, aix++, cix+=n2 )
-			c[ cix ] = a[ aix+0 ];	
+			c[ cix ] = a[ aix+0 ];
 		
 		//unrolled 8-blocks
 		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 )
@@ -960,7 +960,7 @@ public class LibMatrixReorg
 			c[ cix + 4*n2 ] = a[ aix+4 ];
 			c[ cix + 5*n2 ] = a[ aix+5 ];
 			c[ cix + 6*n2 ] = a[ aix+6 ];
-			c[ cix + 7*n2 ] = a[ aix+7 ];	
+			c[ cix + 7*n2 ] = a[ aix+7 ];
 		}
 	}
 

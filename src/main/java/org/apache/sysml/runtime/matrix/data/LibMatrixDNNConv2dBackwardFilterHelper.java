@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2ColHelper.Im2colWorker;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
 
@@ -86,7 +87,7 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
 			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, false);
 			dout_reshaped.allocateDenseBlock();
-			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);
+			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true, false);
 			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
 					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, dout_reshaped.getDenseBlock(), _params, true);
 			double [] partialRetBlock = new double[CRS*_params.K];

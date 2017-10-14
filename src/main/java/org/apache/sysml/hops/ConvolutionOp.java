@@ -520,7 +520,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if(INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP) {
 			boolean isMaxPool = getOp() == ConvOp.MAX_POOLING;
 			boolean isConv = getOp() == ConvOp.DIRECT_CONV2D;
-			boolean unknownCHWPQ = _cachedParams.C < 0 && _cachedParams.H < 0 && _cachedParams.W < 0 && _cachedParams.P < 0 && _cachedParams.Q < 0;
+			boolean unknownCHWPQ = _cachedParams.C < 0 || _cachedParams.H < 0 || _cachedParams.W < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0;
 			if((isMaxPool || isConv) && unknownCHWPQ) {
 				// Only infer input shape for convolution and maxpool
 				inferCHWPQFromParentOp();

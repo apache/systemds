@@ -517,10 +517,14 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					getInput().get(4), _maxNumThreads);
 		}
 		
-		if(INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP &&	
-			(getOp() == ConvOp.MAX_POOLING && (_cachedParams.C < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0)) || 
-			(getOp() == ConvOp.DIRECT_CONV2D && (_cachedParams.P < 0 || _cachedParams.Q < 0))) {
-			inferCHWPQFromParentOp();
+		if(INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP) {
+			boolean isMaxPool = getOp() == ConvOp.MAX_POOLING;
+			boolean isConv = getOp() == ConvOp.DIRECT_CONV2D;
+			boolean unknownCHWPQ = _cachedParams.C < 0 && _cachedParams.H < 0 && _cachedParams.W < 0 && _cachedParams.P < 0 && _cachedParams.Q < 0;
+			if((isMaxPool || isConv) && unknownCHWPQ) {
+				// Only infer input shape for convolution and maxpool
+				inferCHWPQFromParentOp();
+			}
 		}
 		
 		// Compute P and Q if unknown. At script level, they are computed using following script:
@@ -568,8 +572,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * 
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private void inferCHWPQFromParentOp() throws DMLRuntimeException {
-		Hop tmp = getInput().get(0);
+	private void inferCHWPQFromParentOp() throws DMLRuntimeException {Hop tmp = getInput().get(0);
 		while(isInputReLU(tmp) || isInputBiasAdd(tmp)) {
 			// Skip ReLU and bias_add and go to its parent
 			tmp = tmp.getInput().get(0);
@@ -724,9 +727,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
 			throw new RuntimeException("getDim method should not be invoked for bias_add and bias_multiply");
 		}
-		ConvolutionParameters params;
 		try {
-			params = parseInput();
+			parseInput();
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
@@ -757,49 +759,49 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		long ret = -1;
 		if(dimString.equals("K") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(params.K, filter._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.K, filter._dim1));
 		}
 		else if(dimString.equals("CRS") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.R, params.S), filter._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), filter._dim2));
 		}
 		else if(dimString.equals("N") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(params.N, input._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, input._dim1));
 		}
 		else if(dimString.equals("CHW") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.H, params.W), input._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), input._dim2));
 		}
 		else if(dimString.equals("N") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(params.N, dout._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout._dim1));
 		}
 		else if(dimString.equals("KPQ") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.K, params.P, params.Q), dout._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), dout._dim2));
 		}
 		else if(dimString.equals("N") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(params.N, dout1._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout1._dim1));
 		}
 		else if(dimString.equals("CPQ") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(params.C, params.P, params.Q), dout1._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), dout1._dim2));
 		}
 		else if(dimString.equals("K")) {
-			ret = getNonNegative(ret, params.K >= 0 ? params.K : -1);
+			ret = getNonNegative(ret, _cachedParams.K >= 0 ? _cachedParams.K : -1);
 		}
 		else if(dimString.equals("CRS")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.R, params.S));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S));
 		}
 		else if(dimString.equals("N")) {
-			ret = getNonNegative(ret, params.N >= 0 ? params.N : -1);
+			ret = getNonNegative(ret, _cachedParams.N >= 0 ? _cachedParams.N : -1);
 		}
 		else if(dimString.equals("CHW")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.H, params.W));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W));
 		}
 		else if(dimString.equals("KPQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(params.K, params.P, params.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q));
 		}
 		else if(dimString.equals("PQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(params.P, params.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.P, _cachedParams.Q));
 		}
 		else if(dimString.equals("CPQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(params.C, params.P, params.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q));
 		}
 		else {
 			throw new RuntimeException("Unsupported dimension:" + dimString + " for operator " + getOp().name());
@@ -807,10 +809,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		if(LOG.isDebugEnabled() && ret < 0) {
 			LOG.debug("Unknown dimension " + dimString + " for ConvolutionOp:" + op.name() + 
-					" img_dim=[" + params.N + " " + params.C + " " + params.H + " " + params.W + "]" +
-					" filter_dim=[" + params.K + " " + params.C + " " + params.H + " " + params.W + "]" + 
-					" output_feature_map=[" + params.P + " " + params.Q + "] stride=[" + params.stride_h + " " + params.stride_w + "]" +
-					" pad=[" + params.pad_h + " " + params.pad_w + "]");
+					" img_dim=[" + _cachedParams.N + " " + _cachedParams.C + " " + _cachedParams.H + " " + _cachedParams.W + "]" +
+					" filter_dim=[" + _cachedParams.K + " " + _cachedParams.C + " " + _cachedParams.H + " " + _cachedParams.W + "]" + 
+					" output_feature_map=[" + _cachedParams.P + " " + _cachedParams.Q + "] stride=[" + _cachedParams.stride_h + " " + _cachedParams.stride_w + "]" +
+					" pad=[" + _cachedParams.pad_h + " " + _cachedParams.pad_w + "]");
 		}
 		return ret;
 	}

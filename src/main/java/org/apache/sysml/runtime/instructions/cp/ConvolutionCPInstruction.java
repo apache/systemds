@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -354,8 +353,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C*P*Q, false).allocateBlock();
-				if(instOpcode.equalsIgnoreCase("maxpooling"))
-					Arrays.fill(outputBlock.getDenseBlock(), -Double.MAX_VALUE);
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
 		}

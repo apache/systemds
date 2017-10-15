@@ -39,6 +39,9 @@ else {
 if(poolMode == "max") {
 	output = max_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }
+else if(poolMode == "max2") {
+	output = max_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize*imgSize, 1], pool_size=[poolSize1, poolSize2])
+}
 #else {
 	#output = avg_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 #}

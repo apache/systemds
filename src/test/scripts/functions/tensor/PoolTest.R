@@ -28,6 +28,7 @@ poolSize1=as.integer(args[4])
 poolSize2=as.integer(args[5])
 stride=as.integer(args[6])
 pad=as.integer(args[7])
+mode=args[10]
 
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
@@ -98,6 +99,10 @@ max_pool <- function(X, N, C, Hin, Win, Hf, Wf,
   out
 }
 
-output = max_pool(x, numImg, numChannels, imgSize, imgSize, poolSize1, poolSize2, stride, stride)
+if( mode=="max" ) {
+  output = max_pool(x, numImg, numChannels, imgSize, imgSize, poolSize1, poolSize2, stride, stride)
+} else {
+  output = max_pool(x, numImg, numChannels, imgSize*imgSize, 1, poolSize1, poolSize2, stride, stride)
+}
 
 writeMM(as(output,"CsparseMatrix"), paste(args[8], "B", sep=""))

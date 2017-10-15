@@ -51,146 +51,130 @@ public class PoolTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMaxPool2DDense2() 
-	{
+	public void testMaxPool2DDense2() {
 		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
-	
 	@Test
-	public void testMaxPool2DDense3() 
-	{
+	public void testMaxPool2DDense3() {
 		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
-	public void testMaxPool2DDense4() 
-	{
+	public void testMaxPool2DDense4() {
 		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
-	public void testMaxPool2DSparse1() 
-	{
+	public void testMaxPool2DDense5() {
+		int numImg = 2; int imgSize = 8; int numChannels = 4;  int stride = 1; int pad = 0; int poolSize1 = imgSize*imgSize; int poolSize2 = 1;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max2", false);
+	}
+	
+	@Test
+	public void testMaxPool2DSparse1() {
 		int numImg = 1; int imgSize = 6; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
 	}
 	
 	@Test
-	public void testMaxPool2DSparse2() 
-	{
+	public void testMaxPool2DSparse2() {
 		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
 	}
 	
-	
 	@Test
-	public void testMaxPool2DSparse3() 
-	{
+	public void testMaxPool2DSparse3() {
 		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
 	}
 	
 	@Test
-	public void testMaxPool2DSparse4() 
-	{
+	public void testMaxPool2DSparse4() {
 		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true);
+	}
+	
+	@Test
+	public void testMaxPool2DSparse5() {
+		int numImg = 2; int imgSize = 32; int numChannels = 4;  int stride = 1; int pad = 0; int poolSize1 = imgSize*imgSize; int poolSize2 = 1;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max2", true);
 	}
 	
 	// ----------------------------------------
 	
 	@Test
-	public void testMaxPool2DDense1SP() 
-	{
+	public void testMaxPool2DDense1SP() {
 		int numImg = 1; int imgSize = 50; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
-	public void testMaxPool2DDense2SP() 
-	{
+	public void testMaxPool2DDense2SP() {
 		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
-	
 	@Test
-	public void testMaxPool2DDense3SP() 
-	{
+	public void testMaxPool2DDense3SP() {
 		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
 	@Test
-	public void testMaxPool2DDense4SP() 
-	{
+	public void testMaxPool2DDense4SP() {
 		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
 		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 * @param sparse
-	 */
 	public void runPoolTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
 			int pad, int poolSize1, int poolSize2, String poolMode, boolean sparse) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-			
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
-			String sparseVal = (""+sparse).toUpperCase();
-	    TestConfiguration config = getTestConfiguration(TEST_NAME);
-	    if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-	    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			String sparseVal = String.valueOf(sparse).toUpperCase();
 			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
-	        
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+	
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			
-			programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
-					"" + numChannels, "" + poolSize1, "" + poolSize2, 
-					"" + stride, "" + pad, poolMode, 
-					output("B"), sparseVal};
-			        
-			boolean exceptionExpected = false;
-			int expectedNumberOfJobs = -1;
-			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+			programArgs = new String[]{"-explain", "-args", String.valueOf(imgSize), 
+				String.valueOf(numImg), String.valueOf(numChannels),
+				String.valueOf(poolSize1), String.valueOf(poolSize2),
+				String.valueOf(stride), String.valueOf(pad), poolMode,
+				output("B"), sparseVal};
 			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
-					" " + numChannels + " " + poolSize1 + 
-					" " + poolSize2 + " " + stride + " " + pad + " " + expectedDir() + " " + sparseVal; 
+				" " + numChannels + " " + poolSize1 + " " + poolSize2 + " " + stride + 
+				" " + pad + " " + expectedDir() + " " + sparseVal + " " + poolMode; 
 			
-			// Run comparison R script
+			// run scripts
+			runTest(true, false, null, -1);
 			runRScript(true);
-			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
 			
+			//compare results
+			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
-			
 		}
-		finally
-		{
-			rtplatform = oldRTP;
+		finally {
+			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-	
-	
 }

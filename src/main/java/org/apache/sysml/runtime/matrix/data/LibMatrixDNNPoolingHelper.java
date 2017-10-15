@@ -31,43 +31,58 @@ public class LibMatrixDNNPoolingHelper {
 	 */
 	public static class DenseMaxPooling implements Callable<Long> 
 	{
-		public int _rl; public int _ru; 
+		private final int _rl, _ru; 
 		private final ConvolutionParameters _params;
-		double [] inputArray; double [] outputArray;
-		int C; int P; int Q; int W;
+		
 		public DenseMaxPooling(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
-			inputArray = params.input1.getDenseBlock();
-			outputArray = params.output.getDenseBlock();
-			C = params.C; P = params.P; Q = params.Q; W = params.W;
 		}
 		
 		@Override
 		public Long call() throws Exception {
+			final int C = _params.C, P = _params.P, Q = _params.Q;
+			final int R = _params.R, S = _params.S, H = _params.H, W = _params.W;
 			final int HW = _params.H*_params.W;
 			final int CHW = _params.C*_params.H*_params.W;
 			final int CPQ = C*P*Q;
-			for(int n = _rl; n < _ru; n++)  {
-				final int inOffset = n*CHW;
-				int out_index = n*CPQ;
-				for (int c = 0; c < C; c++) {
-					final int inOffset1 = inOffset + c*HW;
-					for (int p = 0; p < P; p++) {
-						for (int q = 0; q < Q; q++, out_index++) {
-							double tmp = outputArray[out_index];
-							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
-								int inputIndex = inOffset1 +  h*W + _params.start_indexes_w[q];
-								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++, inputIndex++) {
-									tmp = Math.max(tmp, inputArray[inputIndex]);
-								}
-							}
-							outputArray[out_index] = tmp;
-						}
-					}
-				}
+			double[] in = _params.input1.getDenseBlock();
+			double[] out = _params.output.getDenseBlock();
+			
+			//thread-local initialization of output block 
+			if( !(_params.isStride1Pad0() && _params.isAllOnes(P, Q, W)) )
+				Arrays.fill(out, _rl*CPQ, _ru*CPQ, -Double.MAX_VALUE);
+			
+			if( _params.isStride1Pad0() && _params.isAllOnes(P, Q, W) ) { 
+				//quick-path w/o materialized index arrays and 
+				//simplified inner loops for P = 1, Q = 1, W = 1
+				int lenh = Math.min(R,H);
+				for(int i = _rl, oix=_rl*C; i < _ru; i++, oix+=C)
+					for (int c = 0, off=i*CHW; c < C; c++, off+=H)
+						out[oix+c] = max(-Double.MAX_VALUE, in, off, lenh);
 			}
-			return 0L;
+			else if( _params.isStride1Pad0() ) {
+				//quick-path w/o materialized index arrays 
+				for(int i = _rl; i < _ru; i++)
+					for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+						for (int p = 0; p < P; p++, oix+=Q)
+							for (int h = p; h < Math.min(p+R,H); h++)
+								for (int q = 0, off2=off+h*W; q < Q; q++)
+									out[oix+q] = max(out[oix+q], in, off2+q, Math.min(S,W-q));
+			}
+			else { //general case
+				int[] hl = _params.start_indexes_h, hu = _params.end_indexes_h;
+				int[] wl = _params.start_indexes_w, wu = _params.end_indexes_w;
+				for(int i = _rl; i < _ru; i++)
+					for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+						for (int p = 0; p < P; p++, oix+=Q)
+							for (int h = hl[p]; h < hu[p]; h++)
+								for (int q = 0, off2=off+h*W; q < Q; q++)
+									out[oix+q] = max(out[oix+q], in, off2+wl[q], wu[q]-wl[q]);
+			}
+			
+			//thread-local recomputation of non-zeros
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 	}
 	
@@ -76,24 +91,26 @@ public class LibMatrixDNNPoolingHelper {
 	 */
 	public static class SparseMaxPooling implements Callable<Long> 
 	{
-		public int _rl; public int _ru; 
+		private final int _rl, _ru; 
 		private final ConvolutionParameters _params;
-		final int HW;
-		double [] outputArray;
-		final int C; final int P; final int Q; final int W; final int H; final int CPQ; final int PQ;
+		private double [] outputArray;
+		private final int C, P, Q, W, H, CPQ, PQ;
+		
 		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			outputArray = params.output.getDenseBlock();
 			C = params.C; P = params.P; Q = params.Q; H = params.H; 
 			W = params.W;
-			HW = _params.H*_params.W;
 			CPQ = C*P*Q;
 			PQ = P*Q;
 		}
 		
 		@Override
 		public Long call() throws Exception {
+			//thread-local initialization of output block 
+			Arrays.fill(outputArray, _rl *CPQ, _ru*CPQ, -Double.MAX_VALUE);
+			
 			for(int n = _rl; n < _ru; n++)  {
 				if( !_params.input1.sparseBlock.isEmpty(n) ) {
 					final int apos = _params.input1.sparseBlock.pos(n);
@@ -136,7 +153,16 @@ public class LibMatrixDNNPoolingHelper {
 					Arrays.fill(outputArray, n*CPQ, (n+1)*CPQ, 0);
 				}
 			}
-			return 0L;
+			
+			//thread-local recomputation of non-zeros
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
+	}
+	
+	private static double max(final double aval, double[] b, final int bi, final int len) {
+		double ret = aval;
+		for( int i = bi; i < bi+len; i++ )
+			ret = Math.max(ret, b[i]);
+		return ret;
 	}
 }

@@ -108,7 +108,7 @@ public class SparseBlockCSR extends SparseBlock
 					pos += alen;
 				}
 				_ptr[i+1]=pos;
-			}			
+			}
 		}
 	}
 	
@@ -276,6 +276,34 @@ public class SparseBlockCSR extends SparseBlock
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 	
+
+	/**
+	 * Get raw access to underlying array of row pointers
+	 * For use in GPU code
+	 * @return array of row pointers
+	 */
+	public int[] rowPointers() {
+		return _ptr;
+	}
+	
+	/** 
+	 * Get raw access to underlying array of column indices
+	 * For use in GPU code
+	 * @return array of column indexes
+	 */
+	public int[] indexes() {
+		return indexes(0);
+	}
+	
+	/**
+	 * Get raw access to underlying array of values
+	 * For use in GPU code
+	 * @return array of values
+	 */
+	public double[] values() {
+		return values(0);
+	}
+	
 	///////////////////
 	//SparseBlock implementation
 
@@ -359,8 +387,8 @@ public class SparseBlockCSR extends SparseBlock
 		long nnz = 0;
 		for(int i=rl; i<ru; i++)
 			if( !isEmpty(i) ) {
-				int start = posFIndexGTE(i, cl);
-				int end = posFIndexGTE(i, cu);
+				int start = internPosFIndexGTE(i, cl);
+				int end = internPosFIndexGTE(i, cu);
 				nnz += (start!=-1) ? (end-start) : 0;
 			}
 		return nnz;
@@ -482,7 +510,7 @@ public class SparseBlockCSR extends SparseBlock
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )
 			resize(lsize);
-		int index = posFIndexGT(r, cl);
+		int index = internPosFIndexGT(r, cl);
 		int index2 = (index>0)?index:pos(r+1);
 		shiftRightByN(index2, lnnz);
 		
@@ -645,12 +673,12 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public void deleteIndexRange(int r, int cl, int cu) {
-		int start = posFIndexGTE(r,cl);
+		int start = internPosFIndexGTE(r,cl);
 		if( start < 0 ) //nothing to delete 
-			return;		
+			return;
 
 		int len = size(r);
-		int end = posFIndexGTE(r, cu);
+		int end = internPosFIndexGTE(r, cu);
 		if( end < 0 ) //delete all remaining
 			end = start+len;
 		
@@ -703,6 +731,11 @@ public class SparseBlockCSR extends SparseBlock
 	
 	@Override
 	public int posFIndexLTE(int r, int c) {
+		int index = internPosFIndexLTE(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexLTE(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -718,6 +751,11 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
+		int index = internPosFIndexGTE(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexGTE(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -733,6 +771,11 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public int posFIndexGT(int r, int c) {
+		int index = internPosFIndexGT(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexGT(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -768,7 +811,7 @@ public class SparseBlockCSR extends SparseBlock
 				sb.append("\t");
 			}
 			sb.append("\n");
-		}		
+		}
 		
 		return sb.toString();
 	}
@@ -783,7 +826,7 @@ public class SparseBlockCSR extends SparseBlock
 			tmpCap *= (tmpCap <= 1024) ? 
 					RESIZE_FACTOR1 : RESIZE_FACTOR2;
 		}
-			
+		
 		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
 	}
 
@@ -825,7 +868,7 @@ public class SparseBlockCSR extends SparseBlock
 		insert(ix, c, v);
 	}
 
-	private void shiftRightAndInsert(int ix, int c, double v)  {		
+	private void shiftRightAndInsert(int ix, int c, double v)  {
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_indexes, ix, _indexes, ix+1, _size-ix);
 		System.arraycopy(_values, ix, _values, ix+1, _size-ix);
@@ -882,32 +925,5 @@ public class SparseBlockCSR extends SparseBlock
 		int rlen = numRows();
 		for( int i=rl; i<rlen+1; i++ )
 			_ptr[i]-=cnt;
-	}
-	
-	/**
-	 * Get raw access to underlying array of row pointers
-	 * For use in GPU code
-	 * @return array of row pointers
-	 */
-	public int[] rowPointers() {
-		return _ptr;
-	}
-	
-	/** 
-	 * Get raw access to underlying array of column indices
-	 * For use in GPU code
-	 * @return array of column indexes
-	 */
-	public int[] indexes() {
-		return _indexes;
-	}
-	
-	/**
-	 * Get raw access to underlying array of values
-	 * For use in GPU code
-	 * @return array of values
-	 */
-	public double[] values() {
-		return _values;
 	}
 }

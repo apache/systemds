@@ -486,7 +486,7 @@ public class LibMatrixAgg
 		else if( op instanceof AggregateOperator ) {
 			AggregateOperator aggop = (AggregateOperator) op;
 			groupedAggregateKahanPlus(groups, target, weights, result, numGroups, aggop, 0, target.clen);
-		}		
+		}
 	}
 
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 
@@ -515,8 +515,10 @@ public class LibMatrixAgg
 			int blklen = (int)(Math.ceil((double)target.clen/k));
 			for( int i=0; i<k & i*blklen<target.clen; i++ )
 				tasks.add( new GrpAggTask(groups, target, weights, result, numGroups, op, i*blklen, Math.min((i+1)*blklen, target.clen)) );
-			pool.invokeAll(tasks);	
+			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
+			for(Future<Object> task : taskret)
+				task.get(); //error handling
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -809,18 +811,17 @@ public class LibMatrixAgg
 					int pos = target.sparseBlock.pos(0);
 					int len = target.sparseBlock.size(0);
 					int[] aix = target.sparseBlock.indexes(0);
-					double[] avals = target.sparseBlock.values(0);	
+					double[] avals = target.sparseBlock.values(0);
 					for( int j=pos; j<pos+len; j++ ) //for each nnz
 					{
-						int g = (int) groups.quickGetValue(aix[j], 0);		
+						int g = (int) groups.quickGetValue(aix[j], 0);
 						if ( g > numGroups )
 							continue;
 						if ( weights != null )
 							w = weights.quickGetValue(aix[j],0);
-						aggop.increOp.fn.execute(buffer[g-1][0], avals[j]*w);						
+						aggop.increOp.fn.execute(buffer[g-1][0], avals[j]*w);
 					}
 				}
-					
 			}
 			else //DENSE target
 			{
@@ -828,7 +829,7 @@ public class LibMatrixAgg
 					double d = target.denseBlock[ i ];
 					if( d != 0 ) //sparse-safe
 					{
-						int g = (int) groups.quickGetValue(i, 0);		
+						int g = (int) groups.quickGetValue(i, 0);
 						if ( g > numGroups )
 							continue;
 						if ( weights != null )
@@ -847,7 +848,7 @@ public class LibMatrixAgg
 				
 				for( int i=0; i < groups.getNumRows(); i++ ) 
 				{
-					int g = (int) groups.quickGetValue(i, 0);		
+					int g = (int) groups.quickGetValue(i, 0);
 					if ( g > numGroups )
 						continue;
 					
@@ -856,15 +857,15 @@ public class LibMatrixAgg
 						int pos = a.pos(i);
 						int len = a.size(i);
 						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						int j = (cl==0) ? pos : a.posFIndexGTE(i,cl);
-						j = (j>=0) ? j : len;
+						double[] avals = a.values(i);
+						int j = (cl==0) ? 0 : a.posFIndexGTE(i,cl);
+						j = (j >= 0) ? pos+j : pos+len;
 						
 						for( ; j<pos+len && aix[j]<cu; j++ ) //for each nnz
 						{
 							if ( weights != null )
 								w = weights.quickGetValue(aix[j],0);
-							aggop.increOp.fn.execute(buffer[g-1][aix[j]-cl], avals[j]*w);						
+							aggop.increOp.fn.execute(buffer[g-1][aix[j]-cl], avals[j]*w);
 						}
 					}
 				}
@@ -875,7 +876,7 @@ public class LibMatrixAgg
 				
 				for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=numCols ) 
 				{
-					int g = (int) groups.quickGetValue(i, 0);		
+					int g = (int) groups.quickGetValue(i, 0);
 					if ( g > numGroups )
 						continue;
 				
@@ -918,7 +919,7 @@ public class LibMatrixAgg
 			
 			for( int i=0; i < groups.getNumRows(); i++ ) 
 			{
-				int g = (int) groups.quickGetValue(i, 0);		
+				int g = (int) groups.quickGetValue(i, 0);
 				if ( g > numGroups )
 					continue;
 				
@@ -927,15 +928,15 @@ public class LibMatrixAgg
 					int pos = a.pos(i);
 					int len = a.size(i);
 					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);	
-					int j = (cl==0) ? pos : a.posFIndexGTE(i,cl);
-					j = (j>=0) ? j : pos+len;
+					double[] avals = a.values(i);
+					int j = (cl==0) ? 0 : a.posFIndexGTE(i,cl);
+					j = (j >= 0) ? pos+j : pos+len;
 					
 					for( ; j<pos+len && aix[j]<cu; j++ ) //for each nnz
 					{
 						if ( weights != null )
 							w = weights.quickGetValue(i, 0);
-						cmFn.execute(cmValues[g-1][aix[j]-cl], avals[j], w);						
+						cmFn.execute(cmValues[g-1][aix[j]-cl], avals[j], w);
 					}
 					//TODO sparse unsafe correction
 				}
@@ -947,7 +948,7 @@ public class LibMatrixAgg
 			
 			for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=target.clen ) 
 			{
-				int g = (int) groups.quickGetValue(i, 0);		
+				int g = (int) groups.quickGetValue(i, 0);
 				if ( g > numGroups )
 					continue;
 			
@@ -966,7 +967,7 @@ public class LibMatrixAgg
 			for( int j=0; j < numCols2; j++ ) {
 				// result is 0-indexed, so is cmValues
 				result.appendValue(i, j, cmValues[i][j+cl].getRequiredResult(cmOp));
-			}			
+			}
 	}
 
 	private static void groupedAggregateVecCount( MatrixBlock groups, MatrixBlock result, int numGroups ) 
@@ -982,7 +983,7 @@ public class LibMatrixAgg
 		
 		//compute counts
 		for( int i = 0; i < m; i++ ) {
-			int g = (int) a[i];		
+			int g = (int) a[i];
 			if ( g > numGroups )
 				continue;
 			tmp[g-1]++;

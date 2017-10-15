@@ -1240,10 +1240,10 @@ public class LibMatrixMult
 						int[] aix = a.indexes(i);
 						double[] avals = a.values(i);
 						
-						int k1 = (rl==0) ? apos : a.posFIndexGTE(i, rl);
-						k1 = (k1>=0) ? k1 : apos+alen;
-						int k2 = (ru==cd) ? apos+alen : a.posFIndexGTE(i, ru);
-						k2 = (k2>=0) ? k2 : apos+alen;
+						int k1 = (rl==0) ? 0 : a.posFIndexGTE(i, rl);
+						k1 = (k1>=0) ? apos+k1 : apos+alen;
+						int k2 = (ru==cd) ? alen : a.posFIndexGTE(i, ru);
+						k2 = (k2>=0) ? apos+k2 : apos+alen;
 						
 						//rest not aligned to blocks of 4 rows
 		    			final int bn = (k2-k1) % 4;
@@ -1797,9 +1797,9 @@ public class LibMatrixMult
 						int apos = a.pos(r);
 						int alen = a.size(r);
 						int[] aix = a.indexes(r);
-						double[] avals = a.values(r);					
-						int rlix = (rl==0) ? apos : a.posFIndexGTE(r, rl);
-						rlix = (rlix>=0) ? rlix : apos+alen;
+						double[] avals = a.values(r);
+						int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+						rlix = (rlix>=0) ? apos+rlix : apos+alen;
 						
 						for(int i = rlix; i < apos+alen && aix[i]<ru; i++) 
 						{
@@ -1819,9 +1819,9 @@ public class LibMatrixMult
 						int apos = a.pos(r);
 						int alen = a.size(r);
 						int[] aix = a.indexes(r);
-						double[] avals = a.values(r);					
-						int rlix = (rl==0) ? apos : a.posFIndexGTE(r, rl);
-						rlix = (rlix>=0) ? rlix : apos+alen;
+						double[] avals = a.values(r);
+						int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+						rlix = (rlix>=0) ? apos+rlix : apos+alen;
 						
 						for(int i = rlix; i < apos+alen && aix[i]<ru; i++) 
 						{
@@ -1861,9 +1861,9 @@ public class LibMatrixMult
 							int apos = a.pos(r);
 							int alen = a.size(r);
 							int[] aix = a.indexes(r);
-							double[] avals = a.values(r);					
-							int rlix = (rl==0) ? apos : a.posFIndexGTE(r, rl);
-							rlix = (rlix>=0) ? rlix : apos+alen;
+							double[] avals = a.values(r);
+							int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+							rlix = (rlix>=0) ? apos+rlix : apos+alen;
 							
 							for(int i = rlix; i < apos+alen && aix[i]<ru; i++) 
 							{
@@ -1883,9 +1883,9 @@ public class LibMatrixMult
 							int apos = a.pos(r);
 							int alen = a.size(r);
 							int[] aix = a.indexes(r);
-							double[] avals = a.values(r);					
-							int rlix = (rl==0) ? apos : a.posFIndexGTE(r,rl);
-							rlix = (rlix>=0) ? rlix : apos+alen;
+							double[] avals = a.values(r);
+							int rlix = (rl==0) ? 0 : a.posFIndexGTE(r,rl);
+							rlix = (rlix>=0) ? apos+rlix : apos+alen;
 							
 							for(int i = rlix; i < apos+alen && aix[i]<ru; i++) 
 							{
@@ -2618,8 +2618,8 @@ public class LibMatrixMult
 					int wlen = w.size(i);
 					int[] wix = w.indexes(i);
 					double[] wval = w.values(i);
-					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
-					k = (k>=0) ? k : wpos+wlen;
+					int k = (cl==0) ? 0 : w.posFIndexGTE(i,cl);
+					k = (k>=0) ? wpos+k : wpos+wlen;
 					for( ; k<wpos+wlen && wix[k]<cu; k++ ) { 
 						if( basic ) {
 							double uvij = dotProductGeneric(mU,mV, i, wix[k], cd);

@@ -206,7 +206,7 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 			//init sparse block
 			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-			SparseBlock srtmp = mbtmp.getSparseBlock();			
+			SparseBlock srtmp = mbtmp.getSparseBlock();
 			switch( btype ) {
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
@@ -228,7 +228,7 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
 					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
 		
-			//check correct index values	
+			//check correct index values
 			for( int i=0; i<rows; i++ ) {
 				int ix = getFirstIx(A, i, i, itype);
 				int sixpos = -1;
@@ -237,10 +237,11 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 					case GTE: sixpos = sblock.posFIndexGTE(i, i); break;
 					case LTE: sixpos = sblock.posFIndexLTE(i, i); break;
 				}
-				int six = (sixpos>=0) ? sblock.indexes(i)[sixpos] : -1;
+				int six = (sixpos>=0) ? 
+					sblock.indexes(i)[sblock.pos(i)+sixpos] : -1;
 				if( six != ix ) {
 					Assert.fail("Wrong index returned by index probe ("+
-							itype.toString()+","+i+"): "+six+", expected: "+ix);	
+							itype.toString()+","+i+"): "+six+", expected: "+ix);
 				}
 			}
 		}
@@ -255,19 +256,19 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 			for( int j=cix+1; j<cols; j++ )
 				if( A[rix][j] != 0 )
 					return j;
-			return -1;	
+			return -1;
 		}
 		else if( type==IndexType.GTE ) {
 			for( int j=cix; j<cols; j++ )
 				if( A[rix][j] != 0 )
 					return j;
-			return -1;	
+			return -1;
 		}
 		else if( type==IndexType.LTE ) {
 			for( int j=cix; j>=0; j-- )
 				if( A[rix][j] != 0 )
 					return j;
-			return -1;	
+			return -1;
 		}
 		
 		return -1;

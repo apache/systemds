@@ -853,7 +853,7 @@ public class LibMatrixReorg
 		//blocked execution
 		for( int bi=rl; bi<ru; bi+=blocksizeI )
 		{
-			Arrays.fill(ix, 0);			
+			Arrays.fill(ix, 0);
 			//find column starting positions
 			int bimin = Math.min(bi+blocksizeI, ru);
 			if( cl > 0 ) {
@@ -934,7 +934,7 @@ public class LibMatrixReorg
 							int j = ix[iix]; //last block boundary
 							for( ; j<alen && aix[apos+j]<bjmin; j++ )
 								c[ aix[apos+j]*n2+i ] = avals[ apos+j ];
-							ix[iix] = j; //keep block boundary						
+							ix[iix] = j; //keep block boundary
 						}
 					}
 				}

@@ -3930,9 +3930,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					int alen = sparseBlock.size(i);
 					int[] aix = sparseBlock.indexes(i);
 					double[] avals = sparseBlock.values(i);
-					int astart = (cl>0)?sparseBlock.posFIndexGTE(i, cl) : apos;
+					int astart = (cl>0)?sparseBlock.posFIndexGTE(i, cl) : 0;
 					if( astart != -1 )
-						for( int j=astart; j<apos+alen && aix[j] <= cu; j++ )
+						for( int j=apos+astart; j<apos+alen && aix[j] <= cu; j++ )
 							dest.appendValue(i-rl, aix[j]-cl, avals[j]);
 				}
 		}
@@ -4080,11 +4080,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return;
 		
 		//actual slice operation
+		int pos = sparseBlock.pos(r);
 		for(int i=start; i<=end; i++) {
-			if(cols[i]<colCut)
-				left.appendValue(r+rowOffset, cols[i]+normalBlockColFactor-colCut, values[i]);
+			if(cols[pos+i]<colCut)
+				left.appendValue(r+rowOffset, cols[pos+i]+normalBlockColFactor-colCut, values[pos+i]);
 			else
-				right.appendValue(r+rowOffset, cols[i]-colCut, values[i]);
+				right.appendValue(r+rowOffset, cols[pos+i]-colCut, values[pos+i]);
 		}
 	}
 	

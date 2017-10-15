@@ -239,8 +239,8 @@ public class SparseBlockCOO extends SparseBlock
 		long nnz = 0;
 		for(int i=rl; i<ru; i++)
 			if( !isEmpty(i) ) {
-				int start = posFIndexGTE(i, cl);
-				int end = posFIndexGTE(i, cu);
+				int start = internPosFIndexGTE(i, cl);
+				int end = internPosFIndexGTE(i, cu);
 				nnz += (start!=-1) ? (end-start) : 0;
 			}
 		return nnz;
@@ -346,7 +346,7 @@ public class SparseBlockCOO extends SparseBlock
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )
 			resize(lsize);
-		int index = posFIndexGT(r, cl);
+		int index = internPosFIndexGT(r, cl);
 		shiftRightByN((index>0)?index:pos(r+1), lnnz);
 		
 		//insert values
@@ -361,12 +361,12 @@ public class SparseBlockCOO extends SparseBlock
 
 	@Override
 	public void deleteIndexRange(int r, int cl, int cu) {
-		int start = posFIndexGTE(r,cl);
+		int start = internPosFIndexGTE(r,cl);
 		if( start < 0 ) //nothing to delete 
-			return;		
+			return;
 
 		int len = size(r);
-		int end = posFIndexGTE(r, cu);
+		int end = internPosFIndexGTE(r, cu);
 		if( end < 0 ) //delete all remaining
 			end = start+len;
 		
@@ -374,7 +374,7 @@ public class SparseBlockCOO extends SparseBlock
 		System.arraycopy(_rindexes, end, _rindexes, start, _size-end);
 		System.arraycopy(_cindexes, end, _cindexes, start, _size-end);
 		System.arraycopy(_values, end, _values, start, _size-end);
-		_size -= (end-start);		
+		_size -= (end-start);
 	}
 
 	@Override
@@ -409,7 +409,7 @@ public class SparseBlockCOO extends SparseBlock
 		int len = size(r);
 		
 		//search for existing col index in [pos,pos+len)
-		int index = Arrays.binarySearch(_cindexes, pos, pos+len, c);		
+		int index = Arrays.binarySearch(_cindexes, pos, pos+len, c);
 		return (index >= 0) ? _values[index] : 0;
 	}
 	
@@ -428,6 +428,11 @@ public class SparseBlockCOO extends SparseBlock
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
+		int index = internPosFIndexLTE(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexLTE(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -443,6 +448,11 @@ public class SparseBlockCOO extends SparseBlock
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
+		int index = internPosFIndexGTE(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexGTE(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -458,6 +468,11 @@ public class SparseBlockCOO extends SparseBlock
 
 	@Override
 	public int posFIndexGT(int r, int c) {
+		int index = internPosFIndexGT(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+	
+	private int internPosFIndexGT(int r, int c) {
 		int pos = pos(r);
 		int len = size(r);
 		

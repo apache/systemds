@@ -632,7 +632,7 @@ public class LibMatrixMult
 		ret.allocateBlock();
 		
 		try 
-		{			
+		{
 			ExecutorService pool = Executors.newFixedThreadPool(k);
 			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
@@ -927,169 +927,189 @@ public class LibMatrixMult
 
 	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
-	{			
+	{
 		double[] a = m1.denseBlock;
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
 		final int m = m1.rlen;
 		final int n = m2.clen;
 		final int cd = m1.clen;
-
-		if( LOW_LEVEL_OPTIMIZATION )
-		{
-			if( m==1 && n==1 ) 		      //DOT PRODUCT
-			{
+		
+		if( LOW_LEVEL_OPTIMIZATION ) {
+			if( m==1 && n==1 ) {            //DOT PRODUCT
 				c[0] = dotProduct(a, b, cd);
 			}
-			else if( n>1 && cd == 1 )     //OUTER PRODUCT
-			{
+			else if( n>1 && cd == 1 ) {     //OUTER PRODUCT
 				for( int i=rl, cix=rl*n; i < ru; i++, cix+=n) {
 					if( a[i] == 1 )
 						System.arraycopy(b, 0, c, cix, n);
-				    else if( a[i] != 0 )
+					else if( a[i] != 0 )
 						vectMultiplyWrite(a[i], b, c, 0, cix, n);
 					else
 						Arrays.fill(c, cix, cix+n, 0);
 				}
 			}
-			else if( n==1 && cd == 1 )    //VECTOR-SCALAR
-			{
+			else if( n==1 && cd == 1 ) {    //VECTOR-SCALAR
 				vectMultiplyWrite(b[0], a, c, rl, rl, ru-rl);
 			}
-			else if( n==1 && cd<=2*1024 ) //MATRIX-VECTOR (short rhs)
-			{
-				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
-					c[i] = dotProduct(a, b, aix, 0, cd);	
+			else if( n==1 && cd<=2*1024 ) { //MATRIX-VECTOR (short rhs)
+				matrixMultDenseDenseMVShortRHS(a, b, c, cd, rl, ru);
 			}
-			else if( n==1 )               //MATRIX-VECTOR (tall rhs)
-			{
-				final int blocksizeI = 32;
-				final int blocksizeK = 2*1024; //16KB vector blocks (L1) 
-				for( int bi=rl; bi<ru; bi+=blocksizeI ) {
-					int bimin = Math.min(bi+blocksizeI, ru);
-					for( int bk=0; bk<cd; bk+=blocksizeK ) {
-						int bkmin = Math.min(bk+blocksizeK, cd);
-						for( int i=bi, aix=bi*cd+bk; i<bimin; i++, aix+=cd) 
-							c[i] += dotProduct(a, b, aix, bk, bkmin-bk);	
-					}
-				}
+			else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
+				matrixMultDenseDenseMVTallRHS(a, b, c, cd, rl, ru);
 			}
-			else if( pm2 && m==1 )        //VECTOR-MATRIX
-			{
-				//parallelization over rows in rhs matrix
-				//rest not aligned to blocks of 2 rows
-				final int kn = (ru-rl)%2;
-				if( kn == 1 && a[rl] != 0 )
-					vectMultiplyAdd(a[rl], b, c, rl*n, 0, n);
-				
-				//compute blocks of 2 rows (2 instead of 4 for small n<64) 
-				for( int k=rl+kn, bix=(rl+kn)*n; k<ru; k+=2, bix+=2*n ){
-					if( a[k] != 0 && a[k+1] != 0  )
-						vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);
-					else if( a[k] != 0 )
-						vectMultiplyAdd(a[k], b, c, bix, 0, n);
-					else if( a[k+1] != 0 )	
-						vectMultiplyAdd(a[k+1], b, c, bix+n, 0, n);
-				}
+			else if( pm2 && m==1 ) {        //VECTOR-MATRIX
+				matrixMultDenseDenseVM(a, b, c, n, cd, rl, ru);
 			}
-			else if( pm2 && m<=16 )       //MATRIX-MATRIX (short lhs) 
-			{
-				//cache-conscious parallelization over rows in rhs matrix
-				final int kn = (ru-rl)%4;				
-				
-				//rest not aligned to blocks of 2 rows
-				for( int i=0, aix=0, cix=0; i<m; i++, aix+=cd, cix+=n )
-					for( int k=rl, bix=rl*n; k<rl+kn; k++, bix+=n )
-						if( a[aix+k] != 0 )
-							vectMultiplyAdd(a[aix+k], b, c, bix, cix, n);
-				
-				final int blocksizeK = 48;
-				final int blocksizeJ = 1024;
-				
-				//blocked execution
-				for( int bk = rl+kn; bk < ru; bk+=blocksizeK ) 
-					for( int bj = 0, bkmin = Math.min(ru, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
-					{
-						//compute blocks of 4 rows in rhs w/ IKJ
-						int bjlen = Math.min(n, bj+blocksizeJ)-bj;
-						for( int i=0, aix=0, cix=bj; i<m; i++, aix+=cd, cix+=n )
-							for( int k=bk, bix=bk*n+bj; k<bkmin; k+=4, bix+=4*n ) {
-								vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3],
-										b, c, bix, bix+n, bix+2*n, bix+3*n, cix, bjlen);
-							}
-					}
+			else if( pm2 && m<=16 ) {       //MATRIX-MATRIX (short lhs) 
+				matrixMultDenseDenseMMShortLHS(a, b, c, m, n, cd, rl, ru);
 			}
-			else if( tm2 )                //MATRIX-MATRIX (skinny rhs)
-			{
-				//note: prepared rhs input via transpose for: m > n && cd > 64 && n < 64
-				//however, explicit flag required since dimension change m2
-				final int n2 = m2.rlen;
-				for( int i=rl, aix=rl*cd, cix=rl*n2; i < ru; i++, aix+=cd, cix+=n2 ) 
-					for( int j=0, bix=0; j<n2; j++, bix+=cd )
-						c[cix+j] = dotProduct(a, b, aix, bix, cd);
+			else if( tm2 ) {                //MATRIX-MATRIX (skinny rhs)
+				matrixMultDenseDenseMMSkinnyRHS(a, b, c, m2.rlen, cd, rl, ru);
 			}
-			else                          //MATRIX-MATRIX
-			{	
-				//1) Unrolled inner loop (for better instruction-level parallelism)
-				//2) Blocked execution (for less cache trashing in parallel exec) 	
-				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
-				
-				final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
-				final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
-				final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
-
-				//temporary arrays (nnz a, b index)
-				double[] ta = new double[ blocksizeK ];
-				int[]  tbi  = new int[ blocksizeK ];
-				
-				//blocked execution
-				for( int bi = rl; bi < ru; bi+=blocksizeI )
-					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
-						for( int bj = cl, bkmin = Math.min(cd, bk+blocksizeK); bj < cu; bj+=blocksizeJ ) 
-						{
-							int bklen = bkmin-bk;
-							int bjlen = Math.min(cu, bj+blocksizeJ)-bj;
-							
-							//core sub block matrix multiplication
-				    		for( int i = bi; i < bimin; i++) 
-				    		{
-				    			int aixi = i * cd + bk; //start index on a
-				    			int cixj = i * n + bj; //scan index on c
-				    			
-				    			//determine nnz of a (for sparsity-aware skipping of rows)
-				    			int knnz = copyNonZeroElements(a, aixi, bk, bj, n, ta, tbi, bklen);
-				    			//if( knnz > 0 ) //for skipping empty rows
-				    			
-			    				//rest not aligned to blocks of 4 rows
-				    			final int bn = knnz % 4;
-				    			switch( bn ){
-					    			case 1: vectMultiplyAdd(ta[0], b, c, tbi[0], cixj, bjlen); break;
-					    	    	case 2: vectMultiplyAdd2(ta[0],ta[1], b, c, tbi[0], tbi[1], cixj, bjlen); break;
-					    			case 3: vectMultiplyAdd3(ta[0],ta[1],ta[2], b, c, tbi[0], tbi[1],tbi[2], cixj, bjlen); break;
-				    			}
-				    			
-				    			//compute blocks of 4 rows (core inner loop)
-				    			for( int k = bn; k<knnz; k+=4 ){
-				    				vectMultiplyAdd4( ta[k], ta[k+1], ta[k+2], ta[k+3], b, c, 
-				    						          tbi[k], tbi[k+1], tbi[k+2], tbi[k+3], cixj, bjlen );
-				    			}
-				    		}
-						}
+			else {                          //MATRIX-MATRIX
+				matrixMultDenseDenseMM(a, b, c, n, cd, rl, ru, cl, cu);
 			}
 		}
-		else
-		{
-			double val;
+		else {
 			for( int i = rl, aix=rl*cd, cix=rl*n; i < ru; i++, cix+=n) 
-				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
-				{			
-					val = a[ aix ];
+				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n) {
+					double val = a[ aix ];
 					if( val != 0 )
 						for( int j = 0; j < n; j++) 
 							c[ cix+j ] += val * b[ bix+j ];
-				}	
+				}
 		}
+	}
+	
+	private static void matrixMultDenseDenseMVShortRHS(double[] a, double[] b, double[] c, int cd, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
+			c[i] = dotProduct(a, b, aix, 0, cd);
+	}
+	
+	private static void matrixMultDenseDenseMVTallRHS(double[] a, double[] b, double[] c, int cd, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		final int blocksizeI = 32;
+		final int blocksizeK = 2*1024; //16KB vector blocks (L1)
+		for( int bi=rl; bi<ru; bi+=blocksizeI ) {
+			int bimin = Math.min(bi+blocksizeI, ru);
+			for( int bk=0; bk<cd; bk+=blocksizeK ) {
+				int bkmin = Math.min(bk+blocksizeK, cd);
+				for( int i=bi, aix=bi*cd+bk; i<bimin; i++, aix+=cd) 
+					c[i] += dotProduct(a, b, aix, bk, bkmin-bk);
+			}
+		}
+	}
+	
+	private static void matrixMultDenseDenseVM(double[] a, double[] b, double[] c, int n, int cd, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		//parallelization over rows in rhs matrix
+		//rest not aligned to blocks of 2 rows
+		final int kn = (ru-rl)%2;
+		if( kn == 1 && a[rl] != 0 )
+			vectMultiplyAdd(a[rl], b, c, rl*n, 0, n);
 		
+		//compute blocks of 2 rows (2 instead of 4 for small n<64) 
+		for( int k=rl+kn, bix=(rl+kn)*n; k<ru; k+=2, bix+=2*n ){
+			if( a[k] != 0 && a[k+1] != 0  )
+				vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);
+			else if( a[k] != 0 )
+				vectMultiplyAdd(a[k], b, c, bix, 0, n);
+			else if( a[k+1] != 0 )	
+				vectMultiplyAdd(a[k+1], b, c, bix+n, 0, n);
+		}
+	}
+	
+	private static void matrixMultDenseDenseMMShortLHS(double[] a, double[] b, double[] c, int m, int n, int cd, int rl, int ru)
+		throws DMLRuntimeException
+	{
+		//cache-conscious parallelization over rows in rhs matrix
+		final int kn = (ru-rl)%4;
+		
+		//rest not aligned to blocks of 2 rows
+		for( int i=0, aix=0, cix=0; i<m; i++, aix+=cd, cix+=n )
+			for( int k=rl, bix=rl*n; k<rl+kn; k++, bix+=n )
+				if( a[aix+k] != 0 )
+					vectMultiplyAdd(a[aix+k], b, c, bix, cix, n);
+		
+		final int blocksizeK = 48;
+		final int blocksizeJ = 1024;
+		
+		//blocked execution
+		for( int bk = rl+kn; bk < ru; bk+=blocksizeK ) 
+			for( int bj = 0, bkmin = Math.min(ru, bk+blocksizeK); bj < n; bj+=blocksizeJ ) {
+				//compute blocks of 4 rows in rhs w/ IKJ
+				int bjlen = Math.min(n, bj+blocksizeJ)-bj;
+				for( int i=0, aix=0, cix=bj; i<m; i++, aix+=cd, cix+=n )
+					for( int k=bk, bix=bk*n+bj; k<bkmin; k+=4, bix+=4*n ) {
+						vectMultiplyAdd4(a[aix+k], a[aix+k+1], a[aix+k+2], a[aix+k+3],
+							b, c, bix, bix+n, bix+2*n, bix+3*n, cix, bjlen);
+					}
+			}
+	}
+	
+	private static void matrixMultDenseDenseMMSkinnyRHS(double[] a, double[] b, double[] c, int n2, int cd, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		//note: prepared rhs input via transpose for: m > n && cd > 64 && n < 64
+		//however, explicit flag required since dimension change m2
+		for( int i=rl, aix=rl*cd, cix=rl*n2; i < ru; i++, aix+=cd, cix+=n2 ) 
+			for( int j=0, bix=0; j<n2; j++, bix+=cd )
+				c[cix+j] = dotProduct(a, b, aix, bix, cd);
+	}
+	
+	private static void matrixMultDenseDenseMM(double[] a, double[] b, double[] c, int n, int cd, int rl, int ru, int cl, int cu) 
+		throws DMLRuntimeException
+	{
+		//1) Unrolled inner loop (for better instruction-level parallelism)
+		//2) Blocked execution (for less cache trashing in parallel exec) 	
+		//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
+		
+		final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
+		final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
+		final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
+
+		//temporary arrays (nnz a, b index)
+		double[] ta = new double[ blocksizeK ];
+		int[]  tbi  = new int[ blocksizeK ];
+		
+		//blocked execution
+		for( int bi = rl; bi < ru; bi+=blocksizeI )
+			for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
+				for( int bj = cl, bkmin = Math.min(cd, bk+blocksizeK); bj < cu; bj+=blocksizeJ ) 
+				{
+					int bklen = bkmin-bk;
+					int bjlen = Math.min(cu, bj+blocksizeJ)-bj;
+					
+					//core sub block matrix multiplication
+					for( int i = bi; i < bimin; i++) 
+					{
+						int aixi = i * cd + bk; //start index on a
+						int cixj = i * n + bj; //scan index on c
+						
+						//determine nnz of a (for sparsity-aware skipping of rows)
+						int knnz = copyNonZeroElements(a, aixi, bk, bj, n, ta, tbi, bklen);
+						//if( knnz > 0 ) //for skipping empty rows
+						
+						//rest not aligned to blocks of 4 rows
+						final int bn = knnz % 4;
+						switch( bn ){
+							case 1: vectMultiplyAdd(ta[0], b, c, tbi[0], cixj, bjlen); break;
+							case 2: vectMultiplyAdd2(ta[0],ta[1], b, c, tbi[0], tbi[1], cixj, bjlen); break;
+							case 3: vectMultiplyAdd3(ta[0],ta[1],ta[2], b, c, tbi[0], tbi[1],tbi[2], cixj, bjlen); break;
+						}
+						
+						//compute blocks of 4 rows (core inner loop)
+						for( int k = bn; k<knnz; k+=4 ){
+							vectMultiplyAdd4( ta[k], ta[k+1], ta[k+2], ta[k+3], b, c, 
+									tbi[k], tbi[k+1], tbi[k+2], tbi[k+3], cixj, bjlen );
+						}
+					}
+				}
 	}
 
 	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
@@ -1163,7 +1183,8 @@ public class LibMatrixMult
 
 	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException
-	{	
+	{
+		SparseBlock a = m1.sparseBlock;
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
 		final int m = m1.rlen;
@@ -1171,179 +1192,195 @@ public class LibMatrixMult
 		final int cd = m2.rlen;
 		final long xsp = (long)m*cd/m1.nonZeros;
 
-		if( LOW_LEVEL_OPTIMIZATION )
-		{
-			SparseBlock a = m1.sparseBlock;
-			
-			if( m==1 && n==1 )            //DOT PRODUCT
-			{
-				if( !a.isEmpty(0) ) {
+		if( LOW_LEVEL_OPTIMIZATION ) {
+			if( m==1 && n==1 ) {            //DOT PRODUCT
+				if( !a.isEmpty(0) )
 					c[0] = dotProduct(a.values(0), b, a.indexes(0), a.pos(0), 0, a.size(0));
+			}
+			else if( n==1 && cd<=2*1024 ) { //MATRIX-VECTOR (short rhs)
+				matrixMultSparseDenseMVShortRHS(a, b, c, rl, ru);
+			}
+			else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
+				matrixMultSparseDenseMVTallRHS(a, b, c, cd, xsp, rl, ru);
+			}
+			else if( pm2 && m==1 ) {        //VECTOR-MATRIX
+				matrixMultSparseDenseVM(a, b, c, n, rl, ru);
+			}
+			else if( pm2 && m<=16 ) {       //MATRIX-MATRIX (short lhs) 
+				matrixMultSparseDenseMMShortLHS(a, b, c, n, cd, rl, ru);
+			}
+			else if( n<=64 ) {              //MATRIX-MATRIX (skinny rhs)
+				matrixMultSparseDenseMMSkinnyRHS(a, b, c, n, rl, ru);
+			}
+			else {                          //MATRIX-MATRIX
+				matrixMultSparseDenseMM(a, b, c, n, cd, xsp, rl, ru);
+			}
+		}
+		else {
+			for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
+				if( a.isEmpty(i) ) continue; 
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				for(int k = apos; k < apos+alen; k++) {
+					double val = avals[k];
+					for(int j = 0, bix=aix[k]*n; j < n; j++)
+						c[cix+j] += val * b[bix+j];
 				}
 			}
-			else if( n==1 && cd<=2*1024 ) //MATRIX-VECTOR (short rhs)
-			{
-				for( int i=rl; i<ru; i++ )
-					if( !a.isEmpty(i) )
-						c[i] = dotProduct(a.values(i), b, a.indexes(i), a.pos(i), 0, a.size(i));
+		}
+	}
+	
+	private static void matrixMultSparseDenseMVShortRHS(SparseBlock a, double[] b, double[] c, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		for( int i=rl; i<ru; i++ )
+			if( !a.isEmpty(i) )
+				c[i] = dotProduct(a.values(i), b, a.indexes(i), a.pos(i), 0, a.size(i));
+	}
+	
+	private static void matrixMultSparseDenseMVTallRHS(SparseBlock a, double[] b, double[] c, int cd, long xsp, int rl, int ru) 
+		throws DMLRuntimeException
+	{	
+		final int blocksizeI = 32;
+		final int blocksizeK = (int)Math.max(2*1024,2*1024*xsp/32); //~ 16KB L1
+		int[] curk = new int[blocksizeI];
+		
+		for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+			Arrays.fill(curk, 0); //reset positions
+			for( int bk=0, bimin = Math.min(ru, bi+blocksizeI); bk<cd; bk+=blocksizeK ) {
+				for( int i=bi, bkmin = Math.min(bk+blocksizeK, cd); i<bimin; i++) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					int k = curk[i-bi] + apos;
+					for( ; k<apos+alen && aix[k]<bkmin; k++ )
+						c[i] += avals[k] * b[aix[k]];
+					curk[i-bi] = k - apos;
+				}
 			}
-			else if( n==1 )               //MATRIX-VECTOR (tall rhs)
-			{
-				final int blocksizeI = 32;
-				final int blocksizeK = (int)Math.max(2*1024,2*1024*xsp/32); //~ 16KB L1  
-				int[] curk = new int[blocksizeI];
-				
-				for( int bi = rl; bi < ru; bi+=blocksizeI ) {
-					Arrays.fill(curk, 0); //reset positions
-					for( int bk=0, bimin = Math.min(ru, bi+blocksizeI); bk<cd; bk+=blocksizeK ) {
-						for( int i=bi, bkmin = Math.min(bk+blocksizeK, cd); i<bimin; i++) {
-							if( a.isEmpty(i) ) continue;
+		}
+	}
+	
+	private static void matrixMultSparseDenseVM(SparseBlock a, double[] b, double[] c, int n, int rl, int ru) 
+		throws DMLRuntimeException
+	{
+		if( a.isEmpty(0) )
+			return;
+		
+		//parallelization over rows in rhs matrix
+		int alen = a.size(0);
+		int[] aix = a.indexes(0);
+		double[] avals = a.values(0);
+		int rlix = (rl==0) ? 0 : a.posFIndexGTE(0,rl);
+		rlix = (rlix>=0) ? rlix : alen;
+		
+		for( int k=rlix; k<alen && aix[k]<ru; k++ ) {
+			if( k+1<alen && aix[k+1]<ru )
+				vectMultiplyAdd2(avals[k], avals[k+1], b, c, aix[k]*n, aix[++k]*n, 0, n);
+			else
+				vectMultiplyAdd(avals[k], b, c, aix[k]*n, 0, n);
+		}
+	}
+	
+	private static void matrixMultSparseDenseMMShortLHS(SparseBlock a, double[] b, double[] c, int n, int cd, int rl, int ru) 
+		throws DMLRuntimeException
+	{	
+		int arlen = a.numRows();
+		for( int i=0, cix=0; i<arlen; i++, cix+=n ) {
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			
+			int k1 = (rl==0) ? 0 : a.posFIndexGTE(i, rl);
+			k1 = (k1>=0) ? apos+k1 : apos+alen;
+			int k2 = (ru==cd) ? alen : a.posFIndexGTE(i, ru);
+			k2 = (k2>=0) ? apos+k2 : apos+alen;
+			
+			//rest not aligned to blocks of 4 rows
+			final int bn = (k2-k1) % 4;
+			switch( bn ){
+				case 1: vectMultiplyAdd(avals[k1], b, c, aix[k1]*n, cix, n); break;
+				case 2: vectMultiplyAdd2(avals[k1],avals[k1+1], b, c, aix[k1]*n, aix[k1+1]*n, cix, n); break;
+				case 3: vectMultiplyAdd3(avals[k1],avals[k1+1],avals[k1+2], b, c, aix[k1]*n, aix[k1+1]*n, aix[k1+2]*n, cix, n); break;
+			}
+			
+			//compute blocks of 4 rows (core inner loop)
+			for( int k = k1+bn; k<k2; k+=4 ) {
+				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+			}
+		}
+	}
+	
+	private static void matrixMultSparseDenseMMSkinnyRHS(SparseBlock a, double[] b, double[] c, int n, int rl, int ru) 
+		throws DMLRuntimeException
+	{	
+		//no blocking since b and c fit into cache anyway
+		for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			//rest not aligned to blocks of 4 rows
+			int bn = alen%4;
+			for( int k=apos; k<apos+bn; k++ )
+				vectMultiplyAdd(avals[k], b, c, aix[k]*n, cix, n);
+			//compute blocks of 4 rows (core inner loop)
+			for( int k=apos+bn; k<apos+alen; k+=4 )
+				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c,
+					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+		}
+	}
+	
+	private static void matrixMultSparseDenseMM(SparseBlock a, double[] b, double[] c, int n, int cd, long xsp, int rl, int ru) 
+		throws DMLRuntimeException
+	{	
+		//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
+		//while blocking A/C for L1/L2 yet allowing long scans (2 pages) in the inner loop over j
+		//in case of almost ultra-sparse matrices, we cannot ensure the blocking for the rhs and
+		//output - however, in this case it's unlikely that we consume every cache line in the rhs
+		final int blocksizeI = (int) (8L*xsp);
+		final int blocksizeK = (int) (8L*xsp);
+		final int blocksizeJ = 1024; 
+		
+		//temporary array of current sparse positions
+		int[] curk = new int[blocksizeI];
+		
+		//blocked execution over IKJ 
+		for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+			Arrays.fill(curk, 0); //reset positions
+			for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) {
+				for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) {
+					int bjlen = Math.min(n, bj+blocksizeJ)-bj;
+					
+					//core sub block matrix multiplication
+					for( int i=bi, cix=bi*n+bj; i<bimin; i++, cix+=n ) {
+						if( !a.isEmpty(i) ) {
 							int apos = a.pos(i);
 							int alen = a.size(i);
 							int[] aix = a.indexes(i);
 							double[] avals = a.values(i);
-							int k = curk[i-bi] + apos;
-							for( ; k<apos+alen && aix[k]<bkmin; k++ )
-								c[i] += avals[k] * b[aix[k]];
-							curk[i-bi] = k - apos;
-						}
-					}
-				}
-			}
-			else if( pm2 && m==1 )        //VECTOR-MATRIX
-			{
-				//parallelization over rows in rhs matrix
-				if( !a.isEmpty(0) ) 
-				{
-					int alen = a.size(0);
-					int[] aix = a.indexes(0);
-					double[] avals = a.values(0);
-					int rlix = (rl==0) ? 0 : a.posFIndexGTE(0,rl);
-					rlix = (rlix>=0) ? rlix : alen;
-					
-					for( int k=rlix; k<alen && aix[k]<ru; k++ ) {
-						if( k+1<alen && aix[k+1]<ru )
-							vectMultiplyAdd2(avals[k], avals[k+1], b, c, aix[k]*n, aix[++k]*n, 0, n);
-						else
-							vectMultiplyAdd(avals[k], b, c, aix[k]*n, 0, n);
-					}
-				}
-			}
-			else if( pm2 && m<=16 )       //MATRIX-MATRIX (short lhs) 
-			{
-				int arlen = a.numRows();
-				for( int i=0, cix=0; i<arlen; i++, cix+=n )
-					if( !a.isEmpty(i) ) 
-					{
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						
-						int k1 = (rl==0) ? 0 : a.posFIndexGTE(i, rl);
-						k1 = (k1>=0) ? apos+k1 : apos+alen;
-						int k2 = (ru==cd) ? alen : a.posFIndexGTE(i, ru);
-						k2 = (k2>=0) ? apos+k2 : apos+alen;
-						
-						//rest not aligned to blocks of 4 rows
-		    			final int bn = (k2-k1) % 4;
-		    			switch( bn ){
-			    			case 1: vectMultiplyAdd(avals[k1], b, c, aix[k1]*n, cix, n); break;
-			    	    	case 2: vectMultiplyAdd2(avals[k1],avals[k1+1], b, c, aix[k1]*n, aix[k1+1]*n, cix, n); break;
-			    			case 3: vectMultiplyAdd3(avals[k1],avals[k1+1],avals[k1+2], b, c, aix[k1]*n, aix[k1+1]*n, aix[k1+2]*n, cix, n); break;
-		    			}
-		    			
-		    			//compute blocks of 4 rows (core inner loop)
-		    			for( int k = k1+bn; k<k2; k+=4 ) {
-		    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
-		    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
-		    			}
-					}
-			}
-			else if( n<=64 )              //MATRIX-MATRIX (skinny rhs)
-			{
-				//no blocking since b and c fit into cache anyway
-				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
-					if( a.isEmpty(i) ) 
-						continue;
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					//rest not aligned to blocks of 4 rows
-					int bn = alen%4;
-					for( int k=apos; k<apos+bn; k++ )
-	    				vectMultiplyAdd(avals[k], b, c, aix[k]*n, cix, n); 
-	    			//compute blocks of 4 rows (core inner loop)
-	    			for( int k=apos+bn; k<apos+alen; k+=4 )
-	    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
-	    					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
-				}	
-			}
-			else                          //MATRIX-MATRIX
-			{
-				//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
-				//while blocking A/C for L1/L2 yet allowing long scans (2 pages) in the inner loop over j
-				//in case of almost ultra-sparse matrices, we cannot ensure the blocking for the rhs and
-				//output - however, in this case it's unlikely that we consume every cache line in the rhs
-				
-				final int blocksizeI = (int) (8L*m*cd/m1.nonZeros);
-				final int blocksizeK = (int) (8L*m*cd/m1.nonZeros);
-				final int blocksizeJ = 1024; 
-				
-				//temporary array of current sparse positions
-				int[] curk = new int[blocksizeI];
-				
-				//blocked execution over IKJ 
-				for( int bi = rl; bi < ru; bi+=blocksizeI ) {
-					Arrays.fill(curk, 0); //reset positions
-					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) {
-						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) {
-							int bjlen = Math.min(n, bj+blocksizeJ)-bj;
 							
-							//core sub block matrix multiplication
-							for( int i=bi, cix=bi*n+bj; i<bimin; i++, cix+=n ) {
-								if( !a.isEmpty(i) ) {
-									int apos = a.pos(i);
-									int alen = a.size(i);
-									int[] aix = a.indexes(i);
-									double[] avals = a.values(i);
-									
-									int k = curk[i-bi] + apos;
-					    			//rest not aligned to blocks of 4 rows
-									int bn = alen%4;
-									for( ; k<apos+bn && aix[k]<bkmin; k++ )
-					    				vectMultiplyAdd(avals[k], b, c, aix[k]*n+bj, cix, bjlen); 
-					    			//compute blocks of 4 rows (core inner loop), allowed to exceed bkmin
-					    			for( ; k<apos+alen && aix[k]<bkmin; k+=4 )
-					    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
-					    					aix[k]*n+bj, aix[k+1]*n+bj, aix[k+2]*n+bj, aix[k+3]*n+bj, cix, bjlen );
-					    			//update positions on last bj block
-					    			if( bj+bjlen==n )
-					    				curk[i-bi] = k - apos;
-								}
-							}
+							int k = curk[i-bi] + apos;
+							//rest not aligned to blocks of 4 rows
+							int bn = alen%4;
+							for( ; k<apos+bn && aix[k]<bkmin; k++ )
+								vectMultiplyAdd(avals[k], b, c, aix[k]*n+bj, cix, bjlen); 
+							//compute blocks of 4 rows (core inner loop), allowed to exceed bkmin
+							for( ; k<apos+alen && aix[k]<bkmin; k+=4 )
+								vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+									aix[k]*n+bj, aix[k+1]*n+bj, aix[k+2]*n+bj, aix[k+3]*n+bj, cix, bjlen );
+							//update positions on last bj block
+							if( bj+bjlen==n )
+								curk[i-bi] = k - apos;
 						}
-					}
-				}
-			}
-		}
-		else
-		{
-			SparseBlock a = m1.sparseBlock;
-			for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
-			{
-				if( !a.isEmpty(i) ) 
-				{
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					
-					for(int k = apos; k < apos+alen; k++) {
-						double val = avals[k];
-						for(int j = 0, bix=aix[k]*n; j < n; j++)
-							c[cix+j] += val * b[bix+j];
 					}
 				}
 			}
@@ -1408,8 +1445,8 @@ public class LibMatrixMult
 								int[] aix = a.indexes(i);
 								double[] avals = a.values(i);	
 								
-								int k = curk[i-bi] + apos;									
-				    			for(; k < apos+alen && aix[k]<bkmin; k++) {
+								int k = curk[i-bi] + apos;
+								for(; k < apos+alen && aix[k]<bkmin; k++) {
 									if( !b.isEmpty(aix[k]) )
 										vectMultiplyAdd(avals[k], b.values(aix[k]), c, 
 											b.indexes(aix[k]), b.pos(aix[k]), cix, b.size(aix[k]));
@@ -1423,28 +1460,22 @@ public class LibMatrixMult
 		}
 		else
 		{
-			for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
-			{
-				if( !a.isEmpty(i) ) 
-				{
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);					
-					
-					for(int k = apos; k < apos+alen; k++) 
-					{
-						double val = avals[k];
-						if( !b.isEmpty(aix[k]) ) 
-						{
-							int bpos = b.pos(aix[k]);
-							int blen = b.size(aix[k]);
-							int[] bix = b.indexes(aix[k]);
-							double[] bvals = b.values(aix[k]);	
-							for(int j = bpos; j < bpos+blen; j++)
-								c[cix+bix[j]] += val * bvals[j];								
-						}
-					}						
+			for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n ) {
+				if( a.isEmpty(i) ) continue;
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				
+				for(int k = apos; k < apos+alen; k++) {
+					if( b.isEmpty(aix[k]) ) continue;
+					double val = avals[k];
+					int bpos = b.pos(aix[k]);
+					int blen = b.size(aix[k]);
+					int[] bix = b.indexes(aix[k]);
+					double[] bvals = b.values(aix[k]);
+					for(int j = bpos; j < bpos+blen; j++)
+						c[cix+bix[j]] += val * bvals[j];
 				}
 			}
 		}

@@ -210,12 +210,9 @@ public class LibMatrixBincell
 		{
 			return;
 		}
-	
-		int rlen = m1.rlen;
-		int clen = m1.clen;
-		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
-		if(    atype == BinaryAccessType.MATRIX_COL_VECTOR //MATRIX - VECTOR
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR //MATRIX - VECTOR
 			|| atype == BinaryAccessType.MATRIX_ROW_VECTOR)  
 		{
 			//note: m2 vector and hence always dense
@@ -232,213 +229,24 @@ public class LibMatrixBincell
 		}
 		else //MATRIX - MATRIX
 		{
-			if(m1.sparse && m2.sparse)
-			{
-				if(ret.sparse)
-					ret.allocateSparseRowsBlock();	
-				
-				//both sparse blocks existing
-				if(m1.sparseBlock!=null && m2.sparseBlock!=null)
-				{
-					SparseBlock lsblock = m1.sparseBlock;
-					SparseBlock rsblock = m2.sparseBlock;
-					
-					if( ret.sparse && lsblock.isAligned(rsblock) )
-					{
-						SparseBlock c = ret.sparseBlock;
-						for(int r=0; r<rlen; r++) 
-							if( !lsblock.isEmpty(r) ) {
-								int alen = lsblock.size(r);
-								int apos = lsblock.pos(r);
-								int[] aix = lsblock.indexes(r);
-								double[] avals = lsblock.values(r);
-								double[] bvals = rsblock.values(r);
-								c.allocate(r, alen);
-								for( int j=apos; j<apos+alen; j++ ) {
-									double tmp = op.fn.execute(avals[j], bvals[j]);
-									c.append(r, aix[j], tmp);
-								}
-								ret.nonZeros += c.size(r);
-							}
-					}
-					else //general case
-					{	
-						for(int r=0; r<rlen; r++)
-						{
-							if( !lsblock.isEmpty(r) && !rsblock.isEmpty(r) ) {
-								mergeForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), lsblock.pos(r), lsblock.size(r),
-										rsblock.values(r), rsblock.indexes(r), rsblock.pos(r), rsblock.size(r), r, ret);	
-							}
-							else if( !rsblock.isEmpty(r) ) {
-								appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
-										rsblock.pos(r), rsblock.size(r), 0, r, ret);
-							}
-							else if( !lsblock.isEmpty(r) ){
-								appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
-										lsblock.pos(r), lsblock.size(r), 0, r, ret);
-							}
-							// do nothing if both not existing
-						}
-					}
-				}
-				//right sparse block existing
-				else if( m2.sparseBlock!=null )
-				{
-					SparseBlock rsblock = m2.sparseBlock;
-					
-					for(int r=0; r<Math.min(rlen, rsblock.numRows()); r++)
-						if( !rsblock.isEmpty(r) )
-						{
-							appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
-									rsblock.pos(r), rsblock.size(r), 0, r, ret);
-						}
-				}
-				//left sparse block existing
-				else
-				{
-					SparseBlock lsblock = m1.sparseBlock;
-					
-					for(int r=0; r<rlen; r++)
-						if( !lsblock.isEmpty(r) )
-						{
-							appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
-									lsblock.pos(r), lsblock.size(r), 0, r, ret);
-						}
-				}
+			if(m1.sparse && m2.sparse) {
+				safeBinaryMMSparseSparse(m1, m2, ret, op);
 			}
 			else if( !ret.sparse && (m1.sparse || m2.sparse) &&
-					(op.fn instanceof Plus || op.fn instanceof Minus ||
-					op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply ||
-					(op.fn instanceof Multiply && !m2.sparse )))
-			{
-				//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
-				ret.allocateDenseBlock();
-				final int m = ret.rlen;
-				final int n = ret.clen;
-				double[] c = ret.denseBlock;
-				
-				//1) process left input: assignment
-				
-				if( m1.sparse ) //SPARSE left
-				{
-					if( m1.sparseBlock != null )
-					{
-						SparseBlock a = m1.sparseBlock;
-						
-						for( int i=0, ix=0; i<m; i++, ix+=n ) {
-							if( !a.isEmpty(i) )
-							{
-								int apos = a.pos(i);
-								int alen = a.size(i);
-								int[] aix = a.indexes(i);
-								double[] avals = a.values(i);
-								for(int k = apos; k < apos+alen; k++) 
-									c[ix+aix[k]] = avals[k];
-							}
-						}
-					}
-				}
-				else //DENSE left
-				{
-					if( !m1.isEmptyBlock(false) ) 
-						System.arraycopy(m1.denseBlock, 0, c, 0, m*n);
-					else
-						Arrays.fill(ret.denseBlock, 0, m*n, 0); 
-				}
-				
-				//2) process right input: op.fn (+,-,*), * only if dense
-				long lnnz = 0;
-				if( m2.sparse ) //SPARSE right
-				{				
-					if(m2.sparseBlock!=null)
-					{
-						SparseBlock a = m2.sparseBlock;
-						
-						for( int i=0, ix=0; i<m; i++, ix+=n ) {
-							if( !a.isEmpty(i) ) {
-								int apos = a.pos(i);
-								int alen = a.size(i);
-								int[] aix = a.indexes(i);
-								double[] avals = a.values(i);
-								for(int k = apos; k < apos+alen; k++) 
-									c[ix+aix[k]] = op.fn.execute(c[ix+aix[k]], avals[k]);
-							}
-							//exploit temporal locality of rows
-							lnnz += ret.recomputeNonZeros(i, i, 0, clen-1);
-						}
-					}
-				}
-				else //DENSE right
-				{
-					if( !m2.isEmptyBlock(false) ) {
-						double[] a = m2.denseBlock;
-						for( int i=0; i<m*n; i++ ) {
-							c[i] = op.fn.execute(c[i], a[i]);
-							lnnz += (c[i]!=0) ? 1 : 0;
-						}
-					}
-					else if(op.fn instanceof Multiply)
-						Arrays.fill(ret.denseBlock, 0, m*n, 0); 
-				}
-				
-				//3) recompute nnz
-				ret.setNonZeros(lnnz);
+				(op.fn instanceof Plus || op.fn instanceof Minus ||
+				op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply ||
+				(op.fn instanceof Multiply && !m2.sparse ))) {
+				safeBinaryMMSparseDenseDense(m1, m2, ret, op);
 			}
 			else if( !ret.sparse && !m1.sparse && !m2.sparse 
-					&& m1.denseBlock!=null && m2.denseBlock!=null )
-			{
-				ret.allocateDenseBlock();
-				final int m = ret.rlen;
-				final int n = ret.clen;
-				double[] a = m1.denseBlock;
-				double[] b = m2.denseBlock;
-				double[] c = ret.denseBlock;
-				ValueFunction fn = op.fn;
-				
-				//compute dense-dense binary, maintain nnz on-the-fly
-				int lnnz = 0;
-				for( int i=0; i<m*n; i++ ) {
-					c[i] = fn.execute(a[i], b[i]);
-					lnnz += (c[i]!=0)? 1 : 0;
-				}
-				ret.setNonZeros(lnnz);
+				&& m1.denseBlock!=null && m2.denseBlock!=null ) {
+				safeBinaryMMDenseDenseDense(m1, m2, ret, op);
 			}
-			else if( skipEmpty && (m1.sparse || m2.sparse) ) 
-			{
-				SparseBlock a = m1.sparse ? m1.sparseBlock : m2.sparseBlock;
-				if( a == null )
-					return;
-				
-				//prepare second input and allocate output
-				MatrixBlock b = m1.sparse ? m2 : m1;
-				ret.allocateBlock();
-				
-				for( int i=0; i<a.numRows(); i++ ) {
-					if( a.isEmpty(i) ) continue;
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					if( ret.sparse && !b.sparse )
-						ret.sparseBlock.allocate(i, alen);
-					for(int k = apos; k < apos+alen; k++) {
-						double in2 = b.quickGetValue(i, aix[k]);
-						if( in2==0 ) continue;
-						double val = op.fn.execute(avals[k], in2);
-						ret.appendValue(i, aix[k], val);
-					}
-				}
+			else if( skipEmpty && (m1.sparse || m2.sparse) ) {
+				safeBinaryMMSparseDenseSkip(m1, m2, ret, op);
 			}
-			else //generic case
-			{
-				for(int r=0; r<rlen; r++)
-					for(int c=0; c<clen; c++) {
-						double in1 = m1.quickGetValue(r, c);
-						double in2 = m2.quickGetValue(r, c);
-						if( in1==0 && in2==0) continue;
-						double val = op.fn.execute(in1, in2);
-						ret.appendValue(r, c, val);
-					}
+			else { //generic case
+				safeBinaryMMGeneric(m1, m2, ret, op);
 			}
 		}
 	}
@@ -694,7 +502,7 @@ public class LibMatrixBincell
 						for( int j=0; j<blen; j++ ) {
 							double v1 = m1.quickGetValue(i, bix[j]);
 							double v = op.fn.execute( v1, bvals[j] );
-							ret.appendValue(i, bix[j], v);					
+							ret.appendValue(i, bix[j], v);
 						}
 					}
 				}
@@ -731,17 +539,229 @@ public class LibMatrixBincell
 		}
 		else {
 			for(int r=0; r<rlen; r++) {
-				double v1 = m1.quickGetValue(r, 0);		
+				double v1 = m1.quickGetValue(r, 0);
 				for(int c=0; c<clen; c++)
 				{
 					double v2 = m2.quickGetValue(0, c);
 					double v = op.fn.execute( v1, v2 );
-					ret.appendValue(r, c, v);	
+					ret.appendValue(r, c, v);
 				}
-			}	
-		}	
-			
+			}
+		}
+		
 		//no need to recomputeNonZeros since maintained in append value
+	}
+	
+	private static void safeBinaryMMSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		final int rlen = m1.rlen;
+		if(ret.sparse)
+			ret.allocateSparseRowsBlock();
+		
+		//both sparse blocks existing
+		if(m1.sparseBlock!=null && m2.sparseBlock!=null)
+		{
+			SparseBlock lsblock = m1.sparseBlock;
+			SparseBlock rsblock = m2.sparseBlock;
+			
+			if( ret.sparse && lsblock.isAligned(rsblock) )
+			{
+				SparseBlock c = ret.sparseBlock;
+				for(int r=0; r<rlen; r++) 
+					if( !lsblock.isEmpty(r) ) {
+						int alen = lsblock.size(r);
+						int apos = lsblock.pos(r);
+						int[] aix = lsblock.indexes(r);
+						double[] avals = lsblock.values(r);
+						double[] bvals = rsblock.values(r);
+						c.allocate(r, alen);
+						for( int j=apos; j<apos+alen; j++ ) {
+							double tmp = op.fn.execute(avals[j], bvals[j]);
+							c.append(r, aix[j], tmp);
+						}
+						ret.nonZeros += c.size(r);
+					}
+			}
+			else //general case
+			{
+				for(int r=0; r<rlen; r++) {
+					if( !lsblock.isEmpty(r) && !rsblock.isEmpty(r) ) {
+						mergeForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), lsblock.pos(r), lsblock.size(r),
+							rsblock.values(r), rsblock.indexes(r), rsblock.pos(r), rsblock.size(r), r, ret);
+					}
+					else if( !rsblock.isEmpty(r) ) {
+						appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
+							rsblock.pos(r), rsblock.size(r), 0, r, ret);
+					}
+					else if( !lsblock.isEmpty(r) ){
+						appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
+							lsblock.pos(r), lsblock.size(r), 0, r, ret);
+					}
+					// do nothing if both not existing
+				}
+			}
+		}
+		//right sparse block existing
+		else if( m2.sparseBlock!=null )
+		{
+			SparseBlock rsblock = m2.sparseBlock;
+			for(int r=0; r<Math.min(rlen, rsblock.numRows()); r++) {
+				if( rsblock.isEmpty(r) ) continue;
+				appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
+					rsblock.pos(r), rsblock.size(r), 0, r, ret);
+			}
+		}
+		//left sparse block existing
+		else
+		{
+			SparseBlock lsblock = m1.sparseBlock;
+			for(int r=0; r<rlen; r++) {
+				if( lsblock.isEmpty(r) ) continue;
+				appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
+					lsblock.pos(r), lsblock.size(r), 0, r, ret);
+			}
+		}
+	}
+	
+	private static void safeBinaryMMSparseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
+		ret.allocateDenseBlock();
+		final int m = ret.rlen;
+		final int n = ret.clen;
+		double[] c = ret.denseBlock;
+		
+		//1) process left input: assignment
+		
+		if( m1.sparse ) //SPARSE left
+		{
+			if( m1.sparseBlock != null )
+			{
+				SparseBlock a = m1.sparseBlock;
+				
+				for( int i=0, ix=0; i<m; i++, ix+=n ) {
+					if( !a.isEmpty(i) )
+					{
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for(int k = apos; k < apos+alen; k++) 
+							c[ix+aix[k]] = avals[k];
+					}
+				}
+			}
+		}
+		else //DENSE left
+		{
+			if( !m1.isEmptyBlock(false) ) 
+				System.arraycopy(m1.denseBlock, 0, c, 0, m*n);
+			else
+				Arrays.fill(ret.denseBlock, 0, m*n, 0); 
+		}
+		
+		//2) process right input: op.fn (+,-,*), * only if dense
+		long lnnz = 0;
+		if( m2.sparse ) //SPARSE right
+		{
+			if(m2.sparseBlock!=null)
+			{
+				SparseBlock a = m2.sparseBlock;
+				
+				for( int i=0, ix=0; i<m; i++, ix+=n ) {
+					if( !a.isEmpty(i) ) {
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for(int k = apos; k < apos+alen; k++) 
+							c[ix+aix[k]] = op.fn.execute(c[ix+aix[k]], avals[k]);
+					}
+					//exploit temporal locality of rows
+					lnnz += ret.recomputeNonZeros(i, i, 0, n-1);
+				}
+			}
+		}
+		else //DENSE right
+		{
+			if( !m2.isEmptyBlock(false) ) {
+				double[] a = m2.denseBlock;
+				for( int i=0; i<m*n; i++ ) {
+					c[i] = op.fn.execute(c[i], a[i]);
+					lnnz += (c[i]!=0) ? 1 : 0;
+				}
+			}
+			else if(op.fn instanceof Multiply)
+				Arrays.fill(ret.denseBlock, 0, m*n, 0); 
+		}
+		
+		//3) recompute nnz
+		ret.setNonZeros(lnnz);
+	}
+	
+	private static void safeBinaryMMDenseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		ret.allocateDenseBlock();
+		final int m = ret.rlen;
+		final int n = ret.clen;
+		double[] a = m1.denseBlock;
+		double[] b = m2.denseBlock;
+		double[] c = ret.denseBlock;
+		ValueFunction fn = op.fn;
+		
+		//compute dense-dense binary, maintain nnz on-the-fly
+		int lnnz = 0;
+		for( int i=0; i<m*n; i++ ) {
+			c[i] = fn.execute(a[i], b[i]);
+			lnnz += (c[i]!=0)? 1 : 0;
+		}
+		ret.setNonZeros(lnnz);
+	}
+	
+	private static void safeBinaryMMSparseDenseSkip(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		SparseBlock a = m1.sparse ? m1.sparseBlock : m2.sparseBlock;
+		if( a == null )
+			return;
+		
+		//prepare second input and allocate output
+		MatrixBlock b = m1.sparse ? m2 : m1;
+		ret.allocateBlock();
+		
+		for( int i=0; i<a.numRows(); i++ ) {
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			if( ret.sparse && !b.sparse )
+				ret.sparseBlock.allocate(i, alen);
+			for(int k = apos; k < apos+alen; k++) {
+				double in2 = b.quickGetValue(i, aix[k]);
+				if( in2==0 ) continue;
+				double val = op.fn.execute(avals[k], in2);
+				ret.appendValue(i, aix[k], val);
+			}
+		}
+	}
+	
+	private static void safeBinaryMMGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		int rlen = m1.rlen;
+		int clen = m2.clen;
+		for(int r=0; r<rlen; r++)
+			for(int c=0; c<clen; c++) {
+				double in1 = m1.quickGetValue(r, c);
+				double in2 = m2.quickGetValue(r, c);
+				if( in1==0 && in2==0) continue;
+				double val = op.fn.execute(in1, in2);
+				ret.appendValue(r, c, val);
+			}
 	}
 	
 	/**
@@ -1254,6 +1274,4 @@ public class LibMatrixBincell
 			result.appendValue(resultRow, cols2[j], v);
 		}
 	}
-	
 }
-

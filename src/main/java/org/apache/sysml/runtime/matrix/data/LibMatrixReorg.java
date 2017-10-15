@@ -859,8 +859,8 @@ public class LibMatrixReorg
 			if( cl > 0 ) {
 				for( int i=bi; i<bimin; i++ )
 					if( !a.isEmpty(i) ) {
-						int pos = a.posFIndexGTE(i, cl);
-						ix[i-bi] = (pos>=0) ? pos : a.size(i);
+						int j = a.posFIndexGTE(i, cl);
+						ix[i-bi] = (j>=0) ? j : a.size(i);
 					}
 			}
 			
@@ -868,19 +868,19 @@ public class LibMatrixReorg
 				int bjmin = Math.min(bj+blocksizeJ, cu);
 
 				//core block transpose operation
-				for( int i=bi, iix=0; i<bimin; i++, iix++ ) {
+				for( int i=bi; i<bimin; i++ ) {
 					if( a.isEmpty(i) ) continue;
 					
 					int apos = a.pos(i);
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
 					double[] avals = a.values(i);
-					int j = ix[iix]; //last block boundary
-					for( ; j<alen && aix[j]<bjmin; j++ ) {
-						c.allocate(aix[apos+j], ennz2,n2);
-						c.append(aix[apos+j], i, avals[apos+j]);
+					int j = ix[i-bi] + apos; //last block boundary
+					for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
+						c.allocate(aix[j], ennz2,n2);
+						c.append(aix[j], i, avals[j]);
 					}
-					ix[iix] = j; //keep block boundary
+					ix[i-bi] = j - apos; //keep block boundary
 				}
 			}
 		}

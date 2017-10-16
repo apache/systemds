@@ -68,16 +68,16 @@ public class CNodeBinary extends CNode
 			return ssComm || vsComm || vvComm;
 		}
 		
-		public String getTemplate(boolean sparse, boolean scalarVector, boolean scalarInput) {
+		public String getTemplate(boolean sparseLhs, boolean sparseRhs, boolean scalarVector, boolean scalarInput) {
 			switch (this) {
 				case DOT_PRODUCT:   
-					return sparse ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
+					return sparseLhs ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
 									"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 				case VECT_MATRIXMULT:   
-					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" :
+					return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" :
 									"    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 				case VECT_OUTERMULT_ADD:   
-					return sparse ? "    LibSpoofPrimitives.vectOuterMultAdd(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POS2%, %POSOUT%, alen, %LEN1%, %LEN2%);\n" :
+					return sparseLhs ? "    LibSpoofPrimitives.vectOuterMultAdd(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POS2%, %POSOUT%, alen, %LEN1%, %LEN2%);\n" :
 									"    LibSpoofPrimitives.vectOuterMultAdd(%IN1%, %IN2%, %OUT%, %POS1%, %POS2%, %POSOUT%, %LEN1%, %LEN2%);\n";
 				
 				//vector-scalar-add operations
@@ -96,10 +96,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATEREQUAL_ADD: {
 					String vectName = getVectorPrimitiveName();
 					if( scalarVector )
-						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" : 
+						return sparseLhs ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" : 
 										"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
 					else	
-						return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : 
+						return sparseLhs ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : 
 										"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
 				
@@ -119,10 +119,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATEREQUAL_SCALAR: {
 					String vectName = getVectorPrimitiveName();
 					if( scalarVector )
-						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" : 
+						return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" : 
 										"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
 					else	
-						return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
+						return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
 										"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
 				
@@ -130,7 +130,7 @@ public class CNodeBinary extends CNode
 					if( scalarInput )
 						return  "    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1%, %IN2%);\n";
 					else
-						return sparse ? 
+						return sparseLhs ? 
 								"    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
 								"    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				
@@ -140,7 +140,7 @@ public class CNodeBinary extends CNode
 				case VECT_MINUS:
 				case VECT_PLUS:
 				case VECT_MIN:
-				case VECT_MAX:	
+				case VECT_MAX:
 				case VECT_EQUAL:
 				case VECT_NOTEQUAL:
 				case VECT_LESS:
@@ -148,8 +148,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATER:
 				case VECT_GREATEREQUAL: {
 					String vectName = getVectorPrimitiveName();
-					return sparse ? 
+					return sparseLhs ? 
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" : 
+						   sparseRhs ?
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" : 
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 				}
 				
@@ -269,14 +271,15 @@ public class CNodeBinary extends CNode
 		sb.append(_inputs.get(1).codegen(sparse));
 		
 		//generate binary operation (use sparse template, if data input)
-		boolean lsparse = sparse 
-			&& ((_inputs.get(0) instanceof CNodeData && _inputs.get(0).getVarname().startsWith("a"))
-			||(_inputs.get(1) instanceof CNodeData && _inputs.get(1).getVarname().startsWith("a")));
+		boolean lsparseLhs = sparse && _inputs.get(0) instanceof CNodeData 
+			&& _inputs.get(0).getVarname().startsWith("a");
+		boolean lsparseRhs = sparse && _inputs.get(1) instanceof CNodeData 
+			&& _inputs.get(1).getVarname().startsWith("a");	
 		boolean scalarInput = _inputs.get(0).getDataType().isScalar();
 		boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 			&& _inputs.get(1).getDataType().isMatrix());
 		String var = createVarname();
-		String tmp = _type.getTemplate(lsparse, scalarVector, scalarInput);
+		String tmp = _type.getTemplate(lsparseLhs, lsparseRhs, scalarVector, scalarInput);
 		tmp = tmp.replace("%TMP%", var);
 		
 		//replace input references and start indexes

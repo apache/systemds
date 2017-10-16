@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 Xfile = $X; # input matrix X of size m x n
-Wfile = $W; # original row factor of size m x r
-Hfile = $H; # original col factor of size r x n
+Ufile = $U; # original row factor of size m x r
+Vfile = $V; # original col factor of size r x n
 m = $rows; # no. of rows of X
 n = $cols; # no. of cols of X
 r = $rank; # rank of factorization
@@ -30,15 +30,18 @@ sigma = ifdef ($sigma, 0.01); # variance of Gaussian noise
 fmt = ifdef ($fmt, "binary"); # output format
 
 # generate original factors by sampling from a normal(0,1.0) distribution
-W = rand(rows = m, cols = r, pdf = "normal", seed = 123);
-H = rand(rows = r, cols = n, pdf = "normal", seed = 456);
+U = rand(rows = m, cols = r, pdf = "normal", seed = 123);
+V = rand(rows = n, cols = r, pdf = "normal", seed = 456);
 
 I = floor(rand(rows = nnz, cols = 1, min = 1, max = m + 0.999999999));
 J = floor(rand(rows = nnz, cols = 1, min = 1, max = n + 0.999999999));
 X = rand(rows = nnz, cols = 1, pdf = "normal") * sqrt(sigma);
 N = table(I, J, X);
-T = (N != 0);
-X = T * (W %*% H) + T * N;
+X = (N != 0) * (U %*% t(V)) + N;
 write(X, Xfile, format = fmt);
-write(W, Wfile, format = fmt);
-write(H, Hfile, format = fmt);
+if( Ufile != " " )
+  write(U, Ufile, format = fmt);
+if( Vfile != " " ) {
+  V = t(V);
+  write(V, Vfile, format = fmt);
+}

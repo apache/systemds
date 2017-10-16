@@ -209,8 +209,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<>();
+				int outLen = out.getNumRows() * out.getNumColumns();
 				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParColAggTask(a, b, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
+					tasks.add(new ParColAggTask(a, b, scalars, n, n2, outLen, i*blklen, Math.min((i+1)*blklen, m)));
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 				//aggregate partial results
 				int len = _type.isColumnAgg() ? out.getNumRows()*out.getNumColumns() : 1;
@@ -343,17 +344,16 @@ public abstract class SpoofRowwise extends SpoofOperator
 		private final MatrixBlock _a;
 		private final SideInput[] _b;
 		private final double[] _scalars;
-		private final int _clen;
-		private final int _clen2;
-		private final int _rl;
-		private final int _ru;
+		private final int _clen, _clen2, _outLen;
+		private final int _rl, _ru;
 
-		protected ParColAggTask( MatrixBlock a, SideInput[] b, double[] scalars, int clen, int clen2, int rl, int ru ) {
+		protected ParColAggTask( MatrixBlock a, SideInput[] b, double[] scalars, int clen, int clen2, int outLen, int rl, int ru ) {
 			_a = a;
 			_b = b;
 			_scalars = scalars;
 			_clen = clen;
 			_clen2 = clen2;
+			_outLen = outLen;
 			_rl = rl;
 			_ru = ru;
 		}
@@ -364,7 +364,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			//allocate vector intermediates and partial output
 			if( _reqVectMem > 0 )
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
-			double[] c = new double[(_clen2>0)?_clen*_clen2 : _clen];
+			double[] c = new double[_outLen];
 			
 			if( _a instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _clen, _rl, _ru);

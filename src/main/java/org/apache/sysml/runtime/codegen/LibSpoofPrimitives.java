@@ -1829,9 +1829,9 @@ public class LibSpoofPrimitives
 		private int _len2;
 		
 		public VectorBuffer(int num, int len1, int len2) {
-			int lnum = (len2 > 0) ? 2*num : num;
+			int lnum = (len2>0 && len1!=len2) ? 2*num : num;
 			_data = new double[lnum][];
-			for( int i=0; i<num; i++ )
+			for( int i=0; i<num; i++ ) {
 				if( lnum > num ) {
 					_data[2*i] = new double[len1];
 					_data[2*i+1] = new double[len2];
@@ -1839,6 +1839,7 @@ public class LibSpoofPrimitives
 				else {
 					_data[i] = new double[len1];
 				}
+			}
 			_pos = -1;
 			_len1 = len1;
 			_len2 = len2;
@@ -1850,6 +1851,12 @@ public class LibSpoofPrimitives
 				_pos = (_pos+1>=_data.length) ? 0 : _pos+1;
 			} while( _data[_pos].length!=len );
 			return _data[_pos];
+		}
+		@SuppressWarnings("unused")
+		public boolean isReusable(int num, int len1, int len2) {
+			int lnum = (len2>0 && len1!=len2) ? 2*num : num;
+			return (_len1 == len1 && _len2 == len2
+				&& _data.length == lnum);
 		}
 	}
 }

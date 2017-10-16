@@ -1017,7 +1017,10 @@ public class OptimizerUtils
 				||(op==OpOp2.LESS     && val==0)
 				||(op==OpOp2.NOTEQUAL && val==0)
 				||(op==OpOp2.EQUAL    && val!=0)
-				||(op==OpOp2.MINUS    && val==0));
+				||(op==OpOp2.MINUS    && val==0)
+				||(op==OpOp2.PLUS     && val==0)
+				||(op==OpOp2.MAX      && val<=0)
+				||(op==OpOp2.MIN      && val>=0));
 	}
 	
 	public static double getBinaryOpSparsityConditionalSparseSafe( double sp1, OpOp2 op, LiteralOp lit ) {

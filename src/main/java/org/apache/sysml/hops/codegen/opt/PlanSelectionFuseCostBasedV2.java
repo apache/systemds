@@ -773,7 +773,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			//use streams, lambda expressions, etc to avoid unnecessary overhead
 			if( currentType == null ) {
 				for( MemoTableEntry me : memo.get(currentHopId) )
-					best = isValid(me, current) 
+					best = me.isValid() 
 						&& hasNoRefToMatPoint(currentHopId, me, matPoints, plan)
 						&& BasicPlanComparator.icompare(me, best)<0 ? me : best;
 				opened = true;

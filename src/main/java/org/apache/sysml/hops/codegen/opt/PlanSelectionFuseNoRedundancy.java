@@ -85,7 +85,7 @@ public class PlanSelectionFuseNoRedundancy extends PlanSelection
 		if( memo.contains(current.getHopID()) ) {
 			if( currentType == null ) {
 				best = memo.get(current.getHopID()).stream()
-					.filter(p -> isValid(p, current))
+					.filter(p -> p.isValid())
 					.min(new BasicPlanComparator()).orElse(null);
 			}
 			else {

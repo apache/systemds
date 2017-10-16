@@ -38,6 +38,8 @@ public class MiscPatternTest extends AutomatedTestBase
 	private static final String TEST_NAME = "miscPattern";
 	private static final String TEST_NAME1 = TEST_NAME+"1"; //Y + (X * U%*%t(V)) overlapping cell-outer
 	private static final String TEST_NAME2 = TEST_NAME+"2"; //multi-agg w/ large common subexpression 
+	private static final String TEST_NAME3 = TEST_NAME+"3"; //sum((X!=0) * (U %*% t(V) - X)^2) 
+	private static final String TEST_NAME4 = TEST_NAME+"4"; //((X!=0) * (U %*% t(V) - X)) %*% V + Y overlapping row-outer
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + MiscPatternTest.class.getSimpleName() + "/";
@@ -49,11 +51,11 @@ public class MiscPatternTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=2; i++)
+		for(int i=1; i<=4; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMiscRewrite1CP() {
 		testCodegenIntegration( TEST_NAME1, true, ExecType.CP );
 	}
@@ -68,7 +70,7 @@ public class MiscPatternTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME1, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMiscRewrite2CP() {
 		testCodegenIntegration( TEST_NAME2, true, ExecType.CP );
 	}
@@ -81,6 +83,36 @@ public class MiscPatternTest extends AutomatedTestBase
 	@Test
 	public void testCodegenMisc2SP() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenMiscRewrite3CP() {
+		testCodegenIntegration( TEST_NAME3, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenMisc3CP() {
+		testCodegenIntegration( TEST_NAME3, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenMisc3SP() {
+		testCodegenIntegration( TEST_NAME3, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenMiscRewrite4CP() {
+		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenMisc4CP() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenMisc4SP() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
@@ -128,6 +160,9 @@ public class MiscPatternTest extends AutomatedTestBase
 			else if( testname.equals(TEST_NAME2) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoof", 2)
 					&& !heavyHittersContainsSubString("sp_spoof", 2));
+			else if( testname.equals(TEST_NAME3) || testname.equals(TEST_NAME4) )
+				Assert.assertTrue(heavyHittersContainsSubString("spoofOP", "sp+spoofOP")
+					&& !heavyHittersContainsSubString("ba+*"));
 		}
 		finally {
 			rtplatform = platformOld;

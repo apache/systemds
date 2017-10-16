@@ -266,8 +266,7 @@ public class PlanAnalyzer
 			long[] refs = memo.getAllRefs(hopID);
 			for( int i=0; i<3; i++ ) {
 				if( refs[i] < 0 ) continue;
-				List<TemplateType> tmp = memo.getDistinctTemplateTypes(hopID, i);
-				
+				List<TemplateType> tmp = memo.getDistinctTemplateTypes(hopID, i, true);
 				if( memo.containsNotIn(refs[i], tmp, true, true) )
 					ret.add(new InterestingPoint(DecisionType.TEMPLATE_CHANGE, hopID, refs[i]));
 			}

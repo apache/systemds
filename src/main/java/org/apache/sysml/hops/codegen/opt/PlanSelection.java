@@ -29,7 +29,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class PlanSelection 
@@ -50,22 +49,6 @@ public abstract class PlanSelection
 	 * @param roots entry points of HOP DAG G
 	 */
 	public abstract void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots);
-	
-	/**
-	 * Determines if the given partial fusion plan is a valid entry point
-	 * of a fused operator.
-	 * 
-	 * @param me memo table entry
-	 * @param hop current hop
-	 * @return true if entry is valid as top-level plan
-	 */
-	public static boolean isValid(MemoTableEntry me, Hop hop) {
-		return (me.type == TemplateType.CELL)
-			|| (me.type == TemplateType.MAGG)
-			|| (me.type == TemplateType.ROW && !HopRewriteUtils.isTransposeOperation(hop))
-			|| (me.type == TemplateType.OUTER 
-				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)));
-	}
 	
 	protected void addBestPlan(long hopID, MemoTableEntry me) {
 		if( me == null ) return;
@@ -108,7 +91,7 @@ public abstract class PlanSelection
 		if( memo.contains(current.getHopID()) ) {
 			if( currentType == null ) {
 				best = memo.get(current.getHopID()).stream()
-					.filter(p -> isValid(p, current))
+					.filter(p -> p.isValid())
 					.min(BASE_COMPARE).orElse(null);
 			}
 			else {

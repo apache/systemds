@@ -42,11 +42,11 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 public class TemplateMultiAgg extends TemplateCell 
 {	
 	public TemplateMultiAgg() {
-		super(TemplateType.MAGG, false);
+		super(TemplateType.MAGG, CloseType.OPEN_VALID);
 	}
 	
-	public TemplateMultiAgg(boolean closed) {
-		super(TemplateType.MAGG, closed);
+	public TemplateMultiAgg(CloseType ctype) {
+		super(TemplateType.MAGG, ctype);
 	}
 
 	@Override

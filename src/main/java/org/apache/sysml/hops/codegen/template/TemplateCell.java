@@ -63,15 +63,14 @@ public class TemplateCell extends TemplateBase
 		super(TemplateType.CELL);
 	}
 	
-	public TemplateCell(boolean closed) {
-		super(TemplateType.CELL, closed);
+	public TemplateCell(CloseType ctype) {
+		super(TemplateType.CELL, ctype);
 	}
 	
-	public TemplateCell(TemplateType type, boolean closed) {
-		super(type, closed);
+	public TemplateCell(TemplateType type, CloseType ctype) {
+		super(type, ctype);
 	}
 	
-
 	@Override
 	public boolean open(Hop hop) {
 		return hop.dimsKnown() && isValidOperation(hop)
@@ -108,7 +107,7 @@ public class TemplateCell extends TemplateBase
 		else if( hop instanceof AggUnaryOp || hop instanceof AggBinaryOp )
 			return CloseType.CLOSED_INVALID;
 		else
-			return CloseType.OPEN;
+			return CloseType.OPEN_VALID;
 	}
 
 	@Override

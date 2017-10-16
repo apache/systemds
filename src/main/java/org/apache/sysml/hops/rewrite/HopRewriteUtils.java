@@ -294,6 +294,16 @@ public class HopRewriteUtils
 		return null;
 	}
 	
+	public static Hop getLargestInput(Hop hop) {
+		Hop max = null; long maxSize = -1;
+		for(Hop in : hop.getInput())
+			if(in.getLength() > maxSize) {
+				max = in;
+				maxSize = in.getLength();
+			}
+		return max;
+	}
+	
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
@@ -854,7 +864,7 @@ public class HopRewriteUtils
 	public static boolean isBinarySparseSafe(Hop hop) {
 		if( !(hop instanceof BinaryOp) )
 			return false;
-		if( isBinary(hop, OpOp2.MULT) )
+		if( isBinary(hop, OpOp2.MULT, OpOp2.DIV) )
 			return true;
 		BinaryOp bop = (BinaryOp) hop;
 		Hop lit = bop.getInput().get(0) instanceof LiteralOp ? bop.getInput().get(0) :

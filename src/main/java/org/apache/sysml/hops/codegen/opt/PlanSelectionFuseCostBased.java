@@ -559,7 +559,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		if( memo.contains(current.getHopID()) ) {
 			if( currentType == null ) {
 				best = memo.get(current.getHopID()).stream()
-					.filter(p -> isValid(p, current))
+					.filter(p -> p.isValid())
 					.filter(p -> hasNoRefToMaterialization(p, M, plan))
 					.min(new BasicPlanComparator()).orElse(null);
 				opened = true;

@@ -69,8 +69,8 @@ public class TemplateRow extends TemplateBase
 		super(TemplateType.ROW);
 	}
 	
-	public TemplateRow(boolean closed) {
-		super(TemplateType.ROW, closed);
+	public TemplateRow(CloseType ctype) {
+		super(TemplateType.ROW, ctype);
 	}
 	
 	@Override
@@ -136,8 +136,10 @@ public class TemplateRow extends TemplateBase
 		if(    (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.Row)
 			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))))
 			return CloseType.CLOSED_VALID;
+		else if( HopRewriteUtils.isTransposeOperation(hop) )
+			return CloseType.OPEN_INVALID;
 		else
-			return CloseType.OPEN;
+			return CloseType.OPEN_VALID;
 	}
 	
 	private static boolean isValidBinaryOperation(Hop hop) {

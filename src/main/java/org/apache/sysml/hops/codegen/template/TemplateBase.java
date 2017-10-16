@@ -42,35 +42,46 @@ public abstract class TemplateBase
 	}
 	
 	public enum CloseType {
-		CLOSED_VALID,
-		CLOSED_INVALID,
-		OPEN,
+		CLOSED_VALID,   //no further fusion, valid entry point
+		CLOSED_INVALID, //no further fusion, invalid entry point (to be discarded)
+		OPEN_VALID,     //further fusion allowed, valid entry point
+		OPEN_INVALID;   //further fusion allowed, but invalid entry point
+		public boolean isClosed() {
+			return (this == CLOSED_VALID || this == CloseType.CLOSED_INVALID);
+		}
+		public boolean isValid() {
+			return (this == CLOSED_VALID || this == OPEN_VALID);
+		}
 	}
 
 	protected final TemplateType _type;
-	protected final boolean _closed;
+	protected final CloseType _ctype;
 	
 	protected TemplateBase(TemplateType type) {
-		this(type, false);
+		this(type, CloseType.OPEN_VALID);
 	}
 	
-	protected TemplateBase(TemplateType type, boolean closed) {
+	protected TemplateBase(TemplateType type, CloseType ctype) {
 		_type = type;
-		_closed = closed;
+		_ctype = ctype;
 	}
 	
 	public TemplateType getType() {
 		return _type;
 	}
 	
+	public CloseType getCType() {
+		return _ctype;
+	}
+	
 	public boolean isClosed() {
-		return _closed;
+		return _ctype.isClosed();
 	}
 	
 	@Override
 	public int hashCode() {
 		return UtilFunctions.intHashCode(
-			_type.ordinal(), Boolean.hashCode(_closed));
+			_type.ordinal(), _ctype.ordinal());
 	}
 	
 	@Override
@@ -79,7 +90,7 @@ public abstract class TemplateBase
 			return false;
 		TemplateBase that = (TemplateBase)obj;
 		return _type == that._type 
-			&& _closed == that._closed;
+			&& _ctype == that._ctype;
 	}
 	
 	/////////////////////////////////////////////

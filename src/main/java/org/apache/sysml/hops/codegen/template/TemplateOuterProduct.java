@@ -51,8 +51,8 @@ public class TemplateOuterProduct extends TemplateBase {
 		super(TemplateType.OUTER);
 	}
 	
-	public TemplateOuterProduct(boolean closed) {
-		super(TemplateType.OUTER, closed);
+	public TemplateOuterProduct(CloseType ctype) {
+		super(TemplateType.OUTER, ctype);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			&&((hop instanceof UnaryOp && TemplateUtils.isOperationSupported(hop))  
 			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
 				&& (TemplateUtils.isBinaryMatrixColVector(hop) || HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
-				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) && HopRewriteUtils.isBinary(hop, OpOp2.MULT, OpOp2.DIV)) )) 
+				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)) )) 
 			|| (HopRewriteUtils.isTransposeOperation(hop) && input instanceof AggBinaryOp
 				&& !HopRewriteUtils.isOuterProductLikeMM(input)) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop)
@@ -89,18 +89,24 @@ public class TemplateOuterProduct extends TemplateBase {
 	@Override
 	public CloseType close(Hop hop) {
 		// close on second matrix multiply (after open) or unary aggregate
-		if( hop instanceof AggUnaryOp && HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+		if( (hop instanceof AggUnaryOp && (HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+				|| !HopRewriteUtils.isBinarySparseSafe(hop.getInput().get(0))))
 			|| (hop instanceof AggBinaryOp && (HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
-				|| HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(1)))) )
-			return CloseType.CLOSED_INVALID;
+				|| HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(1))
+				|| (!HopRewriteUtils.isOuterProductLikeMM(hop)
+					&& !HopRewriteUtils.isBinarySparseSafe(HopRewriteUtils.getLargestInput(hop))))) )
+ 			return CloseType.CLOSED_INVALID;
 		else if( (hop instanceof AggUnaryOp) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop) 
 					&& !HopRewriteUtils.isTransposeOperation(hop.getParent().get(0)))
 			|| (HopRewriteUtils.isTransposeOperation(hop) && hop.getInput().get(0) instanceof AggBinaryOp
 					&& !HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0)) ))
 			return CloseType.CLOSED_VALID;
+		else if( HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)
+			&& HopRewriteUtils.isBinary(hop, OpOp2.MULT, OpOp2.DIV) )
+			return CloseType.OPEN_VALID;
 		else
-			return CloseType.OPEN;
+			return CloseType.OPEN_INVALID;
 	}
 
 	@Override

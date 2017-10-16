@@ -42,6 +42,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
@@ -143,27 +144,27 @@ public class TemplateUtils
 	}
 	
 	public static TemplateBase createTemplate(TemplateType type) {
-		return createTemplate(type, false);
+		return createTemplate(type, CloseType.OPEN_VALID);
 	}
 	
-	public static TemplateBase createTemplate(TemplateType type, boolean closed) {
+	public static TemplateBase createTemplate(TemplateType type, CloseType ctype) {
 		TemplateBase tpl = null;
 		switch( type ) {
-			case CELL: tpl = new TemplateCell(closed); break;
-			case ROW: tpl = new TemplateRow(closed); break;
-			case MAGG: tpl = new TemplateMultiAgg(closed); break;
-			case OUTER: tpl = new TemplateOuterProduct(closed); break;
+			case CELL: tpl = new TemplateCell(ctype); break;
+			case ROW: tpl = new TemplateRow(ctype); break;
+			case MAGG: tpl = new TemplateMultiAgg(ctype); break;
+			case OUTER: tpl = new TemplateOuterProduct(ctype); break;
 		}
 		return tpl;
 	}
 	
-	public static TemplateBase[] createCompatibleTemplates(TemplateType type, boolean closed) {
+	public static TemplateBase[] createCompatibleTemplates(TemplateType type, CloseType ctype) {
 		TemplateBase[] tpl = null;
 		switch( type ) {
-			case CELL: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRow(closed)}; break;
-			case ROW: tpl = new TemplateBase[]{new TemplateRow(closed)}; break;
-			case MAGG: tpl = new TemplateBase[]{new TemplateMultiAgg(closed)}; break;
-			case OUTER: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
+			case CELL: tpl = new TemplateBase[]{new TemplateCell(ctype), new TemplateRow(ctype)}; break;
+			case ROW: tpl = new TemplateBase[]{new TemplateRow(ctype)}; break;
+			case MAGG: tpl = new TemplateBase[]{new TemplateMultiAgg(ctype)}; break;
+			case OUTER: tpl = new TemplateBase[]{new TemplateOuterProduct(ctype)}; break;
 		}
 		return tpl;
 	}

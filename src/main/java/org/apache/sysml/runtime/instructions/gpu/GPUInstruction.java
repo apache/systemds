@@ -78,6 +78,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_DENSE_MATRIX_DENSE_MATRIX_LIB = 	"Mdmdm";	// time spent in matrix mult of dense matrices
 	public final static String MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB = 	"Msmdv";	// time spent in matrix mult of sparse matrix and dense vector
 	public final static String MISC_TIMER_SPARSE_MATRIX_SPARSE_MATRIX_LIB = "Msmsm";  // time spent in matrix mult of sparse matrices
+	public final static String MISC_TIMER_SPARSE_MATRIX_DENSE_MATRIX_LIB = "Msmdm";  // time spent in matrix mult of sparse matrices
 	public final static String MISC_TIMER_SYRK_LIB = 												"Msyrk"; 	// time spent in symmetric rank-k update
 
 	// Other BLAS instructions

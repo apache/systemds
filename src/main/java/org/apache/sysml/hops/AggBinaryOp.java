@@ -371,40 +371,18 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		double ret = 0;
 
 		if (isGPUEnabled()) {
-			// In GPU Mode, intermediate memory is only needed in case of one of the matrix blocks is sparse
-			// When sparse block is converted to dense and a dense MM takes place, we need (dim1 * dim2)
-			// When dense block is converted to sparse and a sparse MM takes place, we need (dim1 * dim2 * 2)
-
 			Hop in1 = _input.get(0);
 			Hop in2 = _input.get(1);
 			double in1Sparsity = OptimizerUtils.getSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
 			double in2Sparsity = OptimizerUtils.getSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
-
 			boolean in1Sparse = in1Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
 			boolean in2Sparse = in2Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
-
-			boolean in1UltraSparse = in1Sparsity < MatrixBlock.ULTRA_SPARSITY_TURN_POINT;
-			boolean in2UltraSparse = in2Sparsity < MatrixBlock.ULTRA_SPARSITY_TURN_POINT;
-
-			// For Matmult X * Y, if X is sparse, Y is dense, X is converted to dense
-			// If X is ultrasparse, Y is converted to sparse
-			if (in1Sparse ^ in2Sparse) { // one sparse, one dense
-				if (in1Sparse) {
-					if (in1UltraSparse) {
-						ret += 2 * OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
-					} else {
-						ret += OptimizerUtils.estimateSizeExactSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
-					}
-				} else if (in2Sparse) {
-					if (in2UltraSparse) {
-						ret += 2 * OptimizerUtils.estimateSizeExactSparsity(in1.getDim1(), in1.getDim2(), in1.getNnz());
-					} else {
-						ret += OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
-					}
-				}
-
+			if(!in1Sparse && in2Sparse) {
+				// Only in dense-sparse cases, we need additional memory budget for GPU
+				ret += Math.min(
+						OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT),
+						OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), MatrixBlock.SPARSITY_TURN_POINT));
 			}
-
 		}
 
 		//account for potential final dense-sparse transformation (worst-case sparse representation)

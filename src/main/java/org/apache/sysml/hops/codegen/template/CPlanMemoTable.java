@@ -439,7 +439,7 @@ public class CPlanMemoTable
 				sb.append(input(i));
 			}
 			if( !isValid() )
-				sb.append(", x");
+				sb.append("|x");
 			sb.append(")");
 			return sb.toString();
 		}

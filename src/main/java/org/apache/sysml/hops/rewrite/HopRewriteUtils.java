@@ -988,7 +988,7 @@ public class HopRewriteUtils
 	
 	public static boolean isColumnRangeIndexing(IndexingOp hop) {
 		return ((isLiteralOfValue(hop.getInput().get(1), 1)
-			&& isLiteralOfValue(hop.getInput().get(2), hop.getDim1()))
+			&& isLiteralOfValue(hop.getInput().get(2), hop.getInput().get(0).getDim1()))
 			|| hop.getDim1() == hop.getInput().get(0).getDim1())
 			&& isLiteralOfValue(hop.getInput().get(3), 1)
 			&& hop.getInput().get(4) instanceof LiteralOp;

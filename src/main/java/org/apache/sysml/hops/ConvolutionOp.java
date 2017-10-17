@@ -639,6 +639,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			return;
 		}
 		
+		// Reset the _cachedParams to avoid incorrect sizes
+		_cachedParams = new ConvolutionParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
+		
 		switch(op) 
 		{
 			case MAX_POOLING:

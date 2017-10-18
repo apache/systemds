@@ -274,7 +274,6 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		}
 		else if(transb == CUSPARSE_OPERATION_NON_TRANSPOSE) {
 			LOG.debug(" GPU Sparse-Dense Matrix Multiply (no-rhs transpose) ");
-			System.out.println(">>>>>>> transa" + transa + "," + transb + "," + param.m + "," + param.n + "," + param.k + "," + param.lda + "," + param.ldb + "," + param.ldc);
 			JCusparse.cusparseDcsrmm(handle, transa, param.m, param.n, param.k, 
 					toInt(A.nnz), one(), A.descr, A.val, A.rowPtr, A.colInd, 
 					B, param.ldb, zero(), C, param.ldc);
@@ -327,8 +326,8 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			LOG.debug(" GPU Dense Vector-Matrix Multiply");
 			// swap transb
 			transb = transb == cublasOperation.CUBLAS_OP_T ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
-			int rightNumRows = (transb == CUSPARSE_OPERATION_NON_TRANSPOSE) ?  param.k : param.n;
-			int rightNumCols = (transb == CUSPARSE_OPERATION_NON_TRANSPOSE) ? param.n : param.k;
+			int rightNumRows = (transb == CUSPARSE_OPERATION_TRANSPOSE) ?  param.k : param.n;
+			int rightNumCols = (transb == CUSPARSE_OPERATION_TRANSPOSE) ? param.n : param.k;
 			JCublas2.cublasDgemv(handle, transb, rightNumRows, rightNumCols, one(), B, param.ldb, A, 1, zero(), C, 1);
 			kernel = GPUInstruction.MISC_TIMER_DENSE_VECTOR_DENSE_MATRIX_LIB;
 		} else if (param.n == 1){

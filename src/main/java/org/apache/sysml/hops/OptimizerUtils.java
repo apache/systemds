@@ -709,7 +709,7 @@ public class OptimizerUtils
 		//check for guaranteed existence of empty blocks (less nnz than total number of blocks)
 		long tnrblks = (long)Math.ceil((double)rlen/brlen);
 		long tncblks = (long)Math.ceil((double)clen/bclen);
-		long nnz = (long) Math.ceil(sp * rlen * clen);		
+		long nnz = (long) Math.ceil(sp * rlen * clen);
 		if( nnz < tnrblks * tncblks ) {
 			long lrlen = Math.min(rlen, brlen);
 			long lclen = Math.min(clen, bclen);

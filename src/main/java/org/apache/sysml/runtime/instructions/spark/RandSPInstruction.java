@@ -350,7 +350,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		LongStream nnz = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
 		PrimitiveIterator.OfLong nnzIter = nnz.iterator();
 		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( rows, cols, rowsInBlock, 
-			colsInBlock, rows*cols*sparsity); //overestimate for on disk, ensures hdfs block per partition
+			colsInBlock, sparsity); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long numBlocks = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock).getNumBlocks();
 		long numColBlocks = (long)Math.ceil((double)cols/(double)colsInBlock);

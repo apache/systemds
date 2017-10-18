@@ -1373,8 +1373,8 @@ public class BinaryOp extends Hop
 
 	private static boolean requiresPartitioning( Hop rightInput )
 	{
-		return (   rightInput.dimsKnown() //known input size 
-                && rightInput.getDim1()*rightInput.getDim2() > DistributedCacheInput.PARTITION_SIZE);
+		return ( rightInput.dimsKnown() //known input size 
+			&& rightInput.getDim1()*rightInput.getDim2() > DistributedCacheInput.PARTITION_SIZE);
 	}
 	
 	public static boolean requiresReplication( Hop left, Hop right )
@@ -1393,9 +1393,10 @@ public class BinaryOp extends Hop
 		long m1_cpb = left.getColsInBlock();
 		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
-		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
+		if( OptimizerUtils.ALLOW_OPERATOR_FUSION
+			&& right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
 			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
-		    ||  (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
+			|| (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
 		{
 			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
 		}
@@ -1430,9 +1431,10 @@ public class BinaryOp extends Hop
 		}
 		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
-		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
+		if( OptimizerUtils.ALLOW_OPERATOR_FUSION
+			&& right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
 			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
-		    ||  (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
+			|| (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
 		{
 			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
 		}

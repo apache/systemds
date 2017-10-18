@@ -26,6 +26,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -328,10 +329,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			String out = null;
 			if( data instanceof MatrixObject ) {
 				MatrixBlock matrix = (MatrixBlock) data.acquireRead();
+				warnOnTrunction(matrix, rows, cols);
 				out = DataConverter.toString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
 			}
 			else if( data instanceof FrameObject ) {
 				FrameBlock frame = (FrameBlock) data.acquireRead();
+				warnOnTrunction(frame, rows, cols);
 				out = DataConverter.toString(frame, sparse, separator, lineseparator, rows, cols, decimal);
 			}
 			else {
@@ -342,6 +345,17 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
-		}		
+		}
+	}
+	
+	private void warnOnTrunction(CacheBlock data, int rows, int cols) {
+		//warn on truncation because users might not be aware and use toString for verification
+		if( (getParam("rows")==null && data.getNumRows()>rows)
+			|| (getParam("cols")==null && data.getNumColumns()>cols) )
+		{
+			LOG.warn("Truncating "+data.getClass().getSimpleName()+" of size "
+				+ data.getNumRows()+"x"+data.getNumColumns()+" to "+rows+"x"+cols+". "
+				+ "Use toString(X, rows=..., cols=...) if necessary.");
+		}
 	}
 }

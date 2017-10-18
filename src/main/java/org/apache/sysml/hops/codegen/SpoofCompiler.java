@@ -139,6 +139,10 @@ public class SpoofCompiler
 			return this == FUSE_ALL
 				|| this == FUSE_NO_REDUNDANCY;
 		}
+		public boolean isCostBased() {
+			return this == FUSE_COST_BASED_V2
+				|| this == FUSE_COST_BASED;
+		}
 	}
 
 	public enum PlanCachePolicy {
@@ -399,14 +403,14 @@ public class SpoofCompiler
 					
 					//explain debug output cplans or generated source code
 					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " 
-							+ cplan.getKey() + ", line "+tmp.getValue().getBeginLine() + "):");
+						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " + cplan.getKey() + 
+							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
 						LOG.info(tmp.getValue().getClassname()
 							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
 					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated code for HopID: "
-							+ cplan.getKey() + ", line "+tmp.getValue().getBeginLine() + "):");
+						LOG.info("Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() + 
+							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
 						LOG.info(src);
 					}
 					

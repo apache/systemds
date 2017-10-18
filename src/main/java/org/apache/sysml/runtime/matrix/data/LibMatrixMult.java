@@ -3567,13 +3567,13 @@ public class LibMatrixMult
 	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
 		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
-			&& isSkinnyRightHandSide(m1.rlen, m1.clen, m2.rlen, m2.clen));
+			&& isSkinnyRightHandSide(m1.rlen, m1.clen, m2.rlen, m2.clen, true));
 	}
 	
 	//note: public for use by codegen for consistency
-	public static boolean isSkinnyRightHandSide(long m1rlen, long m1clen, long m2rlen, long m2clen) {
+	public static boolean isSkinnyRightHandSide(long m1rlen, long m1clen, long m2rlen, long m2clen, boolean inclCacheSize) {
 		return m1rlen > m2clen && m2rlen > m2clen && m2clen > 1 
-			&& m2clen < 64 && 8*m2rlen*m2clen < L2_CACHESIZE;
+			&& m2clen < 64 && (!inclCacheSize || 8*m2rlen*m2clen < L2_CACHESIZE);
 	}
 	
 	public static boolean checkParColumnAgg(MatrixBlock m1, int k, boolean inclFLOPs) {

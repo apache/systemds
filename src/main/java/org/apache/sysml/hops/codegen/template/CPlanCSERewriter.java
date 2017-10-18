@@ -56,7 +56,7 @@ public class CPlanCSERewriter
 		//step 3: reset data nodes to imprecise comparison
 		tpl.resetVisitStatusOutputs();
 		for( CNode out : outputs )
-			rSetStrictDataNodeComparision(out, true);
+			rSetStrictDataNodeComparision(out, false);
 		tpl.resetVisitStatusOutputs();
 		
 		return tpl;

@@ -33,6 +33,7 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -83,7 +84,8 @@ public class TemplateRow extends TemplateBase
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && LibMatrixMult.isSkinnyRightHandSide(
 				hop.getInput().get(0).getDim1(), hop.getInput().get(0).getDim2(), //MM
-				hop.getInput().get(1).getDim1(), hop.getInput().get(1).getDim2())
+				hop.getInput().get(1).getDim1(), hop.getInput().get(1).getDim2(),
+				SpoofCompiler.PLAN_SEL_POLICY.isCostBased())
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1
 				&& !HopRewriteUtils.isOuterProductLikeMM(hop))
 			|| (HopRewriteUtils.isTransposeOperation(hop) && hop.getParent().size()==1
@@ -152,8 +154,9 @@ public class TemplateRow extends TemplateBase
 		//check for fusable but not opening matrix multiply (vect_outer-mult)
 		Hop in1 = hop.getInput().get(0); //transpose
 		Hop in2 = hop.getInput().get(1);
-		return LibMatrixMult.isSkinnyRightHandSide(in1.getDim2(), in1.getDim1(), hop.getDim1(), hop.getDim2())
-			|| LibMatrixMult.isSkinnyRightHandSide(in2.getDim1(), in2.getDim2(), hop.getDim2(), hop.getDim1());
+		boolean inclSizes = SpoofCompiler.PLAN_SEL_POLICY.isCostBased();
+		return LibMatrixMult.isSkinnyRightHandSide(in1.getDim2(), in1.getDim1(), hop.getDim1(), hop.getDim2(), inclSizes)
+			|| LibMatrixMult.isSkinnyRightHandSide(in2.getDim1(), in2.getDim2(), hop.getDim2(), hop.getDim1(), inclSizes);
 	}
 	
 	private static boolean isPartOfValidCumAggChain(Hop hop) {

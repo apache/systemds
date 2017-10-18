@@ -174,6 +174,7 @@ public class TemplateOuterProduct extends TemplateBase {
 		}
 		else if(hop instanceof BinaryOp)
 		{
+			BinaryOp bop = (BinaryOp) hop;
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
@@ -186,8 +187,12 @@ public class TemplateOuterProduct extends TemplateBase {
 			//add lookups if required
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
-			
-			out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
+			if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
+				out = new CNodeUnary(cdata1, UnaryType.POW2);
+			else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
+				out = new CNodeUnary(cdata1, UnaryType.MULT2);
+			else
+				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof AggBinaryOp)
 		{
@@ -213,14 +218,14 @@ public class TemplateOuterProduct extends TemplateBase {
 			//final left/right matrix mult, see close
 			else {
 				if( cdata1.getDataType().isScalar() )
-					out = new CNodeBinary(cdata2, cdata1, BinType.VECT_MULT_ADD);	
+					out = new CNodeBinary(cdata2, cdata1, BinType.VECT_MULT_ADD);
 				else
-					out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);	
+					out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);
 			}
 		}
 		else if( HopRewriteUtils.isTransposeOperation(hop) ) 
 		{
-			out = tmp.get(hop.getInput().get(0).getHopID());	
+			out = tmp.get(hop.getInput().get(0).getHopID());
 		}
 		else if( hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
 			&& ((AggUnaryOp)hop).getDirection() == Direction.RowCol )

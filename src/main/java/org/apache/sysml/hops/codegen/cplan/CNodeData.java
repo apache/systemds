@@ -106,9 +106,9 @@ public class CNodeData extends CNode
 	public boolean equals(Object o) {
 		return (o instanceof CNodeData 
 			&& super.equals(o)
-			&& isLiteral() == ((CNodeData)o).isLiteral()
-			&& (isLiteral() || !_strictEquals) ? 
+			&& isLiteral() == ((CNode)o).isLiteral()
+			&& ((isLiteral() || !_strictEquals) ? 
 				_name.equals(((CNodeData)o)._name) : 
-				_hopID == ((CNodeData)o)._hopID);
+				_hopID == ((CNodeData)o)._hopID));
 	}
 }

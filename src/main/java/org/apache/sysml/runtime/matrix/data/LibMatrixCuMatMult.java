@@ -51,22 +51,52 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	private static class CuMatMultParameters {
 		public int m; public int n; public int k;  
 		public int lda;  public int ldb; public int ldc;
-		public CuMatMultParameters(long leftNumRows, long leftNumCols, long rightNumRows, long rightNumCols, 
-				boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
-			// -------------------------------------------------------------------------------------
+		private long leftNumRows; private long leftNumCols; private long rightNumRows; private long rightNumCols;
+		private boolean isLeftTransposed; private  boolean isRightTransposed;
+		public CuMatMultParameters(long leftNumRows1, long leftNumCols1, long rightNumRows1, long rightNumCols1, 
+				boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
+			leftNumRows = leftNumRows1;
+			leftNumCols = leftNumCols1;
+			rightNumRows = rightNumRows1;
+			rightNumCols = rightNumCols1;
+			isLeftTransposed = isLeftTransposed1;
+			isRightTransposed = isRightTransposed1;
+			setDimensions();
+		}
+		
+		public void rowToColumnMajor() throws DMLRuntimeException {
+			// To compensate for the input matrices being in row-major format instead of column-major (the way cublas expects)
+			boolean tmp = isLeftTransposed;
+			isLeftTransposed = isRightTransposed;
+			isRightTransposed = tmp;
+			
+			long tmp1 = leftNumRows;
+			leftNumRows = rightNumCols;
+			rightNumCols = tmp1;
+			
+			tmp1 = leftNumCols;
+			leftNumCols = rightNumRows;
+			rightNumRows = tmp1;
+			setDimensions();
+		}
+		
+		private void validate() throws DMLRuntimeException {
+			int k1 = toInt(isRightTransposed ? rightNumCols : rightNumRows);
+			if(k != k1)
+				throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1 + " [" + 
+						leftNumRows + "," + leftNumCols + "," + rightNumRows + "," + rightNumCols + "], " + isLeftTransposed + " " + isRightTransposed);
+		}
+		
+		private void setDimensions() throws DMLRuntimeException {
 			// Validate the dimensions
 			m = toInt(isLeftTransposed ? leftNumCols : leftNumRows) ;
 			n = toInt(isRightTransposed ? rightNumRows : rightNumCols);
 			k = toInt(isLeftTransposed ? leftNumRows :  leftNumCols);
-			int k1 = toInt(isRightTransposed ? rightNumCols : rightNumRows);
 			lda = isLeftTransposed ?  k : m;
 			ldb = isRightTransposed ? n : k;
 			ldc = m;
-			if(k != k1)
-				throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
 			if(m == -1 || n == -1 || k == -1)
 				throw new DMLRuntimeException("Incorrect dimensions");
-			// -------------------------------------------------------------------------------------
 		}
 	}
 	
@@ -109,6 +139,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		if(isM1Sparse && isM2Sparse) {
 			// -------------------------------------------------------------------------------------
 			// sparse-sparse matrix multiplication
+			
+			params.validate();
+			
 			// Step 1: Allocate output => sparse format
 			ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
 			int transa = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -134,6 +167,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		else if(isM1Sparse && !isM2Sparse) {
 			// -------------------------------------------------------------------------------------
 			// sparse-dense matrix multiplication
+			
+			params.validate();
+			
 			// Step 1: Allocate output => dense format
 			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
 						
@@ -156,6 +192,8 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// C = op(A) * op(B) ... where A is dense and B is sparse
 			// => t(C) = t(op(B)) * t(op(A)) 
 			LOG.debug("Potential OOM as double allocation of the output to perform transpose");
+			
+			params.validate();
 			
 			// Step 1: Allocate tmp => dense format
 			Pointer tmp = gCtx.allocate(outRLen*outCLen*Sizeof.DOUBLE);
@@ -198,8 +236,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen); 
 			
 			// Step 2: Get the handles to sparse/dense pointers for left, right and output
-			Pointer A = getDensePointer(gCtx, left, instName);
-			Pointer B = getDensePointer(gCtx, right, instName);
+			params.rowToColumnMajor(); params.validate();
+			Pointer A = getDensePointer(gCtx, right, instName);
+			Pointer B = getDensePointer(gCtx, left, instName);
 			Pointer C = getDensePointer(gCtx, output, instName);
 			
 			// Step 3: Invoke the kernel
@@ -263,7 +302,8 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	
 	/**
 	 * Internal method to invoke the appropriate CuBLAS kernel for matrix multiplication for operation: C = op(A) * op(B)
-	 * This assumes A, B and C are allocated in dense row-major format
+	 * This assumes A, B and C are allocated in dense format.
+	 * The caller is expected to invoke params.rowToColumnMajor().
 	 * 
 	 * @param handle cublas handle
 	 * @param instName name of the invoking instruction to record{@link Statistics}.
@@ -317,5 +357,4 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		}
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, kernel, System.nanoTime() - t0);
 	}
-	
 }

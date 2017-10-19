@@ -377,11 +377,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			double in2Sparsity = OptimizerUtils.getSparsity(in2.getDim1(), in2.getDim2(), in2.getNnz());
 			boolean in1Sparse = in1Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
 			boolean in2Sparse = in2Sparsity < MatrixBlock.SPARSITY_TURN_POINT;
-			if(!in1Sparse && in2Sparse) {
-				// Only in dense-sparse cases, we need additional memory budget for GPU
-				ret += Math.min(
-						OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT),
-						OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), MatrixBlock.SPARSITY_TURN_POINT));
+			if(in1Sparse && !in2Sparse) {
+				// Only in sparse-dense cases, we need additional memory budget for GPU
+				ret += OptimizerUtils.estimateSizeExactSparsity(in2.getDim1(), in2.getDim2(), 1.0);
 			}
 		}
 

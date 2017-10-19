@@ -157,9 +157,6 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		else if(!isM1Sparse && isM2Sparse) {
 			// -------------------------------------------------------------------------------------
 			// dense-sparse matrix multiplication
-			// sparse matrix is very large, so it is not wise to convert it into dense format
-			// C = op(A) * op(B) ... where A is dense and B is sparse
-			// => t(C) = t(op(B)) * t(op(A))
 			// Step 1: Allocate output => dense format
 			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen); 
 			
@@ -170,7 +167,23 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			
 			// Step 3: Invoke the kernel
 			denseSparseMatMult(getCusparseHandle(gCtx), instName, C, A, B, params);
+			// -------------------------------------------------------------------------------------
+		}
+		else if(isM1Sparse && !isM2Sparse) {
+			// -------------------------------------------------------------------------------------
+			// sparse-dense matrix multiplication
+			// Step 1: Allocate output => dense format
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen); 
 			
+			// Step 2: Get the handles to sparse/dense pointers for left, right and output
+			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+			Pointer B = getDensePointer(gCtx, right, instName);
+			Pointer C = getDensePointer(gCtx, output, instName);
+			
+			// Step 3: Invoke the kernel
+			sparseDenseMatMult(gCtx, instName, C, A, B, left.getNumRows(), left.getNumColumns(), 
+				right.getNumRows(), right.getNumColumns(), outRLen, outCLen, isLeftTransposed, isRightTransposed);
+			// -------------------------------------------------------------------------------------
 		}
 		else {
 			// -------------------------------------------------------------------------------------
@@ -192,6 +205,30 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------
 		}
 		return output;
+	}
+	
+	private static void sparseDenseMatMult(GPUContext gCtx, String instName, Pointer C, CSRPointer A, Pointer B,
+			long leftNumRows, long leftNumColumns, long rightNumRows, long rightNumColumns, long outRLen, long outCLen,
+			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+		// t(C) = t(B) %*% t(A)
+		Pointer output = null;
+		if(outRLen != 1 && outCLen != 1) {
+			output = gCtx.allocate(outRLen*outCLen*Sizeof.DOUBLE);
+		}
+		else {
+			// no transpose required for vector output
+			output = C;
+		}
+		CuMatMultParameters params = new CuMatMultParameters(
+				rightNumRows, rightNumColumns,  leftNumRows, leftNumColumns,  !isRightTransposed, !isLeftTransposed);
+		denseSparseMatMult(getCusparseHandle(gCtx), instName, output, B, A, params);
+		if(outRLen != 1 && outCLen != 1) {
+			// Transpose: C = t(output)
+			JCublas2.cublasDgeam(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_T, 
+					toInt(outCLen), toInt(outRLen), one(), output, 
+					toInt(outRLen), zero(), new Pointer(), toInt(outRLen), C, toInt(outCLen));
+			gCtx.cudaFreeHelper(output, true);
+		}
 	}
 	
 	

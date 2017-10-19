@@ -249,7 +249,8 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		String kernel = GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_MATRIX_LIB;
 		// Ignoring sparse vector dense matrix multiplication and dot product
-		if(param.leftNumRows == 1) {
+		boolean isVector = (param.leftNumRows == 1 && !param.isLeftTransposed) || (param.leftNumCols == 1 && param.isLeftTransposed);
+		if(isVector) {
 			LOG.debug(" GPU Sparse-Dense Matrix Vector ");
 			int m = toInt(param.rightNumRows);
 			int n = toInt(param.rightNumCols);

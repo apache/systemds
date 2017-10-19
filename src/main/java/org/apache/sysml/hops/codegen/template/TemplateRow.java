@@ -250,7 +250,7 @@ public class TemplateRow extends TemplateBase
 			else if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
 				//vector add without temporary copy
 				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
-					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1), 
+					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1),
 							((CNodeBinary)cdata1).getType().getVectorAddPrimitive());
 				else	
 					out = cdata1;
@@ -269,7 +269,7 @@ public class TemplateRow extends TemplateBase
 			{
 				//correct input under transpose
 				cdata1 = TemplateUtils.skipTranspose(cdata1, hop.getInput().get(0), tmp, compileLiterals);
-				inHops.remove(hop.getInput().get(0)); 
+				inHops.remove(hop.getInput().get(0));
 				inHops.add(hop.getInput().get(0).getInput().get(0));
 				
 				//note: vectorMultAdd applicable to vector-scalar, and vector-vector
@@ -310,7 +310,8 @@ public class TemplateRow extends TemplateBase
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			
 			// if one input is a matrix then we need to do vector by scalar operations
-			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 ) 
+			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 
+				|| (!hop.dimsKnown() && cdata1.getDataType()==DataType.MATRIX ) ) 
 			{
 				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
 					String opname = "VECT_"+((UnaryOp)hop).getOp().name();
@@ -320,12 +321,11 @@ public class TemplateRow extends TemplateBase
 				}
 				else 
 					throw new RuntimeException("Unsupported unary matrix "
-							+ "operation: " + ((UnaryOp)hop).getOp().name());
+						+ "operation: " + ((UnaryOp)hop).getOp().name());
 			}
 			else //general scalar case
 			{
 				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
-				
 				String primitiveOpName = ((UnaryOp)hop).getOp().toString();
 				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 			}
@@ -355,7 +355,9 @@ public class TemplateRow extends TemplateBase
 			
 			// if one input is a matrix then we need to do vector by scalar operations
 			if( (hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1)
-				|| (hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1))
+				|| (hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1)
+				|| (!(hop.dimsKnown() && hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()) 
+						&& (cdata1.getDataType().isMatrix() || cdata2.getDataType().isMatrix())))
 			{
 				if( HopRewriteUtils.isBinary(hop, SUPPORTED_VECT_BINARY) ) {
 					if( TemplateUtils.isMatrix(cdata1) && (TemplateUtils.isMatrix(cdata2) 
@@ -371,14 +373,14 @@ public class TemplateRow extends TemplateBase
 							cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
 						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
 					}
-					if( cdata1 instanceof CNodeData && inHops2.isEmpty() 
+					if( cdata1 instanceof CNodeData && inHops2.isEmpty()
 						&& !(cdata1.getDataType()==DataType.SCALAR) ) {
 						inHops2.put("X", hop.getInput().get(0));
 					}
 				}
 				else 
 					throw new RuntimeException("Unsupported binary matrix "
-							+ "operation: " + ((BinaryOp)hop).getOp().name());
+						+ "operation: " + ((BinaryOp)hop).getOp().name());
 			}
 			else //one input is a vector/scalar other is a scalar
 			{
@@ -389,7 +391,7 @@ public class TemplateRow extends TemplateBase
 					|| (TemplateUtils.isColVector(hop.getInput().get(0)) && cdata2 instanceof CNodeData
 						&& hop.getInput().get(1).getDataType().isMatrix()))
 					cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
-				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));	
+				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
 			}
 		}
 		else if(hop instanceof TernaryOp) 
@@ -405,16 +407,16 @@ public class TemplateRow extends TemplateBase
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
-					TernaryType.valueOf(top.getOp().toString()));
+				TernaryType.valueOf(top.getOp().toString()));
 		}
-		else if( hop instanceof ParameterizedBuiltinOp ) 
+		else if( hop instanceof ParameterizedBuiltinOp )
 		{
 			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			
 			CNode cdata2 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("pattern").getHopID());
 			CNode cdata3 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("replacement").getHopID());
-			TernaryType ttype = (cdata2.isLiteral() && cdata2.getVarname().equals("Double.NaN")) ? 
+			TernaryType ttype = (cdata2.isLiteral() && cdata2.getVarname().equals("Double.NaN")) ?
 					TernaryType.REPLACE_NAN : TernaryType.REPLACE;
 			out = new CNodeTernary(cdata1, cdata2, cdata3, ttype);
 		}
@@ -422,7 +424,7 @@ public class TemplateRow extends TemplateBase
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			out = new CNodeTernary(cdata1, 
-				TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
+				TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true),
 				TemplateUtils.createCNodeData(hop.getInput().get(4), true),
 				(!hop.dimsKnown()||hop.getDim2()>1) ? TernaryType.LOOKUP_RVECT1 : TernaryType.LOOKUP_RC1);
 		}
@@ -456,13 +458,13 @@ public class TemplateRow extends TemplateBase
 		
 		@Override
 		public int compare(Hop h1, Hop h2) {
-			long ncells1 = h1.isScalar() ? Long.MIN_VALUE : 
-				(h1==_X) ? Long.MAX_VALUE : (h1==_B1) ? Long.MAX_VALUE-1 : 
+			long ncells1 = h1.isScalar() ? Long.MIN_VALUE :
+				(h1==_X) ? Long.MAX_VALUE : (h1==_B1) ? Long.MAX_VALUE-1 :
 				h1.dimsKnown() ? h1.getLength() : Long.MAX_VALUE-2;
-			long ncells2 = h2.isScalar() ? Long.MIN_VALUE : 
-				(h2==_X) ? Long.MAX_VALUE : (h2==_B1) ? Long.MAX_VALUE-1 : 
+			long ncells2 = h2.isScalar() ? Long.MIN_VALUE :
+				(h2==_X) ? Long.MAX_VALUE : (h2==_B1) ? Long.MAX_VALUE-1 :
 				h2.dimsKnown() ? h2.getLength() : Long.MAX_VALUE-2;
-			return (ncells1 > ncells2) ? -1 : (ncells1 < ncells2) ? 1 : 0; 
+			return (ncells1 > ncells2) ? -1 : (ncells1 < ncells2) ? 1 : 0;
 		}
 	}
 }

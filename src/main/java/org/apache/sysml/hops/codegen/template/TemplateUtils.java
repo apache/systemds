@@ -184,7 +184,7 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop... inputs) {
 		Hop X = inputs[0];
 		Hop B1 = (inputs.length>1) ? inputs[1] : null;
-		if( (X!=null && HopRewriteUtils.isEqualSize(output, X)) || X==null )
+		if( (X!=null && HopRewriteUtils.isEqualSize(output, X)) || X==null || !X.dimsKnown() )
 			return RowType.NO_AGG;
 		else if( ((B1!=null && output.getDim1()==X.getDim1() && output.getDim2()==B1.getDim2())
 			|| (output instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)output)))

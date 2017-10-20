@@ -26,6 +26,23 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+extern "C"
+__global__ void double2float(double* A,  float* ret, int N) {
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if(tid < N) {
+		ret[tid] = (float) A[tid];
+	}
+}
+
+extern "C"
+__global__ void float2double(float* A,  double* ret, int N) {
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if(tid < N) {
+		ret[tid] = (double) A[tid];
+	}
+}
+
+
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.

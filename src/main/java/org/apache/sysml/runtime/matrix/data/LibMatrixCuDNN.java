@@ -31,6 +31,7 @@ import static jcuda.jcudnn.JCudnn.cudnnSetActivationDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
@@ -42,6 +43,7 @@ import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -149,9 +151,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				if(localN == N) {
 					// Perform all-input all-channel conv2d
 					Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
-					cudnnConv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, algo);
+					try(DataTypeConverter converter = new DataTypeConverter(gCtx, imagePointer, toInt(NCHW), filterPointer, toInt(KCRS), dstPointer, toInt(NKPQ))) {
+						cudnnConv2d(gCtx, instName, converter.getInputPointer(0), converter.getInputPointer(1), converter.getOutputPointer(), algo);
+					}
 				}
 				else {
+					if(LibMatrixCUDA.CUDNN_DATA_TYPE != CUDNN_DATA_DOUBLE) {
+						throw new DMLRuntimeException("The given datatype is not yet supported for row-by-row cudnn, try reducing the batch size.");
+					}
 					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image)) {
 						for(int n = 0; n < N; n++) {
 							// Perform one-input all-channel conv2d
@@ -199,7 +206,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		throw new DMLRuntimeException("The dimensions of input/output matrices is too large to execute a CuDNN kernel. "
 				+ "Max CuDNN matrix size:" + maxNumDoublesOfCuDNNTensor + ". "
 				+ "Given input matrix dimensions: [" + dim1 + "," + dim2 + "], [" + dim3 + "," + dim4 + "]. Output dimension: [" + dim5 + "," + dim6 + "]");
-	}
+	}	 
 
 	/**
 	 * Performs 2D convolution
@@ -286,9 +293,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					// Perform all-input all-channel conv2dBackwardFilter
 					Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
 					Pointer doutPointer = getDensePointerForCuDNN(gCtx, dout, instName);
-					cudnnConv2dBackwardFilter(gCtx, instName, imagePointer, doutPointer, dwPointer, algo);
+					try(DataTypeConverter converter = new DataTypeConverter(gCtx, imagePointer, toInt(NCHW), doutPointer, toInt(NKPQ), dwPointer, toInt(KCRS))) {
+						cudnnConv2dBackwardFilter(gCtx, instName, converter.getInputPointer(0), converter.getInputPointer(1), converter.getOutputPointer(), algo);
+					}
 				}
 				else {
+					if(LibMatrixCUDA.CUDNN_DATA_TYPE != CUDNN_DATA_DOUBLE) {
+						throw new DMLRuntimeException("The given datatype is not yet supported for row-by-row cudnn, try reducing the batch size.");
+					}
 					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 						LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout)) {
 						// Perform one-input conv2dBackwardFilter
@@ -314,6 +326,71 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throwCuDNNDimensionError(N, CHW, N, KPQ, K, CRS);
 		}
 	}
+	
+	private static class DataTypeConverter implements java.lang.AutoCloseable {
+		GPUContext gCtx; 
+		Pointer output; int numElemsOutput;
+		Pointer[] inputsLowerPrecision; Pointer outputLowerPrecision;
+		public DataTypeConverter(GPUContext gCtx, Pointer input1, int numElemsInput1, 
+				Pointer input2, int numElemsInput2,
+				Pointer output, int numElemsOutput) throws DMLRuntimeException {
+			Pointer[] inputs = new Pointer[2];
+			int [] numElemsInput = new int[2];
+			inputs[0] = input1; numElemsInput[0] = numElemsInput1;
+			inputs[1] = input2; numElemsInput[1] = numElemsInput2;
+			initialize(gCtx, inputs, numElemsInput, output, numElemsOutput);
+		}
+		private void initialize(GPUContext gCtx, Pointer[] inputs, int[] numElemsInput, Pointer output, int numElemsOutput) throws DMLRuntimeException {
+			this.gCtx = gCtx;
+			this.numElemsOutput = numElemsOutput;
+			this.output = output;
+			if(LibMatrixCUDA.CUDNN_DATA_TYPE == CUDNN_DATA_DOUBLE) {
+				this.inputsLowerPrecision = inputs;
+				this.outputLowerPrecision = output;
+			}
+			else if(LibMatrixCUDA.CUDNN_DATA_TYPE == CUDNN_DATA_FLOAT) {
+				this.inputsLowerPrecision = new Pointer[inputs.length];
+				for(int i = 0; i < inputs.length; i++) {
+					this.inputsLowerPrecision[i] = double2float(gCtx, inputs[i], numElemsInput[i]);
+				}
+				this.outputLowerPrecision = gCtx.allocate(numElemsOutput*Sizeof.FLOAT);
+				cudaMemset(this.outputLowerPrecision, 0, numElemsOutput*Sizeof.FLOAT);
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported format:" + LibMatrixCUDA.CUDNN_DATA_TYPE);
+			}
+		}
+		
+		public Pointer getInputPointer(int i) {
+			return inputsLowerPrecision[i];
+		}
+		public Pointer getOutputPointer() {
+			return outputLowerPrecision;
+		}
+		
+		@Override
+		public void close() throws DMLRuntimeException {
+			if(LibMatrixCUDA.CUDNN_DATA_TYPE == CUDNN_DATA_FLOAT) {
+				getCudaKernels(gCtx).launchKernel("float2double", ExecutionConfig.getConfigForSimpleVectorOperations(numElemsOutput),
+						outputLowerPrecision, output, numElemsOutput);
+				JCuda.cudaDeviceSynchronize();
+				for(int i = 0; i < inputsLowerPrecision.length; i++) {
+					gCtx.cudaFreeHelper(inputsLowerPrecision[i]);
+				}
+				gCtx.cudaFreeHelper(outputLowerPrecision);
+			}
+			else if(LibMatrixCUDA.CUDNN_DATA_TYPE != CUDNN_DATA_DOUBLE) {
+				throw new DMLRuntimeException("Unsupported format:" + LibMatrixCUDA.CUDNN_DATA_TYPE);
+			}
+		}
+		private Pointer double2float(GPUContext gCtx, Pointer A, int numElems) throws DMLRuntimeException {
+			Pointer ret = gCtx.allocate(numElems*Sizeof.DOUBLE);
+			getCudaKernels(gCtx).launchKernel("double2float", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
+					A, ret, numElems);
+			return ret;
+		}
+		
+	}
 
 	/**
 	 * This method computes the backpropogation errors for filter of convolution operation
@@ -333,6 +410,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		try {
 			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			
 			int status = cudnnConvolutionBackwardFilter(getCudnnHandle(gCtx), one(), algo.nchwTensorDesc, imagePointer,
 					algo.nkpqTensorDesc, doutPointer, algo.convDesc, algo.algo, algo.workSpace, algo.sizeInBytes, zero(), algo.filterDesc, dwPointer);
 			if (GPUStatistics.DISPLAY_STATISTICS)
@@ -393,9 +471,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				if(localN == N) {
 					// Perform all-input all-channel conv2dBackwardData
 					Pointer doutPointer = getDensePointerForCuDNN(gCtx, dout, instName);
-					cudnnConv2dBackwardData(gCtx, instName, filterPointer, doutPointer, dstPointer, algo);
+					try(DataTypeConverter converter = new DataTypeConverter(gCtx, filterPointer, toInt(KCRS), doutPointer, toInt(NKPQ), dstPointer, toInt(NCHW))) {
+						cudnnConv2dBackwardData(gCtx, instName, converter.getInputPointer(0), converter.getInputPointer(1), converter.getOutputPointer(), algo);
+					}
 				}
 				else {
+					if(LibMatrixCUDA.CUDNN_DATA_TYPE != CUDNN_DATA_DOUBLE) {
+						throw new DMLRuntimeException("The given datatype is not yet supported for row-by-row cudnn, try reducing the batch size.");
+					}
 					try(LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout)) {
 						for(int n = 0; n < N; n++) {
 							cudnnConv2dBackwardData(gCtx, instName, doutFetcher.getNthRow(n), filterPointer, dstPointer.withByteOffset(n*CHW*Sizeof.DOUBLE), algo);

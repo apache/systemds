@@ -25,6 +25,7 @@ import static jcuda.jcusparse.JCusparse.cusparseDcsr2csc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -100,6 +101,8 @@ import jcuda.jcusparse.cusparseIndexBase;
 public class LibMatrixCUDA {
 
 	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
+	
+	public static int CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT; // CUDNN_DATA_DOUBLE
 
 	// Assume Compute Capability 3.0
 	// MAX BLOCKS is 2^31 - 1 For compute capability > 3.0

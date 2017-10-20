@@ -50,9 +50,81 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	public void matrixMatrixTest1() {
 		String scriptStr = "O = X %*% Y";
 
-		int[] X1 = { 1, 128, 513, 1024 };
-		int[] X2 = { 128, 512, 1024 };
-		int[] Y2 = { 1, 128, 513, 1024 };
+		int[] X1 = { 1, 128, 1024 };
+		int[] X2 = { 1, 128, 1024 };
+		int[] Y2 = { 1, 128, 1024 };
+		double[] SX = { 0.0, 0.03, 0.3, 0.9 };
+		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
+
+		for (int x1 = 0; x1 < X1.length; x1++) {
+			for (int x2 = 0; x2 < X2.length; x2++) {
+				int y1 = x2;
+				for (int y2 = 0; y2 < Y2.length; y2++) {
+					for (int sx = 0; sx < SX.length; sx++) {
+						for (int sy = 0; sy < SY.length; sy++) {
+							assertMatrixMultiplication(scriptStr, X1[x1], X2[x2], X2[y1], Y2[y2], SX[sx], SY[sy]);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	@Test
+	public void commonCaseMLMatrixMatrixTest1() {
+		String scriptStr = "O = X %*% Y";
+
+		int[] X1 = { 1000000 };
+		int[] X2 = { 1000 };
+		int[] Y2 = { 1, 20 };
+		double[] SX = { 0.0, 0.03, 0.3 };
+		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
+
+		for (int x1 = 0; x1 < X1.length; x1++) {
+			for (int x2 = 0; x2 < X2.length; x2++) {
+				int y1 = x2;
+				for (int y2 = 0; y2 < Y2.length; y2++) {
+					for (int sx = 0; sx < SX.length; sx++) {
+						for (int sy = 0; sy < SY.length; sy++) {
+							assertMatrixMultiplication(scriptStr, X1[x1], X2[x2], X2[y1], Y2[y2], SX[sx], SY[sy]);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	@Test
+	public void commonCaseDLMatrixMatrixTest1() {
+		String scriptStr = "O = X %*% Y";
+
+		int[] X1 = { 100 };
+		int[] X2 = { 600, 900  };
+		int[] Y2 = { 205800 };
+		double[] SX = { 0.0, 0.03, 0.3 };
+		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
+
+		for (int x1 = 0; x1 < X1.length; x1++) {
+			for (int x2 = 0; x2 < X2.length; x2++) {
+				int y1 = x2;
+				for (int y2 = 0; y2 < Y2.length; y2++) {
+					for (int sx = 0; sx < SX.length; sx++) {
+						for (int sy = 0; sy < SY.length; sy++) {
+							assertMatrixMultiplication(scriptStr, X1[x1], X2[x2], X2[y1], Y2[y2], SX[sx], SY[sy]);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	@Test
+	public void commonCaseDLMatrixMatrixTest2() {
+		String scriptStr = "O = X %*% Y";
+
+		int[] X1 = { 64 };
+		int[] X2 = { 196608   };
+		int[] Y2 = { 512 };
 		double[] SX = { 0.0, 0.03, 0.3, 0.9 };
 		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
 
@@ -74,9 +146,9 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	public void matrixMatrixTest2() {
 		String scriptStr = "O = X %*% t(Y)";
 
-		int[] X1 = { 1, 128, 513, 1024 };
-		int[] X2 = { 128, 512, 1024 };
-		int[] Y1 = { 1, 128, 513, 1024 };
+		int[] X1 = { 1, 128, 1024 };
+		int[] X2 = { 1, 128, 1024 };
+		int[] Y1 = { 1, 128, 1024 };
 		double[] SX = { 0.0, 0.03, 0.3, 0.9 };
 		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
 
@@ -98,9 +170,9 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	public void matrixMatrixTest3() {
 		String scriptStr = "O = t(X) %*% Y";
 
-		int[] X1 = { 1, 128, 513, 1024 };
-		int[] X2 = { 128, 512, 1024 };
-		int[] Y2 = { 1, 128, 513, 1024 };
+		int[] X1 = { 1, 128, 1024 };
+		int[] X2 = { 1, 128, 1024 };
+		int[] Y2 = { 1, 128, 1024 };
 		double[] SX = { 0.0, 0.03, 0.3, 0.9 };
 		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
 
@@ -122,9 +194,9 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	public void matrixMatrixTest4() {
 		String scriptStr = "O = t(X) %*% t(Y)";
 
-		int[] X1 = { 1, 128, 513, 1024 };
-		int[] X2 = { 128, 512, 1024 };
-		int[] Y1 = { 1, 128, 513, 1024 };
+		int[] X1 = { 1, 128, 1024 };
+		int[] X2 = { 1, 128, 1024 };
+		int[] Y1 = { 1, 128, 1024 };
 		double[] SX = { 0.0, 0.03, 0.3, 0.9 };
 		double[] SY = { 0.0, 0.03, 0.3, 0.9 };
 
@@ -146,7 +218,7 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	public void transposeSelfMatrixMultiply() {
 		String scriptStr = "O = t(X) %*% X";
 
-		int[] sizes = { 1, 128, 512, 1024, 2049 };
+		int[] sizes = { 1, 128, 1024 };
 		double[] sparsities = { 0.0, 0.03, 0.3, 0.9 };
 
 		for (int i = 0; i < sizes.length; i++) {

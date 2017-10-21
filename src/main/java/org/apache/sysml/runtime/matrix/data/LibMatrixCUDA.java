@@ -187,21 +187,6 @@ public class LibMatrixCUDA {
 				A, ret, numElems);
 		return ret;
 	}
-	
-	public static Pointer double2float(GPUContext gCtx, Pointer A, int numElems) throws DMLRuntimeException {
-		return double2float(gCtx, A, gCtx.allocate(numElems*Sizeof.FLOAT), numElems);
-	}
-	
-	public static Pointer float2double(GPUContext gCtx, Pointer A, Pointer ret, int numElems) throws DMLRuntimeException {
-		getCudaKernels(gCtx).launchKernel("float2double", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
-				A, ret, numElems);
-		return ret;
-	}
-	
-	public static Pointer float2double(GPUContext gCtx, Pointer A, int numElems) throws DMLRuntimeException {
-		return double2float(gCtx, A, gCtx.allocate(numElems*Sizeof.DOUBLE), numElems);
-	}
-
 
 	//********************************************************************/
 	//************************ End of UTILS ******************************/

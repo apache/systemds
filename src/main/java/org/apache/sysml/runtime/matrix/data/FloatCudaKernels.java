@@ -165,7 +165,7 @@ public class FloatCudaKernels implements CudaKernels {
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
-		// TODO: Use LibMatrixCUDA.double2float
+		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		float [] floatData = new float[dest.length];
 		cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
 		for(int i = 0; i < dest.length; i++) {
@@ -178,13 +178,13 @@ public class FloatCudaKernels implements CudaKernels {
 	@Override
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) throws DMLRuntimeException {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
-		// TODO: Use LibMatrixCUDA.double2float
+		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		float [] floatData = new float[src.length];
 		for(int i = 0; i < src.length; i++) {
 			floatData[i] = (float) src[i];
 		}
-		cudaMemcpy(Pointer.to(floatData), dest, ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+		cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 	}

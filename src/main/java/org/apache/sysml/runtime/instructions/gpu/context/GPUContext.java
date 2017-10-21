@@ -566,7 +566,7 @@ public class GPUContext {
 								+ "). Allocated GPU objects:" + allocatedGPUObjects.toString());
 			}
 			if (toBeRemoved.dirty) {
-				toBeRemoved.copyFromDeviceToHost();
+				toBeRemoved.copyFromDeviceToHost(instructionName);
 			}
 			toBeRemoved.clearData(true);
 		}
@@ -802,7 +802,7 @@ public class GPUContext {
 			if (o.isDirty()) {
 				LOG.warn("Attempted to free GPU Memory when a block[" + o
 						+ "] is still on GPU memory, copying it back to host.");
-				o.acquireHostRead();
+				o.acquireHostRead(null);
 			}
 			o.clearData(true);
 		}

@@ -18,7 +18,19 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.utils.GPUStatistics;
+
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcusolver.JCusolverDn;
@@ -28,6 +40,8 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 
 public class FloatCudaKernels implements CudaKernels {
+	
+	private static final Log LOG = LogFactory.getLog(FloatCudaKernels.class.getName());
 
 	@Override
 	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k,
@@ -145,5 +159,33 @@ public class FloatCudaKernels implements CudaKernels {
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, Pointer A, int lda,
 			Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr) {
 		return JCusparse.cusparseSnnz(handle, dirA, m, n, descrA, A, lda, nnzPerRowCol, nnzTotalDevHostPtr);
+	}
+
+	@Override
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
+		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
+		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
+		// TODO: Use LibMatrixCUDA.double2float
+		float [] floatData = new float[dest.length];
+		cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
+		for(int i = 0; i < dest.length; i++) {
+			dest[i] = floatData[i];
+		}
+		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
+			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
+	}
+
+	@Override
+	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) throws DMLRuntimeException {
+		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
+		// TODO: Use LibMatrixCUDA.double2float
+		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
+		float [] floatData = new float[src.length];
+		for(int i = 0; i < src.length; i++) {
+			floatData[i] = (float) src[i];
+		}
+		cudaMemcpy(Pointer.to(floatData), dest, ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
+			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 	}
 }

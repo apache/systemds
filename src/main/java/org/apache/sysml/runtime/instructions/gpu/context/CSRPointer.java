@@ -47,7 +47,6 @@ import jcuda.jcublas.cublasHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 import jcuda.jcusparse.cusparsePointerMode;
-import jcuda.runtime.JCuda;
 
 /**
  * Compressed Sparse Row (CSR) format for CUDA
@@ -202,64 +201,13 @@ public class CSRPointer {
 		if(rowPtr.length < rows + 1) throw new DMLRuntimeException("The length of rowPtr needs to be greater than or equal to " + (rows + 1));
 		if(colInd.length < nnz) throw new DMLRuntimeException("The length of colInd needs to be greater than or equal to " + nnz);
 		if(values.length < nnz) throw new DMLRuntimeException("The length of values needs to be greater than or equal to " + nnz);
-		if(LibMatrixCUDA.sizeOfDataType == Sizeof.DOUBLE) {
-			cudaMemcpy(r.val, Pointer.to(values), nnz*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
-		}
-		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
-			// Since Sizeof.FLOAT = Sizeof.INT = 4 and Sizeof.DOUBLE = 8
-			if(nnz == 1) {
-				cudaMemcpy(r.val, Pointer.to(new float[] { (float) values[0] }), nnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
-			}
-			else if(nnz > 1) {
-				// No additional memory required as we reuse r.colInd
-				Pointer valuesPtr = Pointer.to(values);
-				long firstHalfNnz = (int) Math.floor(((double)nnz)/2);
-				cudaMemcpy(r.colInd, valuesPtr, firstHalfNnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
-				LibMatrixCUDA.double2float(gCtx, r.colInd, r.val, LibMatrixCUDA.toInt(firstHalfNnz));
-				JCuda.cudaDeviceSynchronize();
-				long secondHalfNnz = nnz - firstHalfNnz;
-				cudaMemcpy(r.colInd, valuesPtr.withByteOffset(firstHalfNnz*Sizeof.FLOAT), secondHalfNnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
-				LibMatrixCUDA.double2float(gCtx, r.colInd, r.val, LibMatrixCUDA.toInt(secondHalfNnz));
-				JCuda.cudaDeviceSynchronize();
-			}
-		}
-		else {
-			throw new DMLRuntimeException("Unsupported datatype of size:" + LibMatrixCUDA.sizeOfDataType);
-		}
-		
+		LibMatrixCUDA.cudaKernels.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaToDevCount.add(3);
-	}
-
-	/**
-	 * Static method to copy a CSR sparse matrix from Device to host
-	 *
-	 * @param src    [input] source location (on GPU)
-	 * @param rows   [input] number of rows
-	 * @param nnz    [input] number of non-zeroes
-	 * @param values [output] pre-allocated double array of values of size nnz
-	 * @throws DMLRuntimeException if error
-	 */
-	public static void copyValuesToHost(CSRPointer src, int rows, long nnz, double[] values) throws DMLRuntimeException {
-		CSRPointer r = src;
-		if(LibMatrixCUDA.sizeOfDataType == Sizeof.DOUBLE) {
-			cudaMemcpy(Pointer.to(values), r.val, nnz*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-		}
-		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
-			// No OOM as the values are copied before index pointers are even allocated on CP
-			float[] tmp = new float[values.length];
-			cudaMemcpy(Pointer.to(tmp), r.val, nnz*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
-			for(int i = 0; i < tmp.length; i++) {
-				values[i] = tmp[i];
-			}
-		}
-		else {
-			throw new DMLRuntimeException("Unsupported datatype of size:" + LibMatrixCUDA.sizeOfDataType);
-		}
 	}
 	
 	/**

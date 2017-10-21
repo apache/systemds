@@ -34,6 +34,9 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 	int _arity;
 	CPOperand _input;
 	CPOperand _output;
+	CPOperand _out1;
+	CPOperand _out2;
+	CPOperand _out3;
 
 	protected BuiltinUnaryGPUInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode,
 			String istr) {
@@ -44,6 +47,18 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
+	protected BuiltinUnaryGPUInstruction(Operator op, CPOperand in, CPOperand out1, CPOperand out2, CPOperand out3,
+				int _arity, String opcode, String istr) {
+		super(op, opcode, istr);
+                _gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
+		this._arity = _arity;
+		_input = in;
+		_out1 = out1;
+		_out2 = out2;
+		_out3 = out3;
+
+	}
+
 	public int getArity() {
 		return _arity;
 	}
@@ -51,9 +66,12 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 	public static BuiltinUnaryGPUInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
+		CPOperand in   = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out  = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = null;
 		ValueFunction func = null;
@@ -71,6 +89,15 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 //				return new MatrixBuiltinCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
 //			else
 //				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
+		}
+		else if(parts.length==5)
+		{
+			opcode = parts[0];
+			in.split(parts[1]);
+			out1.split(parts[2]);
+			out2.split(parts[3]);
+			out3.split(parts[4]);
+			func = Builtin.getBuiltinFnObject(opcode);
 		}
 		else //2+1, general case
 		{

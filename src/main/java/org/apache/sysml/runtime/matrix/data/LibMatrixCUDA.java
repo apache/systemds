@@ -2402,6 +2402,113 @@ public class LibMatrixCUDA {
 
 		//debugPrintMatrix(b, n, 1);
     }
+	
+	/**
+	 * Implements the "svd" function
+	 *
+	 * @param ec         a valid {@link ExecutionContext}
+	 * @param gCtx       a valid {@link GPUContext}
+	 * @param instName   the invoking instruction's name for record {@link Statistics}.
+	 * @param in         input matrix A
+	 * @param out1       output matrix U
+	 * @param out2       output matrix S
+	 * @param out3       output matrix Vt
+	 * @throws DMLRuntimeException if an error occurs
+	 */
+	public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, MatrixObject out1, MatrixObject out2, MatrixObject out3 ) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+
+		// [U S Vt] = svd(A)
+		if (LOG.isTraceEnabled())
+		    LOG.trace("GPU : svd" + ", GPUContext=" + gCtx);
+
+		long t0 = -1;
+
+		GPUObject Aobj = in.getGPUObject(gCtx);
+		if (isInSparseFormat(gCtx, in))
+			Aobj.sparseToDense(instName);
+
+		int m = (int) in.getNumRows();
+		int n = (int) in.getNumColumns();
+		int lda = m;
+
+                int[] lwork = {0};
+//              int info_gpu = 0;
+//              double h_one = 1;
+//              double h_minus_one = -1;
+
+		// Copy over matrices and
+		// convert dense matrices to row major
+		// Operation in cuSolver and cuBlas are for column major dense matrices
+		// and are destructive to the original input
+		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+		GPUObject ATobj = (GPUObject) Aobj.clone();
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_OBJECT_CLONE, System.nanoTime() - t0);
+		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+		ATobj.denseRowMajorToColumnMajor();
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ROW_TO_COLUMN_MAJOR, System.nanoTime() - t0);
+
+		Pointer A = ATobj.getJcudaDenseMatrixPtr();
+
+		// The following set of operations is done following the example in the cusolver documentation
+		// http://docs.nvidia.com/cuda/cusolver/index.html#svd-example1
+
+		// step 3: query the working space of svd
+		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+		JCusolverDn.cusolverDnDgesvd_bufferSize(gCtx.getCusolverDnHandle(), m, n, lwork);
+		//if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SVD_BUFFER, System.nanoTime() - t0);//TODO: GPUInstruction.MISC_TIMER_SVD_BUFFER
+
+		// step 4: compute SVD
+		char jobu  = 'A';
+		char jobvt = 'A';
+		Pointer work = gCtx.allocate(instName, lwork[0] * Sizeof.DOUBLE);
+		Pointer S    = gCtx.allocate(instName, n * Sizeof.DOUBLE);
+		Pointer U    = gCtx.allocate(instName, lda * m * Sizeof.DOUBLE);
+		Pointer Vt   = gCtx.allocate(instName, lda * n * Sizeof.DOUBLE);
+		Pointer devInfo = gCtx.allocate(Sizeof.INT);
+		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();//m, n, A, lda, d_S, s_U, lda, d_work, l_work, d_rwork
+		JCusolverDn.cusolverDnDgesvd(gCtx.getCusolverDnHandle(), jobu, jobvt, m, n, A, m, S, U, m, Vt, m, work, lwork[0], work, devInfo);
+		//if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SVD, System.nanoTime() - t0);
+
+		int[] svdError = {-1};
+		cudaMemcpy(Pointer.to(svdError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
+		if (svdError[0] != 0) {
+			throw new DMLRuntimeException("GPU : Error in call to gesvd (SVD) " + svdError[0] + " was wrong");
+		}
+
+		// step 5: measure error of singular value
+//		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+//		double sup = 0;
+//		for (int j = 0; j < n; j++) {
+//			double err =  abs(S[j] - S_exact[j]);
+//			sup = (sup > err) ? sup : err;
+//		}
+
+
+		// step 6: compute |A - U*S*Vt|, here W = S* Vt
+//		Pointer W = gCtx.allocate(instName, m * n * Sizeof.DOUBLE);
+//		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+//		JCublas.cublasDgemm(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, n, n, Vt, lda, S, 1, W, lda);
+//		JCublas.cublasDgemm(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N, m, n, n, pointerTo(-1.0),
+//				U, lda, W, lda, pointerTo(1.0), A, lda);
+//
+//		JCublas.cublasDnrm2(gCtx.getCublasHandle(), lda * n, A, 1.0, 0.0);//todo check the arguments
+
+		// Free Resources
+		gCtx.cudaFreeHelper(instName, work);
+		gCtx.cudaFreeHelper(instName, A);
+		gCtx.cudaFreeHelper(instName, S);
+		gCtx.cudaFreeHelper(instName, U);
+		gCtx.cudaFreeHelper(instName, Vt);
+		gCtx.cudaFreeHelper(instName, devInfo);
+//		gCtx.cudaFreeHelper(instName, W);
+
+		ATobj.clearData();
+
+		//debugPrintMatrix(b, n, 1);
+	}
+
 
 	//********************************************************************/
 	//*****************  END OF Builtin Functions ************************/

@@ -58,7 +58,6 @@ __global__ void float2doublef(float* A,  double* ret, int N) {
  * @param retClen number of columns of output matrix
  */
 template <typename T>
-extern "C"
 __device__ void slice_sparse_dense_row(T* inVal, int* inRowPtr, int* colInd, T* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
   	int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -124,7 +123,6 @@ __global__ void slice_sparse_dense_rowf(float* inVal, int* inRowPtr, int* colInd
  * @param retClen number of columns of output matrix
  */
 template <typename T>
-extern "C"
 __device__ void slice_sparse_dense_nnz(T* inVal, int* inRowPtr, int* colInd, T* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -168,7 +166,6 @@ __global__ void slice_sparse_dense_nnzf(float* inVal, int* inRowPtr, int* colInd
  * @param retClen number of columns of output matrix
  */
 template <typename T>
-extern "C"
 __device__ void slice_dense_dense(T* in, T* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / retClen;
@@ -197,7 +194,6 @@ __global__ void slice_dense_densef(float* in, float* ret, int rl, int ru, int cl
  * @param N total number of elements of the matrix
  */
 template <typename T>
-extern "C"
 __device__ void copy_u2l_dense(T* ret, int dim, int N) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / dim;
@@ -226,7 +222,6 @@ __global__ void copy_u2l_densef(float* ret, int dim, int N) {
 // 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
 // 17=modulus, 18=integer division}
 template <typename T>
-extern "C"
 __forceinline__ __device__ T binaryOp(T x, T y, int op) {
 	switch(op) {
         case 0 : return x + y;
@@ -272,7 +267,6 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
 }
 
 template <typename T>
-extern "C"
 __device__ void relu(T* A,  T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -294,7 +288,6 @@ __global__ void reluf(float* A,  float* ret, int rlen, int clen) {
 
 // This method computes the backpropagation errors for previous layer of relu operation
 template <typename T>
-extern "C"
 __device__ void relu_backward(T* X,  T* dout, T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -323,7 +316,6 @@ __global__ void relu_backwardf(float* X,  float* dout, float* ret, int rlen, int
  * @param clen the number of columns
  */
 template <typename T>
-extern "C"
 __device__ void inplace_add(T* input,  T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -348,7 +340,6 @@ __global__ void inplace_addf(float* input,  float* ret, int rlen, int clen) {
 // output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 // This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 template <typename T>
-extern "C"
 __device__ void bias_add(T* input,  T* bias, T* ret, int rlen, int clen, int PQ) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -371,7 +362,6 @@ __global__ void bias_addf(float* input,  float* bias, float* ret, int rlen, int 
 
 // Performs the operation "ret <- A + alpha*B", where B is a vector
 template <typename T>
-extern "C"
 __device__ void daxpy_matrix_vector(T* A,  T* B, double alpha, T* ret, int rlenA, int clenA, int rlenB, int clenB) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clenA;
@@ -399,7 +389,6 @@ __global__ void daxpy_matrix_vectorf(float* A,  float* B, double alpha, float* r
 
 // Performs similar operation as bias_add except elementwise multiplication instead of add
 template <typename T>
-extern "C"
 __device__ void bias_multiply(T* input,  T* bias, T* ret, int rlen, int clen, int PQ) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -422,7 +411,6 @@ __global__ void bias_multiplyf(float* input,  float* bias, float* ret, int rlen,
 
 // Compares the value and set
 template <typename T>
-extern "C"
 __device__ void compare_and_set(T* A,  T* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
@@ -462,8 +450,8 @@ __global__ void compare_and_setf(float* A,  float* ret, int rlen, int clen, doub
  * @param op                the numeric code of the arithmetic operation to perform
  *
  */
-extern "C"
-__global__ void matrix_matrix_cellwise_op(double* A, double* B, double* C,
+template <typename T>
+__device__ void matrix_matrix_cellwise_op(T* A, T* B, T* C,
 	int maxRlen, int maxClen, int vectorAStatus, int vectorBStatus, int op) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / maxClen;
@@ -487,6 +475,18 @@ __global__ void matrix_matrix_cellwise_op(double* A, double* B, double* C,
 	}
 }
 
+extern "C"
+__global__ void matrix_matrix_cellwise_opd(double* A, double* B, double* C,
+	int maxRlen, int maxClen, int vectorAStatus, int vectorBStatus, int op) {
+	matrix_matrix_cellwise_op(A, B, C, maxRlen, maxClen, vectorAStatus, vectorBStatus, op);
+}
+
+extern "C"
+__global__ void matrix_matrix_cellwise_opf(float* A, float* B, float* C,
+	int maxRlen, int maxClen, int vectorAStatus, int vectorBStatus, int op) {
+	matrix_matrix_cellwise_op(A, B, C, maxRlen, maxClen, vectorAStatus, vectorBStatus, op);
+}
+
 /**
  * Performs an arithmetic operation between a matrix and a scalar.
  * C = s op A or C = A op s (where A is the matrix, s is the scalar and op is the operation)
@@ -497,8 +497,8 @@ __global__ void matrix_matrix_cellwise_op(double* A, double* B, double* C,
  * @param op            number code of the arithmetic operation to perform
  * @param isLeftScalar  whether the scalar is on the left side
  */
-extern "C"
-__global__ void matrix_scalar_op(double* A, double scalar, double* C, int size, int op, int isLeftScalar) {
+template <typename T>
+__device__ void matrix_scalar_op(T* A, T scalar, T* C, int size, int op, int isLeftScalar) {
 	int index = blockIdx.x *blockDim.x + threadIdx.x;
 	if(index < size) {
 		if(isLeftScalar) {
@@ -510,6 +510,15 @@ __global__ void matrix_scalar_op(double* A, double scalar, double* C, int size, 
 	__syncthreads();
 }
 
+extern "C"
+__global__ void matrix_scalar_opd(double* A, double scalar, double* C, int size, int op, int isLeftScalar) {
+	matrix_scalar_op(A, scalar, C, size, op, isLeftScalar);
+}
+
+extern "C"
+__global__ void matrix_scalar_opf(float* A, double scalar, float* C, int size, int op, int isLeftScalar) {
+	matrix_scalar_op(A, (float)scalar, C, size, op, isLeftScalar);
+}
 
 /**
  * Sets all elements (fills) of a double array of given length with a given scalar value
@@ -517,12 +526,22 @@ __global__ void matrix_scalar_op(double* A, double scalar, double* C, int size, 
  * @param scalar    value to fill array with
  * @param lenA      length of array A
  */
-extern "C"
-__global__ void fill(double* A, double scalar, int lenA) {
+template <typename T>
+__device__ void fill(T* A, T scalar, int lenA) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < lenA){
 	    A[index] = scalar;
 	}
+}
+
+extern "C"
+__global__ void filld(double* A, double scalar, int lenA) {
+	fill(A, scalar, lenA);
+}
+
+extern "C"
+__global__ void fillf(float* A, double scalar, int lenA) {
+	fill(A, (float)scalar, lenA);
 }
 
 /**
@@ -538,8 +557,8 @@ __global__ void fill(double* A, double scalar, int lenA) {
  * @param rowsB  rows in B
  * @param colsB  columns in B
  */
-extern "C"
-__global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+ template <typename T>
+__device__ void cbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB, int colsB) {
 	int maxClen = max(colsA, colsB);
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / maxClen;
@@ -561,6 +580,15 @@ __global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int
 	}
 }
 
+extern "C"
+__global__ void cbindd(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+	cbind(A, B, C, rowsA, colsA, rowsB, colsB);
+}
+
+extern "C"
+__global__ void cbindf(float *A, float *B, float *C, int rowsA, int colsA, int rowsB, int colsB) {
+	cbind(A, B, C, rowsA, colsA, rowsB, colsB);
+}
 
 /**
  * Appends Matrix B to the bottom of Matrix A into a new matrix C
@@ -577,8 +605,8 @@ __global__ void cbind(double *A, double *B, double *C, int rowsA, int colsA, int
  * @param rowsB  rows in B
  * @param colsB  columns in B
  */
-extern "C"
-__global__ void rbind(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+template <typename T>
+__device__ void rbind(T* A, T* B, T* C, int rowsA, int colsA, int rowsB, int colsB) {
 	int maxClen = max(colsA, colsB);
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / maxClen;
@@ -600,6 +628,15 @@ __global__ void rbind(double *A, double *B, double *C, int rowsA, int colsA, int
 	}
 }
 
+extern "C"
+__global__ void rbindd(double *A, double *B, double *C, int rowsA, int colsA, int rowsB, int colsB) {
+	rbind(A, B, C, rowsA, colsA, rowsB, colsB);
+}
+
+extern "C"
+__global__ void rbindf(float* A, float* B, float* C, int rowsA, int colsA, int rowsB, int colsB) {
+	rbind(A, B, C, rowsA, colsA, rowsB, colsB);
+}
 
 /**
  * Does a reduce operation over all elements of the array.
@@ -615,15 +652,15 @@ __global__ void rbind(double *A, double *B, double *C, int rowsA, int colsA, int
  *
  * @param ReductionOp       Type of the functor object that implements the reduction operation
  */
-template <typename ReductionOp>
+template <typename ReductionOp, typename T>
 __device__ void reduce(
-    double *g_idata,            ///< input data stored in device memory (of size n)
-    double *g_odata,            ///< output/temporary array stored in device memory (of size n)
+    T *g_idata,            ///< input data stored in device memory (of size n)
+    T *g_odata,            ///< output/temporary array stored in device memory (of size n)
     unsigned int n,             ///< size of the input and temporary/output arrays
     ReductionOp reduction_op,	///< Reduction operation to perform (functor object)
-	double initialValue)  		///< initial value for the reduction variable
+	T initialValue)  		///< initial value for the reduction variable
 {
-    extern __shared__ double sdata[];
+    extern __shared__ T sdata[];
 
     // perform first level of reduction,
     // reading from global memory, writing to shared memory
@@ -631,7 +668,7 @@ __device__ void reduce(
     unsigned int i = blockIdx.x*blockDim.x*2 + threadIdx.x;
     unsigned int gridSize = blockDim.x*2*gridDim.x;
 
-    double v = initialValue;
+    T v = initialValue;
 
     // we reduce multiple elements per thread.  The number is determined by the
     // number of active thread blocks (via gridDim).  More blocks will result
@@ -661,7 +698,7 @@ __device__ void reduce(
         // now that we are using warp-synchronous programming (below)
         // we need to declare our shared memory volatile so that the compiler
         // doesn't reorder stores to it and induce incorrect behavior.
-        volatile double* smem = sdata;
+        volatile T* smem = sdata;
         if (blockDim.x >=  64) { smem[tid] = v = reduction_op(v, smem[tid + 32]); }
         if (blockDim.x >=  32) { smem[tid] = v = reduction_op(v, smem[tid + 16]); }
         if (blockDim.x >=  16) { smem[tid] = v = reduction_op(v, smem[tid +  8]); }
@@ -690,16 +727,16 @@ __device__ void reduce(
  * @param AssignmentOp      Type of the functor object that is used to modify the value before writing it to its final location in global memory for each row
  */
 template <typename ReductionOp,
-          typename AssignmentOp>
+          typename AssignmentOp, typename T>
 __device__ void reduce_row(
-    double *g_idata,            ///< input data stored in device memory (of size rows*cols)
-    double *g_odata,            ///< output/temporary array store in device memory (of size rows*cols)
+    T *g_idata,            ///< input data stored in device memory (of size rows*cols)
+    T *g_odata,            ///< output/temporary array store in device memory (of size rows*cols)
     unsigned int rows,          ///< rows in input and temporary/output arrays
     unsigned int cols,          ///< columns in input and temporary/output arrays
     ReductionOp reduction_op,		///< Reduction operation to perform (functor object)
     AssignmentOp assignment_op, ///< Operation to perform before assigning this to its final location in global memory for each row
-    double initialValue){  			///< initial value for the reduction variable
-    extern __shared__ double sdata[];
+    T initialValue){  			///< initial value for the reduction variable
+    extern __shared__ T sdata[];
 
     // one block per row
     if (blockIdx.x >= rows) {
@@ -711,7 +748,7 @@ __device__ void reduce_row(
     unsigned int i = tid;
     unsigned int block_offset = block * cols;
 
-    double v = initialValue;
+    T v = initialValue;
     while (i < cols){
         v = reduction_op(v, g_idata[block_offset + i]);
         i += blockDim.x;
@@ -732,7 +769,7 @@ __device__ void reduce_row(
         // now that we are using warp-synchronous programming (below)
         // we need to declare our shared memory volatile so that the compiler
         // doesn't reorder stores to it and induce incorrect behavior.
-        volatile double* smem = sdata;
+        volatile T* smem = sdata;
         if (blockDim.x >=  64) { smem[tid] = v = reduction_op(v, smem[tid + 32]); }
         if (blockDim.x >=  32) { smem[tid] = v = reduction_op(v, smem[tid + 16]); }
         if (blockDim.x >=  16) { smem[tid] = v = reduction_op(v, smem[tid +  8]); }
@@ -759,15 +796,15 @@ __device__ void reduce_row(
  * @param AssignmentOp      Type of the functor object that is used to modify the value before writing it to its final location in global memory for each column
  */
 template <typename ReductionOp,
-          typename AssignmentOp>
+          typename AssignmentOp, typename T>
 __device__ void reduce_col(
-    double *g_idata,            ///< input data stored in device memory (of size rows*cols)
-    double *g_odata,            ///< output/temporary array store in device memory (of size rows*cols)
+    T *g_idata,            ///< input data stored in device memory (of size rows*cols)
+    T *g_odata,            ///< output/temporary array store in device memory (of size rows*cols)
     unsigned int rows,          ///< rows in input and temporary/output arrays
     unsigned int cols,          ///< columns in input and temporary/output arrays
     ReductionOp reduction_op,	///< Reduction operation to perform (functor object)
     AssignmentOp assignment_op, ///< Operation to perform before assigning this to its final location in global memory for each column
-    double initialValue)  		///< initial value for the reduction variable
+    T initialValue)  		///< initial value for the reduction variable
 {
     unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (global_tid >= cols) {
@@ -776,7 +813,7 @@ __device__ void reduce_col(
 
     unsigned int i = global_tid;
     unsigned int grid_size = cols;
-    double val = initialValue;
+    T val = initialValue;
 
     while (i < rows * cols) {
       val = reduction_op(val, g_idata[i]);
@@ -788,22 +825,24 @@ __device__ void reduce_col(
 /**
  * Functor op for assignment op. This is a dummy/identity op.
  */
-typedef struct {
+template <typename T>
+struct IdentityOp {
     __device__ __forceinline__
-    double operator()(double a) const {
+    T operator()(T a) const {
         return a;
     }
-} IdentityOp;
+};
 
 /**
  * Functor op for summation operation
  */
-typedef struct {
+ template <typename T>
+struct SumOp {
     __device__ __forceinline__
-    double operator()(double a, double b) const {
+    T operator()(T a, T b) const {
         return a + b;
     }
-} SumOp;
+} ;
 
 
 /**
@@ -812,10 +851,20 @@ typedef struct {
  * @param g_odata   output/temporary array stored in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
+template <typename T>
+__device__ void reduce_sum(T *g_idata, T *g_odata, unsigned int n){
+  SumOp<T> op;
+  reduce<SumOp<T>, T>(g_idata, g_odata, n, op, (T)0.0);
+}
+
 extern "C"
-__global__ void reduce_sum(double *g_idata, double *g_odata, unsigned int n){
-	SumOp op;
-  reduce<SumOp>(g_idata, g_odata, n, op, 0.0);
+__global__ void reduce_sumd(double *g_idata, double *g_odata, unsigned int n){
+	reduce_sum(g_idata, g_odata, n);
+}
+
+extern "C"
+__global__ void reduce_sumf(float *g_idata, float *g_odata, unsigned int n){
+	reduce_sum(g_idata, g_odata, n);
 }
 
 /**
@@ -825,11 +874,21 @@ __global__ void reduce_sum(double *g_idata, double *g_odata, unsigned int n){
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+template <typename T>
+__device__ void reduce_row_sum(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    SumOp<T> op;
+    IdentityOp<T> aop;
+    reduce_row<SumOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, 0.0);
+}
+
 extern "C"
-__global__ void reduce_row_sum(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    SumOp op;
-    IdentityOp aop;
-    reduce_row<SumOp, IdentityOp>(g_idata, g_odata, rows, cols, op, aop, 0.0);
+__global__ void reduce_row_sumd(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_sum(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_row_sumf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_sum(g_idata, g_odata, rows, cols);
 }
 
 /**
@@ -839,23 +898,33 @@ __global__ void reduce_row_sum(double *g_idata, double *g_odata, unsigned int ro
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
-extern "C"
-__global__ void reduce_col_sum(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    SumOp op;
-    IdentityOp aop;
-    reduce_col<SumOp, IdentityOp>(g_idata, g_odata, rows, cols, op, aop, 0.0);
+template <typename T>
+__device__ void reduce_col_sum(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    SumOp<T> op;
+    IdentityOp<T> aop;
+    reduce_col<SumOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)0.0);
 }
 
+extern "C"
+__global__ void reduce_col_sumd(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_sum(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_col_sumf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_sum(g_idata, g_odata, rows, cols);
+}
 
 /**
  * Functor op for max operation
  */
-typedef struct {
+template <typename T>
+struct MaxOp {
     __device__ __forceinline__
-    double operator()(double a, double b) const {
+    T operator()(T a, T b) const {
         return fmax(a, b);
     }
-} MaxOp;
+};
 
 
 /**
@@ -864,10 +933,20 @@ typedef struct {
  * @param g_odata   output/temporary array stode in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
+template <typename T>
+__device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n){
+    MaxOp<T> op;
+    reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, (T) -FLT_MAX);
+}
+
 extern "C"
-__global__ void reduce_max(double *g_idata, double *g_odata, unsigned int n){
-    MaxOp op;
-    reduce<MaxOp>(g_idata, g_odata, n, op, -DBL_MAX);
+__global__ void reduce_maxd(double *g_idata, double *g_odata, unsigned int n){
+	reduce_max(g_idata, g_odata, n);
+}
+
+extern "C"
+__global__ void reduce_maxf(float *g_idata, float *g_odata, unsigned int n){
+	reduce_max(g_idata, g_odata, n);
 }
 
 /**
@@ -877,11 +956,21 @@ __global__ void reduce_max(double *g_idata, double *g_odata, unsigned int n){
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+ template <typename T>
+__device__ void reduce_row_max(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    MaxOp<T> op;
+    IdentityOp<T> aop;
+    reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T) -DBL_MAX);
+}
+
 extern "C"
-__global__ void reduce_row_max(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    MaxOp op;
-    IdentityOp aop;
-    reduce_row<MaxOp, IdentityOp>(g_idata, g_odata, rows, cols, op, aop, -DBL_MAX);
+__global__ void reduce_row_maxd(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_max(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_row_maxf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_max(g_idata, g_odata, rows, cols);
 }
 
 /**
@@ -891,22 +980,33 @@ __global__ void reduce_row_max(double *g_idata, double *g_odata, unsigned int ro
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+template <typename T>
+__device__ void reduce_col_max(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    MaxOp<T> op;
+    IdentityOp<T> aop;
+    reduce_col<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T) -FLT_MAX);
+}
+
 extern "C"
-__global__ void reduce_col_max(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    MaxOp op;
-    IdentityOp aop;
-    reduce_col<MaxOp, IdentityOp>(g_idata, g_odata, rows, cols, op, aop, -DBL_MAX);
+__global__ void reduce_col_maxd(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_max(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_col_maxf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_max(g_idata, g_odata, rows, cols);
 }
 
 /**
  * Functor op for min operation
  */
-typedef struct {
+template <typename T>
+struct MinOp {
     __device__ __forceinline__
-    double operator()(double a, double b) const {
+    T operator()(T a, T b) const {
         return fmin(a, b);
     }
-} MinOp;
+};
 
 /**
  * Do a min over all elements of an array/matrix
@@ -914,10 +1014,20 @@ typedef struct {
  * @param g_odata   output/temporary array stode in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
+template <typename T>
+__device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n){
+	MinOp<T> op;
+    reduce<MinOp<T>, T>(g_idata, g_odata, n, op, DBL_MAX);
+}
+
 extern "C"
-__global__ void reduce_min(double *g_idata, double *g_odata, unsigned int n){
-	MinOp op;
-    reduce<MinOp>(g_idata, g_odata, n, op, DBL_MAX);
+__global__ void reduce_mind(double *g_idata, double *g_odata, unsigned int n){
+	reduce_min(g_idata, g_odata, n);
+}
+
+extern "C"
+__global__ void reduce_minf(float *g_idata, float *g_odata, unsigned int n){
+	reduce_min(g_idata, g_odata, n);
 }
 
 /**
@@ -927,11 +1037,21 @@ __global__ void reduce_min(double *g_idata, double *g_odata, unsigned int n){
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+template <typename T>
+__device__ void reduce_row_min(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    MinOp<T> op;
+    IdentityOp<T> aop;
+    reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)FLT_MAX);
+}
+
 extern "C"
-__global__ void reduce_row_min(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    MinOp op;
-    IdentityOp aop;
-    reduce_row<MinOp, IdentityOp>(g_idata, g_odata, rows, cols, op, aop, DBL_MAX);
+__global__ void reduce_row_mind(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_min(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_row_minf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_min(g_idata, g_odata, rows, cols);
 }
 
 /**
@@ -941,22 +1061,33 @@ __global__ void reduce_row_min(double *g_idata, double *g_odata, unsigned int ro
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+template <typename T>
+__device__ void reduce_col_min(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    MinOp<T> op;
+    IdentityOp<T> aop;
+    reduce_col<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)FLT_MAX);
+}
+
 extern "C"
-__global__ void reduce_col_min(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    MinOp op;
-    IdentityOp aop;
-    reduce_col<MinOp>(g_idata, g_odata, rows, cols, op, aop, DBL_MAX);
+__global__ void reduce_col_mind(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols) {
+	reduce_col_min(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_col_minf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols) {
+	reduce_col_min(g_idata, g_odata, rows, cols);
 }
 
 /**
  * Functor op for product operation
  */
-typedef struct {
+template <typename T>
+struct ProductOp {
     __device__ __forceinline__
-    double operator()(double a, double b) const {
+    T operator()(T a, T b) const {
         return a * b;
     }
-} ProductOp;
+};
 
 /**
  * Do a product over all elements of an array/matrix
@@ -964,21 +1095,32 @@ typedef struct {
  * @param g_odata   output/temporary array stode in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
+template <typename T>
+__device__ void reduce_prod(T *g_idata, T *g_odata, unsigned int n){
+	ProductOp<T> op;
+    reduce<ProductOp<T>, T>(g_idata, g_odata, n, op, (T)1.0);
+}
+
 extern "C"
-__global__ void reduce_prod(double *g_idata, double *g_odata, unsigned int n){
-	ProductOp op;
-    reduce<ProductOp>(g_idata, g_odata, n, op, 1.0);
+__global__ void reduce_prodd(double *g_idata, double *g_odata, unsigned int n) {
+	reduce_prod(g_idata, g_odata, n);
+}
+
+extern "C"
+__global__ void reduce_prodf(float *g_idata, float *g_odata, unsigned int n) {
+	reduce_prod(g_idata, g_odata, n);
 }
 
 /**
  * Functor op for mean operation
  */
+template <typename T>
 struct MeanOp {
     const long _size;   ///< Number of elements by which to divide to calculate mean
 		__device__ __forceinline__
     MeanOp(long size): _size(size) {}
     __device__ __forceinline__
-    double operator()(double total) const {
+    T operator()(T total) const {
         return total / _size;
     }
 };
@@ -991,11 +1133,21 @@ struct MeanOp {
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
+template <typename T>
+__device__ void reduce_row_mean(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    SumOp<T> op;
+    MeanOp<T> aop(cols);
+    reduce_row<SumOp<T>, MeanOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)0.0);
+}
+
 extern "C"
-__global__ void reduce_row_mean(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    SumOp op;
-    MeanOp aop(cols);
-    reduce_row<SumOp, MeanOp>(g_idata, g_odata, rows, cols, op, aop, 0.0);
+__global__ void reduce_row_meand(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_mean(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_row_meanf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_row_mean(g_idata, g_odata, rows, cols);
 }
 
 /**
@@ -1005,13 +1157,22 @@ __global__ void reduce_row_mean(double *g_idata, double *g_odata, unsigned int r
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
-extern "C"
-__global__ void reduce_col_mean(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
-    SumOp op;
-    MeanOp aop(rows);
-    reduce_col<SumOp, MeanOp>(g_idata, g_odata, rows, cols, op, aop, 0.0);
+template <typename T>
+__device__ void reduce_col_mean(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
+    SumOp<T> op;
+    MeanOp<T> aop(rows);
+    reduce_col<SumOp<T>, MeanOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, 0.0);
 }
 
+extern "C"
+__global__ void reduce_col_meand(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_mean(g_idata, g_odata, rows, cols);
+}
+
+extern "C"
+__global__ void reduce_col_meanf(float *g_idata, float *g_odata, unsigned int rows, unsigned int cols){
+	reduce_col_mean(g_idata, g_odata, rows, cols);
+}
 
 /**
  * Do an exp over all the elements of a matrix
@@ -1019,12 +1180,22 @@ __global__ void reduce_col_mean(double *g_idata, double *g_odata, unsigned int r
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_exp(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_exp(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = exp(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_expd(double *A, double *C, unsigned int size) {
+	matrix_exp(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_expf(float *A, float *C, unsigned int size) {
+	matrix_exp(A, C, size);
 }
 
 /**
@@ -1033,12 +1204,22 @@ __global__ void matrix_exp(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_sqrt(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_sqrt(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = sqrt(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_sqrtd(double *A, double *C, unsigned int size) {
+	matrix_sqrt(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_sqrtf(float *A, float *C, unsigned int size) {
+	matrix_sqrt(A, C, size);
 }
 
 /**
@@ -1047,12 +1228,22 @@ __global__ void matrix_sqrt(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_round(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_round(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = (double)llround(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_roundd(double *A, double *C, unsigned int size) {
+	matrix_round(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_roundf(float *A, float *C, unsigned int size) {
+	matrix_round(A, C, size);
 }
 
 /**
@@ -1061,12 +1252,22 @@ __global__ void matrix_round(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_abs(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_abs(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = (double)fabs(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_absd(double *A, double *C, unsigned int size) {
+	matrix_abs(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_absf(float *A, float *C, unsigned int size) {
+	matrix_abs(A, C, size);
 }
 
 /**
@@ -1075,12 +1276,22 @@ __global__ void matrix_abs(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_log(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_log(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = log(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_logd(double *A, double *C, unsigned int size) {
+	matrix_log(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_logf(float *A, float *C, unsigned int size) {
+	matrix_log(A, C, size);
 }
 
 /**
@@ -1089,12 +1300,22 @@ __global__ void matrix_log(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_floor(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_floor(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = floor(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_floord(double *A, double *C, unsigned int size) {
+	matrix_floor(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_floorf(float *A, float  *C, unsigned int size) {
+	matrix_floor(A, C, size);
 }
 
 /**
@@ -1103,12 +1324,22 @@ __global__ void matrix_floor(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_ceil(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_ceil(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = ceil(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_ceild(double *A, double *C, unsigned int size) {
+	matrix_ceil(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_ceilf(float *A, float *C, unsigned int size) {
+	matrix_ceil(A, C, size);
 }
 
 /**
@@ -1117,12 +1348,22 @@ __global__ void matrix_ceil(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_sin(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_sin(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = sin(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_sind(double *A, double *C, unsigned int size) {
+	matrix_sin(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_sinf(float *A, float *C, unsigned int size) {
+	matrix_sin(A, C, size);
 }
 
 /**
@@ -1131,12 +1372,22 @@ __global__ void matrix_sin(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_sinh(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_sinh(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = sinh(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_sinhd(double *A, double *C, unsigned int size) {
+	matrix_sinh(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_sinhf(float *A, float *C, unsigned int size) {
+	matrix_sinh(A, C, size);
 }
 
 /**
@@ -1145,12 +1396,22 @@ __global__ void matrix_sinh(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_cos(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_cos(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = cos(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_cosd(double *A, double *C, unsigned int size) {
+	matrix_cos(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_cosf(float *A, float *C, unsigned int size) {
+	matrix_cos(A, C, size);
 }
 
 /**
@@ -1159,12 +1420,22 @@ __global__ void matrix_cos(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_cosh(double *A, double *C, unsigned int size) {
+ template <typename T>
+__device__ void matrix_cosh(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = cosh(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_coshd(double *A, double *C, unsigned int size) {
+	matrix_cosh(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_coshf(float *A, float *C, unsigned int size) {
+	matrix_cosh(A, C, size);
 }
 
 /**
@@ -1173,12 +1444,22 @@ __global__ void matrix_cosh(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_tan(double *A, double *C, unsigned int size) {
+ template <typename T>
+__device__ void matrix_tan(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = tan(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_tand(double *A, double *C, unsigned int size) {
+	matrix_tan(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_tanf(float *A, float *C, unsigned int size) {
+	matrix_tan(A, C, size);
 }
 
 /**
@@ -1187,12 +1468,22 @@ __global__ void matrix_tan(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_tanh(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_tanh(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = tanh(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_tanhd(double *A, double *C, unsigned int size) {
+	matrix_tanh(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_tanhf(float *A, float *C, unsigned int size) {
+	matrix_tanh(A, C, size);
 }
 
 /**
@@ -1201,12 +1492,22 @@ __global__ void matrix_tanh(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_asin(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_asin(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = asin(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_asind(double *A, double *C, unsigned int size) {
+	matrix_asin(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_asinf(float *A, float *C, unsigned int size) {
+	matrix_asin(A, C, size);
 }
 
 /**
@@ -1215,12 +1516,22 @@ __global__ void matrix_asin(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_acos(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_acos(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = acos(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_acosd(double *A, double *C, unsigned int size) {
+	matrix_acos(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_acosf(float *A, float *C, unsigned int size) {
+	matrix_acos(A, C, size);
 }
 
 /**
@@ -1229,12 +1540,22 @@ __global__ void matrix_acos(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_atan(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_atan(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         C[index] = atan(A[index]);
     }
+}
+
+extern "C"
+__global__ void matrix_atand(double *A, double *C, unsigned int size) {
+	matrix_atan(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_atanf(float *A, float *C, unsigned int size) {
+	matrix_atan(A, C, size);
 }
 
 /**
@@ -1244,8 +1565,8 @@ __global__ void matrix_atan(double *A, double *C, unsigned int size) {
  * @param C the pre-allocated output matrix (of length = size)
  * @param siz the length of the input and output matrices
  */
-extern "C"
-__global__ void matrix_sign(double *A, double *C, unsigned int size) {
+template <typename T>
+__device__ void matrix_sign(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
         if (A[index] == 0.0) {
@@ -1254,4 +1575,14 @@ __global__ void matrix_sign(double *A, double *C, unsigned int size) {
             C[index] = copysign(1.0, A[index]);
         }
     }
+}
+
+extern "C"
+__global__ void matrix_signd(double *A, double *C, unsigned int size) {
+	matrix_sign(A, C, size);
+}
+
+extern "C"
+__global__ void matrix_signf(float *A, float *C, unsigned int size) {
+	matrix_sign(A, C, size);
 }

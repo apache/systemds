@@ -682,7 +682,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else {
 			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
-			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, sizeOfDataType, toInt(N), 1, 1, toInt(CHW));
+			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_TYPE, toInt(N), 1, 1, toInt(CHW));
 			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), tensorDescriptor);
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 		}

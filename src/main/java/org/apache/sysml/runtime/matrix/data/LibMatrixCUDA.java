@@ -271,7 +271,7 @@ public class LibMatrixCUDA {
 		if(sizeOfDataType == Sizeof.DOUBLE) {
 			return Pointer.to(new double[] { value });
 		}
-		else if(sizeOfDataType == Sizeof.DOUBLE) {
+		else if(sizeOfDataType == Sizeof.FLOAT) {
 			return Pointer.to(new float[] { (float) value });
 		}
 		else {

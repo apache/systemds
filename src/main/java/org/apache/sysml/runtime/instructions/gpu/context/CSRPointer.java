@@ -208,17 +208,17 @@ public class CSRPointer {
 		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
 			// Since Sizeof.FLOAT = Sizeof.INT = 4 and Sizeof.DOUBLE = 8
 			if(nnz == 1) {
-				cudaMemcpy(r.val, Pointer.to(new float[] { (float) values[0] }), nnz*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+				cudaMemcpy(r.val, Pointer.to(new float[] { (float) values[0] }), nnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 			}
 			else if(nnz > 1) {
 				// No additional memory required as we reuse r.colInd
 				Pointer valuesPtr = Pointer.to(values);
 				long firstHalfNnz = (int) Math.floor(((double)nnz)/2);
-				cudaMemcpy(r.colInd, valuesPtr, firstHalfNnz*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+				cudaMemcpy(r.colInd, valuesPtr, firstHalfNnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 				LibMatrixCUDA.double2float(gCtx, r.colInd, r.val, LibMatrixCUDA.toInt(firstHalfNnz));
 				JCuda.cudaDeviceSynchronize();
 				long secondHalfNnz = nnz - firstHalfNnz;
-				cudaMemcpy(r.colInd, valuesPtr.withByteOffset(firstHalfNnz*Sizeof.DOUBLE), secondHalfNnz*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+				cudaMemcpy(r.colInd, valuesPtr.withByteOffset(firstHalfNnz*Sizeof.FLOAT), secondHalfNnz*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 				LibMatrixCUDA.double2float(gCtx, r.colInd, r.val, LibMatrixCUDA.toInt(secondHalfNnz));
 				JCuda.cudaDeviceSynchronize();
 			}

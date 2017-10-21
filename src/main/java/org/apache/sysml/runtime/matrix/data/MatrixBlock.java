@@ -3852,6 +3852,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ru row upper
 	 * @param cl column lower
 	 * @param cu column upper
+	 * @param deep ?
 	 * @param ret ?
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs

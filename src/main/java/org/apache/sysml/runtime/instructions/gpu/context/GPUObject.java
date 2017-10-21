@@ -258,7 +258,7 @@ public class GPUObject {
 
 	/**
 	 * Convenience method to directly set the sparse matrix on GPU
-	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
+	 * Needed for operations like cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)
 	 *
 	 * @param sparseMatrixPtr CSR (compressed sparse row) pointer
 	 * @throws DMLRuntimeException ?
@@ -915,7 +915,7 @@ public class GPUObject {
 			else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
 				LOG.debug("Potential OOM: Allocated additional space in copyFromDeviceToHost");
 				float [] floatData = new float[data.length];
-				cudaMemcpy(Pointer.to(floatData), getJcudaDenseMatrixPtr(), data.length*Sizeof.DOUBLE,
+				cudaMemcpy(Pointer.to(floatData), getJcudaDenseMatrixPtr(), data.length*Sizeof.FLOAT,
 						cudaMemcpyDeviceToHost);
 				for(int i = 0; i < data.length; i++) {
 					data[i] = floatData[i];

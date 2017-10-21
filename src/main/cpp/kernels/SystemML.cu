@@ -660,7 +660,9 @@ __device__ void reduce(
     ReductionOp reduction_op,	///< Reduction operation to perform (functor object)
 	T initialValue)  		///< initial value for the reduction variable
 {
-    extern __shared__ T sdata[];
+    // extern __shared__ T sdata[];
+    extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+	T *sdata = reinterpret_cast<T *>(my_sdata);
 
     // perform first level of reduction,
     // reading from global memory, writing to shared memory
@@ -736,7 +738,9 @@ __device__ void reduce_row(
     ReductionOp reduction_op,		///< Reduction operation to perform (functor object)
     AssignmentOp assignment_op, ///< Operation to perform before assigning this to its final location in global memory for each row
     T initialValue){  			///< initial value for the reduction variable
-    extern __shared__ T sdata[];
+    // extern __shared__ T sdata[];
+    extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+	T *sdata = reinterpret_cast<T *>(my_sdata);
 
     // one block per row
     if (blockIdx.x >= rows) {

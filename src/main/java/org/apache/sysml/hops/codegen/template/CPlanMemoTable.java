@@ -95,11 +95,10 @@ public class CPlanMemoTable
 			.anyMatch(p -> (!checkClose||!p.isClosed()) && probe.contains(p.type));
 	}
 	
-	public boolean containsNotIn(long hopID, Collection<TemplateType> types, 
-		boolean checkChildRefs, boolean excludeCell) {
+	public boolean containsNotIn(long hopID, 
+		Collection<TemplateType> types, boolean checkChildRefs) {
 		return contains(hopID) && get(hopID).stream()
-			.anyMatch(p -> (!checkChildRefs || p.hasPlanRef()) 
-				&& (!excludeCell || p.type!=TemplateType.CELL)
+			.anyMatch(p -> (!checkChildRefs || p.hasPlanRef())
 				&& p.isValid() && !types.contains(p.type));
 	}
 	
@@ -153,14 +152,22 @@ public class CPlanMemoTable
 			.removeIf(p -> blackList.contains(p));
 	}
 	
+	public void remove(Hop hop, TemplateType type) {
+		_plans.get(hop.getHopID())
+			.removeIf(p -> p.type == type);
+	}
+	
 	public void removeAllRefTo(long hopID) {
+		removeAllRefTo(hopID, null);
+	}
+	
+	public void removeAllRefTo(long hopID, TemplateType type) {
 		//recursive removal of references
 		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() ) {
-			if( !e.getValue().isEmpty() ) {
-				e.getValue().removeIf(p -> p.hasPlanRefTo(hopID));
-				if( e.getValue().isEmpty() )
-					removeAllRefTo(e.getKey());
-			}
+			if( e.getValue().isEmpty() || e.getKey()==hopID ) 
+				continue;
+			e.getValue().removeIf(p -> p.hasPlanRefTo(hopID)
+				&& (type==null || p.type==type));
 		}
 	}
 	

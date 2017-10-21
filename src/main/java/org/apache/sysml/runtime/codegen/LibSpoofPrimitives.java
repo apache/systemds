@@ -1788,11 +1788,13 @@ public class LibSpoofPrimitives
 	//dynamic memory management
 	
 	public static void setupThreadLocalMemory(int numVectors, int len) {
-		setupThreadLocalMemory(numVectors, len, -1);
+		if( numVectors > 0 )
+			setupThreadLocalMemory(numVectors, len, -1);
 	}
 	
 	public static void setupThreadLocalMemory(int numVectors, int len, int len2) {
-		memPool.set(new VectorBuffer(numVectors, len, len2));
+		if( numVectors > 0 )
+			memPool.set(new VectorBuffer(numVectors, len, len2));
 	}
 	
 	public static void cleanupThreadLocalMemory() {

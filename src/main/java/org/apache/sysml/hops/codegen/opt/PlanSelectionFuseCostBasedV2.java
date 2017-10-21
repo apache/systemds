@@ -86,6 +86,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	//to cover result allocation, write into main memory, and potential evictions
 	private static final double WRITE_BANDWIDTH = 2d*1024*1024*1024;  //2GB/s
 	private static final double READ_BANDWIDTH = 32d*1024*1024*1024;  //32GB/s
+	private static final double READ_BANDWIDTH_BROADCAST = WRITE_BANDWIDTH/4;
 	private static final double COMPUTE_BANDWIDTH = 2d*1024*1024*1024 //2GFLOPs/core
 		* InfrastructureAnalyzer.getLocalParallelism();
 	
@@ -146,7 +147,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				getComputeCosts(memo.getHopRefs().get(hopID), computeCosts);
 			
 			//prepare pruning helpers and prune memo table w/ determined mat points
-			StaticCosts costs = new StaticCosts(computeCosts, getComputeCost(computeCosts, memo), 
+			StaticCosts costs = new StaticCosts(computeCosts, sumComputeCost(computeCosts), 
 				getReadCost(part, memo), getWriteCost(part.getRoots(), memo));
 			ReachabilityGraph rgraph = STRUCTURAL_PRUNING ? new ReachabilityGraph(part, memo) : null;
 			if( STRUCTURAL_PRUNING ) {
@@ -339,14 +340,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		return costs;
 	}
 	
-	private static double getComputeCost(HashMap<Long, Double> computeCosts, CPlanMemoTable memo) {
-		double costs = 0;
-		for( Entry<Long,Double> e : computeCosts.entrySet() ) {
-			Hop mainInput = memo.getHopRefs()
-				.get(e.getKey()).getInput().get(0);
-			costs += getSize(mainInput) * e.getValue() / COMPUTE_BANDWIDTH;
-		}
-		return costs;
+	private static double sumComputeCost(HashMap<Long, Double> computeCosts) {
+		return computeCosts.values().stream()
+			.mapToDouble(d -> d/COMPUTE_BANDWIDTH).sum();
 	}
 	
 	private static long getSize(Hop hop) {
@@ -567,31 +563,37 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 	}
 	
-	private static boolean isRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
-		//consider all aggregations other than root operation
-		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
-		boolean ret = true;
-		for(int i=0; i<3; i++)
-			if( me.isPlanRef(i) )
-				ret &= rIsRowTemplateWithoutAggOrVects(memo, 
-					current.getInput().get(i), visited);
-		return ret;
+	private static HashSet<Long> getRowAggOpsWithRowRef(CPlanMemoTable memo, PlanPartition part) {
+		HashSet<Long> refAggs = new HashSet<>();
+		for( Long hopID : part.getPartition() ) {
+			if( !memo.contains(hopID, TemplateType.ROW) ) continue;
+			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
+			for(int i=0; i<3; i++)
+				if( me.isPlanRef(i) && memo.contains(me.input(i), TemplateType.ROW) 
+					&& isRowAggOp(memo.getHopRefs().get(me.input(i))))
+					refAggs.add(me.input(i));
+		}
+		return refAggs;
 	}
 	
-	private static boolean rIsRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
+	private static boolean rIsRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited, boolean inclRoot) {
 		if( visited.contains(current.getHopID()) )
 			return true;
 		
-		boolean ret = true;
 		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
-		for(int i=0; i<3; i++)
+		boolean ret = !inclRoot || !isRowAggOp(current);
+		for(int i=0; i<3 && ret; i++)
 			if( me!=null && me.isPlanRef(i) )
-				ret &= rIsRowTemplateWithoutAggOrVects(memo, current.getInput().get(i), visited);
-		ret &= !(current instanceof AggUnaryOp || current instanceof AggBinaryOp
-			|| HopRewriteUtils.isBinary(current, OpOp2.CBIND));
+				ret &= rIsRowTemplateWithoutAggOrVects(memo, 
+					current.getInput().get(i), visited, true);
 		
 		visited.add(current.getHopID());
 		return ret;
+	}
+	
+	private static boolean isRowAggOp(Hop hop){
+		return (hop instanceof AggUnaryOp || hop instanceof AggBinaryOp
+			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND));
 	}
 	
 	private static void pruneInvalidAndSpecialCasePlans(CPlanMemoTable memo, PlanPartition part) 
@@ -613,9 +615,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 						&& HopRewriteUtils.isTransposeOperation(in));
 				if( isSpark && !validNcol ) {
 					List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW);
-					memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(blacklist));
-					if( !memo.contains(hopID) )
-						memo.removeAllRefTo(hopID);
+					memo.remove(memo.getHopRefs().get(hopID), TemplateType.ROW);
+					memo.removeAllRefTo(hopID, TemplateType.ROW);
 					if( LOG.isTraceEnabled() ) {
 						LOG.trace("Removed row memo table entries w/ violated blocksize constraint ("+hopID+"): "
 							+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
@@ -625,10 +626,11 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//prune row aggregates with pure cellwise operations
+		HashSet<Long> refAggs = getRowAggOpsWithRowRef(memo, part);
 		for( Long hopID : part.getPartition() ) {
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
 			if( me != null && me.type == TemplateType.ROW && memo.contains(hopID, TemplateType.CELL)
-				&& isRowTemplateWithoutAggOrVects(memo, memo.getHopRefs().get(hopID), new HashSet<Long>())) {
+				&& rIsRowTemplateWithoutAggOrVects(memo, memo.getHopRefs().get(hopID), new HashSet<Long>(), refAggs.contains(hopID)) ) {
 				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
 				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(blacklist));
 				if( LOG.isTraceEnabled() ) {
@@ -698,28 +700,25 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//i.e., plans that become invalid after the previous pruning step
 		long hopID = current.getHopID();
 		if( part.getPartition().contains(hopID) && memo.contains(hopID, TemplateType.ROW) ) {
-			for( MemoTableEntry me : memo.get(hopID) ) {
-				if( me.type==TemplateType.ROW ) {
-					//convert leaf node with pure vector inputs
-					if( !me.hasPlanRef() && !TemplateUtils.hasMatrixInput(current) ) {
+			for( MemoTableEntry me : memo.get(hopID, TemplateType.ROW) ) {
+				//convert leaf node with pure vector inputs
+				if( !me.hasPlanRef() && !TemplateUtils.hasMatrixInput(current) ) {
+					me.type = TemplateType.CELL;
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Converted leaf memo table entry from row to cell: "+me);
+				}
+				
+				//convert inner node without row template input
+				if( me.hasPlanRef() && !ROW_TPL.open(current) ) {
+					boolean hasRowInput = false;
+					for( int i=0; i<3; i++ )
+						if( me.isPlanRef(i) )
+							hasRowInput |= memo.contains(me.input(i), TemplateType.ROW);
+					if( !hasRowInput ) {
 						me.type = TemplateType.CELL;
 						if( LOG.isTraceEnabled() )
-							LOG.trace("Converted leaf memo table entry from row to cell: "+me);
+							LOG.trace("Converted inner memo table entry from row to cell: "+me);	
 					}
-					
-					//convert inner node without row template input
-					if( me.hasPlanRef() && !ROW_TPL.open(current) ) {
-						boolean hasRowInput = false;
-						for( int i=0; i<3; i++ )
-							if( me.isPlanRef(i) )
-								hasRowInput |= memo.contains(me.input(i), TemplateType.ROW);
-						if( !hasRowInput ) {
-							me.type = TemplateType.CELL;
-							if( LOG.isTraceEnabled() )
-								LOG.trace("Converted inner memo table entry from row to cell: "+me);	
-						}
-					}
-					
 				}
 			}
 		}
@@ -834,14 +833,16 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				String type = (best !=null) ? best.type.name() : "HOP";
 				LOG.trace("Cost vector ("+type+" "+currentHopId+"): "+costVect);
 			}
-			double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH //time for output write
-				+ Math.max(costVect.getSumInputSizes() * 8 / READ_BANDWIDTH,
-				costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH);
+			double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH
+				+ Math.max(costVect.getInputSize() * 8 / READ_BANDWIDTH,
+				costVect.computeCosts/ COMPUTE_BANDWIDTH);
+			//read correction for distributed computation
+			Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
+			if( driver.getMemEstimate() > OptimizerUtils.getLocalMemBudget() )
+				tmpCosts += costVect.getSideInputSize() * 8 / READ_BANDWIDTH_BROADCAST;
 			//sparsity correction for outer-product template (and sparse-safe cell)
-			if( best != null && best.type == TemplateType.OUTER ) {
-				Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
+			if( best != null && best.type == TemplateType.OUTER )
 				tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
-			}
 			costs += tmpCosts;
 		}
 		//add costs for non-partition read in the middle of fused operator
@@ -978,12 +979,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			costs = 1;
 		}
 		else if( current instanceof AggBinaryOp ) {
-			//outer product template
-			if( HopRewriteUtils.isOuterProductLikeMM(current) )
-				costs = 2 * current.getInput().get(0).getDim2();
-			//row template w/ matrix-vector or matrix-matrix
-			else
-				costs = 2 * current .getDim2();
+			//outer product template w/ matrix-matrix 
+			//or row template w/ matrix-vector or matrix-matrix
+			costs = 2 * current.getInput().get(0).getDim2();
 		}
 		else if( current instanceof AggUnaryOp) {
 			switch(((AggUnaryOp)current).getOp()) {
@@ -993,9 +991,14 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			case MAX:    costs = 1; break;
 			default:
 				LOG.warn("Cost model not "
-					+ "implemented yet for: "+((AggUnaryOp)current).getOp());			
+					+ "implemented yet for: "+((AggUnaryOp)current).getOp());
 			}
 		}
+		
+		//scale by current output size in order to correctly reflect
+		//a mix of row and cell operations in the same fused operator
+		//(e.g., row template with fused column vector operations)
+		costs *= getSize(current);
 		
 		computeCosts.put(current.getHopID(), costs);
 	}
@@ -1025,8 +1028,14 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			//ensures that input sizes are not double counted
 			inSizes.put(hopID, inputSize);
 		}
-		public double getSumInputSizes() {
+		public double getInputSize() {
 			return inSizes.values().stream()
+				.mapToDouble(d -> d.doubleValue()).sum();
+		}
+		public double getSideInputSize() {
+			double max = getMaxInputSize();
+			return inSizes.values().stream()
+				.filter(d -> d < max)
 				.mapToDouble(d -> d.doubleValue()).sum();
 		}
 		public double getMaxInputSize() {

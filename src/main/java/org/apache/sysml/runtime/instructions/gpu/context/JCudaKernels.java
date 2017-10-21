@@ -29,6 +29,7 @@ import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 
 import jcuda.Pointer;
 import jcuda.driver.CUfunction;
@@ -72,7 +73,8 @@ public class JCudaKernels {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void launchKernel(String name, ExecutionConfig config, Object... arguments) throws DMLRuntimeException {
-		CUfunction function = kernels.get(name);
+		CUfunction function = kernels.get(name + LibMatrixCUDA.customKernelSuffix);
+		
 		if (function == null) {
 			// caching functions into hashmap reduces the lookup overhead
 			function = new CUfunction();

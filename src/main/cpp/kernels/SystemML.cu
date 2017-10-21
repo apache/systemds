@@ -27,7 +27,7 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cmath>
 
 extern "C"
-__global__ void double2float(double* A,  float* ret, int N) {
+__global__ void double2floatf(double* A,  float* ret, int N) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if(tid < N) {
 		ret[tid] = (float) A[tid];
@@ -35,13 +35,12 @@ __global__ void double2float(double* A,  float* ret, int N) {
 }
 
 extern "C"
-__global__ void float2double(float* A,  double* ret, int N) {
+__global__ void float2doublef(float* A,  double* ret, int N) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if(tid < N) {
 		ret[tid] = (double) A[tid];
 	}
 }
-
 
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
@@ -58,8 +57,9 @@ __global__ void float2double(float* A,  double* ret, int N) {
  * @param cu column upper
  * @param retClen number of columns of output matrix
  */
+template <typename T>
 extern "C"
-__global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+__device__ void slice_sparse_dense_row(T* inVal, int* inRowPtr, int* colInd, T* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
   	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int rowIndex = index + rl;
@@ -96,6 +96,18 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
     }
 }
 
+extern "C"
+__global__ void slice_sparse_dense_rowd(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+    slice_sparse_dense_row(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
+}
+
+extern "C"
+__global__ void slice_sparse_dense_rowf(float* inVal, int* inRowPtr, int* colInd, float* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+    slice_sparse_dense_row(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
+}
+
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.
@@ -111,8 +123,9 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
  * @param cu column upper
  * @param retClen number of columns of output matrix
  */
+template <typename T>
 extern "C"
-__global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+__device__ void slice_sparse_dense_nnz(T* inVal, int* inRowPtr, int* colInd, T* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int i = tid + inRowPtr[rl];
@@ -128,6 +141,19 @@ __global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd
     }
 }
 
+extern "C"
+__global__ void slice_sparse_dense_nnzd(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+    slice_sparse_dense_nnz(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
+}
+
+extern "C"
+__global__ void slice_sparse_dense_nnzf(float* inVal, int* inRowPtr, int* colInd, float* ret, 
+    int rl, int ru, int cl, int cu, int retClen) {
+    slice_sparse_dense_nnz(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
+}
+
+
 /**
  * Performs a slice operation where the input matrix is dense and the output matrix is dense.
  * 
@@ -141,8 +167,9 @@ __global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd
  * @param retRlen number of rows of output matrix
  * @param retClen number of columns of output matrix
  */
+template <typename T>
 extern "C"
-__global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
+__device__ void slice_dense_dense(T* in, T* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / retClen;
 	int iy = tid % retClen;
@@ -153,14 +180,25 @@ __global__ void slice_dense_dense(double* in, double* ret, int rl, int ru, int c
 }
 
 
+extern "C"
+__global__ void slice_dense_densed(double* in, double* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
+	slice_dense_dense(in, ret, rl, ru, cl, cu, inClen, retRlen, retClen);
+}
+
+extern "C"
+__global__ void slice_dense_densef(float* in, float* ret, int rl, int ru, int cl, int cu, int inClen, int retRlen, int retClen) {
+	slice_dense_dense(in, ret, rl, ru, cl, cu, inClen, retRlen, retClen);
+}
+
 /**
  * Does a copy of upper to lower triangle of the given matrix
  * @param ret the input and output array allocated on the GPU
  * @param dim the number of rows of the square matrix ret
  * @param N total number of elements of the matrix
  */
+template <typename T>
 extern "C"
-__global__ void copy_u2l_dense(double* ret, int dim, int N) {
+__device__ void copy_u2l_dense(T* ret, int dim, int N) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / dim;
 	int iy = tid % dim;
@@ -173,35 +211,39 @@ __global__ void copy_u2l_dense(double* ret, int dim, int N) {
 }
 
 extern "C"
-__forceinline__ __device__ double getBoolean(int val) {
-	if(val == 0)
-		return 0.0;
-	else
-		return 1.0;
+__global__ void copy_u2l_densed(double* ret, int dim, int N) {
+	copy_u2l_dense(ret, dim, N);
 }
+
+extern "C"
+__global__ void copy_u2l_densef(float* ret, int dim, int N) {
+	copy_u2l_dense(ret, dim, N);
+}
+
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 // 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
 // 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
 // 17=modulus, 18=integer division}
+template <typename T>
 extern "C"
-__forceinline__ __device__ double binaryOp(double x, double y, int op) {
+__forceinline__ __device__ T binaryOp(T x, T y, int op) {
 	switch(op) {
         case 0 : return x + y;
         case 1 : return x - y;
         case 2 : return x * y;
         case 3 : return x / y;
         case 4 : return pow(x, y);
-        case 5 : return getBoolean(x < y);
-        case 6 : return getBoolean(x <= y);
-        case 7 : return getBoolean(x > y);
-        case 8 : return getBoolean(x >= y);
-        case 9 : return getBoolean(x == y);
-        case 10 : return getBoolean(x != y);
+        case 5 : return (x < y) == 0 ? 0.0 : 1.0;
+        case 6 : return (x <= y) == 0 ? 0.0 : 1.0;
+        case 7 : return (x > y) == 0 ? 0.0 : 1.0;
+        case 8 : return (x >= y) == 0 ? 0.0 : 1.0;
+        case 9 : return (x == y) == 0 ? 0.0 : 1.0;
+        case 10 : return (x != y) == 0 ? 0.0 : 1.0;
         case 11 : return min(x, y);
         case 12 : return max(x, y);
-        case 13 : return getBoolean((int)llrint(x) & (int)llrint(y));
-        case 14 : return getBoolean((int)llrint(x) | (int)llrint(y));
+        case 13 : return ((int)llrint(x) & (int)llrint(y)) == 0 ? 0.0 : 1.0;
+        case 14 : return ((int)llrint(x) | (int)llrint(y)) == 0 ? 0.0 : 1.0;
         case 15 : return 1 - x * y;
         case 16 : return (x != 0.0 ? x - y : 0.0);
         case 17 : {
@@ -229,8 +271,9 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
     }
 }
 
+template <typename T>
 extern "C"
-__global__ void relu(double* A,  double* ret, int rlen, int clen) {
+__device__ void relu(T* A,  T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
@@ -239,15 +282,36 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 	}
 }
 
-// This method computes the backpropagation errors for previous layer of relu operation
 extern "C"
-__global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, int clen) {
+__global__ void relud(double* A,  double* ret, int rlen, int clen) {
+	relu(A, ret, rlen, clen);
+}
+
+extern "C"
+__global__ void reluf(float* A,  float* ret, int rlen, int clen) {
+	relu(A, ret, rlen, clen);
+}
+
+// This method computes the backpropagation errors for previous layer of relu operation
+template <typename T>
+extern "C"
+__device__ void relu_backward(T* X,  T* dout, T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
 	if(ix < rlen && iy < clen) {
 		ret[tid] = X[tid] > 0 ?  dout[tid] : 0;
 	}
+}
+
+extern "C"
+__global__ void relu_backwardd(double* X,  double* dout, double* ret, int rlen, int clen) {
+	relu_backward(X, dout, ret, rlen, clen);
+}
+
+extern "C"
+__global__ void relu_backwardf(float* X,  float* dout, float* ret, int rlen, int clen) {
+	relu_backward(X, dout, ret, rlen, clen);
 }
 
 /**
@@ -258,8 +322,9 @@ __global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, i
  * @param rlen the number of rows
  * @param clen the number of columns
  */
+template <typename T>
 extern "C"
-__global__ void inplace_add(double* input,  double* ret, int rlen, int clen) {
+__device__ void inplace_add(T* input,  T* ret, int rlen, int clen) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
@@ -268,12 +333,23 @@ __global__ void inplace_add(double* input,  double* ret, int rlen, int clen) {
 	}
 }
 
+extern "C"
+__global__ void inplace_addd(double* input,  double* ret, int rlen, int clen) {
+	inplace_add(input, ret, rlen, clen);
+}
+
+extern "C"
+__global__ void inplace_addf(float* input,  float* ret, int rlen, int clen) {
+	inplace_add(input, ret, rlen, clen);
+}
+
 // Performs the operation corresponding to the DML script:
 // ones = matrix(1, rows=1, cols=Hout*Wout)
 // output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 // This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
+template <typename T>
 extern "C"
-__global__ void bias_add(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+__device__ void bias_add(T* input,  T* bias, T* ret, int rlen, int clen, int PQ) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
@@ -283,9 +359,20 @@ __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, in
 	}
 }
 
-// Performs the operation "ret <- A + alpha*B", where B is a vector
 extern "C"
-__global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB) {
+__global__ void bias_addd(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+	bias_add(input, bias, ret, rlen, clen, PQ);
+}
+
+extern "C"
+__global__ void bias_addf(float* input,  float* bias, float* ret, int rlen, int clen, int PQ) {
+	bias_add(input, bias, ret, rlen, clen, PQ);
+}
+
+// Performs the operation "ret <- A + alpha*B", where B is a vector
+template <typename T>
+extern "C"
+__device__ void daxpy_matrix_vector(T* A,  T* B, double alpha, T* ret, int rlenA, int clenA, int rlenB, int clenB) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clenA;
 	int iy = tid % clenA;
@@ -300,9 +387,20 @@ __global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double*
 	}
 }
 
-// Performs similar operation as bias_add except elementwise multiplication instead of add
 extern "C"
-__global__ void bias_multiply(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+__global__ void daxpy_matrix_vectord(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB) {
+	daxpy_matrix_vector(A, B, alpha, ret, rlenA, clenA, rlenB, clenB);
+}
+
+extern "C"
+__global__ void daxpy_matrix_vectorf(float* A,  float* B, double alpha, float* ret, int rlenA, int clenA, int rlenB, int clenB) {
+	daxpy_matrix_vector(A, B, alpha, ret, rlenA, clenA, rlenB, clenB);
+}
+
+// Performs similar operation as bias_add except elementwise multiplication instead of add
+template <typename T>
+extern "C"
+__device__ void bias_multiply(T* input,  T* bias, T* ret, int rlen, int clen, int PQ) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
@@ -312,9 +410,20 @@ __global__ void bias_multiply(double* input,  double* bias, double* ret, int rle
 	}
 }
 
-// Compares the value and set
 extern "C"
-__global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
+__global__ void bias_multiplyd(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+	bias_multiply(input, bias, ret, rlen, clen, PQ);
+}
+
+extern "C"
+__global__ void bias_multiplyf(float* input,  float* bias, float* ret, int rlen, int clen, int PQ) {
+	bias_multiply(input, bias, ret, rlen, clen, PQ);
+}
+
+// Compares the value and set
+template <typename T>
+extern "C"
+__device__ void compare_and_set(T* A,  T* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 	int ix = tid / clen;
 	int iy = tid % clen;
@@ -327,6 +436,16 @@ __global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, dou
 		else
 			ret[index] = ifGreaterThanVal;
 	}
+}
+
+extern "C"
+__global__ void compare_and_setd(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
+	compare_and_set(A,  ret, rlen, clen, compareVal, tol, ifEqualsVal, ifLessThanVal, ifGreaterThanVal);
+}
+
+extern "C"
+__global__ void compare_and_setf(float* A,  float* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
+	compare_and_set(A,  ret, rlen, clen, compareVal, tol, ifEqualsVal, ifLessThanVal, ifGreaterThanVal);
 }
 
 

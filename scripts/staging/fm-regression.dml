@@ -1,0 +1,141 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/**
+ * Factorization Machines for Regression.
+ */
+
+# Imports
+source("nn/optim/adam.dml") as adam
+source("algorithms/fm.dml") as fm
+source("nn/layers/l2_loss.dml") as l2_loss
+source("nn/layers/log_loss.dml") as log_loss
+source("nn/layers/sigmoid.dml") as sigmoid
+
+
+train = function(matrix[double] X)
+    return (matrix[double] w0, matrix[double] W, matrix[double] V) {
+  /*
+   * Trains the FM model.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  
+   * Outputs:
+   *  - w0, W, V : updated model parameters.
+   */
+    
+    # 1.initialize fm core
+    [w0, W, V] = fm::init(d, k);
+    
+    # 2.initialize adam optimizer
+    ## Default values for some parameters
+    lr      = 0.001; 
+    beta1   = 0.9;       # [0, 1)
+    beta2   = 0.999;     # [0, 1)
+    epsilon = 0.00000001; 
+    t       = 0;
+    
+    [mw0, vw0] = adam::init(w0);
+    [mW, vW]   = adam::init(W);
+    [mV, vV]   = adam::init(V);
+    
+    # regularization
+    lambd = 5e-04
+    
+    # Optimize
+    print("Starting optimization")
+    batch_size = 64
+    iters = ceil(N / batch_size)
+    for (e in 1:epochs) {
+      for (i in 1:iters) {
+        # Get the next batch
+        beg = ((i-1) * batch_size) %% N + 1
+        end = min(N, beg + batch_size - 1)
+        X_batch = X[beg:end,]
+        y_batch = y[beg:end,]
+        
+        # 3.Send inputs through fm::forward
+        y = fm::forward(X, w0, W, V);
+       
+        # 4.Send the above result through log_loss::forward
+        sfy = sigmoid::forward(y);
+    
+        # 5.compute gradients from a loss l2_loss::backward
+        dy = l2_loss::backward(sfy, y);
+        
+        # Compute loss & accuracy for training & validation data every 100 iterations.
+        if (i %% 100 == 0) { TODO
+          # Compute training loss & accuracy
+          
+          # Compute validation loss & accuracy
+
+          # Output results
+          # print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
+                + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+        }
+    
+        # 6.Send the above result through fm::backward
+        [dX, dw0, dW, dV] = fm::backward(dy, X, w0, W, V);
+    
+        # 6.Call adam::update for all parameters
+
+        w0 = adam::update(w0, dw0, lr, beta1, beta2, epsilon, t, matrix[double] mw0, matrix[double] vw0);
+        W  = adam::update(W, dW, lr, beta1, beta2, epsilon, t, matrix[double] mW, matrix[double] vW );
+        V  = adam::update(V, dV, lr, beta1, beta2, epsilon, t, matrix[double] mV, matrix[double] vV );
+        
+      }
+    }
+}
+
+predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
+    return (matrix[double] out) {
+  /*
+   * Computes the predictions for the given inputs.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  - w0, W, V : trained model parameters. 
+   *  
+   * Outputs:
+   *  - out : target vector, y.
+   */
+    
+    # 1.initialize fm core
+    [w0, W, V] = fm::init(d, k);
+    
+    # 2.Send inputs through fm::forward
+    out = fm::forward(X, w0, W, V);
+    
+    # 3.Send the above result through log_loss::forward
+    # loss = log_loss::forward(out);
+    
+}
+
+eval = function(matrix[double] probs, matrix[double] y)
+    return (matrix[double] loss) {
+   /*
+    * Computes loss and accuracy.
+    */
+    
+    # just compute loss with log_loss::forward(probs, y)
+    y = log_loss::forward(probs, y)
+}

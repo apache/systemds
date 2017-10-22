@@ -18,8 +18,6 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
-import java.util.Arrays;
-
 /**
  * This class contains the different implementation of rotate180 operation
  */
@@ -27,11 +25,12 @@ public class LibMatrixDNNRotate180Helper {
 
 	static interface Rotate180Worker {
 		public void execute(int inputN, int outputN);
-		public static Rotate180Worker getWorker(MatrixBlock input, double [] outputArray, ConvolutionParameters params, boolean zeroOutSparseOutput) {
-			if(!input.isInSparseFormat()) 
-				return new DenseRotate180Worker(input, outputArray, params);
+		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out, 
+			ConvolutionParameters params, boolean zeroOutSparseOutput, boolean trans) {
+			if(!in.isInSparseFormat()) 
+				return new DenseRotate180Worker(in, out.getDenseBlock(), params);
 			else
-				return new SparseRotate180Worker(input, outputArray, params, zeroOutSparseOutput);
+				return new SparseRotate180Worker(in, out, params, trans);
 		}
 	}
 	
@@ -71,39 +70,41 @@ public class LibMatrixDNNRotate180Helper {
 	 * Because the number of rows of output (i.e. NPQ) is much larger than number of columns (i.e. K) 
 	 */
 	static class SparseRotate180Worker implements Rotate180Worker {
-
-		double [] outputArray;  MatrixBlock input;
-		ConvolutionParameters params; boolean zeroOutSparseOutput;
-		public SparseRotate180Worker(MatrixBlock input, double [] outputArray,  ConvolutionParameters params, boolean zeroOutSparseOutput) {
-			this.outputArray = outputArray;
+		private final MatrixBlock in, out;
+		private final ConvolutionParameters params;
+		private final boolean trans;
+		
+		public SparseRotate180Worker(MatrixBlock input, MatrixBlock output, 
+			ConvolutionParameters params, boolean trans) {
+			this.in = input;
+			this.out = output;
 			this.params = params;
-			this.zeroOutSparseOutput = zeroOutSparseOutput;
-			this.input = input;
-			if(outputArray == null)
-				throw new RuntimeException("Incorrect usage: empty inputs");
+			this.trans = trans;
 		}
 		
 		@Override
 		public void execute(int inputN, int outputN) {
-			if(zeroOutSparseOutput)
-				Arrays.fill(outputArray, 0);
+			out.reset();
 			
-			int outputOffset = outputN*params.K*params.P*params.Q;
-			if(!input.isEmptyBlock()) {
-				if( !input.sparseBlock.isEmpty(inputN) ) {
-					int [] tensorIndexes = new int[3];
-					int apos = input.sparseBlock.pos(inputN);
-					int alen = input.sparseBlock.size(inputN);
-					int[] aix = input.sparseBlock.indexes(inputN);
-					double[] avals = input.sparseBlock.values(inputN);
-					for(int j = apos; j < apos+alen; j++) {
-						LibMatrixDNNHelper.computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
-						int k = tensorIndexes[0];
-						int p = tensorIndexes[1];
-						int q = tensorIndexes[2];
-						outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = avals[j];
-					}
-				}
+			SparseBlock sblock = in.sparseBlock;
+			if( sblock==null || sblock.isEmpty(inputN) )
+				return;
+			
+			int outputOffset = outputN*params.P*params.Q;
+			int [] tensorIndexes = new int[3];
+			int apos = sblock.pos(inputN);
+			int alen = sblock.size(inputN);
+			int[] aix = sblock.indexes(inputN);
+			double[] avals = sblock.values(inputN);
+			for(int j = apos; j < apos+alen; j++) {
+				LibMatrixDNNHelper.computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
+				int k = tensorIndexes[0];
+				int p = tensorIndexes[1];
+				int q = tensorIndexes[2];
+				if( trans )
+					out.appendValue(k, outputOffset + p*params.Q + q, avals[j]);
+				else
+					out.appendValue(outputOffset + p*params.Q + q, k, avals[j]);
 			}
 		}
 	}

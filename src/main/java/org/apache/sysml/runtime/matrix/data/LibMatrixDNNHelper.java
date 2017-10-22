@@ -24,6 +24,8 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.Conv2dBackwardFilter;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.SparseNativeConv2dBackwardFilterDense;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
@@ -169,13 +171,13 @@ public class LibMatrixDNNHelper {
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		
 		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
-																(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+			(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(LibMatrixDNN.isEligibleForConv2dBackwardFilterSparseDense(params)) 
-				ret.add(new LibMatrixDNNConv2dBackwardFilterHelper.SparseNativeConv2dBackwardFilterDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new SparseNativeConv2dBackwardFilterDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput)
-				ret.add(new LibMatrixDNNConv2dBackwardFilterHelper.Conv2dBackwardFilter(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new Conv2dBackwardFilter(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}

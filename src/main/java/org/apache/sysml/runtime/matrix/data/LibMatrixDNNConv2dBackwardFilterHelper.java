@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2ColHelper.Im2colWorker;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNRotate180Helper.Rotate180Worker;
 import org.apache.sysml.utils.NativeHelper;
 
 public class LibMatrixDNNConv2dBackwardFilterHelper {
@@ -43,12 +43,13 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 		
 		@Override
 		public Long call() throws Exception {
-			int CRS = _params.C*_params.R*_params.S; 
-			double [] dout_n = new double[_params.P*_params.Q*_params.K];
+			int CRS = _params.C*_params.R*_params.S, PQ = _params.P*_params.Q, K = _params.K;
+			MatrixBlock dout_n = new MatrixBlock(PQ, K, false);
+			dout_n.allocateBlock();
 			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
-					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( _params.input2, dout_n, _params, true);
-			// partialRetBlock is size: [params.C*params.R*params.S, params.K]
-			double [] partialRetBlock = new double[CRS*_params.K];
+					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( _params.input2, dout_n, _params, true, false);
+			double [] ldout_n = dout_n.getDenseBlock();
+			double [] partRet = new double[CRS*_params.K]; //CRS x K
 			for(int n = _rl; n < _ru; n++) {
 				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
 					// rotate180(dout[n,]) => dout_n
@@ -59,11 +60,11 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 					int[] aix = _params.input1.getSparseBlock().indexes(n);
 					double[] avals = _params.input1.getSparseBlock().values(n);
 					NativeHelper.conv2dBackwardFilterSparseDense(apos, alen, aix, avals, 
-							dout_n, partialRetBlock, 1, _params.C, _params.H, _params.W, _params.K, 
+							ldout_n, partRet, 1, _params.C, _params.H, _params.W, _params.K, 
 							_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 				}
 			}
-			inplaceTransposedAddition(partialRetBlock, _params);
+			inplaceTransAdd(partRet, _params);
 			return 0L;
 		}
 	}
@@ -72,9 +73,9 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 	 * General conv2d backward data operator
 	 */
 	public static class Conv2dBackwardFilter implements Callable<Long> {
-
-		public int _rl; public int _ru; 
+		private final int _rl, _ru; 
 		private final ConvolutionParameters _params; 
+		
 		public Conv2dBackwardFilter(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
@@ -82,15 +83,17 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 		
 		@Override
 		public Long call() throws Exception {
-			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
+			int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
 			MatrixBlock dout = _params.input2;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, false);
-			dout_reshaped.allocateDenseBlock();
+			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, dout.sparse);
+			MatrixBlock temp = new MatrixBlock(CRS, K, false);
+			dout_reshaped.allocateBlock();
+			temp.allocateBlock();
+			
 			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true, false);
-			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
-					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, dout_reshaped.getDenseBlock(), _params, true);
-			double [] partialRetBlock = new double[CRS*_params.K];
+			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, dout_reshaped, _params, true, false);
+			double [] partRet = new double[CRS*_params.K];
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++) {
 				// rotate180(dout[n,]) => dout_reshaped
@@ -101,22 +104,19 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				im2ColWorker.execute(n);
 				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
-				MatrixBlock temp = new MatrixBlock(CRS, K, false);
+				temp.reset(CRS, K, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(im2ColOutBlock, dout_reshaped, temp, true, true, _params);
 				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
-				if(!temp.isEmptyBlock()) {
-					// partialRetBlock is size: [params.C*params.R*params.S, params.K]
-					ConvolutionUtils.binaryOperationInPlace(temp, partialRetBlock, 0, K, 0, CRS, 
-							LibMatrixDNN._binaryElementWiseAddition);
-				}
+				if( !temp.isEmptyBlock() ) //accumulate row results
+					LibMatrixMult.vectAdd(temp.getDenseBlock(), partRet, 0, 0, K*CRS);
 				
 				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
-			inplaceTransposedAddition(partialRetBlock, _params);
+			inplaceTransAdd(partRet, _params);
 			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
 				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
@@ -124,15 +124,22 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 			return 0L;
 		}
 	}
-	private static synchronized void inplaceTransposedAddition(double [] partialRetBlock, ConvolutionParameters params) {
-		// Perform transposed addition: output of size [K, CRS] += partialRetBlock of size [CRS,K]
-		int iter = 0; int CRS = params.C*params.R*params.S; int K = params.K;
-		double [] outputArr = params.output.denseBlock;
-		for(int i = 0; i < CRS; i++) {
-			for(int j = 0; j < K; j++, iter++) {
-				int index = j*CRS+i;
-				outputArr[index] += partialRetBlock[iter];
+	
+	private static synchronized void inplaceTransAdd(double[] a, ConvolutionParameters params) {
+		// Perform transposed addition: output of size [K, CRS] += input of size [CRS,K]
+		double [] c = params.output.denseBlock;
+		final int CRS = params.C*params.R*params.S, K = params.K;
+		final int blocksizeIJ = 128; //L2 cache
+		
+		//cache-conscious blocked execution
+		for( int bi=0; bi<CRS; bi+=blocksizeIJ )
+			for( int bj=0; bj<K; bj+=blocksizeIJ ) {
+				int bimin = Math.min(bi+blocksizeIJ, CRS);
+				int bjmin = Math.min(bj+blocksizeIJ, K);
+				//core transpose add operation
+				for(int i=bi, aix=bi*K; i<bimin; i++, aix+=K)
+					for(int j=bj, cix=i+bj*CRS; j<bjmin; j++, cix+=CRS)
+						c[cix] += a[aix+j];
 			}
-		}
 	}
 }

@@ -35,13 +35,13 @@ x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize
 dout=matrix(seq(1, numImg*numFilters*P*Q), numImg, numFilters*P*Q, byrow=TRUE)
 
 if(as.logical(args[11])) {
-	zero_mask = (x - mean(x)) > 0 
+	zero_mask = (x - mean(x)*1.5) > 0 
 	x = x * zero_mask
 } else {
 	x = x - mean(x)
 }
 if(as.logical(args[12])) {
-	zero_mask = (dout - mean(dout)) > 0 
+	zero_mask = (dout - mean(dout)*1.5) > 0 
 	dout = dout * zero_mask
 } else {
 	dout = dout - mean(dout)

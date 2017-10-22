@@ -71,12 +71,11 @@ public class LibMatrixDNNIm2ColHelper {
 	 * Special case operator for performing dense im2col when stride = [1, 1] and pad = [0, 0] by using System.arraycopy
 	 */
 	static class DenseIm2colWorkerStride1Pad0 implements Im2colWorker {
-		double [] inputArray; double [] outputArray; 
-		int CRS; int S; int R; int P; int Q; int CHW; int H; int W;
+		private final double [] inputArray, outputArray; 
+		private final int S, R, P, Q, CHW, H, W;
 		public DenseIm2colWorkerStride1Pad0(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
-			this.CRS = params.C * params.R * params.S;
 			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.CHW = params.C*params.H*params.W;
 		}
@@ -100,10 +99,8 @@ public class LibMatrixDNNIm2ColHelper {
 					System.arraycopy(inputArray, inputOffset + wOffset, outputArray, outOffset, Q);
 					int w = Q - 1;
 					int wPadded = w + wOffset;
-					if (hPadded < H && wPadded < W)
-						outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-					else
-						outputArray[outOffset + w] = 0;
+					boolean assign = (hPadded < H && wPadded < W);
+					outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
 				}
 			}
 		}
@@ -115,8 +112,8 @@ public class LibMatrixDNNIm2ColHelper {
 	 * Special case operator for performing dense im2col when stride = [1, 1] and pad = [0, 0] by using System.arraycopy
 	 */
 	static class DenseIm2colWorkerStride1Pad0AllChannels implements Im2colWorker {
-		double [] inputArray; double [] outputArray; 
-		int CRS; int S; int R; int P; int Q; int CHW; int H; int W;
+		private final double [] inputArray, outputArray; 
+		private final int CRS, S, R, P, Q, CHW, H, W;
 		public DenseIm2colWorkerStride1Pad0AllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
@@ -144,10 +141,8 @@ public class LibMatrixDNNIm2ColHelper {
 					System.arraycopy(inputArray, inputOffset + wOffset, outputArray, outOffset, Q);
 					int w = Q - 1;
 					int wPadded = w + wOffset;
-					if (hPadded < H && wPadded < W)
-						outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-					else
-						outputArray[outOffset + w] = 0;
+					boolean assign = (hPadded < H && wPadded < W);
+					outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
 				}
 			}
 		}
@@ -157,13 +152,12 @@ public class LibMatrixDNNIm2ColHelper {
 	 * Performing dense im2col (general case)
 	 */
 	static class DenseIm2colWorker implements Im2colWorker {
-		double [] inputArray; double [] outputArray; 
-		int CRS; int S; int R; int P; int Q; int CHW; int H; int W; 
-		int stride_h; int stride_w; int pad_h; int pad_w;
+		private final double [] inputArray, outputArray; 
+		private final int S, R, P, Q, CHW, H, W; 
+		private final int stride_h, stride_w, pad_h, pad_w;
 		public DenseIm2colWorker(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
-			this.CRS = params.C * params.R * params.S;
 			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.CHW = params.C*params.H*params.W;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
@@ -190,10 +184,8 @@ public class LibMatrixDNNIm2ColHelper {
 					} else {
 						for (int w = 0; w < Q; ++w) {
 							int wPadded = w * stride_w - pad_w + wOffset;
-							if (wPadded >= 0 && wPadded < W)
-								outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-							else
-								outputArray[outOffset + w] = 0;
+							boolean assign = (wPadded >= 0 && wPadded < W);
+							outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
 						}
 					}
 				}
@@ -205,9 +197,9 @@ public class LibMatrixDNNIm2ColHelper {
 	 * Performing dense im2col (general case)
 	 */
 	private static class DenseIm2colWorkerAllChannels implements Im2colWorker {
-		double [] inputArray; double [] outputArray; 
-		int CRS; int S; int R; int P; int Q; int CHW; int H; int W; 
-		int stride_h; int stride_w; int pad_h; int pad_w;
+		private final double[] inputArray, outputArray; 
+		private final int CRS, S, R, P, Q, CHW, H, W; 
+		private final int stride_h, stride_w, pad_h, pad_w;
 		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
@@ -239,10 +231,8 @@ public class LibMatrixDNNIm2ColHelper {
 					} else {
 						for (int w = 0; w < Q; ++w) {
 							int wPadded = w * stride_w - pad_w + wOffset;
-							if (wPadded >= 0 && wPadded < W)
-								outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-							else
-								outputArray[outOffset + w] = 0;
+							boolean assign = (wPadded >= 0 && wPadded < W);
+							outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
 						}
 					}
 				}
@@ -314,7 +304,7 @@ public class LibMatrixDNNIm2ColHelper {
 		private final MatrixBlock input, output;
 		private final int S, R, P, Q, W, HW;
 		private final int stride_h, stride_w, pad_h, pad_w; 
-		final boolean trans;
+		private final boolean trans;
 		
 		public SparseSparseIm2colWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
 			this.input = input;

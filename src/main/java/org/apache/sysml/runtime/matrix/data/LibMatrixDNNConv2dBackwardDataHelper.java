@@ -81,7 +81,7 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, false);
 			dout_reshaped.allocateDenseBlock();
 			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
-					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, dout_reshaped.getDenseBlock(), _params, true);
+					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, dout_reshaped, _params, true, false);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
 				// rotate180(dout[n,]) => dout_reshaped

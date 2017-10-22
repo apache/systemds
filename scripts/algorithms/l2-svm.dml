@@ -151,14 +151,12 @@ while(continue & iter < maxiterations)  {
   debug_str = append(debug_str, iter + "," + obj)
 	
   tmp = sum(s * g_old)
-  continue = (step_sztmp >= epsilon*obj & sum(s^2) != 0);
+  continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
 
   #non-linear CG step
   be = sum(g_new * g_new)/sum(g_old * g_old)
   s = be * s + g_new
   g_old = g_new
-  
-  continue = (sum(s^2) != 0);
     
   iter = iter + 1
 }

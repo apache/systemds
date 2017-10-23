@@ -867,7 +867,7 @@ public class LibMatrixCUDA {
 
 		Pointer tempOut = gCtx.allocate(instName, n * sizeOfDataType);
 
-		long t1=0,t2=0,t3=0;
+		long t1=0,t2=0;
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		getCudaKernels(gCtx).launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem), in, tempOut, n);
@@ -885,11 +885,7 @@ public class LibMatrixCUDA {
 			s = (s + (threads*2-1)) / (threads*2);
 		}
 		double[] result = {-1f};
-
-		if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
-		cudaMemcpy(Pointer.to(result), tempOut, sizeOfDataType, cudaMemcpyDeviceToHost);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t3);
-
+		cudaKernels.deviceToHost(gCtx, tempOut, result, instName);
 		gCtx.cudaFreeHelper(instName, tempOut);
 		return result[0];
 	}

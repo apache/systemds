@@ -312,7 +312,8 @@ public class TemplateUtils
 	public static boolean hasSingleOperation(CNodeTpl tpl) {
 		CNode output = tpl.getOutput();
 		return ((output instanceof CNodeUnary 
-				&& !TemplateUtils.isUnary(output, UnaryType.EXP, UnaryType.LOG)) 
+				&& !TemplateUtils.isUnary(output, 
+					UnaryType.EXP, UnaryType.LOG, UnaryType.ROW_COUNTNNZS)) 
 			|| (output instanceof CNodeBinary
 				&& !TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD))) 
 			&& hasOnlyDataNodeOrLookupInputs(output);

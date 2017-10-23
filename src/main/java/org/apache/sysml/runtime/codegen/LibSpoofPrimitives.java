@@ -281,6 +281,18 @@ public class LibSpoofPrimitives
 		return (alen<len) ? Math.max(val, 0) : val;
 	}
 	
+	public static double vectCountnnz(double[] a, int ai, int len) { 
+		int count = 0;
+		for( int i = ai; i < ai+len; i++ )
+			count += (a[i] != 0) ? 1 : 0;
+		return count;
+	} 
+	
+	public static double vectCountnnz(double[] avals, int[] aix, int ai, int alen, int len) {
+		//pure meta data operation
+		return alen;
+	}
+	
 	//custom vector div
 	
 	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {

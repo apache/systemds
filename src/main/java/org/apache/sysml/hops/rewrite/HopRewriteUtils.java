@@ -893,6 +893,12 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+	public static boolean isBinaryMatrixScalar(Hop hop, OpOp2 type, double val) {
+		return isBinary(hop, type)
+			&& (isLiteralOfValue(hop.getInput().get(0), val)
+			|| isLiteralOfValue(hop.getInput().get(1), val));
+	}
+	
 	public static boolean containsInput(Hop current, Hop probe) {
 		return rContainsInput(current, probe, new HashSet<Long>());	
 	}

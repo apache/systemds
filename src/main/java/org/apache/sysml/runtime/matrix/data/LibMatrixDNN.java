@@ -186,10 +186,10 @@ public class LibMatrixDNN {
 		if(isEligibleForConv2dBackwardDataDense(params))
 			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
 		
-		execute(LibMatrixDNNHelper.getConv2dBackwardDataWorkers(params), params);
+		long nnz = execute(LibMatrixDNNHelper.getConv2dBackwardDataWorkers(params), params);
 		
 		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros(); 
+		outputBlock.setNonZeros(nnz);
 		outputBlock.examSparsity();
 	}
 	

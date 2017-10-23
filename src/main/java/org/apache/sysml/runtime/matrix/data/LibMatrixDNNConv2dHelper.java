@@ -219,7 +219,7 @@ public class LibMatrixDNNConv2dHelper {
 				
 				// t(_im2ColOutBlock) %*% t(filter) => t(matMultOutBlock)
 				outMM.reset(outMM.rlen, outMM.clen, false);
-				LibMatrixDNNHelper.singleThreadedMatMult(outIm2col, _params.input2, outMM, false, true, _params);
+				LibMatrixDNNHelper.singleThreadedMatMult(outIm2col, _params.input2, outMM, false, false, _params);
 				
 				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
 				partialCopyTrans(outMM, _params.output, n*K*PQ, K, PQ);

@@ -78,22 +78,22 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
 			MatrixBlock filter = _params.input1;
 			MatrixBlock dout = _params.input2;
-			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, false);
-			dout_reshaped.allocateDenseBlock();
+			MatrixBlock outRotate = new MatrixBlock(PQ, K, dout.sparse);
+			MatrixBlock outMM = new MatrixBlock(PQ, CRS, false);
+			outRotate.allocateBlock();
 			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
-					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, dout_reshaped, _params, true, false);
+				LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( dout, outRotate, _params, true, false);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
 				// rotate180(dout[n,]) => dout_reshaped
 				rotate180Worker.execute(n, 0);
-				
 				// dout_reshaped %*% filter => temp
-				MatrixBlock temp = new MatrixBlock(PQ, CRS, false);
 				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				LibMatrixDNNHelper.singleThreadedMatMult(dout_reshaped, filter, temp, true, false, _params);
+				outMM.reset(PQ, CRS, false);
+				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, filter, outMM, !outRotate.sparse, false, _params);
 				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				// col2im(temp) => output[n,] 
-				LibMatrixDNNHelper.doCol2imOverSingleImage(n, temp, _params);
+				LibMatrixDNNHelper.doCol2imOverSingleImage(n, outMM, _params);
 				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
 				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
@@ -105,8 +105,9 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 				LibMatrixDNN.loopedConvBwdDataMatMultTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdDataCol2ImTime.addAndGet(time2);
 			}
-			return 0L;
+			
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
-		
 	}
 }

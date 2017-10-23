@@ -201,7 +201,7 @@ public class LibMatrixDNNHelper {
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		
 		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
-																(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+			(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(LibMatrixDNN.isEligibleForConv2dBackwardDataDense(params)) 

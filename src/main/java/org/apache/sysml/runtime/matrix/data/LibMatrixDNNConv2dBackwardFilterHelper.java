@@ -86,13 +86,12 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 			int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
 			MatrixBlock dout = _params.input2;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			MatrixBlock dout_reshaped = new MatrixBlock(PQ, K, dout.sparse);
-			MatrixBlock temp = new MatrixBlock(CRS, K, false);
-			dout_reshaped.allocateBlock();
-			temp.allocateBlock();
+			MatrixBlock outRotate = new MatrixBlock(PQ, K, dout.sparse);
+			MatrixBlock outMM = new MatrixBlock(CRS, K, false);
+			outRotate.allocateBlock();
 			
 			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true, false);
-			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, dout_reshaped, _params, true, false);
+			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, outRotate, _params, true, false);
 			double [] partRet = new double[CRS*_params.K];
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++) {
@@ -104,12 +103,12 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				im2ColWorker.execute(n);
 				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
-				temp.reset(CRS, K, false);
-				LibMatrixDNNHelper.singleThreadedMatMult(im2ColOutBlock, dout_reshaped, temp, true, true, _params);
+				outMM.reset(CRS, K, false);
+				LibMatrixDNNHelper.singleThreadedMatMult(im2ColOutBlock, outRotate, outMM, !im2ColOutBlock.sparse, !outRotate.sparse, _params);
 				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
-				if( !temp.isEmptyBlock() ) //accumulate row results
-					LibMatrixMult.vectAdd(temp.getDenseBlock(), partRet, 0, 0, K*CRS);
+				if( !outMM.isEmptyBlock() ) //accumulate row results
+					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
 				
 				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
 					time1 += t2 - t1;

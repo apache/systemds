@@ -322,10 +322,12 @@ public class TemplateCell extends TemplateBase
 	protected boolean isSparseSafe(List<Hop> roots, Hop mainInput, List<CNode> outputs, List<AggOp> aggOps, boolean onlySum) {
 		boolean ret = true;
 		for( int i=0; i<outputs.size() && ret; i++ ) {
-			ret &= (HopRewriteUtils.isBinary(roots.get(i), OpOp2.MULT) 
-					&& roots.get(i).getInput().contains(mainInput))
-				|| (HopRewriteUtils.isBinary(roots.get(i), OpOp2.DIV) 
-					&& roots.get(i).getInput().get(0) == mainInput)
+			Hop root = (roots.get(i) instanceof AggUnaryOp || roots.get(i) 
+				instanceof AggBinaryOp) ? roots.get(i).getInput().get(0) : roots.get(i);
+			ret &= (HopRewriteUtils.isBinarySparseSafe(root) 
+					&& root.getInput().contains(mainInput))
+				|| (HopRewriteUtils.isBinary(root, OpOp2.DIV) 
+					&& root.getInput().get(0) == mainInput)
 				|| (TemplateUtils.rIsSparseSafeOnly(outputs.get(i), BinType.MULT)
 					&& TemplateUtils.rContainsInput(outputs.get(i), mainInput.getHopID()));
 			if( onlySum )

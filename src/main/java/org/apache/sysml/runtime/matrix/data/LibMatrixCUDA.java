@@ -187,6 +187,12 @@ public class LibMatrixCUDA {
 				A, ret, numElems);
 		return ret;
 	}
+	
+	public static Pointer float2double(GPUContext gCtx, Pointer A, Pointer ret, int numElems) throws DMLRuntimeException {
+		getCudaKernels(gCtx).launchKernel("float2double", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
+				A, ret, numElems);
+		return ret;
+	}
 
 	//********************************************************************/
 	//************************ End of UTILS ******************************/

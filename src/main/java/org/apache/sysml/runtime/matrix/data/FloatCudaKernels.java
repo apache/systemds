@@ -160,16 +160,24 @@ public class FloatCudaKernels implements CudaKernels {
 			Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr) {
 		return JCusparse.cusparseSnnz(handle, dirA, m, n, descrA, A, lda, nnzPerRowCol, nnzTotalDevHostPtr);
 	}
-
+	
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
-		// TODO: Perform conversion on GPU using double2float and float2double kernels
-		float [] floatData = new float[dest.length];
-		cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
-		for(int i = 0; i < dest.length; i++) {
-			dest[i] = floatData[i];
+		if(PERFORM_CONVERSION_ON_DEVICE) {
+			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
+			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
+			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
+			gCtx.cudaFreeHelper(deviceDoubleData);
+		}
+		else {
+			// TODO: Perform conversion on GPU using double2float and float2double kernels
+			float [] floatData = new float[dest.length];
+			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
+			for(int i = 0; i < dest.length; i++) {
+				dest[i] = floatData[i];
+			}
 		}
 		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
@@ -180,11 +188,20 @@ public class FloatCudaKernels implements CudaKernels {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
-		float [] floatData = new float[src.length];
-		for(int i = 0; i < src.length; i++) {
-			floatData[i] = (float) src[i];
+		if(PERFORM_CONVERSION_ON_DEVICE) {
+			Pointer deviceDoubleData = gCtx.allocate(((long)src.length)*Sizeof.DOUBLE);
+			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
+			gCtx.cudaFreeHelper(deviceDoubleData);
 		}
-		cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+		else {
+			float [] floatData = new float[src.length];
+			for(int i = 0; i < src.length; i++) {
+				floatData[i] = (float) src[i];
+			}
+			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+		}
+		
 		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 	}

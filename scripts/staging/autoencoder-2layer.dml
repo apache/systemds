@@ -150,14 +150,14 @@ max_epochs = $EPOCH
 n = nrow(X)
 m = ncol(X)
 
+#randomly reordering rows
+permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
+X = permut %*% X
+
 #z-transform, whitening operator is better
 means = colSums(X)/n
 stds = sqrt((colSums(X^2)/n - means*means)*n/(n-1)) + 1e-17
 X = (X - means)/stds
-
-#randomly reordering rows
-permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
-X = permut %*% X
 
 W1 = sqrt(6)/sqrt(m + num_hidden1) * Rand(rows=num_hidden1, cols=m, min=-1, max=1, pdf="uniform")
 b1 = matrix(0, rows=num_hidden1, cols=1)

@@ -34,7 +34,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
-import org.apache.sysml.utils.Statistics;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -161,9 +160,6 @@ public class LibMatrixDNN {
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
 		
-		if(isEligibleForConv2dSparse(params))
-			Statistics.numNativeSparseConv2dCalls.increment();
-		
 		long nnz = execute(LibMatrixDNNHelper.getConv2dWorkers(params), params);
 		
 		//post-processing: maintain nnz
@@ -183,9 +179,6 @@ public class LibMatrixDNN {
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
-		if(isEligibleForConv2dBackwardDataDense(params))
-			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
-		
 		long nnz = execute(LibMatrixDNNHelper.getConv2dBackwardDataWorkers(params), params);
 		
 		//post-processing: maintain nnz
@@ -204,9 +197,6 @@ public class LibMatrixDNN {
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
-		
-		if(isEligibleForConv2dBackwardFilterSparseDense(params))
-			Statistics.numNativeSparseConv2dBwdFilterCalls.increment();
 		
 		execute(LibMatrixDNNHelper.getConv2dBackwardFilterWorkers(params), params);
 		

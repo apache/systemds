@@ -57,7 +57,8 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 						_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 				System.arraycopy(ret, 0, _params.output.getDenseBlock(), n*CHW, CHW);
 			}
-			return 0L;
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 	}
 	

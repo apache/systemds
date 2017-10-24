@@ -363,10 +363,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C*H*W, false).allocateBlock();
-				if(instOpcode.equalsIgnoreCase("maxpooling_backward"))
-					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, false);
-				else
-					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, true);
+				LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, 
+					!instOpcode.equalsIgnoreCase("maxpooling_backward"));
 			}
 			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
 		}

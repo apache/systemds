@@ -24,11 +24,15 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.Conv2dBackwardFilter;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.SparseNativeConv2dBackwardFilterDense;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardDataHelper.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dHelper.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingBackwardHelper.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingHelper.*;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 
 public class LibMatrixDNNHelper {
@@ -51,9 +55,9 @@ public class LibMatrixDNNHelper {
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(params.input1.isInSparseFormat())
-				ret.add(new LibMatrixDNNPoolingHelper.SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
-				ret.add(new LibMatrixDNNPoolingHelper.DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 		}
 		return ret;
 	}
@@ -73,15 +77,15 @@ public class LibMatrixDNNHelper {
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(!params.input1.isInSparseFormat()) {
 				if(!params.input2.isInSparseFormat()) 
-					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+					ret.add(new PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
 				else
-					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+					ret.add(new PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
 			}
 			else {
 				if(!params.input2.isInSparseFormat()) 
-					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+					ret.add(new PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
 				else
-					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+					ret.add(new PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
 			}
 		}
 		return ret;
@@ -123,32 +127,36 @@ public class LibMatrixDNNHelper {
 		// TODO: Decide here based on params whether to use LoopedIm2ColConv2dAllChannels or LoopedIm2ColConv2dOneChannel
 		// For now, let's stick to the existing approach of converting [1, CHW] to [CRS, PQ] as it allows matrix multiplication large enough matrix.
 		boolean allChannels = true; ArrayList<MatrixBlock> filters = null;
-		if(!allChannels) {
+		if(!allChannels)
 			filters = splitFilter(params);
-		}
 		
 		MatrixBlock in1 = params.input1;
 		boolean isEmptyDenseInput = !in1.isInSparseFormat() && in1.denseBlock == null;
 		boolean isTransPref = in1.sparse && !params.input2.sparse && 
 			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
+		boolean applyNative = LibMatrixDNN.isEligibleForConv2dSparse(params)
+			&& !(!isEmptyDenseInput && allChannels && isTransPref);
+		if( applyNative )
+			Statistics.numNativeSparseConv2dCalls.increment();
 		
 		//transpose filter once for efficient sparse-dense multiplies in LoopedIm2ColConv2dTransAllChan
 		//in order to share the temporary object and its creation costs across threads
-		if( !LibMatrixDNN.isEligibleForConv2dSparse(params) 
-			&& !isEmptyDenseInput && allChannels && isTransPref ) {
+		if( !applyNative && !isEmptyDenseInput && allChannels && isTransPref ) {
 			params.input2 = LibMatrixReorg.transpose(params.input2, 
 				new MatrixBlock(params.input2.clen, params.input2.rlen, false), k);
 		}
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
-			if(LibMatrixDNN.isEligibleForConv2dSparse(params)) 
-				ret.add(new LibMatrixDNNConv2dHelper.SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			//note: we prefer the java backend for sparse inputs because the native 
+			//implementation simply converts the sparse input into dense rows
+			if( applyNative ) 
+				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels && isTransPref)
-				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels)
-				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LoopedIm2ColConv2dAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && !allChannels)
-				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dOneChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
+				ret.add(new LoopedIm2ColConv2dOneChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}
@@ -172,9 +180,15 @@ public class LibMatrixDNNHelper {
 		
 		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
 			(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+		boolean applyNative = LibMatrixDNN.isEligibleForConv2dBackwardFilterSparseDense(params)
+			&& !params.input2.isInSparseFormat();
+		if( applyNative )
+			Statistics.numNativeSparseConv2dBwdFilterCalls.increment();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
-			if(LibMatrixDNN.isEligibleForConv2dBackwardFilterSparseDense(params)) 
+			//note: we prefer the java backend for sparse filters because the native 
+			//implementation simply rotates the sparse filters into dense rows
+			if( applyNative ) 
 				ret.add(new SparseNativeConv2dBackwardFilterDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput)
 				ret.add(new Conv2dBackwardFilter(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
@@ -202,12 +216,18 @@ public class LibMatrixDNNHelper {
 		
 		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
 			(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+		boolean applyNative = LibMatrixDNN.isEligibleForConv2dBackwardDataDense(params)
+			&& !params.input2.isInSparseFormat();
+		if( applyNative )
+			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
-			if(LibMatrixDNN.isEligibleForConv2dBackwardDataDense(params)) 
-				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.SparseNativeConv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			//note: we prefer the java backend for sparse filters because the native 
+			//implementation simply converts the sparse filters into dense rows
+			if( applyNative ) 
+				ret.add(new SparseNativeConv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput)
-				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.Conv2dBackwardData(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new Conv2dBackwardData(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}
@@ -319,20 +339,21 @@ public class LibMatrixDNNHelper {
 	// Single-threaded matrix multiplication
 	static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
 			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
-		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
+		if( !params.enableNative || m1.sparse || m2.sparse ) {
 			prepNonZerosForMatrixMult(m1, recomputeNNZM1);
 			prepNonZerosForMatrixMult(m2, recomputeNNZM2);
 			LibMatrixMult.matrixMult(m1, m2, ret, false);
-			ret.setNonZeros((long)ret.rlen*ret.clen);
 		}
 		else {
 			ret.sparse = false;
 			if(ret.getDenseBlock() == null)
 				ret.allocateDenseBlock();
 			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
-					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), 1);
-			ret.recomputeNonZeros();
+				ret.denseBlock, m1.rlen, m1.clen, m2.clen, 1);
 		}
+		
+		//no need to maintain nnz exactly, as consumed by other operations
+		ret.setNonZeros((long)ret.rlen*ret.clen);
 	}
 	
 	static void addBias(int r, double [] out, double [] bias, int K, int PQ) {

@@ -56,7 +56,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	
 	// We will use this flag until lower precision is supported on CP. 
 	private final static String DATA_TYPE = "double";  
-	protected final double SINGLE_PRECISION_THRESHOLD = 1e-6;    // for relative error
+	protected final double SINGLE_PRECISION_THRESHOLD = 1e-5;    // for relative error
 	
 	
 	@BeforeClass
@@ -258,11 +258,15 @@ public abstract class GPUTests extends AutomatedTestBase {
 					double actualDouble = actualMB.quickGetValue(i, j);
 					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
 						double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+						double absoluteError = Math.abs(expectedDouble - actualDouble);
 						Formatter format = new Formatter();
 						format.format(
 								"Relative error(%f) is more than threshold (%f). Expected = %f, Actual = %f, differed at [%d, %d]",
 								relativeError, getTHRESHOLD(), expectedDouble, actualDouble, i, j);
-						Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						if(DATA_TYPE.equals("double"))
+							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						else
+							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD() && absoluteError < getTHRESHOLD());
 						format.close();
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());

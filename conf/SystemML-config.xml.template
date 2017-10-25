@@ -93,8 +93,8 @@
     <!-- whether to perform eager CUDA free on rmvar instruction -->
     <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
    
-    <!-- the data type to use on GPU -->
-    <sysml.gpu.dataType>double</sysml.gpu.dataType>
+    <!-- the datatype to use internally: supported values are double, float -->
+    <sysml.dataType>double</sysml.dataType>
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>

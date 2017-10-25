@@ -26,6 +26,33 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 import jcuda.Pointer;
 
+/**
+ * DESIGN DOCUMENTATION FOR SUPPORTING LOWER PRECISION:
+ * 1. SystemML.cu has been templatized in following way to support different datatype:
+ * - Similar to CuBLAS and CuSPARSE, the global kernels have the datatype specification in their name (for example: f for float
+ * and d for datatpe). But unlike CuBLAS and CuSPARSE, these are suffixes so as to simplify the engine.  
+ * - The global kernels with datatype specification invoke a corresponding templatized kernel (without suffix) which contains the core logic.
+ * - The suffixes are added in JCudaKernels's launchKernel method before invocation.
+ * For example:
+ * template <typename T>
+ * __device__ void matrix_atan(T *A, T *C, unsigned int size) {
+ *     int index = blockIdx.x * blockDim.x + threadIdx.x;
+ *     if (index < size){
+ *         C[index] = atan(A[index]);
+ *     }
+ * }
+ * extern "C" __global__ void matrix_atand(double *A, double *C, unsigned int size) {
+ * 	matrix_atan(A, C, size);
+ * }
+ * extern "C" __global__ void matrix_atanf(float *A, float *C, unsigned int size) {
+ * 	matrix_atan(A, C, size);
+ * } 
+ * 
+ * 2. The CUDA library calls (such as CuBLAS, CuSPARSE, etc) go through this interface.
+ * The naming and parameters of the methods in this class are consistent with that of CUDA library to simplify development.
+ * 
+ * 3. During SystemML initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysml.dataType.
+ */
 public interface CudaKernels {
 	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;
 	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k, 

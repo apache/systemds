@@ -361,8 +361,9 @@ public class TemplateRow extends TemplateBase
 			// if one input is a matrix then we need to do vector by scalar operations
 			if( (hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1)
 				|| (hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1)
-				|| (!(hop.dimsKnown() && hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()) 
-						&& (cdata1.getDataType().isMatrix() || cdata2.getDataType().isMatrix())))
+				|| (!(hop.dimsKnown() && hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown())
+					&& (hop.getDim2() != 1) //not a known vector output
+					&& (cdata1.getDataType().isMatrix() || cdata2.getDataType().isMatrix())))
 			{
 				if( HopRewriteUtils.isBinary(hop, SUPPORTED_VECT_BINARY) ) {
 					if( TemplateUtils.isMatrix(cdata1) && (TemplateUtils.isMatrix(cdata2) 

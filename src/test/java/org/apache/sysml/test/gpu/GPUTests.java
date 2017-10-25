@@ -56,7 +56,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	
 	// We will use this flag until lower precision is supported on CP. 
 	private final static String DATA_TYPE = "double";  
-	protected final double SINGLE_PRECISION_THRESHOLD = 1e-5;    // for relative error
+	protected final double SINGLE_PRECISION_THRESHOLD = 1e-3;    // for relative error
 	
 	
 	@BeforeClass

@@ -216,6 +216,20 @@ __global__ void copy_u2l_densef(float* ret, int dim, int N) {
 	copy_u2l_dense(ret, dim, N);
 }
 
+// Use this method in templates to fetch the maximum value for a given datatype 
+template <typename T>
+__forceinline__ __device__ T T_MAX(T x) {
+  return (T) DBL_MAX;
+}
+template <>
+__forceinline__ __device__ float T_MAX(float x) {
+	return FLT_MAX;
+}
+template <>
+__forceinline__ __device__ double T_MAX(double x) {
+	return DBL_MAX;
+}
+
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,
 // 5=less, 6=lessequal, 7=greater, 8=greaterequal, 9=equal, 10=notequal,
@@ -245,7 +259,7 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
             if (y == 0.0 || y == -0.0){
                 return nan("");
             }
-            double v = x / y;
+            T v = x / y;
             // Check for v being NaN (v != v) or if it is infinity
             if (isnan(v) || isinf(v)){
                 return v;
@@ -255,14 +269,14 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
             return x - v * y;
         }
         case 18:{
-            double v = x / y;
+            T v = x / y;
             if (isnan(v) || isinf(v)){
                 return v;
             } else {
                 return floor(v);
             }
         }
-        default : return DBL_MAX;
+        default : return T_MAX(x);
     }
 }
 
@@ -940,7 +954,7 @@ struct MaxOp {
 template <typename T>
 __device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n){
     MaxOp<T> op;
-    reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, (T) -FLT_MAX);
+    reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -T_MAX(g_idata[0]));
 }
 
 extern "C"
@@ -964,7 +978,7 @@ __global__ void reduce_maxf(float *g_idata, float *g_odata, unsigned int n){
 __device__ void reduce_row_max(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
     MaxOp<T> op;
     IdentityOp<T> aop;
-    reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T) -DBL_MAX);
+    reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, -T_MAX(g_idata[0]));
 }
 
 extern "C"
@@ -988,7 +1002,7 @@ template <typename T>
 __device__ void reduce_col_max(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
     MaxOp<T> op;
     IdentityOp<T> aop;
-    reduce_col<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T) -FLT_MAX);
+    reduce_col<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T) -T_MAX(g_idata[0]));
 }
 
 extern "C"
@@ -1021,7 +1035,7 @@ struct MinOp {
 template <typename T>
 __device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n){
 	MinOp<T> op;
-    reduce<MinOp<T>, T>(g_idata, g_odata, n, op, DBL_MAX);
+    reduce<MinOp<T>, T>(g_idata, g_odata, n, op, T_MAX(g_idata[0]));
 }
 
 extern "C"
@@ -1045,7 +1059,7 @@ template <typename T>
 __device__ void reduce_row_min(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
     MinOp<T> op;
     IdentityOp<T> aop;
-    reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)FLT_MAX);
+    reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, T_MAX(g_idata[0]));
 }
 
 extern "C"
@@ -1069,7 +1083,7 @@ template <typename T>
 __device__ void reduce_col_min(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols){
     MinOp<T> op;
     IdentityOp<T> aop;
-    reduce_col<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, (T)FLT_MAX);
+    reduce_col<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop, T_MAX(g_idata[0]));
 }
 
 extern "C"

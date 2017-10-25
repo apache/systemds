@@ -64,22 +64,27 @@ lenet.summary()
 Output:
 
 ```
-+-----+---------------+--------------+------------+---------+-----------+---------+
-| Name|           Type|        Output|      Weight|     Bias|        Top|   Bottom|
-+-----+---------------+--------------+------------+---------+-----------+---------+
-|mnist|           Data| (, 1, 28, 28)|            |         |mnist,mnist|         |
-|conv1|    Convolution|(, 32, 28, 28)|   [32 X 25]| [32 X 1]|      conv1|    mnist|
-|relu1|           ReLU|(, 32, 28, 28)|            |         |      relu1|    conv1|
-|pool1|        Pooling|(, 32, 14, 14)|            |         |      pool1|    relu1|
-|conv2|    Convolution|(, 64, 14, 14)|  [64 X 800]| [64 X 1]|      conv2|    pool1|
-|relu2|           ReLU|(, 64, 14, 14)|            |         |      relu2|    conv2|
-|pool2|        Pooling|  (, 64, 7, 7)|            |         |      pool2|    relu2|
-|  ip1|   InnerProduct| (, 512, 1, 1)|[3136 X 512]|[1 X 512]|        ip1|    pool2|
-|relu3|           ReLU| (, 512, 1, 1)|            |         |      relu3|      ip1|
-|drop1|        Dropout| (, 512, 1, 1)|            |         |      drop1|    relu3|
-|  ip2|   InnerProduct|  (, 10, 1, 1)|  [512 X 10]| [1 X 10]|        ip2|    drop1|
-| loss|SoftmaxWithLoss|  (, 10, 1, 1)|            |         |       loss|ip2,mnist|
-+-----+---------------+--------------+------------+---------+-----------+---------+
++-----+---------------+--------------+------------+---------+-----------+---------+--------------------+
+| Name|           Type|        Output|      Weight|     Bias|        Top|   Bottom|Memory* (train/test)|
++-----+---------------+--------------+------------+---------+-----------+---------+--------------------+
+|mnist|           Data| (, 1, 28, 28)|            |         |mnist,mnist|         |                 1/0|
+|conv1|    Convolution|(, 32, 28, 28)|   [32 X 25]| [32 X 1]|      conv1|    mnist|               25/12|
+|relu1|           ReLU|(, 32, 28, 28)|            |         |      relu1|    conv1|               25/12|
+|pool1|        Pooling|(, 32, 14, 14)|            |         |      pool1|    relu1|                 6/3|
+|conv2|    Convolution|(, 64, 14, 14)|  [64 X 800]| [64 X 1]|      conv2|    pool1|                38/7|
+|relu2|           ReLU|(, 64, 14, 14)|            |         |      relu2|    conv2|                12/6|
+|pool2|        Pooling|  (, 64, 7, 7)|            |         |      pool2|    relu2|                 3/2|
+|  ip1|   InnerProduct| (, 512, 1, 1)|[3136 X 512]|[1 X 512]|        ip1|    pool2|              797/13|
+|relu3|           ReLU| (, 512, 1, 1)|            |         |      relu3|      ip1|                 1/0|
+|drop1|        Dropout| (, 512, 1, 1)|            |         |      drop1|    relu3|                 1/0|
+|  ip2|   InnerProduct|  (, 10, 1, 1)|  [512 X 10]| [1 X 10]|        ip2|    drop1|                 3/0|
+| loss|SoftmaxWithLoss|  (, 10, 1, 1)|            |         |       loss|ip2,mnist|                 0/0|
++-----+---------------+--------------+------------+---------+-----------+---------+--------------------+
+
+Total number of layer outputs/errors/weights/bias/gradients: 5568768/5568768/1662752/618/106455680
+Total memory requirements for parameters* for train/test: 910/55
+[Advanced] Key network statistics to compute intermediate CP overhead batchSize/maxThreads/1-thread im2col*(sum, max)/1-thread reshape_col*(sum, max): 64/48/(1, 1)/(0, 0).
+* => memory in megabytes assuming the parameters are in double precision and in dense format.
 ``` 
 
 To train the above lenet model, we use the MNIST dataset. 

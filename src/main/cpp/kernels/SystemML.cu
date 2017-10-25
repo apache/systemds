@@ -583,13 +583,13 @@ __device__ void cbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB, int col
 
 	// Copy an element of A into C into the appropriate location
 	if (ix < rowsA && iy < colsA) {
-		double elemA = A[ix * colsA + iy];
+		T elemA = A[ix * colsA + iy];
 		C[ix * colsC + iy] = elemA;
 	}
 
 	// Copy an element of B into C into the appropriate location
 	if (ix < rowsB && iy < colsB) {
-		double elemB = B[ix * colsB + iy];
+		T elemB = B[ix * colsB + iy];
 		C[ix * colsC + (iy + colsA)] = elemB;
 	}
 }
@@ -631,13 +631,13 @@ __device__ void rbind(T* A, T* B, T* C, int rowsA, int colsA, int rowsB, int col
 
 	// Copy an element of A into C into the appropriate location
 	if (ix < rowsA && iy < colsA) {
-		double elemA = A[ix * colsA + iy];
+		T elemA = A[ix * colsA + iy];
 		C[ix * colsC + iy] = elemA;
 	}
 
 	// Copy an element of B into C into the appropriate location
 	if (ix < rowsB && iy < colsB) {
-		double elemB = B[ix * colsB + iy];
+		T elemB = B[ix * colsB + iy];
 		C[(ix + rowsA) * colsC + iy] = elemB;
 	}
 }
@@ -1250,7 +1250,7 @@ template <typename T>
 __device__ void matrix_round(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
-        C[index] = (double)llround(A[index]);
+        C[index] = (T)llround(A[index]);
     }
 }
 
@@ -1274,7 +1274,7 @@ template <typename T>
 __device__ void matrix_abs(T *A, T *C, unsigned int size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size){
-        C[index] = (double)fabs(A[index]);
+        C[index] = (T)fabs(A[index]);
     }
 }
 

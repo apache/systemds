@@ -8279,7 +8279,6 @@ BB62_4:
 	.reg .pred 	%p<8>;
 	.reg .f32 	%f<8>;
 	.reg .b32 	%r<17>;
-	.reg .f64 	%fd<2>;
 	.reg .b64 	%rd<26>;
 
 
@@ -8341,8 +8340,7 @@ BB63_6:
 	neg.s64 	%rd19, %rd18;
 	setp.lt.s32	%p7, %r2, 0;
 	selp.b64	%rd20, %rd19, %rd18, %p7;
-	cvt.rn.f64.s64	%fd1, %rd20;
-	cvt.rn.f32.f64	%f7, %fd1;
+	cvt.rn.f32.s64	%f7, %rd20;
 
 BB63_7:
 	cvta.to.global.u64 	%rd21, %rd8;

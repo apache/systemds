@@ -266,7 +266,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 						if(DATA_TYPE.equals("double"))
 							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
 						else
-							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD() && absoluteError < getTHRESHOLD());
+							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD() || absoluteError < getTHRESHOLD());
 						format.close();
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());

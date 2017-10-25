@@ -34,10 +34,11 @@ import jcuda.Pointer;
  * - The global kernels with datatype specification invoke a corresponding templatized kernel (without suffix) which contains the core logic.
  * - The suffixes are added in JCudaKernels's launchKernel method before invocation.
  * For example:
- * template <typename T>
+ * <code>
+ * template &lt; typename T &gt;
  * __device__ void matrix_atan(T *A, T *C, unsigned int size) {
  *     int index = blockIdx.x * blockDim.x + threadIdx.x;
- *     if (index < size){
+ *     if (index &lt; size){
  *         C[index] = atan(A[index]);
  *     }
  * }
@@ -47,6 +48,7 @@ import jcuda.Pointer;
  * extern "C" __global__ void matrix_atanf(float *A, float *C, unsigned int size) {
  * 	matrix_atan(A, C, size);
  * } 
+ * </code>
  * 
  * 2. The CUDA library calls (such as CuBLAS, CuSPARSE, etc) go through this interface.
  * The naming and parameters of the methods in this class are consistent with that of CUDA library to simplify development.

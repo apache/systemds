@@ -134,31 +134,32 @@ while(continue & iter < maxiterations)  {
     h = dd + sum(Xd * sv * Xd)
     step_sz = step_sz - g/h
     
-    continue1 = (gg/h >= 0.0000000001);
+    continue1 = (g*g/h >= 0.0000000001);
   }
 
   #update weights
   w = w + step_sz*s
   Xw = Xw + step_sz*Xd
-	
+  
   out = 1 - Y * Xw
   sv = (out > 0)
   out = sv * out
   obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
   g_new = t(X) %*% (out * Y) - lambda * w
-
+  
   print("ITER " + iter + ": OBJ=" + obj)
   debug_str = append(debug_str, iter + "," + obj)
-	
+  
   tmp = sum(s * g_old)
-  continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
-
+  
   #non-linear CG step
   be = sum(g_new * g_new)/sum(g_old * g_old)
   s = be * s + g_new
   g_old = g_new
-    
+  
+  continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
   iter = iter + 1
+  
 }
 
 extra_model_params = matrix(0, rows=4, cols=1)
@@ -167,11 +168,8 @@ extra_model_params[2,1] = negative_label
 extra_model_params[3,1] = intercept
 extra_model_params[4,1] = dimensions
 
-weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
-# write(extra_model_params, " ", format=cmdLine_fmt)
-# write(weights, " ", format=cmdLine_fmt)
 
 logFile = $Log
 if(logFile != " ") {

@@ -25,7 +25,7 @@
 # Example Usage:
 # Assume SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume epsilon = 0.001, lambda=1.0, max_iterations = 100
+# Assume epsilon = 0.001, lambda=1.0, maxiterations = 100
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -92,8 +92,8 @@ lambda = cmdLine_reg
 if(lambda < 0)
   stop("Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
 
-max_iterations = cmdLine_maxiter
-if(max_iterations < 1)
+maxiterations = cmdLine_maxiter
+if(maxiterations < 1)
   stop("Stopping due to invalid argument: Maximum iterations should be a positive integer")
 
 num_samples = nrow(X)
@@ -110,7 +110,7 @@ if(intercept == 1){
 }
 w = matrix(0, rows=num_rows_in_w, cols=num_classes)
 
-debug_mat = matrix(-1, rows=max_iterations, cols=num_classes)
+debug_mat = matrix(-1, rows=maxiterations, cols=num_classes)
 
 parfor(iter_class in 1:num_classes){		  
   Y_local = 2 * (Y == iter_class) - 1
@@ -145,7 +145,6 @@ parfor(iter_class in 1:num_classes){
       step_sz = step_sz - g/h
       
       continue1 = (g*g/h >= 0.0000000001)
-      
     }
     
     #update weights
@@ -162,15 +161,14 @@ parfor(iter_class in 1:num_classes){
   
     train_acc = sum(Y_local*(X%*%w_class) >= 0)/num_samples*100
     print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
-    debug_mat[iter+1,iter_class] = obj	   
+    debug_mat[iter+1,iter_class] = obj
    
-    continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
-  	 
     #non-linear CG step
     be = sum(g_new * g_new)/sum(g_old * g_old)
     s = be * s + g_new
     g_old = g_new
     
+    continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
     iter = iter + 1
   }
 
@@ -180,11 +178,9 @@ parfor(iter_class in 1:num_classes){
 extra_model_params = matrix(0, rows=2, cols=ncol(w))
 extra_model_params[1, 1] = intercept
 extra_model_params[2, 1] = dimensions
-weights = w
+
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
-# write(extra_model_params, " ", format=cmdLine_fmt)
-# write(weights, " ", format=cmdLine_fmt)
 
 debug_str = "# Class, Iter, Obj"
 for(iter_class in 1:ncol(debug_mat)){

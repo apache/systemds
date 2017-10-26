@@ -120,7 +120,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		}
 		else if( opcode.equalsIgnoreCase("maxpooling_backward") ) {
 			boolean withMaxPoolOut = false;
-			if(parts.length == 16) {
+			if(parts.length == 18) {
 				withMaxPoolOut = true;
 			}
 			else

@@ -1821,17 +1821,19 @@ public class LibMatrixCUDA {
 	 */
 	protected static void sliceSparseDense(GPUContext gCtx, String instName, CSRPointer inPointer, Pointer outPointer, 
 			int rl, int ru, int cl, int cu, int inClen) throws DMLRuntimeException {
+		int size = getNnz(inPointer, rl, ru);
+		// Return since nnz of the output is 0 as outPointer is expected to be zeroed out.
+		if(size == 0) return;
+		
 		int retRlen = ru - rl + 1;
 		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		int retClen = cu - cl + 1;
 		
-		int size = -1; String kernel = null; String timer = null;
-		
+		String kernel = null; String timer = null;
 		// Note: row-wise parallelization scheme iterates over input rows in single thread 
 		// whereas nnz parallelization scheme iterates over number of output rows in single thread.
 		if(inClen > 10 && retClen > 2*retRlen) {
 			// Perform nnz parallelization for wide and short matrices
-			size = getNnz(inPointer, rl, ru);
 			timer = GPUInstruction.MISC_TIMER_RIX_SPARSE_DENSE_OP_NNZ;
 			kernel = "slice_sparse_dense_nnz";
 		}

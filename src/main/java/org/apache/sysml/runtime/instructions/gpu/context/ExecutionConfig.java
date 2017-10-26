@@ -69,36 +69,12 @@ public class ExecutionConfig {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) throws DMLRuntimeException {
+		if(numCells == 0)
+			throw new DMLRuntimeException("Attempting to invoke a kernel with 0 threads");
 		int deviceNumber = 0;
 		int blockDimX = getMaxBlockDim(deviceNumber);
 		int gridDimX = (int) Math.ceil((double) numCells / blockDimX);
 		return new ExecutionConfig(gridDimX, blockDimX);
-	}
-
-	/**
-	 * Use this for simple matrix operations and use following in the kernel
-	 * <code>
-	 * int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	 * int iy = blockIdx.y * blockDim.y + threadIdx.y;
-	 * </code>
-	 * <p>
-	 * This tries to schedule as minimum grids as possible.
-	 *
-	 * @param rlen number of rows
-	 * @param clen number of columns
-	 * @return execution configuration
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static ExecutionConfig getConfigForMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
-		int deviceNumber = 0;
-		int maxBlockDim = getMaxBlockDim(deviceNumber);
-		int blockDimX = (int) Math.min(maxBlockDim, rlen);
-		int gridDimX = (int) Math.ceil((double) rlen / blockDimX);
-		int blockDimY = (int) Math.min(Math.floor(((double) maxBlockDim) / blockDimX), clen);
-		int gridDimY = (int) Math.ceil((double) clen / blockDimY);
-		if (gridDimY > 65535)
-			throw new DMLRuntimeException("Internal Error: gridDimY must be less than 65535 for all supported CUDA compute capabilites!");
-		return new ExecutionConfig(gridDimX, gridDimY, blockDimX, blockDimY);
 	}
 
 	/**
@@ -115,7 +91,6 @@ public class ExecutionConfig {
 	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
 		return getConfigForSimpleVectorOperations(rlen * clen);
 	}
-
 
 	public ExecutionConfig(int gridDimX, int blockDimX) {
 		this.gridDimX = gridDimX;

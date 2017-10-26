@@ -51,8 +51,13 @@ public abstract class GPUTests extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
-	protected final double THRESHOLD = 1e-9;    // for relative error
+	protected final double DOUBLE_PRECISION_THRESHOLD = 1e-9;    // for relative error
 	private static final boolean PRINT_MAT_ERROR = false;
+	
+	// We will use this flag until lower precision is supported on CP. 
+	private final static String DATA_TYPE = "double";  
+	protected final double SINGLE_PRECISION_THRESHOLD = 1e-3;    // for relative error
+	
 	
 	@BeforeClass
 	public static void beforeClass() {
@@ -70,7 +75,9 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return a valid threshold
 	 */
 	protected double getTHRESHOLD() {
-		return THRESHOLD;
+		if(DATA_TYPE.equals("double"))  return DOUBLE_PRECISION_THRESHOLD;
+		else if(DATA_TYPE.equals("float"))  return SINGLE_PRECISION_THRESHOLD;
+		else throw new RuntimeException("Unsupported datatype:" + DATA_TYPE);
 	}
 
 	@After
@@ -228,7 +235,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	}
 
 	/**
-	 * Asserts that the values in two matrices are in {@link UnaryOpTests#THRESHOLD} of each other
+	 * Asserts that the values in two matrices are in {@link UnaryOpTests#DOUBLE_PRECISION_THRESHOLD} of each other
 	 *
 	 * @param expected expected matrix
 	 * @param actual   actual matrix
@@ -251,11 +258,15 @@ public abstract class GPUTests extends AutomatedTestBase {
 					double actualDouble = actualMB.quickGetValue(i, j);
 					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
 						double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+						double absoluteError = Math.abs(expectedDouble - actualDouble);
 						Formatter format = new Formatter();
 						format.format(
 								"Relative error(%f) is more than threshold (%f). Expected = %f, Actual = %f, differed at [%d, %d]",
 								relativeError, getTHRESHOLD(), expectedDouble, actualDouble, i, j);
-						Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						if(DATA_TYPE.equals("double"))
+							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
+						else
+							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD() || absoluteError < getTHRESHOLD());
 						format.close();
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
@@ -313,6 +324,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
 			List<String> outStrs) {
 		MLContext gpuMLC = new MLContext(spark);
+		gpuMLC.setConfigProperty("sysml.gpu.dataType", DATA_TYPE);
 		gpuMLC.setGPU(true);
 		gpuMLC.setForceGPU(true);
 		gpuMLC.setStatistics(true);

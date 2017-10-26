@@ -3852,8 +3852,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ru row upper
 	 * @param cl column lower
 	 * @param cu column upper
-	 * @param ret ?
-	 * @return matrix block
+	 * @param deep should perform deep copy
+	 * @param ret output matrix block
+	 * @return matrix block output matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) 

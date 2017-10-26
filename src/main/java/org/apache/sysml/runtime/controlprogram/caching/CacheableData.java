@@ -404,7 +404,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                 LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
                 throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
             } else if (gObj != null){
-                copiedFromGPU = gObj.acquireHostRead();
+                copiedFromGPU = gObj.acquireHostRead(null);
                 if( _data == null )
                     getCache();
             }
@@ -793,7 +793,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                 LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
                 throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
             } else if (gObj != null){
-                copiedFromGPU = gObj.acquireHostRead();
+                copiedFromGPU = gObj.acquireHostRead(null);
                 if( _data == null )
                     getCache();
             }

@@ -55,7 +55,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	private static final boolean PRINT_MAT_ERROR = false;
 	
 	// We will use this flag until lower precision is supported on CP. 
-	private final static String DATA_TYPE = "double";  
+	private final static String FLOATING_POINT_PRECISION = "double";  
 	protected final double SINGLE_PRECISION_THRESHOLD = 1e-3;    // for relative error
 	
 	
@@ -75,9 +75,9 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return a valid threshold
 	 */
 	protected double getTHRESHOLD() {
-		if(DATA_TYPE.equals("double"))  return DOUBLE_PRECISION_THRESHOLD;
-		else if(DATA_TYPE.equals("float"))  return SINGLE_PRECISION_THRESHOLD;
-		else throw new RuntimeException("Unsupported datatype:" + DATA_TYPE);
+		if(FLOATING_POINT_PRECISION.equals("double"))  return DOUBLE_PRECISION_THRESHOLD;
+		else if(FLOATING_POINT_PRECISION.equals("single"))  return SINGLE_PRECISION_THRESHOLD;
+		else throw new RuntimeException("Unsupported precision:" + FLOATING_POINT_PRECISION);
 	}
 
 	@After
@@ -263,7 +263,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 						format.format(
 								"Relative error(%f) is more than threshold (%f). Expected = %f, Actual = %f, differed at [%d, %d]",
 								relativeError, getTHRESHOLD(), expectedDouble, actualDouble, i, j);
-						if(DATA_TYPE.equals("double"))
+						if(FLOATING_POINT_PRECISION.equals("double"))
 							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD());
 						else
 							Assert.assertTrue(format.toString(), relativeError < getTHRESHOLD() || absoluteError < getTHRESHOLD());
@@ -324,7 +324,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
 			List<String> outStrs) {
 		MLContext gpuMLC = new MLContext(spark);
-		gpuMLC.setConfigProperty("sysml.gpu.dataType", DATA_TYPE);
+		gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
 		gpuMLC.setGPU(true);
 		gpuMLC.setForceGPU(true);
 		gpuMLC.setStatistics(true);

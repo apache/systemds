@@ -1,0 +1,290 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# 1. Implements Ackley Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/ackley.html
+#
+# Description: The Ackley function is widely used for testing optimization algorithms. In its 
+# two-dimensional form, it is characterized by a nearly flat outer region, and a large hole at
+# the centre. The function poses a risk for optimization algorithms, particularly hillclimbing 
+# algorithms, to be trapped in one of its many local minima.
+#
+# Input Domain:
+# The function is usually evaluated on the hypercube xi ∈ [-32.768, 32.768], for all i = 1, 2,..., d,
+# although, it may also be restricted to a smaller domain.
+#
+# Global Minimum:
+# f(X') = 0, at X' = (0, ..., 0)
+#
+# -------------------------------------------------------------
+# 
+
+Ackley = function (matrix [double] X, double a, double b, double c) 
+  returns (double y) {
+  
+  /*
+   * INPUTS:
+   * X -> Input matrix of size 1 x d (1 by d-dimensions)
+   * a -> constant, default value is 20.0 
+   * b -> constant, default value is 0.2
+   * c -> constant, default value is 2 * pi
+   *
+   * OUTPUTS:
+   * y -> output scalar value
+   */
+   
+   d = length(X);
+   
+   sum1 = sum(X ^ 2);
+   sum2 = sum(cos(c * X));
+   
+   term1 = -a * exp(-b * sqrt(sum1 / d));
+   term2 = -exp(sum2/d);
+   
+   y = term1 + term2 + a + exp(1);
+   
+}
+
+
+# 2. Implements Buckin N. 6 Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/bukin6.html
+#
+# Description: The sixth Buckin function has many local minima, all of which lie in a ridge. 
+# 
+# Dimensions: 2.
+#
+# Input Domain:
+# The function is usually evaluated on the rectangle  x1 ∈ [-15, -5], x2 ∈ [-3, 3].
+#
+# Global Minimum:
+# f(X') = 0, at X' = (-10, 1)
+#
+# -------------------------------------------------------------
+# 
+
+Buckin_N6 = function (double x1, double x2)
+  return (double out) {
+  
+  /*
+   * INPUTS: 
+   * x1 -> value along first dimension
+   * x2 -> value along second dimension
+   * 
+   * OUTPUTS:
+   * out -> function value
+   *
+   */
+  
+  out = 100 * sqrt( abs(x2 - 0.01 * x1 ^ 2) ) + 0.01 abs(x1 + 10);
+  
+}
+
+
+# 3. Implements Cross-In-Tray Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/crossit.html
+#
+# Description: The Cross-in-Tray function has multiple global minima. 
+# 
+# Dimensions: 2.
+#
+# Input Domain:
+# The function is usually evaluated on the square xi ∈ [-10, 10], for all i = 1, 2.
+#
+# Global Minima:
+# f(X') = -2.06261, at X' = (1.3491, -1.3491), (1.3491, 1.3491), (-1.3491, 1.3491) 
+# and (-1.3491, -1.3491)
+#
+# -------------------------------------------------------------
+# 
+
+crossit = function (double x1, double x2) 
+  return (double out) {
+  
+  /*
+   * INPUTS:
+   * x1 -> input value in 1st dimension
+   * x2 -> input value in 2nd dimension
+   *
+   * OUTPUT:
+   * out -> function value, a scalar
+   */
+   
+   pi = 3.14 # please place here the exact value.
+   
+   temp1 = sin(x1) * sin(x2);
+   temp2 = exp( abs(100 - sqrt(x1^2 + x2^2) / pi) );
+   
+   out = -0.0001 * ( abs(temp1 * temp2) + 1 ) ^ 0.1;
+   
+}
+
+
+# 4. Implements Drop-Wave Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/drop.html
+#
+# Description: The Drop-Wave function is multimodal and highly complex. 
+# 
+#
+# Dimensions: 2.
+#
+# Input Domain:
+# The function is usually evaluated on the square xi ∈ [-5.12, 5.12], for all i = 1, 2.
+#
+# Global Minimum:
+# f(X') = -1, at X' = (0, 0)
+#
+# -------------------------------------------------------------
+# 
+
+drop_wave = function (double x1, double x2)
+  return (double out) {
+  
+  /*
+   * INPUTS:
+   * x1 -> input value in 1st dimension
+   * x2 -> inputs value in 2nd dimension
+   *
+   * OUTPUT:
+   * out -> function value, a scalar
+   */
+   
+   temp1 = 1 + cos(12 * sqrt(x1 ^2 + x2 ^2));
+   temp2 = 0.5 * (x1 ^2 + x2 ^2) + 2;
+   
+   out = - temp1 / temp2;
+   
+}
+
+# 5. Implements Egg-Holder Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/egg.html
+#
+# Description: The Eggholder function is a difficult function to optimize, because of the large  
+# local minima.
+#
+# Dimensions: 2.
+#
+# Input Domain:
+# The function is usually evaluated on the square xi ∈ [-5.12, 5.12], for all i = 1, 2.
+#
+# Global Minimum:
+# f(X') = -959.6407, at X' = (512, 404.2319)
+#
+# -------------------------------------------------------------
+# 
+
+Eggholder = function (double x1, double x2)
+  return (double out) {
+  
+  /*
+   * INPUTS:
+   * x1 -> input value in 1st dimension
+   * x2 -> input value in 2nd dimension
+   *
+   * OUTPUT:
+   * out -> function value, a scalar
+   */
+   
+   temp1 = (x2 + 47) * sin( sqrt( abs( x2 + 47 + x1/2 ) ) )
+   temp2 = x1 * sin( sqrt( abs(x1 - (x2 + 47)) ) )
+   
+   out = - temp1 - temp2;
+  
+}
+
+# 6. Implements Gramacy & Lee (2012) Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/grlee12.html
+#
+# Description: This is a simple one-dimesional test function.
+#
+# Dimensions: 1.
+#
+# Input Domain:
+# The function is usually evaluated on x ∈ [0.5, 2.5].
+#
+# Global Minimum:
+# No information available.
+#
+# -------------------------------------------------------------
+# 
+
+grlee12 = function (double x) 
+  return (double out) {
+  
+  /*
+   * INPUT: 
+   * x -> input value
+   * 
+   * OUTPUT:
+   * out -> function value
+   */
+   
+   out = (x -1) ^ 4 + sin(10 * pi * x) / (2 * x);
+   
+}
+
+
+# 7. Implements Griewank Function 
+# ------------------------------------------------------------
+# Reference: https://www.sfu.ca/~ssurjano/griewank.html
+#
+# Description: The Griewank function has many widespread local minima, which are reqularly distributed. 
+#  
+#
+# Input Domain:
+# The function is usually evaluated on the hypercube xi ∈ [-600, 600], for all i = 1, 2,..., d
+# 
+#
+# Global Minimum:
+# f(X') = 0, at X' = (0, ..., 0)
+#
+# -------------------------------------------------------------
+#
+
+Griewank = function (matrix [double] X) 
+  returns (double out) {
+  
+  /*
+   * INPUTS:
+   * X -> Input matrix of size 1 x d (1 by d-dimensions)
+   *
+   * OUTPUTS:
+   * y -> output scalar value
+   */
+   
+   d = length(X);
+   
+   temp1 = sum(X ^ 2) / 4000;
+   
+   for(i in 1:d) {
+     temp2 *= cos(X[,i] / sqrt(i));   # TODO: vectorize this loop
+   }
+   
+   y = temp1 - temp2 + 1;
+   
+}
+

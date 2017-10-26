@@ -180,7 +180,7 @@ public class GPUObject {
 		Pointer C = gCtx.allocate(((long) m) * getDatatypeSizeOf(n));
 
 		// Transpose the matrix to get a dense matrix
-		LibMatrixCUDA.cudaKernels.cublasgeam(gCtx.getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(),
+		LibMatrixCUDA.cudaSupportFunctions.cublasgeam(gCtx.getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(),
 				lda, C, ldc);
 		return C;
 	}
@@ -210,7 +210,7 @@ public class GPUObject {
 		nnzTotalDevHostPtr = gCtx.allocate(getIntSizeOf(1));
 
 		// Output is in dense vector format, convert it to CSR
-		LibMatrixCUDA.cudaKernels.cusparsennz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, rows, cols, matDescr, densePtr, rows,
+		LibMatrixCUDA.cudaSupportFunctions.cusparsennz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, rows, cols, matDescr, densePtr, rows,
 				nnzPerRowPtr, nnzTotalDevHostPtr);
 		//cudaDeviceSynchronize();
 		int[] nnzC = { -1 };
@@ -234,7 +234,7 @@ public class GPUObject {
 		}
 
 		CSRPointer C = CSRPointer.allocateEmpty(gCtx, nnzC[0], rows);
-		LibMatrixCUDA.cudaKernels.cusparsedense2csr(cusparseHandle, rows, cols, matDescr, densePtr, rows, nnzPerRowPtr, C.val, C.rowPtr,
+		LibMatrixCUDA.cudaSupportFunctions.cusparsedense2csr(cusparseHandle, rows, cols, matDescr, densePtr, rows, nnzPerRowPtr, C.val, C.rowPtr,
 				C.colInd);
 		//cudaDeviceSynchronize();
 
@@ -515,7 +515,7 @@ public class GPUObject {
 		return isEmptyAndSparseAndAllocated;
 	}
 
-	public boolean acquireDeviceRead(GPUContext gCtx, String opcode) throws DMLRuntimeException {
+	public boolean acquireDeviceRead(String opcode) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : acquireDeviceRead on " + this);
 		}
@@ -525,7 +525,7 @@ public class GPUObject {
 				LOG.trace("GPU : in acquireDeviceRead, data is not allocated, copying from host, on " + this + ", GPUContext="
 							+ getGPUContext());
 			}
-			copyFromHostToDevice(gCtx, opcode);
+			copyFromHostToDevice(opcode);
 			transferred = true;
 		}
 		addReadLock();
@@ -748,7 +748,7 @@ public class GPUObject {
 		return GPUSize;
 	}
 
-	void copyFromHostToDevice(GPUContext gCtx, String opcode) throws DMLRuntimeException {
+	void copyFromHostToDevice(String opcode) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromHostToDevice, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -827,7 +827,7 @@ public class GPUObject {
 
 			if (copyToDevice) {
 				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				CSRPointer.copyToDevice(gCtx, getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
+				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
 						values);
 				if(GPUStatistics.DISPLAY_STATISTICS) 
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
@@ -853,7 +853,7 @@ public class GPUObject {
 			else {
 				// Copy dense block
 				// H2D now only measures the time taken to do 
-				LibMatrixCUDA.cudaKernels.hostToDevice(getGPUContext(), data, getJcudaDenseMatrixPtr(), opcode);
+				LibMatrixCUDA.cudaSupportFunctions.hostToDevice(getGPUContext(), data, getJcudaDenseMatrixPtr(), opcode);
 			}
 		}
 
@@ -886,7 +886,7 @@ public class GPUObject {
 				start = System.nanoTime();
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
-			LibMatrixCUDA.cudaKernels.deviceToHost(getGPUContext(), getJcudaDenseMatrixPtr(), tmp.getDenseBlock(), instName);
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaDenseMatrixPtr(), tmp.getDenseBlock(), instName);
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();
@@ -913,7 +913,7 @@ public class GPUObject {
 				int cols = toIntExact(mat.getNumColumns());
 				int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
 				double[] values = new double[nnz];
-				LibMatrixCUDA.cudaKernels.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName);
+				LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName);
 				int[] rowPtr = new int[rows + 1];
 				int[] colInd = new int[nnz];
 				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

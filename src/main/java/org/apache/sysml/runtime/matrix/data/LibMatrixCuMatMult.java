@@ -173,7 +173,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 
 			// Step 3: Invoke the kernel
 			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-			cudaKernels.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, params.m, params.n, params.k, A.descr,
+			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, params.m, params.n, params.k, A.descr,
 					(int) A.nnz, A.val, A.rowPtr, A.colInd, B.descr, (int) B.nnz, B.val, B.rowPtr, B.colInd, C.descr,
 					C.val, C.rowPtr, C.colInd);
 			if (GPUStatistics.DISPLAY_STATISTICS)
@@ -285,7 +285,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		if (outRLen != 1 && outCLen != 1) {
 			// Transpose: C = t(output)
 			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-			cudaKernels.cublasgeam(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_T,
+			cudaSupportFunctions.cublasgeam(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_T,
 					toInt(outCLen), toInt(outRLen), one(), output, toInt(outRLen), zero(), new Pointer(),
 					toInt(outRLen), C, toInt(outCLen));
 			if (!DMLScript.EAGER_CUDA_FREE)
@@ -329,7 +329,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			int m = toInt(param.rightNumRows);
 			int n = toInt(param.rightNumCols);
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
-			cudaKernels.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.descr, B.val, B.rowPtr, B.colInd, A,
+			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.descr, B.val, B.rowPtr, B.colInd, A,
 					zero(), C);
 			kernel = GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB;
 		} else {
@@ -340,7 +340,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
 			int transb = cusparseOp(param.isRightTransposed);
 			LOG.debug(" GPU Sparse-Dense Matrix Multiply (rhs transpose) ");
-			cudaKernels.cusparsecsrmm2(handle, transa, transb, m, param.n, k, toInt(B.nnz), one(), B.descr, B.val,
+			cudaSupportFunctions.cusparsecsrmm2(handle, transa, transb, m, param.n, k, toInt(B.nnz), one(), B.descr, B.val,
 					B.rowPtr, B.colInd, A, param.ldb, zero(), C, param.ldc);
 		}
 		if (GPUStatistics.DISPLAY_STATISTICS)
@@ -381,7 +381,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// Vector product
 			LOG.debug(" GPU Dense-dense Vector Product");
 			double[] result = { 0 };
-			cudaKernels.cublasdot(handle, param.k, A, 1, B, 1, Pointer.to(result));
+			cudaSupportFunctions.cublasdot(handle, param.k, A, 1, B, 1, Pointer.to(result));
 			// By default in CuBlas V2, cublas pointer mode is set to
 			// CUBLAS_POINTER_MODE_HOST.
 			// This means that scalar values passed are on host (as opposed to
@@ -397,18 +397,18 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			transb = reverseCublasOp(transb);
 			int rightNumRows = (transb == CUSPARSE_OPERATION_TRANSPOSE) ? param.k : param.n;
 			int rightNumCols = (transb == CUSPARSE_OPERATION_TRANSPOSE) ? param.n : param.k;
-			cudaKernels.cublasgemv(handle, transb, rightNumRows, rightNumCols, one(), B, param.ldb, A, 1, zero(), C, 1);
+			cudaSupportFunctions.cublasgemv(handle, transb, rightNumRows, rightNumCols, one(), B, param.ldb, A, 1, zero(), C, 1);
 			kernel = GPUInstruction.MISC_TIMER_DENSE_VECTOR_DENSE_MATRIX_LIB;
 		} else if (param.n == 1) {
 			// Matrix-vector multiply
 			LOG.debug(" GPU Dense Matrix-Vector Multiply");
 			int leftNumRows = (transa == CUSPARSE_OPERATION_NON_TRANSPOSE) ? param.m : param.k;
 			int leftNumCols = (transa == CUSPARSE_OPERATION_NON_TRANSPOSE) ? param.k : param.m;
-			cudaKernels.cublasgemv(handle, transa, leftNumRows, leftNumCols, one(), A, param.lda, B, 1, zero(), C, 1);
+			cudaSupportFunctions.cublasgemv(handle, transa, leftNumRows, leftNumCols, one(), A, param.lda, B, 1, zero(), C, 1);
 			kernel = GPUInstruction.MISC_TIMER_DENSE_MATRIX_DENSE_VECTOR_LIB;
 		} else {
 			LOG.debug(" GPU Dense-Dense Matrix Multiply ");
-			cudaKernels.cublasgemm(handle, transa, transb, param.m, param.n, param.k, one(), A, param.lda, B, param.ldb,
+			cudaSupportFunctions.cublasgemm(handle, transa, transb, param.m, param.n, param.k, one(), A, param.lda, B, param.ldb,
 					zero(), C, param.ldc);
 			kernel = GPUInstruction.MISC_TIMER_DENSE_MATRIX_DENSE_MATRIX_LIB;
 		}

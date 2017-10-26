@@ -397,7 +397,7 @@ public class ExecutionContext {
 			mo.setGPUObject(gCtx, newGObj);
 		}
 		// No need to perform acquireRead here because it is performed in copyFromHostToDevice
-		mo.getGPUObject(gCtx).acquireDeviceRead(gCtx, opcode);
+		mo.getGPUObject(gCtx).acquireDeviceRead(opcode);
 		return mo;
 	}
 	

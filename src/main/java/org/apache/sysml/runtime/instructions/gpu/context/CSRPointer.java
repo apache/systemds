@@ -201,7 +201,7 @@ public class CSRPointer {
 		if(rowPtr.length < rows + 1) throw new DMLRuntimeException("The length of rowPtr needs to be greater than or equal to " + (rows + 1));
 		if(colInd.length < nnz) throw new DMLRuntimeException("The length of colInd needs to be greater than or equal to " + nnz);
 		if(values.length < nnz) throw new DMLRuntimeException("The length of values needs to be greater than or equal to " + nnz);
-		LibMatrixCUDA.cudaKernels.hostToDevice(gCtx, values, r.val, null);
+		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
 		if (DMLScript.STATISTICS)
@@ -505,7 +505,7 @@ public class CSRPointer {
 		// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 		if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 			// Note: cusparseDcsr2dense method cannot handle empty blocks
-			LibMatrixCUDA.cudaKernels.cusparsecsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			LibMatrixCUDA.cudaSupportFunctions.cusparsecsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
 			//cudaDeviceSynchronize;
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");

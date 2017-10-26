@@ -82,25 +82,8 @@ public class ScriptExecutorUtils {
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 		if(DMLScript.USE_ACCELERATOR) {
-			String prevDataType = DMLScript.DATA_TYPE; 
-			DMLScript.DATA_TYPE = dmlconf.getTextValue(DMLConfig.SYSML_DATA_TYPE);
-			if(!prevDataType.equalsIgnoreCase(DMLScript.DATA_TYPE)) {
-				if(DMLScript.DATA_TYPE.equalsIgnoreCase("double")) {
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.cudaKernels = new org.apache.sysml.runtime.matrix.data.DoubleCudaKernels();
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.sizeOfDataType = jcuda.Sizeof.DOUBLE;
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.customKernelSuffix = "d";
-				}
-				else if(DMLScript.DATA_TYPE.equalsIgnoreCase("float")) {
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT;
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.cudaKernels = new org.apache.sysml.runtime.matrix.data.FloatCudaKernels();
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.sizeOfDataType = jcuda.Sizeof.FLOAT;
-					org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.customKernelSuffix = "f";
-				}
-				else {
-					throw new DMLRuntimeException("Unsupported data type: " + DMLScript.DATA_TYPE);
-				}
-			}
+			DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
+			org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
 		}
 
 		boolean exceptionThrown = false;

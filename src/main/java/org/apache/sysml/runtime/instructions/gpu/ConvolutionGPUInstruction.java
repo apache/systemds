@@ -356,7 +356,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
-			MatrixObject maxPoolOutput = _input2 != null ? getMatrixInputForGPUInstruction(ec, _input2.getName()) : null;
+			MatrixObject maxPoolOutput = _input3 != null ? getMatrixInputForGPUInstruction(ec, _input3.getName()) : null;
 			if(dout.getNumRows() != N || dout.getNumColumns() != C*P*Q) 
 				throw new DMLRuntimeException("Incorrect dimensions for dout in maxpooling_backward");
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
@@ -378,7 +378,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		if ( !instOpcode.equalsIgnoreCase("maxpooling") )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 
-		if (instOpcode.equalsIgnoreCase("conv2d_bias_add"))
+		if (instOpcode.equalsIgnoreCase("conv2d_bias_add") || 
+			(instOpcode.equalsIgnoreCase("maxpooling_backward") && _input3 != null))
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());

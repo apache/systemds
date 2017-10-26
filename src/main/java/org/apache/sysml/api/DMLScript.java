@@ -163,6 +163,7 @@ public class DMLScript
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
+	public static String            FLOATING_POINT_PRECISION = "double"; 							// data type to use internally
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used

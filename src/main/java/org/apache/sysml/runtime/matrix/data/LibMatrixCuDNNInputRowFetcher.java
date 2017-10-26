@@ -20,8 +20,6 @@ package org.apache.sysml.runtime.matrix.data;
 
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.Pointer;
-import jcuda.Sizeof;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -32,7 +30,7 @@ import org.apache.sysml.utils.GPUStatistics;
 /**
  * Performs a slice operation: out = in[(n+1):(n+1), 1:numColumns]
  */
-public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
+public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java.lang.AutoCloseable {
 	GPUContext gCtx; String instName; int numColumns; boolean isInputInSparseFormat; 
 	Object inPointer; // can be either CSRPointer or Pointer 
 	Pointer outPointer;
@@ -50,7 +48,7 @@ public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
 		numColumns = LibMatrixCUDA.toInt(image.getNumColumns());
 		isInputInSparseFormat = LibMatrixCUDA.isInSparseFormat(gCtx, image);
 		inPointer = isInputInSparseFormat ? LibMatrixCUDA.getSparsePointer(gCtx, image, instName) : LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
-		outPointer = gCtx.allocate(numColumns*Sizeof.DOUBLE);
+		outPointer = gCtx.allocate(numColumns*sizeOfDataType);
 	}
 	/**
 	 * Copy the nth row and return the dense pointer
@@ -62,7 +60,7 @@ public class LibMatrixCuDNNInputRowFetcher implements java.lang.AutoCloseable {
 		if(isInputInSparseFormat) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-			cudaMemset(outPointer, 0, numColumns*Sizeof.DOUBLE);
+			cudaMemset(outPointer, 0, numColumns*sizeOfDataType);
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			if(GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
 			LibMatrixCUDA.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);

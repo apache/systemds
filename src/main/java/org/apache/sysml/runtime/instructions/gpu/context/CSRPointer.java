@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.gpu.context;
 
 import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
-import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
 import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
 import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
 import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
@@ -38,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
@@ -112,8 +112,8 @@ public class CSRPointer {
 		allocateMatDescrPointer();
 	}
 
-	private static long getDoubleSizeOf(long numElems) {
-		return numElems * ((long) jcuda.Sizeof.DOUBLE);
+	private static long getDataTypeSizeOf(long numElems) {
+		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
 	}
 
 	//  private Pointer allocate(String instName, long size) throws DMLRuntimeException {
@@ -121,7 +121,7 @@ public class CSRPointer {
 	//  }
 
 	private static long getIntSizeOf(long numElems) {
-		return numElems * ((long) jcuda.Sizeof.INT);
+		return numElems * ((long) Sizeof.INT);
 	}
 
 	//  private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
@@ -163,7 +163,7 @@ public class CSRPointer {
 	 * @return size estimate
 	 */
 	public static long estimateSize(long nnz2, long rows) {
-		long sizeofValArray = getDoubleSizeOf(nnz2);
+		long sizeofValArray = getDataTypeSizeOf(nnz2);
 		long sizeofRowPtrArray = getIntSizeOf(rows + 1);
 		long sizeofColIndArray = getIntSizeOf(nnz2);
 		long sizeofDescr = getIntSizeOf(4);
@@ -181,6 +181,7 @@ public class CSRPointer {
 	/**
 	 * Static method to copy a CSR sparse matrix from Host to Device
 	 *
+	 * @param gCtx GPUContext
 	 * @param dest   [input] destination location (on GPU)
 	 * @param rows   number of rows
 	 * @param nnz    number of non-zeroes
@@ -189,7 +190,7 @@ public class CSRPointer {
 	 * @param values double array of non zero values
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void copyToDevice(CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) throws DMLRuntimeException {
+	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) throws DMLRuntimeException {
 		CSRPointer r = dest;
 		long t0 = 0;
 		if (DMLScript.STATISTICS)
@@ -200,15 +201,15 @@ public class CSRPointer {
 		if(rowPtr.length < rows + 1) throw new DMLRuntimeException("The length of rowPtr needs to be greater than or equal to " + (rows + 1));
 		if(colInd.length < nnz) throw new DMLRuntimeException("The length of colInd needs to be greater than or equal to " + nnz);
 		if(values.length < nnz) throw new DMLRuntimeException("The length of values needs to be greater than or equal to " + nnz);
+		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
-		cudaMemcpy(r.val, Pointer.to(values), getDoubleSizeOf(nnz), cudaMemcpyHostToDevice);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaToDevCount.add(3);
 	}
-
+	
 	/**
 	 * Static method to copy a CSR sparse matrix from Device to host
 	 *
@@ -217,20 +218,12 @@ public class CSRPointer {
 	 * @param nnz    [input] number of non-zeroes
 	 * @param rowPtr [output] pre-allocated integer array of row pointers of size (rows+1)
 	 * @param colInd [output] pre-allocated integer array of column indices of size nnz
-	 * @param values [output] pre-allocated double array of values of size nnz
+	 * @throws DMLRuntimeException if error
 	 */
-	public static void copyToHost(CSRPointer src, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
+	public static void copyPtrToHost(CSRPointer src, int rows, long nnz, int[] rowPtr, int[] colInd) throws DMLRuntimeException {
 		CSRPointer r = src;
-		long t0 = 0;
-		if (DMLScript.STATISTICS)
-			t0 = System.nanoTime();
 		cudaMemcpy(Pointer.to(rowPtr), r.rowPtr, getIntSizeOf(rows + 1), cudaMemcpyDeviceToHost);
 		cudaMemcpy(Pointer.to(colInd), r.colInd, getIntSizeOf(nnz), cudaMemcpyDeviceToHost);
-		cudaMemcpy(Pointer.to(values), r.val, getDoubleSizeOf(nnz), cudaMemcpyDeviceToHost);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t0);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevCount.add(3);
 	}
 
 	/**
@@ -305,9 +298,9 @@ public class CSRPointer {
 			// with no memory allocated on the GPU.
 			return r;
 		}
-		gCtx.ensureFreeSpace(getDoubleSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
+		gCtx.ensureFreeSpace(getDataTypeSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
 		// increment the cudaCount by 1 for the allocation of all 3 arrays
-		r.val = gCtx.allocate(null, getDoubleSizeOf(nnz2));
+		r.val = gCtx.allocate(null, getDataTypeSizeOf(nnz2));
 		r.rowPtr = gCtx.allocate(null, getIntSizeOf(rows + 1));
 		r.colInd = gCtx.allocate(null, getIntSizeOf(nnz2));
 		return r;
@@ -410,7 +403,7 @@ public class CSRPointer {
 			throws DMLRuntimeException {
 		LOG.trace("GPU : step3AllocateValNInd" + ", GPUContext=" + gCtx);
 		// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
-		C.val = gCtx.allocate(null, getDoubleSizeOf(C.nnz));
+		C.val = gCtx.allocate(null, getDataTypeSizeOf(C.nnz));
 		C.colInd = gCtx.allocate(null, getIntSizeOf(C.nnz));
 	}
 
@@ -441,13 +434,14 @@ public class CSRPointer {
 		that.gpuContext.ensureFreeSpace(totalSize);
 
 		that.nnz = me.nnz;
-		that.val = allocate(that.nnz * Sizeof.DOUBLE);
-		that.rowPtr = allocate(rows * Sizeof.DOUBLE);
-		that.colInd = allocate(that.nnz * Sizeof.DOUBLE);
+		that.val = allocate(that.nnz * LibMatrixCUDA.sizeOfDataType);
+		// TODO: Nakul ... can you please double-check whether the below was a bug or intentional ?
+		that.rowPtr = allocate(rows * Sizeof.INT);
+		that.colInd = allocate(that.nnz * Sizeof.INT);
 
-		cudaMemcpy(that.val, me.val, that.nnz * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
-		cudaMemcpy(that.rowPtr, me.rowPtr, rows * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
-		cudaMemcpy(that.colInd, me.colInd, that.nnz * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(that.val, me.val, that.nnz * LibMatrixCUDA.sizeOfDataType, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(that.rowPtr, me.rowPtr, rows * Sizeof.INT, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(that.colInd, me.colInd, that.nnz * Sizeof.INT, cudaMemcpyDeviceToDevice);
 
 		return that;
 	}
@@ -506,12 +500,12 @@ public class CSRPointer {
 		long t0 = GPUStatistics.DISPLAY_STATISTICS && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
-		long size = ((long) rows) * getDoubleSizeOf((long) cols);
+		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
 		Pointer A = allocate(size);
 		// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 		if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 			// Note: cusparseDcsr2dense method cannot handle empty blocks
-			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			LibMatrixCUDA.cudaSupportFunctions.cusparsecsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
 			//cudaDeviceSynchronize;
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");

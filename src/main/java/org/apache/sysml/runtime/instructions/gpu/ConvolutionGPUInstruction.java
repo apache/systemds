@@ -129,6 +129,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = withMaxPoolOut ? new CPOperand(parts[15]) : null;
 			CPOperand out = withMaxPoolOut ? new CPOperand(parts[16]) : new CPOperand(parts[15]);
+			double memBudget = withMaxPoolOut ? Double.parseDouble(parts[17]) : Double.parseDouble(parts[16]);
 		
 			ArrayList<CPOperand> stride = new ArrayList<>();
 			ArrayList<CPOperand> padding = new ArrayList<>();
@@ -148,7 +149,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			filter_shape.add(new CPOperand(parts[14]));
 
 			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
-					padding, input_shape, filter_shape, Double.parseDouble(parts[16]));
+					padding, input_shape, filter_shape, memBudget);
 		}
 		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
 			InstructionUtils.checkNumFields(parts, 17);

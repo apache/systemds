@@ -48,12 +48,25 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 	
 	@Test
 	public void channelSums() {
-		String scriptStr = "cols = ncol(in1); C = 1;"
-				+ "if(cols %% 2 == 0) { C = 2; } else if(cols %% 3 == 0) { C = 3; }"
-				+ "if(cols %% 50 == 0) { C = 50; } # trying larger column sizes as well"
-				+ "HW = cols / C;"
-				+ "out = rowSums(matrix(colSums(in1), rows=C, cols=HW))";
-		testUnaryOpMatrixOutput(scriptStr, "gpu_channel_sums", "in1", "out");
+		int[] rows = rowSizes;
+		int[] C = new int[] { 2, 5, 10, 50 };
+		int[] HW = new int[] { 10, 12, 21, 51 };
+		double[] sparsities = this.sparsities;
+		int seed = this.seed;	
+
+		for (int i = 0; i < rows.length; i++) {
+			for (int c : C) {
+				for (int hw : HW) {
+					for (int k = 0; k < sparsities.length; k++) {
+						int row = rows[i];
+						double sparsity = sparsities[k];
+						// Skip the case of a scalar unary op
+						String scriptStr = "out = rowSums(matrix(colSums(in1), rows=" + c + ", cols=" + hw + "));";
+						testUnaryOpMatrixOutput(scriptStr, "gpu_channel_sums", "in1", "out", seed, row, c*hw, sparsity);
+					}
+				}
+			}
+		}
 	}
 
 	@Test

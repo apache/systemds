@@ -124,21 +124,83 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 		}
 	}
 	
-	private static synchronized void inplaceTransAdd(double[] a, ConvolutionParameters params) {
-		// Perform transposed addition: output of size [K, CRS] += input of size [CRS,K]
-		double [] c = params.output.denseBlock;
-		final int CRS = params.C*params.R*params.S, K = params.K;
-		final int blocksizeIJ = 128; //L2 cache
+	public static class Conv2dBackwardFilterTrans implements Callable<Long> {
+		private final int _rl, _ru; 
+		private final ConvolutionParameters _params; 
 		
-		//cache-conscious blocked execution
-		for( int bi=0; bi<CRS; bi+=blocksizeIJ )
-			for( int bj=0; bj<K; bj+=blocksizeIJ ) {
-				int bimin = Math.min(bi+blocksizeIJ, CRS);
-				int bjmin = Math.min(bj+blocksizeIJ, K);
-				//core transpose add operation
-				for(int i=bi, aix=bi*K; i<bimin; i++, aix+=K)
-					for(int j=bj, cix=i+bj*CRS; j<bjmin; j++, cix+=CRS)
-						c[cix] += a[aix+j];
+		public Conv2dBackwardFilterTrans(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
+			MatrixBlock dout = _params.input2;
+			MatrixBlock im2ColOutBlock = new MatrixBlock(PQ, CRS, false).allocateBlock();
+			MatrixBlock outRotate = new MatrixBlock(K, PQ, dout.sparse).allocateBlock();
+			MatrixBlock outMM = new MatrixBlock(K, CRS, false).allocateBlock();
+			
+			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true, true);
+			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, outRotate, _params, true, true);
+			double [] partRet = new double[CRS*_params.K];
+			long time1 = 0; long time2 = 0;
+			for(int n = _rl; n < _ru; n++) {
+				// rotate180(dout[n,]) => dout_reshaped
+				rotate180Worker.execute(n, 0);
+				
+				// im2col(input) => _im2ColOutBlock
+				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				im2ColWorker.execute(n);
+				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				
+				outMM.reset(K, CRS, false);
+				//Timing time = new Timing(true);
+				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, im2ColOutBlock, 
+					outMM, !outRotate.sparse, !im2ColOutBlock.sparse, _params);
+				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				
+				if( !outMM.isEmptyBlock() ) //accumulate row results
+					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
+				
+				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+					time1 += t2 - t1;
+					time2 += t3 - t2;
+				}
 			}
+			//no need to transpose because t(t(out)) cancel out
+			inplaceAdd(partRet, _params);
+			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
+				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
+			}
+			return 0L;
+		}
+	}
+	
+	private static void inplaceAdd(double[] a, ConvolutionParameters params) {
+		synchronized (params.output.denseBlock) {
+			LibMatrixMult.vectAdd(a, params.output.denseBlock, 0, 0, a.length);
+		}
+	}
+	
+	private static void inplaceTransAdd(double[] a, ConvolutionParameters params) {
+		synchronized (params.output.denseBlock) {
+			// Perform transposed addition: output of size [K, CRS] += input of size [CRS,K]
+			double [] c = params.output.denseBlock;
+			final int CRS = params.C*params.R*params.S, K = params.K;
+			final int blocksizeIJ = 128; //L2 cache
+			
+			//cache-conscious blocked execution
+			for( int bi=0; bi<CRS; bi+=blocksizeIJ )
+				for( int bj=0; bj<K; bj+=blocksizeIJ ) {
+					int bimin = Math.min(bi+blocksizeIJ, CRS);
+					int bjmin = Math.min(bj+blocksizeIJ, K);
+					//core transpose add operation
+					for(int i=bi, aix=bi*K; i<bimin; i++, aix+=K)
+						for(int j=bj, cix=i+bj*CRS; j<bjmin; j++, cix+=CRS)
+							c[cix] += a[aix+j];
+				}
+		}
 	}
 }

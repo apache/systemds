@@ -190,6 +190,8 @@ public class LibMatrixDNNHelper {
 			//implementation simply rotates the sparse filters into dense rows
 			if( applyNative ) 
 				ret.add(new SparseNativeConv2dBackwardFilterDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if( params.input2.sparse && params.input1.getSparsity() > params.input2.getSparsity() )
+				ret.add(new Conv2dBackwardFilterTrans(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput)
 				ret.add(new Conv2dBackwardFilter(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else

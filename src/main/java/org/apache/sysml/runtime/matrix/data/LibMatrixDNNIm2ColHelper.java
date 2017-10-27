@@ -41,10 +41,10 @@ public class LibMatrixDNNIm2ColHelper {
 				if( LOG.isTraceEnabled() ) 
 					LOG.trace("Using DenseIm2colWorkerAllChannels operator to perform "
 						+ "im2col (stride1pad0="+stride1Pad0+", allChannels="+allChannels+").");
-				if(allChannels && stride1Pad0 )
+				if(allChannels && stride1Pad0 && !trans )
 					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
 				else if( allChannels )
-					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
+					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params, trans);
 				else if( stride1Pad0 )
 					return new DenseIm2colWorkerStride1Pad0(input.getDenseBlock(), out.getDenseBlock(), params);
 				else
@@ -200,7 +200,8 @@ public class LibMatrixDNNIm2ColHelper {
 		private final double[] inputArray, outputArray; 
 		private final int CRS, S, R, P, Q, CHW, H, W; 
 		private final int stride_h, stride_w, pad_h, pad_w;
-		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
+		private final boolean trans;
+		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params, boolean trans) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
 			this.CRS = params.C * params.R * params.S;
@@ -208,6 +209,7 @@ public class LibMatrixDNNIm2ColHelper {
 			this.CHW = params.C*params.H*params.W;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
+			this.trans = trans;
 		}
 		
 		@Override
@@ -217,23 +219,24 @@ public class LibMatrixDNNIm2ColHelper {
 
 		@Override
 		public void execute(int n) {
+			//reset for selective copy
+			Arrays.fill(outputArray, 0);
+			
 			int nOffset = n * CHW;
 			for (int c = 0; c < CRS; ++c) {
 				int wOffset = c % S;
 				int hOffset = (c / S) % R;
 				int cInput = c / R / S;
 				for (int h = 0; h < P; ++h) {
-					int outOffset = (c * P + h) * Q;
+					int outOffset = trans ? c+(h*Q*CRS) : (c*P+h)*Q;
 					int hPadded = h * stride_h - pad_h + hOffset;
 					int inputOffset = nOffset + (cInput * H + hPadded) * W;
-					if (hPadded < 0 || hPadded >= H) {
-						Arrays.fill(outputArray, outOffset, outOffset+Q, 0);
-					} else {
-						for (int w = 0; w < Q; ++w) {
-							int wPadded = w * stride_w - pad_w + wOffset;
-							boolean assign = (wPadded >= 0 && wPadded < W);
-							outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
-						}
+					if (hPadded < 0 || hPadded >= H ) continue;
+					for (int w = 0; w < Q; ++w) {
+						int wPadded = w * stride_w - pad_w + wOffset;
+						if( wPadded >= 0 && wPadded < W )
+							outputArray[outOffset + (trans?w*CRS:w)] 
+								= inputArray[inputOffset + wPadded];
 					}
 				}
 			}

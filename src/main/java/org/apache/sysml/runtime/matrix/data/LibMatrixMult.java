@@ -1351,7 +1351,7 @@ public class LibMatrixMult
 		final int blocksizeJ = 1024; 
 		
 		//temporary array of current sparse positions
-		int[] curk = new int[blocksizeI];
+		int[] curk = new int[Math.min(blocksizeI, ru-rl)];
 		
 		//blocked execution over IKJ 
 		for( int bi = rl; bi < ru; bi+=blocksizeI ) {
@@ -1429,7 +1429,7 @@ public class LibMatrixMult
 						(int)Math.pow((double)m*cd/m1.nonZeros,2)));
 				
 				//temporary array of current sparse positions
-				int[] curk = new int[blocksizeI];
+				int[] curk = new int[Math.min(blocksizeI, ru-rl)];
 				
 				//blocked execution over IK 
 				for( int bi = rl; bi < ru; bi+=blocksizeI ) {

@@ -19,33 +19,38 @@
 #
 #-------------------------------------------------------------
 
-/*
-------------------------------------------------
-  Parameters                                      
-------------------------------------------------
-$R          = #rows
-$C          = #columns
-$NC         = number of categorical attributes
-$MAXDOMAIN  = maximum domain size
-$DATA       = output file path on HDFS
-$SETSIZE    = Size of one bivariate set
-$LABELSETSIZE= Size of second bivariate set with labels
-$TYPES      = output attribute types
-$TYPES1     = Attribute types for Set1
-$TYPES2     = Attribute types for Set2
-$INDEX1     = Indices for Set1
-$INDEX2     = Indices for Set2
-$FMT        = output format
-------------------------------------------------
-hadoop jar SystemML.jar -f genData4Stats.dml -nvargs R=1000000 C=1000 NC=50 MAXDOMAIN=1100 DATA=stats/data TYPES=stats/types SETSIZE=15 LABELSETSIZE=10 TYPES1=... Types2=... INDEX1=.. INDEX2=..FMT=csv
-------------------------------------------------
-*/
+#
+# Generates data for statistics
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME      TYPE    DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# nr        Int     ---      Number of records
+# nf        Int     ---      Number of features
+# nc        Int     ---      Number of categorical attributes
+# maxdomain Int     ---      maximum domain size
+# setsize   Int     ---      Size of one bivariate set
+# labelsize Int     ---      Size of second bivariate set with labels
+# types     String  ---      Location to store output attribute types
+# types1    String  ---      Location to store attribute types for Set1
+# types2    String  ---      Location to store attribute types for Set2
+# index1    String  ---      Location to store indices for Set1
+# index2    String  ---      Location to store indices for Set2
+# X         String  ---      Location to store matrix X with generated data records
+# fmt       String  "binary" Matrix output format, usually "text", "csv" or "binary"
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemML.jar -f genData4Stats.dml -nvargs nr=1000000 nf=1000 nc=50
+# maxdomain=1100 setsize=15 labelsize=10 types=stats/types
+# types1=... types2=... index1=.. index2=.. X=stats/data fmt=csv
 
 
-FMT = ifdef($FMT,"binary"); # default output format
+FMT = ifdef($fmt,"binary"); # default output format
 
 # number of categorical attributes.. numC <= C
-numC = $NC;
+numC = $nc;
 numO = as.integer(numC/2);
 numNominal = numC - numO;
 print("Categorical Mix = (" + numC + "," + numO + "," + numNominal +")");
@@ -55,7 +60,7 @@ maxDomainSize = $MAXDOMAIN;
 
 # Divide $C attributes according to the following logic:
 #
-#   1     numO       numC               C
+#   1     numO       numC               nf
 #   |-------|---------|-----------------|
 #      ord    nominal    scale
 #
@@ -63,13 +68,13 @@ maxDomainSize = $MAXDOMAIN;
 # 1-numC/2: ordinal
 # (numC/2+1)-numC: nominal
 
-types = matrix(1, rows=1, cols=$C);
+types = matrix(1, rows=1, cols=$nf);
 ocutoff = numO;
 types[1,1:ocutoff] = matrix(1,rows=1,cols=ocutoff)*3;
 types[1, ocutoff+1:numC] = matrix(1,rows=1,cols=(numC-ocutoff))*2;
 
 # Generate data
-A = rand(rows=$R, cols=$C, sparsity=1);
+A = rand(rows=$nr, cols=$nf, sparsity=1);
 B = matrix(0,rows=nrow(A), cols=ncol(A));
 parfor (i in 1:numC) {
     Ai = A[,i];
@@ -86,19 +91,19 @@ parfor (i in 1:numC) {
     B[,i] = round(1+(domain-1)*Ai);
 }
 B[ ,(numC+1):ncol(A)] = A[, (numC+1):ncol(A)];
- 
 
-write(B, $DATA, format=FMT);
-write(types, $TYPES, format=FMT);
+
+write(B, $X, format=FMT);
+write(types, $types, format=FMT);
 
 # ----- Generator for Bivariate ---------
 
-settypes1 = matrix(1, rows=1, cols=$SETSIZE);
-index1   = matrix(0, rows=1, cols=$SETSIZE);
+settypes1 = matrix(1, rows=1, cols=$setsize);
+index1   = matrix(0, rows=1, cols=$setsize);
 
-catSetSize = as.integer($SETSIZE/2);
+catSetSize = as.integer($setsize/2);
 ocutoff = as.integer(catSetSize/2);
-print("Set Mix = (" + $SETSIZE + "," + catSetSize + "," + ocutoff + ")" );
+print("Set Mix = (" + $setsize+ "," + catSetSize + "," + ocutoff + ")" );
 settypes1[1, 1:ocutoff] = matrix(1,rows=1,cols=ocutoff)*3;
 settypes1[1, ocutoff+1:catSetSize] = matrix(1,rows=1,cols=(catSetSize-ocutoff))*2;
 
@@ -112,38 +117,37 @@ tmp = rand(rows=1, cols=nominalSetSize);
 index1[1, ocutoff+1:catSetSize] = round(numO+1 + (numC-numO-1)*tmp);
 
 # select scale attributes
-scaleSetSize = $SETSIZE-catSetSize;
+scaleSetSize = $setsize-catSetSize;
 tmp = rand(rows=1, cols=scaleSetSize);
-index1[1, catSetSize+1:$SETSIZE] = round(numC+1 + ($C-numC-1)*tmp);
+index1[1, catSetSize+1:$setsize] = round(numC+1 + ($nf-numC-1)*tmp);
 
 
 # --- select types and indices for LABELSET
-settypes2 = matrix(2, rows=1, cols=$LABELSETSIZE);
-index2   = matrix(0, rows=1, cols=$LABELSETSIZE);
-if($LABELSETSIZE > 1) {
+settypes2 = matrix(2, rows=1, cols=$labelsize);
+index2   = matrix(0, rows=1, cols=$labelsize);
+if($labelsize > 1) {
     settypes2[1,1] = 1;
     r = as.scalar(rand(rows=1,cols=1));
-    index2[1,1] = round(numC+1 + ($C-numC-1)*r)
+    index2[1,1] = round(numC+1 + ($nf-numC-1)*r)
 }
 else {
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,1] = round( numO+1 + (numC-numO-1)*r )
 }
 
-for(i in 2:as.integer($LABELSETSIZE/2)) {
+for(i in 2:as.integer($labelsize/2)) {
     settypes2[1,i] = 3;
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,i] = round( 1 + (numO-1)*r )
 }
 
-for(i in as.integer($LABELSETSIZE/2)+1:$LABELSETSIZE) {
+for(i in as.integer($labelsize/2)+1:$labelsize) {
     settypes2[1,i] = 2;
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,i] = round( numO+1 + (numC-numO-1)*r )
 }
 
-write(settypes1, $TYPES1, format=FMT);
-write(settypes2, $TYPES2, format=FMT);
-write(index1, $INDEX1, format=FMT);
-write(index2, $INDEX2, format=FMT);
-
+write(settypes1, $types1, format=FMT);
+write(settypes2, $types2, format=FMT);
+write(index1, $index1, format=FMT);
+write(index2, $index2, format=FMT);

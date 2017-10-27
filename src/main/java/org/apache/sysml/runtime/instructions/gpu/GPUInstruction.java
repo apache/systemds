@@ -137,6 +137,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_MAXPOOLING_BACKWARD_LIB =        "nnmb";  // time spent in cudnnPoolingBackward
 	public final static String MISC_TIMER_BIAS_ADD_LIB =                   "nnba";  // time spent in bias_add, bias_multiply cuda kernel
 	public final static String MISC_TIMER_RELU_BACKWARD_KERNEL=            "nnrbk"; // time spent in relu_backward cuda kernel
+	public final static String MISC_TIMER_CHANNEL_SUMS_KERNEL =            "nncsum"; // time spent in channel_sums cuda kernel
 	public final static String MISC_TIMER_RELU_KERNEL =                    "nnrk";  // time spent in the relu kernel
 	public final static String MISC_TIMER_CUDNN_INIT =                     "nni";   // time spent in initializations for cudnn call
 	public final static String MISC_TIMER_CUDNN_CLEANUP =                  "nnc";   // time spent in cleanup for cudnn call

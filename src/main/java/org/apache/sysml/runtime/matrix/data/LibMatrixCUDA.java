@@ -322,6 +322,38 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
 
 	}
+	
+	/**
+	 * Perform channel_sums operations: out = rowSums(matrix(colSums(A), rows=C, cols=HW))
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param input input image
+	 * @param outputBlock output
+	 * @param C number of channels
+	 * @param HW height*width
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static void channelSums(GPUContext gCtx, String instName, MatrixObject input, MatrixObject outputBlock, long C, long HW) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : channelSums" + ", GPUContext=" + gCtx);
+		}
+		long N = input.getNumRows();
+		long cols = input.getNumColumns();
+		if(cols != C*HW) {
+			throw new DMLRuntimeException("Incorrect parameters, number of columns " + cols + " != " + C + "*" + HW);
+		}
+		Pointer imagePointer = getDensePointer(gCtx, input, instName);
+		Pointer outputPointer = getDensePointer(gCtx, outputBlock, instName);
+
+		long t1=0;
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		getCudaKernels(gCtx).launchKernel("channel_sums",
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(C)),
+				imagePointer, outputPointer, toInt(N), toInt(C), toInt(HW));
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CHANNEL_SUMS_KERNEL, System.nanoTime() - t1);
+
+	}
 
 	/**
 	 * Performs the operation corresponding to the DML script:

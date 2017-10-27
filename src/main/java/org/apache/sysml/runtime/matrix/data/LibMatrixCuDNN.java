@@ -64,7 +64,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	protected static cudnnHandle getCudnnHandle(GPUContext gCtx) throws DMLRuntimeException {
 		return gCtx.getCudnnHandle();
 	}
-
+	
 	/**
 	 * Does a 2D convolution followed by a bias_add
 	 *

@@ -53,6 +53,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "maxpooling_backward",    GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "bias_add",               GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "bias_multiply",          GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "channel_sums",          GPUINSTRUCTION_TYPE.Convolution);
 
 		// Matrix Multiply Operators
 		String2GPUInstructionType.put( "ba+*",  GPUINSTRUCTION_TYPE.AggregateBinary);

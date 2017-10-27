@@ -26,6 +26,7 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.Binary;
+import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -131,6 +132,15 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		return false;
 	}
 	
+	private boolean isChannelSumRewriteApplicable() {
+		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && _op == AggOp.SUM && _direction == Direction.Row
+			&& getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp() == ReOrgOp.RESHAPE) {
+			Hop input1 = getInput().get(0).getInput().get(0);
+			return input1 instanceof AggUnaryOp && ((AggUnaryOp)input1)._op == AggOp.SUM && ((AggUnaryOp)input1)._direction == Direction.Col;
+		}
+		return false;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -147,7 +157,15 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			if ( et == ExecType.CP || et == ExecType.GPU ) 
 			{
 				Lop agg1 = null;
-				if( isTernaryAggregateRewriteApplicable() ) {
+				if(isChannelSumRewriteApplicable()) {
+					ReorgOp in = ((ReorgOp)getInput().get(0));
+					agg1 = new ConvolutionTransform(
+							in.getInput().get(0).getInput().get(0).constructLops(), 
+							in.getInput().get(1).constructLops(),
+							in.getInput().get(2).constructLops(),
+							ConvolutionTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
+				}
+				else if( isTernaryAggregateRewriteApplicable() ) {
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
 				else if( isUnaryAggregateOuterCPRewriteApplicable() )

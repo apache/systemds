@@ -138,7 +138,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	 * @return returns true for pattern rowSums(matrix(colSums(X), rows=.., cols=..)) else false
 	 */
 	private boolean isChannelSumRewriteApplicable() {
-		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && _op == AggOp.SUM && _direction == Direction.Row
+		if( OptimizerUtils.ALLOW_OPERATOR_FUSION && _op == AggOp.SUM && _direction == Direction.Row
 			&& getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp() == ReOrgOp.RESHAPE) {
 			Hop input1 = getInput().get(0).getInput().get(0);
 			return input1 instanceof AggUnaryOp && ((AggUnaryOp)input1)._op == AggOp.SUM && ((AggUnaryOp)input1)._direction == Direction.Col;

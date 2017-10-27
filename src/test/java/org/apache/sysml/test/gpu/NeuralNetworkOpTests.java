@@ -579,5 +579,87 @@ public class NeuralNetworkOpTests extends GPUTests {
 			}
 		}
 	}
+	
+	
+	@Test
+	@Ignore
+	public void testMaxPoolBackwardWithMaxpoolOut() {
+		String scriptStr = "tmp = max_pool(image, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S]); print(sum(tmp)); O = max_pool_backward(image, dout, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], pool_size=[R,S])";
+
+		for (long N : Nlst) {
+			for (long C : Clst) {
+				for (long H : Hlst) {
+					long W = H;
+					for (long R : Rlst) {
+						long S = R;
+						for (long strideH : strideLst) {
+							long strideW = strideH;
+							for (long padH : padLst) {
+								long padW = padH;
+								for (double sparsity : sparsitylst) {
+
+									// pool is smaller than image + padding
+									if (R > (H + padH) || S > (W + padW))
+										continue;
+
+									// Make sure ops fit in GPU memory and within constraints of cudnn
+									long imageSize = N * C * H * W * 8l;
+									if (imageSize > MAX_OP_SIZE)  // image size
+										continue;
+									long poolSize = R * S * 8l;
+									if (poolSize > MAX_OP_SIZE)  // filter size
+										continue;
+
+									int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
+									int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+
+									long doutSize = N * C * P * Q * 8l;
+									if (doutSize > MAX_OP_SIZE) // dout/output size
+										continue;
+
+									double imageSizeInMB = imageSize / (1024.0 * 1024.0);
+									double poolSizeInMB = poolSize / (1024.0 * 1024.0);
+									double doutSizeInMB = doutSize / (1024.0 * 1024.0);
+									System.out
+									.format("max_pool_backward, image[%d,%d,%d,%d](%.1fMB), pool[%d,%d](%.1f), dout[%d,%d,%d,%d](%.1fMB), stride[%d,%d], padding[%d,%d]",
+											N, C, H, W, imageSizeInMB, R, S, poolSizeInMB, N, C,
+											P, Q, doutSizeInMB, strideH, strideW, padH, padW);
+
+									Matrix image = generateInputMatrix(spark, (int) N,
+											(int) (C * H * W), -127.0, 127, sparsity, seed, true);
+									Matrix dout = generateInputMatrix(spark, (int) N, (int) (C * P * Q),
+											-127.0, 127, sparsity, seed, true);
+									HashMap<String, Object> inputs = new HashMap<>();
+									inputs.put("N", N);
+									inputs.put("C", C);
+									inputs.put("H", H);
+									inputs.put("W", W);
+									inputs.put("R", R);
+									inputs.put("S", S);
+									inputs.put("strideH", strideH);
+									inputs.put("strideW", strideW);
+									inputs.put("padH", padH);
+									inputs.put("padW", padW);
+									inputs.put("image", image);
+									inputs.put("dout", dout);
+									List<Object> outCPU = runOnCPU(spark, scriptStr, inputs,
+											Arrays.asList("O"));
+									List<Object> outGPU = runOnGPU(spark, scriptStr, inputs,
+											Arrays.asList("O"));
+									assertHeavyHitterPresent("gpu_maxpooling_backward");
+									assertEqualObjects(outCPU.get(0), outGPU.get(0));
+									clearGPUMemory();
+								}
+							}
+						}
+					}
+
+
+
+
+				}
+			}
+		}
+	}
 
 }

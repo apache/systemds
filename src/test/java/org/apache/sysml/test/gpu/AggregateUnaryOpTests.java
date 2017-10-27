@@ -50,6 +50,7 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 	public void channelSums() {
 		String scriptStr = "cols = ncol(in1); C = 1;"
 				+ "if(cols %% 2 == 0) { C = 2; } else if(cols %% 3 == 0) { C = 3; }"
+				+ "if(cols %% 50 == 0) { C = 50; } # trying larger column sizes as well"
 				+ "HW = cols / C;"
 				+ "out = rowSums(matrix(colSums(in1), rows=C, cols=HW))";
 		testUnaryOpMatrixOutput(scriptStr, "gpu_channel_sums", "in1", "out");

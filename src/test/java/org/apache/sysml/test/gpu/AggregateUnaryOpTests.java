@@ -57,13 +57,15 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 		for (int k = 0; k < sparsities.length; k++) {
 			double sparsity = sparsities[k];
 			if(sparsity == 0)
-				continue; // sparsity == 0 has been independently tested but fails with non-informative mlcontext error
+				continue; // sparsity == 0 has been independently tested but it fails with non-informative mlcontext error
 			for (int i = 0; i < rows.length; i++) {
+				int row = rows[i];
+				if(row == 1)
+					continue; // Currently channel_sums rewrite is enabled only for row > 1
 				for (int c : C) {
 					if(c == 1)
-						continue; // C == 1 will result in scalar value and has been independently tested
+						continue; // C == 1 will result in scalar value, but this case has been independently tested
 					for (int hw : HW) {
-						int row = rows[i];
 						// Skip the case of a scalar unary op
 						// System.out.println("Started channelSum test for " + row + " " + c + " " + hw + " " +  sparsity);
 						String scriptStr = "out = rowSums(matrix(colSums(in1), rows=" + c + ", cols=" + hw + "));";

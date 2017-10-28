@@ -57,9 +57,11 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 		for (int k = 0; k < sparsities.length; k++) {
 			double sparsity = sparsities[k];
 			if(sparsity == 0)
-				continue;
+				continue; // sparsity == 0 has been independently tested but fails with non-informative mlcontext error
 			for (int i = 0; i < rows.length; i++) {
 				for (int c : C) {
+					if(c == 1)
+						continue; // C == 1 will result in scalar value and has been independently tested
 					for (int hw : HW) {
 						int row = rows[i];
 						// Skip the case of a scalar unary op

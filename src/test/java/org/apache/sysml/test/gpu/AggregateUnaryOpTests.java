@@ -54,15 +54,19 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 		double[] sparsities = this.sparsities;
 		int seed = this.seed;	
 
-		for (int i = 0; i < rows.length; i++) {
-			for (int c : C) {
-				for (int hw : HW) {
-					for (int k = 0; k < sparsities.length; k++) {
+		for (int k = 0; k < sparsities.length; k++) {
+			double sparsity = sparsities[k];
+			if(sparsity == 0)
+				continue;
+			for (int i = 0; i < rows.length; i++) {
+				for (int c : C) {
+					for (int hw : HW) {
 						int row = rows[i];
-						double sparsity = sparsities[k];
 						// Skip the case of a scalar unary op
+						// System.out.println("Started channelSum test for " + row + " " + c + " " + hw + " " +  sparsity);
 						String scriptStr = "out = rowSums(matrix(colSums(in1), rows=" + c + ", cols=" + hw + "));";
 						testUnaryOpMatrixOutput(scriptStr, "gpu_channel_sums", "in1", "out", seed, row, c*hw, sparsity);
+						// System.out.println("Ended channelSum test for " + row + " " + c + " " + hw + " " +  sparsity);
 					}
 				}
 			}

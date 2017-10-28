@@ -32,7 +32,7 @@
 # icpt      Int     ---     Include Intercept
 # X         String  ---     Location to write matrix X with generated data records
 # Y         String  ---     Location to store generated labels
-# fmt       String  "csv"   Output format
+# fmt       String  ---     Output format
 # ----------------------------------------------------------------------------
 #
 # Example:

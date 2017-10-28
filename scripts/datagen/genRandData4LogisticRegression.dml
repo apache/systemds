@@ -19,29 +19,39 @@
 #
 #-------------------------------------------------------------
 
-# generates random data to test linear logistic regression
+# Generates random data to test linear logistic regression
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME       TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# nr         Int     ---     Number of records
+# nf         Int     ---     Number of features
+# maxfeatval Int     ---     Maximum feature value (absolute value)
+# maxweight  Int     ---     Maximum weight (absolute value)
+# addnoise   Int     ---     Add Noise. if 0 then no noise is added, to add noise set this to 1
+# icpt       Int     ---     Add Intercept. if 0 disables intercept
+# sparse     Double  ---     Controls sparsity in the generated data
+# translabel Int     ---     Transform labels. if 0 then -1/1; otherwise 1/2
+# weight     Int     ---     Location to store generated weights
+# X          String  ---     Location to store generated data
+# Y          String  ---     Location to store generated labels
+# fmt        String  ---     Output format
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemML.jar -f genRandData4LogisticRegression.dml -nvargs nr=100000 nf=100
+# maxfeatval=10 maxweight=5 addnoise=1 icpt=0 sparse=0.01 translabel=1
+# weight=5 Y=Y.mtx X=X.mtx fmt='csv'
 
-# $1 is number of samples
-# $2 is number of features (independent variables)
-# $3 is maximum feature value (absolute value)
-# $4 is maximum weight (absolute value)
-# $5 is location to store generated weights
-# $6 is location to store generated data
-# $7 is location to store generated labels
-# $8 addNoise. if 0 then no noise is added, to add noise set this to 1
-# $9 is b, 0 disables intercept
-# $10 controls sparsity in the generated data
-# $11 output format
-# $12 transform labels. if 0 then -1/1; otherwise 1/2
+numSamples = $nr
+numFeatures = $nf
+maxFeatureValue = $maxfeatval
+maxWeight = $maxweight
+addNoise = $addnoise
+b = $icpt
 
-numSamples = $1
-numFeatures = $2
-maxFeatureValue = $3
-maxWeight = $4
-addNoise = $8
-b = $9
-
-X = Rand(rows=numSamples, cols=numFeatures, min=-1, max=1, pdf="uniform", seed=0, sparsity=$10)
+X = Rand(rows=numSamples, cols=numFeatures, min=-1, max=1, pdf="uniform", seed=0, sparsity=$sparse)
 X = X * maxFeatureValue 
 
 w = Rand(rows=numFeatures, cols=1, min=-1, max=1, pdf="uniform", seed=0)
@@ -63,10 +73,10 @@ if(addNoise == 1){
 	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
 }
 Y = 1 - 2 * (prob < r)
-if( $12 == 1 ) {
+if( $translabel == 1 ) {
   Y = (Y+3)/2;
 }
 
-write(w, $5, format=$11)
-write(X, $6, format=$11)
-write(Y, $7, format=$11)
+write(w, $weight, format=$fmt)
+write(X, $X, format=$fmt)
+write(Y, $Y, format=$fmt)

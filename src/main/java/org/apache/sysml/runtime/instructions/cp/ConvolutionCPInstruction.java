@@ -323,46 +323,51 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int C = (int) ec.getScalarInput(_in2.getName(), _in2.getValueType(), _in2.isLiteral()).getLongValue();
 		int HW = (int) ec.getScalarInput(_in3.getName(), _in3.getValueType(), _in3.isLiteral()).getLongValue();
-		MatrixBlock outputBlock = new MatrixBlock(C, 1, false).allocateBlock();
-		double [] output = outputBlock.getDenseBlock();
-		if(input.isInSparseFormat()) {
-			SparseBlock sblock = input.getSparseBlock();
-			for(int n = 0; n < input.getNumRows(); n++) {
-				if( sblock.isEmpty(n) )
-					continue;
-				int apos = sblock.pos(n);
-				int alen = sblock.size(n);
-				int[] aix = sblock.indexes(n);
-				double[] avals = sblock.values(n);
-				
-				// Iterate over the sparse block
-				for(int j=apos; j<apos+alen; j++) {
-					// Note: the input is of shape [N, CHW]
-					int chw = aix[j];
-					
-					// Get individual zero-based c,h,w indexes from zero-based 'chw'
-					int c = chw / HW;
-					output[c] += avals[j];
-				}
-			}
+		MatrixBlock outputBlock = null;
+		if(input.isEmpty()) {
+			outputBlock = new MatrixBlock(C, 1, true);
 		}
 		else {
-			double [] inArr = input.getDenseBlock();
-			if(inArr != null) {
-				int index = 0;
+			outputBlock = new MatrixBlock(C, 1, false).allocateBlock();
+			double [] output = outputBlock.getDenseBlock();
+			if(input.isInSparseFormat()) {
+				SparseBlock sblock = input.getSparseBlock();
 				for(int n = 0; n < input.getNumRows(); n++) {
-					for(int c = 0; c < C; c++) {
-						double sum = 0;
-						for(int hw = 0; hw < HW; hw++, index++) {
-							sum += inArr[index];
-						}
-						output[c] += sum;
+					if( sblock.isEmpty(n) )
+						continue;
+					int apos = sblock.pos(n);
+					int alen = sblock.size(n);
+					int[] aix = sblock.indexes(n);
+					double[] avals = sblock.values(n);
+					
+					// Iterate over the sparse block
+					for(int j=apos; j<apos+alen; j++) {
+						// Note: the input is of shape [N, CHW]
+						int chw = aix[j];
+						
+						// Get individual zero-based c,h,w indexes from zero-based 'chw'
+						int c = chw / HW;
+						output[c] += avals[j];
 					}
 				}
 			}
+			else {
+				double [] inArr = input.getDenseBlock();
+				if(inArr != null) {
+					int index = 0;
+					for(int n = 0; n < input.getNumRows(); n++) {
+						for(int c = 0; c < C; c++) {
+							double sum = 0;
+							for(int hw = 0; hw < HW; hw++, index++) {
+								sum += inArr[index];
+							}
+							output[c] += sum;
+						}
+					}
+				}
+			}
+			outputBlock.recomputeNonZeros(getExtendedOpcode());
 		}
-		
-		outputBlock.recomputeNonZeros(getExtendedOpcode());
 		
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

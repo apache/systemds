@@ -55,8 +55,9 @@ public class FunctionCallGraph
 	//program-wide function call operators per target function
 	//(mapping from function keys to set of its function calls)
 	private final HashMap<String, ArrayList<FunctionOp>> _fCalls;
+	private final HashMap<String, ArrayList<StatementBlock>> _fCallsSB;
 	
-	//subset of direct or indirect recursive functions	
+	//subset of direct or indirect recursive functions
 	private final HashSet<String> _fRecursive;
 	
 	/**
@@ -68,6 +69,7 @@ public class FunctionCallGraph
 	public FunctionCallGraph(DMLProgram prog) {
 		_fGraph = new HashMap<>();
 		_fCalls = new HashMap<>();
+		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
 		
 		constructFunctionCallGraph(prog);
@@ -82,6 +84,7 @@ public class FunctionCallGraph
 	public FunctionCallGraph(StatementBlock sb) {
 		_fGraph = new HashMap<>();
 		_fCalls = new HashMap<>();
+		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
 		
 		constructFunctionCallGraph(sb);
@@ -125,6 +128,21 @@ public class FunctionCallGraph
 	}
 	
 	/**
+	 * Returns all statement blocks that contain a function operator
+	 * calling the given function.
+	 * 
+	 * @param fkey function key of called function,
+	 *      null indicates the main program and returns an empty list
+	 * @return list of statement blocks
+	 */
+	public List<StatementBlock> getFunctionCallsSB(String fkey) {
+		//main program cannot have function calls
+		if( fkey == null )
+			return Collections.emptyList();
+		return _fCallsSB.get(fkey);
+	}
+	
+	/**
 	 * Indicates if the given function is either directly or indirectly recursive.
 	 * An example of an indirect recursive function is foo2 in the following call
 	 * chain: foo1 -&gt; foo2 -&gt; foo1.
@@ -135,7 +153,7 @@ public class FunctionCallGraph
 	 */
 	public boolean isRecursiveFunction(String fnamespace, String fname) {
 		return isRecursiveFunction(
-			DMLProgram.constructFunctionKey(fnamespace, fname));			
+			DMLProgram.constructFunctionKey(fnamespace, fname));
 	}
 	
 	/**
@@ -268,9 +286,12 @@ public class FunctionCallGraph
 					FunctionOp fop = (FunctionOp) h;
 					String lfkey = fop.getFunctionKey();
 					//keep all function operators
-					if( !_fCalls.containsKey(lfkey) )
-						_fCalls.put(lfkey, new ArrayList<FunctionOp>());
+					if( !_fCalls.containsKey(lfkey) ) {
+						_fCalls.put(lfkey, new ArrayList<>());
+						_fCallsSB.put(lfkey, new ArrayList<>());
+					}
 					_fCalls.get(lfkey).add(fop);
+					_fCallsSB.get(lfkey).add(sb);
 					
 					//prevent redundant call edges
 					if( lfset.contains(lfkey) || fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
@@ -278,7 +299,7 @@ public class FunctionCallGraph
 					
 					if( !_fGraph.containsKey(lfkey) )
 						_fGraph.put(lfkey, new HashSet<String>());
-						
+					
 					//recursively construct function call dag
 					if( !fstack.contains(lfkey) ) {
 						fstack.push(lfkey);

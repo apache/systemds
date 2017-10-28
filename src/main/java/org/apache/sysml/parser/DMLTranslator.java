@@ -1451,12 +1451,8 @@ public class DMLTranslator
 					}
 
 					//create function op
-					String[] foutputs = new String[mas.getTargetList().size()]; 
-					int count = 0;
-					for ( DataIdentifier paramName : mas.getTargetList() ){
-						foutputs[count++]=paramName.getName();
-					}
-					
+					String[] foutputs = mas.getTargetList().stream()
+						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
 					output.add(fcall);

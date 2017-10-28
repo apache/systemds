@@ -96,12 +96,13 @@ public class InterProceduralAnalysis
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
 	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
+	protected static final int     INLINING_MAX_NUM_OPS           = 10;    //inline single-statement functions w/ #ops <= threshold, other than dataops and literals
 	
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.apache.sysml.hops.ipa.InterProceduralAnalysis")
-				  .setLevel((Level) Level.DEBUG);
+				.setLevel((Level) Level.DEBUG);
 		}
 	}
 	
@@ -136,6 +137,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassApplyStaticHopRewrites());
+		_passes.add(new IPAPassInlineFunctions());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {

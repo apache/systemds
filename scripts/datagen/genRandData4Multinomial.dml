@@ -19,12 +19,33 @@
 #
 #-------------------------------------------------------------
 
-num_records = $1;
-num_features = $2;
+# Generates random data to test multinomial algorithms
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME      TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# nr        Int     ---     Number of records
+# nf        Int     ---     Number of features
+# sparse    Double  ---     controls sparsity in the generated data
+# numcat    Int     ---     Number of cateogries
+# icpt      Int     ---     Include Intercept
+# X         String  ---     Location to write matrix X with generated data records
+# Y         String  ---     Location to store generated labels
+# fmt       String  "csv"   Output format
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemML.jar -f genRandData4Multinomial.dml -nvargs nr=1000 nf=100
+# sparse=10 numcat=150 icpt=0 X=X.mtx Y=Y.mtx fmt=csv
 
-p = $3; #sparsity
-num_categories = $4; #num classes
-is_intercept = $5==1; 
+
+num_records = $nr;
+num_features = $nf;
+
+p = $sparse; #sparsity
+num_categories = $numcat; #num classes
+is_intercept = $icpt==1;
 
 stdevLT = 1.0;
 beta_range = 3.0 * stdevLT / sqrt (num_features * p);
@@ -62,5 +83,5 @@ Y = 1 + rowSums (Prob < r);
 # ensure all classes are represented
 Y[(num_records-num_categories+1):num_records,1] = seq(1,num_categories);
 
-write(X, $6, format=$8)
-write(Y, $7, format=$8);
+write(X, $X, format=$fmt)
+write(Y, $Y, format=$fmt);

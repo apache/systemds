@@ -47,10 +47,9 @@ def multinomial_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     intercept = '0'
     X = join(datagen_write, 'X.data')
     Y = join(datagen_write, 'Y.data')
-    fmt = DATA_FORMAT
 
-    config = [numSamples, numFeatures, sparsity, num_categories, intercept,
-              X, Y, fmt, '1']
+    config = dict(nr=numSamples, nf=numFeatures, sparse=sparsity, numcat=num_categories,
+                  icpt=intercept, X=X, Y=Y, fmt=DATA_FORMAT)
 
     config_writer(save_path + '.json', config)
 

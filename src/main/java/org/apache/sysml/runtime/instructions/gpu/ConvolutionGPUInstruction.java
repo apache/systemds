@@ -92,8 +92,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		
 		if( ( opcode.equalsIgnoreCase("conv2d")
 			 || opcode.equalsIgnoreCase("conv2d_backward_filter")
-			 || opcode.equalsIgnoreCase("conv2d_backward_data")
-			 || opcode.equalsIgnoreCase("maxpooling_backward")) ) {
+			 || opcode.equalsIgnoreCase("conv2d_backward_data")) ) {
 			InstructionUtils.checkNumFields(parts, 16);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -118,6 +117,39 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 
 			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[16]));
+		}
+		else if( opcode.equalsIgnoreCase("maxpooling_backward") ) {
+			boolean withMaxPoolOut = false;
+			if(parts.length == 18) {
+				withMaxPoolOut = true;
+			}
+			else
+				InstructionUtils.checkNumFields(parts, 16);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = withMaxPoolOut ? new CPOperand(parts[15]) : null;
+			CPOperand out = withMaxPoolOut ? new CPOperand(parts[16]) : new CPOperand(parts[15]);
+			double memBudget = withMaxPoolOut ? Double.parseDouble(parts[17]) : Double.parseDouble(parts[16]);
+		
+			ArrayList<CPOperand> stride = new ArrayList<>();
+			ArrayList<CPOperand> padding = new ArrayList<>();
+			ArrayList<CPOperand> input_shape = new ArrayList<>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<>();
+			stride.add(new CPOperand(parts[3]));
+			stride.add(new CPOperand(parts[4]));
+			padding.add(new CPOperand(parts[5]));
+			padding.add(new CPOperand(parts[6]));
+			input_shape.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			input_shape.add(new CPOperand(parts[10]));
+			filter_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+			filter_shape.add(new CPOperand(parts[14]));
+
+			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
+					padding, input_shape, filter_shape, memBudget);
 		}
 		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
 			InstructionUtils.checkNumFields(parts, 17);
@@ -324,7 +356,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
-			
+			MatrixObject maxPoolOutput = _input3 != null ? getMatrixInputForGPUInstruction(ec, _input3.getName()) : null;
 			if(dout.getNumRows() != N || dout.getNumColumns() != C*P*Q) 
 				throw new DMLRuntimeException("Incorrect dimensions for dout in maxpooling_backward");
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
@@ -333,7 +365,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			
-			LibMatrixCuDNN.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
+			LibMatrixCuDNN.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else {
@@ -346,7 +378,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		if ( !instOpcode.equalsIgnoreCase("maxpooling") )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 
-		if (instOpcode.equalsIgnoreCase("conv2d_bias_add"))
+		if (instOpcode.equalsIgnoreCase("conv2d_bias_add") || 
+			(instOpcode.equalsIgnoreCase("maxpooling_backward") && _input3 != null))
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());

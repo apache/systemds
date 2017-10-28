@@ -20,7 +20,7 @@
 /**********************************
 When updating a kernel or adding a new one,
 please compile the ptx file and commit it:
-nvcc -ptx -arch=sm_30 SystemML.cu
+nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 ***********************************/
 
 #include <cfloat>
@@ -85,15 +85,14 @@ __device__ void slice_sparse_dense_row(T *inVal, int *inRowPtr, int *colInd,
      *
      * int size = inRowPtr[rowIndex+1] - inRowPtr[rowIndex];
      * double numThreads = (double)min(size, MAX_NUM_THREADS_CHILD_KERNEL);
-     * slice_sparse_dense_row_helper<<< ceil(numThreads/
-*MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr,
-*colInd, ret,
-*			rl, ru, cl, cu, retClen, inRowPtr[rowIndex],
-*inRowPtr[rowIndex+1], index);
-*
-* Two-step compilation and linking process in JCudaKernels's constructor:
-* cuLinkAddFile(linkState, CUjitInputType.CU_JIT_INPUT_LIBRARY,
-*"/usr/local/cuda/lib64/libcudadevrt.a", jitOptions);
+     * slice_sparse_dense_row_helper
+     * <<< ceil(numThreads/MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>
+     * (inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen, inRowPtr[rowIndex],
+     *	inRowPtr[rowIndex+1], index);
+     *
+     * Two-step compilation and linking process in JCudaKernels's constructor:
+     * cuLinkAddFile(linkState, CUjitInputType.CU_JIT_INPUT_LIBRARY,
+     * "/usr/local/cuda/lib64/libcudadevrt.a", jitOptions);
      */
     // Iterate over elements of the row 'rowIndex'.
     for (int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex + 1]; i++) {
@@ -239,15 +238,15 @@ extern "C" __global__ void copy_u2l_dense_f(float *ret, int dim, int N) {
 
 // Use this method in templates to fetch the maximum value for a given datatype
 template <typename T>
-__forceinline__ __device__ T T_MAX(T x) {
-  return (T)DBL_MAX;
+__forceinline__ __device__ T MAX() {
+  return T();
 }
 template <>
-__forceinline__ __device__ float T_MAX(float x) {
+__forceinline__ __device__ float MAX <float>() {
   return FLT_MAX;
 }
 template <>
-__forceinline__ __device__ double T_MAX(double x) {
+__forceinline__ __device__ double MAX <double>() {
   return DBL_MAX;
 }
 
@@ -314,7 +313,7 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
       }
     }
     default:
-      return T_MAX(x);
+      return MAX<T>();
   }
 }
 
@@ -1084,7 +1083,7 @@ struct MaxOp<float> {
 template <typename T>
 __device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n) {
   MaxOp<T> op;
-  reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -T_MAX(g_idata[0]));
+  reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -MAX<T>());
 }
 
 extern "C" __global__ void reduce_max_d(double *g_idata, double *g_odata,
@@ -1110,7 +1109,7 @@ __device__ void reduce_row_max(T *g_idata, T *g_odata, unsigned int rows,
   MaxOp<T> op;
   IdentityOp<T> aop;
   reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         -T_MAX(g_idata[0]));
+                                         -MAX<T>());
 }
 
 extern "C" __global__ void reduce_row_max_d(double *g_idata, double *g_odata,
@@ -1138,7 +1137,7 @@ __device__ void reduce_col_max(T *g_idata, T *g_odata, unsigned int rows,
   MaxOp<T> op;
   IdentityOp<T> aop;
   reduce_col<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         (T)-T_MAX(g_idata[0]));
+                                         -MAX<T>());
 }
 
 extern "C" __global__ void reduce_col_max_d(double *g_idata, double *g_odata,
@@ -1170,7 +1169,7 @@ struct MinOp {
 template <typename T>
 __device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n) {
   MinOp<T> op;
-  reduce<MinOp<T>, T>(g_idata, g_odata, n, op, T_MAX(g_idata[0]));
+  reduce<MinOp<T>, T>(g_idata, g_odata, n, op, MAX<T>());
 }
 
 extern "C" __global__ void reduce_min_d(double *g_idata, double *g_odata,
@@ -1196,7 +1195,7 @@ __device__ void reduce_row_min(T *g_idata, T *g_odata, unsigned int rows,
   MinOp<T> op;
   IdentityOp<T> aop;
   reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         T_MAX(g_idata[0]));
+                                         MAX<T>());
 }
 
 extern "C" __global__ void reduce_row_min_d(double *g_idata, double *g_odata,
@@ -1224,7 +1223,7 @@ __device__ void reduce_col_min(T *g_idata, T *g_odata, unsigned int rows,
   MinOp<T> op;
   IdentityOp<T> aop;
   reduce_col<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         T_MAX(g_idata[0]));
+                                         MAX<T>());
 }
 
 extern "C" __global__ void reduce_col_min_d(double *g_idata, double *g_odata,

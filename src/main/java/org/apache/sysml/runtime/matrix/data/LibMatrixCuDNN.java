@@ -519,6 +519,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param image image as matrix object
 	 * @param dout			delta matrix, output of previous layer
+	 * @param maxpoolOutput (optional and can be null) output of maxpool forward function
 	 * @param outputBlock output matrix
 	 * @param N				batch size
 	 * @param C				number of channels
@@ -537,12 +538,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpoolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
-			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
+		final boolean isMaxPoolOutputProvided = maxpoolOutput != null;
+		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NCPQ < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
 			long overhead = isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
@@ -551,19 +554,26 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if(overhead <= intermediateMemoryBudget) {
 				Pointer x = getDensePointerForCuDNN(gCtx, image, instName);
 				Pointer dy = getDensePointerForCuDNN(gCtx, dout, instName);
-				cudnnMaxpoolingBackward(gCtx, instName, x, dy, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				Pointer y = isMaxPoolOutputProvided ? getDensePointerForCuDNN(gCtx, maxpoolOutput, instName) : null;
+				cudnnMaxpoolingBackward(gCtx, instName, x, dy, y, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 			}
 			else {
 				LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 				LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout);
+				LibMatrixCuDNNInputRowFetcher maxPoolOutFetcher = isMaxPoolOutputProvided ? new LibMatrixCuDNNInputRowFetcher(gCtx, instName, maxpoolOutput) : null;
 				for(int n = 0; n < N; n++) {
-					cudnnMaxpoolingBackward(gCtx, instName, imgFetcher.getNthRow(n), doutFetcher.getNthRow(n), 
+					Pointer x = imgFetcher.getNthRow(n);
+					Pointer dy = doutFetcher.getNthRow(n);
+					Pointer y = isMaxPoolOutputProvided ? maxPoolOutFetcher.getNthRow(n) : null;
+					cudnnMaxpoolingBackward(gCtx, instName, x, dy, y, 
 							dx.withByteOffset(n*CHW*sizeOfDataType), 
 							1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 				}
 				// Deallocate temporary array to hold one element of input
 				imgFetcher.close();
 				doutFetcher.close();
+				if(isMaxPoolOutputProvided)
+					maxPoolOutFetcher.close();
 			}
 		}
 		else {
@@ -572,36 +582,33 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	}
 	
 	private static void cudnnMaxpoolingBackward(GPUContext gCtx, String instName, 
-			Pointer x, Pointer dy, Pointer dx, 
+			Pointer x, Pointer dy, Pointer y, Pointer dx, 
 			int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : maxpoolingBackward" + ", GPUContext=" + gCtx);
 		}
-		Pointer y = null;
+		
+		boolean isMaxPoolOutputProvided = (y != null);
 
 		try(LibMatrixCuDNNPoolingDescriptors desc = 
 				LibMatrixCuDNNPoolingDescriptors.cudnnMaxpoolingBackwardDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
 						pad_h, pad_w, stride_h, stride_w, P, Q)) {
 			long t1=0, t2=0, t3=0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			
-			// Calling PoolForward first, y is one of the inputs for poolBackward
-			// TODO: Remove calling poolForward after necessary changes at language level for poolBackward
-			long numBytes = N*C*P*Q*sizeOfDataType;
-			y = gCtx.allocate(numBytes);
-			
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
-			
-			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
-
-			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
-				throw new DMLRuntimeException("Could not executed cudnnPoolingForward before cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
+			int status;
+			if(!isMaxPoolOutputProvided) {
+				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+				long numBytes = N*C*P*Q*sizeOfDataType;
+				y = gCtx.allocate(numBytes);
+				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+				if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
+				status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
+				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
+				if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
+					throw new DMLRuntimeException("Could not executed cudnnPoolingForward before cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
+				}
 			}
-
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
 			status = cudnnPoolingBackward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.yDesc, y, desc.dyDesc, dy, desc.xDesc, x, zero(), desc.dxDesc, dx);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_BACKWARD_LIB, System.nanoTime() - t3);
@@ -615,7 +622,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		finally {
 			long t4=0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t4 = System.nanoTime();
-			if(y != null)
+			if(!isMaxPoolOutputProvided)
 				gCtx.cudaFreeHelper(instName, y);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}

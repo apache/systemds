@@ -184,11 +184,11 @@ def stats1_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     # num0 = NC/2
     # num0 < NC < C
     # NC = C/2
-    NC = int(int(col)/2)
+    nc = int(int(col)/2)
 
-    config = dict(R=row, C=col, NC=NC, MAXDOMAIN=MAXDOMAIN, DATA=DATA, TYPES=TYPES, SETSIZE=SETSIZE,
-                  LABELSETSIZE=LABELSETSIZE, TYPES1=TYPES1, TYPES2=TYPES2, INDEX1=INDEX1,
-                  INDEX2=INDEX2, fmt=DATA_FORMAT)
+    config = dict(nr=row, nf=col, nc=nc, maxdomain=MAXDOMAIN, setsize=SETSIZE,
+                  labelsetsize=LABELSETSIZE, types=TYPES, types1=TYPES1, types2=TYPES2, index1=INDEX1,
+                  index2=INDEX2, X=DATA, fmt=DATA_FORMAT)
 
     config_writer(save_path + '.json', config)
 

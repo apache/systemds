@@ -24,30 +24,30 @@
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
-# NAME      TYPE    DEFAULT  MEANING
+# NAME         TYPE    DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# nr        Int     ---      Number of records
-# nf        Int     ---      Number of features
-# nc        Int     ---      Number of categorical attributes
-# maxdomain Int     ---      maximum domain size
-# setsize   Int     ---      Size of one bivariate set
-# labelsize Int     ---      Size of second bivariate set with labels
-# types     String  ---      Location to store output attribute types
-# types1    String  ---      Location to store attribute types for Set1
-# types2    String  ---      Location to store attribute types for Set2
-# index1    String  ---      Location to store indices for Set1
-# index2    String  ---      Location to store indices for Set2
-# X         String  ---      Location to store matrix X with generated data records
-# fmt       String  "binary" Matrix output format, usually "text", "csv" or "binary"
+# nr           Int     ---      Number of records
+# nf           Int     ---      Number of features
+# nc           Int     ---      Number of categorical attributes
+# maxdomain    Int     ---      maximum domain size
+# setsize      Int     ---      Size of one bivariate set
+# labelsetsize Int     ---      Size of second bivariate set with labels
+# types        String  ---      Location to store output attribute types
+# types1       String  ---      Location to store attribute types for Set1
+# types2       String  ---      Location to store attribute types for Set2
+# index1       String  ---      Location to store indices for Set1
+# index2       String  ---      Location to store indices for Set2
+# X            String  ---      Location to store matrix X with generated data records
+# fmt          String  "csv"    Matrix output format, usually "text", "csv" or "binary"
 # ----------------------------------------------------------------------------
 #
 # Example:
-# hadoop jar SystemML.jar -f genData4Stats.dml -nvargs nr=1000000 nf=1000 nc=50
-# maxdomain=1100 setsize=15 labelsize=10 types=stats/types
+# hadoop jar SystemML.jar -f genRandData4DescriptiveStats.dml -nvargs nr=1000000 nf=1000 nc=50
+# maxdomain=1100 setsize=15 labelsetsize=10 types=stats/types
 # types1=... types2=... index1=.. index2=.. X=stats/data fmt=csv
 
 
-FMT = ifdef($fmt,"binary"); # default output format
+FMT = ifdef($fmt,"csv"); # default output format
 
 # number of categorical attributes.. numC <= C
 numC = $nc;
@@ -56,7 +56,7 @@ numNominal = numC - numO;
 print("Categorical Mix = (" + numC + "," + numO + "," + numNominal +")");
 
 # maximum domain size among all categorical attributes
-maxDomainSize = $MAXDOMAIN;
+maxDomainSize = $maxdomain;
 
 # Divide $C attributes according to the following logic:
 #
@@ -123,9 +123,9 @@ index1[1, catSetSize+1:$setsize] = round(numC+1 + ($nf-numC-1)*tmp);
 
 
 # --- select types and indices for LABELSET
-settypes2 = matrix(2, rows=1, cols=$labelsize);
-index2   = matrix(0, rows=1, cols=$labelsize);
-if($labelsize > 1) {
+settypes2 = matrix(2, rows=1, cols=$labelsetsize);
+index2   = matrix(0, rows=1, cols=$labelsetsize);
+if($labelsetsize > 1) {
     settypes2[1,1] = 1;
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,1] = round(numC+1 + ($nf-numC-1)*r)
@@ -135,13 +135,13 @@ else {
     index2[1,1] = round( numO+1 + (numC-numO-1)*r )
 }
 
-for(i in 2:as.integer($labelsize/2)) {
+for(i in 2:as.integer($labelsetsize/2)) {
     settypes2[1,i] = 3;
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,i] = round( 1 + (numO-1)*r )
 }
 
-for(i in as.integer($labelsize/2)+1:$labelsize) {
+for(i in as.integer($labelsetsize/2)+1:$labelsetsize) {
     settypes2[1,i] = 2;
     r = as.scalar(rand(rows=1,cols=1));
     index2[1,i] = round( numO+1 + (numC-numO-1)*r )

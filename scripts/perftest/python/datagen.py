@@ -74,10 +74,11 @@ def binomial_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     intercept = '0'
     sparsity = MATRIX_TYPE_DICT[matrix_type]
     tranform_labels = '1'
-    fmt = DATA_FORMAT
 
-    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data,
-              loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
+    config = dict(nr=numSamples, nf=numFeatures, maxfeatval=maxFeatureValue, maxweight=maxWeight,
+                  weight=loc_weights, X=loc_data, Y=loc_labels, addnoise=noise, icpt=intercept,
+                  sparse=sparsity, fmt=DATA_FORMAT, translabel=tranform_labels)
+
     config_writer(save_path + '.json', config)
 
     return save_path
@@ -101,10 +102,11 @@ def regression1_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     intercept = '0'
     sparsity = MATRIX_TYPE_DICT[matrix_type]
     tranform_labels = '1'
-    fmt = DATA_FORMAT
 
-    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data,
-              loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
+    config = dict(nr=numSamples, nf=numFeatures, maxfeatval=maxFeatureValue, maxweight=maxWeight,
+                  weight=loc_weights, X=loc_data, Y=loc_labels, addnoise=noise, icpt=intercept,
+                  sparse=sparsity, fmt=DATA_FORMAT, translabel=tranform_labels)
+
     config_writer(save_path + '.json', config)
 
     return save_path
@@ -128,10 +130,10 @@ def regression2_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     intercept = '0'
     sparsity = MATRIX_TYPE_DICT[matrix_type]
     tranform_labels = '1'
-    fmt = DATA_FORMAT
 
-    config = [numSamples, numFeatures, maxFeatureValue, maxWeight, loc_weights, loc_data,
-              loc_labels, noise, intercept, sparsity, fmt, tranform_labels]
+    config = dict(nr=numSamples, nf=numFeatures, maxfeatval=maxFeatureValue, maxweight=maxWeight,
+                  weight=loc_weights, X=loc_data, Y=loc_labels, addnoise=noise, icpt=intercept,
+                  sparse=sparsity, fmt=DATA_FORMAT, translabel=tranform_labels)
     config_writer(save_path + '.json', config)
 
     return save_path

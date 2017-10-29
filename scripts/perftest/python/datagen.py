@@ -215,6 +215,23 @@ def stats2_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
     return save_path
 
 
+def dimreduction_datagen(matrix_dim, matrix_type, datagen_dir, config_dir):
+
+    path_name = '.'.join(['dimreduction', matrix_type, str(matrix_dim)])
+    datagen_write = join(datagen_dir, path_name)
+    save_path = join(config_dir, path_name)
+    row, col = split_rowcol(matrix_dim)
+
+    R = row
+    C = col
+    OUT = join(datagen_write, 'X.data')
+
+    config = dict(R=R, C=C, OUT=OUT, FMT=DATA_FORMAT)
+
+    config_writer(save_path + '.json', config)
+    return save_path
+
+
 def config_packets_datagen(algo_payload, matrix_type, matrix_shape, datagen_dir, dense_algos, config_dir):
     """
     This function has two responsibilities. Generate the configuration files for

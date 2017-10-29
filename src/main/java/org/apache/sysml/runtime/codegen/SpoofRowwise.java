@@ -39,7 +39,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.matrix.data.SparseRowVector;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public abstract class SpoofRowwise extends SpoofOperator
@@ -198,11 +197,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//core parallel execute
 		ExecutorService pool = Executors.newFixedThreadPool( k );
-		int nk = (a instanceof CompressedMatrixBlock) ? k :
-			UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
-		int blklen = (int)(Math.ceil((double)m/nk));
-		if( a instanceof CompressedMatrixBlock )
-			blklen = BitmapEncoder.getAlignedBlocksize(blklen);
+		ArrayList<Integer> blklens = (a instanceof CompressedMatrixBlock) ?
+			LibMatrixMult.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
+			LibMatrixMult.getBalancedBlockSizesDefault(m, k, false);
 		
 		try
 		{
@@ -210,9 +207,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<>();
 				int outLen = out.getNumRows() * out.getNumColumns();
-				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParColAggTask(a, b, scalars, n, n2, outLen, i*blklen, Math.min((i+1)*blklen, m)));
-				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
+				for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
+					tasks.add(new ParColAggTask(a, b, scalars, n, n2, outLen, lb, lb+blklens.get(i)));
+				List<Future<double[]>> taskret = pool.invokeAll(tasks);
 				//aggregate partial results
 				int len = _type.isColumnAgg() ? out.getNumRows()*out.getNumColumns() : 1;
 				for( Future<double[]> task : taskret )
@@ -222,8 +219,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 			else {
 				//execute tasks
 				ArrayList<ParExecTask> tasks = new ArrayList<>();
-				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParExecTask(a, b, out, scalars, n, n2, i*blklen, Math.min((i+1)*blklen, m)));
+				for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
+					tasks.add(new ParExecTask(a, b, out, scalars, n, n2, lb, lb+blklens.get(i)));
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				//aggregate nnz, no need to aggregate results
 				long nnz = 0;

@@ -346,17 +346,11 @@ public class LibMatrixCUDA {
 		Pointer imagePointer = getDensePointer(gCtx, input, instName);
 		Pointer outputPointer = getDensePointer(gCtx, outputBlock, instName);
 		
+		// We can replace this with CuDNN tensor reduce
 		Pointer tmp = gCtx.allocate(instName, cols*sizeOfDataType);
 		reduceCol(gCtx, instName, "reduce_col_sum", imagePointer, tmp, N, cols);
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp, outputPointer, toInt(C), toInt(HW));
 		gCtx.cudaFreeHelper(tmp);
-
-//		long t1=0;
-//		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-//		getCudaKernels(gCtx).launchKernel("channel_sums",
-//				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(C)),
-//				imagePointer, outputPointer, toInt(N), toInt(C), toInt(HW));
-//		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CHANNEL_SUMS_KERNEL, System.nanoTime() - t1);
 
 	}
 

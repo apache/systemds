@@ -31,10 +31,10 @@ import org.apache.sysml.api.mlcontext.Matrix;
 public abstract class UnaryOpTestsBase extends GPUTests {
 
 	// Set of rows and column sizes & sparsities to test unary ops
-	private final int[] rowSizes = new int[] { 2049, 1024, 140, 64, 1 };
-	private final int[] columnSizes = new int[] { 2049, 1024, 140, 64, 1 };
-	private final double[] sparsities = new double[] { 0.9, 0.3, 0.03, 0.0 };
-	private final int seed = 42;
+	protected final int[] rowSizes = new int[] { 2049, 1024, 140, 64, 1 };
+	protected final int[] columnSizes = new int[] { 2049, 1024, 150, 64, 1 };
+	protected final double[] sparsities = new double[] { 0.9, 0.3, 0.03, 0.0 };
+	protected final int seed = 42;
 
 	/**
 	 * Tests unary ops with a variety of matrix shapes and sparsities.

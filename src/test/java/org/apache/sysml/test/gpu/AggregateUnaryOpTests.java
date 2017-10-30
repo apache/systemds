@@ -45,6 +45,37 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 	public void colSums() {
 		testSimpleUnaryOpMatrixOutput("colSums", "gpu_uack+");
 	}
+	
+	@Test
+	public void channelSums() {
+		int[] rows = rowSizes;
+		int[] C = new int[] { 2, 5, 10, 50 };
+		int[] HW = new int[] { 10, 12, 21, 51 };
+		double[] sparsities = this.sparsities;
+		int seed = this.seed;	
+
+		for (int k = 0; k < sparsities.length; k++) {
+			double sparsity = sparsities[k];
+			if(sparsity == 0)
+				continue; // sparsity == 0 has been independently tested but it fails with non-informative mlcontext error
+			for (int i = 0; i < rows.length; i++) {
+				int row = rows[i];
+				if(row == 1)
+					continue; // Currently channel_sums rewrite is enabled only for row > 1
+				for (int c : C) {
+					if(c == 1)
+						continue; // C == 1 will result in scalar value, but this case has been independently tested
+					for (int hw : HW) {
+						// Skip the case of a scalar unary op
+						// System.out.println("Started channelSum test for " + row + " " + c + " " + hw + " " +  sparsity);
+						String scriptStr = "out = rowSums(matrix(colSums(in1), rows=" + c + ", cols=" + hw + "));";
+						testUnaryOpMatrixOutput(scriptStr, "gpu_channel_sums", "in1", "out", seed, row, c*hw, sparsity);
+						// System.out.println("Ended channelSum test for " + row + " " + c + " " + hw + " " +  sparsity);
+					}
+				}
+			}
+		}
+	}
 
 	@Test
 	public void rowSums() {

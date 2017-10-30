@@ -20,12 +20,17 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import java.util.ArrayList;
 
+import jcuda.Pointer;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -52,6 +57,19 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		}
 		_input1 = in1;
 		_input2 = in2;
+		_gputype = GPUINSTRUCTION_TYPE.Convolution;
+		_output = out;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		if( !opcode.equals("channel_sums") ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
+		}
+		_input1 = in1;
+		_input2 = in2;
+		_input3 = in3;
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
 		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
@@ -210,6 +228,14 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
+		else if (opcode.equalsIgnoreCase("channel_sums")) {
+			InstructionUtils.checkNumFields(parts, 4);
+			CPOperand in = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
+			return new ConvolutionGPUInstruction(in, in2, in3, out, opcode, str, 0);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	
 		}
@@ -246,6 +272,23 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	public void processChannelSumsInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
+		int HW = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getLongValue();
+		if(C*HW != input.getNumColumns()) {
+			throw new DMLRuntimeException("Expected rows*cols" + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
+		}
+		MatrixObject outputBlock = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, 1);
+		
+		LibMatrixCUDA.channelSums(ec.getGPUContext(0), getExtendedOpcode(), input, outputBlock, C, HW);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
@@ -256,6 +299,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
 			processReLUBackwardInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
+			processChannelSumsInstruction(ec);
 			return;
 		}
 		

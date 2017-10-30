@@ -316,7 +316,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				sum += v2.next()._2().sumWeightForQuantile();
 			
 			//return tuple for partition aggregate
-			return Arrays.asList(new Tuple2<>(v1,sum)).iterator();
+			return Arrays.asList(new Tuple2<Integer, Double>(v1,sum)).iterator();
 		}
 	}
 	

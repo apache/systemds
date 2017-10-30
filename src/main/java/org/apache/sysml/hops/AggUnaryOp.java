@@ -163,8 +163,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			{
 				Lop agg1 = null;
 				long numChannels = isChannelSumRewriteApplicable() ? Hop.computeSizeInformation(getInput().get(0).getInput().get(1)) : -1;
-				if(numChannels > 0 ) {
+				if(numChannels > 0 && numChannels < 1000000) {
 					// Apply channel sums only if rewrite is applicable and if the dimension of C is known at compile time
+					// and if numChannels is less than 8 MB.
 					ReorgOp in = ((ReorgOp)getInput().get(0));
 					agg1 = new ConvolutionTransform(
 							in.getInput().get(0).getInput().get(0).constructLops(), 

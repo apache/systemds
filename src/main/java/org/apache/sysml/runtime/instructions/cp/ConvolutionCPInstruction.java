@@ -27,6 +27,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
@@ -354,15 +355,16 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			else {
 				double [] inArr = input.getDenseBlock();
 				if(inArr != null) {
-					int index = 0;
-					for(int n = 0; n < input.getNumRows(); n++) {
-						for(int c = 0; c < C; c++) {
-							double sum = 0;
+					KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+					for(int c = 0; c < C; c++) {
+						KahanObject sum = new KahanObject(0.0, 0.0);
+						for(int n = 0; n < input.getNumRows(); n++) {
+							int index =  n*C*HW + c*HW;
 							for(int hw = 0; hw < HW; hw++, index++) {
-								sum += inArr[index];
+								kplus.execute2(sum, inArr[index]);
 							}
-							output[c] += sum;
 						}
+						output[c] = sum._sum;
 					}
 				}
 			}

@@ -26,6 +26,7 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.Binary;
+import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -131,6 +132,20 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		return false;
 	}
 	
+	/**
+	 * Checks if channels sum rewrite is applicable
+	 * 
+	 * @return returns true for pattern rowSums(matrix(colSums(X), rows=.., cols=..)) else false
+	 */
+	private boolean isChannelSumRewriteApplicable() {
+		if( OptimizerUtils.ALLOW_OPERATOR_FUSION && _op == AggOp.SUM && _direction == Direction.Row
+			&& getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp() == ReOrgOp.RESHAPE) {
+			Hop input1 = getInput().get(0).getInput().get(0);
+			return input1 instanceof AggUnaryOp && ((AggUnaryOp)input1)._op == AggOp.SUM && ((AggUnaryOp)input1)._direction == Direction.Col;
+		}
+		return false;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -147,41 +162,57 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			if ( et == ExecType.CP || et == ExecType.GPU ) 
 			{
 				Lop agg1 = null;
-				if( isTernaryAggregateRewriteApplicable() ) {
-					agg1 = constructLopsTernaryAggregateRewrite(et);
+				long numChannels = isChannelSumRewriteApplicable() ? Hop.computeSizeInformation(getInput().get(0).getInput().get(1)) : -1;
+				if(numChannels > 0 && numChannels < 1000000) {
+					// Apply channel sums only if rewrite is applicable and if the dimension of C is known at compile time
+					// and if numChannels is less than 8 MB.
+					ReorgOp in = ((ReorgOp)getInput().get(0));
+					agg1 = new ConvolutionTransform(
+							in.getInput().get(0).getInput().get(0).constructLops(), 
+							in.getInput().get(1).constructLops(),
+							in.getInput().get(2).constructLops(),
+							ConvolutionTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
+					agg1.getOutputParameters().setDimensions(numChannels, 1, getRowsInBlock(), getColsInBlock(), -1);
+					setLineNumbers(agg1);
+					setLops(agg1);
 				}
-				else if( isUnaryAggregateOuterCPRewriteApplicable() )
-				{
-					OperationTypes op = HopsAgg2Lops.get(_op);
-					DirectionTypes dir = HopsDirection2Lops.get(_direction);
-
-					BinaryOp binput = (BinaryOp)getInput().get(0);
-					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
-							binput.getInput().get(1).constructLops(), op, dir, 
-							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
-					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
-				
-					if (getDataType() == DataType.SCALAR) {
-						UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-								                    getDataType(), getValueType());
-						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-						setLineNumbers(unary1);
-						setLops(unary1);
+				else { 
+					if( isTernaryAggregateRewriteApplicable() ) {
+						agg1 = constructLopsTernaryAggregateRewrite(et);
 					}
-				
-				}				
-				else { //general case		
-					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					agg1 = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
-				}
-				
-				setOutputDimensions(agg1);
-				setLineNumbers(agg1);
-				setLops(agg1);
-				
-				if (getDataType() == DataType.SCALAR) {
-					agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
+					else if( isUnaryAggregateOuterCPRewriteApplicable() )
+					{
+						OperationTypes op = HopsAgg2Lops.get(_op);
+						DirectionTypes dir = HopsDirection2Lops.get(_direction);
+	
+						BinaryOp binput = (BinaryOp)getInput().get(0);
+						agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
+								binput.getInput().get(1).constructLops(), op, dir, 
+								HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
+						PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+					
+						if (getDataType() == DataType.SCALAR) {
+							UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+									                    getDataType(), getValueType());
+							unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+							setLineNumbers(unary1);
+							setLops(unary1);
+						}
+					
+					}				
+					else { //general case		
+						int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+						agg1 = new PartialAggregate(input.constructLops(), 
+								HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
+					}
+					
+					setOutputDimensions(agg1);
+					setLineNumbers(agg1);
+					setLops(agg1);
+					
+					if (getDataType() == DataType.SCALAR) {
+						agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
+					}
 				}
 			}
 			else if( et == ExecType.MR )

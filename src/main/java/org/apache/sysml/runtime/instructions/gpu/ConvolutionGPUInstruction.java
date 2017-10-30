@@ -20,17 +20,12 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import java.util.ArrayList;
 
-import jcuda.Pointer;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
-import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;

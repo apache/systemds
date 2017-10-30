@@ -87,6 +87,11 @@ public class CPlanMemoTable
 			.anyMatch(p -> p.type==type);
 	}
 	
+	public boolean contains(long hopID, MemoTableEntry me, TemplateType type) {
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> p.type==type && p.equalPlanRefs(me));
+	}
+	
 	public boolean contains(long hopID, boolean checkClose, TemplateType... type) {
 		if( !checkClose && type.length==1 )
 			return contains(hopID, type[0]);
@@ -407,6 +412,11 @@ public class CPlanMemoTable
 		public int getPlanRefIndex() {
 			return (input1>=0) ? 0 : (input2>=0) ? 
 				1 : (input3>=0) ? 2 : -1;
+		}
+		public boolean equalPlanRefs(MemoTableEntry that) {
+			return (input1 == that.input1
+				&& input2 == that.input2
+				&& input3 == that.input3);
 		}
 		public long input(int index) {
 			return (index==0) ? input1 : (index==1) ? input2 : input3;

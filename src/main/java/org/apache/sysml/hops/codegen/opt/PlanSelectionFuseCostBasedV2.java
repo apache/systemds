@@ -42,6 +42,7 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.IndexingOp;
@@ -60,6 +61,7 @@ import org.apache.sysml.hops.codegen.template.TemplateRow;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;
+import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -79,23 +81,24 @@ import org.apache.sysml.utils.Statistics;
  * 
  */
 public class PlanSelectionFuseCostBasedV2 extends PlanSelection
-{	
+{
 	private static final Log LOG = LogFactory.getLog(PlanSelectionFuseCostBasedV2.class.getName());
 	
 	//common bandwidth characteristics, with a conservative write bandwidth in order 
 	//to cover result allocation, write into main memory, and potential evictions
-	private static final double WRITE_BANDWIDTH = 2d*1024*1024*1024;  //2GB/s
-	private static final double READ_BANDWIDTH = 32d*1024*1024*1024;  //32GB/s
-	private static final double READ_BANDWIDTH_BROADCAST = WRITE_BANDWIDTH/4;
-	private static final double COMPUTE_BANDWIDTH = 2d*1024*1024*1024 //2GFLOPs/core
-		* InfrastructureAnalyzer.getLocalParallelism();
+	private static final double WRITE_BANDWIDTH_IO  =      512*1024*1024;  //512MB/s
+	private static final double WRITE_BANDWIDTH_MEM =  2d*1024*1024*1024;  //2GB/s
+	private static final double READ_BANDWIDTH_MEM  = 32d*1024*1024*1024;  //32GB/s
+	private static final double READ_BANDWIDTH_BROADCAST = WRITE_BANDWIDTH_MEM/4;
+	private static final double COMPUTE_BANDWIDTH  =   2d*1024*1024*1024   //1GFLOPs/core
+								* InfrastructureAnalyzer.getLocalParallelism();
 	
 	//sparsity estimate for unknown sparsity to prefer sparse-safe fusion plans
 	private static final double SPARSE_SAFE_SPARSITY_EST = 0.1;
 	
 	//optimizer configuration
 	public static boolean COST_PRUNING = true;
-	public static boolean STRUCTURAL_PRUNING = false;
+	public static boolean STRUCTURAL_PRUNING = true;
 	
 	private static final IDSequence COST_ID = new IDSequence();
 	private static final TemplateRow ROW_TPL = new TemplateRow();
@@ -306,8 +309,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				matTargets.add(hopID);
 				Hop hop = memo.getHopRefs().get(hopID);
 				long size = getSize(hop);
-				costs += size * 8 / WRITE_BANDWIDTH + 
-						size * 8 / READ_BANDWIDTH;
+				costs += size * 8 / WRITE_BANDWIDTH_MEM + 
+						size * 8 / READ_BANDWIDTH_MEM;
 			}
 		}
 		//points with non-partition consumers
@@ -315,7 +318,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			if( !matTargets.contains(hopID) ) {
 				matTargets.add(hopID);
 				Hop hop = memo.getHopRefs().get(hopID);
-				costs += getSize(hop) * 8 / WRITE_BANDWIDTH;
+				costs += getSize(hop) * 8 / WRITE_BANDWIDTH_MEM;
 			}
 		
 		return costs;
@@ -326,7 +329,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//get partition input reads (at least read once)
 		for( Long hopID : part.getInputs() ) {
 			Hop hop = memo.getHopRefs().get(hopID);
-			costs += getSize(hop) * 8 / READ_BANDWIDTH;
+			costs += getSize(hop) * 8 / READ_BANDWIDTH_MEM;
 		}
 		return costs;
 	}
@@ -335,7 +338,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		double costs = 0;
 		for( Long hopID : R ) {
 			Hop hop = memo.getHopRefs().get(hopID);
-			costs += getSize(hop) * 8 / WRITE_BANDWIDTH;
+			costs += getSize(hop) * 8 / WRITE_BANDWIDTH_MEM;
 		}
 		return costs;
 	}
@@ -343,6 +346,13 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static double sumComputeCost(HashMap<Long, Double> computeCosts) {
 		return computeCosts.values().stream()
 			.mapToDouble(d -> d/COMPUTE_BANDWIDTH).sum();
+	}
+	
+	private static double sumTmpInputOutputSize(CPlanMemoTable memo, CostVector vect) {
+		//size of intermediate inputs and outputs, i.e., output and inputs other than treads
+		return vect.outSize + vect.inSizes.entrySet().stream()
+			.filter(e -> !HopRewriteUtils.isData(memo.getHopRefs().get(e.getKey()), DataOpTypes.TRANSIENTREAD))
+			.mapToDouble(e -> e.getValue()).sum();
 	}
 	
 	private static long getSize(Hop hop) {
@@ -593,6 +603,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	
 	private static boolean isRowAggOp(Hop hop){
 		return (hop instanceof AggUnaryOp || hop instanceof AggBinaryOp
+			|| (hop instanceof IndexingOp && HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop))
 			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND));
 	}
 	
@@ -629,7 +640,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		HashSet<Long> refAggs = getRowAggOpsWithRowRef(memo, part);
 		for( Long hopID : part.getPartition() ) {
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
-			if( me != null && me.type == TemplateType.ROW && memo.contains(hopID, TemplateType.CELL)
+			if( me != null && me.type == TemplateType.ROW && memo.contains(hopID, me, TemplateType.CELL)
 				&& rIsRowTemplateWithoutAggOrVects(memo, memo.getHopRefs().get(hopID), new HashSet<Long>(), refAggs.contains(hopID)) ) {
 				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
 				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(blacklist));
@@ -829,12 +840,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		
 		//add costs for opened fused operator
 		if( opened ) {
-			if( LOG.isTraceEnabled() ) {
-				String type = (best !=null) ? best.type.name() : "HOP";
-				LOG.trace("Cost vector ("+type+" "+currentHopId+"): "+costVect);
-			}
-			double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH
-				+ Math.max(costVect.getInputSize() * 8 / READ_BANDWIDTH,
+			double tmpCosts = costVect.outSize * 8 / WRITE_BANDWIDTH_MEM
+				+ Math.max(costVect.getInputSize() * 8 / READ_BANDWIDTH_MEM,
 				costVect.computeCosts/ COMPUTE_BANDWIDTH);
 			//read correction for distributed computation
 			Hop driver = memo.getHopRefs().get(costVect.getMaxInputSizeHopID());
@@ -843,7 +850,15 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			//sparsity correction for outer-product template (and sparse-safe cell)
 			if( best != null && best.type == TemplateType.OUTER )
 				tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
+			//write correction for known evictions in CP
+			else if( driver.getMemEstimate() < OptimizerUtils.getLocalMemBudget()
+				&& sumTmpInputOutputSize(memo, costVect) > LazyWriteBuffer.getWriteBufferSize() )
+				tmpCosts += costVect.outSize * 8 / WRITE_BANDWIDTH_IO;
 			costs += tmpCosts;
+			if( LOG.isTraceEnabled() ) {
+				String type = (best !=null) ? best.type.name() : "HOP";
+				LOG.trace("Cost vector ("+type+" "+currentHopId+"): "+costVect+" -> "+tmpCosts);
+			}
 		}
 		//add costs for non-partition read in the middle of fused operator
 		else if( part.getExtConsumed().contains(current.getHopID()) ) {
@@ -985,13 +1000,18 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		else if( current instanceof AggUnaryOp) {
 			switch(((AggUnaryOp)current).getOp()) {
-			case SUM:    costs = 4; break; 
-			case SUM_SQ: costs = 5; break;
-			case MIN:
-			case MAX:    costs = 1; break;
-			default:
-				LOG.warn("Cost model not "
-					+ "implemented yet for: "+((AggUnaryOp)current).getOp());
+				case SUM:    costs = 4; break; 
+				case SUM_SQ: costs = 5; break;
+				case MIN:
+				case MAX:    costs = 1; break;
+				default:
+					LOG.warn("Cost model not "
+						+ "implemented yet for: "+((AggUnaryOp)current).getOp());
+			}
+			switch(((AggUnaryOp)current).getDirection()) {
+				case Col: costs *= Math.max(current.getInput().get(0).getDim1(),1); break;
+				case Row: costs *= Math.max(current.getInput().get(0).getDim2(),1); break;
+				case RowCol: costs *= getSize(current.getInput().get(0)); break;
 			}
 		}
 		

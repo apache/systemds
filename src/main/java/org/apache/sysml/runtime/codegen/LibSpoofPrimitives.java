@@ -118,6 +118,19 @@ public class LibSpoofPrimitives
 		}
 	}
 	
+	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int ai, int[] bix, int bi, int ci, int blen, int len1, int len2) {
+		if( isFlipOuter(len1, len2) ) {
+			for( int i=bi; i<bi+blen; i++ ) {
+				final int cix = ci + bix[i] * len1;
+				LibMatrixMult.vectMultiplyAdd(b[i], a, c, ai, cix, len1);
+			}
+		}
+		else {
+			for( int i=0, cix=ci; i < len1; i++, cix+=len2 )
+				LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bix, bi, cix, blen);
+		}
+	}
+	
 	public static void vectMultAdd(double[] a, double bval, double[] c, int bi, int ci, int len) {
 		if( a == null || bval == 0 ) return;
 		LibMatrixMult.vectMultiplyAdd(bval, a, c, bi, ci, len);
@@ -255,6 +268,14 @@ public class LibSpoofPrimitives
 	public static double vectSum(double[] avals, int[] aix, int ai, int alen, int len) {
 		//forward to dense as column indexes not required here
 		return vectSum(avals, ai, alen);
+	}
+	
+	public static double vectSumsq(double[] a, int ai, int len) { 
+		return LibMatrixMult.dotProduct(a, a, ai, ai, len);
+	}
+	
+	public static double vectSumsq(double[] avals, int[] aix, int ai, int alen, int len) {
+		return LibMatrixMult.dotProduct(avals, avals, ai, ai, alen);
 	}
 	
 	public static double vectMin(double[] a, int ai, int len) { 
@@ -1837,12 +1858,18 @@ public class LibSpoofPrimitives
 	 * vectors of different sizes are interspersed.
 	 */
 	private static class VectorBuffer {
+		private static final int MAX_SIZE = 512*1024; //4MB
 		private final double[][] _data;
 		private int _pos;
 		private int _len1;
 		private int _len2;
 		
 		public VectorBuffer(int num, int len1, int len2) {
+			//best effort size restriction since large intermediates
+			//not necessarily used (num refers to the total number)
+			len1 = Math.min(len1, MAX_SIZE);
+			len2 = Math.min(len2, MAX_SIZE);
+			//pre-allocate ring buffer
 			int lnum = (len2>0 && len1!=len2) ? 2*num : num;
 			_data = new double[lnum][];
 			for( int i=0; i<num; i++ ) {

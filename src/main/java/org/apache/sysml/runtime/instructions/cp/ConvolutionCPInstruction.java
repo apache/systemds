@@ -324,6 +324,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int C = (int) ec.getScalarInput(_in2.getName(), _in2.getValueType(), _in2.isLiteral()).getLongValue();
 		int HW = (int) ec.getScalarInput(_in3.getName(), _in3.getValueType(), _in3.isLiteral()).getLongValue();
+		if(C*HW != input.getNumColumns()) {
+			throw new DMLRuntimeException("Expected rows*cols" + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
+		}
 		MatrixBlock outputBlock = null;
 		if(input.isEmpty()) {
 			outputBlock = new MatrixBlock(C, 1, true);

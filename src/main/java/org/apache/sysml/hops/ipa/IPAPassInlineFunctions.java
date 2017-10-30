@@ -54,14 +54,18 @@ public class IPAPassInlineFunctions extends IPAPass
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 		throws HopsException
 	{
+		//NOTE: we inline single-statement-block (i.e., last-level block) functions
+		//that do not contain other functions, and either are small or called once
+		
 		for( String fkey : fgraph.getReachableFunctions() ) {
 			FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fkey);
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			if( fstmt.getBody().size() == 1 
 				&& HopRewriteUtils.isLastLevelStatementBlock(fstmt.getBody().get(0)) 
 				&& !containsFunctionOp(fstmt.getBody().get(0).get_hops())
-				&& countOperators(fstmt.getBody().get(0).get_hops()) 
-					<= InterProceduralAnalysis.INLINING_MAX_NUM_OPS )
+				&& (fgraph.getFunctionCalls(fkey).size() == 1
+					|| countOperators(fstmt.getBody().get(0).get_hops()) 
+						<= InterProceduralAnalysis.INLINING_MAX_NUM_OPS) )
 			{
 				if( LOG.isDebugEnabled() )
 					LOG.debug("IPA: Inline function '"+fkey+"'");

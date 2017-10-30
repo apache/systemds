@@ -33,8 +33,10 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "IPAFunInline1"; //pos 1
 	private final static String TEST_NAME2 = "IPAFunInline2"; //pos 2
-	private final static String TEST_NAME3 = "IPAFunInline3"; //neg 1 (too large)
-	private final static String TEST_NAME4 = "IPAFunInline4"; //neg 2 (control flow)
+	private final static String TEST_NAME3 = "IPAFunInline3"; //pos 3 (large but called once)
+	private final static String TEST_NAME4 = "IPAFunInline4"; //neg 1 (control flow)
+	private final static String TEST_NAME5 = "IPAFunInline5"; //neg 2 (large and called twice)
+	
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAFunctionInliningTest.class.getSimpleName() + "/";
@@ -46,6 +48,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 	}
 
 	@Test
@@ -69,6 +72,11 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunInline5NoIPA() {
+		runIPAFunInlineTest( TEST_NAME5, false );
+	}
+	
+	@Test
 	public void testFunInline1IPA() {
 		runIPAFunInlineTest( TEST_NAME1, true );
 	}
@@ -86,6 +94,11 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	@Test
 	public void testFunInline4IPA() {
 		runIPAFunInlineTest( TEST_NAME4, true );
+	}
+	
+	@Test
+	public void testFunInline5IPA() {
+		runIPAFunInlineTest( TEST_NAME5, true );
 	}
 	
 	private void runIPAFunInlineTest( String testName, boolean IPA )
@@ -112,7 +125,8 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 			Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
 			
 			//compare inlined functions
-			boolean inlined = ( IPA && (testName.equals(TEST_NAME1) || testName.equals(TEST_NAME2)) );
+			boolean inlined = ( IPA && (testName.equals(TEST_NAME1) 
+				|| testName.equals(TEST_NAME2) || testName.equals(TEST_NAME3)) );
 			Assert.assertTrue("Unexpected function call: "+inlined, !heavyHittersContainsSubString("foo")==inlined);
 		}
 		finally {

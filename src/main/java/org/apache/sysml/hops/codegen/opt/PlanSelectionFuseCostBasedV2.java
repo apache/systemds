@@ -160,8 +160,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 
 			//enumerate and cost plans, returns optional plan
-			boolean[] bestPlan = enumPlans(memo, part, costs, rgraph, 
-					part.getMatPointsExt(), 0, Double.MAX_VALUE);
+			boolean[] bestPlan = enumPlans(memo, part,
+				costs, rgraph, part.getMatPointsExt(), 0);
 			
 			//prune memo table wrt best plan and select plans
 			HashSet<Long> visited = new HashSet<>();
@@ -194,17 +194,17 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	 * @param rgraph reachability graph of interesting materialization points
 	 * @param matPoints sorted materialization points (defined the search space)
 	 * @param off offset for recursive invocation, indicating the fixed plan part
-	 * @param bestC currently known best plan costs (used of upper bound)
 	 * @return optimal assignment of materialization points
 	 */
 	private static boolean[] enumPlans(CPlanMemoTable memo, PlanPartition part, StaticCosts costs, 
-		ReachabilityGraph rgraph, InterestingPoint[] matPoints, int off, double bestC)
+		ReachabilityGraph rgraph, InterestingPoint[] matPoints, int off)
 	{
 		//scan linearized search space, w/ skips for branch and bound pruning
 		//and structural pruning (where we solve conditionally independent problems)
 		//bestC is monotonically non-increasing and serves as the upper bound
-		long len = UtilFunctions.pow(2, matPoints.length-off);
+		final long len = UtilFunctions.pow(2, matPoints.length-off);
 		boolean[] bestPlan = null;
+		double bestC = Double.MAX_VALUE;
 		long numEvalPlans = 0, numEvalPartPlans = 0;
 		
 		for( long i=0; i<len; i++ ) {
@@ -227,7 +227,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Enum: Subproblem "+(j+1)+"/"+prob.length+": "+prob[j]);
 					boolean[] bestTmp = enumPlans(memo, part, 
-						costs, null, prob[j].freeMat, prob[j].offset, bestC);
+						costs, null, prob[j].freeMat, prob[j].offset);
 					LibSpoofPrimitives.vectWrite(bestTmp, plan, prob[j].freePos);
 				}
 				

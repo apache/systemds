@@ -410,29 +410,24 @@ public class ForStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public void updatePredicateRecompilationFlags() 
-		throws HopsException
-	{
+	public boolean updatePredicateRecompilationFlags() throws HopsException {
 		if( ConfigurationManager.isDynamicRecompilation() ) {
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());
 			_requiresIncrementRecompile = Recompiler.requiresRecompilation(getIncrementHops());
 		}
+		return (_requiresFromRecompile || _requiresToRecompile || _requiresIncrementRecompile);
 	}
 	
-	public boolean requiresFromRecompilation()
-	{
+	public boolean requiresFromRecompilation() {
 		return _requiresFromRecompile;
 	}
 	
-	public boolean requiresToRecompilation()
-	{
+	public boolean requiresToRecompilation() {
 		return _requiresToRecompile;
 	}
 	
-	public boolean requiresIncrementRecompilation()
-	{
+	public boolean requiresIncrementRecompilation() {
 		return _requiresIncrementRecompile;
 	}
-	
 }

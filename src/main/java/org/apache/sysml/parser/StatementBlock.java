@@ -1044,9 +1044,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	// materialized hops recompilation / updateinplace flags
 	////
 
-	public void updateRecompilationFlag() throws HopsException {
-		_requiresRecompile = ConfigurationManager.isDynamicRecompilation()
-			                 && Recompiler.requiresRecompilation(get_hops());
+	public boolean updateRecompilationFlag() throws HopsException {
+		return (_requiresRecompile =
+			ConfigurationManager.isDynamicRecompilation()
+			&& Recompiler.requiresRecompilation(get_hops()));
 	}
 
 	public boolean requiresRecompilation() {

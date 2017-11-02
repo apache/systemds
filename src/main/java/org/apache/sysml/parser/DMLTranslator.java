@@ -317,25 +317,21 @@ public class DMLTranslator
 	}
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
-
 		// for each namespace, handle function program blocks handle function 
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
-				FunctionStatementBlock current = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-				constructLops(current);
-			}
-		}
+		for( String namespaceKey : dmlp.getNamespaces().keySet() )
+			for( FunctionStatementBlock fsb : dmlp.getFunctionStatementBlocks(namespaceKey).values() )
+				constructLops(fsb);
 		
 		// handle regular program blocks
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
-			constructLops(current);
-		}
+		for( StatementBlock sb : dmlp.getStatementBlocks() )
+			constructLops(sb);
 	}
 
-	public void constructLops(StatementBlock sb) 
+	public boolean constructLops(StatementBlock sb) 
 		throws HopsException, LopsException 
-	{	
+	{
+		boolean ret = false;
+		
 		if (sb instanceof WhileStatementBlock)
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock)sb;
@@ -348,13 +344,13 @@ public class DMLTranslator
 			}
 			// step through stmt blocks in while stmt body
 			for (StatementBlock stmtBlock : body){
-				constructLops(stmtBlock);
+				ret |= constructLops(stmtBlock);
 			}
 			
 			// handle while stmt predicate
 			Lop l = wsb.getPredicateHops().constructLops();
 			wsb.set_predicateLops(l);	
-			wsb.updatePredicateRecompilationFlag();
+			ret |= wsb.updatePredicateRecompilationFlag();
 		}
 		
 		else if (sb instanceof IfStatementBlock)
@@ -370,16 +366,16 @@ public class DMLTranslator
 			}
 			// step through stmt blocks in if stmt ifBody
 			for (StatementBlock stmtBlock : ifBody)
-				constructLops(stmtBlock);
+				ret |= constructLops(stmtBlock);
 			
 			// step through stmt blocks in if stmt elseBody
 			for (StatementBlock stmtBlock : elseBody)
-				constructLops(stmtBlock);
+				ret |= constructLops(stmtBlock);
 			
 			// handle if stmt predicate
 			Lop l = isb.getPredicateHops().constructLops();
 			isb.set_predicateLops(l);
-			isb.updatePredicateRecompilationFlag();
+			ret |= isb.updatePredicateRecompilationFlag();
 		}
 		
 		else if (sb instanceof ForStatementBlock) //NOTE: applies to ForStatementBlock and ParForStatementBlock
@@ -394,7 +390,7 @@ public class DMLTranslator
 			}
 			// step through stmt blocks in FOR stmt body
 			for (StatementBlock stmtBlock : body)
-				constructLops(stmtBlock);
+				ret |= constructLops(stmtBlock);
 			
 			// handle for stmt predicate
 			if (fsb.getFromHops() != null){
@@ -409,37 +405,36 @@ public class DMLTranslator
 				Lop llobs = fsb.getIncrementHops().constructLops();
 				fsb.setIncrementLops(llobs);
 			}
-			fsb.updatePredicateRecompilationFlags();
+			ret |= fsb.updatePredicateRecompilationFlags();
 		}
-		else if (sb instanceof FunctionStatementBlock){
+		else if (sb instanceof FunctionStatementBlock) {
+			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
 			FunctionStatement functStmt = (FunctionStatement)sb.getStatement(0);
 			ArrayList<StatementBlock> body = functStmt.getBody();
-			
 			if (sb.get_hops() != null && !sb.get_hops().isEmpty()) {
 				LOG.error(sb.printBlockErrorLocation() + "FunctionStatementBlock should not have hops");
 				throw new HopsException(sb.printBlockErrorLocation() + "FunctionStatementBlock should not have hops");
 			}
 			// step through stmt blocks in while stmt body
-			for (StatementBlock stmtBlock : body){
-				constructLops(stmtBlock);
-			}
+			for( StatementBlock stmtBlock : body )
+				ret |= constructLops(stmtBlock);
+			if( fsb.isRecompileOnce() )
+				fsb.setRecompileOnce(ret);
 		}
 		
 		// handle default case for regular StatementBlock
 		else {
-			
 			if (sb.get_hops() == null)
 				sb.set_hops(new ArrayList<Hop>());
-			
 			ArrayList<Lop> lops = new ArrayList<>();
-			for (Hop hop : sb.get_hops()) {
+			for (Hop hop : sb.get_hops())
 				lops.add(hop.constructLops());
-			}
 			sb.setLops(lops);
-			sb.updateRecompilationFlag(); 
+			ret |= sb.updateRecompilationFlag(); 
 		}
 		
-	} // end method
+		return ret;
+	}
 	
 	
 	public Program getRuntimeProgram(DMLProgram prog, DMLConfig config) 

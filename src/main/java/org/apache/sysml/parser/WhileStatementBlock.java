@@ -324,15 +324,13 @@ public class WhileStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public void updatePredicateRecompilationFlag() 
-		throws HopsException
-	{
-		_requiresPredicateRecompile =  ConfigurationManager.isDynamicRecompilation() 
-			                           && Recompiler.requiresRecompilation(getPredicateHops());
+	public boolean updatePredicateRecompilationFlag() throws HopsException {
+		return (_requiresPredicateRecompile = 
+			ConfigurationManager.isDynamicRecompilation() 
+			&& Recompiler.requiresRecompilation(getPredicateHops()));
 	}
 	
-	public boolean requiresPredicateRecompilation()
-	{
+	public boolean requiresPredicateRecompilation() {
 		return _requiresPredicateRecompile;
 	}
 }

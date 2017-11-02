@@ -195,12 +195,9 @@ public class TemplateCell extends TemplateBase
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
 			
-			if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-				out = new CNodeUnary(cdata1, UnaryType.POW2);
-			else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-				out = new CNodeUnary(cdata1, UnaryType.MULT2);
-			else //default binary	
-				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
+			//construct binary cnode
+			out = new CNodeBinary(cdata1, cdata2, 
+				BinType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof TernaryOp) 
 		{
@@ -215,7 +212,7 @@ public class TemplateCell extends TemplateBase
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
-					TernaryType.valueOf(top.getOp().name()));
+				TernaryType.valueOf(top.getOp().name()));
 		}
 		else if( hop instanceof ParameterizedBuiltinOp ) 
 		{

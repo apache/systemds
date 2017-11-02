@@ -70,6 +70,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME31 = TEST_NAME+"31"; //MLogreg - matrix-vector cbind 0s generalized
 	private static final String TEST_NAME32 = TEST_NAME+"32"; //X[, 1] - rowSums(X)
 	private static final String TEST_NAME33 = TEST_NAME+"33"; //Kmeans, inner loop
+	private static final String TEST_NAME34 = TEST_NAME+"34"; //X / rowSums(X!=0)
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -81,7 +82,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=33; i++)
+		for(int i=1; i<=34; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -580,6 +581,21 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME33, false, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenRowAggRewrite34CP() {
+		testCodegenIntegration( TEST_NAME34, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg34CP() {
+		testCodegenIntegration( TEST_NAME34, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg34SP() {
+		testCodegenIntegration( TEST_NAME34, false, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -601,7 +617,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "recompile_hops", "-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "recompile_runtime", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			

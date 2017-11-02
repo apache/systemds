@@ -257,16 +257,6 @@ public class TemplateRow extends TemplateBase
 			if( ((AggUnaryOp)hop).getDirection() == Direction.Row && HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG) ) {
 				if(hop.getInput().get(0).getDim2()==1)
 					out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP_R);
-				else if( HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM)
-					&& HopRewriteUtils.isBinaryMatrixScalar(hop.getInput().get(0), OpOp2.NOTEQUAL, 0)
-					&& cdata1 instanceof CNodeBinary ) {
-					out = new CNodeUnary(cdata1.getInput().get(0), UnaryType.ROW_COUNTNNZS);
-				}
-				else if( HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM)
-					&& HopRewriteUtils.isBinaryMatrixScalar(hop.getInput().get(0), OpOp2.POW, 2)
-					&& cdata1 instanceof CNodeBinary ) {
-					out = new CNodeUnary(cdata1.getInput().get(0), UnaryType.ROW_SUMSQS);
-				}
 				else {
 					String opcode = "ROW_"+((AggUnaryOp)hop).getOp().name().toUpperCase()+"S";
 					out = new CNodeUnary(cdata1, UnaryType.valueOf(opcode));

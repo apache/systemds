@@ -60,7 +60,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private FunctionCallCPInstruction(String namespace, String functName, ArrayList<CPOperand> boundInParamOperands,
 			ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
 		super(null, functName, istr);
-
 		_cptype = CPINSTRUCTION_TYPE.External;
 		_functionName = functName;
 		_namespace = namespace;
@@ -72,7 +71,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 	public static FunctionCallCPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
-	{	
+	{
 		//schema: extfunct, fname, num inputs, num outputs, inputs, outputs
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
@@ -94,8 +93,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return new FunctionCallCPInstruction ( namespace,functionName, 
 				boundInParamOperands, boundInParamNames, boundOutParamNames, str );
 	}
-
-		
+	
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 
@@ -114,7 +112,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
-	{		
+	{
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Executing instruction : " + this.toString());
 		}
@@ -130,19 +128,19 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
-		LocalVariableMap functionVariables = new LocalVariableMap();		
+		LocalVariableMap functionVariables = new LocalVariableMap();
 		for( int i=0; i<fpb.getInputParams().size(); i++) 
-		{				
+		{
 			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
 			String currFormalParamName = currFormalParam.getName();
 			Data currFormalParamValue = null; 
-				
+			
 			CPOperand operand = _boundInputParamOperands.get(i);
 			String varname = operand.getName();
 			//error handling non-existing variables
 			if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
 				throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
-						DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
+					DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 			}
 			//get input matrix/frame/scalar
 			currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
@@ -150,19 +148,18 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//graceful value type conversion for scalar inputs with wrong type
 			if( currFormalParamValue.getDataType() == DataType.SCALAR
-				&& currFormalParamValue.getValueType() != operand.getValueType() )
+				&& currFormalParamValue.getValueType() != currFormalParam.getValueType() ) 
 			{
-				ScalarObject so = (ScalarObject) currFormalParamValue;
-				currFormalParamValue = ScalarObjectFactory
-					.createScalarObject(operand.getValueType(), so);
+				currFormalParamValue = ScalarObjectFactory.createScalarObject(
+					currFormalParam.getValueType(), (ScalarObject) currFormalParamValue);
 			}
 			
-			functionVariables.put(currFormalParamName, currFormalParamValue);						
+			functionVariables.put(currFormalParamName, currFormalParamValue);
 		}
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-	    HashMap<String,Boolean> pinStatus = ec.pinVariables(_boundInputParamNames);
+		HashMap<String,Boolean> pinStatus = ec.pinVariables(_boundInputParamNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
@@ -185,7 +182,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		LocalVariableMap retVars = fn_ec.getVariables();  
+		LocalVariableMap retVars = fn_ec.getVariables();
 		
 		// cleanup all returned variables w/o binding 
 		Collection<String> retVarnames = new LinkedList<>(retVars.keySet());

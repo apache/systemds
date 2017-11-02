@@ -31,6 +31,7 @@ import org.junit.runners.Suite;
 	DataTypeChangeTest.class,
 	FunctionInliningTest.class,
 	FunctionNamespaceTest.class,
+	FunctionReturnTest.class,
 	IfTest.class,
 	InvalidBuiltinFunctionCallTest.class,
 	InvalidFunctionAssignmentTest.class,

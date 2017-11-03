@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
@@ -409,24 +410,20 @@ public class MatrixCharacteristics implements Serializable
 	}
 
 	@Override
-	public boolean equals (Object anObject)
-	{
-		if (anObject instanceof MatrixCharacteristics)
-		{
-			MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
-			return ((numRows == mc.numRows) && 
-					(numColumns == mc.numColumns) && 
-					(numRowsPerBlock == mc.numRowsPerBlock) && 
-					(numColumnsPerBlock == mc.numColumnsPerBlock) && 
-					(nonZero == mc.nonZero)) ;
-		}
-		else
+	public boolean equals (Object anObject) {
+		if( !(anObject instanceof MatrixCharacteristics) )
 			return false;
+		MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
+		return ((numRows == mc.numRows)
+			&& (numColumns == mc.numColumns)
+			&& (numRowsPerBlock == mc.numRowsPerBlock)
+			&& (numColumnsPerBlock == mc.numColumnsPerBlock)
+			&& (nonZero == mc.nonZero));
 	}
 	
 	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
+	public int hashCode() {
+		return Arrays.hashCode(new long[]{numRows,numColumns,
+			numRowsPerBlock,numColumnsPerBlock,nonZero});
 	}
 }

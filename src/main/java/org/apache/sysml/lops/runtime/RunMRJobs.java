@@ -59,8 +59,7 @@ import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.MMCJMR;
 import org.apache.sysml.runtime.matrix.MMRJMR;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.ReblockMR;
 import org.apache.sysml.runtime.matrix.SortMR;
 import org.apache.sysml.runtime.matrix.WriteCSVMR;
@@ -324,7 +323,7 @@ public class RunMRJobs
 				{
 					for (int i = 0; i < outputMatrices.length; i++) {
 						//get output meta data
-						MatrixFormatMetaData meta = (MatrixFormatMetaData)outputMatrices[i].getMetaData();
+						MetaDataFormat meta = (MetaDataFormat)outputMatrices[i].getMetaData();
 						MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 						OutputInfo outinfo = meta.getOutputInfo();
 						String fname = outputMatrices[i].getFileName();
@@ -345,7 +344,7 @@ public class RunMRJobs
 							// Currently, valueType information in not stored in MR instruction, 
 							// since only DOUBLE matrices are supported ==> hard coded the value type information for now
 							MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  
-								((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+								ret.getMetaData(i).getMatrixCharacteristics(), outinfo);
 						}
 					}
 				}

@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -102,7 +102,7 @@ public abstract class DataPartitioner
 			return in;
 		
 		//analyze input matrix object
-		MatrixFormatMetaData meta = (MatrixFormatMetaData)in.getMetaData();
+		MetaDataFormat meta = (MetaDataFormat)in.getMetaData();
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		InputInfo ii = meta.getInputInfo();
 		OutputInfo oi = meta.getOutputInfo();
@@ -167,7 +167,7 @@ public abstract class DataPartitioner
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
-		MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,oi,ii);
+		MetaDataFormat metaNew = new MetaDataFormat(mcNew,oi,ii);
 		out.setMetaData(metaNew);	 
 		
 		return out;

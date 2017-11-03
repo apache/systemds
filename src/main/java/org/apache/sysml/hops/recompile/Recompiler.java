@@ -96,7 +96,7 @@ import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -1120,7 +1120,7 @@ public class Recompiler
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mc = new MatrixCharacteristics( 
 				dim1, dim2, blksz, blksz, nnz);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
 		
 		return moOut;
@@ -1357,7 +1357,7 @@ public class Recompiler
 												hop.getDim1(), hop.getDim2(), 
 												ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 												hop.getNnz());
-					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
 				}
@@ -1751,7 +1751,7 @@ public class Recompiler
 		if( ret && !localMode ) {
 			for( MatrixObject mo : inputs )
 			{
-				MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
+				MetaDataFormat iimd = (MetaDataFormat) mo.getMetaData();
 				if((   iimd.getInputInfo()==InputInfo.TextCellInputInfo
 					|| iimd.getInputInfo()==InputInfo.MatrixMarketInputInfo
 					|| iimd.getInputInfo()==InputInfo.CSVInputInfo
@@ -1805,7 +1805,7 @@ public class Recompiler
 		//robustness for usage through mlcontext (key/values of input rdds are 
 		//not serializable for text; also bufferpool rdd read only supported for 
 		// binarycell and binaryblock)
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) obj.getMetaData();
+		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if( obj.getRDDHandle() != null 
 			&& iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo 
 			&& iimd.getInputInfo() != InputInfo.BinaryCellInputInfo ) {

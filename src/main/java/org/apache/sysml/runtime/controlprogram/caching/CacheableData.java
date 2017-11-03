@@ -47,13 +47,12 @@ import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -314,8 +313,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		return meta.getMatrixCharacteristics();
+		return _metaData.getMatrixCharacteristics();
 	}
 
 	public abstract void refreshMetaData() 
@@ -990,7 +988,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	protected T readBlobFromHDFS(String fname) 
 		throws IOException 
 	{
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		return readBlobFromHDFS(fname, mc.getRows(), mc.getCols());
 	}
@@ -1010,7 +1008,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	protected void writeMetaData (String filePathAndName, String outputFormat, FileFormatProperties formatProperties)
 		throws DMLRuntimeException, IOException
 	{		
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 	
 		if (iimd == null)
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
@@ -1042,7 +1040,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		boolean ret = true;
 		if( outputFormat != null ) {
 			try {
-				MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+				MetaDataFormat iimd = (MetaDataFormat) _metaData;
 				OutputInfo oi1 = InputInfo.getMatchingOutputInfo( iimd.getInputInfo() );
 				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat );
 				if( oi1 != oi2 )
@@ -1427,13 +1425,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		str.append(": ");
 		str.append(_hdfsFileName + ", ");
 
-		if (_metaData instanceof NumItemsByEachReducerMetaData) {
+		if (_metaData instanceof MetaDataNumItemsByEachReducer) {
 			str.append("NumItemsByEachReducerMetaData");
 		} else {
 			try {
-				MatrixFormatMetaData md = (MatrixFormatMetaData) _metaData;
+				MetaDataFormat md = (MetaDataFormat) _metaData;
 				if (md != null) {
-					MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+					MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
 					str.append(mc.toString());
 
 					InputInfo ii = md.getInputInfo();

@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -216,7 +216,7 @@ public class Matrix extends FunctionParameter
 		int cblen = ConfigurationManager.getBlocksize();
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen, nnz);
-		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
+		MetaDataFormat mfmd = new MetaDataFormat(mc, oinfo, iinfo);
 		try 
 		{
 			_mo = new MatrixObject(Expression.ValueType.DOUBLE, _filePath, mfmd);

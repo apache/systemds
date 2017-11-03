@@ -23,15 +23,15 @@ package org.apache.sysml.runtime.matrix;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
-public class MatrixFormatMetaData extends MatrixDimensionsMetaData 
+public class MetaDataFormat extends MetaData 
 {
-	private InputInfo iinfo;
-	private OutputInfo oinfo;
+	private final InputInfo iinfo;
+	private final OutputInfo oinfo;
 	
-	public MatrixFormatMetaData(MatrixCharacteristics mc, OutputInfo oinfo_, InputInfo iinfo_ ) {
+	public MetaDataFormat(MatrixCharacteristics mc, OutputInfo oinfo, InputInfo iinfo ) {
 		super(mc);
-		oinfo = oinfo_;
-		iinfo = iinfo_;
+		this.oinfo = oinfo;
+		this.iinfo = iinfo;
 	}
 	
 	public InputInfo getInputInfo() {
@@ -43,11 +43,7 @@ public class MatrixFormatMetaData extends MatrixDimensionsMetaData
 	}
 	
 	@Override
-	public Object clone()
-	{
-		MatrixCharacteristics mc = new MatrixCharacteristics(matchar);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oinfo, iinfo);
-		
-		return meta;
+	public Object clone() {
+		return new MetaDataFormat(new MatrixCharacteristics(_mc), oinfo, iinfo);
 	}
 }

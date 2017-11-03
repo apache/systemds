@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -202,7 +202,7 @@ public class FrameEvictionTest extends AutomatedTestBase
 			
 			//create frame object
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
-			MatrixFormatMetaData meta = new MatrixFormatMetaData (mc, 
+			MetaDataFormat meta = new MetaDataFormat (mc, 
 					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			FrameObject fo = new FrameObject("fA",  meta, schema);
 			fo.acquireModify(fA);

@@ -28,8 +28,8 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MetaData;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -130,7 +130,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					
 					if ( mdata != null ) {
 						try {
-							double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
+							double picked = MapReduceTool.pickValue(fname, (MetaDataNumItemsByEachReducer) mdata, pickindex.getDoubleValue());
 							ec.setVariable(output.getName(), new DoubleObject(picked));
 						} catch (Exception e ) {
 							throw new DMLRuntimeException(e);
@@ -158,7 +158,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					
 					if ( mdata1 != null ) {
 						try {
-							double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
+							double median = MapReduceTool.median(fname1, (MetaDataNumItemsByEachReducer) mdata1);
 							ec.setVariable(output.getName(), new DoubleObject(median));
 						} catch (Exception e ) {
 							throw new DMLRuntimeException(e);
@@ -186,13 +186,13 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					double[] q25 = null;
 					double[] q75 = null;
 					try {
-						q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.25, false);
-						q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.75, false);
+						q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (MetaDataNumItemsByEachReducer) inputMatrix.getMetaData(), 0.25, false);
+						q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (MetaDataNumItemsByEachReducer) inputMatrix.getMetaData(), 0.75, false);
 					} catch (IOException e1) {
 						throw new DMLRuntimeException(e1);
 					}
 					
-					double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.getName()));
+					double sumwt = UtilFunctions.getTotalLength((MetaDataNumItemsByEachReducer) ec.getMetaData(input1.getName()));
 					double q25d = sumwt*0.25;
 					double q75d = sumwt*0.75;
 					

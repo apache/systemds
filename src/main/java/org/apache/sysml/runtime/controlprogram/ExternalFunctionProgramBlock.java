@@ -49,7 +49,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
@@ -717,7 +717,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		throws CacheException 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
+		MetaDataFormat mfmd = new MetaDataFormat(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
 		return new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 	}
 

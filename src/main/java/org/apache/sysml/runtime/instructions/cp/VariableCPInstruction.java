@@ -46,7 +46,7 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.WriterMatrixMarket;
 import org.apache.sysml.runtime.io.WriterTextCSV;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -360,7 +360,7 @@ public class VariableCPInstruction extends CPInstruction {
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
+			MetaDataFormat iimd = new MetaDataFormat(mc, oi, ii);
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 12 )
 				updateType = UpdateType.valueOf(parts[11].toUpperCase());
@@ -489,16 +489,12 @@ public class VariableCPInstruction extends CPInstruction {
 				//create new variable for symbol table and cache
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
-				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(getInput3().getName(), getInput3().getValueType(), true)).getBooleanValue();
-				if ( overrideFileName ) {
+				if( Boolean.parseBoolean(getInput3().getName()) )
 					fname = fname + "_" + _uniqueVarID.getNextID();
-				}
 				
 				MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
 				mobj.setVarName(getInput1().getName());
-				mobj.setDataType(DataType.MATRIX);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				mobj.setMetaData((MetaData)metadata.clone());
@@ -512,7 +508,6 @@ public class VariableCPInstruction extends CPInstruction {
 				String fname = getInput2().getName();
 				FrameObject fobj = new FrameObject(fname);
 				fobj.setVarName(getInput1().getName());
-				fobj.setDataType(DataType.FRAME);
 				fobj.setMetaData((MetaData)metadata.clone());
 				fobj.setFileFormatProperties(_formatProperties);
 				if( _schema != null )
@@ -520,8 +515,8 @@ public class VariableCPInstruction extends CPInstruction {
 				ec.setVariable(getInput1().getName(), fobj);
 			}
 			else if ( getInput1().getDataType() == DataType.SCALAR ){
-				ScalarObject sobj = null;
-				ec.setScalarOutput(getInput1().getName(), sobj);
+				//created variable not called for scalars
+				ec.setScalarOutput(getInput1().getName(), null);
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
@@ -862,8 +857,8 @@ public class VariableCPInstruction extends CPInstruction {
 		}
 		else {
 			try {
-				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
-				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				MatrixCharacteristics mc = ((MetaDataFormat)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
 					WriterTextCSV writer = new WriterTextCSV((CSVFileFormatProperties)_formatProperties);
 					writer.addHeaderToCSV(mo.getFileName(), fname, mc.getRows(), mc.getCols());
@@ -901,7 +896,7 @@ public class VariableCPInstruction extends CPInstruction {
 			mo.exportData(fname, outFmt);
 		}
 		else {
-			OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
+			OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
 			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {

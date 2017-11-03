@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -92,7 +92,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		mcOut.set(mc.getRows(), mc.getCols(), brlen, bclen, mc.getNonZeros());
 		
 		//get the source format form the meta data
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) obj.getMetaData();
+		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if(iimd == null)
 			throw new DMLRuntimeException("Error: Metadata not found");
 		InputInfo iinfo = iimd.getInputInfo();

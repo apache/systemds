@@ -49,7 +49,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -258,7 +258,7 @@ public class PreparedScript
 		
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(matrix); 
 		mo.release();
@@ -365,7 +365,7 @@ public class PreparedScript
 		
 		//create new frame object
 		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
 		fo.release();

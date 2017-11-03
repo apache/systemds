@@ -84,7 +84,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -878,7 +878,7 @@ public class ProgramConverter
 				break;
 			case MATRIX:
 				MatrixObject mo = (MatrixObject) dat;
-				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
+				MetaDataFormat md = (MetaDataFormat) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
 				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
@@ -1750,7 +1750,7 @@ public class ProgramConverter
 				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
-				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
+				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )

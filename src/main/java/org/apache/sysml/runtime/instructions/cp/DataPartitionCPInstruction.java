@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.io.WriterBinaryBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -85,7 +85,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)
 			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), moIn.getNnz()); 
-			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			moOut.setMetaData(meta);
 		}
 		catch(Exception ex)

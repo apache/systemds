@@ -21,7 +21,6 @@
 package org.apache.sysml.runtime.matrix;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 
@@ -39,31 +38,31 @@ public class JobReturn
 
 	public JobReturn(MatrixCharacteristics[] sts, boolean success) {
 		successful = success;
-		metadata = new MatrixDimensionsMetaData[sts.length];
+		metadata = new MetaData[sts.length];
 		for (int i = 0; i < sts.length; i++) {
-			metadata[i] = new MatrixDimensionsMetaData(sts[i]);
+			metadata[i] = new MetaData(sts[i]);
 		}
 	}
 
 	public JobReturn(MatrixCharacteristics[] sts, OutputInfo[] infos,
 			boolean success) throws DMLRuntimeException {
 		successful = success;
-		metadata = new MatrixFormatMetaData[sts.length];
+		metadata = new MetaDataFormat[sts.length];
 		for (int i = 0; i < sts.length; i++) {
-			metadata[i] = new MatrixFormatMetaData(sts[i], infos[i], OutputInfo.getMatchingInputInfo(infos[i]));
+			metadata[i] = new MetaDataFormat(sts[i], infos[i], OutputInfo.getMatchingInputInfo(infos[i]));
 		}
 	}
 
 	public JobReturn(MatrixCharacteristics sts, OutputInfo info, boolean success) throws DMLRuntimeException {
 		successful = success;
-		metadata = new MatrixFormatMetaData[1];
-		metadata[0] = new MatrixFormatMetaData(sts, info, OutputInfo.getMatchingInputInfo(info));
+		metadata = new MetaDataFormat[1];
+		metadata[0] = new MetaDataFormat(sts, info, OutputInfo.getMatchingInputInfo(info));
 	}
 	
 	public JobReturn(MatrixCharacteristics mc, long[] items, int partition0, long number0s, boolean success) {
 		successful = success;
-		metadata = new NumItemsByEachReducerMetaData[1];
-		metadata[0] = new NumItemsByEachReducerMetaData(mc, items, partition0, number0s);
+		metadata = new MetaDataNumItemsByEachReducer[1];
+		metadata[0] = new MetaDataNumItemsByEachReducer(mc, items, partition0, number0s);
 	}
 
 	public boolean checkReturnStatus() throws DMLRuntimeException {
@@ -79,14 +78,4 @@ public class JobReturn
 	public MetaData getMetaData(int i) {
 		return metadata[i];
 	}
-
-	/*
-	 * Since MatrixCharacteristics is the most common type of metadata, we
-	 * define a method to extract this information for a given output index.
-	 */
-	public MatrixCharacteristics getMatrixCharacteristics(int i) {
-		return ((MatrixDimensionsMetaData) metadata[i])
-				.getMatrixCharacteristics();
-	}
-
 }

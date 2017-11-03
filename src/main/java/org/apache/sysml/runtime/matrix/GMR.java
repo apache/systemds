@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixPackedCell;
@@ -136,13 +135,13 @@ public class GMR
 			PickFromCompactInputFormat.setKeyValueClasses(job, (Class<? extends WritableComparable>) inputInfos[ins.input1].inputKeyClass, 
 					inputInfos[ins.input1].inputValueClass);
 		    job.setInputFormat(PickFromCompactInputFormat.class);
-		    PickFromCompactInputFormat.setZeroValues(job, (NumItemsByEachReducerMetaData)inputInfos[ins.input1].metadata);
+		    PickFromCompactInputFormat.setZeroValues(job, (MetaDataNumItemsByEachReducer)inputInfos[ins.input1].metadata);
 		    
 			if(ins.isValuePick)
 			{
 				double[] probs=MapReduceTool.readColumnVectorFromHDFS(inputs[ins.input2], inputInfos[ins.input2], rlens[ins.input2], 
 						clens[ins.input2], brlens[ins.input2], bclens[ins.input2]);
-			    PickFromCompactInputFormat.setPickRecordsInEachPartFile(job, (NumItemsByEachReducerMetaData) inputInfos[ins.input1].metadata, probs);
+			    PickFromCompactInputFormat.setPickRecordsInEachPartFile(job, (MetaDataNumItemsByEachReducer) inputInfos[ins.input1].metadata, probs);
 			    
 			    realinputs=new String[inputs.length-1];
 				realinputInfos=new InputInfo[inputs.length-1];
@@ -179,8 +178,8 @@ public class GMR
 			}else
 			{
 			    //PickFromCompactInputFormat.setPickRecordsInEachPartFile(job, (NumItemsByEachReducerMetaData) inputInfos[ins.input1].metadata, ins.cst, 1-ins.cst);
-			    PickFromCompactInputFormat.setRangePickPartFiles(job, (NumItemsByEachReducerMetaData) inputInfos[ins.input1].metadata, ins.cst, 1-ins.cst);
-			    realrlens[ins.input1]=UtilFunctions.getLengthForInterQuantile((NumItemsByEachReducerMetaData)inputInfos[ins.input1].metadata, ins.cst);
+			    PickFromCompactInputFormat.setRangePickPartFiles(job, (MetaDataNumItemsByEachReducer) inputInfos[ins.input1].metadata, ins.cst, 1-ins.cst);
+			    realrlens[ins.input1]=UtilFunctions.getLengthForInterQuantile((MetaDataNumItemsByEachReducer)inputInfos[ins.input1].metadata, ins.cst);
 				realclens[ins.input1]=clens[ins.input1];
 				realbrlens[ins.input1]=1;
 				realbclens[ins.input1]=1;

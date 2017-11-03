@@ -60,7 +60,6 @@ import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -227,7 +226,7 @@ public abstract class CostEstimator
 			if( dat instanceof MatrixObject ) //matrix
 			{
 				MatrixObject mo = (MatrixObject) dat;
-				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 				long rlen = mc.getRows();
 				long clen = mc.getCols();
 				long brlen = mc.getRowsPerBlock();

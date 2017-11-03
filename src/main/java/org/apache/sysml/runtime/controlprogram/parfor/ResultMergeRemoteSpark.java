@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -86,7 +86,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			if( _inputs != null && _inputs.length>0 )
 			{
 				//prepare compare
-				MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
+				MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 				MatrixObject compare = (mcOld.getNonZeros()==0) ? null : _output;
 				
@@ -104,7 +104,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
 						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 				mc.setNonZeros( computeNonZeros(_output, Arrays.asList(_inputs)) );
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
 				moNew.setRDDHandle( ro );
 			}

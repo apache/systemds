@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.MLContextProxy;
@@ -537,8 +537,8 @@ public class MLContext {
 						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source));
 						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source));
 
-						if (mo.getMetaData() instanceof MatrixFormatMetaData) {
-							MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
+						if (mo.getMetaData() instanceof MetaDataFormat) {
+							MetaDataFormat metaData = (MetaDataFormat) mo.getMetaData();
 							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
 										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source));

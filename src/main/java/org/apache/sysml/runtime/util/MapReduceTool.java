@@ -51,11 +51,11 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.sort.ReadWithZeros;
@@ -526,7 +526,7 @@ public class MapReduceTool
 		return DataConverter.convertToDoubleVector(mb, false);
 	}
 	
-	public static double median(String dir, NumItemsByEachReducerMetaData metadata) throws IOException {
+	public static double median(String dir, MetaDataNumItemsByEachReducer metadata) throws IOException {
 		long[] counts=metadata.getNumItemsArray();
 		long[] ranges=new long[counts.length];
 		ranges[0]=counts[0];
@@ -539,11 +539,11 @@ public class MapReduceTool
 	}
 	
 
-	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p) throws IOException {
+	public static double pickValue(String dir, MetaDataNumItemsByEachReducer metadata, double p) throws IOException {
 		return pickValueWeight(dir, metadata, p, false)[0];
 	}
 	
-	public static double[] pickValueWeight(String dir, NumItemsByEachReducerMetaData metadata, double p, boolean average) 
+	public static double[] pickValueWeight(String dir, MetaDataNumItemsByEachReducer metadata, double p, boolean average) 
 	throws IOException
 	{
 		long[] counts=metadata.getNumItemsArray();

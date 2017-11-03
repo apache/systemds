@@ -94,7 +94,7 @@ import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseRowVector;
@@ -2247,7 +2247,7 @@ public class OptimizerRuleBased extends Optimizer
 			else
 			{
 				MatrixObject mo = (MatrixObject)dat;
-				MatrixFormatMetaData meta = (MatrixFormatMetaData) mo.getMetaData();
+				MetaDataFormat meta = (MetaDataFormat) mo.getMetaData();
 				OutputInfo oi = meta.getOutputInfo();
 				long nnz = meta.getMatrixCharacteristics().getNonZeros();
 				

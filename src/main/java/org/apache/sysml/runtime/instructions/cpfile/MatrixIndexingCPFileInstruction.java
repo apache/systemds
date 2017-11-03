@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
@@ -92,7 +92,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase(RightIndex.OPCODE) ) 
 		{
-			MatrixFormatMetaData meta = (MatrixFormatMetaData)mo.getMetaData();
+			MetaDataFormat meta = (MetaDataFormat)mo.getMetaData();
 			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
@@ -123,7 +123,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+RightIndex.OPCODE+": "+ mo.getPartitionFormat());
 				}
 				
-				MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,meta.getOutputInfo(),meta.getInputInfo());
+				MetaDataFormat metaNew = new MetaDataFormat(mcNew,meta.getOutputInfo(),meta.getInputInfo());
 				mobj.setMetaData(metaNew);	 
 				
 				//put output object into symbol table

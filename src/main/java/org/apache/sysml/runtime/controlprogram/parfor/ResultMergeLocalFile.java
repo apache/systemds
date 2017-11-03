@@ -51,7 +51,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -157,7 +157,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	{
 		String varName = _output.getVarName();
 		ValueType vt = _output.getValueType();
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
+		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 		
 		MatrixObject moNew = new MatrixObject( vt, _outputFName );
 		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
@@ -170,7 +170,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
 				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 		mc.setNonZeros( computeNonZeros(output, inMO) );
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );
 		
 		return moNew;
@@ -179,7 +179,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		OutputInfo oi = ((MatrixFormatMetaData)outMo.getMetaData()).getOutputInfo();
+		OutputInfo oi = ((MetaDataFormat)outMo.getMetaData()).getOutputInfo();
 		boolean withCompare = ( outMo.getNnz() != 0 ); //if nnz exist or unknown (-1)
 		
 		if( oi == OutputInfo.TextCellOutputInfo )
@@ -295,7 +295,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createTextCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createTextCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -390,7 +390,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createBinaryCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -420,7 +420,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryBlockResultFile(fnameStaging, null, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), false);
+			createBinaryBlockResultFile(fnameStaging, null, fnameNew, (MetaDataFormat)outMo.getMetaData(), false);
 		}	
 		catch(Exception ex)
 		{
@@ -454,7 +454,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryBlockResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createBinaryBlockResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -644,7 +644,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}	
 
 	@SuppressWarnings("deprecation")
-	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -740,7 +740,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -877,7 +877,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	@SuppressWarnings("deprecation")
-	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());

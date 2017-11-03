@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -228,7 +228,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 	{
 		String varName = _output.getVarName();
 		ValueType vt = _output.getValueType();
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
+		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 		
 		MatrixObject moNew = new MatrixObject( vt, _outputFName );
 		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
@@ -241,7 +241,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
 				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 		mc.setNonZeros(data.getNonZeros());
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );
 		
 		//adjust dense/sparse representation

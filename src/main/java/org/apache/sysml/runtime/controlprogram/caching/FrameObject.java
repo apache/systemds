@@ -36,8 +36,7 @@ import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -140,7 +139,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
 
 		//update matrix characteristics
-		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
 		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );
 		mc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
 		
@@ -167,7 +166,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected FrameBlock readBlobFromHDFS(String fname, long rlen, long clen)
 		throws IOException 
 	{
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		
 		//handle missing schema if necessary
@@ -202,7 +201,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//prepare return status (by default only collect)
 		status.setValue(false);
 		
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		int rlen = (int)mc.getRows();
 		int clen = (int)mc.getCols();
@@ -247,7 +246,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare output info
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
 				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 	    

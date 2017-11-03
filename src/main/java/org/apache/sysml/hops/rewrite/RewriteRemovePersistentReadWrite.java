@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 
@@ -131,8 +131,8 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 						
 						//disable unnecessary reblock of binary block w/ equal block sizes
 						if( dop.requiresReblock() && _inputsMeta.containsKey(dop.getName()) 
-							&& _inputsMeta.get(dop.getName()) instanceof MatrixFormatMetaData) {
-							MatrixFormatMetaData meta = (MatrixFormatMetaData)_inputsMeta.get(dop.getName());
+							&& _inputsMeta.get(dop.getName()) instanceof MetaDataFormat) {
+							MetaDataFormat meta = (MetaDataFormat)_inputsMeta.get(dop.getName());
 							MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 							boolean matchingBlksz = mc.getRowsPerBlock() == dop.getRowsInBlock() 
 									&& mc.getColsPerBlock() == dop.getColsInBlock();

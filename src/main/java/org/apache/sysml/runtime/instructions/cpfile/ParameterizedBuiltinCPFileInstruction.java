@@ -59,7 +59,7 @@ import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -161,7 +161,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//initial setup
 			String fnameOld = _src.getFileName();
 			String fnameNew = _out.getFileName();
-			InputInfo ii = ((MatrixFormatMetaData)_src.getMetaData()).getInputInfo();
+			InputInfo ii = ((MetaDataFormat)_src.getMetaData()).getInputInfo();
 			MatrixCharacteristics mc = _src.getMatrixCharacteristics();
 			
 			String stagingDir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_WORK);
@@ -228,7 +228,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			String varName = out.getVarName();
 			String fName = out.getFileName();
 			ValueType vt = src.getValueType();
-			MatrixFormatMetaData metadata = (MatrixFormatMetaData) src.getMetaData();
+			MetaDataFormat metadata = (MetaDataFormat) src.getMetaData();
 			
 			MatrixObject moNew = new MatrixObject( vt, fName );
 			moNew.setVarName( varName );
@@ -253,7 +253,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			InputInfo iiOld = metadata.getInputInfo();
 			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols, mcOld.getRowsPerBlock(),
 					                                              mcOld.getColsPerBlock(), mcOld.getNonZeros());
-			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+			MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 			moNew.setMetaData( meta );
 
 			return moNew;

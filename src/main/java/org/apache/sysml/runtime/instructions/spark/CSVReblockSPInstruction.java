@@ -35,7 +35,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -94,7 +94,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 		//sanity check input info
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) obj.getMetaData();
+		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if (iimd.getInputInfo() != InputInfo.CSVInputInfo) {
 			throw new DMLRuntimeException("The given InputInfo is not implemented for "
 					+ "CSVReblockSPInstruction:" + iimd.getInputInfo());

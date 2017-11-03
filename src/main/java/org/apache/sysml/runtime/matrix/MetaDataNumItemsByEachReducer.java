@@ -18,47 +18,36 @@
  */
 
 
-package org.apache.sysml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix;
 
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-
-public class NumItemsByEachReducerMetaData extends MatrixDimensionsMetaData 
+public class MetaDataNumItemsByEachReducer extends MetaData 
 {
-	
 	private long[] numItems=null;
 	private int partitionOfZero=-1;
 	private long numberOfZero=0;
 	
-	public NumItemsByEachReducerMetaData(MatrixCharacteristics mc, long[] nums, int part0, long num0)
-	{
+	public MetaDataNumItemsByEachReducer(MatrixCharacteristics mc, long[] nums, int part0, long num0) {
 		super(mc);
 		numItems=nums;
 		partitionOfZero=part0;
 		numberOfZero=num0;
 	}
 
-	public long[] getNumItemsArray()
-	{
+	public long[] getNumItemsArray() {
 		return numItems;
 	}
 	
-	public int getPartitionOfZero()
-	{
+	public int getPartitionOfZero() {
 		return partitionOfZero;
 	}
 	
-	public long getNumberOfZero()
-	{
+	public long getNumberOfZero() {
 		return numberOfZero;
 	}
 	
 	@Override
-	public Object clone()
-	{
-		MatrixCharacteristics mc = new MatrixCharacteristics(matchar);
-		NumItemsByEachReducerMetaData ret = new NumItemsByEachReducerMetaData(mc, numItems, partitionOfZero, numberOfZero);
-	
-		return ret;
+	public Object clone() {
+		return new MetaDataNumItemsByEachReducer(
+			new MatrixCharacteristics(_mc), numItems, partitionOfZero, numberOfZero);
 	}
 }

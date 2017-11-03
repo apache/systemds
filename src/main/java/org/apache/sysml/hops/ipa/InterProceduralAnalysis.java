@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.udf.lib.DynamicReadMatrixCP;
 import org.apache.sysml.udf.lib.DynamicReadMatrixRcCP;
 import org.apache.sysml.udf.lib.OrderWrapper;
@@ -554,7 +554,7 @@ public class InterProceduralAnalysis
 				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(), 
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+				MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	
 			}
@@ -729,7 +729,7 @@ public class InterProceduralAnalysis
 		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
 		MatrixCharacteristics mc = new MatrixCharacteristics( dim1, dim2,
 				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), nnz);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
 		
 		return moOut;

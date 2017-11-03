@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -123,7 +123,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 				_output.exportData();
 				
 				//actual merge
-				MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
+				MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 				
 				String fnameCompare = _output.getFileName();
@@ -145,7 +145,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
 						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 				mc.setNonZeros( computeNonZeros(_output, inMO) );
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
 			}
 			else

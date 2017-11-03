@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
@@ -168,7 +168,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
 		{
 			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MetaDataFormat mfmd = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 		}
 		

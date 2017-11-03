@@ -27,9 +27,9 @@ import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
@@ -242,7 +242,7 @@ public class UtilFunctions
 		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
 	}
 	
-	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
+	public static long getTotalLength(MetaDataNumItemsByEachReducer metadata) {
 		long[] counts=metadata.getNumItemsArray();
 		long total=0;
 		for(long count: counts)
@@ -250,7 +250,7 @@ public class UtilFunctions
 		return total;
 	}
 	
-	public static long getLengthForInterQuantile(NumItemsByEachReducerMetaData metadata, double p)
+	public static long getLengthForInterQuantile(MetaDataNumItemsByEachReducer metadata, double p)
 	{
 		long total = UtilFunctions.getTotalLength(metadata);
 		long lpos=(long)Math.ceil(total*p);//lower bound is inclusive

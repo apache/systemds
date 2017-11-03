@@ -48,8 +48,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -233,8 +232,7 @@ public class ExecutionContext {
 	public MatrixCharacteristics getMatrixCharacteristics( String varname ) 
 		throws DMLRuntimeException
 	{
-		MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData) getMetaData(varname);
-		return dims.getMatrixCharacteristics();
+		return getMetaData(varname).getMatrixCharacteristics();
 	}
 	
 	/**
@@ -280,14 +278,14 @@ public class ExecutionContext {
 			return;
 		
 		MetaData oldMetaData = mo.getMetaData();
-		if( oldMetaData == null || !(oldMetaData instanceof MatrixFormatMetaData) )
+		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
 			
 		MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
 				(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
-		mo.setMetaData(new MatrixFormatMetaData(mc, 
-				((MatrixFormatMetaData)oldMetaData).getOutputInfo(),
-				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
+		mo.setMetaData(new MetaDataFormat(mc, 
+				((MetaDataFormat)oldMetaData).getOutputInfo(),
+				((MetaDataFormat)oldMetaData).getInputInfo()));
 	}
 	
 	/**
@@ -611,28 +609,22 @@ public class ExecutionContext {
 	public void cleanupMatrixObject(MatrixObject mo)
 		throws DMLRuntimeException 
 	{
-		try
-		{
-			if ( mo.isCleanupEnabled() ) 
-			{
-				//compute ref count only if matrix cleanup actually necessary
-				if ( !getVariables().hasReferences(mo) ) {
-					//clean cached data	
-					mo.clearData(); 
-					if( mo.isHDFSFileExists() )
-					{
-						//clean hdfs data
-						String fpath = mo.getFileName();
-						if (fpath != null) {
-							MapReduceTool.deleteFileIfExistOnHDFS(fpath);
-							MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
-						}
-					}
+		//early abort w/o scan of symbol table if no cleanup required
+		boolean fileExists = (mo.isHDFSFileExists() && mo.getFileName() != null);
+		if( !CacheableData.isCachingActive() && !fileExists )
+			return;
+		
+		try {
+			//compute ref count only if matrix cleanup actually necessary
+			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )  {
+				mo.clearData(); //clean cached data
+				if( fileExists ) {
+					MapReduceTool.deleteFileIfExistOnHDFS(mo.getFileName());
+					MapReduceTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");
 				}
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 	}

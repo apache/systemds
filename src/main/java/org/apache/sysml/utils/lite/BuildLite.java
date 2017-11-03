@@ -88,24 +88,42 @@ public class BuildLite {
 	static {
 		// avoid "No FileSystem for scheme: file" error in JMLC
 		additionalResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
-		// shutdown hook class
+		// shutdown hook class 
 		additionalResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
 
 		additionalResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
+		additionalResources.add("org/apache/hadoop/util/GenericOptionsParser.class");
+		additionalResources.add("org/apache/hadoop/security/token/Token.class");
+		additionalResources.add("org/apache/hadoop/security/token/TokenIdentifier.class");
+		additionalResources.add("org/apache/hadoop/security/Groups$CachedGroups.class");
+		additionalResources.add("org/apache/commons/cli/OptionValidator.class");
+		additionalResources.add("org/apache/commons/cli/Util.class");
+		additionalResources.add("common-version-info.properties");
 	}
 
 	/**
 	 * Map jars to the additional resources files in order to build the
 	 * dependency sets required by lite.xml.
 	 */
-	public static SortedMap<String, SortedSet<String>> additionalJarToFileMappingsForDependencySets = new TreeMap<>();
-	static {
-		SortedSet<String> hadoopCommonResources = new TreeSet<>();
-		hadoopCommonResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
-		hadoopCommonResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
-		hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
-		additionalJarToFileMappingsForDependencySets.put("hadoop-common", hadoopCommonResources);
-	}
+	
+    public static SortedMap<String, SortedSet<String>> additionalJarToFileMappingsForDependencySets = new TreeMap<String, SortedSet<String>>();
+    static {
+        SortedSet<String> hadoopCommonResources = new TreeSet<String>();
+        hadoopCommonResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
+        hadoopCommonResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
+        hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
+        hadoopCommonResources.add("org/apache/hadoop/util/GenericOptionsParser.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/token/Token.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/token/TokenIdentifier.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/Groups$CachedGroups.class");
+        hadoopCommonResources.add("common-version-info.properties");
+        additionalJarToFileMappingsForDependencySets.put("hadoop-common", hadoopCommonResources);
+        
+        SortedSet<String> commonsCliResources = new TreeSet<String>();
+        commonsCliResources.add("org/apache/commons/cli/OptionValidator.class");
+        commonsCliResources.add("org/apache/commons/cli/Util.class");
+        additionalJarToFileMappingsForDependencySets.put("commons-cli", commonsCliResources);
+    }
 
 	/**
 	 * Scan project *.java files for these packages/classes that should

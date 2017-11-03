@@ -1162,6 +1162,17 @@
 									<descriptors>
 										<descriptor>src/assembly/lite.xml</descriptor>
 									</descriptors>
+																<archive>
+								<manifest>
+									<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+								</manifest>
+								<manifestEntries>
+									<Build-Time>${maven.build.timestamp}</Build-Time>
+									<Group-Id>${project.groupId}</Group-Id>
+									<Artifact-Id>${project.artifactId}-lite</Artifact-Id>
+									<Version>${project.version}</Version>
+								</manifestEntries>
+							</archive>
 								</configuration>
 							</execution>
 						</executions>

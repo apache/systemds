@@ -53,7 +53,7 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:antlr4-runtime</include>
+				<include>*:antlr4</include>
 			</includes>
 			<unpackOptions>
 				<includes>
@@ -210,6 +210,8 @@
 			</includes>
 			<unpackOptions>
 				<includes>
+					<include>org/apache/commons/cli/OptionValidator.class</include>
+					<include>org/apache/commons/cli/Util.class</include>
 					<include>org/apache/commons/cli/AlreadySelectedException.class</include>
 					<include>org/apache/commons/cli/CommandLine.class</include>
 					<include>org/apache/commons/cli/CommandLineParser.class</include>
@@ -620,7 +622,12 @@
 			<unpackOptions>
 				<includes>
 					<include>META-INF/services/org.apache.hadoop.fs.FileSystem</include>
+					<include>common-version-info.properties</include>
 					<include>org/apache/hadoop/log/metrics/EventCounter.class</include>
+					<include>org/apache/hadoop/security/Groups$CachedGroups.class</include>
+					<include>org/apache/hadoop/security/token/Token.class</include>
+					<include>org/apache/hadoop/security/token/TokenIdentifier.class</include>
+					<include>org/apache/hadoop/util/GenericOptionsParser.class</include>
 					<include>org/apache/hadoop/util/ShutdownHookManager$2.class</include>
 					<include>org/apache/hadoop/HadoopIllegalArgumentException.class</include>
 					<include>org/apache/hadoop/conf/Configurable.class</include>
@@ -1019,6 +1026,19 @@
 					<include>org/apache/hadoop/mapreduce/security/TokenCache.class</include>
 					<include>org/apache/hadoop/mapreduce/tools/CLI.class</include>
 					<include>org/apache/hadoop/mapreduce/util/ConfigUtil.class</include>
+				</includes>
+			</unpackOptions>
+			<scope>compile</scope>
+			<unpack>true</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<includes>
+				<include>*:hadoop-mapreduce-client-jobclient</include>
+			</includes>
+			<unpackOptions>
+				<includes>
+					<include>org/apache/hadoop/mapred/YarnClientProtocolProvider.class</include>
 				</includes>
 			</unpackOptions>
 			<scope>compile</scope>

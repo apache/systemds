@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -149,6 +148,11 @@ public class ExecutionContext {
 	
 	public Data getVariable(String name) {
 		return _variables.get(name);
+	}
+	
+	public Data getVariable(CPOperand operand) throws DMLRuntimeException {
+		return operand.getDataType().isScalar() ?
+			getScalarInput(operand) : getVariable(operand.getName());
 	}
 	
 	public void setVariable(String name, Data val) {
@@ -528,30 +532,25 @@ public class ExecutionContext {
 	 * The function returns the OLD "clean up" state of matrix objects.
 	 * 
 	 * @param varList variable list
-	 * @return map of old cleanup state of matrix objects
+	 * @return indicator vector of old cleanup state of matrix objects
 	 */
-	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
+	public boolean[] pinVariables(ArrayList<String> varList) 
 	{
 		//2-pass approach since multiple vars might refer to same matrix object
-		HashMap<String, Boolean> varsState = new HashMap<>();
+		boolean[] varsState = new boolean[varList.size()];
 		
 		//step 1) get current information
-		for( String var : varList )
-		{
-			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject ) {
-				MatrixObject mo = (MatrixObject)dat;
-				varsState.put( var, mo.isCleanupEnabled() );
-			}
+		for( int i=0; i<varList.size(); i++ ) {
+			Data dat = _variables.get(varList.get(i));
+			if( dat instanceof MatrixObject )
+				varsState[i] = ((MatrixObject)dat).isCleanupEnabled();
 		}
 		
 		//step 2) pin variables
-		for( String var : varList ) {
-			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject ) {
-				MatrixObject mo = (MatrixObject)dat;
-				mo.enableCleanup(false); 
-			}
+		for( int i=0; i<varList.size(); i++ ) {
+			Data dat = _variables.get(varList.get(i));
+			if( dat instanceof MatrixObject )
+				((MatrixObject)dat).enableCleanup(false); 
 		}
 		
 		return varsState;
@@ -573,11 +572,11 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @param varsState variable state
 	 */
-	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState) {
-		for( String var : varList) {
-			Data dat = _variables.get(var);
+	public void unpinVariables(ArrayList<String> varList, boolean[] varsState) {
+		for( int i=0; i<varList.size(); i++ ) {
+			Data dat = _variables.get(varList.get(i));
 			if( dat instanceof MatrixObject )
-				((MatrixObject)dat).enableCleanup(varsState.get(var));
+				((MatrixObject)dat).enableCleanup(varsState[i]);
 		}
 	}
 	

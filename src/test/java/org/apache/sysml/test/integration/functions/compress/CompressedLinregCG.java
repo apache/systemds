@@ -100,24 +100,23 @@ public class CompressedLinregCG extends AutomatedTestBase
 		
 		try
 		{
-			String TEST_NAME = testname;
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + "functions/codegen/";
+			String HOME1 = SCRIPT_DIR + "functions/compress/";
+			String HOME2 = SCRIPT_DIR + "functions/codegen/";
 			fullDMLScriptName = "scripts/algorithms/LinearRegCG.dml";
 			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
 					"maxi="+String.valueOf(maxiter), "reg="+String.valueOf(regular), "B="+output("w")};
 
-			fullRScriptName = HOME + "Algorithm_LinregCG.R";
+			fullRScriptName = HOME2 + "Algorithm_LinregCG.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " +
-			       String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
-			       String.valueOf(maxiter) + " " + String.valueOf(regular) + HOME + EXPECTED_DIR;
+					HOME1 + INPUT_DIR + " " +
+					String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
+					String.valueOf(maxiter) + " " + String.valueOf(regular) + " "+ HOME1 + EXPECTED_DIR;
 			
-			loadTestConfiguration(config);
-	
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rows, cols, 1, 1, sparse?sparsity2:sparsity1, 7);
 			writeInputMatrixWithMTD("X", X, true);
@@ -141,7 +140,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			InfrastructureAnalyzer.setLocalMaxMemory(memOld);		
+			InfrastructureAnalyzer.setLocalMaxMemory(memOld);
 			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}

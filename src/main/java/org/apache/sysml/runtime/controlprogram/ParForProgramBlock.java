@@ -633,7 +633,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//preserve shared input/result variables of cleanup
 		ArrayList<String> varList = ec.getVarList();
-		HashMap<String, Boolean> varState = ec.pinVariables(varList);
+		boolean[] varState = ec.pinVariables(varList);
 		
 		try 
 		{
@@ -1329,7 +1329,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private void cleanupSharedVariables( ExecutionContext ec, HashMap<String,Boolean> varState ) 
+	private void cleanupSharedVariables( ExecutionContext ec, boolean[] varState ) 
 		throws DMLRuntimeException 
 	{
 		//TODO needs as precondition a systematic treatment of persistent read information.

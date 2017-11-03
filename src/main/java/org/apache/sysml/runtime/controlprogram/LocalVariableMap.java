@@ -63,6 +63,10 @@ public class LocalVariableMap implements Cloneable
 		return localMap.keySet();
 	}
 	
+	public Set<Entry<String, Data>> entrySet() {
+		return localMap.entrySet();
+	}
+	
 	/**
 	 * Retrieves the data object given its name.
 	 * 

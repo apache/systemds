@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.GPUStatistics;
@@ -467,6 +468,113 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		return _data;
 	}
+
+
+        /**
+         * Acquires a shared "read-only" lock, produces the subsetting reference to the cache block
+         * from cache or HDFS
+         *
+         * Synchronized because there might be parallel threads (parfor local) that
+         * access the same object (in case it was created before the loop).
+         *
+         * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
+         * Out-Status: READ(+1).
+         *
+         * @param  ixrange index range
+         * @return cacheable data
+         * @throws CacheException if CacheException occurs
+         */
+        public synchronized T acquireSubsetRead(IndexRange ixrange)
+            throws DMLRuntimeException
+        {
+              if( LOG.isTraceEnabled() )
+                LOG.trace("Acquire subset "+getVarName() + " with the input index range " + ixrange);
+              long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+              T subsetResult = null;
+
+              if ( !isAvailableToRead() )
+                throw new CacheException ("MatrixObject not available to read.");
+
+              //get object from cache
+              if( _data == null ) {
+                getCache();
+              }
+
+              if ( _data != null) {
+                  subsetResult = (T) _data.sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd,
+                                                           (int) ixrange.colStart, (int) ixrange.colEnd, subsetResult);
+                  return subsetResult;
+              }
+
+               //TODO: update the GPU part
+              //call acquireHostRead if gpuHandle is set as well as is allocated
+              boolean copiedFromGPU = false;
+              for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
+                GPUObject gObj = kv.getValue();
+                if (gObj != null && copiedFromGPU && gObj.isDirty()) {
+                  LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
+                  throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
+                } else if (gObj != null){
+                  copiedFromGPU = gObj.acquireHostRead();
+                  if( _data == null )
+                    getCache();
+                }
+              }
+
+              //read data from HDFS/RDD if required
+              //(probe data for cache_nowrite / jvm_reuse)
+              if( isEmpty(true) && _data==null )
+              {
+                try
+                    {
+                      if( DMLScript.STATISTICS )
+                        CacheStatistics.incrementHDFSHits();
+
+                      if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+                      {
+                        //check filename
+                        if( _hdfsFileName == null )
+                          throw new CacheException("Cannot read matrix for empty filename.");
+
+                        //read cacheable data from hdfs
+                        subsetResult = subsetBlobFromHDFS(_hdfsFileName, ixrange);
+                        return subsetResult;
+                      }
+                      else
+                      {
+                        //read matrix from rdd (incl execute pending rdd operations)
+                        MutableBoolean writeStatus = new MutableBoolean();
+                        subsetResult = (T) readBlobFromRDD( getRDDHandle(), writeStatus )
+                            .sliceOperations((int) ixrange.rowStart, (int) ixrange.rowEnd,
+                                             (int) ixrange.colStart, (int) ixrange.colEnd,
+                                             subsetResult);
+                        return subsetResult;
+                      }
+                    }
+                catch (IOException e) {
+                  throw new CacheException("SubReading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+                } catch (DMLRuntimeException e) {
+                  e.printStackTrace();
+                }
+
+              }
+              else if( DMLScript.STATISTICS )
+              {
+                if( _data!=null )
+                  CacheStatistics.incrementMemHits();
+              }
+
+              if( DMLScript.STATISTICS ){
+                long t1 = System.nanoTime();
+                CacheStatistics.incrementAcquireRTime(t1-t0);
+              }
+
+              return subsetResult;
+        }
+
+
+
 
 	/**
 	 * Acquires the exclusive "write" lock for a thread that wants to change cache block
@@ -995,8 +1103,23 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return readBlobFromHDFS(fname, mc.getRows(), mc.getCols());
 	}
 
+        protected T subsetBlobFromHDFS(String fname, IndexRange ixrange)
+            throws IOException, DMLRuntimeException
+        {
+          MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+          MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+          return subsetBlobFromHDFS(fname, mc.getRows(), mc.getCols(), ixrange);
+        }
+
 	protected abstract T readBlobFromHDFS(String fname, long rlen, long clen) 
 		throws IOException;
+
+        protected T subsetBlobFromHDFS(String fname, long rlen, long clen, IndexRange ixRange)
+            throws IOException, DMLRuntimeException
+        {
+              return (T) readBlobFromHDFS(fname).sliceOperations((int) ixRange.rowStart, (int) ixRange.rowEnd,
+                                                                 (int) ixRange.colStart, (int) ixRange.colEnd, new MatrixBlock());
+        }
 
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException;

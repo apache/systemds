@@ -120,8 +120,7 @@ train = function(matrix[double] X, matrix[double] Y,
       # the other groups.
       group_beg = ((g-1) * group_batch_size) %% N + 1
       group_end = min(N, group_beg + group_batch_size - 1)
-      X_group_batch = X[group_beg:group_end,]
-      y_group_batch = Y[group_beg:group_end,]
+      nrow_group = group_end - group_beg + 1
 
       # Data structure to store gradients computed in parallel
       dW1_agg = matrix(0, rows=parallel_batches, cols=nrow(W1)*ncol(W1))
@@ -134,12 +133,15 @@ train = function(matrix[double] X, matrix[double] Y,
       db4_agg = matrix(0, rows=parallel_batches, cols=nrow(b4)*ncol(b4))
 
       # Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
+      # mode=REMOTE_SPARK, opt=CONSTRAINED
       parfor (j in 1:parallel_batches, mode=REMOTE_SPARK, opt=CONSTRAINED, resultmerge=REMOTE_SPARK) {
         # Get a mini-batch in this group
-        beg = ((j-1) * batch_size) %% nrow(X_group_batch) + 1
-        end = min(nrow(X_group_batch), beg + batch_size - 1)
-        X_batch = X_group_batch[beg:end,]
-        y_batch = y_group_batch[beg:end,]
+        batch_beg = group_beg + ((j-1) * batch_size) %% nrow_group
+        batch_end = min(N, batch_beg + batch_size - 1)
+        nrow_batch = batch_end - batch_beg + 1
+
+        X_batch = X[batch_beg:batch_end,]
+        y_batch = Y[batch_beg:batch_end,]
 
         # Enable for debugging:
         #print("Epoch: "+e+"\t Group: "+g+"\t j: "+j+"\t nrow(X_batch): "+nrow(X_batch))
@@ -201,7 +203,7 @@ train = function(matrix[double] X, matrix[double] Y,
         # Flatten and store gradients for this parallel execution
         # Note: We multiply by a weighting to allow for proper gradient averaging during the
         # aggregation even with uneven batch sizes.
-        weighting = nrow(X_batch) / nrow(X_group_batch)
+        weighting = nrow_batch / nrow_group
         dW1_agg[j,] = matrix(dW1, rows=1, cols=nrow(W1)*ncol(W1)) * weighting
         dW2_agg[j,] = matrix(dW2, rows=1, cols=nrow(W2)*ncol(W2)) * weighting
         dW3_agg[j,] = matrix(dW3, rows=1, cols=nrow(W3)*ncol(W3)) * weighting
@@ -235,13 +237,18 @@ train = function(matrix[double] X, matrix[double] Y,
       [b3, vb3] = sgd_nesterov::update(b3, db3, lr, mu, vb3)
       [b4, vb4] = sgd_nesterov::update(b4, db4, lr, mu, vb4)
 
+
       # Compute loss & accuracy for training & validation data every 100 iterations.
       if (g %% 10 == 0) {
         # Get a mini-batch in this group
-        beg = ((j-1) * batch_size) %% nrow(X_group_batch) + 1
-        end = min(nrow(X_group_batch), beg + batch_size - 1)
-        X_batch = X_group_batch[beg:end,]
-        y_batch = y_group_batch[beg:end,]
+
+        batch_beg = group_beg + ((j-1) * batch_size) %% nrow_group
+        batch_end = min(N, batch_beg + batch_size - 1)
+        nrow_batch = batch_end - batch_beg + 1
+
+        X_batch = X[batch_beg:batch_end,]
+        y_batch = Y[batch_beg:batch_end,]
+
 
         # Compute training loss & accuracy using final
         probs = predict(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)

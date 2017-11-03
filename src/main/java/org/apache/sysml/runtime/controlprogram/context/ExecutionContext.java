@@ -54,6 +54,7 @@ import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.GPUStatistics;
 
@@ -257,6 +258,28 @@ public class ExecutionContext {
 		}
 		return mb;
 	}
+
+        /**
+         * Subset and pins a matrix variable into memory, update the finegrained statistics and returns the internal matrix block.
+         *
+         * @param varName variable name
+         * @param opcode  extended opcode
+         * @param ixrange index range
+         * @return matrix block
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
+         */
+        public MatrixBlock subsetMatrixInput(String varName, String opcode, IndexRange ixrange) throws DMLRuntimeException {
+          long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+          MatrixBlock mb = subsetMatrixInput(varName, ixrange);
+          if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+            long t2 = System.nanoTime();
+            if(mb.isInSparseFormat())
+              GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, t2-t1);
+            else
+              GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_DENSE_MB, t2-t1);
+          }
+          return mb;
+        }
 	
 	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.
@@ -271,6 +294,21 @@ public class ExecutionContext {
 		MatrixObject mo = getMatrixObject(varName);
 		return mo.acquireRead();
 	}
+
+        /**
+         * Subset and pins a matrix variable into memory and returns the internal matrix block.
+         *
+         * @param varName variable name
+         * @param ixrange index range
+         * @return matrix block
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
+         */
+        private MatrixBlock subsetMatrixInput(String varName, IndexRange ixrange)
+            throws DMLRuntimeException
+        {
+          MatrixObject mo = getMatrixObject(varName);
+          return mo.acquireSubsetRead(ixrange);
+        }
 	
 	public void setMetaData(String varName, long nrows, long ncols) 
 		throws DMLRuntimeException  

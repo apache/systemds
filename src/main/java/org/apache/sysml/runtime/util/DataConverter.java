@@ -167,6 +167,25 @@ public class DataConverter
 		//prop.printMe();
 		return readMatrixFromHDFS(prop);
 	}
+
+        public static MatrixBlock subsetMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen,
+                                                    int brlen, int bclen, double expectedSparsity, FileFormatProperties formatProperties, IndexRange ixrange)
+            throws IOException
+        {
+          ReadProperties prop = new ReadProperties();
+
+          prop.path = dir;
+          prop.inputInfo = inputinfo;
+          prop.rlen = rlen;
+          prop.clen = clen;
+          prop.brlen = brlen;
+          prop.bclen = bclen;
+          prop.expectedSparsity = expectedSparsity;
+          prop.formatProperties = formatProperties;
+
+          //prop.printMe();
+          return subMatrixFromHDFS(prop, ixrange);
+        }
 	
 	/**
 	 * Core method for reading matrices in format textcell, matrixmarket, binarycell, or binaryblock 
@@ -212,6 +231,51 @@ public class DataConverter
 				
 		return ret;
 	}
+
+        /**
+         * Core method for subsetting matrices in format textcell, matrixmarket, binarycell, or binaryblock
+         * from HDFS into main memory. For expected dense matrices we directly copy value- or block-at-a-time
+         * into the target matrix. In contrast, for sparse matrices, we append (column-value)-pairs and do a
+         * final sort if required in order to prevent large reorg overheads and increased memory consumption
+         * in case of unordered inputs.
+         *
+         * DENSE MxN input:
+         *  * best/average/worst: O(M*N)
+         * SPARSE MxN input
+         *  * best (ordered, or binary block w/ clen&lt;=bclen): O(M*N)
+         *  * average (unordered): O(M*N*log(N))
+         *  * worst (descending order per row): O(M * N^2)
+         *
+         * NOTE: providing an exact estimate of 'expected sparsity' can prevent a full copy of the result
+         * matrix block (required for changing sparse-&gt;dense, or vice versa)
+         *
+         * @param prop read properties
+         * @return matrix block
+         * @throws IOException if IOException occurs
+         */
+        public static MatrixBlock subMatrixFromHDFS(ReadProperties prop, IndexRange ixRange)
+            throws IOException
+        {
+          //Timing time = new Timing(true);
+
+          long estnnz = (prop.expectedSparsity <= 0 || prop.rlen <= 0 || prop.clen <= 0) ?
+                        -1 : (long)(prop.expectedSparsity*prop.rlen*prop.clen);
+
+          //core matrix reading
+          MatrixBlock ret = null;
+          try {
+            MatrixReader reader = MatrixReaderFactory.createSubMatrixReader(prop);
+            ret = reader.readSubsetMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.brlen, prop.bclen, estnnz, ixRange);
+          }
+          catch(DMLRuntimeException rex)
+          {
+            throw new IOException(rex);
+          }
+
+          //System.out.println("read matrix ("+prop.rlen+","+prop.clen+","+ret.getNonZeros()+") in "+time.stop());
+
+          return ret;
+        }
 
 	
 	//////////////

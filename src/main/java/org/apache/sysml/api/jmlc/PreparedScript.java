@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
@@ -64,13 +65,15 @@ public class PreparedScript
 	private static final Log LOG = LogFactory.getLog(PreparedScript.class.getName());
 	
 	//input/output specification
-	private HashSet<String> _inVarnames = null;
-	private HashSet<String> _outVarnames = null;
-	private HashMap<String,Data> _inVarReuse = null;
+	private final HashSet<String> _inVarnames;
+	private final HashSet<String> _outVarnames;
+	private final HashMap<String,Data> _inVarReuse;
 	
 	//internal state (reused)
-	private Program _prog = null;
-	private LocalVariableMap _vars = null; 
+	private final Program _prog;
+	private final LocalVariableMap _vars;
+	private final DMLConfig _dmlconf;
+	private final CompilerConfig _cconf;
 	
 	/**
 	 * Meant to be invoked only from Connection.
@@ -78,8 +81,10 @@ public class PreparedScript
 	 * @param prog the DML/PyDML program
 	 * @param inputs input variables to register
 	 * @param outputs output variables to register
+	 * @param dmlconf dml configuration 
+	 * @param cconf compiler configuration
 	 */
-	protected PreparedScript( Program prog, String[] inputs, String[] outputs ) 
+	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) 
 	{
 		_prog = prog;
 		_vars = new LocalVariableMap();
@@ -90,6 +95,14 @@ public class PreparedScript
 		_outVarnames = new HashSet<>();
 		Collections.addAll(_outVarnames, outputs);
 		_inVarReuse = new HashMap<>();
+		
+		//attach registered outputs (for dynamic recompile)
+		_vars.setRegisteredOutputs(_outVarnames);
+		
+		//keep dml and compiler configuration to be set as thread-local config
+		//on execute, which allows different threads creating/executing the script
+		_dmlconf = dmlconf;
+		_cconf = cconf;
 	}
 	
 	/**
@@ -386,11 +399,15 @@ public class PreparedScript
 		//add reused variables
 		_vars.putAll(_inVarReuse);
 		
-		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);	
+		//set thread-local configurations
+		ConfigurationManager.setLocalConfig(_dmlconf);
+		ConfigurationManager.setLocalConfig(_cconf);
 		
-		//core execute runtime program	
-		_prog.execute(ec);  
+		//create and populate execution context
+		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
+		
+		//core execute runtime program
+		_prog.execute(ec);
 		
 		//cleanup unnecessary outputs
 		_vars.removeAllNotIn(_outVarnames);
@@ -402,6 +419,10 @@ public class PreparedScript
 			if( tmpVar != null )
 				rvars.addResult(ovar, tmpVar);
 		}
+		
+		//clear thread-local configurations
+		ConfigurationManager.clearLocalConfigs();
+		
 		return rvars;
 	}
 	

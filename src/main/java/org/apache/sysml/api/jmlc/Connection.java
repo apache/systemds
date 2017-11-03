@@ -95,9 +95,10 @@ import org.apache.wink.json4j.JSONObject;
  * </ul>
  */
 public class Connection implements Closeable
-{		
-	private DMLConfig _dmlconf = null;
-
+{
+	private final DMLConfig _dmlconf;
+	private final CompilerConfig _cconf;
+	
 	/**
 	 * Connection constructor, the starting point for any other JMLC API calls.
 	 * 
@@ -122,14 +123,17 @@ public class Connection implements Closeable
 		cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
 		cconf.set(ConfigType.CODEGEN_ENABLED, false);
-		ConfigurationManager.setLocalConfig(cconf);
+		_cconf = cconf;
 		
 		//disable caching globally 
 		CacheableData.disableCaching();
 		
-		//create thread-local default configuration
+		//create default configuration
 		_dmlconf = new DMLConfig();
+		
+		//set thread-local configurations for compilation
 		ConfigurationManager.setLocalConfig(_dmlconf);
+		ConfigurationManager.setLocalConfig(_cconf);
 	}
 	
 	/**
@@ -143,10 +147,12 @@ public class Connection implements Closeable
 		this();
 		
 		//set optional compiler configurations in current config
-		CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
 		for( ConfigType configType : configs )
-			cconf.set(configType, true);
-		ConfigurationManager.setLocalConfig(cconf);
+			_cconf.set(configType, true);
+		
+		//set thread-local configurations for compilation
+		ConfigurationManager.setLocalConfig(_dmlconf);
+		ConfigurationManager.setLocalConfig(_cconf);
 	}
 	
 	/**
@@ -202,7 +208,7 @@ public class Connection implements Closeable
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.liveVariableAnalysis(prog);			
+			dmlt.liveVariableAnalysis(prog);
 			dmlt.validateParseTree(prog);
 			
 			//hop construct/rewrite
@@ -220,10 +226,6 @@ public class Connection implements Closeable
 			
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
-			
-			//activate thread-local proxy for dynamic recompilation
-			if( ConfigurationManager.isDynamicRecompilation() )
-				JMLCProxy.setActive(outputs);
 		}
 		catch(ParseException pe) {
 			// don't chain ParseException (for cleaner error output)
@@ -232,9 +234,9 @@ public class Connection implements Closeable
 		catch(Exception ex) {
 			throw new DMLException(ex);
 		}
-			
+		
 		//return newly create precompiled script 
-		return new PreparedScript(rtprog, inputs, outputs);
+		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
 	}
 	
 	/**
@@ -243,10 +245,8 @@ public class Connection implements Closeable
 	 */
 	@Override
 	public void close() {
-		//clear thread-local dml / compiler configs
+		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
-		if( ConfigurationManager.isDynamicRecompilation() )
-			JMLCProxy.setActive(null);
 		if( ConfigurationManager.isCodegenEnabled() )
 			SpoofCompiler.cleanupCodeGenerator();
 	}

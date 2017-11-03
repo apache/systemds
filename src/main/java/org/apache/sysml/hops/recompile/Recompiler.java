@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.JMLCProxy;
+import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.DataGenOp;
@@ -105,7 +105,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.JSONHelper;
-import org.apache.sysml.utils.MLContextProxy;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -252,19 +251,17 @@ public class Recompiler
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// remove writes if called through mlcontext or jmlc 
-		if( MLContextProxy.isActive() )
-			newInst = MLContextProxy.performCleanupAfterRecompilation(newInst);
-		else if( JMLCProxy.isActive() )
-			newInst = JMLCProxy.performCleanupAfterRecompilation(newInst);
+		if( vars.getRegisteredOutputs() != null )
+			newInst = JMLCUtils.cleanupRuntimeInstructions(newInst, vars.getRegisteredOutputs());
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ){
 			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
-		    Explain.explainHops(hops, 1));
+			Explain.explainHops(hops, 1));
 		}
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME ){
 			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
-		    Explain.explain(newInst, 1));
+			Explain.explain(newInst, 1));
 		}
 	
 		return newInst;

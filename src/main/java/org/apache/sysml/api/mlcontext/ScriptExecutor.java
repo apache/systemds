@@ -20,6 +20,7 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -230,10 +231,11 @@ public class ScriptExecutor {
 	protected void createAndInitializeExecutionContext() {
 		executionContext = ExecutionContextFactory.createContext(runtimeProgram);
 		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null) {
+		if (symbolTable != null)
 			executionContext.setVariables(symbolTable);
-		}
-
+		//attach registered outputs (for dynamic recompile)
+		executionContext.getVariables().setRegisteredOutputs(
+			new HashSet<String>(script.getOutputVariables()));
 	}
 
 	/**

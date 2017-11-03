@@ -26,6 +26,7 @@ import java.util.HashMap;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -48,7 +49,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	private final static int rows = 107;
 	private final static int cols = 46; //fixed
 	
-	private final static int nRuns = 10;
+	private final static int nRuns = 5;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -59,25 +60,28 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	{
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "predicted_y" }) ); 
 	}
-
 	
 	@Test
-	public void testJMLCMulticlassScoreDense() 
-		throws IOException
-	{
-		//should apply diag_mm rewrite
-		runJMLCMulticlassTest(false);
+	public void testJMLCMulticlassScoreDense() throws IOException {
+		runJMLCMulticlassTest(false, false);
 	}
 	
 	@Test
-	public void testJMLCMulticlassScoreSparse() 
-		throws IOException
-	{
-		//should apply diag_mm rewrite
-		runJMLCMulticlassTest(true);
+	public void testJMLCMulticlassScoreSparse() throws IOException {
+		runJMLCMulticlassTest(true, false);
+	}
+	
+	@Test
+	public void testJMLCMulticlassScoreDenseFlags() throws IOException {
+		runJMLCMulticlassTest(false, true);
+	}
+	
+	@Test
+	public void testJMLCMulticlassScoreSparseFlags() throws IOException {
+		runJMLCMulticlassTest(true, true);
 	}
 
-	private void runJMLCMulticlassTest( boolean sparse ) 
+	private void runJMLCMulticlassTest( boolean sparse, boolean flags ) 
 		throws IOException
 	{	
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -87,7 +91,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		ArrayList<double[][]> Xset = generateInputs(nRuns, rows, cols, sparse?sparsity2:sparsity1); 
 		
 		//run DML via JMLC
-		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( Xset );
+		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( Xset, flags );
 		
 		//run R and compare results to DML result
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -117,7 +121,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		}
 	}
 
-	private static ArrayList<double[][]> execDMLScriptviaJMLC( ArrayList<double[][]> X) 
+	private static ArrayList<double[][]> execDMLScriptviaJMLC(ArrayList<double[][]> X, boolean flags) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -125,8 +129,11 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();
 		
 		//establish connection to SystemML
-		Connection conn = new Connection();
-				
+		Connection conn = !flags ? new Connection():
+			new Connection(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS,
+				ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
+				ConfigType.ALLOW_DYN_RECOMPILATION);
+		
 		try
 		{
 			// For now, JMLC pipeline only allows dml

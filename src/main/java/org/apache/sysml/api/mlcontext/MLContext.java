@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api.mlcontext;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 
@@ -28,7 +27,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.DataExpression;
@@ -39,7 +37,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -589,14 +586,6 @@ public class MLContext {
 				}
 			}
 			throw new MLContextException("getMatrixObject not set for parameter: " + parameterName);
-		}
-
-		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
-			if (executionScript == null || executionScript.getOutputVariables() == null)
-				return instructions;
-
-			Set<String> outputVariableNames = executionScript.getOutputVariables();
-			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
 	}
 

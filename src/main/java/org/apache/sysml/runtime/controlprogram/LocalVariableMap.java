@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -37,12 +38,16 @@ import org.apache.sysml.runtime.instructions.cp.Data;
  */
 public class LocalVariableMap implements Cloneable
 {
-	private static String eol = System.getProperty ("line.separator");
-	private static String ELEMENT_DELIM = org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
-	private static IDSequence _seq = new IDSequence();
+	private static final String eol = System.getProperty ("line.separator");
+	private static final String ELEMENT_DELIM = ProgramConverter.ELEMENT_DELIM;
+	private static final IDSequence _seq = new IDSequence();
 	
-	private HashMap <String, Data> localMap = null;
+	//variable map data and id
+	private final HashMap<String, Data> localMap;
 	private final long localID;
+	
+	//optional set of registered outputs
+	private HashSet<String> outputs = null;
 	
 	public LocalVariableMap() {
 		localMap = new HashMap<>();
@@ -104,6 +109,14 @@ public class LocalVariableMap implements Cloneable
 	public boolean hasReferences( Data d ) {
 		return localMap.containsValue(d);
 	}
+	
+	public void setRegisteredOutputs(HashSet<String> outputs) {
+		this.outputs = outputs;
+	}
+	
+	public HashSet<String> getRegisteredOutputs() {
+		return outputs;
+	}
 
 	public String serialize() throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
@@ -115,7 +128,7 @@ public class LocalVariableMap implements Cloneable
 				.serializeDataObject(e.getKey(), e.getValue()));
 			count++;
 		}
-		return sb.toString();		
+		return sb.toString();
 	}
 
 	public static LocalVariableMap deserialize(String varStr) 
@@ -128,7 +141,7 @@ public class LocalVariableMap implements Cloneable
 			Object[] tmp2 = ProgramConverter.parseDataObject (tmp);
 			vars.put((String) tmp2 [0], (Data) tmp2 [1]);
 		}
-		return vars;		
+		return vars;
 	}
 
 	@Override

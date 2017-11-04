@@ -19,23 +19,22 @@
 package org.apache.sysml.udf.lib;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
-import org.apache.sysml.runtime.matrix.data.IJV;
+import org.apache.sysml.runtime.codegen.CodegenUtils;
+import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysml.runtime.compress.utils.IntArrayList;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Matrix.ValueType;
+
 
 /**
  * Performs following operation:
@@ -73,9 +72,7 @@ public class RowClassMeet extends PackageFunction {
 
 	private static final long serialVersionUID = 1L;
 	private Matrix CMat, NMat;
-	private MatrixBlock A, B, C, N;
-	private int nr, nc;
-
+	
 	@Override
 	public int getNumFunctionOutputs() {
 		return 2;
@@ -83,124 +80,75 @@ public class RowClassMeet extends PackageFunction {
 
 	@Override
 	public FunctionParameter getFunctionOutput(int pos) {
-		if(pos == 0)
-			return CMat;
-		else if(pos == 1)
-			return NMat;
-		else
-			throw new RuntimeException("RowClassMeet produces only one output");
-	}
-	
-	
-	public class ClassLabels {
-		public double aVal;
-		public double bVal;
-		public ClassLabels(double aVal, double bVal) {
-			this.aVal = aVal;
-			this.bVal = bVal;
+		switch( pos ) {
+			case 0: return CMat;
+			case 1: return NMat;
+			default:
+				throw new RuntimeException("RowClassMeet produces only one output");
 		}
-	}
-	
-	public class ClassLabelComparator implements Comparator<ClassLabels> {
-		Integer tmp1, tmp2;
-		@Override
-		public int compare(ClassLabels o1, ClassLabels o2) {
-			if(o1.aVal != o2.aVal) {
-				tmp1 = (int) o1.aVal;
-				tmp2 = (int) o2.aVal;
-			}
-			else {
-				tmp1 = (int) o1.bVal;
-				tmp2 = (int) o2.bVal;
-			}
-			return tmp1.compareTo(tmp2);
-		}
-	}
-	
-	double [] getRow(MatrixBlock B, double [] bRow, int i) {
-		if(B.getNumRows() == 1) 
-			i = 0;
-		Arrays.fill(bRow, 0);
-		if(B.isInSparseFormat()) {
-			Iterator<IJV> iter = B.getSparseBlockIterator(i, i+1);
-			while(iter.hasNext()) {
-				IJV ijv = iter.next();
-				bRow[ijv.getJ()] = ijv.getV();
-			}
-		}
-		else {
-			double [] denseBlk = B.getDenseBlock();
-			if(denseBlk != null)
-				System.arraycopy(denseBlk, i*B.getNumColumns(), bRow, 0, B.getNumColumns());
-		}
-		return bRow;
 	}
 	
 	@Override
 	public void execute() {
-		try {
-			A = ((Matrix) getFunctionInput(0)).getMatrixObject().acquireRead();
-			B = ((Matrix) getFunctionInput(1)).getMatrixObject().acquireRead();
-			nr = Math.max(A.getNumRows(), B.getNumRows());
-			nc = Math.max(A.getNumColumns(), B.getNumColumns());
+		try 
+		{
+			MatrixBlock A = ((Matrix) getFunctionInput(0)).getMatrixObject().acquireRead();
+			MatrixBlock B = ((Matrix) getFunctionInput(1)).getMatrixObject().acquireRead();
+			int nr = Math.max(A.getNumRows(), B.getNumRows());
+			int nc = Math.max(A.getNumColumns(), B.getNumColumns());
+			MatrixBlock C = new MatrixBlock(nr, nc, false).allocateBlock();
+			MatrixBlock N = new MatrixBlock(nr, nc, false).allocateBlock();
+			double[] dC = C.getDenseBlock();
+			double[] dN = N.getDenseBlock();
+			//wrap both A and B into side inputs for efficient sparse access
+			SideInput sB = CodegenUtils.createSideInput(B);
+			boolean mv = (B.getNumRows() == 1);
+			int numCols = Math.min(A.getNumColumns(), B.getNumColumns());
 			
-			double [] bRow = new double[B.getNumColumns()];
-			CMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
-			C = new MatrixBlock(nr, nc, false);
-			C.allocateDenseBlock();
-			NMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
-			N = new MatrixBlock(nr, nc, false);
-			N.allocateDenseBlock();
+			HashMap<ClassLabel, IntArrayList> classLabelMapping = new HashMap<>();
 			
-			double [] cBlk = C.getDenseBlock();
-			double [] nBlk = N.getDenseBlock();
-			
-			if(B.getNumRows() == 1)
-				getRow(B, bRow, 0);
-			
-			for(int i = 0; i < A.getNumRows(); i++) {
-				if(B.getNumRows() != 1)
-					getRow(B, bRow, i);
-				
-				// Create class labels
-				TreeMap<ClassLabels, ArrayList<Integer>> classLabelMapping = new TreeMap<>(new ClassLabelComparator());
-				if(A.isInSparseFormat()) {
-					Iterator<IJV> iter = A.getSparseBlockIterator(i, i+1);
-					while(iter.hasNext()) {
-						IJV ijv = iter.next();
-						int j = ijv.getJ();
-						double aVal = ijv.getV();
-						if(aVal != 0 && bRow[j] != 0) {
-							ClassLabels key = new ClassLabels(aVal, bRow[j]);
+			for(int i=0, ai=0; i < A.getNumRows(); i++, ai+=A.getNumColumns()) {
+				classLabelMapping.clear(); sB.reset();
+				if( A.isInSparseFormat() ) {
+					if(A.getSparseBlock()==null || A.getSparseBlock().isEmpty(i))
+						continue;
+					int alen = A.getSparseBlock().size(i);
+					int apos = A.getSparseBlock().pos(i);
+					int[] aix = A.getSparseBlock().indexes(i);
+					double[] avals = A.getSparseBlock().values(i);
+					for(int k=apos; k<apos+alen; k++) {
+						if( aix[k] >= numCols ) break;
+						int bval = (int)sB.getValue(mv?0:i, aix[k]);
+						if( bval != 0 ) {
+							ClassLabel key = new ClassLabel((int)avals[k], bval);
 							if(!classLabelMapping.containsKey(key))
-								classLabelMapping.put(key, new ArrayList<Integer>());
-							classLabelMapping.get(key).add(j);
+								classLabelMapping.put(key, new IntArrayList());
+							classLabelMapping.get(key).appendValue(aix[k]);
 						}
 					}
 				}
 				else {
 					double [] denseBlk = A.getDenseBlock();
-					if(denseBlk != null) {
-						int offset = i*A.getNumColumns();
-						for(int j = 0; j < A.getNumColumns(); j++) {
-							double aVal = denseBlk[offset + j];
-							if(aVal != 0 && bRow[j] != 0) {
-								ClassLabels key = new ClassLabels(aVal, bRow[j]);
-								if(!classLabelMapping.containsKey(key))
-									classLabelMapping.put(key, new ArrayList<Integer>());
-								classLabelMapping.get(key).add(j);
-							}
+					if(denseBlk == null) break;
+					for(int j = 0; j < numCols; j++) {
+						int aVal = (int) denseBlk[ai+j];
+						int bVal = (int) sB.getValue(mv?0:i, j);
+						if(aVal != 0 && bVal != 0) {
+							ClassLabel key = new ClassLabel(aVal, bVal);
+							if(!classLabelMapping.containsKey(key))
+								classLabelMapping.put(key, new IntArrayList());
+							classLabelMapping.get(key).appendValue(j);
 						}
 					}
 				}
 				
-				
 				int labelID = 1;
-				for(Entry<ClassLabels, ArrayList<Integer>> entry : classLabelMapping.entrySet()) {
-					double nVal = entry.getValue().size();
-					for(Integer j : entry.getValue()) {
-						nBlk[i*nc + j] = nVal;
-						cBlk[i*nc + j] = labelID;
+				for(Entry<ClassLabel, IntArrayList> entry : classLabelMapping.entrySet()) {
+					int nVal = entry.getValue().size();
+					int[] list = entry.getValue().extractValues();
+					for(int k=0, off=i*nc; k<nVal; k++) {
+						dN[off+list[k]] = nVal;
+						dC[off+list[k]] = labelID;
 					}
 					labelID++;
 				}
@@ -208,23 +156,37 @@ public class RowClassMeet extends PackageFunction {
 			
 			((Matrix) getFunctionInput(0)).getMatrixObject().release();
 			((Matrix) getFunctionInput(1)).getMatrixObject().release();
-		} catch (CacheException e) {
-			throw new RuntimeException("Error while executing RowClassMeet", e);
-		} 
 		
-		try {
-			C.recomputeNonZeros();
-			C.examSparsity();
+			//prepare outputs 
+			C.recomputeNonZeros(); C.examSparsity();
+			CMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
 			CMat.setMatrixDoubleArray(C, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			N.recomputeNonZeros();
-			N.examSparsity();
+			N.recomputeNonZeros(); N.examSparsity();
+			NMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
 			NMat.setMatrixDoubleArray(N, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException("Error while executing RowClassMeet", e);
-		} catch (IOException e) {
+		} 
+		catch (DMLRuntimeException | IOException e) {
 			throw new RuntimeException("Error while executing RowClassMeet", e);
 		}
 	}
 	
-	
+	private static class ClassLabel {
+		public int aVal;
+		public int bVal;
+		public ClassLabel(int aVal, int bVal) {
+			this.aVal = aVal;
+			this.bVal = bVal;
+		}
+		@Override
+		public int hashCode() {
+			return UtilFunctions.intHashCode(aVal, bVal);
+		}
+		@Override
+		public boolean equals(Object o) {
+			if( !(o instanceof ClassLabel) )
+				return false;
+			ClassLabel that = (ClassLabel) o;
+			return aVal == that.aVal && bVal == that.bVal;
+		}
+	}
 }

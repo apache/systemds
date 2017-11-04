@@ -249,6 +249,10 @@ public abstract class SpoofOperator implements Serializable
 		public double[] values(int r) {
 			return ddat;
 		}
+		public double getValue(int r, int c) {
+			return SpoofOperator.getValue(this, clen, r, c);
+		}
+		public void reset() {}
 	}
 	
 	public static class SideInputSparseRow extends SideInput {
@@ -314,6 +318,10 @@ public abstract class SpoofOperator implements Serializable
 			//return current value or zero
 			return (currColPos < currLen && indexes[currColPos]==colIndex) ?
 				values[currColPos] : 0;
+		}
+		@Override
+		public void reset() {
+			currColPos = 0;
 		}
 	}
 }

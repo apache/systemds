@@ -46,7 +46,10 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysml.runtime.codegen.SpoofOperator.SideInputSparseCell;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.utils.Statistics;
 import org.codehaus.janino.SimpleCompiler;
@@ -150,6 +153,13 @@ public class CodegenUtils
 		}
 		
 		return ret;
+	}
+	
+	public static SideInput createSideInput(MatrixBlock in) {
+		SideInput ret = (in.isInSparseFormat() || !in.isAllocated()) ?
+			new SideInput(null, in, in.getNumColumns()) :
+			new SideInput(in.getDenseBlock(), null, in.getNumColumns());
+		return (ret.mdat != null) ? new SideInputSparseCell(ret) : ret;
 	}
 	
 	////////////////////////////

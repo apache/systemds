@@ -181,12 +181,8 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity )
 	{
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();
-		
 		for( int i=0; i<num; i++ )
-		{
-			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsity, System.nanoTime());
-			ret.add(X);
-		}
+			ret.add(getRandomMatrix(rows, cols, -1, 1, sparsity, i));
 		
 		return ret;
 	}

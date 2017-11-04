@@ -46,12 +46,8 @@ public class BuildLiteJarTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testJMLCWriteMatrix() throws Exception {
+	public void testJMLCWriteReadMatrix() throws Exception {
 		BuildLiteExecution.jmlcWriteMatrix();
-	}
-	
-	@Test
-	public void testJMLCReadMatrix() throws Exception {
 		BuildLiteExecution.jmlcReadMatrix();
 	}
 	

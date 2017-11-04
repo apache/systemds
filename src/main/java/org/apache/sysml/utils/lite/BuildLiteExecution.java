@@ -46,8 +46,9 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class BuildLiteExecution {
 
-	protected static Logger log = Logger.getLogger(BuildLiteExecution.class);
-
+	private static Logger log = Logger.getLogger(BuildLiteExecution.class);
+	private static final String ROOT = "functions/jmlc/temp/";
+	
 	public static void main(String[] args) throws Exception {
 
 		BasicConfigurator.configure();
@@ -94,11 +95,11 @@ public class BuildLiteExecution {
 		"write(predicted_y, \"./tmp\", format=\"text\");\n";
 		/* @formatter:on */
 
-		File file = new File("temp/scoring-example.dml");
+		File file = new File(ROOT+"scoring-example.dml");
 		FileUtils.writeStringToFile(file, scriptString);
 
 		Connection conn = getConfiguredConnection();
-		String dml = conn.readScript("temp/scoring-example.dml");
+		String dml = conn.readScript(ROOT+"scoring-example.dml");
 		PreparedScript script = conn.prepareScript(dml, new String[] { "W", "X" }, new String[] { "predicted_y" },
 				false);
 
@@ -158,17 +159,17 @@ public class BuildLiteExecution {
 	public static void jmlcWriteMatrix() throws Exception {
 		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript(
-				"x=matrix('1 2 3 4',rows=2,cols=2);write(x,'temp/x.csv',format='csv');", new String[] {},
+				"x=matrix('1 2 3 4',rows=2,cols=2);write(x,'"+ROOT+"x.csv',format='csv');", new String[] {},
 				new String[] {}, false);
 		script.executeScript();
 
 		/* @formatter:off */
 		String scriptString =
 		"m = matrix('1 2 3 0 0 0 7 8 9 0 0 0', rows=4, cols=3)\n" +
-		"write(m, 'temp/m.txt', format='text')\n" +
-		"write(m, 'temp/m.mm', format='mm')\n" +
-		"write(m, 'temp/m.csv', format='csv')\n" +
-		"write(m, 'temp/m.binary', format='binary')\n";
+		"write(m, '"+ROOT+"m.txt', format='text')\n" +
+		"write(m, '"+ROOT+"m.mm', format='mm')\n" +
+		"write(m, '"+ROOT+"m.csv', format='csv')\n" +
+		"write(m, '"+ROOT+"m.binary', format='binary')\n";
 		/* @formatter:on */
 
 		script = conn.prepareScript(scriptString, new String[] {}, new String[] {}, false);
@@ -179,12 +180,12 @@ public class BuildLiteExecution {
 
 	public static void jmlcReadMatrix() throws Exception {
 		Connection conn = getConfiguredConnection();
-		PreparedScript script = conn.prepareScript("x=read('temp/x.csv',format='csv');y=x*2;print(toString(y));",
+		PreparedScript script = conn.prepareScript("x=read('"+ROOT+"x.csv',format='csv');y=x*2;print(toString(y));",
 				new String[] {}, new String[] {}, false);
 		script.executeScript();
 
 		/* @formatter:off */
-		String scriptString = "m = read('temp/m.csv',format='csv')\n" +
+		String scriptString = "m = read('"+ROOT+"m.csv',format='csv')\n" +
 		"print(toString(m))\n" +
 		"print('min:' + min(m))\n" +
 		"print('max:' + max(m))\n" +
@@ -201,9 +202,9 @@ public class BuildLiteExecution {
 		// note: the following can be set to work using the following setting
 		// in the Connection class: cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, false);
 		
-		// "m2=read('temp/m.txt', format='text')\n" +
-		// "m3=read('temp/m.mm', format='mm')\n" +
-		// "m4=read('temp/m.binary', format='binary')\n" +
+		// "m2=read('"+ROOT+"m.txt', format='text')\n" +
+		// "m3=read('"+ROOT+"m.mm', format='mm')\n" +
+		// "m4=read('"+ROOT+"m.binary', format='binary')\n" +
 		// "print('m2:'+toString(m2))\n" +
 		// "print('m3:'+toString(m3))\n" +
 		// "print('m4:'+toString(m4))\n";

@@ -131,7 +131,7 @@ public class Connection implements Closeable
 		//create default configuration
 		_dmlconf = new DMLConfig();
 		
-		//set thread-local configurations for compilation
+		//set thread-local configurations for compilation and read
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
 	}
@@ -150,7 +150,7 @@ public class Connection implements Closeable
 		for( ConfigType configType : configs )
 			_cconf.set(configType, true);
 		
-		//set thread-local configurations for compilation
+		//set thread-local configurations for compilation and read
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
 	}
@@ -186,7 +186,7 @@ public class Connection implements Closeable
 		throws DMLException 
 	{
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
-
+		
 		//check for valid names of passed arguments
 		String[] invalidArgs = args.keySet().stream()
 			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
@@ -202,6 +202,10 @@ public class Connection implements Closeable
 		//simplified compilation chain
 		Program rtprog = null;
 		try {
+			//set thread-local configurations for compilation
+			ConfigurationManager.setLocalConfig(_dmlconf);
+			ConfigurationManager.setLocalConfig(_cconf);
+			
 			//parsing
 			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);

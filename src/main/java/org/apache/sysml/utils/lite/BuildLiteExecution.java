@@ -330,7 +330,7 @@ public class BuildLiteExecution {
 		m.put("$confusion", "temp/2.csv");
 		m.put("$scores", "temp/3.csv");
 
-		PreparedScript l2svmPredict = conn.prepareScript(s, m, new String[] { "X", "y", "w", "fmt" },
+		PreparedScript l2svmPredict = conn.prepareScript(s, m, new String[] { "X", "Y", "w", "fmt" },
 				new String[] { "scores", "confusion_mat" }, false);
 
 		double[][] testData = new double[150][3];
@@ -349,7 +349,7 @@ public class BuildLiteExecution {
 			double[] row = new double[] { one };
 			testLabels[i] = row;
 		}
-		l2svmPredict.setMatrix("y", testLabels);
+		l2svmPredict.setMatrix("Y", testLabels);
 
 		l2svmPredict.setMatrix("w", model);
 

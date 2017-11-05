@@ -23,7 +23,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLException;
@@ -74,6 +76,21 @@ public class PreparedScript
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
+	
+	private PreparedScript(PreparedScript that) {
+		//shallow copy, except for a separate symbol table
+		//and related meta data of reused inputs
+		_prog = that._prog;
+		_vars = new LocalVariableMap();
+		for(Entry<String, Data> e : that._vars.entrySet())
+			_vars.put(e.getKey(), e.getValue());
+		_vars.setRegisteredOutputs(that._outVarnames);
+		_inVarnames = that._inVarnames;
+		_outVarnames = that._outVarnames;
+		_inVarReuse = new HashMap<>(that._inVarReuse);
+		_dmlconf = that._dmlconf;
+		_cconf = that._cconf;
+	}
 	
 	/**
 	 * Meant to be invoked only from Connection.
@@ -480,5 +497,25 @@ public class PreparedScript
 				LOG.warn("Failed to enable function recompile for recursive '"+fkey+"'.");
 			}
 		}
+	}
+	
+	/**
+	 * Creates a cloned instance of the prepared script, which
+	 * allows for concurrent execution without side effects.
+	 * 
+	 * @param deep indicator if a deep copy needs to be created;
+	 *   if false, only a shallow (i.e., by reference) copy of the 
+	 *   program and read-only meta data is created. 
+	 * @return an equivalent prepared script
+	 */
+	public PreparedScript clone(boolean deep) {
+		if( deep )
+			throw new NotImplementedException();
+		return new PreparedScript(this);
+	}
+	
+	@Override
+	public Object clone() {
+		return clone(true);
 	}
 }

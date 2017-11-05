@@ -161,6 +161,21 @@ public class Connection implements Closeable
 	 * @param script string representing the DML or PyDML script
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register
+	 * @return PreparedScript object representing the precompiled script
+	 * @throws DMLException if DMLException occurs
+	 */
+	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs) 
+		throws DMLException 
+	{
+		return prepareScript(script, inputs, outputs, false);
+	}
+	
+	/**
+	 * Prepares (precompiles) a script and registers input and output variables.
+	 * 
+	 * @param script string representing the DML or PyDML script
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
 	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
 	 * @throws DMLException if DMLException occurs

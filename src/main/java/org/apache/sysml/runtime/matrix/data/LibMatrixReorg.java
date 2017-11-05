@@ -445,21 +445,25 @@ public class LibMatrixReorg
 		
 		//check for same dimensions
 		if( rlen==rows && clen == cols ) {
-			out.copy(in); //incl dims, nnz
+			//copy incl dims, nnz
+			if( SHALLOW_COPY_REORG )
+				out.copyShallow(in);
+			else
+				out.copy(in); 
 			return out;
 		}
 	
 		//determine output representation
-	    out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
+		out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
 		
 		//set output dimensions
 		out.rlen = rows;
 		out.clen = cols;
 		out.nonZeros = in.nonZeros;
 		
-		//core reshape (sparse or dense)	
+		//core reshape (sparse or dense)
 		if(!in.sparse && !out.sparse)
-			reshapeDense(in, out, rows, cols, rowwise);		
+			reshapeDense(in, out, rows, cols, rowwise);
 		else if(in.sparse && out.sparse)
 			reshapeSparse(in, out, rows, cols, rowwise);
 		else if(in.sparse)

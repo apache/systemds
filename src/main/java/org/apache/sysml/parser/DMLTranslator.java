@@ -613,7 +613,7 @@ public class DMLTranslator
 			ForProgramBlock rtpb = null;
 			IterablePredicate iterPred = fsb.getIterPredicate();
 			
-			if( sb instanceof ParForStatementBlock ) {
+			if( sb instanceof ParForStatementBlock && ConfigurationManager.isParallelParFor() ) {
 				sbName = "ParForStatementBlock";
 				rtpb = new ParForProgramBlock(prog, iterPred.getIterVar().getName(),
 					iterPred.getParForParams(), ((ParForStatementBlock)sb).getResultVariables());

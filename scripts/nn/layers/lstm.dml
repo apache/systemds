@@ -206,7 +206,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
     df_raw = f * (1-f) * df
     do_raw = o * (1-o) * do
     dg_raw = (1-g^2) * dg
-    difog_raw = cbind(di_raw, cbind(df_raw, cbind(do_raw, dg_raw)))  # shape (N, 4M)
+    difog_raw = cbind(di_raw, df_raw, do_raw, dg_raw)  # shape (N, 4M)
 
     dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
     db = db + colSums(difog_raw)  # shape (1, 4M)

@@ -29,28 +29,31 @@ import org.apache.sysml.parser.Expression.ValueType;
  * Lop to perform an operation on a variable number of operands.
  * 
  */
-public class MultipleCP extends Lop {
+public class Nary extends Lop {
 
 	public enum OperationType {
-		PRINTF
+		PRINTF, CBIND, RBIND,
 	}
+	
+	private OperationType operationType;
 
-	OperationType operationType;
-
-	public MultipleCP(OperationType operationType, DataType dt, ValueType vt, Lop... inputLops) {
-		super(Lop.Type.MULTIPLE_CP, dt, vt);
+	public Nary(OperationType operationType, DataType dt, ValueType vt, Lop[] inputLops, ExecType et) 
+		throws LopsException 
+	{
+		super(Lop.Type.Nary, dt, vt);
 		this.operationType = operationType;
 		for (Lop inputLop : inputLops) {
 			addInput(inputLop);
 			inputLop.addOutput(this);
 		}
-
-		boolean breaksAlignment = false; // ?
-		boolean aligner = false; // ?
-		boolean definesMRJob = false; // ?
-		lps.addCompatibility(JobType.INVALID); // ?
-		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner,
-				definesMRJob); // ?
+		
+		if( et == ExecType.CP || et == ExecType.SPARK ) {
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties(inputs, et, ExecLocation.ControlProgram, false, false, false);
+		}
+		else {
+			throw new LopsException("Unsupported exec type for nary lop:" + et.name());
+		}
 	}
 
 	@Override
@@ -88,13 +91,9 @@ public class MultipleCP extends Lop {
 	 * generates the instruction string:<br>
 	 * <code>CP&deg;printf&deg;hello %s&middot;SCALAR&middot;STRING&middot;true&deg;world&middot;SCALAR&middot;STRING&middot;true&deg;_Var1&middot;SCALAR&middot;STRING</code><br>
 	 * 
-	 * Note: This generated instruction string is parsed in the
-	 * parseInstruction() method of BuiltinMultipleCPInstruction, which parses
-	 * the instruction string to generate an instruction object that is a
-	 * subclass of BuiltinMultipleCPInstruction.
 	 */
 	@Override
-	public String getInstructions(String output) throws LopsException {
+	public String getInstructions(String[] inputs, String output) throws LopsException {
 		String opString = getOpcode();
 
 		StringBuilder sb = new StringBuilder();
@@ -105,8 +104,8 @@ public class MultipleCP extends Lop {
 		sb.append(opString);
 		sb.append(OPERAND_DELIMITOR);
 
-		for (Lop input : inputs) {
-			sb.append(input.prepScalarInputOperand(getExecType()));
+		for( int i=0; i<inputs.length; i++ ) {
+			sb.append(getInputs().get(i).prepInputOperand(inputs[i]));
 			sb.append(OPERAND_DELIMITOR);
 		}
 
@@ -114,15 +113,16 @@ public class MultipleCP extends Lop {
 
 		return sb.toString();
 	}
-
+	
 	private String getOpcode() throws LopsException {
 		switch (operationType) {
-		case PRINTF:
-			return OperationType.PRINTF.toString().toLowerCase();
-		default:
-			throw new UnsupportedOperationException(
-					"MultipleCP operation type (" + operationType + ") is not defined.");
+			case PRINTF:
+			case CBIND:
+			case RBIND:
+				return operationType.name().toLowerCase();
+			default:
+				throw new UnsupportedOperationException(
+					"Nary operation type (" + operationType + ") is not defined.");
 		}
 	}
-
 }

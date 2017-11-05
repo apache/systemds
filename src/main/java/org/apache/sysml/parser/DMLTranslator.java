@@ -43,7 +43,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
-import org.apache.sysml.hops.Hop.MultiInputOp;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -53,7 +53,7 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
-import org.apache.sysml.hops.MultipleOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -1185,10 +1185,10 @@ public class DMLTranslator
 		HashMap<String, Hop> ids = new HashMap<>();
 		ArrayList<Hop> output = new ArrayList<>();
 
-		VariableSet liveIn 	= sb.liveIn();
+		VariableSet liveIn  = sb.liveIn();
 		VariableSet liveOut = sb.liveOut();
-		VariableSet	updated = sb._updated;
-		VariableSet gen 	= sb._gen;
+		VariableSet updated = sb._updated;
+		VariableSet gen     = sb._gen;
 		VariableSet updatedLiveOut = new VariableSet();
 
 		// handle liveout variables that are updated --> target identifiers for Assignment
@@ -1317,8 +1317,8 @@ public class DMLTranslator
 							inHops[j] = inHop;
 						}
 						target.setValueType(ValueType.STRING);
-						Hop printfHop = new MultipleOp(target.getName(), target.getDataType(), target.getValueType(),
-								MultiInputOp.PRINTF, inHops);
+						Hop printfHop = new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
+								OpOpN.PRINTF, inHops);
 						output.add(printfHop);
 					}
 
@@ -2663,13 +2663,13 @@ public class DMLTranslator
 			break;
 			
 		case CBIND:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
-										Hop.OpOp2.CBIND, expr, expr2);
-			break;
-		
 		case RBIND:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
-										Hop.OpOp2.RBIND, expr, expr2);
+			OpOp2 appendOp1 = (source.getOpCode()==BuiltinFunctionOp.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;
+			OpOpN appendOp2 = (source.getOpCode()==BuiltinFunctionOp.CBIND) ? OpOpN.CBIND : OpOpN.RBIND;
+			currBuiltinOp = (source.getAllExpr().length == 2) ?
+					new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp1, expr, expr2) :
+					new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp2,
+							processAllExpressions(source.getAllExpr(), hops));
 			break;
 		
 		case DIAG:
@@ -3096,6 +3096,13 @@ public class DMLTranslator
 		}
 		currBuiltinOp.setParseInfo(source);
 		return currBuiltinOp;
+	}
+	
+	private Hop[] processAllExpressions(Expression[] expr, HashMap<String, Hop> hops) throws ParseException {
+		Hop[] ret = new Hop[expr.length];
+		for(int i=0; i<expr.length; i++)
+			ret[i] = processExpression(expr[i], null, hops);
+		return ret;
 	}
 	
 	private static void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {

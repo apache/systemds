@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.instructions.spark.AppendRSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BinUaggChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinBinarySPInstruction;
+import org.apache.sysml.runtime.instructions.spark.BuiltinNarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
@@ -243,6 +244,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);
 		String2SPInstructionType.put( "gappend", SPINSTRUCTION_TYPE.GAppend);
 		String2SPInstructionType.put( "galignedappend", SPINSTRUCTION_TYPE.GAlignedAppend);
+		String2SPInstructionType.put( "cbind", SPINSTRUCTION_TYPE.BuiltinNary);
+		String2SPInstructionType.put( "rbind", SPINSTRUCTION_TYPE.BuiltinNary);
 		
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPINSTRUCTION_TYPE.Rand);
@@ -399,7 +402,10 @@ public class SPInstructionParser extends InstructionParser
 				
 			case BuiltinUnary:
 				return BuiltinUnarySPInstruction.parseInstruction(str);
-				
+			
+			case BuiltinNary:
+				return BuiltinNarySPInstruction.parseInstruction(str);
+			
 			case ParameterizedBuiltin:
 				return ParameterizedBuiltinSPInstruction.parseInstruction(str);
 				

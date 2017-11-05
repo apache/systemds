@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.lops.MultipleCP;
+import org.apache.sysml.lops.Nary;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -36,16 +36,15 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
  * string.
  *
  */
-public class ScalarBuiltinMultipleCPInstruction extends BuiltinMultipleCPInstruction {
+public class ScalarBuiltinNaryCPInstruction extends BuiltinNary {
 
-	protected ScalarBuiltinMultipleCPInstruction(Operator op, String opcode, String istr, CPOperand output,
-			CPOperand... inputs) {
+	protected ScalarBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand[] inputs) {
 		super(op, opcode, istr, output, inputs);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		if (MultipleCP.OperationType.PRINTF.toString().equalsIgnoreCase(getOpcode())) {
+		if (Nary.OperationType.PRINTF.toString().equalsIgnoreCase(getOpcode())) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
 				ScalarObject so = ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral());

@@ -1383,14 +1383,16 @@ public class Dag<N extends Lop>
 						inputs[count++] = in.getOutputParameters().getLabel();
 					count = 0;
 					for( Lop out : node.getOutputs() )
-					{
 						outputs[count++] = out.getOutputParameters().getLabel();
-					}
-					
 					inst_string = node.getInstructions(inputs, outputs);
 				}
-				else if (node.getType() == Lop.Type.MULTIPLE_CP) { // ie, MultipleCP class
-					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
+				else if (node.getType() == Lop.Type.Nary) {
+					String[] inputs = new String[node.getInputs().size()];
+					int count = 0;
+					for( Lop in : node.getInputs() )
+						inputs[count++] = in.getOutputParameters().getLabel();
+					inst_string = node.getInstructions(inputs, 
+						node.getOutputParameters().getLabel());
 				}
 				else {
 					if ( node.getInputs().isEmpty() ) {

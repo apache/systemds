@@ -19,29 +19,28 @@
 
 package org.apache.sysml.hops;
 
-import java.util.ArrayList;
-
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.MultipleCP;
+import org.apache.sysml.lops.Nary;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
 /**
- * The MultipleOp Hop allows for a variable number of operands. Functionality
+ * The NaryOp Hop allows for a variable number of operands. Functionality
  * such as 'printf' (overloaded into the existing print function) is an example
  * of an operation that potentially takes a variable number of operands.
  *
  */
-public class MultipleOp extends Hop {
-	protected MultiInputOp _op = null;
+public class NaryOp extends Hop {
+	protected OpOpN _op = null;
 
-	protected MultipleOp() {
+	protected NaryOp() {
 	}
 
 	/**
-	 * MultipleOp constructor.
+	 * NaryOp constructor.
 	 * 
 	 * @param name
 	 *            the target name, typically set by the DMLTranslator when
@@ -57,10 +56,10 @@ public class MultipleOp extends Hop {
 	 * @throws HopsException
 	 *             thrown if a HopsException occurs
 	 */
-	public MultipleOp(String name, DataType dataType, ValueType valueType,
-			MultiInputOp multipleOperandOperation, Hop... inputs) throws HopsException {
+	public NaryOp(String name, DataType dataType, ValueType valueType,
+			OpOpN op, Hop... inputs) throws HopsException {
 		super(name, dataType, valueType);
-		_op = multipleOperandOperation;
+		_op = op;
 
 		for (int i = 0; i < inputs.length; i++) {
 			getInput().add(i, inputs[i]);
@@ -72,7 +71,7 @@ public class MultipleOp extends Hop {
 	@Override
 	public void checkArity() throws HopsException {}
 
-	public MultiInputOp getOp() {
+	public OpOpN getOp() {
 		return _op;
 	}
 
@@ -96,32 +95,33 @@ public class MultipleOp extends Hop {
 			return getLops();
 
 		try {
-			ArrayList<Hop> inHops = getInput();
-			Lop[] inLops = new Lop[inHops.size()];
-			for (int i = 0; i < inHops.size(); i++) {
-				Hop inHop = inHops.get(i);
-				Lop inLop = inHop.constructLops();
-				inLops[i] = inLop;
-			}
-
-			MultipleCP.OperationType opType = MultipleOperandOperationHopTypeToLopType.get(_op);
-			if (opType == null) {
-				throw new HopsException("Unknown MultipleCP Lop operation type for "
-						+ "MultipleOperandOperation Hop type '" + _op + "'");
-			}
-
-			MultipleCP multipleCPLop = new MultipleCP(opType, getDataType(), getValueType(), inLops);
+			Lop[] inLops = new Lop[getInput().size()];
+			for (int i = 0; i < getInput().size(); i++)
+				inLops[i] = getInput().get(i).constructLops();
+			
+			Nary.OperationType opType = HopsOpOpNLops.get(_op);
+			if (opType == null)
+				throw new HopsException("Unknown Nary Lop type for '"+_op+"'");
+			
+			ExecType et = optFindExecType();
+			Nary multipleCPLop = new Nary(opType, getDataType(), getValueType(), inLops, et);
 			setOutputDimensions(multipleCPLop);
 			setLineNumbers(multipleCPLop);
 			setLops(multipleCPLop);
-		} catch (Exception e) {
-			throw new HopsException(this.printErrorLocation() + "error constructing Lops for MultipleOp Hop -- \n ", e);
+		} 
+		catch (Exception e) {
+			throw new HopsException(this.printErrorLocation() + "error constructing Lops for NaryOp -- \n ", e);
 		}
 
 		// add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
 
 		return getLops();
+	}
+	
+	@Override
+	public boolean allowsAllExecTypes() {
+		return false;
 	}
 
 	@Override
@@ -131,23 +131,69 @@ public class MultipleOp extends Hop {
 	}
 
 	@Override
-	public boolean allowsAllExecTypes() {
-		return false;
+	protected ExecType optFindExecType() throws HopsException {
+		
+		checkAndSetForcedPlatform();
+		
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
+		//forced / memory-based / threshold-based decision
+		if( _etypeForced != null ) {
+			_etype = _etypeForced;
+		}
+		else
+		{
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
+				_etype = findExecTypeByMemEstimate();
+			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+			else if ( areDimsBelowThreshold() )
+				_etype = ExecType.CP;
+			else 
+				_etype = REMOTE;
+			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
+		}
+		
+		//mark for recompile (forever)
+		setRequiresRecompileIfNecessary();
+		
+		//ensure cp exec type for single-node operations
+		if ( _op == OpOpN.PRINTF )
+			_etype = ExecType.CP;
+		
+		return _etype;
 	}
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
-		return ExecType.CP;
+	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
+		return 0;
 	}
 
+	@Override
+	protected long[] inferOutputCharacteristics(MemoTable memo) {
+		return null; //do nothing
+	}
+	
 	@Override
 	public void refreshSizeInformation() {
-		// do nothing
+		switch( _op ) {
+			case CBIND:
+				setDim1(HopRewriteUtils.getMaxInputDim(this, true));
+				setDim2(HopRewriteUtils.getSumValidInputDims(this, false));
+				break;
+			case RBIND:
+				setDim1(HopRewriteUtils.getSumValidInputDims(this, false));
+				setDim2(HopRewriteUtils.getMaxInputDim(this, true));
+				break;
+			case PRINTF:
+				//do nothing:
+		}
 	}
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {
-		MultipleOp multipleOp = new MultipleOp();
+		NaryOp multipleOp = new NaryOp();
 
 		// copy generic attributes
 		multipleOp.clone(this, false);
@@ -160,26 +206,14 @@ public class MultipleOp extends Hop {
 
 	@Override
 	public boolean compare(Hop that) {
-		if (!(that instanceof MultipleOp))
+		if (!(that instanceof NaryOp) || _op == OpOpN.PRINTF)
 			return false;
-
-		if (_op == MultiInputOp.PRINTF) {
-			return false;
-		}
-
-		// if add new multiple operand types in addition to PRINTF,
-		// probably need to modify this.
-		MultipleOp mo = (MultipleOp) that;
-		return (_op == mo._op);
-	}
-
-	@Override
-	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
-		return 0;
-	}
-
-	@Override
-	protected long[] inferOutputCharacteristics(MemoTable memo) {
-		return null;
+		
+		NaryOp that2 = (NaryOp) that;
+		boolean ret = (_op == that2._op
+			&& getInput().size() == that2.getInput().size());
+		for( int i=0; i<getInput().size() && ret; i++ )
+			ret &= (getInput().get(i) == that2.getInput().get(i));
+		return ret;
 	}
 }

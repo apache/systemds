@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.BuiltinMultipleCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.BuiltinNary;
 import org.apache.sysml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
@@ -181,7 +181,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "sigmoid", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sel+", CPINSTRUCTION_TYPE.BuiltinUnary);
 		
-		String2CPInstructionType.put( "printf" , CPINSTRUCTION_TYPE.BuiltinMultiple);
+		String2CPInstructionType.put( "printf" , CPINSTRUCTION_TYPE.BuiltinNary);
+		String2CPInstructionType.put( "cbind" , CPINSTRUCTION_TYPE.BuiltinNary);
+		String2CPInstructionType.put( "rbind" , CPINSTRUCTION_TYPE.BuiltinNary);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
@@ -343,8 +345,10 @@ public class CPInstructionParser extends InstructionParser
 				
 			case BuiltinUnary:
 				return BuiltinUnaryCPInstruction.parseInstruction(str);
-			case BuiltinMultiple:
-				return BuiltinMultipleCPInstruction.parseInstruction(str);
+			
+			case BuiltinNary:
+				return BuiltinNary.parseInstruction(str);
+			
 			case Reorg:
 				return ReorgCPInstruction.parseInstruction(str);
 				
@@ -355,7 +359,7 @@ public class CPInstructionParser extends InstructionParser
 				return UaggOuterChainCPInstruction.parseInstruction(str);
 				
 			case MatrixReshape:
-				return MatrixReshapeCPInstruction.parseInstruction(str);	
+				return MatrixReshapeCPInstruction.parseInstruction(str);
 	
 			case Append:
 				return AppendCPInstruction.parseInstruction(str);

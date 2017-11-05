@@ -91,6 +91,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return _args;
 	}
 	
+	public Expression getExpr(int i) {
+		return (_args.length > i ? _args[i] : null);	
+	}
+	
 	@Override
 	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
 			throws LanguageException 
@@ -539,50 +543,53 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		case CBIND:
-		case RBIND:	
-			checkNumParameters(2);
-			
+		case RBIND:
 			//scalar string append (string concatenation with \n)
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR ) {
+				checkNumParameters(2);
 				checkScalarParam(getFirstExpr());
 				checkScalarParam(getSecondExpr());
 				checkValueTypeParam(getFirstExpr(), ValueType.STRING);
 				checkValueTypeParam(getSecondExpr(), ValueType.STRING);
 			}
 			//matrix append (rbind/cbind)
-			else {				
-				checkMatrixFrameParam(getFirstExpr());
-				checkMatrixFrameParam(getSecondExpr());
+			else {
+				if( getAllExpr().length < 2 )
+					raiseValidateError("Invalid number of arguments for "+getOpCode(), conditional);
+				for(int i=0; i<getAllExpr().length; i++)
+					checkMatrixFrameParam(getExpr(i));
 			}
 			
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
 			
 			// set output dimensions and validate consistency
-			long appendDim1 = -1, appendDim2 = -1;
 			long m1rlen = getFirstExpr().getOutput().getDim1();
 			long m1clen = getFirstExpr().getOutput().getDim2();
-			long m2rlen = getSecondExpr().getOutput().getDim1();
-			long m2clen = getSecondExpr().getOutput().getDim2();
+			long appendDim1 = m1rlen, appendDim2 = m1clen;
 			
-			if( getOpCode() == BuiltinFunctionOp.CBIND ) {
-				if (m1rlen > 0 && m2rlen > 0 && m1rlen!=m2rlen) {
-					raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
-						m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-				}				
-				appendDim1 = (m1rlen>0) ? m1rlen : m2rlen;
-				appendDim2 = (m1clen>0 && m2clen>0)? m1clen + m2clen : -1;
+			for(int i=1; i<getAllExpr().length; i++) {
+				long m2rlen = getExpr(i).getOutput().getDim1();
+				long m2clen = getExpr(i).getOutput().getDim2();
+				
+				if( getOpCode() == BuiltinFunctionOp.CBIND ) {
+					if (m1rlen > 0 && m2rlen > 0 && m1rlen!=m2rlen) {
+						raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
+							m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+					appendDim1 = (m2rlen>0) ? m2rlen : appendDim1;
+					appendDim2 = (appendDim2>0 && m2clen>0) ? appendDim2 + m2clen : -1;
+				}
+				else if( getOpCode() == BuiltinFunctionOp.RBIND ) {
+					if (m1clen > 0 && m2clen > 0 && m1clen!=m2clen) {
+						raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
+							m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+					appendDim1 = (appendDim1>0 && m2rlen>0)? appendDim1 + m2rlen : -1;
+					appendDim2 = (m2clen>0) ? m2clen : appendDim2;
+				}
 			}
-			else if( getOpCode() == BuiltinFunctionOp.RBIND ) {
-				if (m1clen > 0 && m2clen > 0 && m1clen!=m2clen) {
-					raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
-						m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-				}				
-				appendDim1 = (m1rlen>0 && m2rlen>0)? m1rlen + m2rlen : -1;
-				appendDim2 = (m1clen>0) ? m1clen : m2clen;
-			}
-			
-			output.setDimensions(appendDim1, appendDim2); 			
+			output.setDimensions(appendDim1, appendDim2);
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
 			
 			break;

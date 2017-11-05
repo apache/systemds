@@ -1650,7 +1650,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				nonZeros -= recomputeNonZeros(rl, ru, cl, cu);
 				copyEmptyToDense(rl, ru, cl, cu);
 			}
-			return;		
+			return;
 		}
 		
 		//allocate output block
@@ -1661,7 +1661,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			nonZeros = nonZeros - recomputeNonZeros(rl, ru, cl, cu) + src.nonZeros;
 		
 		//copy values
-		int rowLen = cu-cl+1;				
+		int rowLen = cu-cl+1;
 		if(clen == src.clen) //optimization for equal width
 			System.arraycopy(src.denseBlock, 0, denseBlock, rl*clen+cl, src.rlen*src.clen);
 		else
@@ -3521,24 +3521,25 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
-	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret ) 	
-		throws DMLRuntimeException 
-	{
-		//default append-cbind
-		return appendOperations(that, ret, true);
+	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret ) throws DMLRuntimeException {
+		return appendOperations(that, ret, true); //default cbind
 	}
 
-	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret, boolean cbind ) 	
+	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret, boolean cbind ) throws DMLRuntimeException {
+		return appendOperations(new MatrixBlock[]{that}, ret, cbind);
+	}
+	
+	public MatrixBlock appendOperations( MatrixBlock[] that, MatrixBlock ret, boolean cbind )
 		throws DMLRuntimeException 
 	{
 		MatrixBlock result = checkType( ret );
-		final int m = cbind ? rlen : rlen+that.rlen;
-		final int n = cbind ? clen+that.clen : clen;
-		final long nnz = nonZeros+that.nonZeros;		
+		final int m = cbind ? rlen : rlen+Arrays.stream(that).mapToInt(mb -> mb.rlen).sum();
+		final int n = cbind ? clen+Arrays.stream(that).mapToInt(mb -> mb.clen).sum() : clen;
+		final long nnz = nonZeros+Arrays.stream(that).mapToLong(mb -> mb.nonZeros).sum();
 		boolean sp = evalSparseFormatInMemory(m, n, nnz);
 		
 		//init result matrix 
-		if( result == null ) 
+		if( result == null )
 			result = new MatrixBlock(m, n, sp, nnz);
 		else
 			result.reset(m, n, sp, nnz);
@@ -3546,54 +3547,67 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//core append operation
 		//copy left and right input into output
 		if( !result.sparse ) //DENSE
-		{	
+		{
 			if( cbind ) {
 				result.copy(0, m-1, 0, clen-1, this, false);
-				result.copy(0, m-1, clen, n-1, that, false);
+				for(int i=0, off=clen; i<that.length; i++) {
+					result.copy(0, m-1, off, off+that[i].clen-1, that[i], false);
+					off += that[i].clen;
+				}
 			}
 			else { //rbind
 				result.copy(0, rlen-1, 0, n-1, this, false);
-				result.copy(rlen, m-1, 0, n-1, that, false);	
+				for(int i=0, off=rlen; i<that.length; i++) {
+					result.copy(off, off+that[i].rlen-1, 0, n-1, that[i], false);
+					off += that[i].rlen;
+				}
 			}
 		}
 		else //SPARSE
 		{
 			//adjust sparse rows if required
-			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) ) {
+			if( !this.isEmptyBlock(false) || !Arrays.stream(that).allMatch(mb -> mb.isEmptyBlock(false)) ) {
 				result.allocateSparseRowsBlock();
-			
 				//allocate sparse rows once for cbind
 				if( cbind && result.getSparseBlock() instanceof SparseBlockMCSR ) {
 					SparseBlock sblock = result.getSparseBlock();
 					for( int i=0; i<result.rlen; i++ ) {
-						int lnnz = (int)(this.recomputeNonZeros(i, i, 0, this.clen-1)
-							+ that.recomputeNonZeros(i, i, 0, that.clen-1));
+						final int row = i; //workaround for lambda compile issue
+						int lnnz = (int) (this.recomputeNonZeros(i, i, 0, this.clen-1) + Arrays.stream(that)
+							.mapToLong(mb -> mb.recomputeNonZeros(row, row, 0, mb.clen-1)).sum());
 						sblock.allocate(i, lnnz);
 					}
 				}
 			}
 			
 			//core append operation
-			result.appendToSparse(this, 0, 0);			
-			if( cbind )
-				result.appendToSparse(that, 0, clen);
-			else //rbind
-				result.appendToSparse(that, rlen, 0);
-		}		
+			result.appendToSparse(this, 0, 0);
+			if( cbind ) {
+				for(int i=0, off=clen; i<that.length; i++) {
+					result.appendToSparse(that[i], 0, off);
+					off += that[i].clen;
+				}
+			}
+			else { //rbind
+				for(int i=0, off=rlen; i<that.length; i++) {
+					result.appendToSparse(that[i], off, 0);
+					off += that[i].rlen;
+				}
+			}
+		}
 		
 		//update meta data
 		result.nonZeros = nnz;
-		
 		return result;
 	}
 
-	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) 	
+	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype )
 		throws DMLRuntimeException 
 	{
 		return transposeSelfMatrixMultOperations(out, tstype, 1);
 	}
 
-	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k ) 	
+	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k )
 		throws DMLRuntimeException 
 	{
 		//check for transpose type

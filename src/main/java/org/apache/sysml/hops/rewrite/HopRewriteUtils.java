@@ -1214,4 +1214,21 @@ public class HopRewriteUtils
 			|| sb instanceof IfStatementBlock
 			|| sb instanceof ForStatementBlock); //incl parfor
 	}
+	
+	public static long getMaxInputDim(Hop hop, boolean dim1) {
+		return hop.getInput().stream().mapToLong(
+			h -> (dim1?h.getDim1():h.getDim2())).max().orElse(-1);
+	}
+	
+	public static long getSumValidInputDims(Hop hop, boolean dim1) {
+		if( !hasValidInputDims(hop, dim1) )
+			return -1;
+		return hop.getInput().stream().mapToLong(
+			h -> (dim1?h.getDim1():h.getDim2())).sum();
+	}
+	
+	public static boolean hasValidInputDims(Hop hop, boolean dim1) {
+		return hop.getInput().stream().allMatch(
+			h -> (dim1?h.getDim1()>0:h.getDim2()>0));
+	}
 }

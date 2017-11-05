@@ -267,7 +267,7 @@ public class ExecutionContext {
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private MatrixBlock getMatrixInput(String varName) 
+	public MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{	
 		MatrixObject mo = getMatrixObject(varName);
@@ -419,6 +419,11 @@ public class ExecutionContext {
 		}
 	}
 	
+	public void releaseMatrixInput(String varName) throws DMLRuntimeException {
+		MatrixObject mo = getMatrixObject(varName);
+		mo.release(null);
+	}
+	
 	public void releaseMatrixInputForGPUInstruction(String varName)
 		throws DMLRuntimeException 
 	{
@@ -485,10 +490,11 @@ public class ExecutionContext {
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	
+	public void setMatrixOutput(String varName, MatrixBlock outputData) throws DMLRuntimeException  {
+		setMatrixOutput(varName, outputData, null);
+	}
 
-	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) 
-			throws DMLRuntimeException 
-	{
+	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData, opcode);
 		mo.release(opcode);

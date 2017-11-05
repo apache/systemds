@@ -25,10 +25,10 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.MultiInputOp;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.MultipleOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.UnaryOp;
 
 /**
@@ -108,7 +108,7 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 		return (hop instanceof DataOp && ((DataOp)hop).isWrite())
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.STOP)
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.PRINT)
-			|| (hop instanceof MultipleOp && ((MultipleOp)hop).getOp()==MultiInputOp.PRINTF)
+			|| (hop instanceof NaryOp && ((NaryOp)hop).getOp()==OpOpN.PRINTF)
 			|| (hop instanceof FunctionOp)
 			|| (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.FUNCTIONOUTPUT);
 	}

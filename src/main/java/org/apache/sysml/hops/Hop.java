@@ -38,7 +38,7 @@ import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.MultipleCP;
+import org.apache.sysml.lops.Nary;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -1100,8 +1100,8 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	// Operations that require a variable number of operands
-	public enum MultiInputOp {
-		PRINTF
+	public enum OpOpN {
+		PRINTF, CBIND, RBIND,
 	}
 	
 	public enum AggOp {
@@ -1351,10 +1351,12 @@ public abstract class Hop implements ParseInfo
 	 * constructLops() method that is used to construct the Lops that correspond
 	 * to a Hop.
 	 */
-	protected static final HashMap<MultiInputOp, MultipleCP.OperationType> MultipleOperandOperationHopTypeToLopType;
+	protected static final HashMap<OpOpN, Nary.OperationType> HopsOpOpNLops;
 	static {
-		MultipleOperandOperationHopTypeToLopType = new HashMap<>();
-		MultipleOperandOperationHopTypeToLopType.put(MultiInputOp.PRINTF, MultipleCP.OperationType.PRINTF);
+		HopsOpOpNLops = new HashMap<>();
+		HopsOpOpNLops.put(OpOpN.PRINTF, Nary.OperationType.PRINTF);
+		HopsOpOpNLops.put(OpOpN.CBIND, Nary.OperationType.CBIND);
+		HopsOpOpNLops.put(OpOpN.RBIND, Nary.OperationType.RBIND);
 	}
 
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;

@@ -130,8 +130,7 @@ public class FunctionProgramBlock extends ProgramBlock
 
 	protected void checkOutputParameters( LocalVariableMap vars )
 	{
-		for( DataIdentifier diOut : _outputParams )
-		{
+		for( DataIdentifier diOut : _outputParams ) {
 			String varName = diOut.getName();
 			Data dat = vars.get( varName );
 			if( dat == null )
@@ -140,7 +139,6 @@ public class FunctionProgramBlock extends ProgramBlock
 				LOG.warn("Function output "+ varName +" has wrong data type: "+dat.getDataType()+".");
 			else if( dat.getValueType() != diOut.getValueType() )
 				LOG.warn("Function output "+ varName +" has wrong value type: "+dat.getValueType()+".");
-			   
 		}
 	}
 	

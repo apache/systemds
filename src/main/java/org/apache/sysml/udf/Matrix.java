@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
@@ -43,13 +42,13 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class Matrix extends FunctionParameter 
 {
-	
 	private static final long serialVersionUID = -1058329938431848909L;
+	public static final String DEFAULT_FILENAME = "ext_funct";
 	
-	private String 		 _filePath;
-	private long 		 _rows;
-	private long 		 _cols;
-	private ValueType 	 _vType;
+	private String _filePath;
+	private long _rows;
+	private long _cols;
+	private ValueType _vType;
 	private MatrixObject _mo;
 
 	public enum ValueType {
@@ -67,8 +66,7 @@ public class Matrix extends FunctionParameter
 	 * @param vType value type
 	 */
 	public Matrix(long rows, long cols, ValueType vType) {
-		this( ExternalFunctionProgramBlockCP.DEFAULT_FILENAME, 
-			  rows, cols, vType );
+		this( DEFAULT_FILENAME, rows, cols, vType );
 	}
 
 	/**
@@ -88,13 +86,20 @@ public class Matrix extends FunctionParameter
 		_vType = vType;
 	}
 	
-	public void setMatrixObject( MatrixObject mo )
-	{
+	public Matrix(MatrixObject mo, ValueType vType) {
+		super(FunctionParameterType.Matrix);
+		_filePath = mo.getFileName();
+		_rows = mo.getNumRows();
+		_cols = mo.getNumColumns();
+		_vType = vType;
 		_mo = mo;
 	}
 	
-	public MatrixObject getMatrixObject()
-	{
+	public void setMatrixObject( MatrixObject mo ) {
+		_mo = mo;
+	}
+	
+	public MatrixObject getMatrixObject() {
 		return _mo;
 	}
 

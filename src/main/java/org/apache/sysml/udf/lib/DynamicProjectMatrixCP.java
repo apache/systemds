@@ -51,7 +51,7 @@ public class DynamicProjectMatrixCP extends PackageFunction
 	public void execute() 
 	{
 		try
-		{						
+		{
 			Matrix mD = (Matrix) this.getFunctionInput(0);
 			Matrix mC = (Matrix) this.getFunctionInput(1);
 			MatrixBlock mbD = mD.getMatrixObject().acquireRead();

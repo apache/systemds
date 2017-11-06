@@ -85,7 +85,13 @@ public abstract class PackageFunction implements Serializable
 	 * @return function parameter
 	 */
 	public abstract FunctionParameter getFunctionOutput(int pos);
-
+	
+	public final void setFunctionInputs(ArrayList<FunctionParameter> inputs) {
+		setNumFunctionInputs(inputs.size());
+		for (int i = 0; i < inputs.size(); i++)
+			setInput(inputs.get(i), i);
+	}
+	
 	/**
 	 * Method to set the number of inputs for this package function
 	 * 

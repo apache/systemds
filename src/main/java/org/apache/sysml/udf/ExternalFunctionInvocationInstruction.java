@@ -19,9 +19,27 @@
 
 package org.apache.sysml.udf;
 
+import java.util.ArrayList;
+
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.udf.Matrix.ValueType;
+import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 /**
  * Class to maintain external function invocation instructions.
@@ -31,55 +49,146 @@ import org.apache.sysml.runtime.instructions.Instruction;
  */
 public class ExternalFunctionInvocationInstruction extends Instruction 
 {
+	private static final IDSequence _defaultSeq = new IDSequence();
 	
-	public static final String ELEMENT_DELIM = ":";
+	protected final CPOperand[] inputs;
+	protected final CPOperand[] outputs;
+	protected final PackageFunction fun;
+	protected final String baseDir;
+	protected final InputInfo iinfo;
 	
-	public String _namespace;
-	public String _functionName;
-	protected String className; // name of class that contains the function
-	protected String configFile; // optional configuration file parameter
-	protected String inputParams; // string representation of input parameters
-	protected String outputParams; // string representation of output parameters
-	
-	public ExternalFunctionInvocationInstruction(String className,
-			String configFile, String inputParams,
-			String outputParams) 
-	{
-		this.className = className;
-		this.configFile = configFile;
-		this.inputParams = inputParams;
-		this.outputParams = outputParams;
-	}
-	
-	public String getClassName() {
-		return className;
-	}
-
-	public String getConfigFile() {
-		return configFile;
-	}
-
-	public String getInputParams() {
-		return inputParams;
-	}
-
-	public String getOutputParams() {
-		return outputParams;
-	}
-
-	@Override
-	public String toString() {
-		return className + ELEMENT_DELIM + 
-			configFile + ELEMENT_DELIM + 
-			inputParams + ELEMENT_DELIM + 
-			outputParams;
+	public ExternalFunctionInvocationInstruction(CPOperand[] inputs, CPOperand[] outputs,
+		PackageFunction fun, String baseDir, InputInfo format) {
+		this.inputs = inputs;
+		this.outputs = outputs;
+		this.fun = fun;
+		this.baseDir = baseDir;
+		this.iinfo = format;
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
 	{
-		//do nothing (not applicable because this instruction is only used as
-		//meta data container)
+		// get the inputs, wrapped into external data types
+		fun.setFunctionInputs(getInputObjects(inputs, ec.getVariables()));
+		
+		//executes function
+		fun.execute();
+		
+		// get and verify the outputs
+		verifyAndAttachOutputs(ec, fun, outputs);
+	}
+	
+	@SuppressWarnings("incomplete-switch")
+	private ArrayList<FunctionParameter> getInputObjects(CPOperand[] inputs, LocalVariableMap vars) {
+		ArrayList<FunctionParameter> ret = new ArrayList<>();
+		for( CPOperand input : inputs ) {
+			switch( input.getDataType() ) {
+				case MATRIX:
+					MatrixObject mobj = (MatrixObject) vars.get(input.getName());
+					ret.add(new Matrix(mobj, getMatrixValueType(input.getValueType())));
+					break;
+				case SCALAR:
+					ScalarObject so = (ScalarObject) vars.get(input.getName());
+					ret.add(new Scalar(getScalarValueType(input.getValueType()), so.getStringValue()));
+					break;
+				case OBJECT:
+					ret.add(new BinaryObject(vars.get(input.getName())));
+					break;
+			}
+		}
+		return ret;
+	}
+	
+	private ScalarValueType getScalarValueType(Expression.ValueType vt) {
+		switch(vt) {
+			case STRING: return ScalarValueType.Text;
+			case DOUBLE: return ScalarValueType.Double;
+			case INT: return ScalarValueType.Integer;
+			case BOOLEAN: return ScalarValueType.Boolean;
+			default:
+				throw new RuntimeException("Unknown type: "+vt.name());
+		}
+	}
+	
+	private ValueType getMatrixValueType(Expression.ValueType vt) {
+		switch(vt) {
+			case DOUBLE: return ValueType.Double;
+			case INT: return ValueType.Integer;
+			default:
+				throw new RuntimeException("Unknown type: "+vt.name());
+		}
+	}
+	
+	private void verifyAndAttachOutputs(ExecutionContext ec, PackageFunction fun, CPOperand[] outputs) 
+		throws DMLRuntimeException 
+	{
+		for( int i = 0; i < outputs.length; i++) {
+			CPOperand output = outputs[i];
+			switch( fun.getFunctionOutput(i).getType() ) {
+				case Matrix:
+					Matrix m = (Matrix) fun.getFunctionOutput(i);
+					MatrixObject newVar = createOutputMatrixObject( m );
+					newVar.setVarName(output.getName());
+					ec.setVariable(output.getName(), newVar);
+					break;
+				case Scalar:
+					Scalar s = (Scalar) fun.getFunctionOutput(i);
+					ScalarObject scalarObject = null;
+					switch( s.getScalarType() ) {
+						case Integer:
+							scalarObject = new IntObject(output.getName(),
+									Long.parseLong(s.getValue()));
+							break;
+						case Double:
+							scalarObject = new DoubleObject(output.getName(),
+									Double.parseDouble(s.getValue()));
+							break;
+						case Boolean:
+							scalarObject = new BooleanObject(output.getName(),
+									Boolean.parseBoolean(s.getValue()));
+							break;
+						case Text:
+							scalarObject = new StringObject(output.getName(), s.getValue());
+							break;
+						default:
+							throw new DMLRuntimeException("Unknown scalar value type '"
+								+ s.getScalarType()+"' of output '"+output.getName()+"'.");
+					}
+					ec.setVariable(output.getName(), scalarObject);
+					break;
+				default:
+					throw new DMLRuntimeException("Unsupported data type: "
+						+fun.getFunctionOutput(i).getType().name());
+			}
+		}
+	}
+	
+	private MatrixObject createOutputMatrixObject(Matrix m) throws DMLRuntimeException
+	{
+		MatrixObject ret = m.getMatrixObject();
+		
+		if( ret == null ) { //otherwise, pass in-memory matrix from extfunct back to invoking program
+			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(),
+				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
+			MetaDataFormat mfmd = new MetaDataFormat(mc, InputInfo.getMatchingOutputInfo(iinfo), iinfo);
+			ret = new MatrixObject(Expression.ValueType.DOUBLE, m.getFilePath(), mfmd);
+		}
+		
+		//for allowing in-memory packagesupport matrices w/o file names
+		if( ret.getFileName().equals( Matrix.DEFAULT_FILENAME ) ) {
+			ret.setFileName( createDefaultOutputFilePathAndName() );
+		}
+		
+		return ret;
+	}
+	
+	private String createDefaultOutputFilePathAndName( ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(baseDir);
+		sb.append(Matrix.DEFAULT_FILENAME);
+		sb.append(_defaultSeq.getNextID());
+		return sb.toString();
 	}
 }

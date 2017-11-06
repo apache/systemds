@@ -26,69 +26,47 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
-public class RewriteFusedRandTest extends AutomatedTestBase 
+public class RewriteFoldRCBindTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "RewriteFusedRandLit";
-	private static final String TEST_NAME2 = "RewriteFusedRandVar1";
-	private static final String TEST_NAME3 = "RewriteFusedRandVar2";
+	private static final String TEST_NAME1 = "RewriteFoldCBind";
+	private static final String TEST_NAME2 = "RewriteFoldRBind";
 	
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFusedRandTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFoldRCBindTest.class.getSimpleName() + "/";
 	
 	private static final int rows = 1932;
 	private static final int cols = 14;
-	private static final int seed = 7;
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 
 	@Test
-	public void testRewriteFusedRandUniformNoRewrite() {
-		testRewriteFusedRand( TEST_NAME1, "uniform", false );
+	public void testRewriteFoldCBindNoRewrite() {
+		testRewriteFoldRCBind( TEST_NAME1, false );
 	}
 	
 	@Test
-	public void testRewriteFusedRandNormalNoRewrite() {
-		testRewriteFusedRand( TEST_NAME1, "normal", false );
+	public void testRewriteFoldCBindRewrite() {
+		testRewriteFoldRCBind( TEST_NAME1, true );
 	}
 	
 	@Test
-	public void testRewriteFusedRandPoissonNoRewrite() {
-		testRewriteFusedRand( TEST_NAME1, "poisson", false );
+	public void testRewriteFoldRBindNoRewrite() {
+		testRewriteFoldRCBind( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testRewriteFusedRandUniform() {
-		testRewriteFusedRand( TEST_NAME1, "uniform", true );
+	public void testRewriteFoldRBindRewrite() {
+		testRewriteFoldRCBind( TEST_NAME2, true );
 	}
-	
-	@Test
-	public void testRewriteFusedRandNormal() {
-		testRewriteFusedRand( TEST_NAME1, "normal", true );
-	}
-	
-	@Test
-	public void testRewriteFusedRandPoisson() {
-		testRewriteFusedRand( TEST_NAME1, "poisson", true );
-	}
-	
-	@Test
-	public void testRewriteFusedZerosPlusVar() {
-		testRewriteFusedRand( TEST_NAME2, "uniform", true );
-	}
-	
-	@Test
-	public void testRewriteFusedOnesMultVar() {
-		testRewriteFusedRand( TEST_NAME3, "uniform", true );
-	}
-	
-	private void testRewriteFusedRand( String testname, String pdf, boolean rewrites )
+
+	private void testRewriteFoldRCBind( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
@@ -99,7 +77,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-stats", "-args", String.valueOf(rows), 
-					String.valueOf(cols), pdf, String.valueOf(seed), output("R") };
+					String.valueOf(cols), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			//run performance tests
@@ -107,21 +85,17 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			if( testname.equals(TEST_NAME1) )
-				Assert.assertEquals("Wrong result", new Double(rows), ret);
-			else if( testname.equals(TEST_NAME2) )
-				Assert.assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
-			else if( testname.equals(TEST_NAME3) )
-				Assert.assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
+			Assert.assertEquals("Wrong result", new Double(5*rows*cols), ret);
 			
 			//check for applied rewrites
-			if( rewrites && pdf.equals("uniform") ) {
-				Assert.assertTrue(!heavyHittersContainsString("+")
-					&& !heavyHittersContainsString("*"));
+			if( rewrites ) {
+				Assert.assertTrue(!heavyHittersContainsString("append")
+					&& Statistics.getCPHeavyHitterCount("cbind") <= 1
+					&& Statistics.getCPHeavyHitterCount("rbind") <= 1);
 			}
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-	}	
+	}
 }

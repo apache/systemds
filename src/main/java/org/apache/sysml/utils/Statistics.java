@@ -545,7 +545,8 @@ public class Statistics
 	}
 	
 	public static long getCPHeavyHitterCount(String opcode) {
-		return _cpInstCounts.get(opcode);
+		Long tmp = _cpInstCounts.get(opcode);
+		return (tmp != null) ? tmp : 0;
 	}
 
 	/**

@@ -45,7 +45,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class DataGenOp extends Hop implements MultiThreadedHop
 {
-	
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	 // defines the specific data generation method
@@ -366,14 +365,20 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 	
 
-	public HashMap<String, Integer> getParamIndexMap()
-	{
+	public HashMap<String, Integer> getParamIndexMap() {
 		return _paramIndexMap;
 	}
 	
-	public int getParamIndex(String key)
-	{
+	public int getParamIndex(String key) {
 		return _paramIndexMap.get(key);
+	}
+	
+	public Hop getInput(String key) {
+		return getInput().get(getParamIndex(key));
+	}
+	
+	public void setInput(String key, Hop hop) {
+		getInput().set(getParamIndex(key), hop);
 	}
 
 	public boolean hasConstantValue() 

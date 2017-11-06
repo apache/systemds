@@ -432,8 +432,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			else if(HopRewriteUtils.isValidOuterBinaryOp(bop) 
 				&& HopRewriteUtils.isMatrixMultiply(left)
 				&& HopRewriteUtils.isDataGenOpWithConstantValue(left.getInput().get(1), 1)
-				&& left.getInput().get(0).getDim2() == 1 //column vector 
-				&& left.getDim1() != 1 && right.getDim1() == 1 ) //outer vector product 
+				&& (left.getInput().get(0).getDim2() == 1 //outer product
+					|| left.getInput().get(1).getDim1() == 1)
+				&& left.getDim1() != 1 && right.getDim1() == 1 ) //outer vector binary 
 			{
 				Hop hnew = HopRewriteUtils.createBinary(left.getInput().get(0), right, bop, true);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);

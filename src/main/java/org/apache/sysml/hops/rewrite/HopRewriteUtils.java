@@ -40,6 +40,7 @@ import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
@@ -47,6 +48,7 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -603,6 +605,16 @@ public class HopRewriteUtils
 		return ix;
 	}
 	
+	public static NaryOp createNary(OpOpN op, Hop... inputs) throws HopsException {
+		Hop mainInput = inputs[0];
+		NaryOp nop = new NaryOp(mainInput.getName(), mainInput.getDataType(),
+			mainInput.getValueType(), op, inputs);
+		nop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
+		copyLineNumbers(mainInput, nop);
+		nop.refreshSizeInformation();
+		return nop;
+	}
+	
 	public static Hop createValueHop( Hop hop, boolean row ) 
 		throws HopsException
 	{
@@ -955,6 +967,15 @@ public class HopRewriteUtils
 	
 	public static boolean isSumSq(Hop hop) {
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM_SQ);
+	}
+	
+	public static boolean isNary(Hop hop, OpOpN type) {
+		return hop instanceof NaryOp && ((NaryOp)hop).getOp()==type;
+	}
+	
+	public static boolean isNary(Hop hop, OpOpN... types) {
+		return ( hop instanceof NaryOp 
+			&& ArrayUtils.contains(types, ((NaryOp) hop).getOp()));
 	}
 	
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )

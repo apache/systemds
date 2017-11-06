@@ -1808,6 +1808,21 @@ public abstract class AutomatedTestBase
 		return writeInputFrame(name, data, false, schema, oi);
 	}
 
+	protected boolean heavyHittersContainsString(String... str) {
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			for( String s : str )
+				if(opcode.equals(s))
+					return true;
+		return false;
+	}
+	
+	protected boolean heavyHittersContainsString(String str, int minCount) {
+		int count = 0;
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			count += opcode.equals(str) ? 1 : 0;
+		return (count >= minCount);
+	}
+	
 	protected boolean heavyHittersContainsSubString(String... str) {
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for( String s : str )

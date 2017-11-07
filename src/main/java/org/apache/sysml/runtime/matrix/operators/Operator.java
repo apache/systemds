@@ -24,18 +24,15 @@ import java.io.Serializable;
 
 public class Operator implements Serializable 
 {
-
 	private static final long serialVersionUID = -7453178973186473277L;
 
-	public boolean sparseSafe=false;
+	public final boolean sparseSafe;
 
-	public Operator()
-	{
-		
+	public Operator() {
+		this(false);
 	}
 	
-	public Operator(boolean sparseSafeFlag)
-	{
+	public Operator(boolean sparseSafeFlag) {
 		sparseSafe = sparseSafeFlag;
 	}
 }

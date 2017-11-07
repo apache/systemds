@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 
 	protected ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, 1, opcode, instr);
+		super(op, in, out, opcode, instr);
 	}
 
 	@Override 

@@ -36,8 +36,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class QuantilePickCPInstruction extends BinaryCPInstruction {
 
-	private OperationTypes _type = null;
-	private boolean _inmem = true;
+	private final OperationTypes _type;
+	private final boolean _inmem;
 
 	private QuantilePickCPInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem,
 			String opcode, String istr) {
@@ -46,8 +46,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 
 	private QuantilePickCPInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 			boolean inmem, String opcode, String istr) {
-		super(op, in, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.QPick;
+		super(CPType.QPick, op, in, in2, out, opcode, istr);
 		_type = type;
 		_inmem = inmem;
 	}

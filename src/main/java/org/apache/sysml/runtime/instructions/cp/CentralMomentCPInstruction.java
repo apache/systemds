@@ -107,9 +107,8 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
 		
 		CMOperator cm_op = ((CMOperator)_optr); 
-		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {
-			((CMOperator)_optr).setCMAggOp((int)order.getLongValue());
-		}
+		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID )
+			cm_op = cm_op.setCMAggOp((int)order.getLongValue());
 		
 		CM_COV_Object cmobj = null; 
 		if (input3 == null ) {
@@ -123,7 +122,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		
-		double val = cmobj.getRequiredResult(_optr);
+		double val = cmobj.getRequiredResult(cm_op);
 		DoubleObject ret = new DoubleObject(output_name, val);
 		ec.setScalarOutput(output_name, ret);
 	}

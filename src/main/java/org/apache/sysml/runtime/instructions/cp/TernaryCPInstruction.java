@@ -33,17 +33,17 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 
 public class TernaryCPInstruction extends ComputationCPInstruction {
-	private String _outDim1;
-	private String _outDim2;
-	private boolean _dim1Literal;
-	private boolean _dim2Literal;
-	private boolean _isExpand;
-	private boolean _ignoreZeros;
+	private final String _outDim1;
+	private final String _outDim2;
+	private final boolean _dim1Literal;
+	private final boolean _dim2Literal;
+	private final boolean _isExpand;
+	private final boolean _ignoreZeros;
 
 	private TernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
+		super(CPType.Ternary, op, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
 		_outDim2 = outputDim2;

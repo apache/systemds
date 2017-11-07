@@ -24,14 +24,12 @@ import org.apache.sysml.runtime.functionobjects.COV;
 
 public class COVOperator extends Operator 
 {
-
 	private static final long serialVersionUID = -8404264552880694469L;
 
-	public COV fn;
+	public final COV fn;
 	
-	public COVOperator(COV op)
-	{
-		fn=op;
-		sparseSafe=true; // TODO: check with YY
+	public COVOperator(COV op) {
+		super(true);
+		fn = op;
 	}
 }

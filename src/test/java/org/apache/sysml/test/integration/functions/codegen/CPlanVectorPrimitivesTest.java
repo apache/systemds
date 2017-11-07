@@ -771,13 +771,13 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				double[] ret2 = null;
 				if( type1 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, true);
-					bop.setConstant(inA.max());
+					bop = bop.setConstant(inA.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
 						in2.scalarOperations(bop, new MatrixBlock()), false);
 				}
 				else if( type2 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, false);
-					bop.setConstant(inB.max());
+					bop = bop.setConstant(inB.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
 						in1.scalarOperations(bop, new MatrixBlock()), false);
 				}

@@ -29,19 +29,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 
 public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction {
-	private int _arity;
 
-	protected BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int arity,
+	protected BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.BuiltinBinary;
-		_arity = arity;
+		super(CPType.BuiltinBinary, op, in1, in2, out, opcode, istr);
 	}
 
-	public int getArity() {
-		return _arity;
-	}
-	
 	public static BuiltinBinaryCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

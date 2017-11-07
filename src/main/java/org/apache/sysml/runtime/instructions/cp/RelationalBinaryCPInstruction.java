@@ -29,8 +29,7 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction 
 
 	protected RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.RelationalBinary;
+		super(CPType.RelationalBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static RelationalBinaryCPInstruction parseInstruction ( String str ) throws DMLRuntimeException {

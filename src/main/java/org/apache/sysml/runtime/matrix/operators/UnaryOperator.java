@@ -27,29 +27,24 @@ public class UnaryOperator extends Operator
 {
 	private static final long serialVersionUID = 2441990876648978637L;
 
-	public ValueFunction fn;
-	private int k; //num threads
+	public final ValueFunction fn;
+	private final int k; //num threads
 
 	public UnaryOperator(ValueFunction p) {
 		this(p, 1); //default single-threaded
 	}
 	
-	public UnaryOperator(ValueFunction p, int numThreads)
-	{
+	public UnaryOperator(ValueFunction p, int numThreads) {
+		super(p instanceof Builtin && 
+			((Builtin)p).bFunc==Builtin.BuiltinCode.SIN || ((Builtin)p).bFunc==Builtin.BuiltinCode.TAN 
+			// sinh and tanh are zero only at zero, else they are nnz
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SINH || ((Builtin)p).bFunc==Builtin.BuiltinCode.TANH
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.ROUND || ((Builtin)p).bFunc==Builtin.BuiltinCode.ABS
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SQRT || ((Builtin)p).bFunc==Builtin.BuiltinCode.SPROP
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SELP || ((Builtin)p).bFunc==Builtin.BuiltinCode.LOG_NZ
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SIGN );
 		fn = p;
-		sparseSafe = false;
 		k = numThreads;
-		
-		if( fn instanceof Builtin ) {
-			Builtin f=(Builtin)fn;
-			sparseSafe = (f.bFunc==Builtin.BuiltinCode.SIN || f.bFunc==Builtin.BuiltinCode.TAN 
-					// sinh and tanh are zero only at zero, else they are nnz
-					|| f.bFunc==Builtin.BuiltinCode.SINH || f.bFunc==Builtin.BuiltinCode.TANH
-					|| f.bFunc==Builtin.BuiltinCode.ROUND || f.bFunc==Builtin.BuiltinCode.ABS
-					|| f.bFunc==Builtin.BuiltinCode.SQRT || f.bFunc==Builtin.BuiltinCode.SPROP
-					|| f.bFunc==Builtin.BuiltinCode.SELP || f.bFunc==Builtin.BuiltinCode.LOG_NZ
-					|| f.bFunc==Builtin.BuiltinCode.SIGN );
-		}
 	}
 	
 	public int getNumThreads() {

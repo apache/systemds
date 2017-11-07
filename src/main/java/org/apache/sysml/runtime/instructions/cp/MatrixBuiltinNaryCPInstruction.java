@@ -24,7 +24,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixBuiltinNaryCPInstruction extends BuiltinNary {
+public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	protected MatrixBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand[] inputs) {
 		super(op, opcode, istr, output, inputs);

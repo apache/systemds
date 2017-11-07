@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions;
 
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
@@ -39,7 +39,7 @@ public class InstructionParser
 		if (   execType.equalsIgnoreCase(ExecType.CP.toString()) 
 			|| execType.equalsIgnoreCase(ExecType.CP_FILE.toString()) ) 
 		{
-			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
+			CPType cptype = InstructionUtils.getCPType(str); 
 			if( cptype == null )
 				throw new DMLRuntimeException("Unknown CP instruction: " + str);
 			return CPInstructionParser.parseSingleInstruction (cptype, str);

@@ -42,7 +42,7 @@ public abstract class MRInstruction extends Instruction {
 	public byte output;
 
 	protected MRInstruction(Operator op, byte out) {
-		type = INSTRUCTION_TYPE.MAPREDUCE;
+		type = IType.MAPREDUCE;
 		optr = op;
 		output = out;
 		mrtype = MRINSTRUCTION_TYPE.INVALID;

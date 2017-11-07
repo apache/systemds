@@ -39,35 +39,68 @@ import org.apache.sysml.utils.Statistics;
 
 public class JMLCClonedPreparedScriptTest extends AutomatedTestBase 
 {
+	//basic script with parfor loop
+	private static final String SCRIPT1 =
+		  "X = matrix(7, 10, 10);"
+		+ "R = matrix(0, 10, 1)"
+		+ "parfor(i in 1:nrow(X))"
+		+ "  R[i,] = sum(X[i,])"
+		+ "out = sum(R)"
+		+ "write(out, 'tmp/out')";
+	
+	//script with dml-bodied and external functions
+	private static final String SCRIPT2 =
+		  "foo1 = externalFunction(int numInputs, boolean stretch, Matrix[double] A, Matrix[double] B, Matrix[double] C) "
+		+ "  return (Matrix[double] D)"
+		+ "  implemented in (classname='org.apache.sysml.udf.lib.MultiInputCbind', exectype='mem');"
+		+ "foo2 = function(Matrix[double] A, Matrix[double] B, Matrix[double] C)"
+		+ "  return (Matrix[double] D) {"
+		+ "  while(FALSE){}"
+		+ "  D = cbind(A, B, C)"
+		+ "}"
+		+ "X = matrix(7, 10, 10);"
+		+ "R = matrix(0, 10, 1)"
+		+ "for(i in 1:nrow(X)) {"
+		+ "  D = foo1(3, FALSE, X[i,], X[i,], X[i,])"
+		+ "  E = foo2(D, D, D)"
+		+ "  R[i,] = sum(E)/9"
+		+ "}"
+		+ "out = sum(R)"
+		+ "write(out, 'tmp/out')";
+	
+	
 	@Override
 	public void setUp() {
 		//do nothing
 	}
 	
 	@Test
-	public void testSinglePreparedScript128() throws IOException {
-		runJMLCClonedTest(128, false);
+	public void testSinglePreparedScript1T128() throws IOException {
+		runJMLCClonedTest(SCRIPT1, 128, false);
 	}
 	
 	@Test
-	public void testClonedPreparedScript128() throws IOException {
-		runJMLCClonedTest(128, true);
+	public void testClonedPreparedScript1T128() throws IOException {
+		runJMLCClonedTest(SCRIPT1, 128, true);
+	}
+	
+	@Test
+	public void testSinglePreparedScript2T128() throws IOException {
+		runJMLCClonedTest(SCRIPT2, 128, false);
+	}
+	
+	@Test
+	public void testClonedPreparedScript2T128() throws IOException {
+		runJMLCClonedTest(SCRIPT2, 128, true);
 	}
 
-	private void runJMLCClonedTest(int num, boolean clone) 
+	private void runJMLCClonedTest(String script, int num, boolean clone) 
 		throws IOException
 	{
 		int k = InfrastructureAnalyzer.getLocalParallelism();
 		
 		boolean failed = false;
 		try( Connection conn = new Connection() ) {
-			String script =
-				"  X = matrix(7, 10, 10);"
-				+ "R = matrix(0, 10, 1)"
-				+ "parfor(i in 1:nrow(X))"
-				+ "  R[i,] = sum(X[i,])"
-				+ "out = sum(R)"
-				+ "write(out, 'tmp/out')";
 			DMLScript.STATISTICS = true;
 			Statistics.reset();
 			PreparedScript pscript = conn.prepareScript(

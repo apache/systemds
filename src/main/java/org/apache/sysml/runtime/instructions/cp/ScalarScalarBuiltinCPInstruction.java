@@ -29,7 +29,7 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 
 	protected ScalarScalarBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String instr) {
-		super(op, in1, in2, out, 2, opcode, instr);
+		super(op, in1, in2, out, opcode, instr);
 	}
 
 	@Override 

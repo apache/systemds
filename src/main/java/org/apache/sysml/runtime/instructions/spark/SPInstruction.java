@@ -45,7 +45,7 @@ public abstract class SPInstruction extends Instruction {
 	protected boolean _requiresLabelUpdate = false;
 
 	protected SPInstruction(String opcode, String istr) {
-		type = INSTRUCTION_TYPE.SPARK;
+		type = IType.SPARK;
 		instString = istr;
 		instOpcode = opcode;
 

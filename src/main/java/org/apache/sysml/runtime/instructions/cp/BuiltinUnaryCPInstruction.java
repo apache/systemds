@@ -33,19 +33,11 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 
-	int arity;
-
-	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode,
+	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode,
 			String istr) {
-		super(op, in, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.BuiltinUnary;
-		arity = _arity;
+		super(CPType.BuiltinUnary, op, in, out, opcode, istr);
 	}
 
-	public int getArity() {
-		return arity;
-	}
-	
 	public static BuiltinUnaryCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

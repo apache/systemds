@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.instructions.Instruction;
 
 public class CPOperand 
 {
-	
 	private String _name;
 	private ValueType _valueType;
 	private DataType _dataType;
@@ -73,18 +72,6 @@ public class CPOperand
 	public void setName(String name) {
 		_name = name;
 	}
-	
-	public void setValueType(ValueType vt) {
-		_valueType = vt;
-	}
-	
-	public void setDataType(DataType dt) {
-		_dataType = dt;
-	}
-	
-	public void setLiteral(boolean literal) {
-		_isLiteral = literal;
-	}
 
 	public void split(String str){
 		String[] opr = str.split(Instruction.VALUETYPE_PREFIX);
@@ -104,12 +91,6 @@ public class CPOperand
 			_name = opr[0];
 			_valueType = ValueType.valueOf(opr[1]);
 		}
-	}
-
-	public void copy(CPOperand o){
-		_name = o.getName();
-		_valueType = o.getValueType();
-		_dataType = o.getDataType();
 	}
 
 	@Override

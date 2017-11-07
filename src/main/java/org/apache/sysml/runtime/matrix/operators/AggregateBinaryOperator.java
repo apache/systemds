@@ -29,31 +29,24 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 public class AggregateBinaryOperator extends Operator implements Serializable
 {
-
 	private static final long serialVersionUID = 1666421325090925726L;
 
-	public ValueFunction binaryFn;
-	public AggregateOperator aggOp;
-	private int k; //num threads
+	public final ValueFunction binaryFn;
+	public final AggregateOperator aggOp;
+	private final int k; //num threads
 	
-	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer)
-	{
+	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer) {
 		//default degree of parallelism is 1 
 		//(for example in MR/Spark because we parallelize over the number of blocks)
 		this( inner, outer, 1 );
 	}
 	
-	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer, int numThreads)
-	{
+	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer, int numThreads) {
+		//so far, we only support matrix multiplication, and it is sparseSafe
+		super(inner instanceof Multiply && outer.increOp.fn instanceof Plus);
 		binaryFn = inner;
 		aggOp = outer;
 		k = numThreads;
-		
-		//so far, we only support matrix multiplication, and it is sparseSafe
-		if(binaryFn instanceof Multiply && aggOp.increOp.fn instanceof Plus)
-			sparseSafe=true;
-		else
-			sparseSafe=false;
 	}
 	
 	public int getNumThreads() {

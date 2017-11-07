@@ -37,7 +37,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 
 	private SpoofCPInstruction(SpoofOperator op, Class<?> cla, int k, CPOperand[] in, CPOperand out, String opcode,
 			String str) {
-		super(null, null, null, out, opcode, str);
+		super(CPType.SpoofFused, null, null, null, out, opcode, str);
 		_class = cla;
 		_op = op;
 		_numThreads = k;

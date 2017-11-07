@@ -1059,21 +1059,21 @@ public class LargeParUnaryAggregateTest extends AutomatedTestBase
 			
 			//prepare unary aggregate operator
 			AggregateUnaryOperator auop = null;
+			int k = InfrastructureAnalyzer.getLocalParallelism();
 			switch (aggtype) {
-				case SUM: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+"); break;
-				case ROWSUMS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+"); break;
-				case COLSUMS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+"); break;
-				case SUMSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+"); break;
-				case ROWSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+"); break;
-				case COLSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+"); break;
-				case MAX: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax"); break;
-				case ROWMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax"); break;
-				case COLMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax"); break;
-				case MIN: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin"); break;
-				case ROWMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin"); break;
-				case COLMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin"); break;
+				case SUM: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+",k); break;
+				case ROWSUMS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+",k); break;
+				case COLSUMS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+",k); break;
+				case SUMSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+",k); break;
+				case ROWSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+",k); break;
+				case COLSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+",k); break;
+				case MAX: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax",k); break;
+				case ROWMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax",k); break;
+				case COLMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax",k); break;
+				case MIN: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin",k); break;
+				case ROWMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin",k); break;
+				case COLMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin",k); break;
 			}
-			auop.setNumThreads(InfrastructureAnalyzer.getLocalParallelism());
 			
 			//compress given matrix block
 			CompressedMatrixBlock cmb = new CompressedMatrixBlock(mb);

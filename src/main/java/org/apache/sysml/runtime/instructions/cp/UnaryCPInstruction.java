@@ -27,18 +27,18 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
 public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 
-	protected UnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		this(op, in, null, null, out, opcode, instr);
+	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		this(type, op, in, null, null, out, opcode, instr);
 	}
 
-	protected UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String instr) {
-		this(op, in1, in2, null, out, opcode, instr);
+		this(type, op, in1, in2, null, out, opcode, instr);
 	}
 
-	protected UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String instr) {
-		super(op, in1, in2, in3, out, opcode, instr);
+		super(type, op, in1, in2, in3, out, opcode, instr);
 	}
 
 	static String parseUnaryInstruction(String instr, CPOperand in,

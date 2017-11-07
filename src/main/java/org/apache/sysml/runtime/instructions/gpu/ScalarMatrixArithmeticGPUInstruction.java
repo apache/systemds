@@ -55,7 +55,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		ec.setMetaData(_output.getName(), rlen, clen);
 		
 		ScalarOperator sc_op = (ScalarOperator) _optr;
-		sc_op.setConstant(constant.getDoubleValue());
+		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		
 		LibMatrixCUDA.matrixScalarArithmetic(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, _output.getName(), isTransposed, sc_op);
 		

@@ -45,8 +45,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 
 	private QuantileSortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.QSort;
+		super(CPType.QSort, op, in1, in2, out, opcode, istr);
 	}
 
 	public static QuantileSortCPInstruction parseInstruction ( String str ) 

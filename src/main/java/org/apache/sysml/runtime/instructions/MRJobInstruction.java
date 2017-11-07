@@ -127,7 +127,7 @@ public class MRJobInstruction extends Instruction
 
 	public MRJobInstruction(JobType type)
 	{
-		setType(Instruction.INSTRUCTION_TYPE.MAPREDUCE_JOB);
+		setType(Instruction.IType.MAPREDUCE_JOB);
 		jobType = type;	
 		instOpcode = "MR-Job_"+getJobType();
 	}

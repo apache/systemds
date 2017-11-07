@@ -34,9 +34,9 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
 public class ReorgCPInstruction extends UnaryCPInstruction {
 	// sort-specific attributes (to enable variable attributes)
-	private CPOperand _col = null;
-	private CPOperand _desc = null;
-	private CPOperand _ixret = null;
+	private final CPOperand _col;
+	private final CPOperand _desc;
+	private final CPOperand _ixret;
 
 	/**
 	 * for opcodes r' and rdiag
@@ -53,8 +53,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 	 *            ?
 	 */
 	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.Reorg;
+		this(op, in, out, null, null, null, opcode, istr);
 	}
 
 	/**
@@ -77,9 +76,9 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 	 * @param istr
 	 *            ?
 	 */
-	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out,
+	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand col, CPOperand desc, CPOperand ixret,
 			String opcode, String istr) {
-		this(op, in, out, opcode, istr);
+		super(CPType.Reorg, op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
 		_ixret = ixret;
@@ -117,7 +116,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
 			return new ReorgCPInstruction(new ReorgOperator(SortIndex.getSortIndexFnObject(1,false,false)), 
-					                      in, col, desc, ixret, out, opcode, str);
+						in, out, col, desc, ixret, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
@@ -129,19 +128,19 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException 
 	{
 		//acquire inputs
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());		
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		ReorgOperator r_op = (ReorgOperator) _optr;
 		if( r_op.fn instanceof SortIndex ) {
 			//additional attributes for sort
 			int col = (int)ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue();
 			boolean desc = ec.getScalarInput(_desc.getName(), _desc.getValueType(), _desc.isLiteral()).getBooleanValue();
 			boolean ixret = ec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
-			r_op.fn = SortIndex.getSortIndexFnObject(col, desc, ixret);
+			r_op = r_op.setFn(SortIndex.getSortIndexFnObject(col, desc, ixret));
 		}
 		
 		//execute operation
 		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
-        
+		
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());

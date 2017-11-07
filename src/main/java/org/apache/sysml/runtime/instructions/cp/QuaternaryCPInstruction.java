@@ -35,13 +35,12 @@ import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 
 public class QuaternaryCPInstruction extends ComputationCPInstruction {
 
-	private CPOperand input4 = null;
-	private int _numThreads = -1;
+	private final CPOperand input4;
+	private final int _numThreads;
 
 	private QuaternaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 			CPOperand out, int k, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-
+		super(CPType.Quaternary, op, in1, in2, in3, out, opcode, istr);
 		input4 = in4;
 		_numThreads = k;
 	}

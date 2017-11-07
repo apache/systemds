@@ -44,18 +44,19 @@ public class CMOperator extends Operator
 	public AggregateOperationTypes aggOpType;
 
 	public CMOperator(ValueFunction op, AggregateOperationTypes agg) {
+		super(true);
 		fn = op;
 		aggOpType = agg;
-		sparseSafe = true;
 	}
 
 	public AggregateOperationTypes getAggOpType() {
 		return aggOpType;
 	}
 	
-	public void setCMAggOp(int order) {
-		aggOpType = getCMAggOpType(order);
-		fn = CM.getCMFnObject(aggOpType);
+	public CMOperator setCMAggOp(int order) {
+		AggregateOperationTypes agg = getCMAggOpType(order);
+		ValueFunction fn = CM.getCMFnObject(aggOpType);
+		return new CMOperator(fn, agg);
 	}
 	
 	public static AggregateOperationTypes getCMAggOpType ( int order ) {

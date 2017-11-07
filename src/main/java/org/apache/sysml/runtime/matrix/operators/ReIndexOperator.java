@@ -22,11 +22,9 @@ package org.apache.sysml.runtime.matrix.operators;
 
 public class ReIndexOperator extends Operator 
 {
-	
 	private static final long serialVersionUID = 8603367674384408297L;
 	
-	public ReIndexOperator()
-	{
-		sparseSafe=true;
+	public ReIndexOperator() {
+		super(true);
 	}
 }

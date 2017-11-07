@@ -176,7 +176,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		ScalarOperator sc_op = (ScalarOperator) _optr;
-		sc_op.setConstant(constant.getDoubleValue());
+		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		
 		//execute scalar matrix arithmetic instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );

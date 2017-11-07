@@ -39,17 +39,15 @@ import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 
 public class FunctionCallCPInstruction extends CPInstruction {
-	private String _functionName;
-	private String _namespace;
+	private final String _functionName;
+	private final String _namespace;
 	private final CPOperand[] _boundInputs;
 	private final ArrayList<String> _boundInputNames;
 	private final ArrayList<String> _boundOutputNames;
-	private HashSet<String> _expectRetVars = null;
 
 	private FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs, 
 		ArrayList<String> boundInputNames, ArrayList<String> boundOutputNames, String istr) {
-		super(null, functName, istr);
-		_cptype = CPINSTRUCTION_TYPE.External;
+		super(CPType.External, null, functName, istr);
 		_functionName = functName;
 		_namespace = namespace;
 		_boundInputs = boundInputs;
@@ -173,15 +171,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// cleanup all returned variables w/o binding 
-		if( _expectRetVars == null ) {
-			_expectRetVars = new HashSet<>();
-			for(DataIdentifier di : fpb.getOutputParams())
-				_expectRetVars.add(di.getName());
-		}
+		HashSet<String> expectRetVars = new HashSet<>();
+		for(DataIdentifier di : fpb.getOutputParams())
+			expectRetVars.add(di.getName());
 		
 		LocalVariableMap retVars = fn_ec.getVariables();
 		for( Entry<String,Data> var : retVars.entrySet() ) {
-			if( _expectRetVars.contains(var.getKey()) )
+			if( expectRetVars.contains(var.getKey()) )
 				continue;
 			//cleanup unexpected return values to avoid leaks
 			if( var.getValue() instanceof MatrixObject )
@@ -235,17 +231,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	
 	public ArrayList<String> getBoundOutputParamNames() {
 		return _boundOutputNames;
-	}
-
-	public void setFunctionName(String fname)
-	{
-		//update instruction string
-		String oldfname = _functionName;
-		instString = updateInstStringFunctionName(oldfname, fname);
-		
-		//set attribute
-		_functionName = fname;
-		instOpcode = fname;
 	}
 
 	public String updateInstStringFunctionName(String pattern, String replace)

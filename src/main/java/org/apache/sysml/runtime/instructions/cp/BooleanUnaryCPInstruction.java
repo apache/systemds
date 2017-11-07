@@ -29,8 +29,7 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 public class BooleanUnaryCPInstruction extends UnaryCPInstruction {
 
 	private BooleanUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, opcode, instr);
-		_cptype = CPINSTRUCTION_TYPE.BooleanUnary;
+		super(CPType.BooleanUnary, op, in, out, opcode, instr);
 	}
 
 	public static BooleanUnaryCPInstruction parseInstruction (String str) 

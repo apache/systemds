@@ -49,16 +49,14 @@ public class BinaryOperator  extends Operator implements Serializable
 {
 	private static final long serialVersionUID = -2547950181558989209L;
 
-	public ValueFunction fn;
+	public final ValueFunction fn;
 	
-	public BinaryOperator(ValueFunction p)
-	{
-		fn = p;
-		
+	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
-		sparseSafe = (fn instanceof Plus || fn instanceof Multiply 
-			|| fn instanceof Minus || fn instanceof And || fn instanceof Or 
-			|| fn instanceof PlusMultiply || fn instanceof MinusMultiply);
+		super (p instanceof Plus || p instanceof Multiply 
+			|| p instanceof Minus || p instanceof And || p instanceof Or 
+			|| p instanceof PlusMultiply || p instanceof MinusMultiply);
+		fn = p;
 	}
 	
 	/**

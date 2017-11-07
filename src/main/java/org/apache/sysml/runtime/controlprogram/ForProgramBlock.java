@@ -42,7 +42,7 @@ public class ForProgramBlock extends ProgramBlock
 	protected ArrayList<Instruction> _incrementInstructions;
 	protected ArrayList <Instruction> _exitInstructions;
 	protected ArrayList<ProgramBlock> _childBlocks;
-	protected String _iterPredVar; 
+	protected final String _iterPredVar; 
 	
 	public ForProgramBlock(Program prog, String iterPredVar) {
 		super(prog);
@@ -97,10 +97,6 @@ public class ForProgramBlock extends ProgramBlock
 	
 	public String getIterVar() {
 		return _iterPredVar;
-	}
-	
-	public void setIterVar(String iterPredVar) {
-		_iterPredVar = iterPredVar;
 	}
 	
 	@Override	

@@ -28,13 +28,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class MMChainCPInstruction extends UnaryCPInstruction {
 
-	private ChainType _type = null;
-	private int _numThreads = -1;
+	private final ChainType _type;
+	private final int _numThreads;
 
 	private MMChainCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			ChainType type, int k, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.MMChain;
+		super(CPType.MMChain, op, in1, in2, in3, out, opcode, istr);
 		_type = type;
 		_numThreads = k;
 	}
@@ -43,7 +42,7 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		throws DMLRuntimeException 
 	{
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields( parts, 5, 6 );
 	
 		String opcode = parts[0];

@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
  * string.
  *
  */
-public class ScalarBuiltinNaryCPInstruction extends BuiltinNary {
+public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	protected ScalarBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand[] inputs) {
 		super(op, opcode, istr, output, inputs);

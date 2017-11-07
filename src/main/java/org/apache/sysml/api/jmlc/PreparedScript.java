@@ -80,7 +80,7 @@ public class PreparedScript
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
-		_prog = that._prog;
+		_prog = that._prog.clone(false);
 		_vars = new LocalVariableMap();
 		for(Entry<String, Data> e : that._vars.entrySet())
 			_vars.put(e.getKey(), e.getValue());

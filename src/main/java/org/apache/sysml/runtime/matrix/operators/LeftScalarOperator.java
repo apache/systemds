@@ -37,21 +37,15 @@ public class LeftScalarOperator extends ScalarOperator
 	private static final long serialVersionUID = 2360577666575746424L;
 	
 	public LeftScalarOperator(ValueFunction p, double cst) {
-		super(p, cst);
+		super(p, cst, (p instanceof GreaterThan && cst<=0)
+			|| (p instanceof GreaterThanEquals && cst<0)
+			|| (p instanceof LessThan && cst>=0)
+			|| (p instanceof LessThanEquals && cst>0));
 	}
 	
 	@Override
-	public void setConstant(double cst) 
-	{
-		//overwrites constant and sparse safe flag
-		super.setConstant(cst);
-		
-		//enable conditionally sparse safe operations
-		sparseSafe |= ( isSparseSafeStatic()
-			|| (fn instanceof GreaterThan && _constant<=0)
-			|| (fn instanceof GreaterThanEquals && _constant<0)
-			|| (fn instanceof LessThan && _constant>=0)
-			|| (fn instanceof LessThanEquals && _constant>0));
+	public ScalarOperator setConstant(double cst) {
+		return new LeftScalarOperator(fn, cst);
 	}
 
 	@Override

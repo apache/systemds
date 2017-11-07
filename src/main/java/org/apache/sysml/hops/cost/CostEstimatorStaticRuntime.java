@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.MRInstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.mr.BinaryMRInstructionBase;
@@ -789,7 +789,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		//NOTE: all instruction types that are equivalent in CP and MR are only
 		//included in CP to prevent redundancy
-		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get(optype);
+		CPType cptype = CPInstructionParser.String2CPInstructionType.get(optype);
 		if( cptype != null ) //for CP Ops and equivalent MR ops 
 		{
 			//general approach: count of floating point *, /, +, -, ^, builtin ;

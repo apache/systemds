@@ -36,30 +36,24 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 
 	private DataGenMethod method = DataGenMethod.INVALID;
 
-	private long rows;
-	private long cols;
-	private int rowsInBlock;
-	private int colsInBlock;
-	private double minValue;
-	private double maxValue;
-	private double sparsity;
-	private String pdf, pdfParams;
-	private long seed = 0;
+	private final long rows, cols;
+	private final int rowsInBlock, colsInBlock;
+	private final double minValue, maxValue, sparsity;
+	private final String pdf, pdfParams;
+	private final long seed;
 
 	// sequence specific attributes
-	private double seq_from;
-	private double seq_to;
-	private double seq_incr;
+	private final double seq_from, seq_to, seq_incr;
 
 	// sample specific attributes
-	private boolean replace;
-	private int numThreads = -1;
+	private final boolean replace;
+	private final int numThreads;
 
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
-			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
-			String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
+			long rows, long cols, int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
+			String probabilityDensityFunction, String pdfParams, int k, 
+			double seqFrom, double seqTo, double seqIncr, boolean replace, String opcode, String istr) {
+		super(CPType.Rand, op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -70,92 +64,58 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
-		this.numThreads = k;
 		this.pdfParams = pdfParams;
+		this.numThreads = k;
+		this.seq_from = seqFrom;
+		this.seq_to = seqTo;
+		this.seq_incr = seqIncr;
+		this.replace = replace;
+	}
+	
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
+			String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) {
+		this(op, mthd, in, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, 
+			probabilityDensityFunction, pdfParams, k, -1, -1, -1, false, opcode, istr);
 	}
 
 	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
 			int rpb, int cpb, double maxValue, boolean replace, long seed, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-
-		this.method = mthd;
-		this.rows = rows;
-		this.cols = cols;
-		this.rowsInBlock = rpb;
-		this.colsInBlock = cpb;
-		this.maxValue = maxValue;
-		this.replace = replace;
-		this.seed = seed;
+		this(op, mthd, in, out, rows, cols, rpb, cpb, 0, maxValue, 1.0, seed, 
+			null, null, 1, -1, -1, -1, replace, opcode, istr);
 	}
 
 	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols,
 			int rpb, int cpb, double seqFrom, double seqTo, double seqIncr, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-
-		this.method = mthd;
-		this.rows = rows;
-		this.cols = cols;
-		this.rowsInBlock = rpb;
-		this.colsInBlock = cpb;
-		this.seq_from = seqFrom;
-		this.seq_to = seqTo;
-		this.seq_incr = seqIncr;
+		this(op, mthd, in, out, rows, cols, rpb, cpb, 0, 1, 1.0, -1, 
+			null, null, 1, seqFrom, seqTo, seqIncr, false, opcode, istr);
 	}
 
 	public long getRows() {
 		return rows;
 	}
 
-	public void setRows(long rows) {
-		this.rows = rows;
-	}
-
 	public long getCols() {
 		return cols;
 	}
-
-	public void setCols(long cols) {
-		this.cols = cols;
-	}
-
 	public int getRowsInBlock() {
 		return rowsInBlock;
-	}
-
-	public void setRowsInBlock(int rowsInBlock) {
-		this.rowsInBlock = rowsInBlock;
 	}
 
 	public int getColsInBlock() {
 		return colsInBlock;
 	}
 
-	public void setColsInBlock(int colsInBlock) {
-		this.colsInBlock = colsInBlock;
-	}
-
 	public double getMinValue() {
 		return minValue;
-	}
-
-	public void setMinValue(double minValue) {
-		this.minValue = minValue;
 	}
 
 	public double getMaxValue() {
 		return maxValue;
 	}
 
-	public void setMaxValue(double maxValue) {
-		this.maxValue = maxValue;
-	}
-
 	public double getSparsity() {
 		return sparsity;
-	}
-
-	public void setSparsity(double sparsity) {
-		this.sparsity = sparsity;
 	}
 
 	public static DataGenCPInstruction parseInstruction(String str) 
@@ -299,12 +259,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		else if ( method == DataGenMethod.SEQ ) 
 		{
 			//handle default 1 to -1 for special case of from>to
-			seq_incr = LibMatrixDatagen.updateSeqIncr(seq_from, seq_to, seq_incr);
+			double lSeqIncr = LibMatrixDatagen.updateSeqIncr(seq_from, seq_to, seq_incr);
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process DataGenCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
+				LOG.trace("Process DataGenCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+lSeqIncr);
 			
-			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
+			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, lSeqIncr);
 		}
 		else if ( method == DataGenMethod.SAMPLE ) 
 		{

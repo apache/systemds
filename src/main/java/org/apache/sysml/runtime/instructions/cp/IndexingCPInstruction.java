@@ -30,11 +30,11 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 
 public abstract class IndexingCPInstruction extends UnaryCPInstruction {
-	protected CPOperand rowLower, rowUpper, colLower, colUpper;
+	protected final CPOperand rowLower, rowUpper, colLower, colUpper;
 
 	protected IndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
 			CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
+		super(CPType.MatrixIndexing, op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
@@ -43,7 +43,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 
 	protected IndexingCPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru,
 			CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(op, lhsInput, rhsInput, out, opcode, istr);
+		super(CPType.MatrixIndexing, op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;

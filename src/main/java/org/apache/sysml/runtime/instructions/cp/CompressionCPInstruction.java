@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class CompressionCPInstruction extends UnaryCPInstruction {
 
 	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, null, null, out, opcode, istr);
+		super(CPType.Compression, op, in, null, null, out, opcode, istr);
 	}
 
 	public static Instruction parseInstruction(String str)
@@ -42,7 +42,7 @@ public class CompressionCPInstruction extends UnaryCPInstruction {
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		
-		return new CompressionCPInstruction(null, in1, out, opcode, str);				
+		return new CompressionCPInstruction(null, in1, out, opcode, str);
 	}
 	
 	@Override

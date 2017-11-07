@@ -86,7 +86,7 @@ public class VariableCPInstruction extends CPInstruction {
 		CopyVariable,
 		MoveVariable,
 		RemoveVariable,
-		RemoveVariableAndFile,		 
+		RemoveVariableAndFile,
 		CastAsScalarVariable, 
 		CastAsMatrixVariable, 
 		CastAsFrameVariable,
@@ -98,58 +98,52 @@ public class VariableCPInstruction extends CPInstruction {
 		SetFileName, 
 	}
 	
-	private static IDSequence _uniqueVarID;	
+	private static final IDSequence _uniqueVarID = new IDSequence(true);
 	private static final int CREATEVAR_FILE_NAME_VAR_POS=3;
 	
 	private final VariableOperationCode opcode;
 	private final List<CPOperand> inputs;
 	private final CPOperand output;
-	private MetaData metadata;
-	private UpdateType _updateType;
+	private final MetaData metadata;
+	private final UpdateType _updateType;
 	
 	// Frame related members
-	private String _schema;
+	private final String _schema;
 	
 	// CSV related members (used only in createvar instructions)
-	private FileFormatProperties _formatProperties;
-	
-	static {
-		_uniqueVarID  = new IDSequence(true); 
-	}
+	private final FileFormatProperties _formatProperties;
 
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			int _arity, String sopcode, String istr) {
-		super(sopcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.Variable;
+			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr) {
+		super(CPType.Variable, sopcode, istr);
 		opcode = op;
 		inputs = new ArrayList<>();
 		addInput(in1);
 		addInput(in2);
 		addInput(in3);
 		output = out;
-
-		_formatProperties = null;
-		_schema = null;
-	}
-
-	// This version of the constructor is used only in case of CreateVariable
-	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
-			UpdateType updateType, int _arity, String schema, String sopcode, String istr) {
-		this(op, in1, in2, in3, (CPOperand) null, _arity, sopcode, istr);
-		metadata = md;
-		_updateType = updateType;
+		metadata = meta;
+		_formatProperties = fprops;
 		_schema = schema;
+		_updateType = utype;
+	}
+	
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String sopcode, String istr) {
+		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr);
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
-			UpdateType updateType, int _arity, FileFormatProperties formatProperties, String schema, String sopcode,
+			UpdateType updateType, String schema, String sopcode, String istr) {
+		this(op, in1, in2, in3, null, md, null, schema, updateType, sopcode, istr);
+	}
+
+	// This version of the constructor is used only in case of CreateVariable
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
+			UpdateType updateType, FileFormatProperties formatProperties, String schema, String sopcode,
 			String istr) {
-		this(op, in1, in2, in3, (CPOperand) null, _arity, sopcode, istr);
-		metadata = md;
-		_updateType = updateType;
-		_formatProperties = formatProperties;
-		_schema = schema;
+		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr);
 	}
 
 	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLRuntimeException {
@@ -235,10 +229,6 @@ public class VariableCPInstruction extends CPInstruction {
 		return _formatProperties;
 	}
 	
-	public void setFormatProperties(FileFormatProperties prop) {
-		_formatProperties = prop;
-	}
-	
 	public List<CPOperand> getInputs() {
 		return inputs;
 	}
@@ -293,7 +283,6 @@ public class VariableCPInstruction extends CPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 		VariableOperationCode voc = getVariableOperationCode(opcode);
-		int _arity = -1;
 		
 		if ( voc == VariableOperationCode.CreateVariable ){
 			if ( parts.length < 5 )  //&& parts.length != 10 )
@@ -311,9 +300,8 @@ public class VariableCPInstruction extends CPInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
-			_arity = getArity(voc);
 			if( voc != VariableOperationCode.RemoveVariable )
-				InstructionUtils.checkNumFields ( parts, _arity ); // no output
+				InstructionUtils.checkNumFields ( parts, getArity(voc) ); // no output
 		}
 		
 		CPOperand in1=null, in2=null, in3=null, in4=null, out=null;
@@ -389,10 +377,10 @@ public class VariableCPInstruction extends CPInstruction {
 						naStrings = parts[16];
 					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, parts.length, fmtProperties, schema, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
 			else {
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, parts.length, schema, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
 			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -414,7 +402,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RemoveVariable:
 			VariableCPInstruction rminst = new VariableCPInstruction(
-				getVariableOperationCode(opcode), null, null, null, out, _arity, opcode, str);
+				getVariableOperationCode(opcode), null, null, null, out, opcode, str);
 			for( int i=1; i<parts.length; i++ )
 				rminst.addInput(new CPOperand(parts[i], ValueType.UNKNOWN, DataType.SCALAR));
 			return rminst;
@@ -442,22 +430,21 @@ public class VariableCPInstruction extends CPInstruction {
 			in2 = new CPOperand(parts[2]);
 			in3 = new CPOperand(parts[3]);
 			
-			VariableCPInstruction inst = new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str); 
-			
+			FileFormatProperties fprops = null;
 			if ( in3.getName().equalsIgnoreCase("csv") ) {
 				boolean hasHeader = Boolean.parseBoolean(parts[4]);
 				String delim = parts[5];
 				boolean sparse = Boolean.parseBoolean(parts[6]);
-				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
-				inst.setFormatProperties(formatProperties);
+				fprops = new CSVFileFormatProperties(hasHeader, delim, sparse);
 				in4 = new CPOperand(parts[7]); // description
-				inst.addInput(in4);
 			} else {
-				FileFormatProperties ffp = new FileFormatProperties();
-				inst.setFormatProperties(ffp);
+				fprops = new FileFormatProperties();
 				in4 = new CPOperand(parts[4]); // description
-				inst.addInput(in4);
 			}
+			VariableCPInstruction inst = new VariableCPInstruction(
+				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str); 
+			inst.addInput(in4);
+			
 			return inst;
 			
 		case Read:
@@ -474,7 +461,7 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 		
 		}
-		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str);
+		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, opcode, str);
 	}
 	
 	@Override

@@ -51,7 +51,7 @@ public class ScalarMatrixRelationalBinaryGPUInstruction extends RelationalBinary
 		ec.setMetaData(_output.getName(), rlen, clen);
 
 		ScalarOperator sc_op = (ScalarOperator) _optr;
-		sc_op.setConstant(constant.getDoubleValue());
+		sc_op = sc_op.setConstant(constant.getDoubleValue());
 
 		LibMatrixCUDA.matrixScalarRelational(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, _output.getName(), sc_op);
 

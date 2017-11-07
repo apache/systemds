@@ -30,8 +30,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 
 	private AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
+		super(CPType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	public static AggregateTernaryCPInstruction parseInstruction( String str ) 

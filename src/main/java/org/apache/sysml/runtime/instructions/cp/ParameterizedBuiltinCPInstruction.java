@@ -55,18 +55,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
 
-	private int arity;
-	protected HashMap<String, String> params;
+	protected final HashMap<String, String> params;
 
 	protected ParameterizedBuiltinCPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr) {
-		super(op, null, null, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.ParameterizedBuiltin;
+		super(CPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
-	}
-
-	public int getArity() {
-		return arity;
 	}
 	
 	public HashMap<String,String> getParameterMap() { 

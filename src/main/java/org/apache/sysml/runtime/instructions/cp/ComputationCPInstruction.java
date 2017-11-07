@@ -24,21 +24,21 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class ComputationCPInstruction extends CPInstruction {
 
-	public CPOperand output;
-	public CPOperand input1, input2, input3;
+	public final CPOperand output;
+	public final CPOperand input1, input2, input3;
 
-	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, opcode, istr);
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = null;
 		output = out;
 	}
 
-	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(op, opcode, istr);
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;

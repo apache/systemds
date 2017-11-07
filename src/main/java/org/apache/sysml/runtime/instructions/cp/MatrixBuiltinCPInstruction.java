@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 	protected MatrixBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, 1, opcode, instr);
+		super(op, in, out, opcode, instr);
 	}
 
 	@Override 
@@ -55,6 +55,6 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 	 		}
 			
 			ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
-		}		
+		}
 	}
 }

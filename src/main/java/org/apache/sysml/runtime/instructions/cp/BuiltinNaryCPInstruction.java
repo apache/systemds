@@ -36,19 +36,18 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
  * Java-based string formatting.
  *
  */
-public abstract class BuiltinNary extends CPInstruction 
+public abstract class BuiltinNaryCPInstruction extends CPInstruction 
 {
-	public CPOperand output;
-	public CPOperand[] inputs;
+	protected final CPOperand output;
+	protected final CPOperand[] inputs;
 
-	public BuiltinNary(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
-		super(op, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.BuiltinNary;
+	public BuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
+		super(CPType.BuiltinNary, op, opcode, istr);
 		this.output = output;
 		this.inputs = inputs;
 	}
 
-	public static BuiltinNary parseInstruction(String str) throws DMLRuntimeException {
+	public static BuiltinNaryCPInstruction parseInstruction(String str) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand outputOperand = new CPOperand(parts[parts.length - 1]);

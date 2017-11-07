@@ -33,22 +33,15 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
-	int arity;
 	protected ArrayList<CPOperand> _outputs;
 
 	private MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode,
 			String istr) {
-		super(op, input1, null, outputs.get(0), opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
+		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
 		_outputs = outputs;
 	}
-
-	public int getArity() {
-		return arity;
-	}
 	
-	public CPOperand getOutput(int i)
-	{
+	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
 	

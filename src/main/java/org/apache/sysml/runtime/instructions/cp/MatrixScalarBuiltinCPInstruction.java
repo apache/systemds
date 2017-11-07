@@ -30,7 +30,7 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 
 	protected MatrixScalarBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String instr) {
-		super(op, in1, in2, out, 2, opcode, instr);
+		super(op, in1, in2, out, opcode, instr);
 	}
 
 	@Override 
@@ -44,7 +44,7 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		ScalarOperator sc_op = (ScalarOperator) _optr;
-		sc_op.setConstant(constant.getDoubleValue());
+		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		
 		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
 

@@ -37,9 +37,6 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
-
-		// value dependent safe-safeness (trigger re-evaluation sparse-safe)
-		op.setConstant(op.getConstant());
 	}
 
 	public static ScalarInstruction parseInstruction ( String str )

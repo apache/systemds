@@ -42,28 +42,29 @@ public abstract class ScalarOperator extends Operator
 {
 	private static final long serialVersionUID = 4547253761093455869L;
 
-	public ValueFunction fn;
-	protected double _constant;
+	public final ValueFunction fn;
+	protected final double _constant;
 	
 	public ScalarOperator(ValueFunction p, double cst) {
+		this(p, cst, false);
+	}
+	
+	protected ScalarOperator(ValueFunction p, double cst, boolean altSparseSafe) {
+		super( isSparseSafeStatic(p) || altSparseSafe
+				|| (p instanceof NotEquals && cst==0)
+				|| (p instanceof Equals && cst!=0)
+				|| (p instanceof Minus && cst==0)
+				|| (p instanceof Builtin && ((Builtin)p).getBuiltinCode()==BuiltinCode.MAX && cst<=0)
+				|| (p instanceof Builtin && ((Builtin)p).getBuiltinCode()==BuiltinCode.MIN && cst>=0));
 		fn = p;
-		//set constant and sparse safe flag
-		setConstant(cst);
+		_constant = cst;
 	}
 	
 	public double getConstant() {
 		return _constant;
 	}
 	
-	public void setConstant(double cst) {
-		_constant = cst;
-		sparseSafe = (isSparseSafeStatic()
-			|| (fn instanceof NotEquals && _constant==0)
-			|| (fn instanceof Equals && _constant!=0)
-			|| (fn instanceof Minus && _constant==0)
-			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MAX && _constant<=0)
-			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MIN && _constant>=0));
-	}
+	public abstract ScalarOperator setConstant(double cst);
 	
 	/**
 	 * Apply the scalar operator over a given input value.
@@ -81,7 +82,7 @@ public abstract class ScalarOperator extends Operator
 	 * 
 	 * @return true if function statically sparse safe
 	 */
-	protected boolean isSparseSafeStatic() {
+	protected static boolean isSparseSafeStatic(ValueFunction fn) {
 		return ( fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power2 || fn instanceof And || fn instanceof MinusNz
 			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ);

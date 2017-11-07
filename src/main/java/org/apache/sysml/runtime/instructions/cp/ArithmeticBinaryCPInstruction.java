@@ -30,8 +30,7 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction 
 
 	protected ArithmeticBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.ArithmeticBinary;
+		super(CPType.ArithmeticBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static ArithmeticBinaryCPInstruction parseInstruction ( String str ) 

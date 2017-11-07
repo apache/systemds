@@ -38,22 +38,17 @@ public class RightScalarOperator extends ScalarOperator
 	private static final long serialVersionUID = 5148300801904349919L;
 	
 	public RightScalarOperator(ValueFunction p, double cst) {
-		super(p, cst);
+		super(p, cst, (p instanceof GreaterThan && cst>=0)
+			|| (p instanceof GreaterThanEquals && cst>0)
+			|| (p instanceof LessThan && cst<=0)
+			|| (p instanceof LessThanEquals && cst<0)
+			|| (p instanceof Divide && cst!=0)
+			|| (p instanceof Power && cst!=0));
 	}
 
 	@Override
-	public void setConstant(double cst) 
-	{
-		super.setConstant(cst);
-		
-		//enable conditionally sparse safe operations
-		sparseSafe |= (isSparseSafeStatic()
-			|| (fn instanceof GreaterThan && _constant>=0)
-			|| (fn instanceof GreaterThanEquals && _constant>0)
-			|| (fn instanceof LessThan && _constant<=0)
-			|| (fn instanceof LessThanEquals && _constant<0)
-			|| (fn instanceof Divide && _constant!=0)
-			|| (fn instanceof Power && _constant!=0));
+	public ScalarOperator setConstant(double cst) {
+		return new RightScalarOperator(fn, cst);
 	}
 	
 	@Override

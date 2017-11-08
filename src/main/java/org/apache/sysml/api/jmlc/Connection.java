@@ -131,9 +131,7 @@ public class Connection implements Closeable
 		//create default configuration
 		_dmlconf = new DMLConfig();
 		
-		//set thread-local configurations for compilation and read
-		ConfigurationManager.setLocalConfig(_dmlconf);
-		ConfigurationManager.setLocalConfig(_cconf);
+		setLocalConfigs();
 	}
 	
 	/**
@@ -149,10 +147,7 @@ public class Connection implements Closeable
 		//set optional compiler configurations in current config
 		for( ConfigType configType : configs )
 			_cconf.set(configType, true);
-		
-		//set thread-local configurations for compilation and read
-		ConfigurationManager.setLocalConfig(_dmlconf);
-		ConfigurationManager.setLocalConfig(_cconf);
+		setLocalConfigs();
 	}
 	
 	/**
@@ -214,13 +209,11 @@ public class Connection implements Closeable
 		if( invalidVars.length > 0 )
 			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
 		
+		setLocalConfigs();
+		
 		//simplified compilation chain
 		Program rtprog = null;
 		try {
-			//set thread-local configurations for compilation
-			ConfigurationManager.setLocalConfig(_dmlconf);
-			ConfigurationManager.setLocalConfig(_cconf);
-			
 			//parsing
 			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
@@ -368,6 +361,8 @@ public class Connection implements Closeable
 	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
 		throws IOException
 	{
+		setLocalConfigs();
+		
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
 			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
@@ -534,6 +529,8 @@ public class Connection implements Closeable
 			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
 		}
 		
+		setLocalConfigs();
+		
 		try {
 			//read input matrix
 			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
@@ -574,7 +571,7 @@ public class Connection implements Closeable
 			long rows = jmtd.getLong(DataExpression.READROWPARAM);
 			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
 		
 			//read frame file
 			return readStringFrame(fname, iinfo, rows, cols);
@@ -598,6 +595,8 @@ public class Connection implements Closeable
 	public String[][] readStringFrame(String fname, InputInfo iinfo, long rows, long cols) 
 		throws IOException
 	{
+		setLocalConfigs();
+		
 		try {
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
 			FrameBlock mb = reader.readFrameFromHDFS(fname, rows, cols);
@@ -764,6 +763,8 @@ public class Connection implements Closeable
 			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
 		}
 		
+		setLocalConfigs();
+		
 		try {
 			//read input frame
 			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
@@ -862,5 +863,11 @@ public class Connection implements Closeable
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) throws IOException {
 		return TfMetaUtils.readTransformMetaDataFromPath(spec, metapath, colDelim);
+	}
+	
+	private void setLocalConfigs() {
+		//set thread-local configurations for compilation and read
+		ConfigurationManager.setLocalConfig(_dmlconf);
+		ConfigurationManager.setLocalConfig(_cconf);
 	}
 }

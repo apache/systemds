@@ -116,7 +116,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
-		throw new DMLRuntimeException("Not implemented yet.");
+		//not implemented yet, fallback to sequential reader
+		return new ReaderTextCSV(_props)
+			.readMatrixFromInputStream(is, rlen, clen, brlen, bclen, estnnz);
 	}
 	
 	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 

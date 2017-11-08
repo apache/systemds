@@ -107,7 +107,9 @@ public class ReaderTextCellParallel extends MatrixReader
 	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
-		throw new DMLRuntimeException("Not implemented yet.");
+		//not implemented yet, fallback to sequential reader
+		return new ReaderTextCell(_isMMFile ? InputInfo.MatrixMarketInputInfo : InputInfo.TextCellInputInfo)
+			.readMatrixFromInputStream(is, rlen, clen, brlen, bclen, estnnz);
 	}
 	
 	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )

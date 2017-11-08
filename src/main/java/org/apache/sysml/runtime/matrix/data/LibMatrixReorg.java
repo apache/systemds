@@ -114,7 +114,7 @@ public class LibMatrixReorg
 				return diag(in, out); 
 			case SORT:      
 				SortIndex ix = (SortIndex) op.fn;
-				return sort(in, out, ix.getCol(), ix.getDecreasing(), ix.getIndexReturn());
+				return sort(in, out, ix.getCols(), ix.getDecreasing(), ix.getIndexReturn());
 			
 			default:        
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
@@ -317,7 +317,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int by, boolean desc, boolean ixret) 
+	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int[] by, boolean desc, boolean ixret) 
 		throws DMLRuntimeException
 	{
 		//meta data gathering and preparation
@@ -328,8 +328,9 @@ public class LibMatrixReorg
 		out.nonZeros = ixret ? rlen : in.nonZeros;
 		
 		//step 1: error handling
-		if( by <= 0 || clen < by )
-			throw new DMLRuntimeException("Sort configuration issue: non-existing orderby column: "+by+" ("+rlen+"x"+clen+" input).");
+		if( !isValidSortByList(by, clen) )
+			throw new DMLRuntimeException("Sort configuration issue: invalid orderby columns: "
+				+ Arrays.toString(by)+" ("+rlen+"x"+clen+" input).");
 		
 		//step 2: empty block / special case handling
 		if( !ixret ) //SORT DATA
@@ -350,8 +351,9 @@ public class LibMatrixReorg
 		{
 			if( in.isEmptyBlock(false) ) { //EMPTY INPUT BLOCK
 				out.allocateDenseBlock(false);
-				for( int i=0; i<rlen; i++ ) //seq(1,n)
-					out.setValueDenseUnsafe(i, 0, i+1);
+				double[] c = out.getDenseBlock();
+				for( int i=0; i<rlen; i++ )
+					c[i] = i+1; //seq(1,n)
 				return out;
 			}
 		}
@@ -363,12 +365,16 @@ public class LibMatrixReorg
 		double[] values = new double[rlen];
 		for( int i=0; i<rlen; i++ ) {
 			vix[i] = i;
-			values[i] = in.quickGetValue(i, by-1);
+			values[i] = in.quickGetValue(i, by[0]-1);
 		}
 		
 		//sort index vector on extracted data (unstable)
 		SortUtils.sortByValue(0, rlen, values, vix);
-
+		
+		//sort by secondary columns if required (in-place)
+		if( by.length > 1 )
+			sortBySecondary(0, rlen, values, vix, in, by, 1);
+		
 		//flip order if descending requested (note that this needs to happen
 		//before we ensure stable outputs, hence we also flip values)
 		if(desc) {
@@ -377,42 +383,25 @@ public class LibMatrixReorg
 		}
 		
 		//final pass to ensure stable output
-		for( int i=0; i<rlen-1; i++ ) {
-			double tmp = values[i];
-			//determine run of equal values
-			int len = 0;
-			while( i+len+1<rlen && tmp==values[i+len+1] )
-				len++;
-			//unstable sort of run indexes (equal value guaranteed)
-			if( len>0 ) {
-				Arrays.sort(vix, i, i+len+1);
-				i += len; //skip processed run
-			}
-		}
+		sortIndexesStable(0, rlen, values, vix, in, by, 1);
 
 		//step 4: create output matrix (guaranteed non-empty, see step 2)
-		if( !ixret )
-		{
+		if( !ixret ) {
 			//copy input data in sorted order into result
-			if( !sparse ) //DENSE
-			{
+			if( !sparse ) { //DENSE
 				out.allocateDenseBlock(false);
-				for( int i=0; i<rlen; i++ ) {
+				for( int i=0; i<rlen; i++ )
 					System.arraycopy(in.denseBlock, vix[i]*clen, out.denseBlock, i*clen, clen);
-				}
 			}
-			else //SPARSE
-			{
+			else { //SPARSE
 				out.allocateSparseRowsBlock(false);
 				for( int i=0; i<rlen; i++ )
-					if( !in.sparseBlock.isEmpty(vix[i]) ) {
+					if( !in.sparseBlock.isEmpty(vix[i]) )
 						out.sparseBlock.set(i, in.sparseBlock.get(vix[i]),
 							!SHALLOW_COPY_REORG); //row remains unchanged
-					}
 			}
 		}
-		else
-		{
+		else {
 			//copy sorted index vector into result
 			out.allocateDenseBlock(false);
 			for( int i=0; i<rlen; i++ )
@@ -2031,11 +2020,9 @@ public class LibMatrixReorg
 	 * 
 	 * @param m1 matrix
 	 */
-	private static void sortReverseDense( MatrixBlock m1 )
-	{
+	private static void sortReverseDense( MatrixBlock m1 ) {
 		int rlen = m1.rlen;
 		double[] a = m1.denseBlock;
-		
 		for( int i=0; i<rlen/2; i++ ) {
 			double tmp = a[i];
 			a[i] = a[rlen - i -1];
@@ -2043,10 +2030,8 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void sortReverseDense( int[] a )
-	{
+	private static void sortReverseDense( int[] a ) {
 		int rlen = a.length;
-		
 		for( int i=0; i<rlen/2; i++ ) {
 			int tmp = a[i];
 			a[i] = a[rlen - i -1];
@@ -2054,15 +2039,70 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void sortReverseDense( double[] a )
-	{
+	private static void sortReverseDense( double[] a ) {
 		int rlen = a.length;
-		
 		for( int i=0; i<rlen/2; i++ ) {
 			double tmp = a[i];
 			a[i] = a[rlen - i -1];
 			a[rlen - i - 1] = tmp;
 		}
+	}
+	
+	private static void sortBySecondary(int rl, int ru, double[] values, int[] vix, MatrixBlock in, int[] by, int off) {
+		//find runs of equal values in current offset and index range
+		//replace value by next column, sort, and recurse until single value
+		for( int i=rl; i<ru-1; i++ ) {
+			double tmp = values[i];
+			//determine run of equal values
+			int len = 0;
+			while( i+len+1<ru && tmp==values[i+len+1] )
+				len++;
+			//temp value replacement and recursive sort
+			if( len > 0 ) {
+				double old = values[i];
+				//extract values of next column
+				for(int j=i; j<i+len+1; j++)
+					values[j] = in.quickGetValue(vix[j], by[off]-1);
+				//sort values, incl recursive decent
+				SortUtils.sortByValue(i, i+len+1, values, vix);
+				if( off+1 < by.length )
+					sortBySecondary(i, i+len+1, values, vix, in, by, off+1);
+				//reset values of previous level
+				Arrays.fill(values, i, i+len+1, old);
+				i += len; //skip processed run
+			}
+		}
+	}
+	
+	private static void sortIndexesStable(int rl, int ru, double[] values, int[] vix, MatrixBlock in, int[] by, int off) {
+		for( int i=rl; i<ru-1; i++ ) {
+			double tmp = values[i];
+			//determine run of equal values
+			int len = 0;
+			while( i+len+1<ru && tmp==values[i+len+1] )
+				len++;
+			//temp value replacement and recursive decent
+			if( len > 0 ) {
+				if( off < by.length ) {
+					//extract values of next column
+					for(int j=i; j<i+len+1; j++)
+						values[j] = in.quickGetValue(vix[j], by[off]-1);
+					sortIndexesStable(i, i+len+1, values, vix, in, by, off+1);
+				}
+				else //unstable sort of run indexes (equal value guaranteed)
+					Arrays.sort(vix, i, i+len+1);
+				i += len; //skip processed run
+			}
+		}
+	}
+	
+	private static boolean isValidSortByList(int[] by, int clen) {
+		if( by == null || by.length==0 || by.length>clen )
+			return false;
+		for(int i=0; i<by.length; i++)
+			if( by[i] <= 0 || clen < by[i])
+				return false;
+		return true;
 	}
 
 	@SuppressWarnings("unused")

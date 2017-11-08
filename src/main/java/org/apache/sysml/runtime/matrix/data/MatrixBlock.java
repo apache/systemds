@@ -3462,7 +3462,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//SPECIAL case (operators with special performance requirements, 
 			//or size-dependent special behavior)
-			//currently supported opcodes: r', rdiag, rsort
+			//currently supported opcodes: r', rdiag, rsort, rev
 			LibMatrixReorg.reorg(this, result, op);
 		}
 		else 
@@ -4755,7 +4755,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		tdw.quickSetValue(0, 1, zero_wt); //num zeros in input
 		
 		// Sort td and tw based on values inside td (ascending sort), incl copy into result
-		SortIndex sfn = SortIndex.getSortIndexFnObject(1, false, false);
+		SortIndex sfn = new SortIndex(1, false, false);
 		ReorgOperator rop = new ReorgOperator(sfn);
 		LibMatrixReorg.reorg(tdw, (MatrixBlock)result, rop);
 		

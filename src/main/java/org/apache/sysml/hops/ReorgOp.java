@@ -51,10 +51,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class ReorgOp extends Hop implements MultiThreadedHop
 {
-	
 	public static boolean FORCE_DIST_SORT_INDEXES = false;
-	
-	public boolean bSortSPRewriteApplicable = false;
 	
 	private ReOrgOp op;
 	private int _maxNumThreads = -1; //-1 for unlimited
@@ -371,18 +368,21 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						setLops( mmult.constructLops() );
 						
 						//cleanups
-						HopRewriteUtils.removeChildReference(table, input);		
+						HopRewriteUtils.removeChildReference(table, input);
 					}
 				}
-				else //CP or Spark
-				{
-					if( et==ExecType.SPARK && !FORCE_DIST_SORT_INDEXES)
-						bSortSPRewriteApplicable = isSortSPRewriteApplicable();
-					
-					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, bSortSPRewriteApplicable);
+				else if( et==ExecType.SPARK ) {
+					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES && isSortSPRewriteApplicable();
+					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, sortRewrite);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
-					
+					setLops(transform1);
+				}
+				else //CP
+				{
+					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, false);
+					setOutputDimensions(transform1);
+					setLineNumbers(transform1);
 					setLops(transform1);
 				}
 				break;
@@ -402,7 +402,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		throws HopsException, LopsException
 	{
 		Transform transform1 = new Transform( input.constructLops(), HopsTransf2Lops.get(ReOrgOp.SORT), 
-				     input.getDataType(), input.getValueType(), et, bSortIndInMem);
+				input.getDataType(), input.getValueType(), et, bSortIndInMem);
 		
 		for( Hop c : new Hop[]{by,desc,ixret} ) {
 			Lop ltmp = c.constructLops();

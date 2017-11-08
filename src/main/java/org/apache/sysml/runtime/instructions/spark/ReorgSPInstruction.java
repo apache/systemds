@@ -52,6 +52,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class ReorgSPInstruction extends UnarySPInstruction {
@@ -103,13 +104,13 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			CPOperand col = new CPOperand(parts[2]);
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
-			boolean bSortIndInMem = false;		
+			boolean bSortIndInMem = false;
 			
 			if(parts.length > 5)
 				bSortIndInMem = Boolean.parseBoolean(parts[6]);
-						
-			return new ReorgSPInstruction(new ReorgOperator(SortIndex.getSortIndexFnObject(1,false,false)), 
-					                      in, col, desc, ixret, out, opcode, bSortIndInMem, str);
+			
+			return new ReorgSPInstruction(new ReorgOperator(new SortIndex(1,false,false)),
+				in, col, desc, ixret, out, opcode, bSortIndInMem, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
@@ -156,16 +157,23 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			// Sort by column 'col' in ascending/descending order and return either index/value
 			
 			//get parameters
-			long col = ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue();
+			long[] cols = _col.getDataType().isMatrix() ? DataConverter.convertToLongVector(ec.getMatrixInput(_col.getName())) :
+				new long[]{ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue()};
 			boolean desc = ec.getScalarInput(_desc.getName(), _desc.getValueType(), _desc.isLiteral()).getBooleanValue();
 			boolean ixret = ec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
 			boolean singleCol = (mcIn.getCols() == 1);
+			
+			//error handling unsupported operations
+			//TODO additional spark sort runtime with multiple order columns
+			if( cols.length > 1 ) 
+				LOG.warn("Unsupported sort with multiple order-by columns. Falling back first sort column.");
+			long col = cols[0];
 			
 			// extract column (if necessary) and sort 
 			out = in1;
 			if( !singleCol ){
 				out = out.filter(new IsBlockInRange(1, mcIn.getRows(), col, col, mcIn))
-						 .mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(col, mcIn.getColsPerBlock())));
+					.mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(col, mcIn.getColsPerBlock())));
 			}
 			
 			//actual index/data sort operation
@@ -177,8 +185,8 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			}
 			else { //sort multi-column matrix
 				if (! _bSortIndInMem)
-				        out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
-				else					
+					out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				else
 					out = RDDSortUtils.sortDataByValMemSort(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), sec, (ReorgOperator) _optr);
 			}
 		}
@@ -187,6 +195,8 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		}
 		
 		//store output rdd handle
+		if( opcode.equalsIgnoreCase("rsort") && _col.getDataType().isMatrix() )
+			sec.releaseMatrixInput(_col.getName());
 		updateReorgMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());

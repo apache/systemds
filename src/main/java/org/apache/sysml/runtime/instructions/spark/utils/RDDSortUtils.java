@@ -175,7 +175,7 @@ public class RDDSortUtils
 				.toMatrixBlock(val, (int)rlen, 1, brlen, bclen, -1);
 
 		//in-memory sort operation (w/ index return: source index in target position)
-		ReorgOperator lrop = new ReorgOperator(SortIndex.getSortIndexFnObject(1, !asc, true));	
+		ReorgOperator lrop = new ReorgOperator(new SortIndex(1, !asc, true));
 		MatrixBlock sortedIx = (MatrixBlock) inMatBlock
 				.reorgOperations(lrop, new MatrixBlock(), -1, -1, -1);
 		

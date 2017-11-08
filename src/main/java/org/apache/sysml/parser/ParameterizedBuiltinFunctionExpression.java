@@ -444,15 +444,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			orderby = new IntIdentifier(1);
 			addVarParam("by", orderby);
 		}
-		else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
-			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
+		else if( orderby !=null && !(orderby.getOutput().getDataType().isScalar() 
+			|| orderby.getOutput().getDataType().isMatrix()) ) {
+			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, use a scalar or row vector to specify column indexes.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
 		
 		Expression decreasing = getVarParam("decreasing"); //[OPTIONAL] DECREASING
 		if( decreasing == null ) { //default: ascending
 			addVarParam("decreasing", new BooleanIdentifier(false));
 		}
-		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){				
+		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
@@ -461,7 +462,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			indexreturn = new BooleanIdentifier(false);
 			addVarParam("index.return", indexreturn);
 		}
-		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
+		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 

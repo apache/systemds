@@ -139,9 +139,7 @@ Verify that the snapshot is now available at
 
 # Release Candidate Build and Deployment
 
-To be written. (Describe how the release candidate is built, including checksums. Describe how
-the release candidate is deployed to servers for review.)
-
+For detailed information, please see [SystemML Release Creation Process](release-creation-process.html).
 
 # Release Candidate Checklist
 
@@ -377,7 +375,7 @@ For more information, please see [SystemML Performance Testing](python-performan
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
 The unit tests for NN operators for GPU take a long time to run and are therefore not run as part of the Jenkins build.
-They must be run before a release. To run them, edit the 
+They must be run before a release. To run them, edit the
 [NeuralNetworkOpTests.java](https://github.com/apache/systemml/blob/master/src/test/java/org/apache/sysml/test/gpu/NeuralNetworkOpTests.java)
 file and remove all the `@Ignore` annotations from all the tests. Then run the NN unit tests using mvn verify:
 
@@ -450,7 +448,7 @@ Generate pythondocs with Sphinx.
 
 Copy contents of `systemml/target/pydocs/html` to `systemml-website-site/docs/1.0.0/api/python`.
 
-Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Java` link works and that the correct Javadoc version is displayed. 
+Open up `file:///.../systemml-website-site/docs/1.0.0/index.html` and verify `API Docs` &rarr; `Java` link works and that the correct Javadoc version is displayed.
 Verify `API Docs` &rarr; `Python` link works and that the same Pythondoc version is displayed. Verify feedback links under `Issues` menu are not present.
 
 Clean up any unnecessary files (such as deleting `.DS_Store` files on OS X).
@@ -488,4 +486,3 @@ Commit the update to `documentation.html` to publish the website update.
 
 The versioned project documentation is now deployed to the main website, and the
 [Documentation Page](http://systemml.apache.org/documentation) contains a link to the versioned documentation.
-

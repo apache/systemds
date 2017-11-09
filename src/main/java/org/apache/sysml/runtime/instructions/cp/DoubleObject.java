@@ -26,7 +26,7 @@ public class DoubleObject extends ScalarObject
 {
 	private static final long serialVersionUID = -8525290101679236360L;
 
-	private double _value;
+	private final double _value;
 
 	public DoubleObject(double val){
 		this(null,val);

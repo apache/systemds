@@ -27,7 +27,7 @@ public class IntObject extends ScalarObject
 	private static final long serialVersionUID = 353170585998999528L;
 
 	//we use consistently to the compiler long in terms of integer (8 byte)
-	private long _value;
+	private final long _value;
 
 	public IntObject(long val) {
 		this(null,val);

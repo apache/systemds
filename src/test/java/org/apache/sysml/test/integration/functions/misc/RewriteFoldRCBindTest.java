@@ -21,7 +21,10 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -48,26 +51,37 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 
 	@Test
 	public void testRewriteFoldCBindNoRewrite() {
-		testRewriteFoldRCBind( TEST_NAME1, false );
+		testRewriteFoldRCBind( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testRewriteFoldCBindRewrite() {
-		testRewriteFoldRCBind( TEST_NAME1, true );
+		testRewriteFoldRCBind( TEST_NAME1, true, ExecType.CP );
 	}
 	
 	@Test
 	public void testRewriteFoldRBindNoRewrite() {
-		testRewriteFoldRCBind( TEST_NAME2, false );
+		testRewriteFoldRCBind( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testRewriteFoldRBindRewrite() {
-		testRewriteFoldRCBind( TEST_NAME2, true );
+		testRewriteFoldRCBind( TEST_NAME2, true, ExecType.CP );
 	}
 
-	private void testRewriteFoldRCBind( String testname, boolean rewrites )
-	{	
+	private void testRewriteFoldRCBind( String testname, boolean rewrites, ExecType et )
+	{
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+		}
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {
@@ -96,6 +110,8 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			rtplatform = platformOld;
 		}
 	}
 }

@@ -105,7 +105,7 @@ public class MapReduceTool
 
 	public static boolean existsFileOnHDFS(String fname) {
 		//robustness for empty strings (e.g., JMLC, MLContext)
-		if( fname == null || fname.isEmpty() )
+		if( fname == null || fname.isEmpty() || fname.trim().isEmpty() )
 			return false;
 		
 		try {
@@ -121,7 +121,7 @@ public class MapReduceTool
 	
 	public static boolean isDirectory(String fname) {
 		//robustness for empty strings (e.g., JMLC, MLContext)
-		if( fname == null || fname.isEmpty() )
+		if( fname == null || fname.isEmpty() || fname.trim().isEmpty() )
 			return false;
 		
 		try {
@@ -176,7 +176,7 @@ public class MapReduceTool
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
 		//robustness for empty strings (e.g., JMLC, MLContext)
-		if( dir == null || dir.isEmpty() )
+		if( dir == null || dir.isEmpty() || dir.trim().isEmpty())
 			return false;
 		Path path = new Path(dir);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);

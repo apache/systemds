@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class StringInitCPInstruction extends UnaryCPInstruction {
-	private static final String DELIM = " ";
+	public static final String DELIM = " ";
 
 	private final long _rlen;
 	private final long _clen;

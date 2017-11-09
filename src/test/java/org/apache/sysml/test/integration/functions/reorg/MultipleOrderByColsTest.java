@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -30,10 +31,12 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class MultipleOrderByColsTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "OrderMultiBy";
+	private final static String TEST_NAME2 = "OrderMultiBy2";
 	
 	private final static String TEST_DIR = "functions/reorg/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + MultipleOrderByColsTest.class.getSimpleName() + "/";
@@ -48,6 +51,7 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"B"}));
 	}
 	
 	@Test
@@ -90,6 +94,26 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 		runOrderTest(TEST_NAME1, true, true, true, ExecType.CP);
 	}
 
+	@Test
+	public void testOrder2DenseAscDataCP() {
+		runOrderTest(TEST_NAME2, false, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testOrder2DenseDescDataCP() {
+		runOrderTest(TEST_NAME2, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testOrder2SparseAscDataCP() {
+		runOrderTest(TEST_NAME2, true, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testOrder2SparseDescDataCP() {
+		runOrderTest(TEST_NAME2, true, true, false, ExecType.CP);
+	}
+	
 //TODO enable together with additional spark sort runtime
 //	@Test
 //	public void testOrderDenseAscDataSP() {
@@ -152,7 +176,7 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), 
+			programArgs = new String[]{"-stats","-args", input("A"), 
 				String.valueOf(desc).toUpperCase(), String.valueOf(ixret).toUpperCase(), output("B") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
@@ -170,6 +194,10 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+			
+			//check for applied rewrite
+			if( testname.equals(TEST_NAME2) && !ixret )
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("rsort")==1);
 		}
 		finally {
 			rtplatform = platformOld;

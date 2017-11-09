@@ -22,7 +22,8 @@
 
 A = read($1);
 
-ix = matrix("3 7 14", rows=1, cols=3)
-B = order(target=A, by=ix, decreasing=$2, index.return=$3);
+B = order(target=A, by=14, decreasing=$2, index.return=$3);
+B = order(target=B, by=7, decreasing=$2, index.return=$3);
+B = order(target=B, by=3, decreasing=$2, index.return=$3);
 
-write(B, $4, format="text");  
+write(B, $4, format="text");

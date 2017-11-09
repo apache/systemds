@@ -67,6 +67,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -197,6 +198,17 @@ public class HopRewriteUtils
 		return (hop instanceof LiteralOp 
 			&& (hop.getValueType()==ValueType.DOUBLE || hop.getValueType()==ValueType.INT)
 			&& getDoubleValueSafe((LiteralOp)hop)==val);
+	}
+	
+	public static boolean isLiteralOfValue( Hop hop, boolean val ) {
+		try {
+			return (hop instanceof LiteralOp 
+				&& (hop.getValueType()==ValueType.BOOLEAN)
+				&& ((LiteralOp)hop).getBooleanValue()==val);
+		}
+		catch(HopsException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 	
 	public static ScalarObject getScalarObject( LiteralOp op )
@@ -481,6 +493,32 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	public static Hop createDataGenOpByVal( ArrayList<LiteralOp> values, long rows, long cols ) 
+		throws HopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		for(LiteralOp lit : values) {
+			if(sb.length()>0)
+				sb.append(StringInitCPInstruction.DELIM);
+			sb.append(lit.getStringValue());
+		}
+		LiteralOp str = new LiteralOp(sb.toString());
+		
+		HashMap<String, Hop> params = new HashMap<>();
+		params.put(DataExpression.RAND_ROWS, new LiteralOp(rows));
+		params.put(DataExpression.RAND_COLS, new LiteralOp(cols));
+		params.put(DataExpression.RAND_MIN, str);
+		params.put(DataExpression.RAND_MAX, str);
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));
+		
+		Hop datagen = new DataGenOp(DataGenMethod.SINIT, new DataIdentifier("tmp"), params);
+		int blksz = ConfigurationManager.getBlocksize();
+		datagen.setOutputBlocksizes(blksz, blksz);
+		copyLineNumbers(values.get(0), datagen);
+		
+		return datagen;
+	}
+	
 	public static boolean isDataGenOp(Hop hop, DataGenMethod... ops) {
 		return (hop instanceof DataGenOp 
 			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
@@ -506,14 +544,21 @@ public class HopRewriteUtils
 		return createReorg(input, ReOrgOp.TRANSPOSE);
 	}
 	
-	public static ReorgOp createReorg(Hop input, ReOrgOp rop)
-	{
-		ReorgOp transpose = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
-		transpose.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
-		copyLineNumbers(input, transpose);
-		transpose.refreshSizeInformation();	
-		
-		return transpose;
+	public static ReorgOp createReorg(Hop input, ReOrgOp rop) {
+		ReorgOp reorg = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
+		reorg.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, reorg);
+		reorg.refreshSizeInformation();
+		return reorg;
+	}
+	
+	public static ReorgOp createReorg(ArrayList<Hop> inputs, ReOrgOp rop) {
+		Hop main = inputs.get(0);
+		ReorgOp reorg = new ReorgOp(main.getName(), main.getDataType(), main.getValueType(), rop, inputs);
+		reorg.setOutputBlocksizes(main.getRowsInBlock(), main.getColsInBlock());
+		copyLineNumbers(main, reorg);
+		reorg.refreshSizeInformation();
+		return reorg;
 	}
 	
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
@@ -831,8 +876,17 @@ public class HopRewriteUtils
 		return ret;
 	}
 
+	public static boolean isReorg(Hop hop, ReOrgOp type) {
+		return hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==type;
+	}
+	
+	public static boolean isReorg(Hop hop, ReOrgOp... types) {
+		return ( hop instanceof ReorgOp 
+			&& ArrayUtils.contains(types, ((ReorgOp) hop).getOp()));
+	}
+	
 	public static boolean isTransposeOperation(Hop hop) {
-		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
+		return isReorg(hop, ReOrgOp.TRANSPOSE);
 	}
 	
 	public static boolean isTransposeOperation(Hop hop, int maxParents) {

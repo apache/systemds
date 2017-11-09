@@ -171,6 +171,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
+			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
 			hi = simplifyTransposeAggBinBinaryChains(hop, hi, i);//e.g., t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplify binary or dyn rewrites
@@ -1475,12 +1476,69 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						LOG.debug("Applied simplifyOrderedSort2.");
 					}
 				}
-			}	   
+			}
 		}
 		
 		return hi;
 	}
 
+	private static Hop fuseOrderOperationChain(Hop hi) 
+		throws HopsException
+	{
+		//order(order(X,2),1) -> order(X, (12)), 
+		if( HopRewriteUtils.isReorg(hi, ReOrgOp.SORT)
+			&& hi.getInput().get(1) instanceof LiteralOp //scalar by
+			&& hi.getInput().get(2) instanceof LiteralOp //scalar desc
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false) ) //not ixret 
+		{ 
+			LiteralOp by = (LiteralOp) hi.getInput().get(1);
+			boolean desc = HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2));
+			
+			//find chain of order operations with same desc/ixret configuration and single consumers
+			ArrayList<LiteralOp> byList = new ArrayList<LiteralOp>();
+			byList.add(by);
+			Hop input = hi.getInput().get(0);
+			while( HopRewriteUtils.isReorg(input, ReOrgOp.SORT)
+				&& input.getInput().get(1) instanceof LiteralOp //scalar by
+				&& HopRewriteUtils.isLiteralOfValue(input.getInput().get(2), desc)
+				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false)
+				&& input.getParent().size() == 1 ) 
+			{
+				byList.add((LiteralOp)input.getInput().get(1));
+				input = input.getInput().get(0);
+			}
+			
+			//merge order chain if at least two instances
+			if( byList.size() >= 2 ) {
+				//create new order operations
+				ArrayList<Hop> inputs = new ArrayList<>();
+				inputs.add(input);
+				inputs.add(HopRewriteUtils.createDataGenOpByVal(byList, 1, byList.size()));
+				inputs.add(new LiteralOp(desc));
+				inputs.add(new LiteralOp(false));
+				Hop hnew = HopRewriteUtils.createReorg(inputs, ReOrgOp.SORT);
+				
+				//cleanup references recursively
+				Hop current = hi;
+				while(current != input ) {
+					Hop tmp = current.getInput().get(0);
+					HopRewriteUtils.removeAllChildReferences(current);
+					current = tmp;
+				}
+				
+				//rewire all parents (avoid anomalies with replicated datagen)
+				List<Hop> parents = new ArrayList<>(hi.getParent());
+				for( Hop p : parents )
+					HopRewriteUtils.replaceChildReference(p, hi, hnew);
+				
+				hi = hnew;
+				LOG.debug("Applied fuseOrderOperationChain (line "+hi.getBeginLine()+").");
+			}
+		}
+		
+		return hi;
+	}
+	
 	/**
 	 * Patterns: t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 	 * 

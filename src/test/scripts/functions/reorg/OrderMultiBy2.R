@@ -20,9 +20,23 @@
 #-------------------------------------------------------------
 
 
-A = read($1);
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
-ix = matrix("3 7 14", rows=1, cols=3)
-B = order(target=A, by=ix, decreasing=$2, index.return=$3);
+A = readMM(paste(args[1], "A.mtx", sep=""))
+desc = as.logical(args[2]);
+ixret = as.logical(args[3]);
 
-write(B, $4, format="text");  
+col1 = A[,3];
+col2 = A[,7];
+col3 = A[,14];
+
+
+if( ixret ) {
+  B = order(col1, col2, col3, decreasing=desc);
+} else {
+  B = A[order(col1, col2, col3, decreasing=desc),];
+}
+
+writeMM(as(B,"CsparseMatrix"), paste(args[4], "B", sep=""))

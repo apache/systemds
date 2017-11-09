@@ -36,32 +36,32 @@ echo "NOT DONE YET. WAITING FOR DML SCRIPT FROM FARAZ" ; exit 1
 
 
 #generate XS scenarios (80MB)
-${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_dense $BASE/X10k_1k_dense $BASE/y10k_1k_dense 1 0 $DENSE_SP $FORMAT
-${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_sparse $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse 1 0 $SPARSE_SP $FORMAT
+${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=10000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w10k_1k_dense X=$BASE/X10k_1k_dense  Y=$BASE/y10k_1k_dense addNoise=1 icpt=0 sparse=$DENSE_SP fmt=$FORMAT
+${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=10000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w10k_1k_sparse X=$BASE/X10k_1k_sparse  Y=$BASE/y10k_1k_sparse addNoise=1 icpt=0 sparse=$SPARSE_SP fmt=$FORMAT
 ${CMD} -f extractTestData.dml $DASH-args $BASE/X10k_1k_dense $BASE/y10k_1k_dense $BASE/X10k_1k_dense_test $BASE/y10k_1k_dense_test $FORMAT
 ${CMD} -f extractTestData.dml $DASH-args $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse $BASE/X10k_1k_sparse_test $BASE/y10k_1k_sparse_test $FORMAT
 
 ##generate S scenarios (800MB)
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000 1000 5 5 $BASE/w100k_1k_dense $BASE/X100k_1k_dense $BASE/y100k_1k_dense 1 0 $DENSE_SP $FORMAT
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000 1000 5 5 $BASE/w100k_1k_sparse $BASE/X100k_1k_sparse $BASE/y100k_1k_sparse 1 0 $SPARSE_SP $FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=100000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w100k_1k_dense X=$BASE/X100k_1k_dense Y=$BASE/y100k_1k_dense addNoise=1 icpt=0 sparse=$DENSE_SP fmt=$FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=100000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w100k_1k_sparse X=$BASE/X100k_1k_sparse Y=$BASE/y100k_1k_sparse addNoise=1 icpt=0 $SPARSE_SP fmt=$FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100k_1k_dense $BASE/y100k_1k_dense $BASE/X100k_1k_dense_test $BASE/y100k_1k_dense_test $FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100k_1k_sparse $BASE/y100k_1k_sparse $BASE/X100k_1k_sparse_test $BASE/y100k_1k_sparse_test $FORMAT
 #
 ##generate M scenarios (8GB)
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 1000000 1000 5 5 $BASE/w1M_1k_dense $BASE/X1M_1k_dense $BASE/y1M_1k_dense 1 0 $DENSE_SP $FORMAT
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 1000000 1000 5 5 $BASE/w1M_1k_sparse $BASE/X1M_1k_sparse $BASE/y1M_1k_sparse 1 0 $SPARSE_SP $FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=1000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w1M_1k_dense X=$BASE/X1M_1k_dense Y=$BASE/y1M_1k_dense addNoise=1 icpt=0 sparse=$DENSE_SP fmt=$FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=1000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w1M_1k_sparse X=$BASE/X1M_1k_sparse Y=$BASE/y1M_1k_sparse addNoise=1 icpt=0 sparse=$SPARSE_SP fmt=$FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X1M_1k_dense $BASE/y1M_1k_dense $BASE/X1M_1k_dense_test $BASE/y1M_1k_dense_test $FORMAT
 #${CMD}-f extractTestData.dml $DASH-args $BASE/X1M_1k_sparse $BASE/y1M_1k_sparse $BASE/X1M_1k_sparse_test $BASE/y1M_1k_sparse_test $FORMAT
 #
 ##generate L scenarios (80GB)
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000000 1000 5 5 $BASE/w10M_1k_dense $BASE/X10M_1k_dense $BASE/y10M_1k_dense 1 0 $DENSE_SP $FORMAT
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000000 1000 5 5 $BASE/w10M_1k_sparse $BASE/X10M_1k_sparse $BASE/y10M_1k_sparse 1 0 $SPARSE_SP $FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=10000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w10M_1k_dense X=$BASE/X10M_1k_dense Y=$BASE/y10M_1k_dense addNoise=1 icpt=0 sparse=$DENSE_SP fmt=$FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=10000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w10M_1k_sparse X=$BASE/X10M_1k_sparse Y=$BASE/y10M_1k_sparse addNoise=1 icpt=0 sparse=$SPARSE_SP fmt=$FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X10M_1k_dense $BASE/y10M_1k_dense $BASE/X10M_1k_dense_test $BASE/y10M_1k_dense_test $FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X10M_1k_sparse $BASE/y10M_1k_sparse $BASE/X10M_1k_sparse_test $BASE/y10M_1k_sparse_test $FORMAT
 #
 ##generate XL scenarios (800GB)
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000000 1000 5 5 $BASE/w100M_1k_dense $BASE/X100M_1k_dense $BASE/y100M_1k_dense 1 0 $DENSE_SP $FORMAT
-#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000000 1000 5 5 $BASE/w100M_1k_sparse $BASE/X100M_1k_sparse $BASE/y100M_1k_sparse 1 0 $SPARSE_SP $FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=100000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w100M_1k_dense X=$BASE/X100M_1k_dense Y=$BASE/y100M_1k_dense addNoise=1 icpt=0 sparse=$DENSE_SP fmt=$FORMAT
+#${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-nvargs nr=100000000 nf=1000 maxfeatval=5 maxweight=5 weight=$BASE/w100M_1k_sparse X=$BASE/X100M_1k_sparse Y=$BASE/y100M_1k_sparse addNoise=1 icpt=0 sparse=$SPARSE_SP fmt=$FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100M_1k_dense $BASE/y100M_1k_dense $BASE/X100M_1k_dense_test $BASE/y100M_1k_dense_test $FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100M_1k_sparse $BASE/y100M_1k_sparse $BASE/X100M_1k_sparse_test $BASE/y100M_1k_sparse_test $FORMAT
 

@@ -47,7 +47,8 @@ ML_ALGO = {'binomial': ['MultiLogReg', 'l2-svm', 'm-svm'],
            'regression1': ['LinearRegDS', 'LinearRegCG'],
            'regression2': ['GLM_poisson', 'GLM_gamma', 'GLM_binomial'],
            'stats1': ['Univar-Stats', 'bivar-stats'],
-           'stats2': ['stratstats']}
+           'stats2': ['stratstats'],
+           'dimreduction': ['PCA']}
 
 ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
               'clustering': 'genRandData4Kmeans',
@@ -55,7 +56,8 @@ ML_GENDATA = {'binomial': 'genRandData4LogisticRegression',
               'regression1': 'genRandData4LogisticRegression',
               'regression2': 'genRandData4LogisticRegression',
               'stats1': 'genRandData4DescriptiveStats',
-              'stats2': 'genRandData4StratStats'}
+              'stats2': 'genRandData4StratStats',
+              'dimreduction': 'genRandData4PCA'}
 
 ML_TRAIN = {'GLM_poisson': 'GLM',
             'GLM_gamma': 'GLM',
@@ -69,7 +71,8 @@ ML_TRAIN = {'GLM_poisson': 'GLM',
             'm-svm': 'm-svm',
             'l2-svm': 'l2-svm',
             'MultiLogReg': 'MultiLogReg',
-            'naive-bayes': 'naive-bayes'}
+            'naive-bayes': 'naive-bayes',
+            'PCA': 'PCA'}
 
 ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'LinearRegCG': 'GLM-predict',
@@ -82,7 +85,7 @@ ML_PREDICT = {'Kmeans': 'Kmeans-predict',
               'GLM_gamma': 'GLM-predict',
               'GLM_binomial': 'GLM-predict'}
 
-DENSE_TYPE_ALGOS = ['clustering', 'stats1', 'stats2']
+DENSE_TYPE_ALGOS = ['clustering', 'stats1', 'stats2', 'dimreduction']
 
 
 # Responsible for execution and metric logging

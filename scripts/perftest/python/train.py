@@ -338,6 +338,21 @@ def regression2_glm_poisson_train(save_folder_name, datagen_dir, train_dir, conf
     return data_folders
 
 
+def dimreduction_pca_train(save_folder_name, datagen_dir, train_dir, config_dir):
+    save_path = join(config_dir, save_folder_name)
+    train_write = join(train_dir, save_folder_name)
+
+    INPUT = join(datagen_dir, 'X.data')
+    SCALE = '1'
+    PROJDATA = '1'
+    OUTPUT = join(train_write, 'Output.data')
+
+    config = dict(INPUT=INPUT, SCALE=SCALE, PROJDATA=PROJDATA, OUTPUT=OUTPUT, OFMT=DATA_FORMAT)
+    config_writer(save_path + '.json', config)
+
+    return [save_path]
+
+
 def config_packets_train(algo_payload, matrix_type, matrix_shape, datagen_dir, train_dir, dense_algos, config_dir):
     """
     This function has two responsibilities. Generate the configuration files for

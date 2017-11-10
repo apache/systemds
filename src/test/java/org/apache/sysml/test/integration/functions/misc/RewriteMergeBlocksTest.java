@@ -30,7 +30,11 @@ import org.apache.sysml.test.utils.TestUtils;
 public class RewriteMergeBlocksTest extends AutomatedTestBase 
 {
 	private static final String TEST_NAME1 = "RewriteMergeIfCut"; //full merge
-	private static final String TEST_NAME2 = "RewriteMergeFunctionCut"; //only input merge
+	private static final String TEST_NAME2 = "RewriteMergeFunctionCut"; //full merge
+	private static final String TEST_NAME3 = "RewriteMergeFunctionCut2"; //only input merge
+	private static final String TEST_NAME4 = "RewriteMergeFunctionCut3"; //only input merge
+	private static final String TEST_NAME5 = "RewriteMergeFunctionCut4"; //only input merge
+	
 
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteMergeBlocksTest.class.getSimpleName() + "/";
@@ -42,19 +46,39 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"R"}));
 	}
 	
 	@Test
 	public void testIfCutMerge() {
-		testRewriteMerge(TEST_NAME1);
+		testRewriteMerge(TEST_NAME1, true);
 	}
 	
 	@Test
 	public void testFunctionCutMerge() {
-		testRewriteMerge(TEST_NAME2);
+		testRewriteMerge(TEST_NAME2, true);
 	}
 	
-	private void testRewriteMerge(String testname)
+	@Test
+	public void testFunctionCutMerge2() {
+		testRewriteMerge(TEST_NAME3, false);
+	}
+	
+	@Test
+	public void testFunctionCutMerge3() {
+		testRewriteMerge(TEST_NAME4, false);
+	}
+	
+	@Test
+	public void testFunctionCutMerge4() {
+		//note: this test primarily checks for result correctness
+		//(prevent too eager merge of functions)
+		testRewriteMerge(TEST_NAME5, true);
+	}
+	
+	private void testRewriteMerge(String testname, boolean expectedMerge)
 	{	
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
@@ -73,7 +97,7 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-		Assert.assertTrue(testname.equals(TEST_NAME1) == 
+		Assert.assertTrue(expectedMerge == 
 			heavyHittersContainsSubString("mmchain"));
 	}	
 }

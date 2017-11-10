@@ -19,20 +19,18 @@
 #
 #-------------------------------------------------------------
 
-printAndAssign = function(Matrix[Double] X) return (Matrix[Double] Y) {
-	if( sum(X) > 0 )
-     print("sum(X) = " + sum(X));
-  Y = X;
-}
 
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
 
 X = matrix(0.5, 600, 10);
 ssX_V = matrix(0.9, 10, 1);
 P = matrix(0.7, 600, 2);
 
 Q = P[,1:1] * (X %*% ssX_V);
-Y = X + 2;
-Y2 = printAndAssign(X);
+X = X;
 R = t(X) %*% (Q - P[,1:1] * rowSums(Q));
 
-write(R, $1);
+writeMM(as(R, "CsparseMatrix"), paste(args[1], "R", sep="")); 

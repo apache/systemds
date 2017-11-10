@@ -28,6 +28,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -1006,6 +1008,11 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 	
 	private static String getBasicCreateVarString(String varName, String fileName, boolean fNameOverride, DataType dt, String format) {
+		//note: the filename override property leads to concatenation of unique ids in order to 
+		//ensure conflicting filenames for objects that originate from the same instruction
+		boolean lfNameOverride = fNameOverride && !ConfigurationManager
+			.getCompilerConfigFlag(ConfigType.IGNORE_TEMPORARY_FILENAMES);
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -1016,7 +1023,7 @@ public class VariableCPInstruction extends CPInstruction {
 		sb.append(fileName);		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
 									// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(fNameOverride);
+		sb.append(lfNameOverride);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(dt.toString());
 		sb.append(Lop.OPERAND_DELIMITOR);

@@ -110,7 +110,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
     }
 	
 	/** Global flag indicating if caching is enabled (controls eviction) */
-	private static boolean _activeFlag = false;
+	private static volatile boolean _activeFlag = false;
 	
 	/** Global sequence for generating unique ids. */
 	private static IDSequence _seq = null;   
@@ -140,7 +140,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * The unique (JVM-wide) ID of a cacheable data object; to ensure unique IDs across JVMs, we
 	 * concatenate filenames with a unique prefix (map task ID). 
 	 */
-	private final int _uniqueID;
+	private final long _uniqueID;
 	
 	/** The cache status of the data blob (whether it can be or is evicted, etc. */
 	private CacheStatus _cacheStatus = null;
@@ -205,7 +205,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected CacheableData(DataType dt, ValueType vt) {
 		super (dt, vt);
-		_uniqueID = (int)_seq.getNextID();
+		_uniqueID = isCachingActive() ? _seq.getNextID() : -1;
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
 		_gpuObjects = new HashMap<>();
@@ -1047,17 +1047,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
 	
-	protected int getUniqueCacheID() {
-		return _uniqueID;
-	}
-
 	protected String getCacheFilePathAndName () {
 		if( _cacheFileName==null ) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(CacheableData.cacheEvictionLocalFilePath); 
 			sb.append(CacheableData.cacheEvictionLocalFilePrefix);
-			sb.append(String.format ("%09d", getUniqueCacheID()));
-			sb.append(CacheableData.CACHING_EVICTION_FILEEXTENSION);			
+			sb.append(String.format ("%09d", _uniqueID));
+			sb.append(CacheableData.CACHING_EVICTION_FILEEXTENSION);
 			_cacheFileName = sb.toString();
 		}
 		
@@ -1361,15 +1357,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_activeFlag = true; //turn on caching
 	}
 	
-	public static synchronized boolean isCachingActive() {
+	public static boolean isCachingActive() {
 		return _activeFlag;
 	}
 	
-	public static synchronized void disableCaching() {
+	public static void disableCaching() {
 		_activeFlag = false;
 	}
 	
-	public static synchronized void enableCaching() {
+	public static void enableCaching() {
 		_activeFlag = true;
 	}
 

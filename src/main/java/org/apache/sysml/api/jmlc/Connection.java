@@ -112,6 +112,7 @@ public class Connection implements Closeable
 		CompilerConfig cconf = new CompilerConfig();
 		cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
 		cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
+		cconf.set(ConfigType.IGNORE_TEMPORARY_FILENAMES, true);
 		cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
 		cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
 		cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);

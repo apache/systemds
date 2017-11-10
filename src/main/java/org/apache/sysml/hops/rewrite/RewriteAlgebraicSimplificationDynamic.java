@@ -2540,15 +2540,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 
 		if(    hi instanceof TernaryOp && hi.getInput().size()==5 //table without weights 
-			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(2), 1) //i.e., weight of 1
-			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp)
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(2), 1) ) //i.e., weight of 1
 		{
 			Hop first = hi.getInput().get(0);
 			Hop second = hi.getInput().get(1);
 			
 			//pattern a: table(seq(1,nrow(v)), v, nrow(v), m, 1)
-			if( HopRewriteUtils.isBasic1NSequence(first, second, true) && second.dimsKnown() 
-				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), second.getDim1()) )
+			if( HopRewriteUtils.isBasic1NSequence(first, second, true) 
+				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(3), second, true) )
 			{
 				//setup input parameter hops
 				HashMap<String,Hop> args = new HashMap<>();
@@ -2568,8 +2567,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				LOG.debug("Applied simplifyTableSeqExpand1 (line "+hi.getBeginLine()+")");	
 			}
 			//pattern b: table(v, seq(1,nrow(v)), m, nrow(v))
-			else if( HopRewriteUtils.isBasic1NSequence(second, first, true) && first.dimsKnown() 
-				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(4), first.getDim1()) )
+			else if( HopRewriteUtils.isBasic1NSequence(second, first, true)
+				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(4), first, true) )
 			{
 				//setup input parameter hops
 				HashMap<String,Hop> args = new HashMap<>();

@@ -152,6 +152,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = foldMultipleAppendOperations(hi);               //e.g., cbind(X,cbind(Y,Z)) -> cbind(X,Y,Z)
 			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
+			hi = simplifyCTableWithConstMatrixInputs(hi);        //e.g., table(X, matrix(1,...)) -> table(X, 1)
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
@@ -664,11 +665,30 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				bop.setOp(OpOp2.PLUS);
 				HopRewriteUtils.replaceChildReference(bop,  right,
-						HopRewriteUtils.createBinaryMinus(right), 1);				
+						HopRewriteUtils.createBinaryMinus(right), 1);
 				LOG.debug("Applied canonicalizeMatrixMultScalarAdd2 (line "+hi.getBeginLine()+").");
 			}
 		}
 		
+		return hi;
+	}
+	
+	private static Hop simplifyCTableWithConstMatrixInputs( Hop hi ) 
+		throws HopsException
+	{
+		//pattern: table(X, matrix(1,...), matrix(7, ...)) -> table(X, 1, 7)
+		if( HopRewriteUtils.isTernary(hi, OpOp3.CTABLE) ) {
+			//note: the first input always expected to be a matrix
+			for( int i=1; i<hi.getInput().size(); i++ ) {
+				Hop inCurr = hi.getInput().get(i);
+				if( HopRewriteUtils.isDataGenOpWithConstantValue(inCurr) ) {
+					Hop inNew = ((DataGenOp)inCurr).getInput(DataExpression.RAND_MIN);
+					HopRewriteUtils.replaceChildReference(hi, inCurr, inNew, i);
+					LOG.debug("Applied simplifyCTableWithConstMatrixInputs"
+						+ i + " (line "+hi.getBeginLine()+").");
+				}
+			}
+		}
 		return hi;
 	}
 

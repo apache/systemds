@@ -965,6 +965,15 @@ public class HopRewriteUtils
 			|| isLiteralOfValue(hop.getInput().get(1), val));
 	}
 	
+	public static boolean isTernary(Hop hop, OpOp3 type) {
+		return hop instanceof TernaryOp && ((TernaryOp)hop).getOp()==type;
+	}
+	
+	public static boolean isTernary(Hop hop, OpOp3... types) {
+		return ( hop instanceof TernaryOp 
+			&& ArrayUtils.contains(types, ((TernaryOp) hop).getOp()));
+	}
+	
 	public static boolean containsInput(Hop current, Hop probe) {
 		return rContainsInput(current, probe, new HashSet<Long>());	
 	}
@@ -1052,6 +1061,15 @@ public class HopRewriteUtils
 		return true;
 	}
 	
+	public static boolean isColumnRightIndexing(Hop hop) {
+		return hop instanceof IndexingOp
+			&& ((IndexingOp) hop).isColLowerEqualsUpper()
+			&& ((hop.dimsKnown() && hop.getDim1() == hop.getInput().get(0).getDim1())
+			|| (isLiteralOfValue(hop.getInput().get(1), 1) 
+				&& isUnary(hop.getInput().get(2), OpOp1.NROW) 
+				&& hop.getInput().get(2).getInput().get(0)==hop.getInput().get(0)));
+	}
+	
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop) {
 		return hop.isColLowerEqualsUpper()
 			&& isLiteralOfValue(hop.getInput().get(2), 1)
@@ -1112,9 +1130,7 @@ public class HopRewriteUtils
 			Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
 			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 			return isLiteralOfValue(from, 1) && isLiteralOfValue(incr, 1)
-				&& (isLiteralOfValue(to, row?input.getDim1():input.getDim2())
-					|| (to instanceof UnaryOp && ((UnaryOp)to).getOp()==(row?
-						OpOp1.NROW:OpOp1.NCOL) && to.getInput().get(0)==input));
+				&& isSizeExpressionOf(to, input, row);
 		}
 		return false;
 	}
@@ -1149,6 +1165,11 @@ public class HopRewriteUtils
 		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
 	}
 	
+	public static boolean isSizeExpressionOf(Hop size, Hop input, boolean row) {
+		return (input.dimsKnown() && isLiteralOfValue(size, row?input.getDim1():input.getDim2()))
+			|| ((row ? isUnary(size, OpOp1.NROW) : isUnary(size, OpOp1.NCOL)) && (size.getInput().get(0)==input 
+			|| (isColumnRightIndexing(input) && size.getInput().get(0)==input.getInput().get(0))));
+	}
 	
 	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
 	{

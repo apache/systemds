@@ -23,8 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -71,12 +69,7 @@ public abstract class DataPartitioner
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force )
 		throws DMLRuntimeException
 	{
-		ValueType vt = in.getValueType();
-		String varname = in.getVarName();
-		MatrixObject out = new MatrixObject(vt, fnameNew );
-		out.setDataType( DataType.MATRIX );
-		out.setVarName( varname+NAME_SUFFIX );		
-		
+		MatrixObject out = new MatrixObject(in.getValueType(), fnameNew);
 		return createPartitionedMatrixObject(in, out, force);
 	}
 	

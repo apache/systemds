@@ -157,7 +157,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		CacheableData<?> cd = sec.getCacheableData( input1.getName() );
 		if( out != in ) {                         //prevent unnecessary lineage info
 			RDDObject inro =  cd.getRDDHandle();  //guaranteed to exist (see above)
-			RDDObject outro = new RDDObject(out, output.getName()); //create new rdd object
+			RDDObject outro = new RDDObject(out); //create new rdd object
 			outro.setCheckpointRDD(true);         //mark as checkpointed
 			outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
 			cd.setRDDHandle(outro);

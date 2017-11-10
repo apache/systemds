@@ -145,7 +145,7 @@ public abstract class ParWorker
 		throws DMLRuntimeException 
 	{
 		//monitoring start
-		Timing time1 = null, time2 = null;		
+		Timing time1 = null, time2 = null;
 		if( _monitor )
 		{
 			time1 = new Timing(true); 
@@ -155,12 +155,13 @@ public abstract class ParWorker
 		//core execution
 
 		//foreach iteration in task, execute iteration body
+		String lVarName = task.getVarName();
 		for( IntObject indexVal : task.getIterations() )
 		{
 			//System.out.println(" EXECUTE ITERATION: "+indexVal.getName()+"="+indexVal.getIntValue());
 			
 			//set index values
-			_ec.setVariable(indexVal.getName(), indexVal);
+			_ec.setVariable(lVarName, indexVal);
 			
 			// for each program block
 			for (ProgramBlock pb : _childBlocks)
@@ -186,7 +187,7 @@ public abstract class ParWorker
 		throws DMLRuntimeException 
 	{
 		//monitoring start
-		Timing time1 = null, time2 = null;		
+		Timing time1 = null, time2 = null;
 		if( _monitor )
 		{
 			time1 = new Timing(true); 
@@ -195,7 +196,7 @@ public abstract class ParWorker
 		
 		//core execution
 		List<IntObject> tmp = task.getIterations();
-		String lVarName = tmp.get(0).getName();
+		String lVarName = task.getVarName();
 		long lFrom      = tmp.get(0).getLongValue();
 		long lTo        = tmp.get(1).getLongValue();
 		long lIncr      = tmp.get(2).getLongValue();
@@ -203,7 +204,7 @@ public abstract class ParWorker
 		for( long i=lFrom; i<=lTo; i+=lIncr )
 		{
 			//set index values
-			_ec.setVariable(lVarName, new IntObject(lVarName,i));
+			_ec.setVariable(lVarName, new IntObject(i));
 			
 			// for each program block
 			for (ProgramBlock pb : _childBlocks)

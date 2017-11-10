@@ -99,7 +99,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public MatrixObject( ValueType vt, String file, MetaData mtd ) {
 		super (DataType.MATRIX, vt);
 		_metaData = mtd; 
-		_hdfsFileName = file;		
+		_hdfsFileName = file;
 		_cache = null;
 		_data = null;
 	}
@@ -239,7 +239,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire partition "+getVarName()+" "+pred);
+			LOG.trace("Acquire partition "+hashCode()+" "+pred);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
@@ -424,7 +424,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long begin = 0;
 		
 		if( LOG.isTraceEnabled() ) {
-			LOG.trace("Reading matrix from HDFS...  " + getVarName() + "  Path: " + fname 
+			LOG.trace("Reading matrix from HDFS...  " + hashCode() + "  Path: " + fname 
 					+ ", dimensions: [" + mc.getRows() + ", " + mc.getCols() + ", " + mc.getNonZeros() + "]");
 			begin = System.currentTimeMillis();
 		}
@@ -504,9 +504,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		}
 		
 		//sanity check correct output
-		if( mb == null ) {
-			throw new IOException("Unable to load matrix from rdd: "+lrdd.getVarName());
-		}
+		if( mb == null )
+			throw new IOException("Unable to load matrix from rdd.");
 		
 		return mb;
 	}
@@ -520,7 +519,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	{
 		long begin = 0;
 		if( LOG.isTraceEnabled() ){
-			LOG.trace (" Writing matrix to HDFS...  " + getVarName() + "  Path: " + fname + ", Format: " +
+			LOG.trace (" Writing matrix to HDFS...  " + hashCode() + "  Path: " + fname + ", Format: " +
 						(ofmt != null ? ofmt : "inferred from metadata"));
 			begin = System.currentTimeMillis();
 		}

@@ -41,8 +41,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -92,17 +90,13 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws DMLRuntimeException 
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
-
-		//Timing time = null;
-		LOG.trace("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-		//	time = new Timing();
-		//	time.start();
-
+		
+		if( LOG.isTraceEnabled() )
+		LOG.trace("ResultMerge (local, file): Execute serial merge for output "
+			+_output.hashCode()+" (fname="+_output.getFileName()+")");
 		
 		try
 		{
-			
-			
 			//collect all relevant inputs
 			ArrayList<MatrixObject> inMO = new ArrayList<>();
 			for( MatrixObject in : _inputs )
@@ -155,13 +149,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		String varName = _output.getVarName();
-		ValueType vt = _output.getValueType();
 		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
-		
-		MatrixObject moNew = new MatrixObject( vt, _outputFName );
-		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
-		moNew.setDataType( DataType.MATRIX );
+		MatrixObject moNew = new MatrixObject( _output.getValueType(), _outputFName );
 		
 		//create deep copy of metadata obj
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
@@ -231,7 +220,9 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="
+							+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
@@ -282,13 +273,16 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			createTextCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createTextCellStagingFile( fnameStaging, in, ID );
@@ -334,7 +328,9 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("ResultMerge (local, file): Merge input "
+							+in.hashCode()+" (fname="+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
@@ -377,13 +373,16 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			createBinaryCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createBinaryCellStagingFile( fnameStaging, in, ID );
@@ -414,7 +413,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");				
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
@@ -442,14 +442,17 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");			
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			
 			createBinaryBlockStagingFile(fnameStagingCompare, outMo);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");		
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
 	
@@ -1017,8 +1020,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		//merge in all input matrix objects
 		IDSequence seq = new IDSequence();
 		for( MatrixObject in : inMO )
-		{			
-			LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via file rename.");
+		{
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()
+					+" (fname="+in.getFileName()+") via file rename.");
 			
 			//copy over files (just rename file or entire dir)
 			Path tmpPath = new Path(in.getFileName());

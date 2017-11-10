@@ -121,7 +121,7 @@ public class ForProgramBlock extends ProgramBlock
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
 			// run for loop body for each instance of predicate sequence 
-			SequenceIterator seqIter = new SequenceIterator(_iterPredVar, from, to, incr);
+			SequenceIterator seqIter = new SequenceIterator(from, to, incr);
 			for( IntObject iterVar : seqIter ) 
 			{
 				//set iteration variable
@@ -131,7 +131,7 @@ public class ForProgramBlock extends ProgramBlock
 				for(int i=0 ; i < this._childBlocks.size() ; i++) {
 					ec.updateDebugState( i );
 					_childBlocks.get(i).execute(ec);
-				}				
+				}
 			}
 			
 			// reset update-in-place variables
@@ -201,7 +201,7 @@ public class ForProgramBlock extends ProgramBlock
 		if( tmp instanceof IntObject )
 			ret = (IntObject)tmp;
 		else //downcast to int if necessary
-			ret = new IntObject(tmp.getName(),tmp.getLongValue()); 
+			ret = new IntObject(tmp.getLongValue()); 
 		
 		return ret;
 	}
@@ -216,14 +216,12 @@ public class ForProgramBlock extends ProgramBlock
 	 */
 	protected class SequenceIterator implements Iterator<IntObject>, Iterable<IntObject>
 	{
-		private String _varName = null;
 		private long _cur = -1;
 		private long _to = -1;
 		private long _incr = -1;
 		private boolean _inuse = false;
 		
-		protected SequenceIterator(String varName, IntObject from, IntObject to, IntObject incr) {
-			_varName = varName;
+		protected SequenceIterator(IntObject from, IntObject to, IntObject incr) {
 			_cur = from.getLongValue();
 			_to = to.getLongValue();
 			_incr = incr.getLongValue();
@@ -236,7 +234,7 @@ public class ForProgramBlock extends ProgramBlock
 
 		@Override
 		public IntObject next() {
-			IntObject ret = new IntObject( _varName, _cur );
+			IntObject ret = new IntObject(_cur);
 			_cur += _incr; //update current val
 			return ret;
 		}

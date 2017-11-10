@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -56,9 +55,11 @@ public class ResultMergeLocalMemory extends ResultMerge
 		throws DMLRuntimeException
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
-
-		LOG.trace("ResultMerge (local, in-memory): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-				
+		
+		if( LOG.isTraceEnabled() )
+			LOG.trace("ResultMerge (local, in-memory): Execute serial merge for output "
+				+_output.hashCode()+" (fname="+_output.getFileName()+")");
+		
 		try
 		{
 			//get old output matrix from cache for compare
@@ -83,7 +84,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 				//check for empty inputs (no iterations executed)
 				if( in != null && in != _output ) 
 				{
-					LOG.trace("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("ResultMerge (local, in-memory): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 					
 					//read/pin input_i
 					MatrixBlock inMB = in.acquireRead();	
@@ -145,7 +147,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 	{		
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		
-		LOG.trace("ResultMerge (local, in-memory): Execute parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		if( LOG.isTraceEnabled() )
+			LOG.trace("ResultMerge (local, in-memory): Execute parallel (par="+par+") "
+				+ "merge for output "+_output.hashCode()+" (fname="+_output.getFileName()+")");
 		
 		try
 		{
@@ -205,7 +209,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			}
 			
 			//release old output, and all inputs
-			_output.release();			
+			_output.release();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -213,7 +217,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		
 		//LOG.trace("ResultMerge (local, in-memory): Executed parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 
-		return moNew;		
+		return moNew;
 	}
 
 	private static double[][] createCompareMatrix( MatrixBlock output ) {
@@ -226,13 +230,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 	private MatrixObject createNewMatrixObject( MatrixBlock data ) 
 		throws DMLRuntimeException
 	{
-		String varName = _output.getVarName();
 		ValueType vt = _output.getValueType();
 		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
-		
 		MatrixObject moNew = new MatrixObject( vt, _outputFName );
-		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
-		moNew.setDataType( DataType.MATRIX );
 		
 		//create deep copy of metadata obj
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
@@ -315,7 +315,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			//read each input if required
 			try
 			{
-				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.getVarName()+" (fname="+_inMO.getFileName()+")");
+				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.hashCode()+" (fname="+_inMO.getFileName()+")");
 				
 				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
 				merge( _outMB, inMB, false );

@@ -533,24 +533,24 @@ public final class MLContextUtil {
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
 				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
-					return MLContextConversionUtil.javaRDDStringIJVToMatrixObject(name, javaRDD, matrixMetadata);
+					return MLContextConversionUtil.javaRDDStringIJVToMatrixObject(javaRDD, matrixMetadata);
 				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD, matrixMetadata);
+					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(javaRDD, matrixMetadata);
 				}
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
 				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
-					return MLContextConversionUtil.javaRDDStringIJVToFrameObject(name, javaRDD, frameMetadata);
+					return MLContextConversionUtil.javaRDDStringIJVToFrameObject(javaRDD, frameMetadata);
 				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD, frameMetadata);
+					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD, frameMetadata);
 				}
 			} else if (!hasMetadata) {
 				String firstLine = javaRDD.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
 				if (isAllNumbers) {
-					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD);
+					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(javaRDD);
 				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD);
+					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD);
 				}
 			}
 
@@ -561,24 +561,24 @@ public final class MLContextUtil {
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
 				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
-					return MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+					return MLContextConversionUtil.rddStringIJVToMatrixObject(rdd, matrixMetadata);
 				} else {
-					return MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+					return MLContextConversionUtil.rddStringCSVToMatrixObject(rdd, matrixMetadata);
 				}
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
 				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
-					return MLContextConversionUtil.rddStringIJVToFrameObject(name, rdd, frameMetadata);
+					return MLContextConversionUtil.rddStringIJVToFrameObject(rdd, frameMetadata);
 				} else {
-					return MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd, frameMetadata);
+					return MLContextConversionUtil.rddStringCSVToFrameObject(rdd, frameMetadata);
 				}
 			} else if (!hasMetadata) {
 				String firstLine = rdd.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
 				if (isAllNumbers) {
-					return MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd);
+					return MLContextConversionUtil.rddStringCSVToMatrixObject(rdd);
 				} else {
-					return MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd);
+					return MLContextConversionUtil.rddStringCSVToFrameObject(rdd);
 				}
 			}
 		} else if (value instanceof MatrixBlock) {
@@ -593,15 +593,15 @@ public final class MLContextUtil {
 
 			dataFrame = MLUtils.convertVectorColumnsToML(dataFrame);
 			if (hasMatrixMetadata) {
-				return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame, (MatrixMetadata) metadata);
+				return MLContextConversionUtil.dataFrameToMatrixObject(dataFrame, (MatrixMetadata) metadata);
 			} else if (hasFrameMetadata) {
-				return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame, (FrameMetadata) metadata);
+				return MLContextConversionUtil.dataFrameToFrameObject(dataFrame, (FrameMetadata) metadata);
 			} else if (!hasMetadata) {
 				boolean looksLikeMatrix = doesDataFrameLookLikeMatrix(dataFrame);
 				if (looksLikeMatrix) {
-					return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame);
+					return MLContextConversionUtil.dataFrameToMatrixObject(dataFrame);
 				} else {
-					return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame);
+					return MLContextConversionUtil.dataFrameToFrameObject(dataFrame);
 				}
 			}
 		} else if (value instanceof Matrix) {
@@ -611,7 +611,7 @@ public final class MLContextUtil {
 					metadata = matrix.getMatrixMetadata();
 				}
 				JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = matrix.toBinaryBlocks();
-				return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks,
+				return MLContextConversionUtil.binaryBlocksToMatrixObject(binaryBlocks,
 						(MatrixMetadata) metadata);
 			} else {
 				return matrix.toMatrixObject();
@@ -623,7 +623,7 @@ public final class MLContextUtil {
 					metadata = frame.getFrameMetadata();
 				}
 				JavaPairRDD<Long, FrameBlock> binaryBlocks = frame.toBinaryBlocks();
-				return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
+				return MLContextConversionUtil.binaryBlocksToFrameObject(binaryBlocks, (FrameMetadata) metadata);
 			} else {
 				return frame.toFrameObject();
 			}
@@ -632,7 +632,7 @@ public final class MLContextUtil {
 			return MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix, (MatrixMetadata) metadata);
 		} else if (value instanceof URL) {
 			URL url = (URL) value;
-			return MLContextConversionUtil.urlToMatrixObject(name, url, (MatrixMetadata) metadata);
+			return MLContextConversionUtil.urlToMatrixObject(url, (MatrixMetadata) metadata);
 		} else if (value instanceof Integer) {
 			return new IntObject((Integer) value);
 		} else if (value instanceof Double) {

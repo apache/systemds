@@ -30,14 +30,10 @@ public class IntObject extends ScalarObject
 	private final long _value;
 
 	public IntObject(long val) {
-		this(null,val);
-	}
-
-	public IntObject(String name, long val) {
-		super(name, ValueType.INT);
+		super(ValueType.INT);
 		_value = val;
 	}
-
+	
 	@Override
 	public boolean getBooleanValue(){
 		return (_value!=0);

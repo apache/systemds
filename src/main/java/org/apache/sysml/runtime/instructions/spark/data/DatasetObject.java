@@ -28,12 +28,12 @@ public class DatasetObject extends LineageObject
 	private final boolean _isVector;
 	private final boolean _containsID;
 	
-	public DatasetObject( Dataset<Row> dsvar, String varName) {
-		this(dsvar, varName, true, true);
+	public DatasetObject( Dataset<Row> dsvar) {
+		this(dsvar, true, true);
 	}
 	
-	public DatasetObject( Dataset<Row> dsvar, String varName, boolean isVector, boolean containsID) {
-		super(varName);
+	public DatasetObject( Dataset<Row> dsvar, boolean isVector, boolean containsID) {
+		super();
 		_dsHandle = dsvar;
 		_isVector = isVector;
 		_containsID = containsID;

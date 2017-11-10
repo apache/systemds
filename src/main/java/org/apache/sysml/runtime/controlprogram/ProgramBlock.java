@@ -235,10 +235,10 @@ public class ProgramBlock implements ParseInfo
 		//check and correct scalar ret type (incl save double to int)
 		if( ret.getValueType() != retType )
 			switch( retType ) {
-				case BOOLEAN: ret = new BooleanObject(ret.getName(),ret.getBooleanValue()); break;
-				case INT:	  ret = new IntObject(ret.getName(),ret.getLongValue()); break;
-				case DOUBLE:  ret = new DoubleObject(ret.getName(),ret.getDoubleValue()); break;
-				case STRING:  ret = new StringObject(ret.getName(),ret.getStringValue()); break;
+				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
+				case INT:	  ret = new IntObject(ret.getLongValue()); break;
+				case DOUBLE:  ret = new DoubleObject(ret.getDoubleValue()); break;
+				case STRING:  ret = new StringObject(ret.getStringValue()); break;
 				default:
 					//do nothing
 			}

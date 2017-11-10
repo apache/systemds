@@ -316,7 +316,7 @@ public class VariableCPInstruction extends CPInstruction {
 			in1 = new CPOperand(parts[1], vt, dt);
 			// file name
 			in2 = new CPOperand(parts[2], ValueType.STRING, DataType.SCALAR);
-			// file name override flag
+			// file name override flag (always literal)
 			in3 = new CPOperand(parts[3], ValueType.BOOLEAN, DataType.SCALAR);
 			
 			// format 
@@ -477,11 +477,11 @@ public class VariableCPInstruction extends CPInstruction {
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) )
-					fname = fname + "_" + _uniqueVarID.getNextID();
-				
+				if( Boolean.parseBoolean(getInput3().getName()) ) {
+					fname = new StringBuilder(fname.length()+16).append(fname)
+						.append('_').append(_uniqueVarID.getNextID()).toString();
+				}
 				MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
-				mobj.setVarName(getInput1().getName());
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				mobj.setMetaData((MetaData)metadata.clone());
@@ -494,7 +494,6 @@ public class VariableCPInstruction extends CPInstruction {
 			else if( getInput1().getDataType() == DataType.FRAME ) {
 				String fname = getInput2().getName();
 				FrameObject fobj = new FrameObject(fname);
-				fobj.setVarName(getInput1().getName());
 				fobj.setMetaData((MetaData)metadata.clone());
 				fobj.setFileFormatProperties(_formatProperties);
 				if( _schema != null )

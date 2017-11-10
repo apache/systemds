@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cpfile;
 
 import org.apache.sysml.lops.LeftIndex;
 import org.apache.sysml.lops.RightIndex;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -98,12 +97,8 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
-				MatrixObject out = ec.getMatrixObject(output.getName());
-				
-				//create output matrix object				
+				//create output matrix object
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
-				mobj.setDataType( DataType.MATRIX );
-				mobj.setVarName( out.getVarName() );
 				MatrixCharacteristics mcNew = null;
 				switch( mo.getPartitionFormat() )
 				{

@@ -201,8 +201,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			}
 			
 			//add/replace data in symbol table
-			if( boundValue instanceof MatrixObject )
-				((MatrixObject) boundValue).setVarName(boundVarName);
 			ec.setVariable(boundVarName, boundValue);
 		}
 	}

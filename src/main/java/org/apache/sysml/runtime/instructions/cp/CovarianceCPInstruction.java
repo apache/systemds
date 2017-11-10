@@ -104,8 +104,6 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		}
 		
 		double val = covobj.getRequiredResult(_optr);
-		DoubleObject ret = new DoubleObject(output_name, val);
-			
-		ec.setScalarOutput(output_name, ret);
+		ec.setScalarOutput(output_name, new DoubleObject(val));
 	}
 }

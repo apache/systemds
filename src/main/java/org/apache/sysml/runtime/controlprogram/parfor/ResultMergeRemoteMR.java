@@ -34,8 +34,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
@@ -99,7 +97,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		if( LOG.isTraceEnabled() )
 			LOG.trace("ResultMerge (remote, mr): Execute serial merge for output "
-				+_output.getVarName()+" (fname="+_output.getFileName()+")");
+				+_output.hashCode()+" (fname="+_output.getFileName()+")");
 		
 		try
 		{
@@ -135,11 +133,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 						     mcOld.getRowsPerBlock(), mcOld.getColsPerBlock());
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
-				String varName = _output.getVarName();
-				ValueType vt = _output.getValueType();
-				moNew = new MatrixObject( vt, _outputFName );
-				moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
-				moNew.setDataType( DataType.MATRIX );
+				moNew = new MatrixObject(_output.getValueType(), _outputFName);
 				OutputInfo oiOld = metadata.getOutputInfo();
 				InputInfo iiOld = metadata.getInputInfo();
 				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),

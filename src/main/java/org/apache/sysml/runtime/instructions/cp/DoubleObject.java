@@ -29,11 +29,7 @@ public class DoubleObject extends ScalarObject
 	private final double _value;
 
 	public DoubleObject(double val){
-		this(null,val);
-	}
-
-	public DoubleObject(String name, double val){
-		super(name, ValueType.DOUBLE);
+		super(ValueType.DOUBLE);
 		_value = val;
 	}
 

@@ -369,7 +369,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+			RDDObject rddhandle = new RDDObject(rdd);
 			rddhandle.setHDFSFile(fromFile);
 			mo.setRDDHandle(rddhandle);
 		}
@@ -397,7 +397,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+			RDDObject rddhandle = new RDDObject(rdd);
 			rddhandle.setHDFSFile(true);
 			mo.setRDDHandle(rddhandle);
 		}
@@ -461,7 +461,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, fo.getVarName());
+			RDDObject rddhandle = new RDDObject(rdd);
 			rddhandle.setHDFSFile(fromFile);
 			fo.setRDDHandle(rddhandle);
 		}
@@ -488,7 +488,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, fo.getVarName());
+			RDDObject rddhandle = new RDDObject(rdd);
 			rddhandle.setHDFSFile(true);
 			fo.setRDDHandle(rddhandle);
 		}
@@ -560,7 +560,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			
 			bret = new PartitionedBroadcast<>(ret);
-			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<>(bret, varname,
+			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<>(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
 			mo.setBroadcastHandle(bchandle);
 			CacheableData.addBroadcastSize(bchandle.getSize());
@@ -630,7 +630,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			bret = new PartitionedBroadcast<>(ret);
-			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<>(bret, varname,
+			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<>(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
 			fo.setBroadcastHandle(bchandle);
 			CacheableData.addBroadcastSize(bchandle.getSize());
@@ -656,7 +656,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		CacheableData<?> obj = getCacheableData(varname);
-		RDDObject rddhandle = new RDDObject(rdd, varname);
+		RDDObject rddhandle = new RDDObject(rdd);
 		obj.setRDDHandle( rddhandle );
 	}
 
@@ -1236,10 +1236,10 @@ public class SparkExecutionContext extends ExecutionContext
 		   .count(); //trigger caching to prevent contention
 
 		//create new rdd handle, in-place of current matrix object
-		RDDObject inro =  mo.getRDDHandle();       //guaranteed to exist (see above)
-		RDDObject outro = new RDDObject(out, var); //create new rdd object
-		outro.setCheckpointRDD(true);              //mark as checkpointed
-		outro.addLineageChild(inro);               //keep lineage to prevent cycles on cleanup
+		RDDObject inro =  mo.getRDDHandle();  //guaranteed to exist (see above)
+		RDDObject outro = new RDDObject(out); //create new rdd object
+		outro.setCheckpointRDD(true);         //mark as checkpointed
+		outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
 		mo.setRDDHandle(outro);
 	}
 

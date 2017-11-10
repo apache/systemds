@@ -186,7 +186,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	// additional private flags and meta data
 	private int     _numReadThreads = 0;   //number of threads for read from HDFS
 	private boolean _cleanupFlag = true;   //flag if obj unpinned (cleanup enabled)	
-	private String  _varName = "";         //plan variable name
 	private String  _cacheFileName = null; //local eviction file name
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
@@ -205,8 +204,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param vt value type
 	 */
 	protected CacheableData(DataType dt, ValueType vt) {
-		super (dt, vt);		
-		_uniqueID = (int)_seq.getNextID();		
+		super (dt, vt);
+		_uniqueID = (int)_seq.getNextID();
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
 		_gpuObjects = new HashMap<>();
@@ -222,7 +221,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_cleanupFlag = that._cleanupFlag;
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
-		_varName = that._varName;
 		_gpuObjects = that._gpuObjects;
 	}
 
@@ -245,14 +243,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public boolean isCleanupEnabled() {
 		return _cleanupFlag;
-	}
-
-	public void setVarName(String s) {
-		_varName = s;
-	}
-
-	public String getVarName() {
-		return _varName;
 	}
 
 	public boolean isHDFSFileExists() {
@@ -384,7 +374,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire read "+getVarName());
+			LOG.trace("Acquire read "+hashCode());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToRead() )
@@ -443,7 +433,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				setDirty(false);
 			}
 			catch (IOException e) {
-				throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				throw new CacheException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 			}
 			
 			_isAcquireFromEmpty = true;
@@ -481,7 +471,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire modify "+getVarName());
+			LOG.trace("Acquire modify "+hashCode());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToModify() )
@@ -505,7 +495,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			}
 			catch (IOException e)
 			{
-				throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				throw new CacheException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 			}
 		}
 
@@ -544,7 +534,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire modify newdata "+getVarName());
+			LOG.trace("Acquire modify newdata "+hashCode());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if (! isAvailableToModify ())
@@ -602,7 +592,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Release "+getVarName());
+			LOG.trace("Release "+hashCode());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		boolean write = false;
@@ -642,7 +632,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					}
 				}
 				catch (Exception e) {
-					throw new CacheException("Eviction to local path " + filePath + " ("+getVarName()+") failed.", e);
+					throw new CacheException("Eviction to local path " + filePath + " ("+hashCode()+") failed.", e);
 				}
 				_requiresLocalWrite = false;
 			}
@@ -652,7 +642,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_data = null;			
 		}
 		else if( LOG.isTraceEnabled() ){
-			LOG.trace("Var "+getVarName()+" not subject to caching, state="+getStatusAsString());
+			LOG.trace("Var "+hashCode()+" not subject to caching, state="+getStatusAsString());
 		}
 
 		if( DMLScript.STATISTICS ){
@@ -677,7 +667,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Clear data "+getVarName());
+			LOG.trace("Clear data "+hashCode());
 		
 		// check if cleanup enabled and possible 
 		if( !isCleanupEnabled() ) 
@@ -774,7 +764,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Export data "+getVarName()+" "+fName);
+			LOG.trace("Export data "+hashCode()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		//prevent concurrent modifications
@@ -826,7 +816,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 				catch (IOException e)
 				{
-				    throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				    throw new CacheException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 				}
 			}
 			//get object from cache
@@ -926,7 +916,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
 		
 		if( LOG.isTraceEnabled() )
-			LOG.trace ("CACHE: Restoring matrix...  " + getVarName() + "  HDFS path: " + 
+			LOG.trace ("CACHE: Restoring matrix...  " + hashCode() + "  HDFS path: " + 
 						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + cacheFilePathAndName);
 				
 		if (_data != null)
@@ -959,7 +949,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		String cacheFilePathAndName = getCacheFilePathAndName();
 		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
 		if( LOG.isTraceEnabled() )
-			LOG.trace("CACHE: Freeing evicted matrix...  " + getVarName() + "  HDFS path: " + 
+			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
 						(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
 		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
@@ -982,7 +972,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		String debugNameEnding = (_hdfsFileName == null ? "null" : 
 			(_hdfsFileName.length() < maxLength ? _hdfsFileName : "..." + 
 				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
-		return getVarName() + " " + debugNameEnding;
+		return hashCode() + " " + debugNameEnding;
 	}
 
 	protected T readBlobFromHDFS(String fname) 

@@ -105,7 +105,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 			//create and set output scalar
 			ScalarObject ret = null;
 			switch( output.getValueType() ) {
-				case DOUBLE:  ret = new DoubleObject(output_name, mbOut.quickGetValue(0, 0)); break;
+				case DOUBLE:  ret = new DoubleObject(mbOut.quickGetValue(0, 0)); break;
 				
 				default: 
 					throw new DMLRuntimeException("Invalid output value type: "+output.getValueType());

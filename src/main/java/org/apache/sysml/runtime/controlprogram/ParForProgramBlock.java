@@ -616,7 +616,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 		
 		// initialize iter var to form value
-		IntObject iterVar = new IntObject(_iterPredVar, from.getLongValue() );
+		IntObject iterVar = new IntObject(from.getLongValue());
 		
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
@@ -674,7 +674,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		cleanupSharedVariables(ec, varState);
 		
 		//set iteration var to TO value (+ increment) for FOR equivalence
-		iterVar = new IntObject(_iterPredVar, to.getLongValue()); //consistent with for
+		iterVar = new IntObject(to.getLongValue()); //consistent with for
 		ec.setVariable(_iterPredVar, iterVar);
 		
 		//ensure that subsequent program blocks never see partitioned data (invalid plans!)
@@ -982,7 +982,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PartitionFormat.COLUMN_WISE)
 			|| (inputMatrix.getSparsity()<0.001 && inputDPF==PartitionFormat.ROW_WISE)) ?
 			OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
+		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program, resultFile, 
 			inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP );
 		
 		if( _monitor )
@@ -1107,7 +1107,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 4) submit MR job (wait for finished work)
 		//TODO runtime support for binary cell partitioning 
 		OutputInfo inputOI = OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program,
+		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program,
 			clsMap, resultFile, inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
 		
 		if( _monitor ) 
@@ -1273,10 +1273,10 @@ public class ParForProgramBlock extends ForProgramBlock
 				{
 					case SCALAR:
 						switch( valuetype ) {
-							case BOOLEAN: dataObj = new BooleanObject(var,false); break;
-							case INT:     dataObj = new IntObject(var,-1);        break;
-							case DOUBLE:  dataObj = new DoubleObject(var,-1d);    break;
-							case STRING:  dataObj = new StringObject(var,"-1");   break;
+							case BOOLEAN: dataObj = new BooleanObject(false); break;
+							case INT:     dataObj = new IntObject(-1);        break;
+							case DOUBLE:  dataObj = new DoubleObject(-1d);    break;
+							case STRING:  dataObj = new StringObject("-1");   break;
 							default:
 								throw new DMLRuntimeException("Value type not supported: "+valuetype);
 						}

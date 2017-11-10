@@ -121,8 +121,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			mo.setInMemoryPartition( partition );
 			
 			//create tasks for input data
-			Task lTask = new Task(TaskType.SET);
-			lTask.addIteration( new IntObject(_iterVar, larg._1()) );
+			Task lTask = new Task(_iterVar, TaskType.SET);
+			lTask.addIteration( new IntObject(larg._1()) );
 			
 			//execute program
 			long numIter = getExecutedIterations();

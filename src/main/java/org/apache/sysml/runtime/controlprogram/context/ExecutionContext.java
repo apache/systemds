@@ -518,12 +518,9 @@ public class ExecutionContext {
 		throws DMLRuntimeException 
 	{
 		FrameObject fo = getFrameObject(varName);
-		if( outputData.getNumColumns()>0 && outputData.getSchema()!=null )
-			fo.setValueType(outputData.getSchema()[0]);
 		fo.acquireModify(outputData);
 		fo.release();
-		    
-	    setVariable(varName, fo);
+		setVariable(varName, fo);
 	}
 	
 	/**

@@ -99,8 +99,8 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			mo.setInMemoryPartition( _partition );
 			
 			//create tasks for input data
-			Task lTask = new Task(TaskType.SET);
-			lTask.addIteration( new IntObject(_iterVar,key.get()) );
+			Task lTask = new Task(_iterVar, TaskType.SET);
+			lTask.addIteration( new IntObject(key.get()) );
 			
 			//execute program
 			executeTask( lTask );

@@ -30,12 +30,8 @@ public class StringObject extends ScalarObject
 	
 	private final String _value;
 
-	public StringObject (String val){
-		this(null,val);
-	}
-
-	public StringObject(String name, String val){
-		super(name, ValueType.STRING);
+	public StringObject(String val){
+		super(ValueType.STRING);
 		_value = val;
 	}
 	

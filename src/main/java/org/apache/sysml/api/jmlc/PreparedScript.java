@@ -142,7 +142,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, boolean scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new BooleanObject(varname, scalar), reuse);
+		setScalar(varname, new BooleanObject(scalar), reuse);
 	}
 	
 	/**
@@ -165,7 +165,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, long scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new IntObject(varname, scalar), reuse);
+		setScalar(varname, new IntObject(scalar), reuse);
 	}
 	
 	/** Binds a scalar double to a registered input variable.
@@ -187,7 +187,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, double scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new DoubleObject(varname, scalar), reuse);
+		setScalar(varname, new DoubleObject(scalar), reuse);
 	}
 	
 	/**
@@ -210,7 +210,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, String scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new StringObject(varname, scalar), reuse);
+		setScalar(varname, new StringObject(scalar), reuse);
 	}
 
 	/**

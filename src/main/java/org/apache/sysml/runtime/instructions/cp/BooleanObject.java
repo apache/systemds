@@ -30,13 +30,9 @@ public class BooleanObject extends ScalarObject
 	private static final long serialVersionUID = -4506242165735516984L;
 
 	private final boolean _value;
-
+	
 	public BooleanObject(boolean val){
-		this(null,val);
-	}
-
-	public BooleanObject(String name,boolean val){
-		super(name, ValueType.BOOLEAN);
+		super(ValueType.BOOLEAN);
 		_value = val;
 	}
 

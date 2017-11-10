@@ -223,11 +223,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);
 		}
-				
+		
 		//sanity check correct output
-		if( fb == null ) {
-			throw new IOException("Unable to load frame from rdd: "+lrdd.getVarName());
-		}
+		if( fb == null )
+			throw new IOException("Unable to load frame from rdd.");
 		
 		return fb;
 	}

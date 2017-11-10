@@ -130,7 +130,6 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 				case Matrix:
 					Matrix m = (Matrix) fun.getFunctionOutput(i);
 					MatrixObject newVar = createOutputMatrixObject( m );
-					newVar.setVarName(output.getName());
 					ec.setVariable(output.getName(), newVar);
 					break;
 				case Scalar:
@@ -138,19 +137,16 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 					ScalarObject scalarObject = null;
 					switch( s.getScalarType() ) {
 						case Integer:
-							scalarObject = new IntObject(output.getName(),
-									Long.parseLong(s.getValue()));
+							scalarObject = new IntObject(Long.parseLong(s.getValue()));
 							break;
 						case Double:
-							scalarObject = new DoubleObject(output.getName(),
-									Double.parseDouble(s.getValue()));
+							scalarObject = new DoubleObject(Double.parseDouble(s.getValue()));
 							break;
 						case Boolean:
-							scalarObject = new BooleanObject(output.getName(),
-									Boolean.parseBoolean(s.getValue()));
+							scalarObject = new BooleanObject(Boolean.parseBoolean(s.getValue()));
 							break;
 						case Text:
-							scalarObject = new StringObject(output.getName(), s.getValue());
+							scalarObject = new StringObject(s.getValue());
 							break;
 						default:
 							throw new DMLRuntimeException("Unknown scalar value type '"

@@ -132,8 +132,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 
 		//create scalar output (no lineage information required)
 		double val = cmobj.getRequiredResult(_optr);
-		DoubleObject ret = new DoubleObject(output.getName(), val);
-		ec.setScalarOutput(output.getName(), ret);
+		ec.setScalarOutput(output.getName(), new DoubleObject(val));
 	}
 
 	private static class RDDCMFunction implements Function<MatrixBlock, CM_COV_Object> 

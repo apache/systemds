@@ -42,8 +42,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -225,14 +223,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		private static MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
 			throws DMLRuntimeException
 		{
-			String varName = out.getVarName();
 			String fName = out.getFileName();
-			ValueType vt = src.getValueType();
 			MetaDataFormat metadata = (MetaDataFormat) src.getMetaData();
-			
-			MatrixObject moNew = new MatrixObject( vt, fName );
-			moNew.setVarName( varName );
-			moNew.setDataType( DataType.MATRIX );
+			MatrixObject moNew = new MatrixObject(src.getValueType(), fName);
 			
 			//handle empty output block (ensure valid dimensions)
 			if( rows==0 || cols ==0 ){
@@ -251,8 +244,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 			OutputInfo oiOld = metadata.getOutputInfo();
 			InputInfo iiOld = metadata.getInputInfo();
-			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols, mcOld.getRowsPerBlock(),
-					                                              mcOld.getColsPerBlock(), mcOld.getNonZeros());
+			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols,
+				mcOld.getRowsPerBlock(), mcOld.getColsPerBlock(), mcOld.getNonZeros());
 			MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 			moNew.setMetaData( meta );
 

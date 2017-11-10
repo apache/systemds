@@ -1718,19 +1718,16 @@ public class ProgramConverter
 				switch ( valuetype )
 				{
 					case INT:
-						long value1 = Long.parseLong(valString);
-						dat = new IntObject(name,value1);
+						dat = new IntObject(Long.parseLong(valString));
 						break;
 					case DOUBLE:
-						double value2 = Double.parseDouble(valString);
-						dat = new DoubleObject(name,value2);
+						dat = new DoubleObject(Double.parseDouble(valString));
 						break;
 					case BOOLEAN:
-						boolean value3 = Boolean.parseBoolean(valString);
-						dat = new BooleanObject(name,value3);
+						dat = new BooleanObject(Boolean.parseBoolean(valString));
 						break;
 					case STRING:
-						dat = new StringObject(name,valString);
+						dat = new StringObject(valString);
 						break;
 					default:
 						throw new DMLRuntimeException("Unable to parse valuetype "+valuetype);
@@ -1752,7 +1749,6 @@ public class ProgramConverter
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
 				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
 				mo.setMetaData( md );
-				mo.setVarName( name );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )
 					mo.setPartitioned( partFormat._dpf, partFormat._N );
 				mo.setUpdateType(inplace);

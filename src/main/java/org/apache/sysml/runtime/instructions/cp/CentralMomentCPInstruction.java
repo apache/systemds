@@ -123,7 +123,6 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		
 		double val = cmobj.getRequiredResult(cm_op);
-		DoubleObject ret = new DoubleObject(output_name, val);
-		ec.setScalarOutput(output_name, ret);
+		ec.setScalarOutput(output_name, new DoubleObject(val));
 	}
 }

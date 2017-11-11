@@ -29,6 +29,8 @@ import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 
@@ -66,6 +68,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 				if( HopRewriteUtils.isLastLevelStatementBlock(sb1) 
 					&& HopRewriteUtils.isLastLevelStatementBlock(sb2) 
 					&& !sb1.isSplitDag() && !sb2.isSplitDag()
+					&& !(hasExternalFunctionOpRoot(sb1) && hasExternalFunctionOpRoot(sb2))
 					&& (!hasFunctionOpRoot(sb1) || !hasFunctionIOConflict(sb1,sb2))
 					&& (!hasFunctionOpRoot(sb2) || !hasFunctionIOConflict(sb2,sb1)) )
 				{
@@ -165,6 +168,22 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		for( Hop root : sb.get_hops() )
 			ret |= (root instanceof FunctionOp);
 		return ret;
+	}
+	
+	private static boolean hasExternalFunctionOpRoot(StatementBlock sb) 
+			throws HopsException {
+		if( sb == null || sb.get_hops() == null )
+			return false;
+		for( Hop root : sb.get_hops() )
+			if( root instanceof FunctionOp ) {
+				FunctionStatementBlock fsb = sb.getDMLProg()
+					.getFunctionStatementBlock(((FunctionOp)root).getFunctionKey());
+				//note: in case of builtin multi-return functions such as qr (namespace _internal), 
+				//there is no function statement block and hence we need to check for null
+				if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement )
+					return true; 
+			}
+		return false;
 	}
 	
 	private static boolean hasFunctionIOConflict(StatementBlock sb1, StatementBlock sb2) 

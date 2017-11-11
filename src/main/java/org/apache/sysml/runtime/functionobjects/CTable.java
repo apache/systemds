@@ -42,6 +42,15 @@ public class CTable extends ValueFunction
 		return singleObj;
 	}
 
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock) 
+		throws DMLRuntimeException 
+	{
+		if( resultBlock != null )
+			execute(v1, v2, w, ignoreZeros, resultBlock);
+		else
+			execute(v1, v2, w, ignoreZeros, resultMap);
+	}
+	
 	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) 
 		throws DMLRuntimeException 
 	{	

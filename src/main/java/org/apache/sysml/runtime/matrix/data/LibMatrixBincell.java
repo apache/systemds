@@ -775,7 +775,7 @@ public class LibMatrixBincell
 	 * 
 	 */
 	private static void performBinOuterOperation(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut, BinaryOperator bOp) 
-			throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		int rlen = mbLeft.rlen;
 		int clen = mbOut.clen;
@@ -784,42 +784,37 @@ public class LibMatrixBincell
 			mbOut.allocateDenseBlock();
 		double c[] = mbOut.getDenseBlock();
 		
+		//pre-materialize various types used in inner loop
+		boolean scanType1 = (bOp.fn instanceof LessThan || bOp.fn instanceof Equals 
+			|| bOp.fn instanceof NotEquals || bOp.fn instanceof GreaterThanEquals);
+		boolean scanType2 = (bOp.fn instanceof LessThanEquals || bOp.fn instanceof Equals 
+			|| bOp.fn instanceof NotEquals || bOp.fn instanceof GreaterThan);
+		boolean lt = (bOp.fn instanceof LessThan), lte = (bOp.fn instanceof LessThanEquals);
+		boolean gt = (bOp.fn instanceof GreaterThan), gte = (bOp.fn instanceof GreaterThanEquals);
+		boolean eqNeq = (bOp.fn instanceof Equals || bOp.fn instanceof NotEquals);
+		
 		long lnnz = 0;
-		for(int r=0, off=0; r<rlen; r++, off+=clen) {
-			double value = mbLeft.quickGetValue(r, 0);		
+		for( int r=0, off=0; r<rlen; r++, off+=clen ) {
+			double value = mbLeft.quickGetValue(r, 0);
 			int ixPos1 = Arrays.binarySearch(b, value);
 			int ixPos2 = ixPos1;
-
-			if( ixPos1 >= 0 ){ //match, scan to next val
-				if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals 
-						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
-					while( ixPos1<b.length && value==b[ixPos1]  ) ixPos1++;
-				if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals 
-						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
-					while(  ixPos2 > 0 && value==b[ixPos2-1]) --ixPos2;
-			} else {
+			if( ixPos1 >= 0 ) { //match, scan to next val
+				if(scanType1) while( ixPos1<b.length && value==b[ixPos1]  ) ixPos1++;
+				if(scanType2) while( ixPos2 > 0 && value==b[ixPos2-1]) --ixPos2;
+			} 
+			else
 				ixPos2 = ixPos1 = Math.abs(ixPos1) - 1;
+			int start = lt ? ixPos1 : (lte||eqNeq) ? ixPos2 : 0;
+			int end = gt ? ixPos2 : (gte||eqNeq) ? ixPos1 : clen;
+			
+			if (bOp.fn instanceof NotEquals) {
+				Arrays.fill(c, off, off+start, 1.0);
+				Arrays.fill(c, off+end, off+clen, 1.0);
+				lnnz += (start+(clen-end));
 			}
-
-			int start = 0, end = clen;
-			if(bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals)
-				start = (bOp.fn instanceof LessThan) ? ixPos1 : ixPos2;
-			else if(bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals)
-				end = (bOp.fn instanceof GreaterThan) ? ixPos2 : ixPos1;
-			else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
-				start = ixPos2;
-				end = ixPos1;
-			}
-			if(start < end || bOp.fn instanceof NotEquals) {
-				if (bOp.fn instanceof NotEquals) {
-					Arrays.fill(c, off, off+start, 1.0);
-					Arrays.fill(c, off+end, off+clen, 1.0);
-					lnnz += (start+(clen-end));
-				}
-				else {
-					Arrays.fill(c, off+start, off+end, 1.0);
-					lnnz += (end-start);
-				}
+			else if( start < end ) {
+				Arrays.fill(c, off+start, off+end, 1.0);
+				lnnz += (end-start);
 			}
 		}
 		mbOut.setNonZeros(lnnz);
@@ -835,14 +830,10 @@ public class LibMatrixBincell
 		
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR ) //MATRIX - COL_VECTOR
 		{
-			for(int r=0; r<rlen; r++)
-			{
-				//replicated value
+			for(int r=0; r<rlen; r++) {
 				double v2 = m2.quickGetValue(r, 0);
-				
-				for(int c=0; c<clen; c++)
-				{
-					double v1 = m1.quickGetValue(r, c);	
+				for(int c=0; c<clen; c++) {
+					double v1 = m1.quickGetValue(r, c);
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValue(r, c, v);
 				}
@@ -851,9 +842,8 @@ public class LibMatrixBincell
 		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR ) //MATRIX - ROW_VECTOR
 		{
 			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					double v1 = m1.quickGetValue(r, c);	
+				for(int c=0; c<clen; c++) {
+					double v1 = m1.quickGetValue(r, c);
 					double v2 = m2.quickGetValue(0, c);
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValue(r, c, v);
@@ -869,12 +859,11 @@ public class LibMatrixBincell
 			} 
 			else {
 				for(int r=0; r<rlen; r++) {
-					double v1 = m1.quickGetValue(r, 0);		
-					for(int c=0; c<clen2; c++)
-					{
+					double v1 = m1.quickGetValue(r, 0);
+					for(int c=0; c<clen2; c++) {
 						double v2 = m2.quickGetValue(0, c);
 						double v = op.fn.execute( v1, v2 );
-						ret.appendValue(r, c, v);	
+						ret.appendValue(r, c, v);
 					}
 				}
 			}
@@ -882,25 +871,25 @@ public class LibMatrixBincell
 		else // MATRIX - MATRIX
 		{
 			//dense non-empty vectors
-			if( m1.clen==1 && !m1.sparse && !m1.isEmptyBlock(false)   
+			if( m1.clen==1 && !m1.sparse && !m1.isEmptyBlock(false)
 				&& !m2.sparse && !m2.isEmptyBlock(false)  )
 			{
 				ret.allocateDenseBlock();
 				double[] a = m1.denseBlock;
 				double[] b = m2.denseBlock;
 				double[] c = ret.denseBlock;
+				int lnnz = 0;
 				for( int i=0; i<rlen; i++ ) {
 					c[i] = op.fn.execute( a[i], b[i] );
-					if( c[i] != 0 ) 
-						ret.nonZeros++;
+					lnnz += (c[i] != 0) ? 1 : 0;
 				}
+				ret.nonZeros = lnnz;
 			}
 			//general case
 			else 
 			{
 				for(int r=0; r<rlen; r++)
-					for(int c=0; c<clen; c++)
-					{
+					for(int c=0; c<clen; c++) {
 						double v1 = m1.quickGetValue(r, c);
 						double v2 = m2.quickGetValue(r, c);
 						double v = op.fn.execute( v1, v2 );
@@ -923,6 +912,8 @@ public class LibMatrixBincell
 			throw new DMLRuntimeException("Unsupported safe binary scalar operations over different input/output representation: "+m1.sparse+" "+ret.sparse);
 		
 		boolean copyOnes = (op.fn instanceof NotEquals && op.getConstant()==0);
+		boolean allocExact = (op.fn instanceof Multiply 
+			|| op.fn instanceof Multiply2 || op.fn instanceof Power2);
 		
 		if( m1.sparse ) //SPARSE <- SPARSE
 		{	
@@ -954,10 +945,8 @@ public class LibMatrixBincell
 				}
 				else { //GENERAL CASE
 					//create sparse row without repeated resizing for specific ops
-					if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
-						|| op.fn instanceof Power2  ) {
+					if( allocExact )
 						c.allocate(r, alen);
-					}
 					
 					for(int j=apos; j<apos+alen; j++) {
 						double val = op.executeScalar(avals[j]);

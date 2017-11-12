@@ -99,9 +99,12 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	//optimizer configuration
 	public static boolean COST_PRUNING = true;
 	public static boolean STRUCTURAL_PRUNING = true;
-	
-	private static final IDSequence COST_ID = new IDSequence();
 	private static final TemplateRow ROW_TPL = new TemplateRow();
+	
+	//cost vector id generator, whose ids are only used for memoization per call to getPlanCost;
+	//hence, we use a sequence generator per optimizer instance to avoid thread contention in 
+	//multi-threaded parfor scenarios with concurrent dynamic recompilation and thus optimization.
+	private final IDSequence COST_ID = new IDSequence();
 	
 	@Override
 	public void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots) 
@@ -196,7 +199,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	 * @param off offset for recursive invocation, indicating the fixed plan part
 	 * @return optimal assignment of materialization points
 	 */
-	private static boolean[] enumPlans(CPlanMemoTable memo, PlanPartition part, StaticCosts costs, 
+	private boolean[] enumPlans(CPlanMemoTable memo, PlanPartition part, StaticCosts costs, 
 		ReachabilityGraph rgraph, InterestingPoint[] matPoints, int off)
 	{
 		//scan linearized search space, w/ skips for branch and bound pruning
@@ -750,7 +753,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	// Cost model fused operators w/ materialization points
 	//////////
 	
-	private static double getPlanCost(CPlanMemoTable memo, PlanPartition part, 
+	private double getPlanCost(CPlanMemoTable memo, PlanPartition part, 
 			InterestingPoint[] matPoints,boolean[] plan, HashMap<Long, Double> computeCosts,
 			final double costBound)
 	{
@@ -771,7 +774,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		return costs;
 	}
 	
-	private static double rGetPlanCosts(CPlanMemoTable memo, final Hop current, HashSet<VisitMarkCost> visited,
+	private double rGetPlanCosts(CPlanMemoTable memo, final Hop current, HashSet<VisitMarkCost> visited,
 			PlanPartition part, InterestingPoint[] matPoints, boolean[] plan, HashMap<Long, Double> computeCosts,
 			CostVector costsCurrent, TemplateType currentType, final double costBound)
 	{
@@ -1046,7 +1049,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(index)); 
 	}
 	
-	private static class CostVector {
+	private class CostVector {
 		public final long ID;
 		public final double outSize; 
 		public double computeCosts = 0;

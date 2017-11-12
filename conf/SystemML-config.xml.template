@@ -75,15 +75,9 @@
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
    <sysml.native.blas>none</sysml.native.blas>
 
-   <!-- prints finegrained statistics information -->
+   <!-- prints finegrained statistics information (includes extra GPU information and extra statistics information for Deep Neural Networks done in CP mode) -->
    <sysml.stats.finegrained>false</sysml.stats.finegrained>
    
-   <!-- prints extra statistics information for GPU -->
-   <sysml.stats.extraGPU>false</sysml.stats.extraGPU>
-
-   <!-- prints extra statistics information for Deep Neural Networks done in CP mode -->
-   <sysml.stats.extraDNN>false</sysml.stats.extraDNN>
-
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
     <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
     

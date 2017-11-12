@@ -43,6 +43,7 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -220,13 +221,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		try {
 			long t1 = 0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 			int status = cudnnConvolutionForward(getCudnnHandle(gCtx), one(),
 					algo.nchwTensorDesc, image,
 					algo.filterDesc, filter,
 					algo.convDesc, algo.algo, algo.workSpace, algo.sizeInBytes, zero(),
 					algo.nkpqTensorDesc, output);
-			if (GPUStatistics.DISPLAY_STATISTICS)
+			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_FORWARD_LIB, System.nanoTime() - t1);
 			if (status != cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + cudnnStatus.stringFor(status));
@@ -292,9 +293,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 						// Perform one-input conv2dBackwardFilter
 						Pointer tempdwPointer = gCtx.allocate(KCRS*sizeOfDataType);
 						for(int n = 0; n < N; n++) {
-							long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+							long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 							cudaMemset(tempdwPointer, 0, KCRS*sizeOfDataType);
-							if(GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
+							if(DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
 							// Perform one-input conv2dBackwardFilter
 							cudnnConv2dBackwardFilter(gCtx, instName, imgFetcher.getNthRow(n), doutFetcher.getNthRow(n), tempdwPointer, algo);
 							getCudaKernels(gCtx).launchKernel("inplace_add",
@@ -330,10 +331,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			LOG.trace("GPU : conv2dBackwardFilter" + ", GPUContext=" + gCtx);
 		}
 		try {
-			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			int status = cudnnConvolutionBackwardFilter(getCudnnHandle(gCtx), one(), algo.nchwTensorDesc, imagePointer,
 					algo.nkpqTensorDesc, doutPointer, algo.convDesc, algo.algo, algo.workSpace, algo.sizeInBytes, zero(), algo.filterDesc, dwPointer);
-			if (GPUStatistics.DISPLAY_STATISTICS)
+			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_FILTER_LIB, System.nanoTime() - t1);
 			if (status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardFilter: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
@@ -424,10 +425,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			LOG.trace("GPU : conv2dBackwardData" + ", GPUContext=" + gCtx);
 		}
 		try {
-			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			int status = cudnnConvolutionBackwardData(getCudnnHandle(gCtx), one(), algo.filterDesc, w,
 					algo.nkpqTensorDesc, dy, algo.convDesc, algo.algo, algo.workSpace, algo.sizeInBytes, zero(), algo.nchwTensorDesc, dx);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_DATA_LIB, System.nanoTime() - t1);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_DATA_LIB, System.nanoTime() - t1);
 
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardData: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
@@ -499,11 +500,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				LibMatrixCuDNNPoolingDescriptors.cudnnMaxpoolingDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
 						pad_h, pad_w, stride_h, stride_w, P, Q)) {
 			long t1=0,t2=0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
-			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+			if (DMLScript.FINEGRAINED_STATISTICS) t2 = System.nanoTime();
 			int status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
@@ -598,20 +599,20 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			long t1=0, t2=0, t3=0;
 			int status;
 			if(!isMaxPoolOutputProvided) {
-				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+				if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 				long numBytes = N*C*P*Q*sizeOfDataType;
 				y = gCtx.allocate(numBytes);
-				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
-				if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
+				if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+				if (DMLScript.FINEGRAINED_STATISTICS) t2 = System.nanoTime();
 				status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
-				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
+				if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
 				if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 					throw new DMLRuntimeException("Could not executed cudnnPoolingForward before cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 				}
 			}
-			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t3 = System.nanoTime();
 			status = cudnnPoolingBackward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.yDesc, y, desc.dyDesc, dy, desc.xDesc, x, zero(), desc.dxDesc, dx);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_BACKWARD_LIB, System.nanoTime() - t3);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_BACKWARD_LIB, System.nanoTime() - t3);
 
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
@@ -621,10 +622,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		finally {
 			long t4=0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t4 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t4 = System.nanoTime();
 			if(!isMaxPoolOutputProvided)
 				gCtx.cudaFreeHelper(instName, y);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}
 	}
 
@@ -641,18 +642,18 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			cudnnCreateActivationDescriptor(activationDescriptor);
 			double dummy = -1;
 			cudnnSetActivationDescriptor(activationDescriptor, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, dummy);
-			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			cudnnActivationForward(getCudnnHandle(gCtx), activationDescriptor,
 					one(), srcTensorDesc, srcData,
 					zero(), dstTensorDesc, dstData);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
 		} catch (CudaException e) {
 			throw new DMLRuntimeException("Error in conv2d in GPUContext " + gCtx.toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t1=0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t1);
+			if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t1);
 		}
 	}
 
@@ -678,13 +679,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
-			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName); // TODO: FIXME: Add sparse kernel support for relu
 			getCudaKernels(gCtx).launchKernel("relu",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
 					srcData, dstData, toInt(N), toInt(CHW));
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
+			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
 		}
 		else {
 			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();

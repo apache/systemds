@@ -89,20 +89,20 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 				// rotate180(dout[n,]) => dout_reshaped
 				rotate180Worker.execute(n, 0);
 				// dout_reshaped %*% filter => temp
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				outMM.reset(PQ, CRS, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, filter, outMM, !outRotate.sparse, false, _params);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				// col2im(temp) => output[n,] 
 				LibMatrixDNNHelper.doCol2imOverSingleImage(n, outMM, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvBwdDataMatMultTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdDataCol2ImTime.addAndGet(time2);
 			}

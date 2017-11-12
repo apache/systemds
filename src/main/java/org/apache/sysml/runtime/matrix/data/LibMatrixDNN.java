@@ -68,8 +68,6 @@ public class LibMatrixDNN {
 	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNN.class.getName());
 	
 	//library configurations and external contracts
-	public static boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
-	
 	// ------------------------------------------------------------------------------------------------
 	private static AtomicLong conv2dSparseCount = new AtomicLong(0);
 	private static AtomicLong conv2dDenseCount = new AtomicLong(0);
@@ -89,7 +87,7 @@ public class LibMatrixDNN {
 	static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
 	
 	public static void appendStatistics(StringBuilder sb) {
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
 					+ conv2dDenseCount.get() + "/"
 					+ conv2dBwdFilterDenseCount.get() + "/"
@@ -230,7 +228,7 @@ public class LibMatrixDNN {
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			if(filter.isInSparseFormat() || dout.isInSparseFormat()) {
 				conv2dBwdDataSparseCount.addAndGet(1);
 			}
@@ -255,7 +253,7 @@ public class LibMatrixDNN {
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
 				conv2dBwdFilterSparseCount.addAndGet(1);
 			}
@@ -281,7 +279,7 @@ public class LibMatrixDNN {
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			if(input.isInSparseFormat() || filter.isInSparseFormat()) {
 				conv2dSparseCount.addAndGet(1);
 			}
@@ -314,7 +312,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect dout dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
 				maxPoolBwdSparseCount.addAndGet(1);
 			}

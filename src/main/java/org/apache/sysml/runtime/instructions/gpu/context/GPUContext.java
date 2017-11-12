@@ -298,7 +298,7 @@ public class GPUContext {
 						"GPU : in allocate from instruction " + instructionName + ", found free block of size " + (size
 								/ 1024.0) + " Kbytes from previously allocated block on " + this);
 			}
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+			if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 				t0 = System.nanoTime();
 			Set<Pointer> freeList = freeCUDASpaceMap.get(size);
 
@@ -308,7 +308,7 @@ public class GPUContext {
 
 			if (freeList.isEmpty())
 				freeCUDASpaceMap.remove(size);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+			if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics
 						.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
 		} else {
@@ -326,7 +326,7 @@ public class GPUContext {
 				GPUStatistics.cudaAllocTime.add(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaAllocCount.add(statsCount);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+			if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE,
 						System.nanoTime() - t0);
 		}
@@ -340,7 +340,7 @@ public class GPUContext {
 		cudaMemset(A, 0, size);
 		if (DMLScript.STATISTICS)
 			end = System.nanoTime();
-		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+		if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaMemSet0Time.add(end - t1);
@@ -413,7 +413,7 @@ public class GPUContext {
 				GPUStatistics.cudaDeAllocTime.add(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaDeAllocCount.add(1);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+			if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE,
 						System.nanoTime() - t0);
 		} else {

@@ -110,8 +110,8 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		writeInputMatrix("W", W, true);
 		
 		//for each input data set
-		for( int i=0; i<nRuns; i++ )
-		{
+		int lnRuns = CHECK_IN_OUT ? 1 : nRuns;
+		for( int i=0; i<lnRuns; i++ ) {
 			//write input data
 			writeInputMatrix("X", Xset.get(i), true);
 			

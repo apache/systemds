@@ -130,9 +130,9 @@ public class GridEnumerationMemory extends GridEnumeration
 		else
 		{
 			StatementBlock sb = pb.getStatementBlock();
-			if( sb != null && sb.get_hops() != null ){
-				Hop.resetVisitStatus(sb.get_hops());
-				for( Hop hop : sb.get_hops() )
+			if( sb != null && sb.getHops() != null ){
+				Hop.resetVisitStatus(sb.getHops());
+				for( Hop hop : sb.getHops() )
 					getMemoryEstimates(hop, mem);
 			}
 		}

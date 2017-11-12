@@ -62,16 +62,16 @@ public class IPAPassInlineFunctions extends IPAPass
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			if( fstmt.getBody().size() == 1 
 				&& HopRewriteUtils.isLastLevelStatementBlock(fstmt.getBody().get(0)) 
-				&& !containsFunctionOp(fstmt.getBody().get(0).get_hops())
+				&& !containsFunctionOp(fstmt.getBody().get(0).getHops())
 				&& (fgraph.getFunctionCalls(fkey).size() == 1
-					|| countOperators(fstmt.getBody().get(0).get_hops()) 
+					|| countOperators(fstmt.getBody().get(0).getHops()) 
 						<= InterProceduralAnalysis.INLINING_MAX_NUM_OPS) )
 			{
 				if( LOG.isDebugEnabled() )
 					LOG.debug("IPA: Inline function '"+fkey+"'");
 				
 				//replace all relevant function calls 
-				ArrayList<Hop> hops = fstmt.getBody().get(0).get_hops();
+				ArrayList<Hop> hops = fstmt.getBody().get(0).getHops();
 				List<FunctionOp> fcalls = fgraph.getFunctionCalls(fkey);
 				List<StatementBlock> fcallsSB = fgraph.getFunctionCallsSB(fkey);
 				for(int i=0; i<fcalls.size(); i++) {
@@ -101,8 +101,8 @@ public class IPAPassInlineFunctions extends IPAPass
 						if( HopRewriteUtils.isData(out, DataOpTypes.TRANSIENTWRITE) )
 							out.setName(outMap.get(out.getName()));
 					}
-					fcallsSB.get(i).get_hops().remove(op);
-					fcallsSB.get(i).get_hops().addAll(hops2);
+					fcallsSB.get(i).getHops().remove(op);
+					fcallsSB.get(i).getHops().addAll(hops2);
 				}
 			}
 		}

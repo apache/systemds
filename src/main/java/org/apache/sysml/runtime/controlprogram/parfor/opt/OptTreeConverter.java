@@ -459,7 +459,7 @@ public class OptTreeConverter
 			//process all hops
 			node = new OptNode(NodeType.GENERIC);
 			_hlMap.putProgMapping(sb, pb, node);
-			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars, memo) );
+			node.addChilds( createAbstractOptNodes(sb.getHops(), vars, memo) );
 			node.setExecType(ExecType.CP);
 			node.setLineNumbers(sb.getBeginLine(), sb.getEndLine());
 			

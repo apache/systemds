@@ -117,7 +117,7 @@ public class OptTreePlanChecker
 		}
 		else
 		{
-			checkHopDagCorrectness(prog, dprog, sb.get_hops(), pb.getInstructions(), fnStack);
+			checkHopDagCorrectness(prog, dprog, sb.getHops(), pb.getInstructions(), fnStack);
 			//checkLinksProgramStatementBlock(pb, sb);
 		}
 		

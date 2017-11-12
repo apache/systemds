@@ -72,8 +72,8 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 					&& (!hasFunctionOpRoot(sb1) || !hasFunctionIOConflict(sb1,sb2))
 					&& (!hasFunctionOpRoot(sb2) || !hasFunctionIOConflict(sb2,sb1)) )
 				{
-					ArrayList<Hop> sb1Hops = sb1.get_hops();
-					ArrayList<Hop> sb2Hops = sb2.get_hops();
+					ArrayList<Hop> sb1Hops = sb1.getHops();
+					ArrayList<Hop> sb2Hops = sb2.getHops();
 					
 					//determine transient read inputs s2 
 					Hop.resetVisitStatus(sb2Hops);
@@ -162,19 +162,19 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 	
 	private static boolean hasFunctionOpRoot(StatementBlock sb) 
 			throws HopsException {
-		if( sb == null || sb.get_hops() == null )
+		if( sb == null || sb.getHops() == null )
 			return false;
 		boolean ret = false;
-		for( Hop root : sb.get_hops() )
+		for( Hop root : sb.getHops() )
 			ret |= (root instanceof FunctionOp);
 		return ret;
 	}
 	
 	private static boolean hasExternalFunctionOpRoot(StatementBlock sb) 
 			throws HopsException {
-		if( sb == null || sb.get_hops() == null )
+		if( sb == null || sb.getHops() == null )
 			return false;
-		for( Hop root : sb.get_hops() )
+		for( Hop root : sb.getHops() )
 			if( root instanceof FunctionOp ) {
 				FunctionStatementBlock fsb = sb.getDMLProg()
 					.getFunctionStatementBlock(((FunctionOp)root).getFunctionKey());
@@ -195,7 +195,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		
 		//collect all function output variables of sb1
 		HashSet<String> outSb1 = new HashSet<>();
-		for( Hop root : sb1.get_hops() )
+		for( Hop root : sb1.getHops() )
 			if( root instanceof FunctionOp )
 				outSb1.addAll(Arrays.asList(((FunctionOp)root).getOutputVariableNames()));
 		

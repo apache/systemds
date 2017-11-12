@@ -773,7 +773,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//construct new instructions
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
-			sb, sb.get_hops(), vars, null, false, false, 0);
+			sb, sb.getHops(), vars, null, false, false, 0);
 		pb.setInstructions( newInst );   
 		
 		//reset all rix estimated (modified by recompile)

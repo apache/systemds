@@ -247,17 +247,6 @@ public class WhileStatementBlock extends StatementBlock
 		_predicateHops = hops;
 	}
 	
-	@Override
-	public ArrayList<Hop> get_hops() throws HopsException {
-		
-		if (_hops != null && !_hops.isEmpty()){
-			LOG.error(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
-			throw new HopsException(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
-		}
-		
-		return _hops;
-	}
-	
 	public Hop getPredicateHops(){
 		return _predicateHops;
 	}

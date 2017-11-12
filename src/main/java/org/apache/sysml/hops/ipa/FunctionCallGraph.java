@@ -276,7 +276,7 @@ public class FunctionCallGraph
 		} 
 		else {
 			// For generic StatementBlock
-			ArrayList<Hop> hopsDAG = sb.get_hops();
+			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return; //nothing to do
 			

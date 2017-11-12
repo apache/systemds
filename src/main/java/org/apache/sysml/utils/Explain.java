@@ -617,7 +617,7 @@ public class Explain
 			if (sb.requiresRecompilation()) {
 				addSubGraphHeader(builder, withSubgraph);
 			}
-			ArrayList<Hop> hopsDAG = sb.get_hops();
+			ArrayList<Hop> hopsDAG = sb.getHops();
 			if (hopsDAG != null && !hopsDAG.isEmpty()) {
 				Hop.resetVisitStatus(hopsDAG);
 				for (Hop hop : hopsDAG)
@@ -710,7 +710,7 @@ public class Explain
 			// For generic StatementBlock
 			builder.append(offset);
 			builder.append("GENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+") [recompile=" + sb.requiresRecompilation() + "]\n");
-			ArrayList<Hop> hopsDAG = sb.get_hops();
+			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
 				Hop.resetVisitStatus(hopsDAG);
 				for (Hop hop : hopsDAG)

@@ -116,7 +116,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 				rReplaceLiterals(current, constants);
 		}
 		else {
-			replaceLiterals(sb.get_hops(), constants);
+			replaceLiterals(sb.getHops(), constants);
 		}
 	}
 	

@@ -90,10 +90,10 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 					//data operations like nrow(X) or operations removed by rewrites 
 					//double check hops on basic blocks; otherwise worst-case
 					boolean skipRemove = false;
-					if( sb.get_hops() !=null ) {
-						Hop.resetVisitStatus(sb.get_hops());
+					if( sb.getHops() !=null ) {
+						Hop.resetVisitStatus(sb.getHops());
 						skipRemove = true;
-						for( Hop root : sb.get_hops() )
+						for( Hop root : sb.getHops() )
 							skipRemove &= !HopRewriteUtils.rContainsRead(root, cand, false);
 					}					
 					if( !skipRemove )
@@ -114,10 +114,10 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			else
 			{
 				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) 
+					if( sb.variablesUpdated().containsVariable(cand) && sb.getHops() != null) 
 					{
-						Hop.resetVisitStatus(sb.get_hops());
-						for( Hop root : sb.get_hops() )
+						Hop.resetVisitStatus(sb.getHops());
+						for( Hop root : sb.getHops() )
 							if( root.getName().equals(cand) &&
 								!HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
 								chkpointCand.remove(cand);
@@ -126,14 +126,15 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			}
 		
 			//collect checkpoints and remove unnecessary checkpoints
-			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
-			for( Hop chkpoint : tmp ) {
-				if( chkpointCand.containsKey(chkpoint.getName()) ) {
-					chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);
+			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
+				ArrayList<Hop> tmp = collectCheckpoints(sb.getHops());
+				for( Hop chkpoint : tmp ) {
+					if( chkpointCand.containsKey(chkpoint.getName()) ) {
+						chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);
+					}
+					chkpointCand.put(chkpoint.getName(), chkpoint);
 				}
-				chkpointCand.put(chkpoint.getName(), chkpoint);
 			}
-			
 		}
 	}
 
@@ -159,10 +160,10 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 					//data operations like nrow(X) or operations removed by rewrites 
 					//double check hops on basic blocks; otherwise worst-case
 					boolean skipRemove = false;
-					if( sb.get_hops() !=null ) {
-						Hop.resetVisitStatus(sb.get_hops());
+					if( sb.getHops() !=null ) {
+						Hop.resetVisitStatus(sb.getHops());
 						skipRemove = true;
-						for( Hop root : sb.get_hops() )
+						for( Hop root : sb.getHops() )
 							skipRemove &= !HopRewriteUtils.rContainsRead(root, cand, false);
 					}					
 					if( !skipRemove )
@@ -185,9 +186,9 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			else
 			{
 				for( String cand : cands2 )
-					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) {
-						Hop.resetVisitStatus(sb.get_hops());
-						for( Hop root : sb.get_hops() )
+					if( sb.variablesUpdated().containsVariable(cand) && sb.getHops() != null) {
+						Hop.resetVisitStatus(sb.getHops());
+						for( Hop root : sb.getHops() )
 							if( root.getName().equals(cand) ) {
 								if( HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
 									chkpointCand.get(cand).setRequiresCheckpoint(false);
@@ -195,15 +196,16 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 									chkpointCand.put(cand, root.getInput().get(0));
 								}
 								else
-									chkpointCand.remove(cand);		
+									chkpointCand.remove(cand);
 							}
 					}	
 			}
 		
 			//collect checkpoints
-			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
-			for( Hop chkpoint : tmp ) {
-				chkpointCand.put(chkpoint.getName(), chkpoint);
+			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
+				ArrayList<Hop> tmp = collectCheckpoints(sb.getHops());
+				for( Hop chkpoint : tmp )
+					chkpointCand.put(chkpoint.getName(), chkpoint);
 			}
 		}
 	}
@@ -218,9 +220,9 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			|| sbs.get(0) instanceof ForStatementBlock) ) 
 		{
 			//recursively process all dag roots
-			if( sbs.get(0).get_hops()!=null ) {
-				Hop.resetVisitStatus(sbs.get(0).get_hops());
-				for( Hop root : sbs.get(0).get_hops() )
+			if( sbs.get(0).getHops()!=null ) {
+				Hop.resetVisitStatus(sbs.get(0).getHops());
+				for( Hop root : sbs.get(0).getHops() )
 					rRemoveCheckpointReadWrite(root);
 			}
 		}

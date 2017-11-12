@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -264,17 +262,6 @@ public class FunctionStatementBlock extends StatementBlock
 		loReturn.addVariables(lo);
 		return loReturn;
 	
-	}
-	
-	@Override
-	public ArrayList<Hop> get_hops() throws HopsException {
-		
-		if (_hops != null && _hops.size() > 0){
-			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the FunctionStatementBlock");
-			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the FunctionStatementBlock");
-		}
-		
-		return _hops;
 	}
 	
 	@Override

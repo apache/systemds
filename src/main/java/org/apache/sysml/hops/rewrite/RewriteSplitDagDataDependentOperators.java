@@ -75,15 +75,16 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		throws HopsException 
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return new ArrayList<>(Arrays.asList(sb));
 		
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 	
 		//collect all unknown csv reads hops
 		ArrayList<Hop> cand = new ArrayList<>();
-		collectDataDependentOperators( sb.get_hops(), cand );
-		Hop.resetVisitStatus(sb.get_hops());
+		collectDataDependentOperators( sb.getHops(), cand );
+		Hop.resetVisitStatus(sb.getHops());
 		
 		//split hop dag on demand
 		if( !cand.isEmpty() )
@@ -141,7 +142,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 								if( parent != twrite )
 									HopRewriteUtils.replaceChildReference(parent, c, tread);
 								else
-									sb.get_hops().remove(parent);
+									sb.getHops().remove(parent);
 							}
 						}
 						
@@ -187,10 +188,10 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				}
 				
 				//ensure disjoint operators across DAGs (prevent replicated operations)
-				handleReplicatedOperators( sb1hops, sb.get_hops(), sb1.liveOut(), sb.liveIn() );
+				handleReplicatedOperators( sb1hops, sb.getHops(), sb1.liveOut(), sb.liveIn() );
 				
 				//deep copy new dag (in order to prevent any dangling references)
-				sb1.set_hops(Recompiler.deepCopyHopsDag(sb1hops));
+				sb1.setHops(Recompiler.deepCopyHopsDag(sb1hops));
 				sb1.updateRecompilationFlag();
 				sb1.setSplitDag(true); //avoid later merge by other rewrites
 				

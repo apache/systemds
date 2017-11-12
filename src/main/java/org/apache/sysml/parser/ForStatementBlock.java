@@ -265,16 +265,7 @@ public class ForStatementBlock extends StatementBlock
 		return loReturn;
 	
 	}
-
-	@Override
-	public ArrayList<Hop> get_hops() throws HopsException {
-		if (_hops != null && !_hops.isEmpty()){
-			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
-			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
-		}
-		return _hops;
-	}
-
+	
 	public void setFromHops(Hop hops) { _fromHops = hops; }
 	public void setToHops(Hop hops) { _toHops = hops; }
 	public void setIncrementHops(Hop hops) { _incrementHops = hops; }

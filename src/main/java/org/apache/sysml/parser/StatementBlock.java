@@ -114,8 +114,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _statements.get(i);
 	}
 
-	public ArrayList<Statement> getStatements()
-	{
+	public ArrayList<Statement> getStatements() {
 		return _statements;
 	}
 
@@ -124,7 +123,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		_statements = s;
 	}
 
-	public ArrayList<Hop> get_hops() throws HopsException {
+	public ArrayList<Hop> getHops() {
 		return _hops;
 	}
 
@@ -132,7 +131,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _lops;
 	}
 
-	public void set_hops(ArrayList<Hop> hops) {
+	public void setHops(ArrayList<Hop> hops) {
 		_hops = hops;
 	}
 
@@ -1047,7 +1046,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public boolean updateRecompilationFlag() throws HopsException {
 		return (_requiresRecompile =
 			ConfigurationManager.isDynamicRecompilation()
-			&& Recompiler.requiresRecompilation(get_hops()));
+			&& Recompiler.requiresRecompilation(getHops()));
 	}
 
 	public boolean requiresRecompilation() {

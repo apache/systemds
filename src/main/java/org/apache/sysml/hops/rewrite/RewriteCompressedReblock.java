@@ -68,7 +68,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	{
 		//check for inapplicable statement blocks
 		if( !HopRewriteUtils.isLastLevelStatementBlock(sb)
-			|| sb.get_hops() == null )
+			|| sb.getHops() == null )
 			return Arrays.asList(sb);
 		
 		//parse compression config
@@ -78,10 +78,10 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 		
 		//perform compressed reblock rewrite
 		if( compress.isEnabled() ) {
-			Hop.resetVisitStatus(sb.get_hops());
-			for( Hop h : sb.get_hops() ) 
+			Hop.resetVisitStatus(sb.getHops());
+			for( Hop h : sb.getHops() ) 
 				injectCompressionDirective(h, compress, sb.getDMLProg());
-			Hop.resetVisitStatus(sb.get_hops());
+			Hop.resetVisitStatus(sb.getHops());
 		}
 		return Arrays.asList(sb);
 	}
@@ -198,8 +198,8 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 			if( fsb.variablesRead().containsAnyName(status.compMtx) )
 				status.usedInLoop = true;
 		}
-		else if( sb.get_hops() != null ) { //generic (last-level)
-			ArrayList<Hop> roots = sb.get_hops();
+		else if( sb.getHops() != null ) { //generic (last-level)
+			ArrayList<Hop> roots = sb.getHops();
 			Hop.resetVisitStatus(roots);
 			//process entire HOP DAG starting from the roots
 			for( Hop root : roots )

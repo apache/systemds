@@ -543,7 +543,7 @@ public class ProgramConverter
 		{
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null  //forced deep copy for function recompilation
-				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
+				&& (Recompiler.requiresRecompilation( sb.getHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
@@ -555,10 +555,10 @@ public class ProgramConverter
 				ret.setReadVariables( sb.variablesRead() );
 				
 				//deep copy hops dag for concurrent recompile
-				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
+				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.getHops() );
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );
-				ret.set_hops( hops );
+				ret.setHops( hops );
 				ret.updateRecompilationFlag();
 			}
 			else

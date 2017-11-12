@@ -256,7 +256,7 @@ public class ProgramRewriter
 		}
 		else //generic (last-level)
 		{
-			current.set_hops( rewriteHopDAG(current.get_hops(), state) );
+			current.setHops( rewriteHopDAG(current.getHops(), state) );
 		}
 	}
 	

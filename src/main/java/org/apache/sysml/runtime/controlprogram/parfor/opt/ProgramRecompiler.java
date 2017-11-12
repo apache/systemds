@@ -164,17 +164,17 @@ public class ProgramRecompiler
 			{
 				//process actual hops
 				boolean ret = false;
-				Hop.resetVisitStatus(sb.get_hops());
+				Hop.resetVisitStatus(sb.getHops());
 				if( force )
 				{
 					//set forced execution type
-					for( Hop h : sb.get_hops() )
+					for( Hop h : sb.getHops() )
 						ret |= rFindAndSetCPIndexingHOP(h, var);
 				}
 				else
 				{
 					//release forced execution type
-					for( Hop h : sb.get_hops() )
+					for( Hop h : sb.getHops() )
 						ret |= rFindAndReleaseIndexingHOP(h, var);
 				}
 				
@@ -183,7 +183,7 @@ public class ProgramRecompiler
 				{
 					//construct new instructions
 					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
-						sb, sb.get_hops(), ec.getVariables(), null, true, false, 0);
+						sb, sb.getHops(), ec.getVariables(), null, true, false, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}
@@ -245,7 +245,7 @@ public class ProgramRecompiler
 		}
 		else //last level block
 		{
-			ArrayList<Hop> hops = sb.get_hops();
+			ArrayList<Hop> hops = sb.getHops();
 			if( hops != null ) 
 			{	
 				//replace constant literals

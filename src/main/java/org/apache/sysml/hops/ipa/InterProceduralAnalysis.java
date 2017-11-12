@@ -353,7 +353,7 @@ public class InterProceduralAnalysis
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 			//old stats in, new stats out if updated
-			ArrayList<Hop> roots = sb.get_hops();
+			ArrayList<Hop> roots = sb.getHops();
 			DMLProgram prog = sb.getDMLProg();
 			//replace scalar reads with literals
 			Hop.resetVisitStatus(roots);

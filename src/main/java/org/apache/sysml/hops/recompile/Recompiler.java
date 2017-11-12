@@ -646,8 +646,8 @@ public class Recompiler
 		{
 			//recompile last-level program block instructions
 			StatementBlock sb = pb.getStatementBlock();
-			if( sb!=null && sb.get_hops()!=null ) {
-				pb.setInstructions(recompileHopsDagInstructions(sb, sb.get_hops()));
+			if( sb!=null && sb.getHops()!=null ) {
+				pb.setInstructions(recompileHopsDagInstructions(sb, sb.getHops()));
 			}
 		}
 	}
@@ -883,18 +883,18 @@ public class Recompiler
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
 				tmp = Recompiler.recompileHopsDag(
-					sb, sb.get_hops(), vars, status, true, false, tid);
+					sb, sb.getHops(), vars, status, true, false, tid);
 				pb.setInstructions( tmp );
 				
 				//propagate stats across hops (should be executed on clone of vars)
-				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
+				Recompiler.extractDAGOutputStatistics(sb.getHops(), vars);
 				
 				//reset recompilation flags (w/ special handling functions)
 				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-					&& !containsRootFunctionOp(sb.get_hops())  
+					&& !containsRootFunctionOp(sb.getHops())  
 					&& resetRecompile.isReset() ) 
 				{
-					Hop.resetRecompilationFlag(sb.get_hops(), ExecType.CP, resetRecompile);
+					Hop.resetRecompilationFlag(sb.getHops(), ExecType.CP, resetRecompile);
 					sb.updateRecompilationFlag();
 				}
 			}
@@ -1278,7 +1278,7 @@ public class Recompiler
 			//would be invalid with permutation matrix mult across multiple dags)
 			if(	sb != null ) {
 				ArrayList<Instruction> tmp = pb.getInstructions();
-				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.get_hops(), tid, et);
+				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.getHops(), tid, et);
 				pb.setInstructions( tmp );
 			}
 			

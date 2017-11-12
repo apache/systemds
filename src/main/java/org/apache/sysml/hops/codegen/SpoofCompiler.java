@@ -240,7 +240,7 @@ public class SpoofCompiler
 		}
 		else //generic (last-level)
 		{
-			current.set_hops( generateCodeFromHopDAGs(current.get_hops()) );
+			current.setHops( generateCodeFromHopDAGs(current.getHops()) );
 			current.updateRecompilationFlag();
 		}
 	}
@@ -291,7 +291,7 @@ public class SpoofCompiler
 		else //generic (last-level)
 		{
 			StatementBlock sb = current.getStatementBlock();
-			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.get_hops()) );
+			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.getHops()) );
 		}
 	}
 

@@ -147,7 +147,7 @@ public class GraphBuilder
 		else //last-level program block
 		{
 			StatementBlock sb = pb.getStatementBlock();
-			ArrayList<Hop> hops = sb.get_hops();
+			ArrayList<Hop> hops = sb.getHops();
 			if( hops != null )
 			{
 				//create new local memo structure for local dag

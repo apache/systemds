@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.AppendGSPInstruction.ShiftMatrix;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -85,7 +86,8 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		}
 		
 		//aggregate partially overlapping blocks w/ single shuffle
-		out = RDDAggregateUtils.mergeByKey(out);
+		int numPartOut = SparkUtils.getNumPreferredPartitions(mcOut);
+		out = RDDAggregateUtils.mergeByKey(out, numPartOut, false);
 		
 		//set output RDD and add lineage
 		sec.getMatrixCharacteristics(output.getName()).set(mcOut);

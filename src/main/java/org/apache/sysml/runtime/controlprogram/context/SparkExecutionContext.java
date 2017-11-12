@@ -261,7 +261,15 @@ public class SparkExecutionContext extends ExecutionContext
 		if( !conf.contains("spark.locality.wait") ) { //default 3s
 			conf.set("spark.locality.wait", "5s");
 		}
-
+		
+		//increase max message size for robustness
+		String sparkVersion = org.apache.spark.package$.MODULE$.SPARK_VERSION();
+		String msgSizeConf = (UtilFunctions.compareVersion(sparkVersion, "2.0.0") < 0) ?
+			"spark.akka.frameSize" : "spark.rpc.message.maxSize";
+		if( !conf.contains(msgSizeConf) ) { //default 128MB
+			conf.set(msgSizeConf, "512");
+		}
+		
 		return conf;
 	}
 	

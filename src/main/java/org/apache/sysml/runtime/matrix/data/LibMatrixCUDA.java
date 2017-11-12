@@ -946,7 +946,7 @@ public class LibMatrixCUDA {
 			s = (s + (threads*2-1)) / (threads*2);
 		}
 		double[] result = {-1f};
-		cudaSupportFunctions.deviceToHost(gCtx, tempOut, result, instName);
+		cudaSupportFunctions.deviceToHost(gCtx, tempOut, result, instName, false);
 		gCtx.cudaFreeHelper(instName, tempOut);
 		return result[0];
 	}

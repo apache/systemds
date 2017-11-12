@@ -162,10 +162,11 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 	
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
-		if(PERFORM_CONVERSION_ON_DEVICE) {
+		// Only perform conversion on host if eviction to avoid recursive calls.
+		if(PERFORM_CONVERSION_ON_DEVICE && !isEviction) {
 			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);

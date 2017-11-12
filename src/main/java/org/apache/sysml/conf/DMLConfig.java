@@ -84,8 +84,6 @@ public class DMLConfig
 	
 	public static final String EXTRA_FINEGRAINED_STATS = "sysml.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN   = "sysml.stats.maxWrapLength"; //int
-	public static final String EXTRA_GPU_STATS      = "sysml.stats.extraGPU"; //boolean
-	public static final String EXTRA_DNN_STATS      = "sysml.stats.extraDNN"; //boolean
 	public static final String AVAILABLE_GPUS       = "sysml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 	public static final String SYNCHRONIZE_GPU      = "sysml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
 	public static final String EAGER_CUDA_FREE		= "sysml.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
@@ -134,8 +132,6 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
-		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
-		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "true" );
@@ -422,7 +418,7 @@ public class DMLConfig
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
+				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION
 		}; 
 		

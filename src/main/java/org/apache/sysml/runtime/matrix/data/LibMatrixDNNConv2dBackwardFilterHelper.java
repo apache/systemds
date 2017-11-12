@@ -99,24 +99,24 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				rotate180Worker.execute(n, 0);
 				
 				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				im2ColWorker.execute(n);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				outMM.reset(CRS, K, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(im2ColOutBlock, outRotate, outMM, !im2ColOutBlock.sparse, !outRotate.sparse, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
 					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
 				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
 			inplaceTransAdd(partRet, _params);
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
 			}
@@ -150,27 +150,27 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				rotate180Worker.execute(n, 0);
 				
 				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				im2ColWorker.execute(n);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				outMM.reset(K, CRS, false);
 				//Timing time = new Timing(true);
 				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, im2ColOutBlock, 
 					outMM, !outRotate.sparse, !im2ColOutBlock.sparse, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
 					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
 				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
 			//no need to transpose because t(t(out)) cancel out
 			inplaceAdd(partRet, _params);
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
 			}

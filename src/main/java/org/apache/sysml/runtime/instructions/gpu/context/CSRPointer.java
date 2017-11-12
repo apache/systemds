@@ -497,7 +497,7 @@ public class CSRPointer {
 	 */
 	public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows,
 			int cols, String instName) throws DMLRuntimeException {
-		long t0 = GPUStatistics.DISPLAY_STATISTICS && instName != null ? System.nanoTime() : 0;
+		long t0 = DMLScript.FINEGRAINED_STATISTICS && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
 		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
@@ -510,7 +510,7 @@ public class CSRPointer {
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");
 		}
-		if (GPUStatistics.DISPLAY_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
+		if (DMLScript.FINEGRAINED_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 		return A;
 	}
 

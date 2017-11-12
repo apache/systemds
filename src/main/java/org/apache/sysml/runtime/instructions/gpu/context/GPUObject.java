@@ -401,7 +401,7 @@ public class GPUObject {
 		denseColumnMajorToRowMajor();
 		if (DMLScript.STATISTICS)
 			end = System.nanoTime();
-		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+		if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, end - start);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaSparseToDenseTime.add(end - start);
@@ -756,9 +756,9 @@ public class GPUObject {
 		if (DMLScript.STATISTICS)
 			start = System.nanoTime();
 
-		long acqrTime = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		long acqrTime = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		MatrixBlock tmp = mat.acquireRead();
-		if(GPUStatistics.DISPLAY_STATISTICS) {
+		if(DMLScript.FINEGRAINED_STATISTICS) {
 			if(tmp.isInSparseFormat())
 				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, System.nanoTime()-acqrTime);
 			else
@@ -826,10 +826,10 @@ public class GPUObject {
 			allocateSparseMatrixOnDevice();
 
 			if (copyToDevice) {
-				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
 						values);
-				if(GPUStatistics.DISPLAY_STATISTICS) 
+				if(DMLScript.FINEGRAINED_STATISTICS) 
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
@@ -845,9 +845,9 @@ public class GPUObject {
 			if (tmp.getNonZeros() == 0) {
 				// Minor optimization: No need to allocate empty error for CPU 
 				// data = new double[tmp.getNumRows() * tmp.getNumColumns()];
-				long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				cudaMemset(getJcudaDenseMatrixPtr(), 0, getDatatypeSizeOf(mat.getNumRows() * mat.getNumColumns()));
-				if(GPUStatistics.DISPLAY_STATISTICS) 
+				if(DMLScript.FINEGRAINED_STATISTICS) 
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t1);
 			}
 			else {

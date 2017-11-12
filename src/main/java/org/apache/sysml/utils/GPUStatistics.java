@@ -35,9 +35,6 @@ import org.apache.sysml.api.DMLScript;
  * Printed as part of {@link Statistics}.
  */
 public class GPUStatistics {
-	// Whether or not extra per-instruction statistics will be recorded and shown for the GPU
-	public static boolean DISPLAY_STATISTICS = false;
-
 	private static int iNoOfExecutedGPUInst = 0;
 
 	public static long cudaInitTime = 0;
@@ -117,7 +114,7 @@ public class GPUStatistics {
 	 */
 	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
 	{
-		if (!(DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS))
+		if (!(DMLScript.FINEGRAINED_STATISTICS))
 			return;
 
 		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);

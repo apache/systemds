@@ -566,7 +566,7 @@ public class GPUContext {
 								+ "). Allocated GPU objects:" + allocatedGPUObjects.toString());
 			}
 			if (toBeRemoved.dirty) {
-				toBeRemoved.copyFromDeviceToHost(instructionName);
+				toBeRemoved.copyFromDeviceToHost(instructionName, true);
 			}
 			toBeRemoved.clearData(true);
 		}

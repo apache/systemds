@@ -592,7 +592,7 @@ public class GPUObject {
 					LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
 						+ getGPUContext());
 				}
-				copyFromDeviceToHost(instName);
+				copyFromDeviceToHost(instName, false);
 				copied = true;
 			}
 		} catch (DMLRuntimeException e) {
@@ -872,7 +872,7 @@ public class GPUObject {
 		return (int) l;
 	}
 
-	protected void copyFromDeviceToHost(String instName) throws DMLRuntimeException {
+	protected void copyFromDeviceToHost(String instName, boolean isEviction) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -886,7 +886,7 @@ public class GPUObject {
 				start = System.nanoTime();
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaDenseMatrixPtr(), tmp.getDenseBlock(), instName);
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaDenseMatrixPtr(), tmp.getDenseBlock(), instName, isEviction);
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();
@@ -913,7 +913,7 @@ public class GPUObject {
 				int cols = toIntExact(mat.getNumColumns());
 				int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
 				double[] values = new double[nnz];
-				LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName);
+				LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, isEviction);
 				int[] rowPtr = new int[rows + 1];
 				int[] colInd = new int[nnz];
 				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

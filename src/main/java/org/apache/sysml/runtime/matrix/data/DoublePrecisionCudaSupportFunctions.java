@@ -158,7 +158,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		cudaMemcpy(Pointer.to(dest), src, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
 		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 

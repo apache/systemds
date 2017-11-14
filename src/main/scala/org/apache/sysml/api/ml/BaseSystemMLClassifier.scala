@@ -19,9 +19,12 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.rdd.RDD
+
 import java.io.File
+
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.{ Estimator, Model }
 import org.apache.spark.sql.types.StructType
@@ -30,12 +33,17 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtils, RDDConverterUtilsExt }
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.spark.sql._
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
+import org.apache.sysml.hops.OptimizerUtils;
+
 import java.util.HashMap
+
 import scala.collection.JavaConversions._
+
 import java.util.Random
 
 /****************************************************
@@ -118,10 +126,18 @@ trait BaseSystemMLEstimatorOrModel {
   def setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters1: Int): BaseSystemMLEstimatorOrModel = { statisticsMaxHeavyHitters = statisticsMaxHeavyHitters1; this }
   def setConfigProperty(key: String, value: String): BaseSystemMLEstimatorOrModel                 = { config.put(key, value); this }
   def updateML(ml: MLContext): Unit = {
-    ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
+	System.gc();
+	ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
     ml.setExplain(explain); ml.setExplainLevel(explainLevel);
     ml.setStatistics(statistics); ml.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
     config.map(x => ml.setConfigProperty(x._1, x._2))
+    // Since this is an approximate information, the check below only warns the users of unintended side effects
+    // (for example: holding too many strong references) and is not added as a safeguard.
+    val freeMem = Runtime.getRuntime().freeMemory();
+    if(freeMem < OptimizerUtils.getLocalMemBudget()) {
+    	val LOG = LogFactory.getLog(classOf[BaseSystemMLEstimatorOrModel].getName())
+    	LOG.warn("SystemML local memory budget:" + OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " mb. Approximate free memory available on the driver JVM:" + OptimizerUtils.toMB(freeMem) + " mb.");
+    }
   }
   def copyProperties(other: BaseSystemMLEstimatorOrModel): BaseSystemMLEstimatorOrModel = {
     other.setGPU(enableGPU); other.setForceGPU(forceGPU);
@@ -236,6 +252,13 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       .in("C", C)
       .in("H", H)
       .in("W", W)
+    
+    System.gc();
+    val freeMem = Runtime.getRuntime().freeMemory();
+    if(freeMem < OptimizerUtils.getLocalMemBudget()) {
+    	val LOG = LogFactory.getLog(classOf[BaseSystemMLClassifierModel].getName())
+    	LOG.warn("SystemML local memory budget:" + OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " mb. Approximate free memory abailable:" + OptimizerUtils.toMB(freeMem));
+    }
     val ret = (new MLContext(sc)).execute(script1).getMatrix("Prediction").toMatrixBlock
 
     if (ret.getNumColumns != 1 && H == 1 && W == 1) {
@@ -251,6 +274,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val script = getPredictionScript(isSingleNode)
     // Uncomment for debugging
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
+    
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
     return modelPredict.getMatrix(probVar)
   }

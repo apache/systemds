@@ -636,16 +636,28 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
-		Hop ix = createMatrixIndexing(input, rix, cix);
+		Hop ix = createIndexingOp(input, rix, cix);
 		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
 	}
 	
-	public static Hop createMatrixIndexing(Hop input, long rix, long cix) {
+	public static IndexingOp createIndexingOp(Hop input, long rix, long cix) {
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
-		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
+		return createIndexingOp(input, row, row, col, col);
+	}
+	
+	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
+		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, rl, ru, cl, cu, rl==ru, cl==cu);
 		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, ix);
+		ix.refreshSizeInformation();
+		return ix;
+	}
+	
+	public static LeftIndexingOp createLeftIndexingOp(Hop lhs, Hop rhs, Hop rl, Hop ru, Hop cl, Hop cu) {
+		LeftIndexingOp ix = new LeftIndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, lhs, rhs, rl, ru, cl, cu, rl==ru, cl==cu);
+		ix.setOutputBlocksizes(lhs.getRowsInBlock(), lhs.getColsInBlock());
+		copyLineNumbers(lhs, ix);
 		ix.refreshSizeInformation();
 		return ix;
 	}
@@ -1073,16 +1085,29 @@ public class HopRewriteUtils
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop) {
 		return hop.isColLowerEqualsUpper()
 			&& isLiteralOfValue(hop.getInput().get(2), 1)
-			&& isLiteralOfValue(hop.getInput().get(3), hop.getDim1());
-		//TODO extend by input/output size conditions, which are currently
-		//invalid due to temporarily incorrect size information
+			&& (isLiteralOfValue(hop.getInput().get(3), hop.getDim1())
+				|| isSizeExpressionOf(hop.getInput().get(3), hop.getInput().get(0), true));
+	}
+	
+	public static boolean isFullColumnIndexing(IndexingOp hop) {
+		return hop.isColLowerEqualsUpper()
+			&& isLiteralOfValue(hop.getInput().get(1), 1)
+			&& (isLiteralOfValue(hop.getInput().get(2), hop.getDim1())
+				|| isSizeExpressionOf(hop.getInput().get(2), hop.getInput().get(0), true));
 	}
 	
 	public static boolean isFullRowIndexing(LeftIndexingOp hop) {
 		return hop.isRowLowerEqualsUpper()
 			&& isLiteralOfValue(hop.getInput().get(4), 1)
-			&& isLiteralOfValue(hop.getInput().get(5), hop.getDim2());
-		//TODO extend by input/output size conditions (see above)
+			&& (isLiteralOfValue(hop.getInput().get(5), hop.getDim2())
+				|| isSizeExpressionOf(hop.getInput().get(5), hop.getInput().get(0), false));
+	}
+	
+	public static boolean isFullRowIndexing(IndexingOp hop) {
+		return hop.isRowLowerEqualsUpper()
+			&& isLiteralOfValue(hop.getInput().get(3), 1)
+			&& (isLiteralOfValue(hop.getInput().get(4), hop.getDim2())
+				|| isSizeExpressionOf(hop.getInput().get(4), hop.getInput().get(0), false));
 	}
 	
 	public static boolean isColumnRangeIndexing(IndexingOp hop) {
@@ -1091,6 +1116,13 @@ public class HopRewriteUtils
 			|| hop.getDim1() == hop.getInput().get(0).getDim1())
 			&& isLiteralOfValue(hop.getInput().get(3), 1)
 			&& hop.getInput().get(4) instanceof LiteralOp;
+	}
+	
+	public static boolean isConsecutiveIndex(Hop index, Hop index2) {
+		return (index instanceof LiteralOp && index2 instanceof LiteralOp) ?
+			getDoubleValueSafe((LiteralOp)index2) == (getDoubleValueSafe((LiteralOp)index)+1) :
+			(isBinaryMatrixScalar(index2, OpOp2.PLUS, 1) && 
+				(index2.getInput().get(0) == index || index2.getInput().get(1) == index));
 	}
 	
 	public static boolean isUnnecessaryRightIndexing(Hop hop) {

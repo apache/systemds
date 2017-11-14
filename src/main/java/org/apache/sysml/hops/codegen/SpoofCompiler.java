@@ -647,7 +647,7 @@ public class SpoofCompiler
 				for( int i=0; i<roots.size(); i++ ) {
 					Hop hnewi = (roots.get(i) instanceof AggUnaryOp) ? 
 						HopRewriteUtils.createScalarIndexing(hnew, 1, i+1) :
-						HopRewriteUtils.createMatrixIndexing(hnew, 1, i+1);
+						HopRewriteUtils.createIndexingOp(hnew, 1, i+1);
 					HopRewriteUtils.rewireAllParentChildReferences(roots.get(i), hnewi);
 				}
 			}

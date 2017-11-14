@@ -68,7 +68,8 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 				if( HopRewriteUtils.isLastLevelStatementBlock(sb1) 
 					&& HopRewriteUtils.isLastLevelStatementBlock(sb2) 
 					&& !sb1.isSplitDag() && !sb2.isSplitDag()
-					&& !(hasExternalFunctionOpRoot(sb1) && hasExternalFunctionOpRoot(sb2))
+					&& !(hasExternalFunctionOpRootWithSideEffect(sb1) 
+						&& hasExternalFunctionOpRootWithSideEffect(sb2))
 					&& (!hasFunctionOpRoot(sb1) || !hasFunctionIOConflict(sb1,sb2))
 					&& (!hasFunctionOpRoot(sb2) || !hasFunctionIOConflict(sb2,sb1)) )
 				{
@@ -170,7 +171,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private static boolean hasExternalFunctionOpRoot(StatementBlock sb) 
+	private static boolean hasExternalFunctionOpRootWithSideEffect(StatementBlock sb) 
 			throws HopsException {
 		if( sb == null || sb.getHops() == null )
 			return false;
@@ -180,7 +181,8 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 					.getFunctionStatementBlock(((FunctionOp)root).getFunctionKey());
 				//note: in case of builtin multi-return functions such as qr (namespace _internal), 
 				//there is no function statement block and hence we need to check for null
-				if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement )
+				if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement
+					&& ((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects() )
 					return true; 
 			}
 		return false;

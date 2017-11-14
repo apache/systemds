@@ -23,22 +23,20 @@ import java.util.HashMap;
 
 public class ExternalFunctionStatement extends FunctionStatement
 {
-		
 	//valid attribute names
 	public static final String CLASS_NAME    = "classname";
 	public static final String EXEC_TYPE     = "exectype";
-	//public static final String EXEC_LOCATION = "execlocation"; 	//MB: obsolete
 	public static final String CONFIG_FILE   = "configfile";
+	public static final String SIDE_EFFECTS  = "sideeffect";
 	
-	//valid attribute values for execlocation and 
+	
+	//valid attribute values for execlocation
 	public static final String FILE_BASED    = "file";
 	public static final String IN_MEMORY     = "mem";
-	//public static final String MASTER        = "master";	//MB: obsolete
-	//public static final String WORKER        = "worker";	//MB: obsolete
 	
 	//default values for optional attributes
-	public static final String DEFAULT_EXEC_TYPE = FILE_BASED;
-	//public static final String DEFAULT_EXEC_LOCATION = MASTER; 	//MB: obsolete
+	public static final String DEFAULT_EXEC_TYPE    = FILE_BASED;
+	public static final String DEFAULT_SIDE_EFFECTS = "false";
 	
 	//all parameters
 	private HashMap<String,String> _otherParams;
@@ -56,6 +54,11 @@ public class ExternalFunctionStatement extends FunctionStatement
 		return _otherParams;
 	}
 	
+	public boolean hasSideEffects() {
+		return _otherParams.containsKey(SIDE_EFFECTS)
+			&& Boolean.parseBoolean(_otherParams.get(SIDE_EFFECTS));
+	}
+	
 	/**
 	 * Validates all attributes and attribute values.
 	 * 
@@ -68,8 +71,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 		
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
-			if( !(   varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) 
-				  || varName.equals(CONFIG_FILE) ) )                                                  
+			if( !(varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) 
+				  || varName.equals(CONFIG_FILE) || varName.equals(SIDE_EFFECTS) ) )
 			{
 				LOG.warn( printWarningLocation() + "External function specifies undefined attribute type '"+varName+"'.");
 			}
@@ -83,18 +86,24 @@ public class ExternalFunctionStatement extends FunctionStatement
 		}
 		
 		//exec type (optional, default: file)
-		if( _otherParams.containsKey( EXEC_TYPE ) )
-		{
+		if( _otherParams.containsKey( EXEC_TYPE ) ) {
 			//check specified values
 			String execType = _otherParams.get(EXEC_TYPE);
-			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) ) { //always unconditional (invalid parameter)
-				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"+EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").", false);
-			}
+			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) ) //always unconditional (invalid parameter)
+				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"
+					+ EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").", false);
 		}
-		else
-		{
+		else {
 			//put default values
 			_otherParams.put(EXEC_TYPE, DEFAULT_EXEC_TYPE);
+		}
+		
+		//side effects
+		if( _otherParams.containsKey( SIDE_EFFECTS ) ) {
+			String sideeffect = _otherParams.get(SIDE_EFFECTS);
+			if( !(sideeffect.equals("true") || sideeffect.equals("false")) ) //always unconditional (invalid parameter)
+				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"
+					+ SIDE_EFFECTS+"' (valid values: true, false).", false);
 		}
 	}
 	

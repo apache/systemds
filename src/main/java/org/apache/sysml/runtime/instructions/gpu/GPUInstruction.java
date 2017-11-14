@@ -200,9 +200,9 @@ public abstract class GPUInstruction extends Instruction {
 					throws DMLRuntimeException
 	{
 		if(DMLScript.SYNCHRONIZE_GPU) {
-			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(GPUStatistics.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
 			}
 		}
@@ -238,9 +238,9 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
-		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (GPUStatistics.DISPLAY_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

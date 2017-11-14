@@ -56,16 +56,16 @@ public class LibMatrixDNNConv2dHelper {
 			for(int n = _rl; n < _ru; n++)  {
 				for(int c = 0; c < _params.C; c++)  {
 					// im2col(input) => _im2ColOutBlock
-					long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+					long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 					im2ColWorker.execute(n, c);
-					long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+					long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 					
 					// filter %*% _im2ColOutBlock => matMultOutBlock
 					MatrixBlock matMultOutBlock = new MatrixBlock(K, PQ, false);
 					LibMatrixDNNHelper.singleThreadedMatMult(_filters.get(c), im2ColOutBlock, matMultOutBlock, false, true, _params);
-					long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+					long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 					
-					if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+					if(DMLScript.FINEGRAINED_STATISTICS) {
 						time1 += t2 - t1;
 						time2 += t3 - t2;
 					}
@@ -77,7 +77,7 @@ public class LibMatrixDNNConv2dHelper {
 				if(_params.bias != null)
 					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
 			}
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
 			}
@@ -137,16 +137,16 @@ public class LibMatrixDNNConv2dHelper {
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
 				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				im2ColWorker.execute(n);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				// filter %*% _im2ColOutBlock => matMultOutBlock
 				outMM.reset(outMM.rlen, outMM.clen, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(_params.input2, outIm2col, outMM, false, true, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
@@ -159,7 +159,7 @@ public class LibMatrixDNNConv2dHelper {
 					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
 			}
 			
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
 			}

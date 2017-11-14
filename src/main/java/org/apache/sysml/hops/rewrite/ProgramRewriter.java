@@ -87,7 +87,8 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
-			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );
+			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
+				_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
@@ -120,20 +121,20 @@ public class ProgramRewriter
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
 		{
-			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse
-			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES)
+			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES) {
+				_dagRuleSet.add( new RewriteMatrixMultChainOptimization()         ); //dependency: cse
 				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()    ); //dependency: cse
-			
-			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
-			{
+			}
+			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
 		}
 		
 		// cleanup after all rewrites applied 
-		// (newly introduced operators, introduced redundancy after rewrites w/ multiple parents) 
-		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );
+		// (newly introduced operators, introduced redundancy after rewrites w/ multiple parents)
+		if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
+			_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(true) );
 	}

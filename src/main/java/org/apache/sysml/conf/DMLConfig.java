@@ -76,6 +76,7 @@ public class DMLConfig
 	public static final String CP_PARALLEL_IO       = "sysml.cp.parallel.io";
 	public static final String COMPRESSED_LINALG    = "sysml.compressed.linalg"; //auto, true, false
 	public static final String NATIVE_BLAS          = "sysml.native.blas";
+	public static final String NATIVE_BLAS_DIR      = "sysml.native.blas.directory";
 	public static final String CODEGEN              = "sysml.codegen.enabled"; //boolean
 	public static final String CODEGEN_COMPILER     = "sysml.codegen.compiler"; //see SpoofCompiler.CompilerType
 	public static final String CODEGEN_OPTIMIZER    = "sysml.codegen.optimizer"; //see SpoofCompiler.PlanSelector
@@ -130,6 +131,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
+		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
@@ -415,7 +417,7 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
+				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,

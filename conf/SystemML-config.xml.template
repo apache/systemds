@@ -75,6 +75,9 @@
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
    <sysml.native.blas>none</sysml.native.blas>
 
+   <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
+   <sysml.native.blas.directory>none</sysml.native.blas.directory>
+   
    <!-- prints finegrained statistics information (includes extra GPU information and extra statistics information for Deep Neural Networks done in CP mode) -->
    <sysml.stats.finegrained>false</sysml.stats.finegrained>
    

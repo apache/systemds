@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
 public class ScriptExecutorUtils {
@@ -77,6 +78,12 @@ public class ScriptExecutorUtils {
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
+		
+		String customLibPath = dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR);
+		if(!customLibPath.equalsIgnoreCase("none")) {
+			NativeHelper.initializeCustomBLAS(customLibPath, dmlconf.getTextValue(DMLConfig.NATIVE_BLAS));
+		}
+		
 		if(DMLScript.USE_ACCELERATOR) {
 			DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
 			org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();

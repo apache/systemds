@@ -22,7 +22,7 @@
 # Methods to create Script object
 script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
 # Utility methods
-util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG', 'setBLASPath' ]
+util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG' ]
 __all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
 
 import os
@@ -63,25 +63,6 @@ def _get_spark_context():
         return sc
     else:
         raise Exception('Expected spark context to be created.')
-
-
-
-def setBLASPath(path, blas='auto'):
-    """
-    This method useful in the cloud environment where the user 
-    doesnot have sudo permission or where setting environment variables 
-    such as LD_LIBRARY_PATH is difficult.
-
-    Parameters
-    ----------
-    path: String
-        Custom path to the directory where the BLAS shared libraries are located. 
-    
-    blas: String
-        Can be auto, openblas or mkl
-    """
-    sc = _get_spark_context()
-    sc._jvm.org.apache.sysml.utils.NativeHelper.setBLASPath(str(path), blas)
 
 
 

@@ -118,11 +118,10 @@ public class LibMatrixDNNHelper {
 	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) throws DMLRuntimeException {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
-		// Try to create as many tasks as threads. 
-		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
-		// data structures such as im2col blocks.
+		// Try to create twice as many tasks as threads for improved load balance
+		// (due to constant-sized intermediates, GC works well, so the overhead per task is small)
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		int taskSize = (int)(Math.ceil((double)params.N / k));
+		int taskSize = (int)(Math.ceil((double)params.N / k / 2));
 		
 		// TODO: Decide here based on params whether to use LoopedIm2ColConv2dAllChannels or LoopedIm2ColConv2dOneChannel
 		// For now, let's stick to the existing approach of converting [1, CHW] to [CRS, PQ] as it allows matrix multiplication large enough matrix.

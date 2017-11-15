@@ -55,13 +55,10 @@ public class LibMatrixDNNIm2ColHelper {
 					LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
 				out.reset(out.rlen, out.clen, true);
 				out.allocateSparseRowsBlock();
-				//preallocate sparse-rows
-				double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, 
-					(input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
-				int estnnz = (int)Math.ceil((trans ? params.C*params.R*params.S : params.P*params.Q)*sparsity);
+				//preallocate sparse-rows (larger than average sparsity to account for skew)
+				int estnnz = (int)Math.ceil(4*input.getSparsity()*out.clen);
 				for(int r = 0; r < out.rlen; r++)
-					out.getSparseBlock().allocate(r, estnnz);
-				
+					out.getSparseBlock().allocate(r, Math.min(estnnz, out.clen));
 				return new SparseSparseIm2colWorkerAllChan(input, out, params, trans);
 			}
 		}
@@ -248,17 +245,20 @@ public class LibMatrixDNNIm2ColHelper {
 	 */
 	private static class SparseSparseIm2colWorkerAllChan implements Im2colWorker {
 		private final MatrixBlock input, output;
-		private final int S, R, P, Q, W, HW;
+		private final int S, R, P, Q, W, HW, RS;
 		private final int stride_h, stride_w, pad_h, pad_w;
 		private final boolean trans;
+		private final boolean simple;
 		public SparseSparseIm2colWorkerAllChan(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.HW = params.H * params.W;
+			this.RS = params.R * params.S;
 			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
+			this.simple = params.isStride1Pad0() && W == S && Q == 1;
 			if(!input.isInSparseFormat()) 
 				throw new RuntimeException("Incorrect operator selection. Expected dense input for SparseIm2colWorkerAllChannels");
 		}
@@ -267,7 +267,7 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n, int c) {
 			throw new RuntimeException("Not supported");
 		}
-
+		
 		@Override
 		public void execute(int n) {
 			output.reset();
@@ -289,13 +289,15 @@ public class LibMatrixDNNIm2ColHelper {
 				int hInput = (chw - cInput*HW)/W;
 				int wInput = chw % W; 
 				
-				appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
+				if( simple )
+					appendInputValueToIm2colOutputSimple(output, cInput, hInput, wInput, 
+						avals[j], R, S, RS, P, trans);
+				else
+					appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
 						R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
 			}
-			// Since the chw are appended in sorted order, no need to sort the output rows
-			// unless in trans mode, then sorting is needed
-			if( trans )
-				output.sortSparseRows();
+			
+			output.sortSparseRows();
 		}
 	}
 	
@@ -349,10 +351,7 @@ public class LibMatrixDNNIm2ColHelper {
 							R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
 				}
 			}
-			// Since the chw are appended in sorted order, no need to sort the output rows
-			// unless in trans mode, then sorting is needed
-			if( trans )
-				output.sortSparseRows();
+			output.sortSparseRows();
 		}
 	}
 	
@@ -375,8 +374,6 @@ public class LibMatrixDNNIm2ColHelper {
 	 */
 	private static void appendInputValueToIm2colOutput(MatrixBlock output, int cInput, int hInput, int wInput, double value, 
 			int R, int S, int P, int Q, int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
-		if(value == 0) 
-			return;
 		int RS = R*S;
 		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
 		
@@ -407,8 +404,16 @@ public class LibMatrixDNNIm2ColHelper {
 					output.appendValue(pQ + q, outRowIndex + s, value);
 				else
 					output.appendValue(outRowIndex + s, pQ + q, value);
-				// Since the chw are appended in sorted order, no need to sort the output rows
 			}
 		}
+	}
+	
+	private static void appendInputValueToIm2colOutputSimple(MatrixBlock output, int c, int h, int w,
+		double value, int R, int S, int RS, int P, boolean trans) {
+		int rMin = Math.max(0, h - P + 1);
+		int rMax = Math.min(R-1, h);
+		int cix = c*RS+w+rMin*S;
+		for(int p=h-rMin; p >= h-rMax; p--, cix+=S)
+			output.appendValue(trans?p:cix, trans?cix:p, value);
 	}
 }

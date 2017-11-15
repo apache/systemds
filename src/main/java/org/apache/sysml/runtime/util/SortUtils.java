@@ -35,20 +35,32 @@ public class SortUtils
 	public static boolean isSorted(int start, int end, int[] indexes) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-    		ret &= (indexes[i]<indexes[i-1]);
+			ret &= (indexes[i]<indexes[i-1]);
 		return ret;
 	}
 
 	public static boolean isSorted(int start, int end, double[] values) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-    		ret &= (values[i]<values[i-1]);
+			ret &= (values[i]<values[i-1]);
 		return ret;
 	}
 	
 	public static boolean isSorted(MatrixBlock in) {
 		return in.isInSparseFormat() ? false : !in.isAllocated() ? true :
 			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlock());
+	}
+	
+	public static int compare(double[] d1, double[] d2) {
+		if( d1 == null || d2 == null )
+			throw new RuntimeException("Invalid invocation w/ null parameter.");
+		int ret = Long.compare(d1.length, d2.length);
+		if( ret != 0 ) return ret;
+		for(int i=0; i<d1.length; i++) {
+			ret = Double.compare(d1[i], d2[i]);
+			if( ret != 0 ) return ret;
+		}
+		return 0;
 	}
 	
 	/**

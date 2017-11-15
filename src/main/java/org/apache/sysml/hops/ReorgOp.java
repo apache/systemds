@@ -372,7 +372,8 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					}
 				}
 				else if( et==ExecType.SPARK ) {
-					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES && isSortSPRewriteApplicable();
+					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES 
+						&& isSortSPRewriteApplicable() && by.getDataType().isScalar();
 					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, sortRewrite);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);

@@ -35,16 +35,19 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RowMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.SortUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class RDDSortUtils 
@@ -65,88 +68,165 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
-		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, brlen));
+				.mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
-
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in2, long rlen, int brlen )
 	{
 		//create value-index rdd from inputs
 		JavaRDD<DoublePair> dvals = in.join(in2).values()
-				.flatMap(new ExtractDoubleValuesFunction2());
+			.flatMap(new ExtractDoubleValuesFunction2());
 	
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
 		int numPartitions = (int)Math.ceil(((double)rlen*8)/hdfsBlocksize);
 		JavaRDD<DoublePair> sdvals = dvals
-				.sortBy(new CreateDoubleKeyFunction2(), true, numPartitions);
+			.sortBy(new CreateDoubleKeyFunction2(), true, numPartitions);
 
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
-				.zipWithIndex()
-		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, brlen));
+			.zipWithIndex()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);		
 		
 		return ret;
 	}
 
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVals(
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, long clen, int brlen )
+	{
+		//create value-index rdd from inputs
+		JavaRDD<MatrixBlock> dvals = in.values()
+			.flatMap(new ExtractRowsFunction());
+		
+		//sort (creates sorted range per partition)
+		int numPartitions = SparkUtils.getNumPreferredPartitions(
+			new MatrixCharacteristics(rlen, clen, brlen, brlen), in);
+		JavaRDD<MatrixBlock> sdvals = dvals
+			.sortBy(new CreateDoubleKeysFunction(), true, numPartitions);
+		
+		//create binary block output
+		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
+			.zipWithIndex()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction5(rlen, brlen));
+		ret = RDDAggregateUtils.mergeByKey(ret, false);
+		
+		return ret;
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortIndexesByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
 			boolean asc, long rlen, int brlen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValueIndexPair, Double> dvals = val
-				.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
-	
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
+		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
 		int numPartitions = (int)Math.ceil(((double)rlen*16)/hdfsBlocksize);
 		JavaRDD<ValueIndexPair> sdvals = dvals
-				.sortByKey(new IndexComparator(asc), true, numPartitions)
-				.keys(); //workaround for index comparator
-	 
+			.sortByKey(new IndexComparator(asc), true, numPartitions)
+			.keys(); //workaround for index comparator
+		
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
-				.zipWithIndex()
-		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, brlen));
-		ret = RDDAggregateUtils.mergeByKey(ret, false);		
+			.zipWithIndex()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, brlen));
+		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
-		return ret;	
+		return ret;
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortIndexesByVals( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
+			boolean asc, long rlen, long clen, int brlen )
+	{
+		//create value-index rdd from inputs
+		JavaPairRDD<ValuesIndexPair, double[]> dvals = in
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(brlen));
+		
+		//sort (creates sorted range per partition)
+		int numPartitions = SparkUtils.getNumPreferredPartitions(
+			new MatrixCharacteristics(rlen, clen+1, brlen, brlen));
+		JavaRDD<ValuesIndexPair> sdvals = dvals
+			.sortByKey(new IndexComparator2(asc), true, numPartitions)
+			.keys(); //workaround for index comparator
+		
+		//create binary block output
+		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
+			.zipWithIndex()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction6(rlen, brlen));
+		ret = RDDAggregateUtils.mergeByKey(ret, false);
+		
+		return ret;
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen )
+		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValueIndexPair, Double> dvals = val
-				.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
-	
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
+		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
 		int numPartitions = (int)Math.ceil(((double)rlen*16)/hdfsBlocksize);
 		JavaRDD<ValueIndexPair> sdvals = dvals
-				.sortByKey(new IndexComparator(asc), true, numPartitions)
-				.keys(); //workaround for index comparator
-	 
-		//create target indexes by original index
-		long numRep = (long)Math.ceil((double)clen/bclen);
-		JavaPairRDD<MatrixIndexes, MatrixBlock> ixmap = sdvals
-				.zipWithIndex()
-				.mapToPair(new ExtractIndexFunction())
-				.sortByKey()
-		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
-		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);		
+			.sortByKey(new IndexComparator(asc), true, numPartitions)
+			.keys(); //workaround for index comparator
 		
+		//create target indexes by original index
+		JavaPairRDD<MatrixIndexes, MatrixBlock> ixmap = sdvals
+			.zipWithIndex()
+			.mapToPair(new ExtractIndexFunction())
+			.sortByKey()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
+		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);
+		
+		//actual data sort
+		return sortDataByIx(data, ixmap, rlen, clen, brlen, bclen);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByVals( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
+		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, long clen2, int brlen, int bclen )
+	{
+		//create value-index rdd from inputs
+		JavaPairRDD<ValuesIndexPair, double[]> dvals = val
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(brlen));
+		
+		//sort (creates sorted range per partition)
+		int numPartitions = SparkUtils.getNumPreferredPartitions(
+			new MatrixCharacteristics(rlen, clen2+1, brlen, brlen));
+		JavaRDD<ValuesIndexPair> sdvals = dvals
+			.sortByKey(new IndexComparator2(asc), true, numPartitions)
+			.keys(); //workaround for index comparator
+		
+		//create target indexes by original index
+		JavaPairRDD<MatrixIndexes, MatrixBlock> ixmap = sdvals
+			.zipWithIndex()
+			.mapToPair(new ExtractIndexFunction2())
+			.sortByKey()
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
+		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);
+		
+		//actual data sort
+		return sortDataByIx(data, ixmap, rlen, clen, brlen, bclen);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByIx(JavaPairRDD<MatrixIndexes,MatrixBlock> data,
+		JavaPairRDD<MatrixIndexes,MatrixBlock> ixmap, long rlen, long clen, int brlen, int bclen) {
 		//replicate indexes for all column blocks
+		long numRep = (long)Math.ceil((double)clen/bclen);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rixmap = ixmap
-				.flatMapToPair(new ReplicateVectorFunction(false, numRep));      
+			.flatMapToPair(new ReplicateVectorFunction(false, numRep));
 		
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
-				.join(rixmap)
-				.mapPartitionsToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
+			.join(rixmap)
+			.mapPartitionsToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
 		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 	
@@ -200,10 +280,23 @@ public class RDDSortUtils
 
 		@Override
 		public Iterator<Double> call(MatrixBlock arg0) 
-			throws Exception 
-		{
+			throws Exception {
 			return DataConverter.convertToDoubleList(arg0).iterator();
-		}		
+		}
+	}
+	
+	private static class ExtractRowsFunction implements FlatMapFunction<MatrixBlock,MatrixBlock> 
+	{
+		private static final long serialVersionUID = -2786968469468554974L;
+
+		@Override
+		public Iterator<MatrixBlock> call(MatrixBlock arg0) 
+			throws Exception {
+			ArrayList<MatrixBlock> rows = new ArrayList<>();
+			for(int i=0; i<arg0.getNumRows(); i++)
+				rows.add(arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-1, new MatrixBlock()));
+			return rows.iterator();
+		}
 	}
 
 	private static class ExtractDoubleValuesFunction2 implements FlatMapFunction<Tuple2<MatrixBlock,MatrixBlock>,DoublePair> 
@@ -256,6 +349,35 @@ public class RDDSortUtils
 			return ret.iterator();
 		}
 	}
+	
+	private static class ExtractDoubleValuesWithIndexFunction2 implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,ValuesIndexPair,double[]> 
+	{
+		private static final long serialVersionUID = 8358254634903633283L;
+		
+		private final int _brlen;
+		
+		public ExtractDoubleValuesWithIndexFunction2(int brlen) {
+			_brlen = brlen;
+		}
+		
+		@Override
+		public Iterator<Tuple2<ValuesIndexPair,double[]>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<ValuesIndexPair,double[]>> ret = new ArrayList<>(); 
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock mb = arg0._2();
+			
+			long ixoffset = (ix.getRowIndex()-1)*_brlen;
+			for( int i=0; i<mb.getNumRows(); i++) {
+				double[] vals = DataConverter.convertToDoubleVector(
+					mb.sliceOperations(i, i, 0, mb.getNumColumns()-1, new MatrixBlock()));
+				ret.add(new Tuple2<>(new ValuesIndexPair(vals,ixoffset+i+1), vals));
+			}
+			
+			return ret.iterator();
+		}
+	}
 
 	private static class CreateDoubleKeyFunction implements Function<Double,Double> 
 	{
@@ -266,7 +388,7 @@ public class RDDSortUtils
 			throws Exception 
 		{
 			return arg0;
-		}		
+		}
 	}
 
 	private static class CreateDoubleKeyFunction2 implements Function<DoublePair,Double> 
@@ -278,20 +400,35 @@ public class RDDSortUtils
 			throws Exception 
 		{
 			return arg0.val1;
-		}		
+		}
 	}
 
-	private static class ExtractIndexFunction implements PairFunction<Tuple2<ValueIndexPair,Long>,Long,Long> 
+	private static class CreateDoubleKeysFunction implements Function<MatrixBlock,double[]> 
 	{
+		private static final long serialVersionUID = 4316858496746520340L;
+
+		@Override
+		public double[] call(MatrixBlock row) throws Exception {
+			return DataConverter.convertToDoubleVector(row);
+		}
+	}
+	
+	private static class ExtractIndexFunction implements PairFunction<Tuple2<ValueIndexPair,Long>,Long,Long> {
 		private static final long serialVersionUID = -4553468724131249535L;
 
 		@Override
-		public Tuple2<Long, Long> call(Tuple2<ValueIndexPair,Long> arg0)
-				throws Exception 
-		{
+		public Tuple2<Long, Long> call(Tuple2<ValueIndexPair,Long> arg0) throws Exception {
 			return new Tuple2<>(arg0._1().ix, arg0._2());
 		}
+	}
+	
+	private static class ExtractIndexFunction2 implements PairFunction<Tuple2<ValuesIndexPair,Long>,Long,Long> {
+		private static final long serialVersionUID = -1366455446597907270L;
 
+		@Override
+		public Tuple2<Long, Long> call(Tuple2<ValuesIndexPair,Long> arg0) throws Exception {
+			return new Tuple2<>(arg0._1().ix, arg0._2());
+		}
 	}
 
 	private static class ConvertToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Double,Long>>,MatrixIndexes,MatrixBlock> 
@@ -475,6 +612,98 @@ public class RDDSortUtils
 				}
 				
 				mb.quickSetValue(pos, 0, val._2+1);
+			}
+			
+			//flush last block
+			if( mb!=null && mb.getNonZeros() != 0 )
+				ret.add(new Tuple2<>(ix,mb));
+			
+			return ret.iterator();
+		}
+	}
+	
+	private static class ConvertToBinaryBlockFunction5 implements PairFlatMapFunction<Iterator<Tuple2<MatrixBlock,Long>>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = 6357994683868091724L;
+		
+		private long _rlen = -1;
+		private int _brlen = -1;
+		
+		public ConvertToBinaryBlockFunction5(long rlen, int brlen)
+		{
+			_rlen = rlen;
+			_brlen = brlen;
+		}
+		
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixBlock,Long>> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
+			MatrixIndexes ix = null;
+			MatrixBlock mb = null;
+			
+			while( arg0.hasNext() ) 
+			{
+				Tuple2<MatrixBlock,Long> val = arg0.next();
+				long valix = val._2 + 1;
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				
+				if( ix == null || ix.getRowIndex() != rix ) {
+					if( ix !=null )
+						ret.add(new Tuple2<>(ix,mb));
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					ix = new MatrixIndexes(rix,1);
+					mb = new MatrixBlock((int)len, val._1.getNumColumns(), false);
+				}
+				
+				mb.leftIndexingOperations(val._1, pos, pos, 0, val._1.getNumColumns()-1, mb, UpdateType.INPLACE);
+			}
+			
+			//flush last block
+			if( mb!=null && mb.getNonZeros() != 0 )
+				ret.add(new Tuple2<>(ix,mb));
+			return ret.iterator();
+		}
+	}
+	
+	private static class ConvertToBinaryBlockFunction6 implements PairFlatMapFunction<Iterator<Tuple2<ValuesIndexPair,Long>>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = 5351649694631911694L;
+		
+		private long _rlen = -1;
+		private int _brlen = -1;
+		
+		public ConvertToBinaryBlockFunction6(long rlen, int brlen)
+		{
+			_rlen = rlen;
+			_brlen = brlen;
+		}
+		
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValuesIndexPair,Long>> arg0) 
+			throws Exception
+		{
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
+			
+			MatrixIndexes ix = null;
+			MatrixBlock mb = null;
+			
+			while( arg0.hasNext() ) 
+			{
+				Tuple2<ValuesIndexPair,Long> val = arg0.next();
+				long valix = val._2 + 1;
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				
+				if( ix == null || ix.getRowIndex() != rix ) {
+					if( ix !=null )
+						ret.add(new Tuple2<>(ix,mb));
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					ix = new MatrixIndexes(rix,1);
+					mb = new MatrixBlock((int)len, 1, false);
+				}
+				
+				mb.quickSetValue(pos, 0, val._1.ix);
 			}
 			
 			//flush last block
@@ -690,6 +919,19 @@ public class RDDSortUtils
 		}
 	}
 	
+	private static class ValuesIndexPair implements Serializable 
+	{
+		private static final long serialVersionUID = 4297433409147784971L;
+		
+		public double[] vals;
+		public long ix; 
+
+		public ValuesIndexPair(double[] dvals, long lix) {
+			vals = dvals;
+			ix = lix;
+		}
+	}
+	
 	public static class IndexComparator implements Comparator<ValueIndexPair>, Serializable 
 	{
 		private static final long serialVersionUID = 5154839870549241343L;
@@ -700,18 +942,32 @@ public class RDDSortUtils
 		}
 			
 		@Override
-		public int compare(ValueIndexPair o1, ValueIndexPair o2) 
-		{
-			//note: use conversion to Double and Long instead of native
-			//compare for compatibility with jdk 6
-			int retVal = Double.valueOf(o1.val).compareTo(o2.val);
-			if(retVal != 0) {
+		public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+			int retVal = Double.compare(o1.val, o2.val);
+			if(retVal != 0)
 				return (_asc ? retVal : -1*retVal);
-			}
-			else {
-				//for stable sort
-				return Long.valueOf(o1.ix).compareTo(o2.ix);
-			}
+			else //for stable sort
+				return Long.compare(o1.ix, o2.ix);
+		}
+	}
+	
+	public static class IndexComparator2 implements Comparator<ValuesIndexPair>, Serializable 
+	{
+		private static final long serialVersionUID = 5531987863790922691L;
+		
+		private boolean _asc;
+		public IndexComparator2(boolean asc) {
+			_asc = asc;
+		}
+		
+		@Override
+		public int compare(ValuesIndexPair o1, ValuesIndexPair o2) 
+		{
+			int retVal = SortUtils.compare(o1.vals, o2.vals);
+			if(retVal != 0)
+				return (_asc ? retVal : -1*retVal);
+			else //for stable sort
+				return Long.compare(o1.ix, o2.ix);
 		}
 		
 	}

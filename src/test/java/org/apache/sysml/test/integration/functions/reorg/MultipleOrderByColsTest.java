@@ -114,46 +114,45 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 		runOrderTest(TEST_NAME2, true, true, false, ExecType.CP);
 	}
 	
-//TODO enable together with additional spark sort runtime
-//	@Test
-//	public void testOrderDenseAscDataSP() {
-//		runOrderTest(TEST_NAME1, false, false, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderDenseAscIxSP() {
-//		runOrderTest(TEST_NAME1, false, false, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderDenseDescDataSP() {
-//		runOrderTest(TEST_NAME1, false, true, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderDenseDescIxSP() {
-//		runOrderTest(TEST_NAME1, false, true, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderSparseAscDataSP() {
-//		runOrderTest(TEST_NAME1, true, false, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderSparseAscIxSP() {
-//		runOrderTest(TEST_NAME1, true, false, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderSparseDescDataSP() {
-//		runOrderTest(TEST_NAME1, true, true, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testOrderSparseDescIxSP() {
-//		runOrderTest(TEST_NAME1, true, true, true, ExecType.SPARK);
-//	}
+	@Test
+	public void testOrderDenseAscDataSP() {
+		runOrderTest(TEST_NAME1, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderDenseAscIxSP() {
+		runOrderTest(TEST_NAME1, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderDenseDescDataSP() {
+		runOrderTest(TEST_NAME1, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderDenseDescIxSP() {
+		runOrderTest(TEST_NAME1, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderSparseAscDataSP() {
+		runOrderTest(TEST_NAME1, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderSparseAscIxSP() {
+		runOrderTest(TEST_NAME1, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderSparseDescDataSP() {
+		runOrderTest(TEST_NAME1, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderSparseDescIxSP() {
+		runOrderTest(TEST_NAME1, true, true, true, ExecType.SPARK);
+	}
 	
 	private void runOrderTest( String testname, boolean sparse, boolean desc, boolean ixret, ExecType et)
 	{
@@ -161,11 +160,11 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 		switch( et ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

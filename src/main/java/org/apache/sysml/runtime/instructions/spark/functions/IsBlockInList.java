@@ -28,18 +28,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class IsBlockInRange implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
+public class IsBlockInList implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 {
-	private static final long serialVersionUID = 5849687296021280540L;
+	private static final long serialVersionUID = -1956151588590369875L;
 	
-	private long _rl; long _ru; long _cl; long _cu;
-	private int _brlen; int _bclen;
+	private final long[] _cols;
+	private final int _brlen, _bclen;
 	
-	public IsBlockInRange(long rl, long ru, long cl, long cu, MatrixCharacteristics mc) {
-		_rl = rl;
-		_ru = ru;
-		_cl = cl;
-		_cu = cu;
+	public IsBlockInList(long[] cols, MatrixCharacteristics mc) {
+		_cols = cols;
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 	}
@@ -48,6 +45,9 @@ public class IsBlockInRange implements Function<Tuple2<MatrixIndexes,MatrixBlock
 	public Boolean call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 		throws Exception 
 	{
-		return UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, _rl, _ru, _cl, _cu);
+		for( int i=0; i<_cols.length; i++ )
+			if( UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, 1, Long.MAX_VALUE, _cols[i], _cols[i]) )
+				return true;
+		return false;
 	}
 }

@@ -1509,7 +1509,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		if( HopRewriteUtils.isReorg(hi, ReOrgOp.SORT)
 			&& hi.getInput().get(1) instanceof LiteralOp //scalar by
 			&& hi.getInput().get(2) instanceof LiteralOp //scalar desc
-			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false) ) //not ixret 
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false) //not ixret
+			&& !OptimizerUtils.isHadoopExecutionMode() )
 		{ 
 			LiteralOp by = (LiteralOp) hi.getInput().get(1);
 			boolean desc = HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2));

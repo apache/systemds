@@ -66,7 +66,7 @@ def _get_spark_context():
 
 
 
-def setBLASPath(path):
+def setBLASPath(path, blas='auto'):
     """
     This method useful in the cloud environment where the user 
     doesnot have sudo permission or where setting environment variables 
@@ -75,10 +75,13 @@ def setBLASPath(path):
     Parameters
     ----------
     path: String
-        Custom path where the BLAS libraries where located. 
+        Custom path to the directory where the BLAS shared libraries are located. 
+    
+    blas: String
+        Can be auto, openblas or mkl
     """
     sc = _get_spark_context()
-    sc._jvm.org.apache.sysml.utils.NativeHelper.setBLASPath(path)
+    sc._jvm.org.apache.sysml.utils.NativeHelper.setBLASPath(str(path), blas)
 
 
 

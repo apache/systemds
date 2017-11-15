@@ -48,7 +48,6 @@ public class NativeHelper {
 	public static String blasType;
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;
-	private static String customLibPath = null;
 	static {
 		// Note: we only support 64 bit Java on x86 and AMD machine
     supportedArchitectures.put("x86_64", "x86_64");
@@ -59,31 +58,24 @@ public class NativeHelper {
 	
 	private static String hintOnFailures = "";
 	
-	public static void setBLASPath(String path) {
-		customLibPath = path;
-		init(true);
+	public static void setBLASPath(String customLibPath, String userSpecifiedBLAS) {
+		init(customLibPath, userSpecifiedBLAS);
 	}
 	
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
-	private static void init(boolean forcedInit) {
+	private static void init(String customLibPath, String userSpecifiedBLAS) {
 		// Only Linux supported for BLAS
 		if(!SystemUtils.IS_OS_LINUX)
 			return;
 		
 		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
 		// again and again especially in the parfor (hence the double-checking with synchronized).
-		if(!attemptedLoading || forcedInit) {
-			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
+		if(!attemptedLoading || customLibPath != null) {
 			// -------------------------------------------------------------------------------------
-			// We allow BLAS to be enabled or disabled or explicitly selected in one of the two ways:
-			// 1. DML Configuration: native.blas (boolean flag)
-			// 2. Environment variable: SYSTEMML_BLAS (can be set to mkl, openblas or none)
-			// The option 1 will be removed in later SystemML versions.
-			// The option 2 is useful for two reasons:
-			// - Developer testing of different BLAS 
-			// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
-			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
-						
+			if(userSpecifiedBLAS == null) {
+				DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
+				userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
+			}
 			if(userSpecifiedBLAS.equals("auto") || userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas")) {
 				long start = System.nanoTime();
 				if(!supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
@@ -91,24 +83,24 @@ public class NativeHelper {
 					return;
 				}
 	    	synchronized(NativeHelper.class) {
-	    		if(!attemptedLoading || forcedInit) {
+	    		if(!attemptedLoading || customLibPath != null) {
 	    			// -----------------------------------------------------------------------------
 	    			// =============================================================================
 	    			// By default, we will native.blas=true and we will attempt to load MKL first.
     				// If MKL is not enabled then we try to load OpenBLAS.
     				// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
 	    			if(userSpecifiedBLAS.equals("auto")) {
-	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
+	    				blasType = isMKLAvailable(customLibPath) ? "mkl" : isOpenBLASAvailable(customLibPath) ? "openblas" : null;
 	    				if(blasType == null)
 	    					LOG.info("Unable to load either MKL or OpenBLAS due to " + hintOnFailures);
 	    			}
 	    			else if(userSpecifiedBLAS.equals("mkl")) {
-	    				blasType = isMKLAvailable() ? "mkl" : null;
+	    				blasType = isMKLAvailable(customLibPath) ? "mkl" : null;
 	    				if(blasType == null)
 	    					LOG.info("Unable to load MKL due to " + hintOnFailures);
 	    			}
 	    			else if(userSpecifiedBLAS.equals("openblas")) {
-	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
+	    				blasType = isOpenBLASAvailable(customLibPath) ? "openblas" : null;
 	    				if(blasType == null)
 	    					LOG.info("Unable to load OpenBLAS due to " + hintOnFailures);
 	    			}
@@ -158,7 +150,14 @@ public class NativeHelper {
 	}
 	
 	public static boolean isNativeLibraryLoaded() {
-		init(false);
+		// We allow BLAS to be enabled or disabled or explicitly selected in one of the two ways:
+		// 1. DML Configuration: native.blas (boolean flag)
+		// 2. Environment variable: SYSTEMML_BLAS (can be set to mkl, openblas or none)
+		// The option 1 will be removed in later SystemML versions.
+		// The option 2 is useful for two reasons:
+		// - Developer testing of different BLAS 
+		// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
+		init(null, null);
 		if(maxNumThreads == -1)
 			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(isSystemMLLoaded && !setMaxNumThreads && maxNumThreads != -1) {
@@ -178,17 +177,17 @@ public class NativeHelper {
 	}
 	
 	
-	private static boolean isMKLAvailable() {
-		return loadBLAS("mkl_rt", null);
+	private static boolean isMKLAvailable(String customLibPath) {
+		return loadBLAS(customLibPath, "mkl_rt", null);
 	}
 	
-	private static boolean isOpenBLASAvailable() {
-		if(!loadBLAS("gomp", "gomp required for loading OpenBLAS-enabled SystemML library")) 
+	private static boolean isOpenBLASAvailable(String customLibPath) {
+		if(!loadBLAS(customLibPath, "gomp", "gomp required for loading OpenBLAS-enabled SystemML library")) 
 			return false;
-		return loadBLAS("openblas", null);
+		return loadBLAS(customLibPath, "openblas", null);
 	}
 	
-	private static boolean loadBLAS(String blas, String optionalMsg) {
+	private static boolean loadBLAS(String customLibPath, String blas, String optionalMsg) {
 		// First attempt to load from custom library path
 		if(customLibPath != null) {
 			String libPath = customLibPath + File.separator + System.mapLibraryName(blas);

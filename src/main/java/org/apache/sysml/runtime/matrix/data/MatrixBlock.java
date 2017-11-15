@@ -3545,6 +3545,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int m = cbind ? rlen : rlen+Arrays.stream(that).mapToInt(mb -> mb.rlen).sum();
 		final int n = cbind ? clen+Arrays.stream(that).mapToInt(mb -> mb.clen).sum() : clen;
 		final long nnz = nonZeros+Arrays.stream(that).mapToLong(mb -> mb.nonZeros).sum();
+		boolean shallowCopy = (nonZeros == nnz);
 		boolean sp = evalSparseFormatInMemory(m, n, nnz);
 		
 		//init result matrix 
@@ -3577,7 +3578,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//adjust sparse rows if required
 			result.allocateSparseRowsBlock();
 			//allocate sparse rows once for cbind
-			if( cbind && nnz > rlen && result.getSparseBlock() instanceof SparseBlockMCSR ) {
+			if( cbind && nnz > rlen && !shallowCopy && result.getSparseBlock() instanceof SparseBlockMCSR ) {
 				SparseBlock sblock = result.getSparseBlock();
 				for( int i=0; i<result.rlen; i++ ) {
 					final int row = i; //workaround for lambda compile issue
@@ -3588,7 +3589,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 			
 			//core append operation
-			result.appendToSparse(this, 0, 0);
+			result.appendToSparse(this, 0, 0, !shallowCopy);
 			if( cbind ) {
 				for(int i=0, off=clen; i<that.length; i++) {
 					result.appendToSparse(that[i], 0, off);

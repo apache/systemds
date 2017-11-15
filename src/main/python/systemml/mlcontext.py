@@ -22,7 +22,7 @@
 # Methods to create Script object
 script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
 # Utility methods
-util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG' ]
+util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG', 'setBLASPath' ]
 __all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
 
 import os
@@ -63,6 +63,24 @@ def _get_spark_context():
         return sc
     else:
         raise Exception('Expected spark context to be created.')
+
+
+
+def setBLASPath(path):
+    """
+    This method useful in the cloud environment where the user 
+    doesnot have sudo permission or where setting environment variables 
+    such as LD_LIBRARY_PATH is difficult.
+
+    Parameters
+    ----------
+    path: String
+        Custom path where the BLAS libraries where located. 
+    """
+    sc = _get_spark_context()
+    sc._jvm.org.apache.sysml.utils.NativeHelper.setBLASPath(path)
+
+
 
 # This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
 # Example usage:

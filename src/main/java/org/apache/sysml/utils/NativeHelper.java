@@ -48,6 +48,7 @@ public class NativeHelper {
 	public static String blasType;
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;
+	private static String customLibPath = null;
 	static {
 		// Note: we only support 64 bit Java on x86 and AMD machine
     supportedArchitectures.put("x86_64", "x86_64");
@@ -58,15 +59,20 @@ public class NativeHelper {
 	
 	private static String hintOnFailures = "";
 	
+	public static void setBLASPath(String path) {
+		customLibPath = path;
+		init(true);
+	}
+	
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
-	private static void init() {
+	private static void init(boolean forcedInit) {
 		// Only Linux supported for BLAS
 		if(!SystemUtils.IS_OS_LINUX)
 			return;
 		
 		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
 		// again and again especially in the parfor (hence the double-checking with synchronized).
-		if(!attemptedLoading) {
+		if(!attemptedLoading || forcedInit) {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
 			// -------------------------------------------------------------------------------------
 			// We allow BLAS to be enabled or disabled or explicitly selected in one of the two ways:
@@ -85,7 +91,7 @@ public class NativeHelper {
 					return;
 				}
 	    	synchronized(NativeHelper.class) {
-	    		if(!attemptedLoading) {
+	    		if(!attemptedLoading || forcedInit) {
 	    			// -----------------------------------------------------------------------------
 	    			// =============================================================================
 	    			// By default, we will native.blas=true and we will attempt to load MKL first.
@@ -152,7 +158,7 @@ public class NativeHelper {
 	}
 	
 	public static boolean isNativeLibraryLoaded() {
-		init();
+		init(false);
 		if(maxNumThreads == -1)
 			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(isSystemMLLoaded && !setMaxNumThreads && maxNumThreads != -1) {
@@ -183,6 +189,22 @@ public class NativeHelper {
 	}
 	
 	private static boolean loadBLAS(String blas, String optionalMsg) {
+		// First attempt to load from custom library path
+		if(customLibPath != null) {
+			String libPath = customLibPath + File.separator + System.mapLibraryName(blas);
+			try {
+				System.load(libPath);
+				// Print to stdout as this feature is intended for cloud environment
+				System.out.println("Loaded the library:" + libPath);
+				return true;
+			}
+			catch (UnsatisfiedLinkError e1) { 
+				// Print to stdout as this feature is intended for cloud environment
+				System.out.println("Unable to load " + libPath + ":" + e1.getMessage());
+			}
+		}
+		
+		// Then try loading using loadLibrary
 		try {
 			 System.loadLibrary(blas);
 			 return true;
@@ -197,6 +219,7 @@ public class NativeHelper {
 			return false;
 		}
 	}
+	
 
 	private static boolean loadLibraryHelper(String path)  {
 		InputStream in = null; OutputStream out = null;

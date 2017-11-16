@@ -49,9 +49,11 @@ public class LibMatrixDNNPoolingHelper {
 			double[] in = _params.input1.getDenseBlock();
 			double[] out = _params.output.getDenseBlock();
 			
+			double minValForMaxPoolOperations = _params.minValForMaxPoolOperations;
+			
 			//thread-local initialization of output block 
 			if( !(_params.isStride1Pad0() && _params.isAllOnes(P, Q, W)) )
-				Arrays.fill(out, _rl*CPQ, _ru*CPQ, -Double.MAX_VALUE);
+				Arrays.fill(out, _rl*CPQ, _ru*CPQ, minValForMaxPoolOperations);
 			
 			if( _params.isStride1Pad0() && _params.isAllOnes(P, Q, W) ) { 
 				//quick-path w/o materialized index arrays and 
@@ -59,7 +61,7 @@ public class LibMatrixDNNPoolingHelper {
 				int lenh = Math.min(R,H);
 				for(int i = _rl, oix=_rl*C; i < _ru; i++, oix+=C)
 					for (int c = 0, off=i*CHW; c < C; c++, off+=H)
-						out[oix+c] = max(-Double.MAX_VALUE, in, off, lenh);
+						out[oix+c] = max(minValForMaxPoolOperations, in, off, lenh);
 			}
 			else if( _params.isStride1Pad0() ) {
 				//quick-path w/o materialized index arrays 
@@ -109,7 +111,7 @@ public class LibMatrixDNNPoolingHelper {
 		@Override
 		public Long call() throws Exception {
 			//thread-local initialization of output block 
-			Arrays.fill(outputArray, _rl *CPQ, _ru*CPQ, -Double.MAX_VALUE);
+			Arrays.fill(outputArray, _rl *CPQ, _ru*CPQ, _params.minValForMaxPoolOperations);
 			
 			for(int n = _rl; n < _ru; n++)  {
 				if( !_params.input1.sparseBlock.isEmpty(n) ) {

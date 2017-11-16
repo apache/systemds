@@ -416,6 +416,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C*P*Q, false).allocateBlock();
+				if(instOpcode.equalsIgnoreCase("relu_maxpooling"))
+					params.minValForMaxPoolOperations = 0;
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
 		}
@@ -426,6 +428,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C*H*W, false).allocateBlock();
+				if(instOpcode.equalsIgnoreCase("relu_maxpooling_backward"))
+					params.minValForMaxPoolOperations = 0;
 				LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, 
 					!instOpcode.equalsIgnoreCase("maxpooling_backward"));
 			}

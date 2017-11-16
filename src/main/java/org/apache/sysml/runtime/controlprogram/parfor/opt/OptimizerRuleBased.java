@@ -2078,7 +2078,7 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				//replace existing matrix object with empty matrix
 				MatrixObject mo = (MatrixObject)dat;
-				ec.cleanupMatrixObject(mo);
+				ec.cleanupCacheableData(mo);
 				ec.setMatrixOutput(rvar, new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(),false), null);
 				
 				//keep track of cleaned result variables

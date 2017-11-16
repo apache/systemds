@@ -698,13 +698,13 @@ public class VariableCPInstruction extends CPInstruction {
 					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
 			}
 			
-			if( getInput2().getDataType().isMatrix() ) {
+			if( getInput2().getDataType().isMatrix() || getInput2().getDataType().isFrame() ) {
 				// remove existing variable bound to target name
 				Data tgt = ec.removeVariable(getInput2().getName());
 					
 				//cleanup matrix data on fs/hdfs (if necessary)
-				if ( tgt != null && tgt instanceof MatrixObject ) {
-					ec.cleanupMatrixObject((MatrixObject) tgt);
+				if ( tgt != null && tgt instanceof CacheableData ) {
+					ec.cleanupCacheableData((CacheableData<?>) tgt);
 				}
 			}
 			
@@ -754,8 +754,8 @@ public class VariableCPInstruction extends CPInstruction {
 		Data input2_data = ec.removeVariable(getInput2().getName());
 		
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if ( input2_data != null && input2_data instanceof MatrixObject ) {
-			ec.cleanupMatrixObject((MatrixObject) input2_data);
+		if ( input2_data != null && input2_data instanceof CacheableData ) {
+			ec.cleanupCacheableData((CacheableData<?>) input2_data);
 		}
 		
 		// do the actual copy!
@@ -820,8 +820,8 @@ public class VariableCPInstruction extends CPInstruction {
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmvar instruction.");
 
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if ( input1_data instanceof MatrixObject ) {
-			ec.cleanupMatrixObject( (MatrixObject) input1_data );
+		if ( input1_data instanceof CacheableData ) {
+			ec.cleanupCacheableData( (CacheableData<?>) input1_data );
 		}
 	}
 	

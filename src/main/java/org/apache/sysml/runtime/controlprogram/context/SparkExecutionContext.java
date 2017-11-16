@@ -1087,7 +1087,7 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	@Override
-	public void cleanupMatrixObject( MatrixObject mo )
+	public void cleanupCacheableData( CacheableData<?> mo )
 		throws DMLRuntimeException
 	{
 		//NOTE: this method overwrites the default behavior of cleanupMatrixObject

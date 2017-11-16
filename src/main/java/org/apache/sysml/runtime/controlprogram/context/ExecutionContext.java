@@ -608,7 +608,7 @@ public class ExecutionContext {
 		return ret;
 	}
 	
-	public void cleanupMatrixObject(MatrixObject mo)
+	public void cleanupCacheableData(CacheableData<?> mo)
 		throws DMLRuntimeException 
 	{
 		//early abort w/o scan of symbol table if no cleanup required

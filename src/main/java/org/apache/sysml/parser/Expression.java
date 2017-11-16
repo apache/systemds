@@ -173,6 +173,9 @@ public abstract class Expression implements ParseInfo
 		public boolean isMatrix() {
 			return (this == MATRIX);
 		}
+		public boolean isFrame() {
+			return (this == FRAME);
+		}
 		public boolean isScalar() {
 			return (this == SCALAR);
 		}

@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -180,8 +180,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			if( expectRetVars.contains(var.getKey()) )
 				continue;
 			//cleanup unexpected return values to avoid leaks
-			if( var.getValue() instanceof MatrixObject )
-				fn_ec.cleanupMatrixObject((MatrixObject)var.getValue());
+			if( var.getValue() instanceof CacheableData )
+				fn_ec.cleanupCacheableData((CacheableData<?>)var.getValue());
 		}
 		
 		// Unpin the pinned variables
@@ -196,8 +196,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
-			if ( exdata != null && exdata instanceof MatrixObject && exdata != boundValue ) {
-				ec.cleanupMatrixObject( (MatrixObject)exdata );
+			if ( exdata != null && exdata instanceof CacheableData && exdata != boundValue ) {
+				ec.cleanupCacheableData( (CacheableData<?>)exdata );
 			}
 			
 			//add/replace data in symbol table

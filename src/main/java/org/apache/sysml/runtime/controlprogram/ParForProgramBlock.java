@@ -1239,7 +1239,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( MatrixObject tmp : in ) {
 			//check for empty inputs (no iterations executed)
 			if( tmp != null && tmp != out )
-				ec.cleanupMatrixObject(tmp);
+				ec.cleanupCacheableData(tmp);
 		}
 	}
 	
@@ -1705,7 +1705,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					//cleanup existing var
 					Data exdata = ec.removeVariable(var);
 					if( exdata != null && exdata != outNew && exdata instanceof MatrixObject )
-						ec.cleanupMatrixObject((MatrixObject)exdata);
+						ec.cleanupCacheableData((MatrixObject)exdata);
 					
 					//cleanup of intermediate result variables
 					cleanWorkerResultVariables( ec, out, in );

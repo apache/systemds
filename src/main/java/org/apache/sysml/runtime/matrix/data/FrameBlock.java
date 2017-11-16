@@ -471,9 +471,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int j=0; j<ncol; j++ )
 			tmpData[j] = new DoubleArray(cols[j]);
 		_colnames = empty ? null : (String[]) ArrayUtils.addAll(getColumnNames(), 
-				createColNames(getNumColumns(), ncol)); //before schema modification
+			createColNames(getNumColumns(), ncol)); //before schema modification
 		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema); 
-		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);		
+		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
 		_numRows = cols[0].length;
 	}
 
@@ -988,10 +988,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
 			ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
 			
-			//concatenate column data (w/ deep copy to prevent side effects)
+			//concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
 			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
-			for( int i=0; i<ret.getNumColumns(); i++ )
-				ret._coldata[i] = ret._coldata[i].clone();
 		}
 		else //ROW APPEND
 		{

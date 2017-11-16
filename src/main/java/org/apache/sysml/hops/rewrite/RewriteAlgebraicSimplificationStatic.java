@@ -522,7 +522,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static Hop foldMultipleAppendOperations(Hop hi) 
 		throws HopsException
 	{
-		if( hi.getDataType().isMatrix() //no string appends
+		if( hi.getDataType().isMatrix() //no string appends or frames
 			&& (HopRewriteUtils.isBinary(hi, OpOp2.CBIND, OpOp2.RBIND) 
 			|| HopRewriteUtils.isNary(hi, OpOpN.CBIND, OpOpN.RBIND))
 			&& !OptimizerUtils.isHadoopExecutionMode() )

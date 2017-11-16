@@ -54,11 +54,13 @@ public class OutputStatement extends Statement
 	public OutputStatement(ParserRuleContext ctx, DataIdentifier t, DataOp op, String filename) {
 		_id = t;
 		_paramsExpr = new DataExpression(ctx, op, new HashMap<String, Expression>(), filename);
+		setCtxValuesAndFilename(ctx, filename);
 	}
 
 	public OutputStatement(DataIdentifier t, DataOp op, ParseInfo parseInfo) {
 		_id = t;
 		_paramsExpr = new DataExpression(op, new HashMap<String, Expression>(), parseInfo);
+		setParseInfo(parseInfo);
 	}
 
 	public static boolean isValidParamName(String key){

@@ -71,8 +71,8 @@ public class LibMatrixReorg
 	//allow reuse of temporary blocks for certain operations
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
-	//use csr instead of mcsr sparse block for rexpand columns
-	public static final boolean REXPAND_COLS_IN_CSR = true;
+	//use csr instead of mcsr sparse block for rexpand columns / diag v2m
+	public static final boolean SPARSE_OUTPUTS_IN_CSR = true;
 	
 	private enum ReorgType {
 		TRANSPOSE,
@@ -108,15 +108,15 @@ public class LibMatrixReorg
 					return transpose(in, out, op.getNumThreads());
 				else
 					return transpose(in, out);
-			case REV: 
+			case REV:
 				return rev(in, out);
-			case DIAG:      
+			case DIAG:
 				return diag(in, out); 
-			case SORT:      
+			case SORT:
 				SortIndex ix = (SortIndex) op.fn;
 				return sort(in, out, ix.getCols(), ix.getDecreasing(), ix.getIndexReturn());
 			
-			default:        
+			default:
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
 		}
 	}
@@ -1029,7 +1029,7 @@ public class LibMatrixReorg
 	}
 	
 	/**
-	 * Generic implementation diagV2M (non-performance critical)
+	 * Generic implementation diagV2M
 	 * (in most-likely DENSE, out most likely SPARSE)
 	 * 
 	 * @param in input matrix
@@ -1037,15 +1037,47 @@ public class LibMatrixReorg
 	 */
 	private static void diagV2M( MatrixBlock in, MatrixBlock out )
 	{
-		int rlen = in.rlen;
+		final int rlen = in.rlen;
 		
 		//CASE column vector
-		for( int i=0; i<rlen; i++ )
-		{
-			double val = in.quickGetValue(i, 0);
-			if( val != 0 )
-				out.appendValue(i, i, val);
+		if( out.sparse  ) { //SPARSE
+			if( SPARSE_OUTPUTS_IN_CSR ) {
+				int[] rptr = new int[in.rlen+1];
+				int[] cix = new int[(int)in.nonZeros];
+				double[] vals = new double[(int)in.nonZeros];
+				for( int i=0, pos=0; i<rlen; i++ ) {
+					double val = in.quickGetValue(i, 0);
+					if( val != 0 ) {
+						cix[pos] = i;
+						vals[pos] = val;
+						pos++;
+					}
+					rptr[i+1]=pos;
+				}
+				out.sparseBlock = new SparseBlockCSR(
+					rptr, cix, vals, (int)in.nonZeros);
+			}
+			else {
+				out.allocateBlock();
+				SparseBlock sblock = out.sparseBlock;
+				for(int i=0; i<rlen; i++) {
+					double val = in.quickGetValue(i, 0);
+					if( val != 0 ) {
+						sblock.allocate(i, 1);
+						sblock.append(i, i, val);
+					}
+				}
+			}
 		}
+		else { //DENSE
+			for( int i=0; i<rlen; i++ ) {
+				double val = in.quickGetValue(i, 0);
+				if( val != 0 )
+					out.appendValue(i, i, val);
+			}
+		}
+		
+		out.setNonZeros(in.nonZeros);
 	}
 	
 	/**
@@ -1647,19 +1679,41 @@ public class LibMatrixReorg
 		boolean[] flags = null; 
 		int rlen2 = 0; 
 		
+		//Step 0: special case handling
+		if( SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
+			&& in.sparse && !in.isEmptyBlock(false)
+			&& select==null && in.sparseBlock instanceof SparseBlockCSR
+			&& in.nonZeros < Integer.MAX_VALUE )
+		{
+			//create the output in csr format with a shallow copy of arrays for column 
+			//indexes and values (heuristic: shallow copy better than copy to dense)
+			SparseBlockCSR sblock = (SparseBlockCSR) in.sparseBlock;
+			int lrlen = 0;
+			for( int i=0; i<m; i++ )
+				lrlen += sblock.isEmpty(i) ? 0 : 1;
+			int[] rptr = new int[lrlen+1];
+			for( int i=0, j=0, pos=0; i<m; i++ )
+				if( !sblock.isEmpty(i) ) {
+					pos += sblock.size(i);
+					rptr[++j] = pos;
+				}
+			ret.reset(lrlen, in.clen, true);
+			ret.sparseBlock = new SparseBlockCSR(rptr,
+				sblock.indexes(), sblock.values(), (int)in.nonZeros);
+			ret.nonZeros = in.nonZeros;
+			return ret;
+		}
+		
+		//Step 1: scan block and determine non-empty rows
 		if(select == null) 
 		{
 			flags = new boolean[ m ]; //false
-			//Step 1: scan block and determine non-empty rows
-			
-			if( in.sparse ) //SPARSE 
-			{
+			if( in.sparse ) { //SPARSE 
 				SparseBlock a = in.sparseBlock;
 				for ( int i=0; i < m; i++ )
 					rlen2 += (flags[i] = !a.isEmpty(i)) ? 1 : 0;
 			}
-			else //DENSE
-			{
+			else { //DENSE
 				double[] a = in.denseBlock;
 				for(int i=0, aix=0; i<m; i++, aix+=n)
 					for(int j=0; j<n; j++)
@@ -1671,7 +1725,7 @@ public class LibMatrixReorg
 						}
 			}
 		} 
-		else {			
+		else {
 			flags = DataConverter.convertToBooleanVector(select);
 			rlen2 = (int)select.getNonZeros();
 		}
@@ -1918,7 +1972,7 @@ public class LibMatrixReorg
 		//execute rexpand columns
 		long rnnz = 0; //real nnz (due to cutoff max)
 		if( k <= 1 || in.getNumRows() <= PAR_NUMCELL_THRESHOLD
-			|| (sp && REXPAND_COLS_IN_CSR) ) {
+			|| (sp && SPARSE_OUTPUTS_IN_CSR) ) {
 			rnnz = rexpandColumns(in, ret, max, cast, ignore, 0, rlen);
 		}
 		else {
@@ -1951,7 +2005,7 @@ public class LibMatrixReorg
 		//initialize auxiliary data structures 
 		int lnnz = 0;
 		int[] cix = null;
-		if( ret.sparse && REXPAND_COLS_IN_CSR ) {
+		if( ret.sparse && SPARSE_OUTPUTS_IN_CSR ) {
 			cix = new int[in.rlen];
 			Arrays.fill(cix, -1);
 		}

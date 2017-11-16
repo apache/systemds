@@ -37,7 +37,7 @@ rather than SystemML's internal Java library for performing single-node
 operations such matrix multiplication, convolution, etc.
 
 To allow SystemML to use native BLAS rather than internal Java library,
-please set the configuration property `native.blas` to `auto`.
+please set the configuration property `sysml.native.blas` to `auto`.
 Other possible options are: `mkl`, `openblas` and `none`.
 The first two options will only attempt to use the respective BLAS libraries.
 
@@ -50,6 +50,8 @@ The current version of SystemML only supports BLAS on **Linux** machines.
 
 ## Step 1: Install BLAS
 
+If BLAS is already installed, please skip this step.
+
 ### Option 1: Install Intel MKL
 
 Download and install the [community version of Intel MKL](https://software.intel.com/sites/campaigns/nest/).
@@ -60,14 +62,16 @@ with license key. Since we use MKL DNN primitives, we depend on Intel MKL versio
 
 ### Option 2: Install OpenBLAS  
 
+The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
+which can lead to performance degradation when using SystemML. So, instead we recommend that you
+compile OpenBLAS from the source instead of installing it with `yum` or `apt-get`.
+
+The steps to install OpenBLAS v0.2.20:
+
 ```bash
-# The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
-# which can lead to performance degradation when using SystemML. So, instead we recommend that you
-# compile OpenBLAS from the source. 
-# RedHat / CentOS: sudo yum install openblas
-# Ubuntu: sudo apt-get install openblas
-git clone https://github.com/xianyi/OpenBLAS.git
-cd OpenBLAS/
+wget https://github.com/xianyi/OpenBLAS/archive/v0.2.20.tar.gz
+tar -xzf v0.2.20.tar.gz
+cd OpenBLAS-0.2.20/
 make clean
 make USE_OPENMP=1
 sudo make install
@@ -80,19 +84,14 @@ If gomp is available as `/lib64/libgomp.so.1` instead of `/lib64/libgomp.so`,
 please add a softlink to it:
 
 ```bash
-sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
-```
-
-## Step 2: Install other dependencies
-
-```bash
 # Centos/RedHat
 sudo yum install gcc-c++
 # Ubuntu
 sudo apt-get install g++ 
+sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
 ```
 	
-## Step 3: Provide the location of the native libraries
+## Step 2: Provide the location of the native libraries
 
 1. Pass the location of the native libraries using command-line options:
 
@@ -106,6 +105,22 @@ If you want to use SystemML with Spark, please add the following line to `spark-
 
 	export LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
  
+
+In cloud environment where you may not be able to set `LD_LIBRARY_PATH` or `spark.executorEnv.LD_LIBRARY_PATH`
+before starting spark, you can use set the configuration property `sysml.native.blas.directory`. For example:
+
+```python
+mlCtx.setConfigProperty("sysml.native.blas.directory", "/path/to/blas-n-other-dependencies")
+```
+
+## Step 3: Set configuration property to enable native BLAS
+
+The configuration property `sysml.native.blas` can be either set in the file `SystemML-config.xml`
+or using `setConfigProperty` method of `MLContext` or `mllearn` classes. For example:
+
+```python 
+mlCtx.setConfigProperty("sysml.native.blas", "openblas")
+```
 
 ## Common issues on Linux
 

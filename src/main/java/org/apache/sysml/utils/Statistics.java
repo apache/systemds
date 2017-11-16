@@ -774,8 +774,8 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
-			if(NativeHelper.blasType != null) {
-				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
+			if(NativeHelper.CURRENT_NATIVE_BLAS_STATE == NativeHelper.NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE) {
+				String blas = NativeHelper.getCurrentBLAS(); 
 				sb.append("Native " + blas + " calls (dense mult/conv/bwdF/bwdD):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + 
 						numNativeConv2dCalls.longValue() + "/" + numNativeConv2dBwdFilterCalls.longValue()
 						+ "/" + numNativeConv2dBwdDataCalls.longValue() + ".\n");

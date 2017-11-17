@@ -47,7 +47,8 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		MULTI_SCALAR,
 		ROW_RANK_DIMS, // right wdivmm, row mm
 		COLUMN_RANK_DIMS,  // left wdivmm, row mm
-		COLUMN_RANK_DIMS_T;
+		COLUMN_RANK_DIMS_T,
+		VECT_CONST2;
 	}
 	
 	private Class<?> _class = null;
@@ -176,6 +177,9 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				case INPUT_DIMS_CONST2:
 					ret = new long[]{mc.getRows(), _constDim2, -1};
 					break;
+				case VECT_CONST2:
+					ret = new long[]{1, _constDim2, -1};
+					break;	
 				case SCALAR:
 					ret = new long[]{0, 0, -1};
 					break;
@@ -238,6 +242,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				setDim1(getInput().get(0).getDim1());
 				setDim2(_constDim2);
 				break;
+			case VECT_CONST2:
+				setDim1(1);
+				setDim2(_constDim2);
+				break;
 			case SCALAR:
 				setDim1(0);
 				setDim2(0);
@@ -260,7 +268,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				break;	
 			default:
 				throw new RuntimeException("Failed to refresh size information "
-						+ "for type: "+_dimsType.toString());
+					+ "for type: "+_dimsType.toString());
 		}
 	}
 

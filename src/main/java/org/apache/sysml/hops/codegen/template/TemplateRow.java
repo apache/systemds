@@ -219,7 +219,8 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, 
 			inHops2.get("X"), inHops2.get("B1")));
-		if( tpl.getRowType()==RowType.NO_AGG_CONST )
+		if( tpl.getRowType()==RowType.NO_AGG_CONST 
+			|| tpl.getRowType()==RowType.COL_AGG_CONST )
 			tpl.setConstDim2(hop.getDim2());
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.determineMinVectorIntermediates(output));

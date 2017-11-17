@@ -55,12 +55,13 @@ public abstract class SpoofRowwise extends SpoofOperator
 		COL_AGG_T,    //transposed col aggregation (e.g., t(X) %*% y)
 		COL_AGG_B1,   //col aggregation w/ matrix mult B1
 		COL_AGG_B1_T, //transposed col aggregation w/ matrix mult B1
-		COL_AGG_B1R;  //col aggregation w/ matrix mult B1 to row vector
+		COL_AGG_B1R,  //col aggregation w/ matrix mult B1 to row vector
+		COL_AGG_CONST;//col aggregation w/ expansion/contraction
 		
 		public boolean isColumnAgg() {
 			return this == COL_AGG || this == COL_AGG_T
 				|| this == COL_AGG_B1 || this == COL_AGG_B1_T
-				|| this == COL_AGG_B1R;
+				|| this == COL_AGG_B1R || this == COL_AGG_CONST;
 		}
 		public boolean isRowTypeB1() {
 			return this == NO_AGG_B1 || this == COL_AGG_B1 
@@ -260,16 +261,17 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	private void allocateOutputMatrix(int m, int n, int n2, MatrixBlock out) {
 		switch( _type ) {
-			case NO_AGG:       out.reset(m, n, false); break;
-			case NO_AGG_B1:    out.reset(m, n2, false); break;
-			case NO_AGG_CONST: out.reset(m, (int)_constDim2, false); break;
-			case FULL_AGG:     out.reset(1, 1, false); break;
-			case ROW_AGG:      out.reset(m, 1, false); break;
-			case COL_AGG:      out.reset(1, n, false); break;
-			case COL_AGG_T:    out.reset(n, 1, false); break;
-			case COL_AGG_B1:   out.reset(n2, n, false); break;
-			case COL_AGG_B1_T: out.reset(n, n2, false); break;
-			case COL_AGG_B1R:  out.reset(1, n2, false); break;
+			case NO_AGG:        out.reset(m, n, false); break;
+			case NO_AGG_B1:     out.reset(m, n2, false); break;
+			case NO_AGG_CONST:  out.reset(m, (int)_constDim2, false); break;
+			case FULL_AGG:      out.reset(1, 1, false); break;
+			case ROW_AGG:       out.reset(m, 1, false); break;
+			case COL_AGG:       out.reset(1, n, false); break;
+			case COL_AGG_T:     out.reset(n, 1, false); break;
+			case COL_AGG_B1:    out.reset(n2, n, false); break;
+			case COL_AGG_B1_T:  out.reset(n, n2, false); break;
+			case COL_AGG_B1R:   out.reset(1, n2, false); break;
+			case COL_AGG_CONST: out.reset(1, (int)_constDim2, false); break;
 		}
 		out.allocateDenseBlock();
 	}

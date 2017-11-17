@@ -214,22 +214,34 @@ public class LibSpoofPrimitives
 	
 	// cbind handling
 	
-	public static double[] vectCBindWrite(double a, double b) {
+	public static double[] vectCbindAdd(double[] a, double b, double[] c, int ai, int ci, int len) {
+		LibMatrixMult.vectAdd(a, c, ai, ci, len);
+		c[ci+len] += b;
+		return c;
+	}
+	
+	public static double[] vectCbindAdd(double[] a, double b, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		LibMatrixMult.vectAdd(a, c, aix, ai, ci, alen);
+		c[ci+len] += b;
+		return c;
+	}
+	
+	public static double[] vectCbindWrite(double a, double b) {
 		double[] c = allocVector(2, false);
 		c[0] = a;
 		c[1] = b;
 		return c;
 	}
 	
-	public static double[] vectCBindWrite(double[] a, double b, int aix, int len) {
+	public static double[] vectCbindWrite(double[] a, double b, int aix, int len) {
 		double[] c = allocVector(len+1, false);
 		System.arraycopy(a, aix, c, 0, len);
 		c[len] = b;
 		return c;
 	}
 	
-	public static double[] vectCBindWrite(double[] a, double b, int[] aix, int ai, int alen, int len) {
-		double[] c = allocVector(len+1, false);
+	public static double[] vectCbindWrite(double[] a, double b, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len+1, true);
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = a[j];
 		c[len] = b;

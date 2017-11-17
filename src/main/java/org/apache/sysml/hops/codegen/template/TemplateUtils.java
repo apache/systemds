@@ -209,6 +209,8 @@ public class TemplateUtils
 			return RowType.COL_AGG_B1R;
 		else if( X.getDim1() == output.getDim1() && X.getDim2() != output.getDim2() )
 			return RowType.NO_AGG_CONST;
+		else if( output.getDim1() == 1 && X.getDim2() != output.getDim2() )
+			return RowType.COL_AGG_CONST;
 		else
 			throw new RuntimeException("Unknown row type for hop "+output.getHopID()+".");
 	}

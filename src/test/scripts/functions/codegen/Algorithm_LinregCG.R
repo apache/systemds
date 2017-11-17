@@ -51,13 +51,15 @@ if (intercept_status == 1 | intercept_status == 2)
 }
 
 if (intercept_status == 2) {
-    avg_X_cols = t(colSums(X)) / n;
-    var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
+    avg_X_cols = colSums(X) / n;
+    var_X_cols = (colSums (X ^ 2) - n * (avg_X_cols ^ 2)) / (n - 1);
     is_unsafe = (var_X_cols <= 0);
     scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
-    scale_X [m_ext, 1] = 1;
+    scale_X [m_ext] = 1;
     shift_X = - avg_X_cols * scale_X;
-    shift_X [m_ext, 1] = 0;
+    shift_X [m_ext] = 0;
+    scale_X = as.matrix(scale_X);
+    shift_X = as.matrix(shift_X);
 } else {
     scale_X = matrix (1, m_ext, 1);
     shift_X = matrix (0, m_ext, 1);

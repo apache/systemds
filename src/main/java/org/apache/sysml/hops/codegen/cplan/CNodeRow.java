@@ -150,16 +150,17 @@ public class CNodeRow extends CNodeTpl
 	@Override
 	public SpoofOutputDimsType getOutputDimType() {
 		switch( _type ) {
-			case NO_AGG:       return SpoofOutputDimsType.INPUT_DIMS;
-			case NO_AGG_B1:    return SpoofOutputDimsType.ROW_RANK_DIMS;
-			case NO_AGG_CONST: return SpoofOutputDimsType.INPUT_DIMS_CONST2; 
-			case FULL_AGG:     return SpoofOutputDimsType.SCALAR;
-			case ROW_AGG:      return SpoofOutputDimsType.ROW_DIMS;
-			case COL_AGG:      return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
-			case COL_AGG_T:    return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
-			case COL_AGG_B1:   return SpoofOutputDimsType.COLUMN_RANK_DIMS; 
-			case COL_AGG_B1_T: return SpoofOutputDimsType.COLUMN_RANK_DIMS_T;
-			case COL_AGG_B1R:  return SpoofOutputDimsType.RANK_DIMS_COLS;
+			case NO_AGG:        return SpoofOutputDimsType.INPUT_DIMS;
+			case NO_AGG_B1:     return SpoofOutputDimsType.ROW_RANK_DIMS;
+			case NO_AGG_CONST:  return SpoofOutputDimsType.INPUT_DIMS_CONST2; 
+			case FULL_AGG:      return SpoofOutputDimsType.SCALAR;
+			case ROW_AGG:       return SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG:       return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
+			case COL_AGG_T:     return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
+			case COL_AGG_B1:    return SpoofOutputDimsType.COLUMN_RANK_DIMS; 
+			case COL_AGG_B1_T:  return SpoofOutputDimsType.COLUMN_RANK_DIMS_T;
+			case COL_AGG_B1R:   return SpoofOutputDimsType.RANK_DIMS_COLS;
+			case COL_AGG_CONST: return SpoofOutputDimsType.VECT_CONST2;
 			default:
 				throw new RuntimeException("Unsupported row type: "+_type.toString());
 		}

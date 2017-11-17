@@ -3288,6 +3288,24 @@ public class LibMatrixMult
 		}
 	}
 
+	public static void vectAdd( double[] a, double[] c, int[] aix, int ai, int ci, final int alen ) {
+		final int bn = alen%8;
+		//rest, not aligned to 8-blocks
+		for( int j = ai; j < ai+bn; j++ )
+			c[ ci+aix[j] ] += a[ j ];
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = ai+bn; j < ai+alen; j+=8 ) {
+			c[ ci+aix[j+0] ] += a[ j+0 ];
+			c[ ci+aix[j+1] ] += a[ j+1 ];
+			c[ ci+aix[j+2] ] += a[ j+2 ];
+			c[ ci+aix[j+3] ] += a[ j+3 ];
+			c[ ci+aix[j+4] ] += a[ j+4 ];
+			c[ ci+aix[j+5] ] += a[ j+5 ];
+			c[ ci+aix[j+6] ] += a[ j+6 ];
+			c[ ci+aix[j+7] ] += a[ j+7 ];
+		}
+	}
+	
 	private static void vectAdd4( double[] a1, double[] a2, double[] a3, double[] a4, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;

@@ -49,7 +49,6 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private final static int intercept = 0;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 	
@@ -60,46 +59,126 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	}
 
 	@Test
-	public void testLinregCGDenseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, false, ExecType.CP);
+	public void testLinregCG0DenseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP);
 	}
 	
 	@Test
-	public void testLinregCGSparseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, true, ExecType.CP);
+	public void testLinregCG0SparseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP);
 	}
 	
 	@Test
-	public void testLinregCGDenseCP() {
-		runLinregCGTest(TEST_NAME1, false, false, ExecType.CP);
+	public void testLinregCG0DenseCP() {
+		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.CP);
 	}
 	
 	@Test
-	public void testLinregCGSparseCP() {
-		runLinregCGTest(TEST_NAME1, false, true, ExecType.CP);
+	public void testLinregCG0SparseCP() {
+		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.CP);
 	}
 
 	@Test
-	public void testLinregCGDenseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, false, ExecType.SPARK);
+	public void testLinregCG0DenseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLinregCGSparseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, true, ExecType.SPARK);
+	public void testLinregCG0SparseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLinregCGDenseSP() {
-		runLinregCGTest(TEST_NAME1, false, false, ExecType.SPARK);
+	public void testLinregCG0DenseSP() {
+		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLinregCGSparseSP() {
-		runLinregCGTest(TEST_NAME1, false, true, ExecType.SPARK);
+	public void testLinregCG0SparseSP() {
+		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.SPARK);
 	}
 	
-	private void runLinregCGTest( String testname, boolean rewrites, boolean sparse, ExecType instType)
+	@Test
+	public void testLinregCG1DenseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG1SparseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG1DenseCP() {
+		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG1SparseCP() {
+		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testLinregCG1DenseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG1SparseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG1DenseSP() {
+		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG1SparseSP() {
+		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG2DenseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG2SparseRewritesCP() {
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG2DenseCP() {
+		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.CP);
+	}
+	
+	@Test
+	public void testLinregCG2SparseCP() {
+		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.CP);
+	}
+
+	@Test
+	public void testLinregCG2DenseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG2SparseRewritesSP() {
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG2DenseSP() {
+		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLinregCG2SparseSP() {
+		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.SPARK);
+	}
+	
+	private void runLinregCGTest( String testname, boolean rewrites, boolean sparse, int intercept, ExecType instType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;

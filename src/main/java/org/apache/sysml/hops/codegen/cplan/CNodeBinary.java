@@ -35,6 +35,7 @@ public class CNodeBinary extends CNode
 		VECT_POW_ADD, VECT_MIN_ADD, VECT_MAX_ADD,
 		VECT_EQUAL_ADD, VECT_NOTEQUAL_ADD, VECT_LESS_ADD, 
 		VECT_LESSEQUAL_ADD, VECT_GREATER_ADD, VECT_GREATEREQUAL_ADD,
+		VECT_CBIND_ADD,
 		//vector-scalar operations
 		VECT_MULT_SCALAR, VECT_DIV_SCALAR, VECT_MINUS_SCALAR, VECT_PLUS_SCALAR,
 		VECT_POW_SCALAR, VECT_MIN_SCALAR, VECT_MAX_SCALAR,
@@ -94,7 +95,8 @@ public class CNodeBinary extends CNode
 				case VECT_LESS_ADD:
 				case VECT_LESSEQUAL_ADD:
 				case VECT_GREATER_ADD:
-				case VECT_GREATEREQUAL_ADD: {
+				case VECT_GREATEREQUAL_ADD:
+				case VECT_CBIND_ADD: {
 					String vectName = getVectorPrimitiveName();
 					if( scalarVector )
 						return sparseLhs ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" : 
@@ -129,11 +131,11 @@ public class CNodeBinary extends CNode
 				
 				case VECT_CBIND:
 					if( scalarInput )
-						return  "    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1%, %IN2%);\n";
+						return  "    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
 					else
 						return sparseLhs ? 
-								"    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
-								"    double[] %TMP% = LibSpoofPrimitives.vectCBindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+								"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : 
+								"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				
 				//vector-vector operations
 				case VECT_MULT:
@@ -344,6 +346,7 @@ public class CNodeBinary extends CNode
 			case VECT_LESSEQUAL_ADD:       return "b(vltea)";
 			case VECT_GREATEREQUAL_ADD:    return "b(vgtea)";
 			case VECT_GREATER_ADD:         return "b(vgta)";
+			case VECT_CBIND_ADD:           return "b(vcbinda)";
 			case VECT_MULT_SCALAR:         return "b(vm)";
 			case VECT_DIV_SCALAR:          return "b(vd)";
 			case VECT_MINUS_SCALAR:        return "b(vmi)";
@@ -409,6 +412,7 @@ public class CNodeBinary extends CNode
 			case VECT_LESSEQUAL_ADD: 
 			case VECT_GREATER_ADD: 
 			case VECT_GREATEREQUAL_ADD:
+			case VECT_CBIND_ADD:
 				boolean vectorScalar = _inputs.get(1).getDataType()==DataType.SCALAR;
 				_rows = _inputs.get(vectorScalar ? 0 : 1)._rows;
 				_cols = _inputs.get(vectorScalar ? 0 : 1)._cols;

@@ -103,7 +103,7 @@ public class LongLongDoubleHashMap
 				while( e.next!=null ) {
 					ADoubleEntry tmp = e;
 					e = e.next; //tmp.next overwritten on append
-					appendEntry(e.getKey1(), e.getKey2(), tmp);
+					appendEntry(tmp.getKey1(), tmp.getKey2(), tmp);
 				}
 				appendEntry(e.getKey1(), e.getKey2(), e);
 			}

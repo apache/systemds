@@ -50,7 +50,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
-import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TernarySPInstruction extends ComputationSPInstruction {
@@ -459,11 +459,11 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
 				throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
-			Iterator<LLDoubleEntry> iter = ctableMap.getIterator();
+			Iterator<ADoubleEntry> iter = ctableMap.getIterator();
 			while( iter.hasNext() ) {
-				LLDoubleEntry ijv = iter.next();
-				long i = ijv.key1;
-				long j =  ijv.key2;
+				ADoubleEntry ijv = iter.next();
+				long i = ijv.getKey1();
+				long j =  ijv.getKey2();
 				double v =  ijv.value;
 				retVal.add(new Tuple2<>(new MatrixIndexes(i, j), v));
 			}

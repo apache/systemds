@@ -29,18 +29,27 @@ import java.util.Iterator;
  * to keep data in the caches and prevent high-latency random memory access. 
  * 
  */
-public class LongLongDoubleHashMap 
+public class LongLongDoubleHashMap
 {
 	private static final int INIT_CAPACITY = 8;
 	private static final int RESIZE_FACTOR = 2;
 	private static final float LOAD_FACTOR = 0.75f;
 
-	private LLDoubleEntry[] data = null;
+	public enum EntryType {
+		LONG, INT
+	}
+	
+	private final EntryType type;
+	private ADoubleEntry[] data = null;
 	private int size = -1;
 	
-	public LongLongDoubleHashMap()
-	{
-		data = new LLDoubleEntry[INIT_CAPACITY];
+	public LongLongDoubleHashMap() {
+		this(EntryType.LONG);
+	}
+	
+	public LongLongDoubleHashMap(EntryType etype) {
+		type = etype;
+		data = new ADoubleEntry[INIT_CAPACITY];
 		size = 0;
 	}
 
@@ -51,19 +60,20 @@ public class LongLongDoubleHashMap
 	public void addValue(long key1, long key2, double value)
 	{
 		//compute entry index position
-		int hash = hash(key1, key2);
-		int ix = indexFor(hash, data.length);
-
+		int ix = getIndex(key1, key2, data.length);
+		
 		//find existing entry and add value
-		for( LLDoubleEntry e = data[ix]; e!=null; e = e.next ) {
-			if( e.key1==key1 && e.key2==key2 ) {
+		for( ADoubleEntry e = data[ix]; e!=null; e = e.next ) {
+			if( e.getKey1()==key1 && e.getKey2()==key2 ) {
 				e.value += value;
 				return; //no need to append or resize
 			}
 		}
 		
 		//add non-existing entry (constant time)
-		LLDoubleEntry enew = new LLDoubleEntry(key1, key2, value);
+		ADoubleEntry enew = (type==EntryType.LONG) ? 
+			new LLDoubleEntry(key1, key2, value) :
+			new IIDoubleEntry(key1, key2, value);
 		enew.next = data[ix]; //colliding entries / null
 		data[ix] = enew;
 		size++;
@@ -72,9 +82,9 @@ public class LongLongDoubleHashMap
 		if( size >= LOAD_FACTOR*data.length )
 			resize();
 	}
-
-	public Iterator<LLDoubleEntry> getIterator() {
-		return new LLDoubleEntryIterator();
+	
+	public Iterator<ADoubleEntry> getIterator() {
+		return new ADoubleEntryIterator();
 	}
 
 	private void resize() {
@@ -83,22 +93,38 @@ public class LongLongDoubleHashMap
 			return;
 		
 		//resize data array and copy existing contents
-		LLDoubleEntry[] olddata = data;
-		data = new LLDoubleEntry[data.length*RESIZE_FACTOR];
+		ADoubleEntry[] olddata = data;
+		data = new ADoubleEntry[data.length*RESIZE_FACTOR];
 		size = 0;
 		
-		//rehash all entries
-		for( LLDoubleEntry e : olddata ) {
+		//rehash all entries with reuse of existing entries
+		for( ADoubleEntry e : olddata ) {
 			if( e != null ) {
 				while( e.next!=null ) {
-					addValue(e.key1, e.key2, e.value);
-					e = e.next;
+					ADoubleEntry tmp = e;
+					e = e.next; //tmp.next overwritten on append
+					appendEntry(e.getKey1(), e.getKey2(), tmp);
 				}
-				addValue(e.key1, e.key2, e.value);	
+				appendEntry(e.getKey1(), e.getKey2(), e);
 			}
 		}
 	}
-
+	
+	private void appendEntry(long key1, long key2, ADoubleEntry e) {
+		//compute entry index position
+		int ix = getIndex(key1, key2, data.length);
+		
+		//add existing entry (constant time)
+		e.next = data[ix]; //colliding entries / null
+		data[ix] = e;
+		size++;
+	}
+	
+	private static int getIndex(long key1, long key2, int length) {
+		int hash = hash(key1, key2);
+		return indexFor(hash, length);
+	}
+	
 	private static int hash(long key1, long key2) {
 		int h = UtilFunctions.longHashCode(key1, key2);
 		
@@ -113,25 +139,54 @@ public class LongLongDoubleHashMap
 		return h & (length-1);
 	}
 
-	public class LLDoubleEntry {
-		public long key1 = Long.MAX_VALUE;
-		public long key2 = Long.MAX_VALUE;
+	public static abstract class ADoubleEntry {
 		public double value = Double.MAX_VALUE;
-		public LLDoubleEntry next = null;
-		
-		public LLDoubleEntry(long k1, long k2, double val) {
-			key1 = k1;
-			key2 = k2;
+		public ADoubleEntry next = null;
+		public ADoubleEntry(double val) {
 			value = val;
 			next = null;
 		}
+		public abstract long getKey1();
+		public abstract long getKey2();
 	}
 	
-	private class LLDoubleEntryIterator implements Iterator<LLDoubleEntry> {
-		private LLDoubleEntry _curr;
+	private static class LLDoubleEntry extends ADoubleEntry {
+		private final long key1;
+		private final long key2;
+		public LLDoubleEntry(long k1, long k2, double val) {
+			super(val);
+			key1 = k1;
+			key2 = k2;
+		}
+		public long getKey1() {
+			return key1;
+		}
+		public long getKey2() {
+			return key2;
+		}
+	}
+	
+	private static class IIDoubleEntry extends ADoubleEntry {
+		private final int key1;
+		private final int key2;
+		public IIDoubleEntry(long k1, long k2, double val) {
+			super(val);
+			key1 = (int)k1;
+			key2 = (int)k2;
+		}
+		public long getKey1() {
+			return key1;
+		}
+		public long getKey2() {
+			return key2;
+		}
+	}
+	
+	private class ADoubleEntryIterator implements Iterator<ADoubleEntry> {
+		private ADoubleEntry _curr;
 		private int _currPos;
 		
-		public LLDoubleEntryIterator() {
+		public ADoubleEntryIterator() {
 			_curr = null;
 			_currPos = -1;
 			findNext();
@@ -143,8 +198,8 @@ public class LongLongDoubleHashMap
 		}
 
 		@Override
-		public LLDoubleEntry next() {
-			LLDoubleEntry ret = _curr;
+		public ADoubleEntry next() {
+			ADoubleEntry ret = _curr;
 			findNext();
 			return ret;
 		}

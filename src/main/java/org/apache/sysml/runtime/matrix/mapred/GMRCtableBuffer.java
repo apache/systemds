@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 
 
 public class GMRCtableBuffer 
@@ -129,10 +129,10 @@ public class GMRCtableBuffer
 					}
 					
 					//output result data 
-					Iterator<LLDoubleEntry> iter = resultMap.getIterator();
+					Iterator<ADoubleEntry> iter = resultMap.getIterator();
 					while( iter.hasNext() ) {
-						LLDoubleEntry e = iter.next();
-						key = new MatrixIndexes(e.key1, e.key2);
+						ADoubleEntry e = iter.next();
+						key = new MatrixIndexes(e.getKey1(), e.getKey2());
 						value.setValue(e.value);
 						for(Integer i: resultIDs)
 							_collector.collectOutput(key, value, i, reporter);

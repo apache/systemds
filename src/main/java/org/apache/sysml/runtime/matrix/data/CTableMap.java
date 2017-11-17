@@ -22,7 +22,8 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.Iterator;
 
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap;
-import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.EntryType;
 
 /**
  * Ctable map is an abstraction for the hashmap used for ctable's hash group-by
@@ -33,21 +34,25 @@ import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
  */
 public class CTableMap 
 {
-	private LongLongDoubleHashMap _map = null;
+	private final LongLongDoubleHashMap _map;
 	private long _maxRow = -1;
 	private long _maxCol = -1;
 	
 	public CTableMap() {
-		_map = new LongLongDoubleHashMap();
+		this(EntryType.LONG);
+	}
+
+	public CTableMap(EntryType type) {
+		_map = new LongLongDoubleHashMap(type);
 		_maxRow = -1;
 		_maxCol = -1;
 	}
-
+	
 	public int size() {
 		return _map.size();
 	}
 	
-	public Iterator<LLDoubleEntry> getIterator() {
+	public Iterator<ADoubleEntry> getIterator() {
 		return _map.getIterator();
 	}
 
@@ -73,35 +78,39 @@ public class CTableMap
 	{
 		//allocate new matrix block
 		int nnz = _map.size();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
-		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 
+		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz).allocateBlock();
 		
 		// copy map values into new matrix block
 		if( sparse ) //SPARSE <- cells
 		{
-			//append cells to sparse target (prevent shifting)
-			Iterator<LLDoubleEntry> iter2 = _map.getIterator();
+			//append cells to sparse target (unordered to avoid shifting)
+			SparseBlock sblock = mb.getSparseBlock();
+			Iterator<ADoubleEntry> iter2 = _map.getIterator();
 			while( iter2.hasNext() ) {
-				LLDoubleEntry e = iter2.next();
+				ADoubleEntry e = iter2.next();
 				double value = e.value;
-				int rix = (int)e.key1;
-				int cix = (int)e.key2;
-				if( value != 0 && rix<=rlen && cix<=clen )
-					mb.appendValue( rix-1, cix-1, value );
+				int rix = (int)e.getKey1();
+				int cix = (int)e.getKey2();
+				if( value != 0 && rix<=rlen && cix<=clen ) {
+					sblock.allocate(rix-1, Math.max(nnz/rlen,1));
+					sblock.append( rix-1, cix-1, value );
+				}
 			}
 			
 			//sort sparse target representation
 			mb.sortSparseRows();
+			mb.recomputeNonZeros();
 		}
 		else  //DENSE <- cells
 		{
 			//directly insert cells into dense target 
-			Iterator<LLDoubleEntry> iter = _map.getIterator();
+			Iterator<ADoubleEntry> iter = _map.getIterator();
 			while( iter.hasNext() ) {
-				LLDoubleEntry e = iter.next();
+				ADoubleEntry e = iter.next();
 				double value = e.value;
-				int rix = (int)e.key1;
-				int cix = (int)e.key2;
+				int rix = (int)e.getKey1();
+				int cix = (int)e.getKey2();
 				if( value != 0 && rix<=rlen && cix<=clen )
 					mb.quickSetValue( rix-1, cix-1, value );
 			}

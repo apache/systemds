@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.EntryType;
 
 public class TernaryCPInstruction extends ComputationCPInstruction {
 	private final String _outDim1;
@@ -97,7 +98,7 @@ public class TernaryCPInstruction extends ComputationCPInstruction {
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
-		CTableMap resultMap = new CTableMap();
+		CTableMap resultMap = new CTableMap(EntryType.INT);
 		MatrixBlock resultBlock = null;
 		Ternary.OperationTypes ctableOp = findCtableOperation();
 		ctableOp = _isExpand ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;

@@ -96,6 +96,12 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	//sparsity estimate for unknown sparsity to prefer sparse-safe fusion plans
 	private static final double SPARSE_SAFE_SPARSITY_EST = 0.1;
 	
+	//after evaluating the costs of the opening heuristics fuse-all and fuse-no-redundancy,
+	//remaining candidate plans of large partitions (w/ >= COST_MIN_EPS_NUM_POINTS) are
+	//only evaluated if the current costs are > (1+COST_MIN_EPS) * static (i.e., minimal) costs.
+	public static final double COST_MIN_EPS = 0.01; //1%
+	public static final double COST_MIN_EPS_NUM_POINTS = 20; //2^20 = 1M plans
+	
 	//optimizer configuration
 	public static boolean COST_PRUNING = true;
 	public static boolean STRUCTURAL_PRUNING = true;
@@ -161,7 +167,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				for( Long hopID : part.getPartition() )
 					memo.pruneRedundant(hopID, true, part.getMatPointsExt());
 			}
-
+			
 			//enumerate and cost plans, returns optional plan
 			boolean[] bestPlan = enumPlans(memo, part,
 				costs, rgraph, part.getMatPointsExt(), 0);
@@ -205,14 +211,28 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//scan linearized search space, w/ skips for branch and bound pruning
 		//and structural pruning (where we solve conditionally independent problems)
 		//bestC is monotonically non-increasing and serves as the upper bound
-		final long len = UtilFunctions.pow(2, matPoints.length-off);
-		boolean[] bestPlan = null;
-		double bestC = Double.MAX_VALUE;
+		final int Mlen = matPoints.length-off;
+		final long len = UtilFunctions.pow(2, Mlen);
 		long numEvalPlans = 0, numEvalPartPlans = 0;
 		
-		for( long i=0; i<len; i++ ) {
+		//evaluate heuristics fuse-all and fuse-no-redundancy to quickly obtain a good lower bound
+		final boolean[] plan0 = createAssignment(Mlen, off, 0); // fuse-all
+		final boolean[] planN = createAssignment(Mlen, off, len-1); //fuse-no-redundancy
+		final double C0 = getPlanCost(memo, part, matPoints, plan0, costs._computeCosts, Double.MAX_VALUE);
+		final double CN = getPlanCost(memo, part, matPoints, planN, costs._computeCosts, Double.MAX_VALUE);
+		boolean[] bestPlan = (C0 <= CN) ? plan0 : planN;
+		double bestC = Math.min(C0, CN);
+		final boolean evalRemain = (Mlen < COST_MIN_EPS_NUM_POINTS 
+			|| !COST_PRUNING || bestC > (1+COST_MIN_EPS) * costs.getMinCosts());
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Enum opening: " + Arrays.toString(bestPlan) + " -> " + bestC);
+		if( !evalRemain )
+			LOG.warn("Skip enum for |M|="+Mlen+", C="+bestC+", Cmin="+costs.getMinCosts());
+		
+		//evaluate remaining plans, except already evaluated heuristics
+		for( long i=1; i<len-1 & evalRemain; i++ ) {
 			//construct assignment
-			boolean[] plan = createAssignment(matPoints.length-off, off, i);
+			boolean[] plan = createAssignment(Mlen, off, i);
 			long pskip = 0; //skip after costing
 			
 			//skip plans with structural pruning
@@ -281,7 +301,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
 		
 		//copy best plan w/o fixed offset plan
-		return (bestPlan==null) ? new boolean[matPoints.length-off] :
+		return (bestPlan==null) ? new boolean[Mlen] :
 			Arrays.copyOfRange(bestPlan, off, bestPlan.length);
 	}
 	
@@ -1100,12 +1120,14 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		public final double _compute;
 		public final double _read;
 		public final double _write;
-		
 		public StaticCosts(HashMap<Long,Double> allComputeCosts, double computeCost, double readCost, double writeCost) {
 			_computeCosts = allComputeCosts;
 			_compute = computeCost;
 			_read = readCost;
 			_write = writeCost;
+		}
+		public double getMinCosts() {
+			return Math.max(_read, _compute) + _write;
 		}
 	}
 	

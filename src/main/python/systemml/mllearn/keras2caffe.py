@@ -25,7 +25,8 @@
 import numpy as np
 import os
 from itertools import chain, imap
-from ..mlcontext import *
+from ..converters import *
+from ..classloader import *
 import keras
 
 # --------------------------------------------------------------------------------------
@@ -217,16 +218,17 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
 	_checkIfValid(kerasModel.layers, lambda layer: False if len(layer.get_weights()) <= 4 or len(layer.get_weights()) != 3 else True, 'Unsupported number of weights:')
 	layers = [layer for layer in kerasModel.layers if len(layer.get_weights()) > 0]
+	sc = spark._sc
 	biasToTranspose = [ keras.layers.Dense ]
-	ml = MLContext(spark)
 	dmlLines = []
-	script = dml('')
+	script_java = sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml('')
 	for layer in layers:
 		inputMatrices = [ getNumPyMatrixFromKerasWeight(param) for param in layer.get_weights() ]
 		potentialVar = [ layer.name + '_weight', layer.name + '_bias',  layer.name + '_1_weight', layer.name + '_1_bias' ]
 		for i in range(len(inputMatrices)):
 			dmlLines = dmlLines + [ 'write(' + potentialVar[i] + ', "' + outDirectory + '/' + potentialVar[i] + '.mtx", format="binary");\n' ]
 			mat = inputMatrices[i].transpose() if (i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
-			script.input(potentialVar[i], inputMatrices[i])
-	script.setScriptString(''.join(dmlLines))
-	ml.execute(script)
+			py4j.java_gateway.get_method(script_java, "in")(potentialVar[i], convertToMatrixBlock(sc, inputMatrices[i]))
+	script_java.setScriptString(''.join(dmlLines))
+	ml = createJavaObject(sc, 'mlcontext')
+	ml.execute(script_java)

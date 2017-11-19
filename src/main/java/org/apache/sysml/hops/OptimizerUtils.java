@@ -771,9 +771,14 @@ public class OptimizerUtils
 	}
 	
 	public static double getTotalMemEstimate(Hop[] in, Hop out) {
+		return getTotalMemEstimate(in, out, false);
+	}
+	
+	public static double getTotalMemEstimate(Hop[] in, Hop out, boolean denseOut) {
 		return Arrays.stream(in)
 			.mapToDouble(h -> h.getOutputMemEstimate()).sum()
-			+ out.getOutputMemEstimate();
+			+ (!denseOut ? out.getOutputMemEstimate() :
+				OptimizerUtils.estimateSize(out.getDim1(), out.getDim2()));
 	}
 	
 	/**

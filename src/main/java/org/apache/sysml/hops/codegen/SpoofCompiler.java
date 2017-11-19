@@ -655,7 +655,8 @@ public class SpoofCompiler
 				HopRewriteUtils.setOutputParametersForScalar(hnew);
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
-			else if( tmpCNode instanceof CNodeRow && ((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST )
+			else if( tmpCNode instanceof CNodeRow && (((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST
+				|| ((CNodeRow)tmpCNode).getRowType()==RowType.COL_AGG_CONST) )
 				((SpoofFusedOp)hnew).setConstDim2(((CNodeRow)tmpCNode).getConstDim2());
 			
 			if( !(tmpCNode instanceof CNodeMultiAgg) )
@@ -736,17 +737,19 @@ public class SpoofCompiler
 						LOG.trace("Removed invalid row cplan w/o agg on column vector.");
 				}
 				else if( OptimizerUtils.isSparkExecutionMode() ) {
+					Hop hop = memo.getHopRefs().get(e.getKey());
 					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-						|| OptimizerUtils.getTotalMemEstimate(inHops, memo.getHopRefs().get(e.getKey()))
+						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
-					boolean invalidNcol = false;
+					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?
+						hop.getDim1() > hop.getRowsInBlock() : hop.getDim2() > hop.getColsInBlock());
 					for( Hop in : inHops )
 						invalidNcol |= (in.getDataType().isMatrix() 
 							&& in.getDim2() > in.getColsInBlock());
 					if( isSpark && invalidNcol ) {
 						cplans2.remove(e.getKey());
 						if( LOG.isTraceEnabled() )
-							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");		
+							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");
 					}
 				}
 			}

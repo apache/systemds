@@ -648,14 +648,15 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					continue;
 				Hop hop = memo.getHopRefs().get(hopID);
 				boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-					|| OptimizerUtils.getTotalMemEstimate(hop.getInput().toArray(new Hop[0]), hop)
+					|| OptimizerUtils.getTotalMemEstimate(hop.getInput().toArray(new Hop[0]), hop, true)
 						> OptimizerUtils.getLocalMemBudget();
-				boolean validNcol = true;
+				boolean validNcol = hop.getDataType().isScalar() || (HopRewriteUtils.isTransposeOperation(hop) ? 
+					hop.getDim1() <= hop.getRowsInBlock() : hop.getDim2() <= hop.getColsInBlock());
 				for( Hop in : hop.getInput() )
 					validNcol &= in.getDataType().isScalar()
 						|| (in.getDim2() <= in.getColsInBlock())
 						|| (hop instanceof AggBinaryOp && in.getDim1() <= in.getRowsInBlock()
-						&& HopRewriteUtils.isTransposeOperation(in));
+							&& HopRewriteUtils.isTransposeOperation(in));
 				if( isSpark && !validNcol ) {
 					List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW);
 					memo.remove(memo.getHopRefs().get(hopID), TemplateType.ROW);

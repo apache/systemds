@@ -212,7 +212,8 @@ public class SpoofSPInstruction extends SPInstruction {
 					mcIn.getCols()+", ncolpb="+mcIn.getColsPerBlock()+".");
 			}
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class);
-			long clen2 = (op.getRowType()==RowType.NO_AGG_CONST) ? op.getConstDim2() :
+			long clen2 = (op.getRowType()==RowType.NO_AGG_CONST 
+				|| op.getRowType()==RowType.COL_AGG_CONST) ? op.getConstDim2() :
 				op.getRowType().isRowTypeB1() ? sec.getMatrixCharacteristics(_in[1].getName()).getCols() : -1;
 			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(),
 				_classBytes, bcVect2, bcMatrices, scalars, (int)mcIn.getCols(), (int)clen2);

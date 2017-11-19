@@ -32,6 +32,7 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.SpoofFused;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class SpoofFusedOp extends Hop implements MultiThreadedHop
@@ -92,7 +93,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-		return OptimizerUtils.estimateSize(dim1, dim2);
+		return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
+			OptimizerUtils.estimateSize(dim1, dim2) :
+			OptimizerUtils.estimatePartitionedSizeExactSparsity(
+				dim1, dim2, getRowsInBlock(), getColsInBlock(), nnz);
 	}
 
 	@Override

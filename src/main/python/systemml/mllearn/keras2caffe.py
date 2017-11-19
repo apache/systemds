@@ -210,7 +210,7 @@ test_interval: 500
 
 def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath):
 	with open(outCaffeSolverFilePath, 'w') as f:
-	    f.write('net: "' + caffeNetworkFilePath + '"\n')
+		f.write('net: "' + caffeNetworkFilePath + '"\n')
 		f.write(defaultSolver)
 
 

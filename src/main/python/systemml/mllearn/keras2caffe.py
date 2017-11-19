@@ -23,8 +23,10 @@
 
 
 import numpy as np
-import keras
+import os
 from itertools import chain, imap
+from ..mlcontext import *
+import keras
 
 # --------------------------------------------------------------------------------------
 # Design Document:
@@ -120,7 +122,7 @@ def _parseKerasLayer(layer):
 
 
 def _parseBatchNorm(layer):
-	bnName = layer.name + '_batchNorm'
+	bnName = layer.name + '_1'
 	return [ { 'layer': { 'name':bnName, 'type':'BatchNorm', 'bottom':_getBottomLayers(layer), 'top':bnName, 'batch_norm_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon} } }, { 'layer': { 'name':layer.name, 'type':'Scale', 'bottom':bnName, 'top':layer.name, 'scale_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon, 'bias_term':bias_term} } } ]
 
 # The special are redirected to their custom parse function in _parseKerasLayer
@@ -163,13 +165,68 @@ layerParamMapping = {
         {'pooling_param': getPoolingParam(l, 'MAX')},
     }
 
+def _checkIfValid(myList, fn, errorMessage):
+	bool_vals = np.array([ fn(elem) for elem in myList])
+	unsupported_elems = np.where(bool_vals)[0]
+	if len(unsupported_elems) != 0:
+		raise ValueError(errorMessage + str(np.array(myList)[unsupported_elems]))
 
-def converKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath):
-	unsupported_layers = np.array([False if type(layer) in supportedLayers else True for layer in kerasModel.layers])
-	if len(np.where(unsupported_layers)[0]) != 0:
-		raise TypeError('Unsupported Layers:' + str(np.array(kerasModel.layers)[np.where(x)[0]]))
+def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath):
+	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
+	#unsupported_layers = np.array([False if type(layer) in supportedLayers else True for layer in kerasModel.layers])
+	#if len(np.where(unsupported_layers)[0]) != 0:
+	#	raise TypeError('Unsupported Layers:' + str(np.array(kerasModel.layers)[np.where(unsupported_layers)[0]]))
 	# Core logic: model.layers.flatMap(layer => _parseJSONObject(_parseKerasLayer(layer)))
 	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), kerasModel.layers)))
 	parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
 	with open(outCaffeNetworkFilePath, 'w') as f:
 		f.write(''.join(parsedLayers))
+
+
+def getNumPyMatrixFromKerasWeight(param):
+	x = np.array(param)
+	if len(x.shape) > 2:
+		x = x.transpose(3, 2, 0, 1)
+		return x.reshape(x.shape[0], -1)
+	elif len(x.shape) == 1:
+		return np.matrix(param).transpose()
+	else:
+		return x
+
+
+defaultSolver = """
+base_lr: 0.01
+momentum: 0.9
+weight_decay: 5e-4
+lr_policy: "exp"
+gamma: 0.95
+display: 100
+solver_mode: CPU
+type: "SGD"
+max_iter: 2000
+test_iter: 10
+test_interval: 500
+"""
+
+def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath):
+	with open(outCaffeSolverFilePath, 'w') as f:
+	    f.write('net: "' + caffeNetworkFilePath + '"\n')
+		f.write(defaultSolver)
+
+
+def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
+	_checkIfValid(kerasModel.layers, lambda layer: False if len(layer.get_weights()) <= 4 or len(layer.get_weights()) != 3 else True, 'Unsupported number of weights:')
+	layers = [layer for layer in kerasModel.layers if len(layer.get_weights()) > 0]
+	biasToTranspose = [ keras.layers.Dense ]
+	ml = MLContext(spark)
+	dmlLines = []
+	script = dml('')
+	for layer in layers:
+		inputMatrices = [ getNumPyMatrixFromKerasWeight(param) for param in layer.get_weights() ]
+		potentialVar = [ layer.name + '_weight', layer.name + '_bias',  layer.name + '_1_weight', layer.name + '_1_bias' ]
+		for i in range(len(inputMatrices)):
+			dmlLines = dmlLines + [ 'write(' + potentialVar[i] + ', "' + outDirectory + '/' + potentialVar[i] + '.mtx", format="binary");\n' ]
+			mat = inputMatrices[i].transpose() if (i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
+			script.input(potentialVar[i], inputMatrices[i])
+	script.setScriptString(''.join(dmlLines))
+	ml.execute(script)

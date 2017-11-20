@@ -877,6 +877,12 @@ class Caffe2DML(BaseSystemMLClassifier):
             raise TypeError('Please use spark session of type pyspark.sql.session.SparkSession in the constructor')
     
     
+default_loss_layer = """
+layer {
+	type: "SoftmaxWithLoss"
+	bottom: "label"
+"""
+
 class Keras2DML(Caffe2DML):
     """
     Peforms training/prediction for a given keras model.
@@ -900,7 +906,18 @@ class Keras2DML(Caffe2DML):
         import tempfile, shutil
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
-        convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
+        if hasattr(keras_model.layers[-1], 'activation') and keras.activations.serialize(keras_model.layers[-1].activation) == 'softmax':
+            del keras_model.layers[-1].activation
+            convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
+            import random
+            tmpLossLayer = 'loss_' + str(random.randrange(10000))
+            with open(self.name + ".proto", 'a') as f:
+                f.write('\n' + default_loss_layer + '\n\t')
+                f.write('name: "' + tmpLossLayer + '"\n\t')
+                f.write('top: "' + tmpLossLayer + '"\n\t')
+                f.write('bottom: "' + keras_model.layers[-1].name + '"\n}')
+        else:
+            convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
         convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto")
         weights = tempfile.mkdtemp() if weights is None else weights
         convertKerasToSystemMLModel(sparkSession, keras_model, weights)

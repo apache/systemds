@@ -884,7 +884,7 @@ class Keras2DML(Caffe2DML):
 
     """
 
-    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, weights=None):
+    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, weights=None, labels=None):
         """
         Performs training/prediction for a given keras model.
 
@@ -904,6 +904,12 @@ class Keras2DML(Caffe2DML):
         convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto")
         self.weights = tempfile.mkdtemp() if weights is None else weights
         convertKerasToSystemMLModel(sparkSession, keras_model, self.weights)
+        if labels is not None and (labels.startswith('https:') or labels.startswith('http:')):
+            import urllib
+            urllib.urlretrieve(labels, os.path.join(weights, 'labels.txt'))
+        elif labels is not None:
+            from shutil import copyfile
+            copyfile(labels, os.path.join(weights, 'labels.txt'))
         super(Keras2DML,self).__init__(sparkSession, self.name + "_solver.proto", input_shape, transferUsingDF)
         self.load(self.weights)
 

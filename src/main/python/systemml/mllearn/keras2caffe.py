@@ -29,6 +29,13 @@ from ..converters import *
 from ..classloader import *
 import keras
 
+try:
+    import py4j.java_gateway
+    from py4j.java_gateway import JavaObject
+    from pyspark import SparkContext
+except ImportError:
+    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
+
 # --------------------------------------------------------------------------------------
 # Design Document:
 # We support Keras model by first converting it to Caffe models and then using Caffe2DML to read them

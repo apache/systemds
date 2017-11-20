@@ -896,7 +896,7 @@ class Keras2DML(Caffe2DML):
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         weights: directory whether learned weights are stored (default: None)
         """
-        from . import keras2caffe
+        from .keras2caffe import *
         import tempfile, shutil
         self.name = keras_model.name
         convertKerasToCaffeNetwork(keras_model, self.name + ".proto")

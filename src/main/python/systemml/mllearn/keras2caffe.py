@@ -146,7 +146,7 @@ def getPoolingParam(layer, pool='MAX'):
 	padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2] if layer.padding == 'same' else [0, 0]
 	return {'pool':pool, 'kernel_h':layer.pool_size[0], 'kernel_w':layer.pool_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
-
+# TODO: Update AveragePooling2D when we add maxpooling support 
 layerParamMapping = {
     keras.layers.InputLayer: lambda l: \
         {'data_param': {'batch_size': batchSize}},
@@ -163,6 +163,8 @@ layerParamMapping = {
     keras.layers.Conv2D: lambda l: \
         {'convolution_param': getConvParam(l)},
     keras.layers.MaxPooling2D: lambda l: \
+        {'pooling_param': getPoolingParam(l, 'MAX')},
+    keras.layers.AveragePooling2D: lambda l: \
         {'pooling_param': getPoolingParam(l, 'MAX')},
     }
 
@@ -230,5 +232,5 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
 			mat = inputMatrices[i].transpose() if (i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
 			py4j.java_gateway.get_method(script_java, "in")(potentialVar[i], convertToMatrixBlock(sc, inputMatrices[i]))
 	script_java.setScriptString(''.join(dmlLines))
-	ml = createJavaObject(sc, 'mlcontext')
+	ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
 	ml.execute(script_java)

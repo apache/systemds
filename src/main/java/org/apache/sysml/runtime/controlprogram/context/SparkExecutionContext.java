@@ -46,6 +46,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -832,13 +833,17 @@ public class SparkExecutionContext extends ExecutionContext
 				//unpack index-block pair
 				MatrixIndexes ix = keyval._1();
 				MatrixBlock block = keyval._2();
-
+				
 				//compute row/column block offsets
 				int row_offset = (int)(ix.getRowIndex()-1)*brlen;
 				int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
-
+				
+				//handle compressed blocks (decompress for robustness)
+				if( block instanceof CompressedMatrixBlock )
+					block = ((CompressedMatrixBlock)block).decompress();
+				
 				//append block
 				if( sparse ) { //SPARSE OUTPUT
 					//append block to sparse target in order to avoid shifting, where

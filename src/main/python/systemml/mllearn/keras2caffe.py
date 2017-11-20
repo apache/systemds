@@ -88,7 +88,7 @@ def _getCompensatedAxis(layer):
 
 str_keys = [ 'name', 'type', 'top', 'bottom' ]
 def toKV(key, value):
-	return 'key: "' + str(value) + '"' if key in str_keys else 'key: ' + str(value)
+	return str(key) + ': "' + str(value) + '"' if key in str_keys else str(key) + ': ' + str(value)
 	
 
 def _parseJSONObject(obj):

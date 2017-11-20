@@ -52,6 +52,7 @@ supportedLayers = {
     keras.layers.Conv2DTranspose: 'Deconvolution',
     keras.layers.Conv2D: 'Convolution',
     keras.layers.MaxPooling2D: 'Pooling',
+    keras.layers.AveragePooling2D: 'Pooling',
 	keras.layers.Flatten: 'None',
     keras.layers.BatchNormalization: 'None',
     keras.layers.Activation: 'None'

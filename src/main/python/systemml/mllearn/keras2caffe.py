@@ -118,8 +118,8 @@ def _parseActivation(layer, customLayerName=None):
 		raise TypeError('Unsupported activation ' + kerasActivation + ' for the layer:' + layer.name)
 	if customLayerName is not None:
 		return { 'layer':{'name':customLayerName, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
-    else:
-    	return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':_getBottomLayers(layer) }}
+	else:
+		return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':_getBottomLayers(layer) }}
 
 
 

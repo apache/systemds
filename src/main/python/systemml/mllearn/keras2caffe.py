@@ -108,15 +108,19 @@ def _parseJSONObject(obj):
 	return ret + ['\n}' ]
 	
 
+def _getBottomLayers(layer):
+    return [ bottomLayer.name for bottomLayer in _getInboundLayers(layer) ]
+
+
 def _parseActivation(layer, customLayerName=None):
 	kerasActivation = keras.activations.serialize(layer.activation)
 	if kerasActivation not in supportedCaffeActivations:
 		raise TypeError('Unsupported activation ' + kerasActivation + ' for the layer:' + layer.name)
-	return { 'layer':{'name':layer.name if customLayerName is None else customLayerName, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
+	if customLayerName is not None:
+		return { 'layer':{'name':customLayerName, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
+    else:
+    	return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':_getBottomLayers(layer) }}
 
-
-def _getBottomLayers(layer):
-    return [ bottomLayer.name for bottomLayer in _getInboundLayers(layer) ]
 
 
 def _parseKerasLayer(layer):

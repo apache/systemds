@@ -35,7 +35,7 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class SparseSideInputTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME = "sparseSideInput";
+	private static final String TEST_NAME = "SparseSideInput";
 	private static final String TEST_NAME1 = TEST_NAME+"1"; //row sum(X/rowSums(X)+Y)
 	private static final String TEST_NAME2 = TEST_NAME+"2"; //cell sum(abs(X^2)+Y)
 	private static final String TEST_NAME3 = TEST_NAME+"3"; //magg sum(X^2), sum(X+Y)

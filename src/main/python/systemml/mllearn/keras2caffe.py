@@ -108,11 +108,11 @@ def _parseJSONObject(obj):
 	return ret + ['\n}' ]
 	
 
-def _parseActivation(layer):
+def _parseActivation(layer, customLayerName=None):
 	kerasActivation = keras.activations.serialize(layer.activation)
 	if kerasActivation not in supportedCaffeActivations:
 		raise TypeError('Unsupported activation ' + kerasActivation + ' for the layer:' + layer.name)
-	return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
+	return { 'layer':{'name':layer.name if customLayerName is None else customLayerName, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
 
 
 def _getBottomLayers(layer):
@@ -131,7 +131,7 @@ def _parseKerasLayer(layer):
 		ret = { 'layer': { 'name':layer.name, 'type':'Data', 'top':layer.name, paramName:param[paramName] } }
 	else:
 		ret = { 'layer': { 'name':layer.name, 'type':supportedLayers[layerType], 'bottom':_getBottomLayers(layer), 'top':layer.name, paramName:param[paramName] } }
-	return [ ret, _parseActivation(layer) ] if hasattr(layer, 'activation') and keras.activations.serialize(layer.activation) != 'linear'  else [ ret ]
+	return [ ret, _parseActivation(layer, layer.name + '_activation') ] if hasattr(layer, 'activation') and keras.activations.serialize(layer.activation) != 'linear'  else [ ret ]
 
 
 def _parseBatchNorm(layer):

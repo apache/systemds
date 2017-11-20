@@ -178,10 +178,12 @@ public class TemplateOuterProduct extends TemplateBase {
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
 			
-			if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )
-				inHops2.put("_X", hop.getInput().get(0));
-			if( TemplateUtils.isMatrix(hop.getInput().get(1)) && cdata2 instanceof CNodeData )
-				inHops2.put("_X", hop.getInput().get(1));
+			if( HopRewriteUtils.isBinarySparseSafe(hop) ) {
+				if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )
+					inHops2.put("_X", hop.getInput().get(0));
+				if( TemplateUtils.isMatrix(hop.getInput().get(1)) && cdata2 instanceof CNodeData )
+					inHops2.put("_X", hop.getInput().get(1));
+			}
 			
 			//add lookups if required
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));

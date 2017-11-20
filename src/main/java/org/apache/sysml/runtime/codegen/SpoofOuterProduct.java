@@ -280,7 +280,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		MatrixBlock a = inputs.get(0);
 		
 		try 
-		{			
+		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<ParExecTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
@@ -345,7 +345,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
 		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
 		
-		SideInput[] lb = createSparseSideInputs(b);
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//cache blocking would lead to non-sequential access
+		
 		final int blocksizeIJ = 16; //u/v block (max at typical L2 size) 
 		int cix = 0;
 		//blocked execution
@@ -359,7 +361,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 					for( int j=bj, vix=bj*k; j<bjmin; j++, vix+=k)
 						if( a[ix+j] != 0 ) {
 							cix = (type == OutProdType.LEFT_OUTER_PRODUCT) ? vix : uix;
-							genexecDense( a[ix+j], u, uix, v, vix, lb, scalars, c, cix, m, n, k, i, j); 
+							genexecDense( a[ix+j], u, uix, v, vix, b, scalars, c, cix, m, n, k, i, j); 
 						}
 			}
 	}
@@ -371,7 +373,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
 		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB)
 		
-		SideInput[] lb = createSparseSideInputs(b);
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//cache blocking would lead to non-sequential access
+		
 		final int blocksizeIJ = 16; //u/v block (max at typical L2 size)
 		//blocked execution
 		double sum = 0;
@@ -385,9 +389,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 					for( int j=bj, vix=bj*k; j<bjmin; j++, vix+=k)
 						if( a[ix+j] != 0 ) {
 							if(type == OutProdType.CELLWISE_OUTER_PRODUCT)
-								c[ix+j] = genexecCellwise( a[ix+j], u, uix, v, vix, lb, scalars, m, n, k, i, j );
+								c[ix+j] = genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j );
 							else
-								sum += genexecCellwise( a[ix+j], u, uix, v, vix, lb, scalars, m, n, k, i, j);
+								sum += genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j);
 						}
 			}
 		if( type != OutProdType.CELLWISE_OUTER_PRODUCT )
@@ -397,7 +401,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private void executeSparse(SparseBlock sblock, double[] u, double[] v, SideInput[] b, double[] scalars,
 		double[] c, int m, int n, int k, long nnz, OutProdType type, int rl, int ru, int cl, int cu) 
 	{
-		SideInput[] lb = createSparseSideInputs(b);
 		boolean left = (_outerProductType== OutProdType.LEFT_OUTER_PRODUCT);
 		
 		//approach: iterate over non-zeros of w, selective mm computation
@@ -410,7 +413,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		{
 			//for ultra-sparse matrices, we do not allocate the index array because
 			//its allocation and maintenance can dominate the total runtime.
-			
+			SideInput[] lb = createSparseSideInputs(b);
+				
 			//core wdivmm block matrix mult
 			for( int i=rl, uix=rl*k; i<ru; i++, uix+=k ) {
 				if( sblock.isEmpty(i) ) continue;
@@ -430,6 +434,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 		else //sparse
 		{
+			//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+			//cache blocking would lead to non-sequential access
+			
 			final int blocksizeJ = left ? Math.max(8,Math.min(L2_CACHESIZE/(k*8), blocksizeI)) : blocksizeI;
 			int[] curk = new int[Math.min(blocksizeI,ru-rl)];
 			
@@ -457,7 +464,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 						
 						int index = wpos + curk[i-bi];
 						for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
-							genexecDense(wval[index], u, uix, v, wix[index]*k, lb, scalars, c,
+							genexecDense(wval[index], u, uix, v, wix[index]*k, b, scalars, c,
 								(left ? wix[index]*k : uix), m, n, k, i, wix[index]);
 						}
 						curk[i-bi] = index - wpos;
@@ -470,7 +477,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private void executeCellwiseSparse(SparseBlock sblock, double[] u, double[] v, SideInput[] b, double[] scalars, 
 		MatrixBlock out, int m, int n, int k, long nnz, OutProdType type, int rl, int ru, int cl, int cu ) 
 	{
-		SideInput[] lb = createSparseSideInputs(b);
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//cache blocking would lead to non-sequential access
+		
 		final int blocksizeIJ = (int) (8L*m*n/nnz);
 		int[] curk = new int[Math.min(blocksizeIJ, ru-rl)];
 		
@@ -495,11 +504,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 						if( type == OutProdType.CELLWISE_OUTER_PRODUCT )
 							for( ; index<wpos+wlen && wix[index]<bjmin; index++ )
 								c[wix[index]] = genexecCellwise( wval[index], 
-									u, uix, v, wix[index]*k, lb, scalars, m, n, k, i, wix[index] );
+									u, uix, v, wix[index]*k, b, scalars, m, n, k, i, wix[index] );
 						else
 							for( ; index<wpos+wlen && wix[index]<bjmin; index++ )
 								tmp += genexecCellwise( wval[index], 
-									u, uix, v, wix[index]*k, lb, scalars, m, n, k, i, wix[index]);
+									u, uix, v, wix[index]*k, b, scalars, m, n, k, i, wix[index]);
 						curk[i-bi] = index - wpos;
 					}
 				}
@@ -526,7 +535,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 						int index = wpos + curk[i-bi];
 						for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
 							c.append(i, wix[index], genexecCellwise( wval[index], u, uix, v,
-								wix[index]*k, lb, scalars, m, n, k, i, wix[index] ));
+								wix[index]*k, b, scalars, m, n, k, i, wix[index] ));
 						}
 						curk[i-bi] = index - wpos;
 					}
@@ -538,7 +547,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private void executeCompressed(CompressedMatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars, 
 			double[] c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu) 
 	{
-		SideInput[] lb = createSparseSideInputs(b);
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//compressed data is access in a column-major order 
+		
 		boolean left = (_outerProductType==OutProdType.LEFT_OUTER_PRODUCT);
 		
 		Iterator<IJV> iter = !left ? a.getIterator(rl, ru, false) :
@@ -547,7 +558,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			IJV cell = iter.next();
 			int uix = cell.getI() * k;
 			int vix = cell.getJ() * k;
-			genexecDense(cell.getV(), u, uix, v, vix, lb, scalars, c,
+			genexecDense(cell.getV(), u, uix, v, vix, b, scalars, c,
 				left ? vix : uix, m, n, k, cell.getI(), cell.getJ());
 		}
 	}
@@ -555,7 +566,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private void executeCellwiseCompressed(CompressedMatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars,
 		MatrixBlock out, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
 	{
-		SideInput[] lb = createSparseSideInputs(b);
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//compressed data is access in a column-major order 
+		
 		double[] c = out.getDenseBlock();
 		SparseBlock csblock = out.getSparseBlock();
 		
@@ -568,15 +581,15 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				if( out.isInSparseFormat() ) {
 					csblock.allocate(cell.getI());
 					csblock.append(cell.getI(), cell.getJ(),
-						genexecCellwise(cell.getV(), u, uix, v, vix, lb, scalars, m, n, k, cell.getI(), cell.getJ()));
+						genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ()));
 				}
 				else {
 					c[cell.getI()*n+cell.getJ()] =
-						genexecCellwise(cell.getV(), u, uix, v, vix, lb, scalars, m, n, k, cell.getI(), cell.getJ());
+						genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
 				}
 			}
 			else {
-				c[0] += genexecCellwise(cell.getV(), u, uix, v, vix, lb, scalars, m, n, k, cell.getI(), cell.getJ());
+				c[0] += genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
 			}
 		}
 	}

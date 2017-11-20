@@ -375,6 +375,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//compressed data is access in a column-major order 
+		
 		if( _type == CellType.NO_AGG ) {
 			long lnnz = executeCompressedNoAgg(a, b, scalars, out, m, n, sparseSafe, rl, ru);
 			if( out.isInSparseFormat() )
@@ -401,6 +404,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private double executeCompressedAndAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru) throws DMLRuntimeException 
 	{
+		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
+		//compressed data is access in a column-major order 
+		
 		//numerically stable aggregation for sum/sum_sq
 		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
 			return executeCompressedAggSum(a, b, scalars, m, n, sparseSafe, rl, ru);

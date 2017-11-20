@@ -897,12 +897,16 @@ class Keras2DML(Caffe2DML):
         weights: directory whether learned weights are stored (default: None)
         """
         from .keras2caffe import *
-        import tempfile, shutil
+        import tempfile
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
         convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto")
-        weights = tempfile.mkdtemp() if weights is None else weights
-        convertKerasToSystemMLModel(sparkSession, keras_model, weights)
+        self.weights = tempfile.mkdtemp() if weights is None else weights
+        convertKerasToSystemMLModel(sparkSession, keras_model, self.weights)
         super(Keras2DML,self).__init__(sparkSession, self.name + "_solver.proto", input_shape, transferUsingDF)
+        self.load(self.weights)
+
+    def close(self):
+        import shutil
         shutil.rmtree(weights)

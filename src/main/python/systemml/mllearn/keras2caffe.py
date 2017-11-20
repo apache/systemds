@@ -248,7 +248,7 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
 		for i in range(len(inputMatrices)):
 			dmlLines = dmlLines + [ 'write(' + potentialVar[i] + ', "' + outDirectory + '/' + potentialVar[i] + '.mtx", format="binary");\n' ]
 			mat = inputMatrices[i].transpose() if (i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
-			py4j.java_gateway.get_method(script_java, "in")(potentialVar[i], convertToMatrixBlock(sc, inputMatrices[i]))
+			py4j.java_gateway.get_method(script_java, "in")(potentialVar[i], convertToMatrixBlock(sc, mat))
 	script_java.setScriptString(''.join(dmlLines))
 	ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
 	ml.execute(script_java)

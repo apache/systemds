@@ -899,7 +899,7 @@ class Keras2DML(Caffe2DML):
         from .keras2caffe import *
         import tempfile, shutil
         self.name = keras_model.name
-        createJavaObject(spark._sc, 'dummy')
+        createJavaObject(sparkSession._sc, 'dummy')
         convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
         convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto")
         weights = tempfile.mkdtemp() if weights is None else weights

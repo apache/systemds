@@ -138,7 +138,7 @@ def _parseBatchNorm(layer):
 	bnName = layer.name + '_1'
 	config = layer.get_config()
 	bias_term = 'true' if config['center'] else 'false'
-	return [ { 'layer': { 'name':bnName, 'type':'BatchNorm', 'bottom':_getBottomLayers(layer), 'top':bnName, 'batch_norm_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon} } }, { 'layer': { 'name':layer.name, 'type':'Scale', 'bottom':bnName, 'top':layer.name, 'scale_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon, 'bias_term':bias_term} } } ]
+	return [ { 'layer': { 'name':bnName, 'type':'BatchNorm', 'bottom':_getBottomLayers(layer), 'top':bnName, 'batch_norm_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon} } }, { 'layer': { 'name':layer.name, 'type':'Scale', 'bottom':bnName, 'top':layer.name, 'scale_param':{'bias_term':bias_term} } } ]
 
 # The special are redirected to their custom parse function in _parseKerasLayer
 specialLayers = {

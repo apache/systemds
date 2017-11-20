@@ -86,6 +86,10 @@ def _getCompensatedAxis(layer):
         compensated_axis = 1
     return compensated_axis
 
+str_keys = [ 'name', 'type', 'top', 'bottom' ]
+def toKV(key, value):
+	return 'key: "' + str(value) + '"' if key in str_keys else 'key: ' + str(value)
+	
 
 def _parseJSONObject(obj):
 	rootName = obj.keys()[0]
@@ -94,13 +98,13 @@ def _parseJSONObject(obj):
 		if isinstance(obj[rootName][key], dict):
 			ret = ret + [ '\n\t', key, ' {' ]
 			for key1 in obj[rootName][key]:
-				ret = ret + [ '\n\t\t', key1, ': ', str(obj[rootName][key][key1]) ]
+				ret = ret + [ '\n\t\t', toKV(key1, obj[rootName][key][key1]) ]
 			ret = ret + [ '\n\t', '}' ]
 		elif isinstance(obj[rootName][key], list):
 			for v in obj[rootName][key]:
-				ret = ret + ['\n\t', key, ': ', str(v) ]
+				ret = ret + ['\n\t', toKV(key, v) ]
 		else:
-			ret = ret + ['\n\t', key, ': ', str(obj[rootName][key]) ]
+			ret = ret + ['\n\t', toKV(key, obj[rootName][key]) ]
 	return ret + ['\n}' ]
 	
 

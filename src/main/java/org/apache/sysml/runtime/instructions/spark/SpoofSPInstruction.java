@@ -133,7 +133,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		//execute generated operator
 		if(_class.getSuperclass() == SpoofCellwise.class) //CELL
 		{
-			SpoofCellwise op = (SpoofCellwise) CodegenUtils.createInstance(_class); 	
+			SpoofCellwise op = (SpoofCellwise) CodegenUtils.createInstance(_class);
 			AggregateOperator aggop = getAggregateOperator(op.getAggOp());
 			
 			if( _out.getDataType()==DataType.MATRIX ) {
@@ -182,7 +182,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				OutProdType type = ((SpoofOuterProduct)op).getOuterProdType();
 
 				//update matrix characteristics
-				updateOutputMatrixCharacteristics(sec, op);			
+				updateOutputMatrixCharacteristics(sec, op);
 				MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
 				
 				out = in.mapPartitionsToPair(new OuterProductFunction(
@@ -212,8 +212,7 @@ public class SpoofSPInstruction extends SPInstruction {
 					mcIn.getCols()+", ncolpb="+mcIn.getColsPerBlock()+".");
 			}
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class);
-			long clen2 = (op.getRowType()==RowType.NO_AGG_CONST 
-				|| op.getRowType()==RowType.COL_AGG_CONST) ? op.getConstDim2() :
+			long clen2 = op.getRowType().isConstDim2(op.getConstDim2()) ? op.getConstDim2() :
 				op.getRowType().isRowTypeB1() ? sec.getMatrixCharacteristics(_in[1].getName()).getCols() : -1;
 			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(),
 				_classBytes, bcVect2, bcMatrices, scalars, (int)mcIn.getCols(), (int)clen2);

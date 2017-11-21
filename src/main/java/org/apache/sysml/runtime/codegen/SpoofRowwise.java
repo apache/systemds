@@ -69,7 +69,11 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		public boolean isRowTypeB1ColumnAgg() {
 			return (this == COL_AGG_B1) || (this == COL_AGG_B1_T);
-		} 
+		}
+		public boolean isConstDim2(long dim2) {
+			return (this == NO_AGG_CONST || this == COL_AGG_CONST)
+				|| (dim2>0 && isRowTypeB1());
+		}
 	}
 	
 	protected final RowType _type;
@@ -119,7 +123,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) 
-		throws DMLRuntimeException	
+		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 1 || out==null )
@@ -128,7 +132,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = (_type==RowType.NO_AGG_CONST) ? (int)_constDim2 : 
+		final int n2 = _type.isConstDim2(_constDim2) ? (int)_constDim2 : 
 			_type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		if( !aggIncr || !out.isAllocated() )
@@ -184,7 +188,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		final int n2 = (_type==RowType.NO_AGG_CONST) ? (int)_constDim2 : 
+		final int n2 = _type.isConstDim2(_constDim2) ? (int)_constDim2 : 
 			_type.isRowTypeB1() || hasMatrixSideInput(inputs) ?
 			getMinColsMatrixSideInputs(inputs) : -1;
 		allocateOutputMatrix(m, n, n2, out);

@@ -81,6 +81,7 @@ public class CNodeRow extends CNodeTpl
 	
 	public void setConstDim2(long dim2) {
 		_constDim2 = dim2;
+		_hash = 0;
 	}
 	
 	public long getConstDim2() {
@@ -191,7 +192,8 @@ public class CNodeRow extends CNodeTpl
 		CNodeRow that = (CNodeRow)o;
 		return super.equals(o)
 			&& _type == that._type
-			&& _numVectors == that._numVectors	
+			&& _numVectors == that._numVectors
+			&& _constDim2 == that._constDim2
 			&& equalInputReferences(
 				_output, that._output, _inputs, that._inputs);
 	}

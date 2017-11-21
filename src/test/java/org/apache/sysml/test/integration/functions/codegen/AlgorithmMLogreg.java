@@ -34,7 +34,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 public class AlgorithmMLogreg extends AutomatedTestBase 
-{	
+{
 	private final static String TEST_NAME1 = "Algorithm_MLogreg";
 	private final static String TEST_DIR = "functions/codegen/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMLogreg.class.getSimpleName() + "/";
@@ -43,13 +43,12 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 	
 	private final static double eps = 1e-5;
 	
-	private final static int rows = 3468;
-	private final static int cols = 327;
+	private final static int rows = 2468;
+	private final static int cols = 227;
 		
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private final static int intercept = 0;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 	
@@ -60,86 +59,166 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 	}
 
 	@Test
-	public void testMlogregBinDenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, true, false, ExecType.CP);
+	public void testMlogregBin0DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregBinSparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, true, true, ExecType.CP);
+	public void testMlogregBin0SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregBinDenseCP() {
-		runMlogregTest(TEST_NAME1, 2, false, false, ExecType.CP);
+	public void testMlogregBin0DenseCP() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregBinSparseCP() {
-		runMlogregTest(TEST_NAME1, 2, false, true, ExecType.CP);
+	public void testMlogregBin0SparseCP() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregMulDenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, true, false, ExecType.CP);
+	public void testMlogregMul0DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregMulSparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, true, true, ExecType.CP);
+	public void testMlogregMul0SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregMulDenseCP() {
-		runMlogregTest(TEST_NAME1, 5, false, false, ExecType.CP);
+	public void testMlogregMul0DenseCP() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMlogregMulSparseCP() {
-		runMlogregTest(TEST_NAME1, 5, false, true, ExecType.CP);
+	public void testMlogregMul0SparseCP() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.CP);
 	}
 
 	@Test
-	public void testMlogregBinDenseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 2, true, false, ExecType.SPARK);
+	public void testMlogregBin0DenseRewritesSP() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregBinSparseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 2, true, true, ExecType.SPARK);
+	public void testMlogregBin0SparseRewritesSP() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregBinDenseSP() {
-		runMlogregTest(TEST_NAME1, 2, false, false, ExecType.SPARK);
+	public void testMlogregBin0DenseSP() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregBinSparseSP() {
-		runMlogregTest(TEST_NAME1, 2, false, true, ExecType.SPARK);
+	public void testMlogregBin0SparseSP() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregMulDenseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 5, true, false, ExecType.SPARK);
+	public void testMlogregMul0DenseRewritesSP() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregMulSparseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 5, true, true, ExecType.SPARK);
+	public void testMlogregMul0SparseRewritesSP() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregMulDenseSP() {
-		runMlogregTest(TEST_NAME1, 5, false, false, ExecType.SPARK);
+	public void testMlogregMul0DenseSP() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMlogregMulSparseSP() {
-		runMlogregTest(TEST_NAME1, 5, false, true, ExecType.SPARK);
+	public void testMlogregMul0SparseSP() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.SPARK);
 	}
 	
-	private void runMlogregTest( String testname, int classes, boolean rewrites, boolean sparse, ExecType instType)
+	@Test
+	public void testMlogregBin1DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin1SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin1DenseCP() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin1SparseCP() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul1DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul1SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul1DenseCP() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul1SparseCP() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMlogregBin2DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin2SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin2DenseCP() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregBin2SparseCP() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul2DenseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul2SparseRewritesCP() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul2DenseCP() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMlogregMul2SparseCP() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, true, ExecType.CP);
+	}
+	
+	private void runMlogregTest( String testname, int classes, int intercept, boolean rewrites, boolean sparse, ExecType instType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -182,7 +261,8 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoof")
+				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			rtplatform = platformOld;

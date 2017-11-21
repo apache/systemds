@@ -61,13 +61,15 @@ if (intercept_status == 1 | intercept_status == 2)
 
 if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 {                           # Important assumption: X [, D] = matrix (1, rows = N, cols = 1)
-    avg_X_cols = t(colSums(X)) / N;
-    var_X_cols = (t(colSums (X ^ 2)) - N * (avg_X_cols ^ 2)) / (N - 1);
+    avg_X_cols = colSums(X) / N;
+    var_X_cols = (colSums (X ^ 2) - N * (avg_X_cols ^ 2)) / (N - 1);
     is_unsafe = (var_X_cols <= 0.0);
     scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
-    scale_X [D, 1] = 1;
+    scale_X [D] = 1;
     shift_X = - avg_X_cols * scale_X;
-    shift_X [D, 1] = 0;
+    shift_X [D] = 0;
+    scale_X = as.matrix(scale_X);
+    shift_X = as.matrix(shift_X);
     rowSums_X_sq = (X ^ 2) %*% (scale_X ^ 2) + X %*% (2 * scale_X * shift_X) + sum (shift_X ^ 2);
 } else {
     scale_X = matrix (1, D, 1);
@@ -110,7 +112,7 @@ obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (row
 
 Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
 if (intercept_status == 2) {
-    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
+    Grad = diag (as.vector(scale_X)) %*% Grad + shift_X %*% t(Grad [D, ]);
 }
 Grad = Grad + lambda * B;
 norm_Grad = sqrt (sum (Grad ^ 2));
@@ -141,7 +143,7 @@ while (! converge)
 	while (! innerconverge)
 	{
 	    if (intercept_status == 2) {
-	        ssX_V = diag (scale_X) %*% V;
+	        ssX_V = diag (as.vector(scale_X)) %*% V;
 	        ssX_V [D, ] = ssX_V [D, ] + t(shift_X) %*% V;
 	    } else {
 	        ssX_V = V;
@@ -149,7 +151,7 @@ while (! converge)
         Q = P [, 1:K] * (X %*% ssX_V);
         HV = t(X) %*% (Q - P [, 1:K] * (rowSums (Q) %*% matrix (1, 1, K)));
         if (intercept_status == 2) {
-            HV = diag (scale_X) %*% HV + shift_X %*% HV [D, ];
+            HV = diag (as.vector(scale_X)) %*% HV + shift_X %*% HV [D, ];
         }
         HV = HV + lambda * V;
 		alpha = norm_R2 / sum (V * HV);
@@ -189,8 +191,8 @@ while (! converge)
 	qk = - 0.5 * (gs - sum (S * R));
 	B_new = B + S;
 	if (intercept_status == 2) {
-	    ssX_B_new = diag (scale_X) %*% B_new;
-	    ssX_B_new [D, ] = ssX_B_new [D, ] + t(shift_X) %*% B_new;
+        ssX_B_new = diag (as.vector(scale_X)) %*% B_new;
+        ssX_B_new [D, ] = ssX_B_new [D, ] + t(shift_X) %*% B_new;
     } else {
         ssX_B_new = B_new;
     }
@@ -254,7 +256,7 @@ while (! converge)
 		P = P_new;
 		Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
 		if (intercept_status == 2) {
-		    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
+		    Grad = diag (as.vector(scale_X)) %*% Grad + shift_X %*% t(Grad [D, ]);
 		}
 		Grad = Grad + lambda * B;
 		norm_Grad = sqrt (sum (Grad ^ 2));
@@ -269,7 +271,7 @@ while (! converge)
 } 
 
 if (intercept_status == 2) {
-    B_out = diag (scale_X) %*% B;
+    B_out = diag (as.vector(scale_X)) %*% B;
     B_out [D, ] = B_out [D, ] + t(shift_X) %*% B;
 } else {
     B_out = B;

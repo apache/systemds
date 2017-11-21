@@ -161,7 +161,7 @@ def getConvParam(layer):
 
 def getPoolingParam(layer, pool='MAX'):
 	stride = (1, 1) if layer.strides is None else layer.strides
-	padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2] if layer.padding == 'same' else [0, 0]
+	padding = [layer.pool_size[0] / 2, layer.pool_size[1] / 2] if layer.padding == 'same' else [0, 0]
 	return {'pool':pool, 'kernel_h':layer.pool_size[0], 'kernel_w':layer.pool_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
 # TODO: Update AveragePooling2D when we add maxpooling support 

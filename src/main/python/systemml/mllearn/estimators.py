@@ -884,28 +884,35 @@ class Keras2DML(Caffe2DML):
 
     """
 
-    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False,
-                 tensorboard_log_dir=None):
+    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, weights=None, labels=None):
         """
         Performs training/prediction for a given keras model.
 
         Parameters
         ----------
-        parkSession: PySpark SparkSession
+        sparkSession: PySpark SparkSession
         model: keras hdf5 model file path
         input_shape: 3-element list (number of channels, input height, input width)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
-        tensorboard_log_dir: directory to store the event logs (default: None,
-        we use a temporary directory)
+        weights: directory whether learned weights are stored (default: None)
         """
-        #NOTE Lazily imported until the Caffe Dependency issue is resolved
-        from . import keras2caffe
+        from .keras2caffe import *
+        import tempfile
         self.name = keras_model.name
-        #Convert keras model into caffe net and weights
-        caffenet, caffemodel = keras2caffe.generate_caffe_model(keras_model,self.name + ".proto",self.name + ".caffemodel")
-        #Create solver from network file
-        caffesolver = keras2caffe.CaffeSolver(self.name + ".proto",keras_model).write(self.name + "_solver.proto")
-        #Generate caffe2DML object
-        super(Keras2DML,self).__init__(sparkSession, self.name+ "_solver.proto",input_shape, transferUsingDF, tensorboard_log_dir)
-        #Create and Load weights into caffe2DML
-        convert_caffemodel(sparkSession.sparkContext,self.name + ".proto", self.name + ".caffemodel", self.name + "_C2DML_weights")
+        createJavaObject(sparkSession._sc, 'dummy')
+        convertKerasToCaffeNetwork(keras_model, self.name + ".proto")
+        convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto")
+        self.weights = tempfile.mkdtemp() if weights is None else weights
+        convertKerasToSystemMLModel(sparkSession, keras_model, self.weights)
+        if labels is not None and (labels.startswith('https:') or labels.startswith('http:')):
+            import urllib
+            urllib.urlretrieve(labels, os.path.join(weights, 'labels.txt'))
+        elif labels is not None:
+            from shutil import copyfile
+            copyfile(labels, os.path.join(weights, 'labels.txt'))
+        super(Keras2DML,self).__init__(sparkSession, self.name + "_solver.proto", input_shape, transferUsingDF)
+        self.load(self.weights)
+
+    def close(self):
+        import shutil
+        shutil.rmtree(weights)

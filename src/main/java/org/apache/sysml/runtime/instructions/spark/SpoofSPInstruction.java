@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.codegen.SpoofOuterProduct;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysml.runtime.codegen.SpoofRowwise;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -253,7 +254,8 @@ public class SpoofSPInstruction extends SPInstruction {
 		throws DMLRuntimeException 
 	{
 		boolean[] ret = new boolean[inputs.length];
-		double localBudget = OptimizerUtils.getLocalMemBudget();
+		double localBudget = OptimizerUtils.getLocalMemBudget()
+			- CacheableData.getBroadcastSize(); //account for other broadcasts
 		double bcBudget = SparkExecutionContext.getBroadcastMemoryBudget();
 		
 		//decided for each matrix input if it fits into remaining memory
@@ -263,9 +265,10 @@ public class SpoofSPInstruction extends SPInstruction {
 				MatrixCharacteristics mc = sec.getMatrixCharacteristics(inputs[i].getName());
 				double sizeL = OptimizerUtils.estimateSizeExactSparsity(mc);
 				double sizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
-				ret[i] = localBudget > sizeL && bcBudget > sizeP;
-				localBudget -= ret[i] ? sizeL : 0;
-				bcBudget -= ret[i] ? sizeP : 0;
+				//account for partitioning and local/remote budgets
+				ret[i] = localBudget > (sizeL + sizeP) && bcBudget > sizeP;
+				localBudget -= ret[i] ? sizeP : 0; //in local block manager
+				bcBudget -= ret[i] ? sizeP : 0; //in remote block managers
 			}
 		
 		return ret;

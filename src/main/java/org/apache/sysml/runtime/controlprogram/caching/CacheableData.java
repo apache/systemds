@@ -116,26 +116,26 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private static IDSequence _seq = null;   
 
 	// Global eviction path and prefix (prefix used for isolation purposes)
-    public static String cacheEvictionLocalFilePath = null; //set during init
-    public static String cacheEvictionLocalFilePrefix = "cache";
+	public static String cacheEvictionLocalFilePath = null; //set during init
+	public static String cacheEvictionLocalFilePrefix = "cache";
 
 	/**
 	 * Current state of pinned variables, required for guarded collect.
 	 */
 	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
-        @Override protected Long initialValue() { return 0L; }
-    };
+		@Override protected Long initialValue() { return 0L; }
+	};
 
 	//current size of live broadcast objects (because Spark's ContextCleaner maintains 
 	//a buffer with references to prevent eager cleanup by GC); note that this is an 
 	//overestimate, because we maintain partitioned broadcasts as soft references, which 
 	//might be collected by the GC and subsequently cleaned up by Spark's ContextCleaner.
-	private static AtomicLong _refBCs = new AtomicLong(0);	
-    
+	private static final AtomicLong _refBCs = new AtomicLong(0);
+
 	static {
 		_seq = new IDSequence();
 	}
-		
+
 	/**
 	 * The unique (JVM-wide) ID of a cacheable data object; to ensure unique IDs across JVMs, we
 	 * concatenate filenames with a unique prefix (map task ID). 
@@ -651,8 +651,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 	}
 	
-	protected void clearReusableData() {}
-	
 	/**
 	 * Sets the cache block reference to <code>null</code>, abandons the old block.
 	 * Makes the "envelope" empty.  Run it to finalize the object (otherwise the
@@ -682,8 +680,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			freeEvictedBlob();	
 		
 		// clear the in-memory data
-		clearReusableData();
-		_data = null;	
+		_data = null;
 		clearCache();
 		
 		// clear rdd/broadcast back refs
@@ -691,13 +688,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
-		if( _gpuObjects != null ) {
-		    for (GPUObject gObj : _gpuObjects.values()){
-		        if (gObj != null) {
-                    gObj.clearData();
-                }
-            }
-        }
+		if( _gpuObjects != null )
+			for (GPUObject gObj : _gpuObjects.values())
+				if (gObj != null)
+					gObj.clearData();
 
 		// change object state EMPTY
 		setDirty(false);

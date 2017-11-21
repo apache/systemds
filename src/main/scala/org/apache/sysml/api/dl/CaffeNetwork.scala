@@ -164,6 +164,26 @@ class CaffeNetwork(netFilePath: String, val currentPhase: Phase, var numChannels
       builder.build()
     } else l
   })
+  
+  // Condition 6: Replace last softmax layer with softmaxwithloss
+  val firstLayer = _caffeLayerParams.get(0)
+  val lastLayer = _caffeLayerParams.last
+  if(lastLayer.getType.toLowerCase().equalsIgnoreCase("softmax")) {
+     _caffeLayerParams = _caffeLayerParams.map(l => {
+       if(l == lastLayer) {
+         val builder = l.toBuilder();
+         builder.setType("SoftmaxWithLoss")
+         builder.build()
+       } 
+       else if(l == firstLayer && ( l.getType.equalsIgnoreCase("data") || l.getType.equalsIgnoreCase("input") ) && !l.getTopList.contains("label")) {
+         val builder = l.toBuilder();
+         builder.addTop("label")
+         builder.build()
+       }
+       else l
+     })
+  }
+  
 
   // --------------------------------------------------------------------------------
 

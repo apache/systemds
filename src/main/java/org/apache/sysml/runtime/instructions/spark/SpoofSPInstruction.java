@@ -456,7 +456,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
 				_op = (SpoofRowwise) CodegenUtils.createInstance(loadedClass); 
 			}
 			
@@ -513,7 +513,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 			
@@ -565,7 +565,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 				
@@ -627,7 +627,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 			

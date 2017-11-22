@@ -147,15 +147,13 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_workerID = ID;
 		
 		//initialize codegen class cache (before program parsing)
-		synchronized( CodegenUtils.class ) {
-			for( Entry<String, byte[]> e : _clsMap.entrySet() )
-				CodegenUtils.getClass(e.getKey(), e.getValue());
-		}
-		
+		for( Entry<String, byte[]> e : _clsMap.entrySet() )
+			CodegenUtils.getClassSync(e.getKey(), e.getValue());
+	
 		//parse and setup parfor body program
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
-		_ec          = body.getEc();				
+		_ec          = body.getEc();
 		_resultVars  = body.getResultVarNames();
 		_numTasks    = 0;
 		_numIters    = 0;

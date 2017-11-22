@@ -68,7 +68,7 @@ public class CodegenUtils
 	private static String _workingDir = null;
 	
 	public static Class<?> compileClass(String name, String src) 
-			throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
@@ -96,6 +96,18 @@ public class CodegenUtils
 	
 	public static Class<?> getClass(String name) throws DMLRuntimeException {
 		return getClass(name, null);
+	}
+	
+	public synchronized static Class<?> getClassSync(String name, byte[] classBytes)
+		throws DMLRuntimeException 
+	{
+		//In order to avoid anomalies of concurrently compiling and loading the same
+		//class with the same name multiple times in spark executors, this indirection
+		//synchronizes the class compilation. This synchronization leads to the first
+		//thread compiling the common class and all other threads simply reusing the
+		//cached class instance, which also ensures that the same class is not loaded
+		//multiple times which causes unnecessary JIT compilation overhead.
+		return getClass(name, classBytes);
 	}
 	
 	public static Class<?> getClass(String name, byte[] classBytes) 

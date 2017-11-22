@@ -158,7 +158,7 @@ cd $EXEC_DIR/src/test/java
 if [[ "$COMPILE_CODE" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Compiling release verify utility..."
 
-    javac -Xlint:unchecked -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/*.java
+    javac -Xlint:unchecked -classpath ../../../target/release/systemml/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemml/target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/*.java
 
     cd "$ORIG_DIR" # Return to directory from it was called.
     exit 0
@@ -182,7 +182,7 @@ fi
 if [[ "$LIC_NOTICE_VERIFY" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying license and notices from zip/tgz/tar.gz files..."
 
-    java -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateLicAndNotice $DIST_DIR
+    java -classpath ../../../target/release/systemml/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemml/target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateLicAndNotice $DIST_DIR
     RET_CODE=$?
     if [[ $RET_CODE == 0 ]]; then
        echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of license and notices completed successfully."

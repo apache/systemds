@@ -570,12 +570,8 @@ public class TestUtils
 			}
 			else if ( count > 1 ) {
 				File tmp = new File(csvFile+"_temp.csv");
-				OutputStreamWriter out = null;
 
-				try {
-					out = new OutputStreamWriter(new FileOutputStream(tmp),
-							"UTF-8");
-
+				try( OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8") ) {
 					// Directory listing may contain .crc files or may be in the
 					// wrong order. Sanitize the list of names.
 					ArrayList<String> partNames = new ArrayList<String>();
@@ -594,8 +590,6 @@ public class TestUtils
 								"UTF-8");
 						out.append(fileContents);
 					}
-				} finally {
-					IOUtilFunctions.closeSilently(out);
 				}
 				
 				csvFile = tmp.getCanonicalPath();

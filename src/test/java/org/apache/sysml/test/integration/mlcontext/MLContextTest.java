@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -123,23 +123,25 @@ public class MLContextTest extends MLContextTestBase {
 	}
 
 	@Test
-	public void testCreateDMLScriptBasedOnInputStreamAndExecute() throws FileNotFoundException {
+	public void testCreateDMLScriptBasedOnInputStreamAndExecute() throws IOException {
 		System.out.println("MLContextTest - create DML script based on InputStream and execute");
 		setExpectedStdOut("hello world");
 		File file = new File(baseDirectory + File.separator + "hello-world.dml");
-		InputStream is = new FileInputStream(file);
-		Script script = dmlFromInputStream(is);
-		ml.execute(script);
+		try( InputStream is = new FileInputStream(file) ) {
+			Script script = dmlFromInputStream(is);
+			ml.execute(script);
+		}
 	}
 
 	@Test
-	public void testCreatePYDMLScriptBasedOnInputStreamAndExecute() throws FileNotFoundException {
+	public void testCreatePYDMLScriptBasedOnInputStreamAndExecute() throws IOException {
 		System.out.println("MLContextTest - create PYDML script based on InputStream and execute");
 		setExpectedStdOut("hello world");
 		File file = new File(baseDirectory + File.separator + "hello-world.pydml");
-		InputStream is = new FileInputStream(file);
-		Script script = pydmlFromInputStream(is);
-		ml.execute(script);
+		try( InputStream is = new FileInputStream(file) ) {
+			Script script = pydmlFromInputStream(is);
+			ml.execute(script);
+		}
 	}
 
 	@Test

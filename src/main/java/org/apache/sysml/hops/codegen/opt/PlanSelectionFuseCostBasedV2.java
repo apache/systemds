@@ -639,6 +639,11 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND));
 	}
 	
+	private static boolean isValidRow2CellOp(Hop hop) {
+		return !(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)
+			|| (hop instanceof AggBinaryOp && hop.getDim1()!=1 && hop.getDim2()!=1));
+	}
+	
 	private static void pruneInvalidAndSpecialCasePlans(CPlanMemoTable memo, PlanPartition part) 
 	{	
 		//prune invalid row entries w/ violated blocksize constraint
@@ -744,24 +749,30 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//i.e., plans that become invalid after the previous pruning step
 		long hopID = current.getHopID();
 		if( part.getPartition().contains(hopID) && memo.contains(hopID, TemplateType.ROW) ) {
-			for( MemoTableEntry me : memo.get(hopID, TemplateType.ROW) ) {
+			Iterator<MemoTableEntry> iter = memo.get(hopID, TemplateType.ROW).iterator();
+			while( iter.hasNext() ) {
+				MemoTableEntry me = iter.next();
 				//convert leaf node with pure vector inputs
-				if( !me.hasPlanRef() && !TemplateUtils.hasMatrixInput(current) ) {
-					me.type = TemplateType.CELL;
-					if( LOG.isTraceEnabled() )
-						LOG.trace("Converted leaf memo table entry from row to cell: "+me);
-				}
+				boolean applyLeaf = (!me.hasPlanRef() 
+					&& !TemplateUtils.hasMatrixInput(current));
 				
 				//convert inner node without row template input
-				if( me.hasPlanRef() && !ROW_TPL.open(current) ) {
-					boolean hasRowInput = false;
-					for( int i=0; i<3; i++ )
-						if( me.isPlanRef(i) )
-							hasRowInput |= memo.contains(me.input(i), TemplateType.ROW);
-					if( !hasRowInput ) {
+				boolean applyInner = !applyLeaf && !ROW_TPL.open(current);
+				for( int i=0; i<3 & applyInner; i++ )
+					if( me.isPlanRef(i) )
+						applyInner &= !memo.contains(me.input(i), TemplateType.ROW);
+				
+				if( applyLeaf || applyInner ) {
+					String type = applyLeaf ? "leaf" : "inner";
+					if( isValidRow2CellOp(current) ) {
 						me.type = TemplateType.CELL;
 						if( LOG.isTraceEnabled() )
-							LOG.trace("Converted inner memo table entry from row to cell: "+me);	
+							LOG.trace("Converted "+type+" memo table entry from row to cell: "+me);
+					}
+					else {
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Removed "+type+" memo table entry row (unsupported cell): "+me);
+						iter.remove();
 					}
 				}
 			}

@@ -57,8 +57,8 @@ def get_spark_context():
         
 _in_jvm_stdout = False
 default_jvm_stdout = True
-default_jvm_stdout_parallel_flush = False
-def set_default_jvm_stdout(enable, parallel_flush=False):
+default_jvm_stdout_parallel_flush = True
+def set_default_jvm_stdout(enable, parallel_flush=True):
     """
     This is useful utility method to get the output of the driver JVM from within a Jupyter notebook
 

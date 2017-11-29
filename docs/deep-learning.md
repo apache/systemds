@@ -27,11 +27,67 @@ limitations under the License.
 
 <br/>
 
+# Introduction
+
 There are three different ways to implement a Deep Learning model in SystemML:
 1. Using the [DML-bodied NN library](https://github.com/apache/systemml/tree/master/scripts/nn): This library allows the user to exploit full flexibility of [DML language](http://apache.github.io/systemml/dml-language-reference) to implement your neural network.
 2. Using the experimental [Caffe2DML API](http://apache.github.io/systemml/beginners-guide-caffe2dml.html): This API allows a model expressed in Caffe's proto format to be imported into SystemML. This API **doesnot** require Caffe to be installed on your SystemML.
-3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras to be imported into SystemML. However, this API requires Keras to be installed on your driver.
+3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras's functional API to be imported into SystemML. However, this API requires Keras to be installed on your driver.
 
+|                                                                                                      | NN library                                                                                                 | Caffe2DML                                                                                                     | Keras2DML                                                                       |
+|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| External dependency                                                                                  | None                                                                                                       | None                                                                                                          | Keras                                                                           |
+| Ability to add custom layers                                                                         | Yes                                                                                                        | No                                                                                                            | No                                                                              |
+| The user needs to know                                                                               | [DML](http://apache.github.io/systemml/dml-language-reference)                                             | [Caffe's proto API](http://apache.github.io/systemml/reference-guide-caffe2dml#layers-supported-in-caffe2dml) | [Keras' functional API](https://keras.io/getting-started/functional-api-guide/) |
+| Can be invoked using pyspark                                                                         | Yes. Please see [Python MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide) | Yes.                                                                                                          | Yes.                                                                            |
+| Can be invoked using spark-shell                                                                     | Yes. Please see [Scala MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide)  | Limited support                                                                                               | No                                                                              |
+| Can be invoked via command-line or JMLC API                                                          | Yes                                                                                                        | No                                                                                                            | No                                                                              |
+| GPU and [native BLAS](http://apache.github.io/systemml/native-backend.html) support                  | Yes                                                                                                        | Yes                                                                                                           | Yes                                                                             |
+| Part of SystemML's [mllearn](http://apache.github.io/systemml/python-reference.html#mllearn-api) API | No                                                                                                         | Yes                                                                                                           | Yes                                                                             |
+
+## mllearn API
+
+Before we go any further, let us briefly discuss the training and prediction functions in the mllearn API (i.e. Caffe2DML and Keras2DML).
+
+### Training functions
+
+<div class="codetabs">
+<div data-lang="sklearn way" markdown="1">
+{% highlight python %}
+# Input: Two Python objects (X_train, y_train) of type numpy, pandas or scipy.
+model.fit(X_train, y_train)
+{% endhighlight %}
+</div>
+<div data-lang="mllib way" markdown="1">
+{% highlight python %}
+# Input: One LabeledPoint DataFrame with atleast two columns: features (of type Vector) and labels.
+model.fit(X_df)
+{% endhighlight %}
+</div>
+</div>
+
+### Prediction functions
+
+<div class="codetabs">
+<div data-lang="sklearn way" markdown="1">
+{% highlight python %}
+# Input: One Python object (X_test) of type numpy, pandas or scipy.
+model.predict(X_test)
+# OR model.score(X_test, y_test)
+{% endhighlight %}
+</div>
+<div data-lang="mllib way" markdown="1">
+{% highlight python %}
+# Input: One LabeledPoint DataFrame (df_test) with atleast one column: features (of type Vector).
+model.transform(df_test)
+{% endhighlight %}
+</div>
+</div>
+
+Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemML 
+expects that labels have been converted to 1-based value.
+This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
+For scikit-learn API, there is no such requirement.
 
 # Training Lenet on the MNIST dataset
 
@@ -144,6 +200,11 @@ x = Dense(10, activation='softmax')(x)
 keras_model = Model(input_img, x)
 keras_model.summary()
 
+# Scale the input features
+scale = 0.00390625
+X_train = X_train*scale
+X_test = X_test*scale
+
 from systemml.mllearn import Keras2DML
 sysml_model = Keras2DML(spark, keras_model, input_shape=(1,28,28), weights='weights_dir')
 # sysml_model.setConfigProperty("sysml.native.blas", "auto")
@@ -183,7 +244,7 @@ from keras.applications.resnet50 import preprocess_input, decode_predictions, Re
 model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
 model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
 
-resnet = Keras2DML(spark,model,input_shape=(3,224,224), weights='tmp', labels='https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt')
+resnet = Keras2DML(spark,model,input_shape=(3,224,224), weights='weights_dir', labels='https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt')
 resnet.summary()
 urllib.urlretrieve('https://upload.wikimedia.org/wikipedia/commons/f/f4/Cougar_sitting.jpg', 'test.jpg')
 img_shape = (3, 224, 224)

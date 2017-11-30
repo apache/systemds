@@ -47,7 +47,7 @@ public class SparseBlockMCSR extends SparseBlock
 			SparseRow[] orows = ((SparseBlockMCSR)sblock)._rows;
 			_rows = new SparseRow[orows.length];
 			for( int i=0; i<_rows.length; i++ )
-				_rows[i] = new SparseRowVector(orows[i]);		
+				_rows[i] = new SparseRowVector(orows[i]);
 		}
 		//general case SparseBlock
 		else { 
@@ -81,7 +81,7 @@ public class SparseBlockMCSR extends SparseBlock
 			}
 		}
 		else {
-			_rows = rows;	
+			_rows = rows;
 		}
 	}
 	
@@ -120,24 +120,22 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public void allocate(int r) {
-		if( _rows[r] == null )
+		if( !isAllocated(r) )
 			_rows[r] = new SparseRowVector();
 	}
 	
 	@Override
 	public void allocate(int r, int nnz) {
-		if( _rows[r] == null ) {
+		if( !isAllocated(r) )
 			_rows[r] = (nnz == 1) ? new SparseRowScalar() :
 				new SparseRowVector(nnz);
-		}
 	}
 	
 	@Override
 	public void allocate(int r, int ennz, int maxnnz) {
-		if( _rows[r] == null ) {
+		if( !isAllocated(r) )
 			_rows[r] = (ennz == 1) ? new SparseRowScalar() :
 				new SparseRowVector(ennz, maxnnz);
-		}
 	}
 	
 	@Override
@@ -154,7 +152,12 @@ public class SparseBlockMCSR extends SparseBlock
 	public boolean isContiguous() {
 		return false;
 	}
-
+	
+	@Override
+	public boolean isAllocated(int r) {
+		return (_rows[r] != null);
+	}
+	
 	@Override 
 	public void reset() {
 		for( SparseRow row : _rows )
@@ -171,7 +174,7 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override 
 	public void reset(int r, int ennz, int maxnnz) {
-		if( _rows[r] != null )
+		if( isAllocated(r) )
 			_rows[r].reset(ennz, maxnnz);
 	}
 	
@@ -188,14 +191,14 @@ public class SparseBlockMCSR extends SparseBlock
 	@Override
 	public int size(int r) {
 		//prior check with isEmpty(r) expected
-		return (_rows[r]!=null) ? _rows[r].size() : 0;
+		return isAllocated(r) ? _rows[r].size() : 0;
 	}
 	
 	@Override
 	public long size(int rl, int ru) {
 		int ret = 0;
 		for( int i=rl; i<ru; i++ )
-			ret += (_rows[i]!=null) ? _rows[i].size() : 0;	
+			ret += isAllocated(i) ? _rows[i].size() : 0;
 		return ret;
 	}
 	
@@ -213,7 +216,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public boolean isEmpty(int r) {
-		return (_rows[r]==null || _rows[r].isEmpty());
+		return (!isAllocated(r) || _rows[r].isEmpty());
 	}
 	
 	@Override
@@ -236,7 +239,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public boolean set(int r, int c, double v) {
-		if( _rows[r] == null )
+		if( !isAllocated(r) )
 			_rows[r] = new SparseRowScalar();
 		else if( _rows[r] instanceof SparseRowScalar && !_rows[r].isEmpty())
 			_rows[r] = new SparseRowVector(_rows[r]);
@@ -246,18 +249,18 @@ public class SparseBlockMCSR extends SparseBlock
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
 		//copy values into existing row to avoid allocation
-		if( _rows[r] != null && _rows[r] instanceof SparseRowVector
+		if( isAllocated(r) && _rows[r] instanceof SparseRowVector
 			&& ((SparseRowVector)_rows[r]).capacity() >= row.size() && deep )
 			((SparseRowVector)_rows[r]).copy(row);
 		//set new sparse row (incl allocation if required)
 		else 
-			_rows[r] = (deep && row != null) ? 
-				new SparseRowVector(row) : row;		
+			_rows[r] = (deep && row != null) ?
+				new SparseRowVector(row) : row;
 	}
 	
 	@Override
 	public void append(int r, int c, double v) {
-		if( _rows[r] == null )
+		if( !isAllocated(r) )
 			_rows[r] = new SparseRowScalar();
 		else if( _rows[r] instanceof SparseRowScalar && !_rows[r].isEmpty() )
 			_rows[r] = new SparseRowVector(_rows[r]);
@@ -266,7 +269,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int len) {
-		if( _rows[r] == null )
+		if( !isAllocated(r) )
 			_rows[r] = new SparseRowVector();
 		else if( _rows[r] instanceof SparseRowScalar )
 			_rows[r] = new SparseRowVector(_rows[r]);
@@ -298,7 +301,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public double get(int r, int c) {
-		if( _rows[r] == null )
+		if( !isAllocated(r) )
 			return 0;
 		return _rows[r].get(c); 
 	}
@@ -346,7 +349,7 @@ public class SparseBlockMCSR extends SparseBlock
 			sb.append(": ");
 			sb.append(_rows[i]);
 			sb.append("\n");
-		}		
+		}
 		
 		return sb.toString();
 	}

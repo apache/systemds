@@ -166,6 +166,15 @@ public abstract class SparseBlock implements Serializable
 	}
 	
 	/**
+	 * Indicates if the underlying data structure for a given row
+	 * is already allocated.
+	 * 
+	 * @param r row index
+	 * @return true if already allocated
+	 */
+	public abstract boolean isAllocated(int r);
+	
+	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
 	 * all size() calls are guaranteed to return 0.
 	 */

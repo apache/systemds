@@ -54,7 +54,7 @@ public final class SparseRowVector extends SparseRow implements Serializable
 			estimatedNzs = estnnz;
 		maxNzs = maxnnz;
 		int capacity = ((estnnz<initialCapacity && estnnz>0) ? 
-				         estnnz : initialCapacity);
+				estnnz : initialCapacity);
 		values = new double[capacity];
 		indexes = new int[capacity];
 	}
@@ -163,10 +163,10 @@ public final class SparseRowVector extends SparseRow implements Serializable
 				shiftLeftAndDelete(index);
 				return true; // nnz--
 			}
-			else { 	
+			else {
 				values[index] = v;
 				return false;
-			} 
+			}
 		}
 
 		//early abort on zero (if no overwrite)
@@ -201,68 +201,44 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	@Override
 	public double get(int col) {
 		//search for existing col index
-		int index = Arrays.binarySearch(indexes, 0, size, col);		
-		if( index >= 0 )
-			return values[index];
-		else
-			return 0;
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		return (index >= 0) ? values[index] : 0;
 	}
 
 	public int searchIndexesFirstLTE(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index < size )
-				return index;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index < size) ? index : -1;
 		
 		//search lt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index-1 < size )
-			return index-1;
-		else 
-			return -1;
+		return (index-1 < size) ? index-1 : -1;
 	}
 
 	public int searchIndexesFirstGTE(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index < size )
-				return index;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index < size) ? index : -1;
 		
 		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index < size )
-			return index;
-		else 
-			return -1;
+		return (index < size) ? index : -1;
 	}
 
 	public int searchIndexesFirstGT(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index+1 < size )
-				return index+1;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index+1 < size) ? index+1 : -1;
 		
 		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index < size )
-			return index;
-		else 
-			return -1;
+		return (index < size) ? index : -1;
 	}
 
 	public void deleteIndexRange(int lowerCol, int upperCol)

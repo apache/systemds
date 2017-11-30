@@ -337,6 +337,11 @@ public class SparseBlockCSR extends SparseBlock
 		return true;
 	}
 	
+	@Override
+	public boolean isAllocated(int r) {
+		return true;
+	}
+	
 	@Override 
 	public void reset() {
 		if( _size > 0 ) {

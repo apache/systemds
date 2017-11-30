@@ -186,6 +186,11 @@ public class SparseBlockCOO extends SparseBlock
 		return true;
 	}
 	
+	@Override
+	public boolean isAllocated(int r) {
+		return true;
+	}
+	
 	@Override 
 	public void reset() {
 		_size = 0;

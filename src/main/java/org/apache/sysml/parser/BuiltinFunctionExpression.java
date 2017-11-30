@@ -502,7 +502,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
 				output.setDimensions(1, 1); //correction scalars
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
-			output.setValueType(id.getValueType());
+			output.setValueType(ValueType.DOUBLE); //matrices always in double
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);

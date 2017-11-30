@@ -105,7 +105,7 @@ public class ProgramRewriter
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL ) {
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
- 			}
+			}
  			_sbRuleSet.add(      new RewriteCompressedReblock()                  );
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
@@ -137,6 +137,7 @@ public class ProgramRewriter
 			_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(true) );
+		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 	}
 	
 	/**

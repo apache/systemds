@@ -38,7 +38,7 @@ public class CompressionCPInstruction extends UnaryCPInstruction {
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];		
+		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		
@@ -53,11 +53,11 @@ public class CompressionCPInstruction extends UnaryCPInstruction {
 		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		
 		//compress the matrix block
-		CompressedMatrixBlock cmb = new CompressedMatrixBlock(in);
-		cmb.compress(OptimizerUtils.getConstrainedNumThreads(-1));
+		MatrixBlock out = new CompressedMatrixBlock(in)
+			.compress(OptimizerUtils.getConstrainedNumThreads(-1));
 		
 		//set output and release input
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(output.getName(), cmb, getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 	}
 }

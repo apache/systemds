@@ -1349,7 +1349,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			copyDenseToDense(that);
 	}
 	
-	public void copyShallow(MatrixBlock that) {
+	public MatrixBlock copyShallow(MatrixBlock that) {
 		rlen = that.rlen;
 		clen = that.clen;
 		nonZeros = that.nonZeros;
@@ -1358,6 +1358,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			denseBlock = that.denseBlock;
 		else
 			sparseBlock = that.sparseBlock;
+		return this;
 	}
 	
 	private void copySparseToSparse(MatrixBlock that)

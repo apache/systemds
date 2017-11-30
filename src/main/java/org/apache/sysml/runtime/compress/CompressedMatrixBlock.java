@@ -214,21 +214,23 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * +per column sparsity
 	 * 
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @return compressed matrix block or original block if incompressible
 	 */
-	public void compress() 
+	public MatrixBlock compress() 
 		throws DMLRuntimeException
 	{
 		//default sequential execution
-		compress(1);
+		return compress(1);
 	}
 	
 	/**
 	 * Compress block.
 	 * 
 	 * @param k  number of threads
+	 * @return compressed matrix block or original block if incompressible
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void compress(int k) 
+	public MatrixBlock compress(int k) 
 		throws DMLRuntimeException 
 	{
 		//check for redundant compression
@@ -304,7 +306,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			LOG.debug("Compression statistics:");
 			LOG.debug("--compression phase 1: "+_stats.timePhase1);
 		}
-
+		
+		if( colsC.isEmpty() ) {
+			if( LOG.isDebugEnabled() )
+				LOG.debug("Abort block compression because all columns are incompressible.");
+			return new MatrixBlock().copyShallow(this);
+		}
+		
 		// PHASE 2: Grouping columns
 		// Divide the bitmap columns into column groups.
 		List<int[]> bitmapColGrps = PlanningCoCoder.findCocodesByPartitioning(
@@ -366,6 +374,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		_stats.size = estimateCompressedSizeInMemory();
 		_stats.ratio= estimateSizeInMemory() / _stats.size;
 		
+		if( _stats.ratio < 1 ) {
+			if( LOG.isDebugEnabled() )
+				LOG.debug("Abort block compression because compression ratio is less than 1.");
+			return new MatrixBlock().copyShallow(this);
+		}
+		
 		//final cleanup (discard uncompressed block)
 		rawblock.cleanupBlock(true, true);
 		this.cleanupBlock(true, true);
@@ -382,6 +396,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			LOG.debug("--compressed size: "+_stats.size);
 			LOG.debug("--compression ratio: "+_stats.ratio);
 		}
+		
+		return this;
 	}
 
 	public CompressionStatistics getCompressionStatistics() {

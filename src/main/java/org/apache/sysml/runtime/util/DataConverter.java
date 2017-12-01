@@ -32,6 +32,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.MatrixWriter;
@@ -117,7 +118,7 @@ public class DataConverter
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, double expectedSparsity) 
 		throws IOException
-	{	
+	{
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
@@ -456,14 +457,14 @@ public class DataConverter
 	public static MatrixBlock convertToMatrixBlock( HashMap<MatrixIndexes,Double> map, int rlen, int clen )
 	{
 		int nnz = map.size();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
 		
 		// copy map values into new block
 		if( sparse ) //SPARSE <- cells
 		{
 			//append cells to sparse target (prevent shifting)
-			for( Entry<MatrixIndexes,Double> e : map.entrySet() ) 
+			for( Entry<MatrixIndexes,Double> e : map.entrySet() )
 			{
 				MatrixIndexes index = e.getKey();
 				double value = e.getValue();
@@ -543,7 +544,7 @@ public class DataConverter
 			double[][] a = new double[n][];
 			double[] c = mb.getDenseBlock();
 			for( int j=0; j<n; j++ )
-				a[j] = (double[])frame.getColumnData(j);			
+				a[j] = (double[])frame.getColumnData(j);
 			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
 			for( int bi=0; bi<m; bi+=blocksizeIJ )
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
@@ -579,7 +580,7 @@ public class DataConverter
 	public static String[][] convertToStringFrame(FrameBlock frame) 
 	{
 		String[][] ret = new String[frame.getNumRows()][];
-		Iterator<String[]> iter = frame.getStringRowIterator();		
+		Iterator<String[]> iter = frame.getStringRowIterator();
 		for( int i=0; iter.hasNext(); i++ ) {
 			//deep copy output rows due to internal reuse
 			ret[i] = iter.next().clone();
@@ -760,7 +761,7 @@ public class DataConverter
 			if( !mb.isEmptyBlock(false) ) {
 				for( int i=0; i<rows; i++ )
 					mb.sliceOperations(i, i, 0, cols-1, ret[i]);
-			}			
+			}
 		}
 		
 		return ret;
@@ -952,14 +953,17 @@ public class DataConverter
 		while( iter.hasNext() ) {
 			Object[] row = iter.next();
 			for( int j=0; j<colLength; j++ ) {
-				if( row[j]!=null ) {
-					if( fb.getSchema()[j] == ValueType.DOUBLE )
-						sb.append(dfFormat(df, (Double)row[j]));
-					else
-						sb.append(row[j]);
-					if( j != colLength-1 )
-						sb.append(separator);
-				}
+				if( row[j]==null )
+					sb.append(String.valueOf(row[j]));
+				else if( fb.getSchema()[j] == ValueType.DOUBLE )
+					sb.append(dfFormat(df, (Double)row[j]));
+				else if( fb.getSchema()[j] == ValueType.BOOLEAN )
+					sb.append(new BooleanObject((Boolean)row[j])
+						.getLanguageSpecificStringValue());
+				else
+					sb.append(row[j]);
+				if( j != colLength-1 )
+					sb.append(separator);
 			}
 			sb.append(lineseparator);
 		}

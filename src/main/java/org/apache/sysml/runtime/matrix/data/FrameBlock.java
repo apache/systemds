@@ -30,6 +30,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -987,6 +988,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._schema = (ValueType[]) ArrayUtils.addAll(_schema, that._schema);
 			ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
 			ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
+			
+			//check and enforce unique columns names
+			if( !Arrays.stream(ret._colnames).allMatch(new HashSet<>()::add) )
+				ret._colnames = createColNames(ret.getNumColumns());
 			
 			//concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
 			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);

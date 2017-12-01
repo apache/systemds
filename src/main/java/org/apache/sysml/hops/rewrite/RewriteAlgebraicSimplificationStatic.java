@@ -371,10 +371,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop min = inputGen.getInput(DataExpression.RAND_MIN);
 				Hop max = inputGen.getInput(DataExpression.RAND_MAX);
 				double sval = ((LiteralOp)right).getDoubleValue();
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
 				
 				if( HopRewriteUtils.isBinary(bop, OpOp2.MULT, OpOp2.PLUS, OpOp2.MINUS, OpOp2.DIV)
-					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
-					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdfUniform )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -392,7 +393,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation1 (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation1 "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
@@ -404,10 +406,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop min = inputGen.getInput(DataExpression.RAND_MIN);
 				Hop max = inputGen.getInput(DataExpression.RAND_MAX);
 				double sval = ((LiteralOp)left).getDoubleValue();
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
 				
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
-					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
-					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdfUniform )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -423,7 +426,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation2 (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation2 "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 			}
 			//left input rand and hence output matrix double, right scalar variable
@@ -433,6 +437,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				DataGenOp gen = (DataGenOp)left;
 				Hop min = gen.getInput(DataExpression.RAND_MIN);
 				Hop max = gen.getInput(DataExpression.RAND_MAX);
+				Hop pdf = gen.getInput(DataExpression.RAND_PDF);
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
+					
 				
 				if( HopRewriteUtils.isBinary(bop, OpOp2.PLUS)
 					&& HopRewriteUtils.isLiteralOfValue(min, 0)
@@ -445,10 +453,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation3a (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation3a "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 				else if( HopRewriteUtils.isBinary(bop, OpOp2.MULT)
-					&& (HopRewriteUtils.isLiteralOfValue(min, 0)
+					&& ((HopRewriteUtils.isLiteralOfValue(min, 0) && pdfUniform)
 						|| HopRewriteUtils.isLiteralOfValue(min, 1))
 					&& HopRewriteUtils.isLiteralOfValue(max, 1) )
 				{
@@ -460,10 +469,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation3b (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation3b "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 			}
-			
 		}
 		
 		return hi;

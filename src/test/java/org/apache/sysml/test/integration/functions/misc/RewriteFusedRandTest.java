@@ -32,6 +32,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 	private static final String TEST_NAME1 = "RewriteFusedRandLit";
 	private static final String TEST_NAME2 = "RewriteFusedRandVar1";
 	private static final String TEST_NAME3 = "RewriteFusedRandVar2";
+	private static final String TEST_NAME4 = "RewriteFusedRandVar3";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFusedRandTest.class.getSimpleName() + "/";
@@ -46,6 +47,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 
 	@Test
@@ -79,13 +81,23 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRewriteFusedZerosPlusVar() {
+	public void testRewriteFusedZerosPlusVarUniform() {
 		testRewriteFusedRand( TEST_NAME2, "uniform", true );
 	}
 	
 	@Test
-	public void testRewriteFusedOnesMultVar() {
+	public void testRewriteFusedOnesMultVarUniform() {
 		testRewriteFusedRand( TEST_NAME3, "uniform", true );
+	}
+	
+	@Test
+	public void testRewriteFusedOnesMult2VarUniform() {
+		testRewriteFusedRand( TEST_NAME4, "uniform", true );
+	}
+	
+	@Test
+	public void testRewriteFusedOnesMult2VarNormal() {
+		testRewriteFusedRand( TEST_NAME4, "normal", true );
 	}
 	
 	private void testRewriteFusedRand( String testname, String pdf, boolean rewrites )
@@ -115,13 +127,14 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 				Assert.assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
 			
 			//check for applied rewrites
-			if( rewrites && pdf.equals("uniform") ) {
-				Assert.assertTrue(!heavyHittersContainsString("+")
-					&& !heavyHittersContainsString("*"));
+			if( rewrites ) {
+				boolean expected = testname.equals(TEST_NAME2) || pdf.equals("uniform");
+				Assert.assertTrue(expected == (!heavyHittersContainsString("+")
+					&& !heavyHittersContainsString("*")));
 			}
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-	}	
+	}
 }

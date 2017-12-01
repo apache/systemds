@@ -31,6 +31,7 @@ import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
@@ -249,9 +250,19 @@ public class ScriptExecutor {
 		oldGPU = DMLScript.USE_ACCELERATOR;
 		DMLScript.USE_ACCELERATOR = gpu;
 		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
-
-		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
-		GPUContextPool.AVAILABLE_GPUS = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.AVAILABLE_GPUS);
+		
+		// set the global compiler configuration
+		try {
+			OptimizerUtils.resetStaticCompilerFlags();
+			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(
+				ConfigurationManager.getCompilerConfig(), config);
+			ConfigurationManager.setGlobalConfig(cconf);
+		} catch(DMLRuntimeException ex) {
+			throw new RuntimeException(ex);
+		}
+		
+		// set the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
+		GPUContextPool.AVAILABLE_GPUS = config.getTextValue(DMLConfig.AVAILABLE_GPUS);
 	}
 
 	/**

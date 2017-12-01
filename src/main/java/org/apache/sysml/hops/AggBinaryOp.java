@@ -669,7 +669,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			boolean leftTrans = HopRewriteUtils.isTransposeOperation(h1);
-			boolean rightTrans = HopRewriteUtils.isTransposeOperation(h1);
+			boolean rightTrans = HopRewriteUtils.isTransposeOperation(h2);
 			Lop left = !leftTrans ? h1.constructLops() :
 				h1.getInput().get(0).constructLops();
 			Lop right = !rightTrans ? h2.constructLops() :

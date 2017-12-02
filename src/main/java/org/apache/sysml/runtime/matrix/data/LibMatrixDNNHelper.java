@@ -20,6 +20,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -421,10 +422,12 @@ public class LibMatrixDNNHelper {
 		
 		int [] tensorIndexes = new int[3];
 		
-		int start_index_h = params.start_indexes_h[p];
-		int end_index_h = params.end_indexes_h[p];
-		int start_index_w = params.start_indexes_w[q];
-		int end_index_w = params.end_indexes_w[q];
+		int start_h = params.start_indexes_h[p];
+		int end_h = params.end_indexes_h[p];
+		int start_w = params.start_indexes_w[q];
+		int end_w = params.end_indexes_w[q];
+		int numVals = (end_h-start_h)*(end_w-start_w);
+		BitSet bmap = new BitSet(numVals);
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
@@ -446,17 +449,24 @@ public class LibMatrixDNNHelper {
 					continue;
 				int h = tensorIndexes[1];
 				int w = tensorIndexes[2];
-				if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
+				if(h >= start_h && h < end_h && w >= start_w && w < end_w) {
 					double val = performReluBackward && avals[j] < 0 ? 0 : avals[j]; 
 					if(maxVal < val) {
 						maxIndex = inputOffset +  h*params.W + w;
 						maxVal = val;
 					}
+					bmap.set((h-start_h)*(end_w-start_w) + (w-start_w));
 				}
 			}
 		}
-		else {
-			maxIndex = inputOffset;
+		
+		//correction for 0 maximum and subset of evaluated entries
+		int firstMiss = bmap.nextClearBit(0);
+		if( firstMiss < numVals && maxVal<0 ) {
+			int lh = firstMiss/(end_w-start_w)+start_h;
+			int lw = firstMiss%(end_w-start_w)+start_w;
+			maxIndex = inputOffset + lh * params.W + lw;
+			maxVal = 0;
 		}
 		return maxIndex;
 	}

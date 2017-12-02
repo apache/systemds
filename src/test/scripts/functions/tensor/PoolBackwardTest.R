@@ -35,15 +35,17 @@ Q=as.integer(args[9])
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
 dout=matrix(seq(1, numImg*numChannels*P*Q), numImg, numChannels*P*Q, byrow=TRUE)
 if(as.logical(args[11])) {
-	# zero_mask = (x - mean(x)) > 0 
-	# x = x * zero_mask
+	zero_mask = (x - mean(x)*1.5) > 0 
+	x = x * zero_mask
+} else {
+	x = x - mean(x)
 }
 if(as.logical(args[12])) {
-	# zero_mask = (dout - mean(dout)) > 0 
-	# dout = dout * zero_mask
+	zero_mask = (dout - mean(dout)*1.5) > 0 
+	dout = dout * zero_mask
+} else {
+	dout = dout - mean(dout)
 }
-x = x - mean(x)
-dout = dout - mean(dout)
 max_pool_backward <- function(dout, Hout, Wout, X, C,
                     Hin, Win, Hf, Wf, strideh, stridew)
      {
@@ -65,7 +67,8 @@ max_pool_backward <- function(dout, Hout, Wout, X, C,
           win = (wout-1) * stridew + 1
           img_slice_patch = img_slice[hin:(hin+Hf-1), win:(win+Wf-1)]
           max_val = max(img_slice_patch)
-          max_val_ind = (img_slice_patch == max_val)  # max value indicator
+          max_val_ind = matrix(0, nrow(img_slice_patch), ncol(img_slice_patch))
+          max_val_ind[which.max(img_slice_patch)] = 1  # first max value indicator
           # gradient passes through only for the max value in this patch
           dimg_slice_patch = max_val_ind * dout[n, (c-1)*Hout*Wout + (hout-1)*Wout + wout]
           dimg_slice[hin:(hin+Hf-1), win:(win+Wf-1)] =
@@ -82,4 +85,3 @@ max_pool_backward <- function(dout, Hout, Wout, X, C,
 
 output = max_pool_backward(dout, P, Q, x, numChannels, imgSize, imgSize, poolSize1, poolSize2, stride, stride)
 writeMM(as(output,"CsparseMatrix"), paste(args[10], "B", sep=""))
-

@@ -75,19 +75,17 @@ public class LibMatrixDNNHelper {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
+		boolean sparse1 = params.input1.isInSparseFormat();
+		boolean sparse2 = params.input2.isInSparseFormat();
 		for(int i = 0; i*taskSize < params.N; i++) {
-			if(!params.input1.isInSparseFormat()) {
-				if(!params.input2.isInSparseFormat()) 
-					ret.add(new PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
-				else
-					ret.add(new PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
-			}
-			else {
-				if(!params.input2.isInSparseFormat()) 
-					ret.add(new PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
-				else
-					ret.add(new PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
-			}
+			if( !sparse1 && !sparse2 )
+				ret.add(new PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( !sparse1 && sparse2 )
+				ret.add(new PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( sparse1 && !sparse2 ) 
+				ret.add(new PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( sparse1 && sparse2 )
+				ret.add(new PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
 		}
 		return ret;
 	}
@@ -417,9 +415,6 @@ public class LibMatrixDNNHelper {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
-		if(!input.isInSparseFormat())
-			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
-		
 		int [] tensorIndexes = new int[3];
 		
 		int start_h = params.start_indexes_h[p];

@@ -313,23 +313,22 @@ public class LibMatrixDNN {
 		}
 		
 		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
+			if(input.isInSparseFormat() || dout.isInSparseFormat())
 				maxPoolBwdSparseCount.addAndGet(1);
-			}
-			else {
+			else
 				maxPoolBwdDenseCount.addAndGet(1);
-			}
 		}
 		
 		if (params.output.isInSparseFormat())
 			throw new DMLRuntimeException("Sparse maxpooling_backward is not supported");
 
-		fillIndexesArray(params);
+		if( !(params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) )
+			fillIndexesArray(params); //not needed for sparse-dense
 		
-		execute(LibMatrixDNNHelper.getMaxPoolingBackwardWorkers(params, performReluBackward), params);
+		long nnz = execute(LibMatrixDNNHelper.getMaxPoolingBackwardWorkers(params, performReluBackward), params);
 		
 		//post-processing: maintain nnz 
-		outputBlock.recomputeNonZeros(); 
+		outputBlock.setNonZeros(nnz); 
 		outputBlock.examSparsity();
 	}
 	

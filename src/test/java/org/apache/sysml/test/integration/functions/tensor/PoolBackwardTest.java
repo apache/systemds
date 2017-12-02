@@ -120,6 +120,18 @@ public class PoolBackwardTest extends AutomatedTestBase
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, false);
 	}
 	
+	@Test
+	public void testMaxPool2DBackwardSparse11() {
+		int numImg = 10; int imgSize = 28; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 5; int poolSize2 = 5;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse12() {
+		int numImg = 10; int imgSize = 28; int numChannels = 4;  int stride = 1; int pad = 0; int poolSize1 = 5; int poolSize2 = 5;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, true);
+	}
+	
 	public void runPoolTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
 			int pad, int poolSize1, int poolSize2, String poolMode, boolean sparse1, boolean sparse2) 
 	{

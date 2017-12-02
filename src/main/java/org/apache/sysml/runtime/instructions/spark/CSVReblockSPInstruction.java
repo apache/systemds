@@ -114,9 +114,6 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 			return;
 		}
 		
-		//check jdk version (prevent double.parseDouble contention on <jdk8)
-		sec.checkAndRaiseValidationWarningJDKVersion();
-		
 		//execute matrix/frame csvreblock 
 		JavaPairRDD<?,?> out = null;
 		if( input1.getDataType() == DataType.MATRIX )

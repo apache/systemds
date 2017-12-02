@@ -1369,33 +1369,6 @@ public class SparkExecutionContext extends ExecutionContext
 			.getDefaultParallelism(refresh);
 	}
 
-	public void checkAndRaiseValidationWarningJDKVersion()
-	{
-		//check for jdk version less than jdk8
-		boolean isLtJDK8 = InfrastructureAnalyzer.isJavaVersionLessThanJDK8();
-
-		//check multi-threaded executors
-		int numExecutors = getNumExecutors();
-		int numCores = getDefaultParallelism(false);
-		boolean multiThreaded = (numCores > numExecutors);
-
-		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		if( isLtJDK8 && multiThreaded)
-		{
-			//get the jre version
-			String version = System.getProperty("java.version");
-
-			LOG.warn("########################################################################################");
-			LOG.warn("### WARNING: Multi-threaded text reblock may lead to thread contention on JRE < 1.8 ####");
-			LOG.warn("### java.version = " + version);
-			LOG.warn("### total number of executors = " + numExecutors);
-			LOG.warn("### total number of cores = " + numCores);
-			LOG.warn("### JDK-7032154: Performance tuning of sun.misc.FloatingDecimal/FormattedFloatingDecimal");
-			LOG.warn("### Workaround: Convert text to binary w/ changed configuration of one executor per core");
-			LOG.warn("########################################################################################");
-		}
-	}
-
 	/**
 	 * Captures relevant spark cluster configuration properties, e.g., memory budgets and
 	 * degree of parallelism. This configuration abstracts legacy (< Spark 1.6) and current

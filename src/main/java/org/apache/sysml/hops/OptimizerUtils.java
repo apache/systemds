@@ -22,8 +22,6 @@ package org.apache.sysml.hops;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
@@ -62,8 +60,6 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 public class OptimizerUtils 
 {
-	private static final Log LOG = LogFactory.getLog(OptimizerUtils.class.getName());
-	
 	////////////////////////////////////////////////////////
 	// Optimizer constants and flags (incl tuning knobs)  //
 	////////////////////////////////////////////////////////
@@ -363,13 +359,6 @@ public class OptimizerUtils
 			cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
 			cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
-		}
-		else if( InfrastructureAnalyzer.isJavaVersionLessThanJDK8()
-			&& InfrastructureAnalyzer.getLocalParallelism() > 1 )
-		{
-			LOG.warn("Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8"
-					+ " (java.version="+ System.getProperty("java.version")+").");
-			cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
 		}
 
 		//handle parallel matrix mult / rand configuration

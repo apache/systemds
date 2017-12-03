@@ -1743,3 +1743,27 @@ extern "C" __global__ void matrix_sign_f(float *A, float *C,
                                          unsigned int size) {
   matrix_sign(A, C, size);
 }
+
+/**
+ * Do an sigmoid over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+template <typename T>
+__device__ void matrix_sigmoid(T *A, T *C, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+    C[index] = 0.5 * tanh(0.5 * A[index]) + 0.5;
+  }
+}
+
+extern "C" __global__ void matrix_sigmoid_d(double *A, double *C,
+                                         unsigned int size) {
+  matrix_sigmoid(A, C, size);
+}
+
+extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
+                                         unsigned int size) {
+  matrix_sigmoid(A, C, size);
+}

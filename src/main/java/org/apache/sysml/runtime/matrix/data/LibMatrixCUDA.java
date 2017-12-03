@@ -2265,6 +2265,23 @@ public class LibMatrixCUDA {
 		// sign(0) = 0
 		unaryOp(ec, gCtx, in1, "matrix_sign", 0, outputName, instName, GPUInstruction.MISC_TIMER_SIGN_KERNEL);
 	}
+	
+	/**
+	 * Performs an "sigmoid" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void sigmoid(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : sigmoid" + ", GPUContext=" + gCtx);
+		}
+		// sigmoid(0) = 0.5
+		unaryOp(ec, gCtx, in1, "matrix_sigmoid", 0.5, outputName, instName, GPUInstruction.MISC_TIMER_SIGMOID_KERNEL);
+	}
 
 
 	/**

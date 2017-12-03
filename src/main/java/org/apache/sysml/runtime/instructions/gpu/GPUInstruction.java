@@ -113,6 +113,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_ACOS_KERNEL =                      "acosk";   // time spent in the acos kernel
 	public final static String MISC_TIMER_ATAN_KERNEL =                      "atank";   // time spent in the atan kernel
 	public final static String MISC_TIMER_SIGN_KERNEL =                      "signk";   // time spent in the sign kernel
+	public final static String MISC_TIMER_SIGMOID_KERNEL =                   "sigmk";   // time spent in the sigmoid kernel
 	public final static String MISC_TIMER_CBIND_KERNEL =                     "cbindk";  // time spent in the cbind kernel
 	public final static String MISC_TIMER_RBIND_KERNEL =                     "rbindk";  // time spent in the rbind kernel
 

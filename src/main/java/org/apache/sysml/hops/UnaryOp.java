@@ -113,6 +113,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				case ASIN:case ACOS:case ATAN:
 				case SINH:case COSH: case TANH:
 				case SIGN:
+				case SIGMOID:
 					return true;
 				default:
 					return false;

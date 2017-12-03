@@ -176,6 +176,9 @@ public class UnaryCP extends Lop
 		case LENGTH:
 			return "length";
 
+		case SOFTMAX:
+			return "softmax";
+			
 		default:
 			throw new LopsException(this.printErrorLocation() + "Unknown operation: " + operation);
 		}

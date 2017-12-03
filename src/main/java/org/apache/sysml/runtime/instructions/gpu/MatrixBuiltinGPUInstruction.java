@@ -82,6 +82,8 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.sign(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sigmoid":
 				LibMatrixCUDA.sigmoid(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "softmax":
+				LibMatrixCuDNN.softmax(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			default:
 				throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
 		}

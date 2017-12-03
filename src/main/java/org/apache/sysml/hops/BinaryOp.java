@@ -638,7 +638,19 @@ public class BinaryOp extends Hop
 		{
 			// Both operands are Matrixes
 			ExecType et = optFindExecType();
-			if ( et == ExecType.CP || et == ExecType.GPU ) 
+			boolean isGPUSoftmax = et == ExecType.GPU && op == Hop.OpOp2.DIV && 
+					getInput().get(0) instanceof UnaryOp && getInput().get(1) instanceof AggUnaryOp && 
+					((UnaryOp)getInput().get(0)).getOp() == OpOp1.EXP && ((AggUnaryOp)getInput().get(1)).getOp() == AggOp.SUM &&
+					((AggUnaryOp)getInput().get(1)).getDirection() == Direction.Row &&
+					getInput().get(0) == getInput().get(1).getInput().get(0);
+			if(isGPUSoftmax) {
+				UnaryCP softmax = new UnaryCP(getInput().get(0).getInput().get(0).constructLops(), UnaryCP.OperationTypes.SOFTMAX, 
+						getDataType(), getValueType(), et);
+				setOutputDimensions(softmax);
+				setLineNumbers(softmax);
+				setLops(softmax);
+			}
+			else if ( et == ExecType.CP || et == ExecType.GPU ) 
 			{
 				Lop binary = null;
 				

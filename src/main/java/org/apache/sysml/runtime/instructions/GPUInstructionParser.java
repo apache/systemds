@@ -100,6 +100,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "atan",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "sign",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "sigmoid", GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "softmax", GPUINSTRUCTION_TYPE.BuiltinUnary);
 
 		// Binary Builtin functions
 		String2GPUInstructionType.put( "solve", GPUINSTRUCTION_TYPE.BuiltinBinary);

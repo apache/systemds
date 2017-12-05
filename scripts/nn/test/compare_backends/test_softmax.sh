@@ -20,10 +20,24 @@
 #
 #-------------------------------------------------------------
 
-# Additional tests to compare the accuracy of different convolution related operators with CuDNN
-./test_conv2d_bwd_filter.sh
-./test_conv2d_bwd_data.sh
-./test_conv2d.sh
-./test_maxpool.sh
-./test_maxpool_bwd.sh
-./test_softmax.sh
+jars='systemml-*-extra.jar'
+
+for rows in 1 300
+do
+	for cols in 1 300
+	do
+		for sparsity in 0.1 0.2 0.6 0.9
+		do
+			# Generating the data
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f gen_softmax.dml -nvargs sp=$sparsity rows=$rows cols=$cols
+			# Running a test in CPU mode
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f test_softmax.dml -nvargs out=out_cp.csv
+			# Running a test in GPU mode
+			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_softmax.dml -stats -gpu force -nvargs out=out_gpu.csv
+			# Comparing the CPU vs GPU results to make sure they are the same
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "softmax:rows="$rows",cols="$cols",sparsity="$sparsity
+			rm -rf out_cp.csv out_gpu.csv out_cp.csv.mtd out_gpu.csv.mtd
+			rm -rf input.mtx input.mtx.mtd
+		done
+	done
+done

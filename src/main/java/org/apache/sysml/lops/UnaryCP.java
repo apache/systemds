@@ -36,7 +36,7 @@ public class UnaryCP extends Lop
 	public enum OperationTypes {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM
+		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX
 	}
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -57,8 +57,9 @@ public class UnaryCP extends Lop
 	 * @param op operation type
 	 * @param dt data type
 	 * @param vt value type
+	 * @param et exec type
 	 */
-	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {
+	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UnaryCP, dt, vt);
 		operation = op;
 		this.addInput(input);
@@ -70,7 +71,11 @@ public class UnaryCP extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+	}
+	
+	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {
+		this(input, op, dt, vt, ExecType.CP);
 	}
 
 	@Override
@@ -171,6 +176,9 @@ public class UnaryCP extends Lop
 		case LENGTH:
 			return "length";
 
+		case SOFTMAX:
+			return "softmax";
+			
 		default:
 			throw new LopsException(this.printErrorLocation() + "Unknown operation: " + operation);
 		}

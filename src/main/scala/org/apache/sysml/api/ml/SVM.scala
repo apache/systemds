@@ -105,6 +105,7 @@ class SVMModel(override val uid: String)(estimator: SVM, val sc: SparkContext, v
     val script = dml(ScriptsUtils.getDMLScript(if (isMultiClass) SVMModel.predictionScriptPathMulticlass else SVMModel.predictionScriptPathBinary))
       .in("$X", " ")
       .in("$model", " ")
+      .in("$scoring_only", "TRUE")
       .out("scores")
 
     val w    = estimator.mloutput.getMatrix("w")

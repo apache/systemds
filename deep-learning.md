@@ -32,13 +32,13 @@ limitations under the License.
 There are three different ways to implement a Deep Learning model in SystemML:
 1. Using the [DML-bodied NN library](https://github.com/apache/systemml/tree/master/scripts/nn): This library allows the user to exploit full flexibility of [DML language](http://apache.github.io/systemml/dml-language-reference) to implement your neural network.
 2. Using the experimental [Caffe2DML API](http://apache.github.io/systemml/beginners-guide-caffe2dml.html): This API allows a model expressed in Caffe's proto format to be imported into SystemML. This API **doesnot** require Caffe to be installed on your SystemML.
-3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras's functional API to be imported into SystemML. However, this API requires Keras to be installed on your driver.
+3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras's API to be imported into SystemML. However, this API requires Keras to be installed on your driver.
 
 |                                                                                                      | NN library                                                                                                 | Caffe2DML                                                                                                     | Keras2DML                                                                       |
 |------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | External dependency                                                                                  | None                                                                                                       | None                                                                                                          | Keras                                                                           |
 | Ability to add custom layers                                                                         | Yes                                                                                                        | No                                                                                                            | No                                                                              |
-| The user needs to know                                                                               | [DML](http://apache.github.io/systemml/dml-language-reference)                                             | [Caffe's proto API](http://apache.github.io/systemml/reference-guide-caffe2dml#layers-supported-in-caffe2dml) | [Keras' functional API](https://keras.io/getting-started/functional-api-guide/) |
+| The user needs to know                                                                               | [DML](http://apache.github.io/systemml/dml-language-reference)                                             | [Caffe's proto API](http://apache.github.io/systemml/reference-guide-caffe2dml#layers-supported-in-caffe2dml) | [Keras' API](https://keras.io/models/about-keras-models/)                       |
 | Can be invoked using pyspark                                                                         | Yes. Please see [Python MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide) | Yes.                                                                                                          | Yes.                                                                            |
 | Can be invoked using spark-shell                                                                     | Yes. Please see [Scala MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide)  | Limited support                                                                                               | No                                                                              |
 | Can be invoked via command-line or JMLC API                                                          | Yes                                                                                                        | No                                                                                                            | No                                                                              |
@@ -184,20 +184,20 @@ lenet.score(X_test, y_test)
 
 <div data-lang="Keras2DML" markdown="1">
 {% highlight python %}
+from keras.models import Sequential
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
 from keras import backend as K
 from keras.models import Model
 input_shape = (1,28,28) if K.image_data_format() == 'channels_first' else (28,28, 1)
-input_img = Input(shape=(input_shape))
-x = Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=input_shape, padding='same')(input_img)
-x = MaxPooling2D(pool_size=(2, 2))(x)
-x = Conv2D(64, (5, 5), activation='relu', padding='same')(x)
-x = MaxPooling2D(pool_size=(2, 2))(x)
-x = Flatten()(x)
-x = Dense(512, activation='relu')(x)
-x = Dropout(0.5)(x)
-x = Dense(10, activation='softmax')(x)
-keras_model = Model(input_img, x)
+keras_model = Sequential()
+keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=input_shape, padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Conv2D(64, (5, 5), activation='relu', padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Flatten())
+keras_model.add(Dense(512, activation='relu'))
+keras_model.add(Dropout(0.5))
+keras_model.add(Dense(10, activation='softmax'))
 keras_model.summary()
 
 # Scale the input features
@@ -241,15 +241,15 @@ import keras, urllib
 from PIL import Image
 from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
 
-model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
-model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
+keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
+keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
 
-resnet = Keras2DML(spark,model,input_shape=(3,224,224), weights='weights_dir', labels='https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt')
-resnet.summary()
+sysml_model = Keras2DML(spark,keras_model,input_shape=(3,224,224), weights='weights_dir', labels='https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt')
+sysml_model.summary()
 urllib.urlretrieve('https://upload.wikimedia.org/wikipedia/commons/f/f4/Cougar_sitting.jpg', 'test.jpg')
 img_shape = (3, 224, 224)
 input_image = sml.convertImageToNumPyArr(Image.open('test.jpg'), img_shape=img_shape)
-resnet.predict(input_image)
+sysml_model.predict(input_image)
 {% endhighlight %}
 </div>
 

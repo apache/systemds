@@ -140,14 +140,15 @@ def _createJavaObject(sc, obj_type):
     else:
         raise ValueError('Incorrect usage: supported values: mlcontext or dummy')
 
-def _getJarFileName(sc, suffix):
+def _getJarFileNames(sc):
     import imp, fnmatch
     jar_file_name = '_ignore.jar'
     java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
+    jar_file_names = []
     for file in os.listdir(java_dir):
-        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT' + suffix + '.jar') or fnmatch.fnmatch(file, 'systemml-*' + suffix + '.jar'):
-            jar_file_name = os.path.join(java_dir, file)
-    return jar_file_name
+        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*.jar'):
+            jar_file_names = jar_file_names + [ os.path.join(java_dir, file) ]
+    return jar_file_names
 
 def _getLoaderInstance(sc, jar_file_name, className, hint):
     err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
@@ -179,16 +180,18 @@ def createJavaObject(sc, obj_type):
         ret = None
         err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
         hint = 'Provide the following argument to pyspark: --driver-class-path '
-        # First load SystemML
-        jar_file_name = _getJarFileName(sc, '')
-        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.utils.SystemMLLoaderUtils', hint + 'SystemML.jar')
-        x.loadSystemML(jar_file_name)
+        jar_file_names = _getJarFileNames(sc)
+        if len(jar_file_names) != 2:
+            raise ImportError('Expected only systemml and systemml-extra jars, but found ' + str(jar_file_names))
+        for jar_file_name in jar_file_names:
+            if 'extra' in jar_file_name:
+                x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-extra.jar')
+                x.loadCaffe2DML(jar_file_name)
+            else:
+                x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.utils.SystemMLLoaderUtils', hint + 'systemml-*.jar')
+                x.loadSystemML(jar_file_name)
         try:
             ret = _createJavaObject(sc, obj_type)
         except (py4j.protocol.Py4JError, TypeError):
             raise ImportError(err_msg + ' Hint: ' + hint + jar_file_name)
-        # Now load caffe2dml
-        jar_file_name = _getJarFileName(sc, '-extra')
-        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-extra.jar')
-        x.loadCaffe2DML(jar_file_name)
         return ret

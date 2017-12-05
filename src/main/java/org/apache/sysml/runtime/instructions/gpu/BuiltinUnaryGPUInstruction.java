@@ -78,13 +78,14 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 			opcode = parts[0];
 			in.split(parts[1]);
 			out.split(parts[2]);
-			func = Builtin.getBuiltinFnObject(opcode);
+			// func = Builtin.getBuiltinFnObject(opcode);
+			// new UnaryOperator(func)
 			
 			if(in.getDataType() == DataType.SCALAR)
 				throw new DMLRuntimeException("The instruction is not supported on GPU:" + str);
 //				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 			else if(in.getDataType() == DataType.MATRIX)
-				return new MatrixBuiltinGPUInstruction(new UnaryOperator(func), in, out, opcode, str);
+				return new MatrixBuiltinGPUInstruction(null, in, out, opcode, str);
 		}
 		
 		return null;

@@ -35,6 +35,7 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
+import jcuda.jcudnn.JCudnn;
 import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
@@ -53,6 +54,9 @@ import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
+
+import static jcuda.jcudnn.cudnnSoftmaxAlgorithm.CUDNN_SOFTMAX_ACCURATE;
+import static jcuda.jcudnn.cudnnSoftmaxMode.CUDNN_SOFTMAX_MODE_CHANNEL;
 
 /**
  * This class contains method that invoke CuDNN operations.
@@ -163,6 +167,47 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else {
 			throwCuDNNDimensionError(N, CHW, K, CRS, N, KPQ);
 		}
+	}
+	
+	/**
+	 * Performs an "softmax" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void softmax(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : softmax" + ", GPUContext=" + gCtx);
+		}
+		cudnnTensorDescriptor tensorDesc = allocateTensorDescriptor(toInt(in1.getNumRows()), toInt(in1.getNumColumns()), 1, 1);
+		Pointer srcPointer = getDensePointerForCuDNN(gCtx, in1, instName);
+		MatrixObject out = ec.getMatrixObject(outputName);
+		ec.allocateGPUMatrixObject(outputName, in1.getNumRows(), in1.getNumColumns());
+		out.getGPUObject(gCtx).allocateAndFillDense(0);
+		Pointer dstPointer = getDensePointerForCuDNN(gCtx, out, instName);
+		JCudnn.cudnnSoftmaxForward(gCtx.getCudnnHandle(), CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, 
+                one(), tensorDesc, srcPointer,
+                zero(), tensorDesc, dstPointer);
+		cudnnDestroyTensorDescriptor(tensorDesc);
+	}
+	
+	/**
+	 * Convenience method to get tensor descriptor
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param H height
+	 * @param W width
+	 * @return cudnn tensor descriptor
+	 * @throws DMLRuntimeException if the input descriptor and matrix dimensions don't match
+	 */
+	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) throws DMLRuntimeException {
+		cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
+		cudnnCreateTensorDescriptor(tensorDescriptor);
+		cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, LibMatrixCUDA.CUDNN_DATA_TYPE, N, C, H, W);
+		return tensorDescriptor;
 	}
 
 

@@ -891,13 +891,19 @@ class Keras2DML(Caffe2DML):
         Parameters
         ----------
         sparkSession: PySpark SparkSession
-        model: keras hdf5 model file path
+        keras_model: keras model
         input_shape: 3-element list (number of channels, input height, input width)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         weights: directory whether learned weights are stored (default: None)
+        labels: file containing mapping between index and string labels (default: None)
         """
         from .keras2caffe import *
         import tempfile
+        if type(keras_model) == keras.models.Sequential:
+            # Convert the sequential model to functional model
+            if keras_model.model is None:
+                keras_model.build()
+            keras_model = keras_model.model
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         convertKerasToCaffeNetwork(keras_model, self.name + ".proto")

@@ -102,14 +102,14 @@ Before you get started on SystemML, make sure that your environment is set up an
 
   4. **Download SystemML.**
 
-  Go to the [SystemML Downloads page](http://systemml.apache.org/download.html), download `systemml-0.15.0.zip` (should be 2nd), and unzip it to a location of your choice.
+  Go to the [SystemML Downloads page](http://systemml.apache.org/download.html), download `systemml-1.0.0-bin.zip` (should be 2nd), and unzip it to a location of your choice.
 
   *The next step is optional, but it will make your life a lot easier.*
 
   5. **[OPTIONAL] Set `SYSTEMML_HOME` in your bash profile.**
-  Add the following to `~/.bash_profile`, replacing `path/to/` with the location of the download in step 5.
+  Add the following to `~/.bash_profile`, replacing `path/to/` with the location of the download in step 4.
   ```
-  export SYSTEMML_HOME=path/to/systemml-0.15.0
+  export SYSTEMML_HOME=path/to/systemml-1.0.0
   ```
   *Make sure to open a new tab in terminal so that you make sure the changes have been made.*
 

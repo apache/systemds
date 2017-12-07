@@ -1781,7 +1781,8 @@ public class LibMatrixReorg
 		}
 		
 		//check sparsity
-		ret.nonZeros = in.nonZeros;
+		ret.nonZeros = (select==null) ?
+			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 
 		return ret;
@@ -1901,7 +1902,8 @@ public class LibMatrixReorg
 		}
 		
 		//check sparsity
-		ret.nonZeros = in.nonZeros;
+		ret.nonZeros = (select==null) ?
+			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		return ret;

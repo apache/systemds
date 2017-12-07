@@ -480,6 +480,7 @@ public class LibMatrixCUDA {
 		}
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		
 		if(isInSparseFormat(gCtx, left)) {
 			// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
 			LibMatrixCuMatMult.matmult(ec, gCtx, instName, left, left, outputName, isLeftTransposed, !isLeftTransposed);

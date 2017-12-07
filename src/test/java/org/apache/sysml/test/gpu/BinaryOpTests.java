@@ -37,6 +37,7 @@ public class BinaryOpTests extends GPUTests {
 
 	@Override
 	public void setUp() {
+		super.setUp();
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_DIR, TEST_NAME);
 		getAndLoadTestConfiguration(TEST_NAME);

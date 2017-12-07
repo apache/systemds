@@ -956,6 +956,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
 	}
 	
+	public long getDataSize() {
+		return (_data != null) ?_data.getInMemorySize() : 0;
+	}
+	
 	protected ValueType[] getSchema() {
 		return null;
 	}
@@ -1262,7 +1266,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		sizePinned.set( Math.max(size,0) );
 	}
 
-	protected long getPinnedSize() {
+	protected static long getPinnedSize() {
 		return sizePinned.get();
 	}
 	

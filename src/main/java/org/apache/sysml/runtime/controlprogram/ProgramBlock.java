@@ -371,7 +371,7 @@ public class ProgramBlock implements ParseInfo
 					if( nnz1 != nnz2 )
 						throw new DMLRuntimeException("Matrix nnz meta data was incorrect: ("+varname+", actual="+nnz1+", expected="+nnz2+", inst="+lastInst+")");
 
-					if( sparse1 != sparse2 )
+					if( sparse1 != sparse2 && mb.isAllocated() )
 						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2 +
 								", nrow="+mb.getNumRows()+", ncol="+mb.getNumColumns()+", nnz="+nnz1+", inst="+lastInst+")");
 				}

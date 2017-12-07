@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -122,6 +123,14 @@ public class LocalVariableMap implements Cloneable
 		return outputs;
 	}
 
+	public double getPinnedDataSize() {
+		//note: this method returns the total size of pinned data objects
+		//that are not subject to automatic eviction.
+		return localMap.values().stream()
+			.filter(d -> (d instanceof CacheableData))
+			.mapToDouble(d -> ((CacheableData<?>)d).getDataSize()).sum();
+	}
+	
 	public String serialize() throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		int count = 0;

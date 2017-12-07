@@ -1312,9 +1312,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				int apos = sparseBlock.pos(i);
 				int alen = sparseBlock.size(i);
 				int[] aix = sparseBlock.indexes(i);
+				double[] avals = sparseBlock.values(i);
 				for( int k=apos+1; k<apos+alen; k++ )
 					if( aix[k-1] >= aix[k] )
 						throw new RuntimeException("Wrong sparse row ordering: "+k+" "+aix[k-1]+" "+aix[k]);
+				for( int k=apos; k<apos+alen; k++ )
+					if( avals[k] == 0 )
+						throw new RuntimeException("Wrong sparse row: zero at "+k);
 			}
 	}
 

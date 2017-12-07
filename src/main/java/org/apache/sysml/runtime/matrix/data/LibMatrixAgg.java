@@ -2634,7 +2634,7 @@ public class LibMatrixAgg
 				if(alen < n && (builtin.execute2( 0, c[cix+1] ) == 1))
 				{
 					int ix = n-1; //find last 0 value
-					for( int j=alen-1; j>=0; j--, ix-- )
+					for( int j=apos+alen-1; j>=apos; j--, ix-- )
 						if( aix[j]!=ix )
 							break;
 					c[cix+0] = ix + 1; //max index (last)

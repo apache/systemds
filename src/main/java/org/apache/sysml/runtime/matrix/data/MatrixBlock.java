@@ -29,6 +29,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.stream.LongStream;
 
@@ -553,7 +554,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//check for existing sparse block: return empty list
 		if( sparseBlock==null )
-			return new ArrayList<IJV>().iterator();
+			return Collections.EMPTY_LIST.iterator();
 		
 		//get iterator over sparse block
 		return sparseBlock.getIterator(rl, ru);

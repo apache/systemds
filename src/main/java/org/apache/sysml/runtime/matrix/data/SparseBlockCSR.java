@@ -456,14 +456,14 @@ public class SparseBlockCSR extends SparseBlock
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
 		int pos = pos(r);
-		int len = size(r);		
+		int len = size(r);
 		int alen = row.size();
 		int[] aix = row.indexes();
 		double[] avals = row.values();
 		
 		//delete existing values if necessary
 		if( len > 0 ) //incl size update
-			deleteIndexRange(r, aix[0], aix[alen-1]+1);
+			deleteIndexRange(r, aix[pos], aix[pos+len-1]+1);
 		
 		//prepare free space (allocate and shift)
 		int lsize = _size+alen;

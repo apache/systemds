@@ -1807,7 +1807,7 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{
 		//2) transpose self matrix multiply sparse
-		// (compute only upper-triangular matrix due to symmetry)		
+		// (compute only upper-triangular matrix due to symmetry)
 		SparseBlock a = m1.sparseBlock;
 		double[] c = ret.denseBlock;
 		int m = m1.rlen;
@@ -1820,25 +1820,23 @@ public class LibMatrixMult
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
 				int arlen = a.numRows();
-				for( int r=0; r<arlen; r++ )
-					if( !a.isEmpty(r) ) 
-					{
-						int apos = a.pos(r);
-						int alen = a.size(r);
-						int[] aix = a.indexes(r);
-						double[] avals = a.values(r);
-						int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
-						rlix = (rlix>=0) ? apos+rlix : apos+alen;
-						
-						for(int i = rlix; i < apos+alen && aix[i]<ru; i++) 
-						{
-							double val = avals[i];
-							if( val != 0 ) {
-								int ix2 = aix[i]*n;
-								vectMultiplyAdd(val, avals, c, aix, i, ix2, alen-i);
-							}
+				for( int r=0; r<arlen; r++ ) {
+					if( a.isEmpty(r) ) continue;
+					int apos = a.pos(r);
+					int alen = a.size(r);
+					int[] aix = a.indexes(r);
+					double[] avals = a.values(r);
+					int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+					rlix = (rlix>=0) ? apos+rlix : apos+alen;
+					int len = apos + alen;
+					for(int i = rlix; i < len && aix[i]<ru; i++) {
+						double val = avals[i];
+						if( val != 0 ) {
+							int ix2 = aix[i]*n;
+							vectMultiplyAdd(val, avals, c, aix, i, ix2, len-i);
 						}
 					}
+				}
 			}
 			else
 			{

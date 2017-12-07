@@ -175,6 +175,12 @@ public class TernaryCPInstruction extends ComputationCPInstruction {
 		else
 			resultBlock.examSparsity();
 		
+		// Ensure right dense/sparse output representation for special cases
+		// such as ctable expand (guarded by released input memory)
+		if( checkGuardedRepresentationChange(matBlock1, matBlock2, resultBlock) ) {
+			resultBlock.examSparsity();
+		}
+		
 		ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
-	}	
+	}
 }

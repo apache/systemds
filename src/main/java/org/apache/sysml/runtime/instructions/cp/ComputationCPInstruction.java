@@ -19,6 +19,9 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -54,6 +57,9 @@ public abstract class ComputationCPInstruction extends CPInstruction {
 	}
 
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out ) {
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+			&& !CacheableData.isCachingActive() )
+			return true;
 		double memIn1 = (in1 != null) ? in1.getInMemorySize() : 0;
 		double memIn2 = (in2 != null) ? in2.getInMemorySize() : 0;
 		double memReq = out.isInSparseFormat() ? 

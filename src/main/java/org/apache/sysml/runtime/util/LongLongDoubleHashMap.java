@@ -56,6 +56,18 @@ public class LongLongDoubleHashMap
 	public int size() {
 		return size;
 	}
+	
+	public int getNonZeros() {
+		//note: the exact number of non-zeros might be smaller than size
+		//if negative and positive values canceled each other out
+		int ret = 0;
+		for( ADoubleEntry e : data )
+			while( e != null ) {
+				ret += (e.value != 0) ? 1 : 0;
+				e = e.next;
+			}
+		return ret;
+	}
 
 	public void addValue(long key1, long key2, double value)
 	{

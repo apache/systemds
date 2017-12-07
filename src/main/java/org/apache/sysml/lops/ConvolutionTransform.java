@@ -101,6 +101,10 @@ public class ConvolutionTransform extends Lop
 			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
+	
+	public void updateLopProperties() {
+		lps.setLevel(inputs);
+	}
 
 	@Override
 	public String toString() {

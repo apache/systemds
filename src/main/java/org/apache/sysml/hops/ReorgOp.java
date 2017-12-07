@@ -226,29 +226,24 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 			}
 			case RESHAPE:
 			{
+				Lop[] linputs = new Lop[4]; //main, rows, cols, byrow
+				for( int i=0; i<4; i++ )
+					linputs[i] = getInput().get(i).constructLops();
+				
 				if( et==ExecType.MR )
 				{
-					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+					Transform transform1 = new Transform( linputs,
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
-					for( int i=1; i<=3; i++ ) //rows, cols, byrow
-					{
-						Lop ltmp = getInput().get(i).constructLops();
-						transform1.addInput(ltmp);
-						ltmp.addOutput(transform1);
-					}
-					transform1.setLevel(); //force order of added lops
 					
-					Group group1 = new Group(
-							transform1, Group.OperationTypes.Sort, DataType.MATRIX,
-							getValueType());
+					Group group1 = new Group(transform1,
+						Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
 					setOutputDimensions(group1);
 					setLineNumbers(group1);
 	
-					Aggregate agg1 = new Aggregate(
-							group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-							getValueType(), et);
+					Aggregate agg1 = new Aggregate(group1,
+						Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), et);
 					setOutputDimensions(agg1);
 					setLineNumbers(agg1);
 					
@@ -256,18 +251,10 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 				}
 				else //CP/SPARK
 				{
-					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+					Transform transform1 = new Transform( linputs,
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
-					
-					for( int i=1; i<=3; i++ ) //rows, cols, byrow
-					{
-						Lop ltmp = getInput().get(i).constructLops();
-						transform1.addInput(ltmp);
-						ltmp.addOutput(transform1);
-					}
-					transform1.setLevel(); //force order of added lops
 					
 					setLops(transform1);
 				}
@@ -402,23 +389,16 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et, boolean bSortIndInMem ) 
 		throws HopsException, LopsException
 	{
-		Transform transform1 = new Transform( input.constructLops(), HopsTransf2Lops.get(ReOrgOp.SORT), 
-				input.getDataType(), input.getValueType(), et, bSortIndInMem);
-		
-		for( Hop c : new Hop[]{by,desc,ixret} ) {
-			Lop ltmp = c.constructLops();
-			transform1.addInput(ltmp);
-			ltmp.addOutput(transform1);
-		}
-		
-		transform1.setLevel(); //force order of added lops
-		
-		return transform1;
+		Hop[] hinputs = new Hop[]{input, by, desc, ixret};
+		Lop[] linputs = new Lop[4];
+		for( int i=0; i<4; i++ )
+			linputs[i] = hinputs[i].constructLops();
+		return new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT), 
+			input.getDataType(), input.getValueType(), et, bSortIndInMem);
 	}
-			
+	
 	@Override
-	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz ) {
 		//no dedicated mem estimation per op type, because always propagated via refreshSizeInformation
 		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);

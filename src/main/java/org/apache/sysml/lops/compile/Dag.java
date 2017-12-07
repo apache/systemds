@@ -22,9 +22,11 @@ package org.apache.sysml.lops.compile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -80,7 +82,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 
-
 /**
  * 
  * Class to maintain a DAG of lops and compile it into 
@@ -113,7 +114,7 @@ public class Dag<N extends Lop>
 		var_index = new IDSequence();
 	}
 	
-	// hash set for all nodes in dag
+	// list of all nodes in the dag
 	private ArrayList<Lop> nodes = null;
 	
 	/* 
@@ -178,11 +179,10 @@ public class Dag<N extends Lop>
 		}
 		public void addLastInstruction(Instruction inst) {
 			lastInstructions.add(inst);
-		}		
+		}
 	}
 	
-	public Dag() 
-	{
+	public Dag() {
 		//allocate internal data structures
 		nodes = new ArrayList<>();
 		IDMap = new HashMap<>();
@@ -246,25 +246,16 @@ public class Dag<N extends Lop>
 	 */
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
 			throws LopsException, IOException, DMLRuntimeException {
-		
-		if (config != null) 
-		{
+		if (config != null) {
 			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
 		
-		// hold all nodes in a vector (needed for ordering)
-		ArrayList<Lop> node_v = new ArrayList<>();
-		node_v.addAll(nodes);
-		
-		/*
-		 * Sort the nodes by topological order.
-		 * 
-		 * 1) All nodes with level i appear prior to the nodes in level i+1.
-		 * 2) All nodes within a level are ordered by their ID i.e., in the order
-		 * they are created
-		 */
-		doTopologicalSort_strict_order(node_v);
+		// create ordering of lops (for MR, we sort by level, while for all
+		// other exec types we use a two-level sorting of )
+		ArrayList<Lop> node_v = OptimizerUtils.isHadoopExecutionMode() ?
+			doTopologicalSortStrictOrder(nodes) :
+			doTopologicalSortTwoLevelOrder(nodes);
 		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst = doGreedyGrouping(sb, node_v);
@@ -3607,14 +3598,16 @@ public class Dag<N extends Lop>
 	}
 	
 	/**
-	 * Method to topologically sort lops
+	 * Sort the lops by topological order.
+	 * 
+	 *  1) All nodes with level i appear prior to the nodes in level i+1.
+	 *  2) All nodes within a level are ordered by their ID i.e., in the order
+	 *  they are created
 	 * 
 	 * @param v list of lops
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void doTopologicalSort_strict_order(ArrayList<Lop> v) {
-		//int numNodes = v.size();
-
+	private ArrayList<Lop> doTopologicalSortStrictOrder(ArrayList<Lop> v) {
 		/*
 		 * Step 1: compute the level for each node in the DAG. Level for each node is 
 		 *   computed as lops are created. So, this step is need not be performed here.
@@ -3627,13 +3620,28 @@ public class Dag<N extends Lop>
 		Lop[] nodearray = v.toArray(new Lop[0]);
 		Arrays.sort(nodearray, new LopComparator());
 
+		return createIDMapping(nodearray);
+	}
+	
+	private ArrayList<Lop> doTopologicalSortTwoLevelOrder(ArrayList<Lop> v) {
+		//partition nodes into leaf/inner nodes and dag root nodes,
+		//sort leaf/inner nodes by ID to force depth-first scheduling
+		Lop[] nodearray = Stream.concat(
+			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
+			v.stream().filter(l -> l.getOutputs().isEmpty()))
+			.toArray(Lop[]::new);
+		
+		return createIDMapping(nodearray);
+	}
+	
+	private ArrayList<Lop> createIDMapping(Lop[] nodearray) {
 		// Copy sorted nodes into "v" and construct a mapping between Lop IDs and sequence of numbers
-		v.clear();
+		ArrayList<Lop> ret = new ArrayList<>();
 		IDMap.clear();
 		
 		for (int i = 0; i < nodearray.length; i++) {
-			v.add(nodearray[i]);
-			IDMap.put(v.get(i).getID(), i);
+			ret.add(nodearray[i]);
+			IDMap.put(nodearray[i].getID(), i);
 		}
 		
 		/*
@@ -3642,17 +3650,14 @@ public class Dag<N extends Lop>
 		 * - and construct the list of reachable nodes from the node $u$
 		 * - store the constructed reachability information in $u$.reachable[] boolean array
 		 */
-		// 
-		//  
 		for (int i = 0; i < nodearray.length; i++) {
-			boolean[] arr = v.get(i).create_reachable(nodearray.length);
-			Arrays.fill(arr, false);
-			dagDFS(v.get(i), arr);
+			dagDFS(nodearray[i], nodearray[i]
+				.create_reachable(nodearray.length));
 		}
 
 		// print the nodes in sorted order
 		if (LOG.isTraceEnabled()) {
-			for ( Lop vnode : v ) {
+			for ( Lop vnode : ret ) {
 				StringBuilder sb = new StringBuilder();
 				sb.append(vnode.getID());
 				sb.append("(");
@@ -3665,13 +3670,12 @@ public class Dag<N extends Lop>
 					sb.append(",");
 				}
 				sb.append("), ");
-				
 				LOG.trace(sb.toString());
 			}
-			
 			LOG.trace("topological sort -- done");
 		}
-
+		
+		return ret;
 	}
 
 	/**

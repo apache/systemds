@@ -339,7 +339,7 @@ public abstract class Lop
 		return lps.getLevel();
 	}
 	
-	public void setLevel() {
+	protected void setLevel() {
 		lps.setLevel(inputs);
 	}
 	

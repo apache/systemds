@@ -43,44 +43,53 @@ public class Transform extends Lop
 	private OperationTypes operation = null;
 	private boolean _bSortIndInMem = false;
 	private int _numThreads = 1;
-		
-	/**
-	 * Constructor when we have one input.
-	 * 
-	 * @param input low-level operator
-	 * @param op transform operation type
-	 * @param dt data type
-	 * @param vt value type
-	 * @param et execution type
-	 */
+	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		this(input, op, dt, vt, et, 1);		
+		this(input, op, dt, vt, et, 1);
+	}
+	
+	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		this(inputs, op, dt, vt, et, 1);
 	}
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
-		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, et);
+		super(Lop.Type.Transform, dt, vt);
+		init(new Lop[]{input}, op, dt, vt, et);
+		_numThreads = k;
+	}
+	
+	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
+		super(Lop.Type.Transform, dt, vt);
+		init(inputs, op, dt, vt, et);
 		_numThreads = k;
 	}
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, ExecType.MR);
+		super(Lop.Type.Transform, dt, vt);
+		init(new Lop[]{input}, op, dt, vt, ExecType.MR);
 	}
 
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		_bSortIndInMem = bSortIndInMem;
-		init(input, op, dt, vt, et);
+		init(new Lop[]{input}, op, dt, vt, et);
 	}
 	
-	private void init (Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
+		super(Lop.Type.Transform, dt, vt);
+		_bSortIndInMem = bSortIndInMem;
+		init(inputs, op, dt, vt, et);
+	}
+	
+	private void init (Lop[] input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		operation = op;
- 
-		this.addInput(input);
-		input.addOutput(this);
-
+		
+		for(Lop in : input) {
+			this.addInput(in);
+			in.addOutput(this);
+		}
+		
 		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = false;

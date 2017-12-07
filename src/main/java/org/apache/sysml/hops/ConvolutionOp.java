@@ -266,10 +266,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// ---------------------------------------------------------------
 		
 		// Contruct the lop
-		ConvolutionTransform convolutionLop = new ConvolutionTransform(lhsInputLop, lopOp, 
+		Lop optionalMaxPoolOutput = (et == ExecType.GPU) ? getMaxPoolOutputLop() : null;
+		Lop[] l2inputs = new Lop[inputsOfPotentiallyFusedOp.size()-1];
+		for( int i=1; i < inputsOfPotentiallyFusedOp.size(); i++ )
+			l2inputs[i-1] = inputsOfPotentiallyFusedOp.get(i).constructLops();
+		ConvolutionTransform convolutionLop = new ConvolutionTransform(lhsInputLop, lopOp,
 				getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
-		
-		// Propagate the output dimensions and the line number of ConvolutionOp to ConvolutionTransform
 		setOutputDimensions(convolutionLop);
 		setLineNumbers(convolutionLop);
 		
@@ -280,19 +282,22 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			convolutionLop.addInput(optionalRhsInputLop);
 			optionalRhsInputLop.addOutput(convolutionLop);
 		}
-		for( int i=1; i < inputsOfPotentiallyFusedOp.size(); i++ ) {
-			Lop ltmp = inputsOfPotentiallyFusedOp.get(i).constructLops();
-			convolutionLop.addInput(ltmp);
-			ltmp.addOutput(convolutionLop);
+		for( int i=0; i < l2inputs.length; i++ ) {
+			convolutionLop.addInput(l2inputs[i]);
+			l2inputs[i].addOutput(convolutionLop);
 		}
 		// Only valid for MAX_POOLING_BACKWARD on GPU
-		Lop optionalMaxPoolOutput = (et == ExecType.GPU) ? getMaxPoolOutputLop() : null; 
 		if(optionalMaxPoolOutput != null) {
 			convolutionLop.addInput(optionalMaxPoolOutput);
 			optionalMaxPoolOutput.addOutput(convolutionLop);
 		}
-		convolutionLop.setLevel(); //force order of added lops
+		convolutionLop.updateLopProperties();
+		
+		// TODO double check that optionalMaxPoolOutput adheres to proper
+		// ID ordering of constructed lops (previously hidden by setLevel)
+		
 		// ---------------------------------------------------------------
+		
 		return convolutionLop;
 	}
 

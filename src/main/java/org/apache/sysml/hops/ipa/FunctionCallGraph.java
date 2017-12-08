@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -140,6 +141,21 @@ public class FunctionCallGraph
 		if( fkey == null )
 			return Collections.emptyList();
 		return _fCallsSB.get(fkey);
+	}
+	
+	/**
+	 * Removes all calls of the given function.
+	 * 
+	 * @param fkey function key of called function,
+	 *      null indicates the main program, which has no affect
+	 */
+	public void removeFunctionCalls(String fkey) {
+		_fCalls.remove(fkey);
+		_fCallsSB.remove(fkey);
+		_fRecursive.remove(fkey);
+		_fGraph.remove(fkey);
+		for( Entry<String, HashSet<String>> e : _fGraph.entrySet() )
+			e.getValue().removeIf(s -> s.equals(fkey));
 	}
 	
 	/**

@@ -104,6 +104,10 @@ public class IPAPassInlineFunctions extends IPAPass
 					fcallsSB.get(i).getHops().remove(op);
 					fcallsSB.get(i).getHops().addAll(hops2);
 				}
+				
+				//update the function call graph to avoid repeated inlining
+				//(and thus op replication) on repeated IPA calls
+				fgraph.removeFunctionCalls(fkey);
 			}
 		}
 	}

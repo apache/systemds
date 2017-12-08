@@ -22,12 +22,13 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class IPAFunctionInliningTest extends AutomatedTestBase 
 {
@@ -36,7 +37,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "IPAFunInline3"; //pos 3 (large but called once)
 	private final static String TEST_NAME4 = "IPAFunInline4"; //neg 1 (control flow)
 	private final static String TEST_NAME5 = "IPAFunInline5"; //neg 2 (large and called twice)
-	
+	private final static String TEST_NAME6 = "IPAFunInline6"; //pos 4 (regression op replication)
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAFunctionInliningTest.class.getSimpleName() + "/";
@@ -49,6 +50,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
 	}
 
 	@Test
@@ -77,6 +79,11 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunInline6NoIPA() {
+		runIPAFunInlineTest( TEST_NAME6, false );
+	}
+	
+	@Test
 	public void testFunInline1IPA() {
 		runIPAFunInlineTest( TEST_NAME1, true );
 	}
@@ -101,6 +108,11 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		runIPAFunInlineTest( TEST_NAME5, true );
 	}
 	
+	@Test
+	public void testFunInline6IPA() {
+		runIPAFunInlineTest( TEST_NAME6, true );
+	}
+	
 	private void runIPAFunInlineTest( String testName, boolean IPA )
 	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
@@ -121,13 +133,21 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 
 			//run script and compare output
 			runTest(true, false, null, -1); 
-			double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
+			
+			//compare results
+			if( !testName.equals(TEST_NAME6) ) {
+				double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+				Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
+			}
 			
 			//compare inlined functions
-			boolean inlined = ( IPA && (testName.equals(TEST_NAME1) 
-				|| testName.equals(TEST_NAME2) || testName.equals(TEST_NAME3)) );
+			boolean inlined = ( IPA && ArrayUtils.contains(
+				new String[]{TEST_NAME1, TEST_NAME2, TEST_NAME3, TEST_NAME6}, testName));
 			Assert.assertTrue("Unexpected function call: "+inlined, !heavyHittersContainsSubString("foo")==inlined);
+		
+			//check for incorrect operation replication
+			if( testName.equals(TEST_NAME6) )
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")==1);
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

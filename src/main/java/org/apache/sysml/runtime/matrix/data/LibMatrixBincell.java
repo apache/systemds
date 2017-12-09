@@ -265,9 +265,9 @@ public class LibMatrixBincell
 			return; // skip entire empty block
 		
 		ret.allocateDenseBlock();
-		double[] a = m1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = (m1.denseBlock != null) ? m1.getDenseBlockValues() : null;
+		double[] b = (m2.denseBlock != null) ? m2.getDenseBlockValues() : null;
+		double[] c = ret.getDenseBlockValues();
 		int nnz = 0;
 		
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
@@ -631,7 +631,7 @@ public class LibMatrixBincell
 		ret.allocateDenseBlock();
 		final int m = ret.rlen;
 		final int n = ret.clen;
-		double[] c = ret.denseBlock;
+		double[] c = ret.getDenseBlockValues();
 		
 		//1) process left input: assignment
 		
@@ -657,9 +657,9 @@ public class LibMatrixBincell
 		else //DENSE left
 		{
 			if( !m1.isEmptyBlock(false) ) 
-				System.arraycopy(m1.denseBlock, 0, c, 0, m*n);
+				System.arraycopy(m1.getDenseBlockValues(), 0, c, 0, m*n);
 			else
-				Arrays.fill(ret.denseBlock, 0, m*n, 0); 
+				ret.denseBlock.set(0);
 		}
 		
 		//2) process right input: op.fn (+,-,*), * only if dense
@@ -687,14 +687,14 @@ public class LibMatrixBincell
 		else //DENSE right
 		{
 			if( !m2.isEmptyBlock(false) ) {
-				double[] a = m2.denseBlock;
+				double[] a = m2.getDenseBlockValues();
 				for( int i=0; i<m*n; i++ ) {
 					c[i] = op.fn.execute(c[i], a[i]);
 					lnnz += (c[i]!=0) ? 1 : 0;
 				}
 			}
 			else if(op.fn instanceof Multiply)
-				Arrays.fill(ret.denseBlock, 0, m*n, 0); 
+				ret.denseBlock.set(0);
 		}
 		
 		//3) recompute nnz
@@ -707,9 +707,9 @@ public class LibMatrixBincell
 		ret.allocateDenseBlock();
 		final int m = ret.rlen;
 		final int n = ret.clen;
-		double[] a = m1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = m1.getDenseBlockValues();
+		double[] b = m2.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		ValueFunction fn = op.fn;
 		
 		//compute dense-dense binary, maintain nnz on-the-fly
@@ -782,7 +782,7 @@ public class LibMatrixBincell
 		double b[] = DataConverter.convertToDoubleVector(mbRight);
 		if(!mbOut.isAllocated())
 			mbOut.allocateDenseBlock();
-		double c[] = mbOut.getDenseBlock();
+		double c[] = mbOut.getDenseBlockValues();
 		
 		//pre-materialize various types used in inner loop
 		boolean scanType1 = (bOp.fn instanceof LessThan || bOp.fn instanceof Equals 
@@ -875,9 +875,9 @@ public class LibMatrixBincell
 				&& !m2.sparse && !m2.isEmptyBlock(false)  )
 			{
 				ret.allocateDenseBlock();
-				double[] a = m1.denseBlock;
-				double[] b = m2.denseBlock;
-				double[] c = ret.denseBlock;
+				double[] a = m1.getDenseBlockValues();
+				double[] b = m2.getDenseBlockValues();
+				double[] c = ret.getDenseBlockValues();
 				int lnnz = 0;
 				for( int i=0; i<rlen; i++ ) {
 					c[i] = op.fn.execute( a[i], b[i] );
@@ -991,7 +991,7 @@ public class LibMatrixBincell
 			ret.allocateDenseBlock();
 			
 			SparseBlock a = m1.sparseBlock;
-			double[] c = ret.denseBlock;			
+			double[] c = ret.getDenseBlockValues();
 			int m = m1.rlen;
 			int n = m1.clen;
 			
@@ -1027,8 +1027,8 @@ public class LibMatrixBincell
 		//allocate dense block (if necessary), incl clear nnz
 		ret.allocateDenseBlock(true);
 		
-		double[] a = m1.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = m1.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		
 		//compute scalar operation, incl nnz maintenance
 		int limit = m1.rlen*m1.clen;

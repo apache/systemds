@@ -31,21 +31,36 @@ public class DenseBlockDRB extends DenseBlock
 	private int clen;
 
 	public DenseBlockDRB(int rlen, int clen) {
-		reset(rlen, clen);
+		reset(rlen, clen, 0);
 	}
-	
+
+	public DenseBlockDRB(double[] data, int rlen, int clen) {
+		this.data = data;
+		this.rlen = rlen;
+		this.clen = clen;
+	}
+
 	@Override
 	public void reset() {
-		reset(rlen, clen);
+		reset(rlen, clen, 0);
 	}
 
 	@Override
 	public void reset(int rlen, int clen) {
+		reset(rlen, clen, 0);
+	}
+	
+	@Override
+	public void reset(int rlen, int clen, double v) {
 		int len = rlen * clen;
-		if( len < capacity() )
-			Arrays.fill(data, 0, len, 0);
-		else
+		if( len > capacity() ) {
 			data = new double[len];
+			if( v != 0 )
+				Arrays.fill(data, v);
+		}
+		else {
+			Arrays.fill(data, 0, len, v);
+		}
 		this.rlen = rlen;
 		this.clen = clen;
 	}
@@ -73,9 +88,25 @@ public class DenseBlockDRB extends DenseBlock
 	@Override
 	public long countNonZeros() {
 		final int len = rlen * clen;
+		double[] a = data;
 		int nnz = 0;
 		for(int i=0; i<len; i++)
-			nnz += (data[i]!=0) ? 1 : 0;
+			nnz += (a[i]!=0) ? 1 : 0;
+		return nnz;
+	}
+
+	@Override
+	public long countNonZeros(int rl, int ru, int cl, int cu) {
+		long nnz = 0;
+		if( cl==0 && cu==clen ) { //specific case: all cols
+			for( int i=rl*clen; i<ru*clen; i++ )
+				nnz += (data[i]!=0) ? 1 : 0;
+		}
+		else {
+			for( int i=rl, ix=rl*clen; i<ru; i++, ix+=clen )
+				for( int j=cl; j<cu; j++ )
+					nnz += (data[ix+j]!=0) ? 1 : 0;
+		}
 		return nnz;
 	}
 
@@ -105,12 +136,41 @@ public class DenseBlockDRB extends DenseBlock
 	}
 
 	@Override
+	public void set(double v) {
+		Arrays.fill(data, 0, rlen*clen, v);
+	}
+	
+	@Override
+	public void set(int rl, int ru, int cl, int cu, double v) {
+		for(int i=rl, ix=rl*clen; i<ru; i++, ix+=clen)
+			Arrays.fill(data, ix+cl, ix+cu, v);
+	}
+
+	@Override
 	public void set(int r, int c, double v) {
 		data[pos(r, c)] = v;
 	}
 
 	@Override
+	public void set(int r, double[] v) {
+		System.arraycopy(v, 0, data, pos(r), clen);
+	}
+
+	@Override
 	public double get(int r, int c) {
 		return data[pos(r, c)];
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0, ix=0; i<rlen; i++, ix+=clen) {
+			for(int j=0; j<clen; j++) {
+				sb.append(data[ix+j]);
+				sb.append("\t");
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }

@@ -772,7 +772,7 @@ public class GPUObject {
 			
 			// Only recompute non-zero if unknown, else this will incur huge penalty !!
 			if(tmp.getNonZeros() < 0) {
-				tmp.recomputeNonZeros(opcode);
+				tmp.recomputeNonZeros();
 			}
 			long nnz = tmp.getNonZeros();
 			mat.getMatrixCharacteristics().setNonZeros(nnz);
@@ -833,7 +833,7 @@ public class GPUObject {
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
-			double[] data = tmp.getDenseBlock();
+			double[] data = tmp.getDenseBlockValues();
 
 			if (data == null && tmp.getSparseBlock() != null)
 				throw new DMLRuntimeException("Incorrect sparsity calculation");
@@ -886,7 +886,8 @@ public class GPUObject {
 				start = System.nanoTime();
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaDenseMatrixPtr(), tmp.getDenseBlock(), instName, isEviction);
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
+				getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();

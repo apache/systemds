@@ -28,6 +28,10 @@ public abstract class DenseBlockFactory
 		return createDenseBlock(type, rlen, clen);
 	}
 
+	public static DenseBlock createDenseBlock(double[] data, int rlen, int clen) {
+		return new DenseBlockDRB(data, rlen, clen);
+	}
+	
 	public static DenseBlock createDenseBlock(DenseBlock.Type type, int rlen, int clen) {
 		switch( type ) {
 			case DRB: return new DenseBlockDRB(rlen, clen);

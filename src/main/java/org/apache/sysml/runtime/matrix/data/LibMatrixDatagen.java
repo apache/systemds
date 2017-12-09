@@ -399,7 +399,7 @@ public class LibMatrixDatagen
 		out.allocateDenseBlock();
 	
 		//compute sequence data
-		double[] c = out.denseBlock; 		
+		double[] c = out.getDenseBlockValues();
 		double cur = from;
 		for(int i=0; i < rows; i++) {
 			c[i] = cur;
@@ -577,7 +577,7 @@ public class LibMatrixDatagen
 				}
 				else {
 					if (sparsity == 1.0) {
-						double[] c = out.denseBlock;
+						double[] c = out.getDenseBlockValues();
 						int cix = rowoffset*cols + coloffset;
 						for(int ii = 0; ii < blockrows; ii++, cix+=cols)
 							for(int jj = 0; jj < blockcols; jj++)
@@ -605,7 +605,7 @@ public class LibMatrixDatagen
 							}
 						}
 						else {
-							double[] c = out.denseBlock;
+							double[] c = out.getDenseBlockValues();
 							int cix = rowoffset*cols + coloffset;
 							for(int ii = 0; ii < blockrows; ii++, cix+=cols)
 								for(int jj = 0; jj < blockcols; jj++)

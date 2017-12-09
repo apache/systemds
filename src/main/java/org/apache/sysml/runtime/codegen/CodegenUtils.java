@@ -170,7 +170,7 @@ public class CodegenUtils
 	public static SideInput createSideInput(MatrixBlock in) {
 		SideInput ret = (in.isInSparseFormat() || !in.isAllocated()) ?
 			new SideInput(null, in, in.getNumColumns()) :
-			new SideInput(in.getDenseBlock(), null, in.getNumColumns());
+			new SideInput(in.getDenseBlockValues(), null, in.getNumColumns());
 		return (ret.mdat != null) ? new SideInputSparseCell(ret) : ret;
 	}
 	

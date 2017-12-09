@@ -42,13 +42,13 @@ public class LibMatrixDNNIm2ColHelper {
 					LOG.trace("Using DenseIm2colWorkerAllChannels operator to perform "
 						+ "im2col (stride1pad0="+stride1Pad0+", allChannels="+allChannels+").");
 				if(allChannels && stride1Pad0 && !trans )
-					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
+					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlockValues(), out.getDenseBlockValues(), params);
 				else if( allChannels )
-					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params, trans);
+					return new DenseIm2colWorkerAllChannels(input.getDenseBlockValues(), out.getDenseBlockValues(), params, trans);
 				else if( stride1Pad0 )
-					return new DenseIm2colWorkerStride1Pad0(input.getDenseBlock(), out.getDenseBlock(), params);
+					return new DenseIm2colWorkerStride1Pad0(input.getDenseBlockValues(), out.getDenseBlockValues(), params);
 				else
-					return new DenseIm2colWorker(input.getDenseBlock(), out.getDenseBlock(), params);
+					return new DenseIm2colWorker(input.getDenseBlockValues(), out.getDenseBlockValues(), params);
 			}
 			else {
 				if(LOG.isTraceEnabled()) 

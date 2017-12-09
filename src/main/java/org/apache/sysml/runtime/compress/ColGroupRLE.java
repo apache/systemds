@@ -191,7 +191,7 @@ public class ColGroupRLE extends ColGroupOffset
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		
 		//position and start offset arrays
 		int[] astart = new int[numVals];
@@ -269,7 +269,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
@@ -365,7 +365,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{		
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
@@ -443,7 +443,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{
 		//note: this method is only applicable for numrows < blocksize
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 
@@ -538,7 +538,7 @@ public class ColGroupRLE extends ColGroupOffset
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
 		
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		if( ALLOW_CACHE_CONSCIOUS_ROWSUMS 
 			&& LOW_LEVEL_OPT && numVals > 1 
@@ -651,7 +651,7 @@ public class ColGroupRLE extends ColGroupOffset
 	{
 		//NOTE: zeros handled once for all column groups outside
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];

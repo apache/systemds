@@ -74,7 +74,7 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		{
 			if(v1.getDenseBlock()==null)
 				return;
-			denseArray=v1.getDenseBlock();
+			denseArray=v1.getDenseBlockValues();
 			nextInDenseArray=0;
 			denseArraySize=v1.getNumRows()*v1.getNumColumns();
 		}

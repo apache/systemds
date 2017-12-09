@@ -165,8 +165,8 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 						Arrays.sort(_bv);
 					}
 				}
-		
-				LibMatrixOuterAgg.resetOutputMatix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _uaggOp);
+				
+				LibMatrixOuterAgg.resetOutputMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _uaggOp);
 				LibMatrixOuterAgg.aggregateMatrix((MatrixBlock)in1Val, (MatrixBlock)outVal, _bv, _bvi, _bOp, _uaggOp);
 			}
 			else //default case 

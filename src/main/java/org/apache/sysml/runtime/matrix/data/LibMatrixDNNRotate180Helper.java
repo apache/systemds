@@ -28,7 +28,7 @@ public class LibMatrixDNNRotate180Helper {
 		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out, 
 			ConvolutionParameters params, boolean zeroOutSparseOutput, boolean trans) {
 			if(!in.isInSparseFormat()) 
-				return new DenseRotate180Worker(in, out.getDenseBlock(), params);
+				return new DenseRotate180Worker(in, out.getDenseBlockValues(), params);
 			else
 				return new SparseRotate180Worker(in, out, params, trans);
 		}
@@ -44,7 +44,7 @@ public class LibMatrixDNNRotate180Helper {
 		public DenseRotate180Worker(MatrixBlock input, double [] outputArray,  ConvolutionParameters params) {
 			this.outputArray = outputArray;
 			this.params = params;
-			inputArray = input.getDenseBlock();
+			inputArray = input.getDenseBlockValues();
 			if(inputArray == null || outputArray == null)
 				throw new RuntimeException("Incorrect usage: empty inputs");
 		}

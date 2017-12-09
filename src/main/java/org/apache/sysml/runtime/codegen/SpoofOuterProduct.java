@@ -97,10 +97,10 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		if( a instanceof CompressedMatrixBlock )
 			executeCellwiseCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out, m, n, k, _outerProductType, 0, m, 0, n);
 		else if( !a.isInSparseFormat() )
-			executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
+			executeCellwiseDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
 		else
 			executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
-		return new DoubleObject(out.getDenseBlock()[0]);
+		return new DoubleObject(out.getDenseBlock().get(0, 0));
 	}
 	
 	@Override
@@ -200,19 +200,19 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			case LEFT_OUTER_PRODUCT:
 			case RIGHT_OUTER_PRODUCT:
 				if( a instanceof CompressedMatrixBlock )
-					executeCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out.getDenseBlock(), 
+					executeCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out.getDenseBlockValues(), 
 						m, n, k, _outerProductType, 0, m, 0, ((CompressedMatrixBlock)a).getNumColGroups());
 				else if( !a.isInSparseFormat() )
-					executeDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
+					executeDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
 				else
-					executeSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
+					executeSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
 				
 			case CELLWISE_OUTER_PRODUCT:
 				if( a instanceof CompressedMatrixBlock )
 					executeCellwiseCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out, m, n, k, _outerProductType, 0, m, 0, n);
 				else if( !a.isInSparseFormat() )
-					executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
+					executeCellwiseDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
 				else 
 					executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
@@ -485,7 +485,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		if( !out.isInSparseFormat() ) //DENSE
 		{
-			double[] c = out.getDenseBlock();
+			double[] c = out.getDenseBlockValues();
 			double tmp = 0;
 			for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
 				int bimin = Math.min(ru, bi+blocksizeIJ);
@@ -569,7 +569,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
 		//compressed data is access in a column-major order 
 		
-		double[] c = out.getDenseBlock();
+		double[] c = (out.getDenseBlock() != null) ?
+			out.getDenseBlockValues() : null;
 		SparseBlock csblock = out.getSparseBlock();
 		
 		Iterator<IJV> iter = a.getIterator(rl, ru, false);
@@ -641,17 +642,17 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				case LEFT_OUTER_PRODUCT:
 				case RIGHT_OUTER_PRODUCT:
 					if( _a instanceof CompressedMatrixBlock )
-						executeCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else if( !_a.isInSparseFormat() )
-						executeDense(_a.getDenseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else
-						executeSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
+						executeSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
 					break;
 				case CELLWISE_OUTER_PRODUCT:
 					if( _a instanceof CompressedMatrixBlock )
 						executeCellwiseCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c, _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else if( !_c.isInSparseFormat() )
-						executeCellwiseDense(_a.getDenseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeCellwiseDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else 
 						executeCellwiseSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c, _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
 					break;
@@ -706,10 +707,10 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			if( _a instanceof CompressedMatrixBlock )
 				executeCellwiseCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, out, _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 			else if( !_a.isInSparseFormat() )
-				executeCellwiseDense(_a.getDenseBlock(), _u, _v, _b, _scalars, out.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+				executeCellwiseDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, out.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 			else
 				executeCellwiseSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, out, _rlen, _clen, _k, _a.getNonZeros(), _type, _rl, _ru, _cl, _cu);
-			return out.getDenseBlock()[0];
+			return out.quickGetValue(0, 0);
 		}
 	}
 }

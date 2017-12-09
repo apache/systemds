@@ -48,7 +48,7 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 			dout_n.allocateBlock();
 			LibMatrixDNNRotate180Helper.Rotate180Worker rotate180Worker = 
 					LibMatrixDNNRotate180Helper.Rotate180Worker.getWorker( _params.input2, dout_n, _params, true, false);
-			double [] ldout_n = dout_n.getDenseBlock();
+			double [] ldout_n = dout_n.getDenseBlockValues();
 			double [] partRet = new double[CRS*_params.K]; //CRS x K
 			for(int n = _rl; n < _ru; n++) {
 				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
@@ -108,7 +108,7 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
-					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
+					LibMatrixMult.vectAdd(outMM.getDenseBlockValues(), partRet, 0, 0, K*CRS);
 				
 				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
@@ -161,7 +161,7 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
-					LibMatrixMult.vectAdd(outMM.getDenseBlock(), partRet, 0, 0, K*CRS);
+					LibMatrixMult.vectAdd(outMM.getDenseBlockValues(), partRet, 0, 0, K*CRS);
 				
 				if(DMLScript.FINEGRAINED_STATISTICS) {
 					time1 += t2 - t1;
@@ -180,14 +180,14 @@ public class LibMatrixDNNConv2dBackwardFilterHelper {
 	
 	private static void inplaceAdd(double[] a, ConvolutionParameters params) {
 		synchronized (params.output.denseBlock) {
-			LibMatrixMult.vectAdd(a, params.output.denseBlock, 0, 0, a.length);
+			LibMatrixMult.vectAdd(a, params.output.getDenseBlockValues(), 0, 0, a.length);
 		}
 	}
 	
 	private static void inplaceTransAdd(double[] a, ConvolutionParameters params) {
 		synchronized (params.output.denseBlock) {
 			// Perform transposed addition: output of size [K, CRS] += input of size [CRS,K]
-			double [] c = params.output.denseBlock;
+			double [] c = params.output.getDenseBlockValues();
 			final int CRS = params.C*params.R*params.S, K = params.K;
 			final int blocksizeIJ = 128; //L2 cache
 			

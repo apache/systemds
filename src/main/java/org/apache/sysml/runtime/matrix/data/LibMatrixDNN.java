@@ -403,7 +403,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + N + " X " + input.getNumColumns()  + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
 		
-		double [] outputArray = outputBlock.getDenseBlock();
+		double [] outputArray = outputBlock.getDenseBlockValues();
 		if(input.isEmptyBlock()) {
 			for(int n = 0;  n < N; n++) 
 				ConvolutionUtils.fillBias(bias, outputArray, n, n+1, N, K, PQ);
@@ -414,7 +414,7 @@ public class LibMatrixDNN {
 			int index = 0;
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array
-			double [] biasArr = bias.getDenseBlock();
+			double [] biasArr = bias.getDenseBlockValues();
 			for(int n = 0; n < N; n++) {
 				for(int k = 0; k < K; k++) {
 					double biasVal = biasArr[k];
@@ -462,9 +462,9 @@ public class LibMatrixDNN {
 			outputBlock.copy(input);
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array
-			double [] biasArr = bias.getDenseBlock();
+			double [] biasArr = bias.getDenseBlockValues();
 			if(!input.isInSparseFormat()) {
-				double [] outputArray = outputBlock.getDenseBlock();
+				double [] outputArray = outputBlock.getDenseBlockValues();
 				int index = 0;
 				for(int n = 0; n < N; n++) {
 					for(int k = 0; k < K; k++) {

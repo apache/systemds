@@ -191,7 +191,7 @@ public class LibMatrixAgg
 		if( in.isEmptyBlock(false) ){
 			aggregateUnaryMatrixEmpty(in, out, aggtype, uaop.indexFn);
 			return;
-		}	
+		}
 		
 		//Timing time = new Timing(true);
 		
@@ -203,7 +203,7 @@ public class LibMatrixAgg
 			aggregateUnaryMatrixDense(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
 		else
 			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
-				
+		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
 		out.examSparsity();
@@ -255,7 +255,7 @@ public class LibMatrixAgg
 						new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) :
 						new PartialAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
-			pool.invokeAll(tasks);	
+			pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
 			if( !(uaop.indexFn instanceof ReduceCol) ) {
@@ -557,7 +557,7 @@ public class LibMatrixAgg
 		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
 		{
 			int m = out.rlen;
-			double[] c = out.getDenseBlock();
+			double[] c = out.getDenseBlockValues();
 			for( int i=0, cix=0; i<m; i++, cix+=2 )
 				c[cix] = UtilFunctions.computeCellIndex(ix.getColumnIndex(), bclen, (int)c[cix]-1);
 		}
@@ -664,9 +664,9 @@ public class LibMatrixAgg
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		
-		double[] a = in1.denseBlock;
-		double[] b1 = in2.denseBlock;
-		double[] b2 = (in3!=null) ? in3.denseBlock : null; //if null, literal 1
+		double[] a = in1.getDenseBlockValues();
+		double[] b1 = in2.getDenseBlockValues();
+		double[] b2 = (in3!=null) ? in3.getDenseBlockValues() : null; //if null, literal 1
 		final int n = in1.clen;
 		
 		if( ixFn instanceof ReduceAll ) //tak+*
@@ -682,7 +682,7 @@ public class LibMatrixAgg
 		}
 		else //tack+*
 		{
-			double[] c = ret.getDenseBlock();
+			double[] c = ret.getDenseBlockValues();
 			for( int i=rl, ix=rl*n; i<ru; i++ )
 				for( int j=0; j<n; j++, ix++ ) {
 					double b2val = (b2 != null) ? b2[ix] : 1;
@@ -734,7 +734,7 @@ public class LibMatrixAgg
 						double val = val1 * val2;
 						if( val != 0 && lin3 != null )
 							val *= lin3.quickGetValue(i, aix[j]);
-						kplus.execute2( kbuff, val );							
+						kplus.execute2( kbuff, val );
 					}
 				}	
 			ret.quickSetValue(0, 0, kbuff._sum);
@@ -742,7 +742,7 @@ public class LibMatrixAgg
 		}
 		else //tack+*
 		{
-			double[] c = ret.getDenseBlock();
+			double[] c = ret.getDenseBlockValues();
 			for( int i=rl; i<ru; i++ )
 				if( !a.isEmpty(i) ) {
 					int apos = a.pos(i);
@@ -825,8 +825,9 @@ public class LibMatrixAgg
 			}
 			else //DENSE target
 			{
+				double[] a = target.getDenseBlockValues();
 				for ( int i=0; i < target.getNumColumns(); i++ ) {
-					double d = target.denseBlock[ i ];
+					double d = a[ i ];
 					if( d != 0 ) //sparse-safe
 					{
 						int g = (int) groups.quickGetValue(i, 0);
@@ -872,7 +873,7 @@ public class LibMatrixAgg
 			}
 			else //DENSE target
 			{
-				double[] a = target.denseBlock;
+				double[] a = target.getDenseBlockValues();
 				
 				for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=numCols ) 
 				{
@@ -944,7 +945,7 @@ public class LibMatrixAgg
 		}
 		else //DENSE target
 		{
-			double[] a = target.denseBlock;
+			double[] a = target.getDenseBlockValues();
 			
 			for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=target.clen ) 
 			{
@@ -977,7 +978,7 @@ public class LibMatrixAgg
 		if( groups.isInSparseFormat() || groups.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Unsupported sparse input for aggregate-count on group vector.");
 		
-		double[] a = groups.denseBlock;
+		double[] a = groups.getDenseBlockValues();
 		int[] tmp = new int[numGroups];
 		int m = groups.rlen;
 		
@@ -1005,9 +1006,9 @@ public class LibMatrixAgg
 		aggVal.allocateDenseBlock(); //should always stay in dense
 		aggCorr.allocateDenseBlock(); //should always stay in dense
 		
-		double[] a = in.getDenseBlock();
-		double[] c = aggVal.getDenseBlock();
-		double[] cc = aggCorr.getDenseBlock();
+		double[] a = in.getDenseBlockValues();
+		double[] c = aggVal.getDenseBlockValues();
+		double[] cc = aggCorr.getDenseBlockValues();
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
@@ -1043,8 +1044,8 @@ public class LibMatrixAgg
 		aggCorr.allocateDenseBlock(); //should always stay in dense
 		
 		SparseBlock a = in.getSparseBlock();
-		double[] c = aggVal.getDenseBlock();
-		double[] cc = aggCorr.getDenseBlock();
+		double[] c = aggVal.getDenseBlockValues();
+		double[] cc = aggCorr.getDenseBlockValues();
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
@@ -1127,7 +1128,7 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int n = in.clen;
 		
-		double[] a = in.getDenseBlock();
+		double[] a = in.getDenseBlockValues();
 		
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
@@ -1158,7 +1159,7 @@ public class LibMatrixAgg
 		final int n = in.clen;
 		final int cix = (m-1)*n;
 		
-		double[] a = in.getDenseBlock();
+		double[] a = in.getDenseBlockValues();
 		
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
@@ -1228,7 +1229,7 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int n = in.clen;
 		
-		double[] a = in.getDenseBlock();
+		double[] a = in.getDenseBlockValues();
 		
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
@@ -1296,8 +1297,8 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int n = in.clen;
 		
-		double[] a = in.getDenseBlock();
-		double[] c = out.getDenseBlock();		
+		double[] a = in.getDenseBlockValues();
+		double[] c = out.getDenseBlockValues();
 		
 		switch( optype )
 		{
@@ -1419,7 +1420,7 @@ public class LibMatrixAgg
 		final int n = in.clen;
 		
 		SparseBlock a = in.getSparseBlock();
-		double[] c = out.getDenseBlock();
+		double[] c = out.getDenseBlockValues();
 		
 		switch( optype )
 		{
@@ -1539,8 +1540,8 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int n = in.clen;
 		
-		double[] a = in.getDenseBlock();
-		double[] c = out.getDenseBlock();		
+		double[] a = in.getDenseBlockValues();
+		double[] c = out.getDenseBlockValues();
 		
 		switch( optype )
 		{
@@ -1576,7 +1577,7 @@ public class LibMatrixAgg
 		final int n = in.clen;
 		
 		SparseBlock a = in.getSparseBlock();
-		double[] c = out.getDenseBlock();
+		double[] c = out.getDenseBlockValues();
 		
 		switch( optype )
 		{

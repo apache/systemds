@@ -200,7 +200,7 @@ public class ColGroupOLE extends ColGroupOffset
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		
 		//cache blocking config and position array
 		int[] apos = allocIVector(numVals, true);
@@ -298,7 +298,7 @@ public class ColGroupOLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -388,7 +388,7 @@ public class ColGroupOLE extends ColGroupOffset
 		throws DMLRuntimeException 
 	{
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -462,7 +462,7 @@ public class ColGroupOLE extends ColGroupOffset
 		throws DMLRuntimeException 
 	{
 		//note: this method is only applicable for numrows < blocksize
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
@@ -518,7 +518,7 @@ public class ColGroupOLE extends ColGroupOffset
 		
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		if( ALLOW_CACHE_CONSCIOUS_ROWSUMS &&
 			LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz )
@@ -625,7 +625,7 @@ public class ColGroupOLE extends ColGroupOffset
 		//NOTE: zeros handled once for all column groups outside
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		//iterate over all values and their bitmaps
 		for (int k = 0; k < numVals; k++) 

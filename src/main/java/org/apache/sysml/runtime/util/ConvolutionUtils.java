@@ -127,7 +127,7 @@ public class ConvolutionUtils {
 			}
 		}
 		else {
-			double [] inputArr = src.getDenseBlock();
+			double [] inputArr = src.getDenseBlockValues();
 			if(op.fn == Plus.getPlusFnObject()) {
 				for(int i = destPos; i < src_ru*destNumCols; i++) {
 					dest[i] += inputArr[i];
@@ -163,7 +163,7 @@ public class ConvolutionUtils {
 			}
 		}
 		else {
-			double [] inputArr = src.getDenseBlock();
+			double [] inputArr = src.getDenseBlockValues();
 			for(int i = destPos; i < src_ru*destNumCols; i++) {
 				dest[i] = scalarOp.executeScalar(inputArr[i]);
 			}
@@ -186,7 +186,7 @@ public class ConvolutionUtils {
 			}
 		}
 		else {
-			double [] biasArr = bias.getDenseBlock();
+			double [] biasArr = bias.getDenseBlockValues();
 			for(int n = src_rl; n < src_ru; n++) {
 				for(int k = 0; k < K; k++) {
 					int fromIndex = n*K*PQ + k*PQ;

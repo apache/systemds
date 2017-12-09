@@ -19,7 +19,6 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -360,7 +359,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 				else {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, false).allocateBlock();
 					if(instOpcode.equalsIgnoreCase("maxpooling"))
-						Arrays.fill(outputBlock.getDenseBlock(), -Double.MAX_VALUE);
+						outputBlock.getDenseBlock().set(-Double.MAX_VALUE);
 					LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 				}
 			}

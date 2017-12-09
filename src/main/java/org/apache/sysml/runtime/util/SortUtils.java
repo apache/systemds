@@ -48,7 +48,7 @@ public class SortUtils
 	
 	public static boolean isSorted(MatrixBlock in) {
 		return in.isInSparseFormat() ? false : !in.isAllocated() ? true :
-			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlock());
+			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlockValues());
 	}
 	
 	public static int compare(double[] d1, double[] d2) {

@@ -46,8 +46,8 @@ public class LibMatrixDNNPoolingHelper {
 			final int HW = _params.H*_params.W;
 			final int CHW = _params.C*_params.H*_params.W;
 			final int CPQ = C*P*Q;
-			double[] in = _params.input1.getDenseBlock();
-			double[] out = _params.output.getDenseBlock();
+			double[] in = _params.input1.getDenseBlockValues();
+			double[] out = _params.output.getDenseBlockValues();
 			
 			double minValForMaxPoolOperations = _params.minValForMaxPoolOperations;
 			
@@ -101,7 +101,7 @@ public class LibMatrixDNNPoolingHelper {
 		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
-			outputArray = params.output.getDenseBlock();
+			outputArray = params.output.getDenseBlockValues();
 			C = params.C; P = params.P; Q = params.Q; H = params.H; 
 			W = params.W;
 			CPQ = C*P*Q;

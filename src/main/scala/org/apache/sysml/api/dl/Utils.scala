@@ -126,7 +126,7 @@ object Utils {
   def allocateDeconvolutionWeight(data: java.util.List[java.lang.Float], F: Int, C: Int, H: Int, W: Int): (MatrixBlock, CopyFloatToDoubleArray) = {
     val mb = new MatrixBlock(C, F * H * W, false)
     mb.allocateDenseBlock()
-    val arr    = mb.getDenseBlock
+    val arr    = mb.getDenseBlockValues
     val thread = new CopyCaffeDeconvFloatToSystemMLDeconvDoubleArray(data, F, C, H, W, arr)
     thread.start
     return (mb, thread)
@@ -135,7 +135,7 @@ object Utils {
   def allocateMatrixBlock(data: java.util.List[java.lang.Float], rows: Int, cols: Int, transpose: Boolean): (MatrixBlock, CopyFloatToDoubleArray) = {
     val mb = new MatrixBlock(rows, cols, false)
     mb.allocateDenseBlock()
-    val arr    = mb.getDenseBlock
+    val arr    = mb.getDenseBlockValues
     val thread = new CopyFloatToDoubleArray(data, rows, cols, transpose, arr)
     thread.start
     return (mb, thread)

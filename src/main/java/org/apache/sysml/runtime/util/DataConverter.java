@@ -233,19 +233,18 @@ public class DataConverter
 		
 		if( mb.getNonZeros() > 0 )
 		{
-			if( mb.isInSparseFormat() )
-			{
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
 					ret[cell.getI()][cell.getJ()] = cell.getV();
 				}
 			}
-			else
-			{			
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-						ret[i][j] = mb.getValueDenseUnsafe(i, j);
+			else {
+				double[] a = mb.getDenseBlockValues();
+				for( int i=0, ix=0; i<rows; i++ )
+					for( int j=0; j<cols; j++, ix++ )
+						ret[i][j] = a[ix];
 			}
 		}
 		
@@ -332,7 +331,7 @@ public class DataConverter
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
-			mb.getDenseBlock() : new double[rows*cols]; //0-initialized
+			mb.getDenseBlockValues() : new double[rows*cols]; //0-initialized
 		
 		if( !mb.isEmptyBlock(false) )
 		{
@@ -345,7 +344,7 @@ public class DataConverter
 			}
 			else if( deep ) {
 				//memcopy row major representation if at least 1 non-zero
-				System.arraycopy(mb.getDenseBlock(), 0, ret, 0, rows*cols);
+				System.arraycopy(mb.getDenseBlockValues(), 0, ret, 0, rows*cols);
 			}
 		}
 		
@@ -542,7 +541,7 @@ public class DataConverter
 			// special case double schema (without cell-object creation, 
 			// cache-friendly row-column copy)
 			double[][] a = new double[n][];
-			double[] c = mb.getDenseBlock();
+			double[] c = mb.getDenseBlockValues();
 			for( int j=0; j<n; j++ )
 				a[j] = (double[])frame.getColumnData(j);
 			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
@@ -680,14 +679,14 @@ public class DataConverter
 				// allows for a shallow copy since the physical representation
 				// of row-major matrix and column-major frame match exactly
 				frame.reset();
-				frame.appendColumns(new double[][]{mb.getDenseBlock()});
+				frame.appendColumns(new double[][]{mb.getDenseBlockValues()});
 			}
 			else if( dFreq == schema.length ) {
 				// special case double schema (without cell-object creation, 
 				// col pre-allocation, and cache-friendly row-column copy)
 				int m = mb.getNumRows();
 				int n = mb.getNumColumns();
-				double[] a = mb.getDenseBlock();
+				double[] a = mb.getDenseBlockValues();
 				double[][] c = new double[n][m];
 				int blocksizeIJ = 16; //blocks of a/c+overhead in L1 cache
 				if( !mb.isEmptyBlock(false) )
@@ -780,7 +779,7 @@ public class DataConverter
 	{
 		MatrixBlock mb = mo.acquireRead();
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
-		mo.release();		
+		mo.release();
 		return new Array2DRowRealMatrix(data, false);
 	}
 
@@ -801,7 +800,7 @@ public class DataConverter
 		}
 		else {
 			//memcopy row major representation if at least 1 non-zero
-			System.arraycopy(mb.getDenseBlock(), 0, dest, destPos, rows*cols);
+			System.arraycopy(mb.getDenseBlockValues(), 0, dest, destPos, rows*cols);
 		}
 	}
 	

@@ -662,7 +662,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			for( int i=0; i<m; i++ ) {
 				//execute vector primitive via reflection
 				Double ret1 = (Double) ((type1 == InputType.VECTOR_DENSE) ? 
-					me.invoke(null, in.getDenseBlock(), i*n, n) : 
+					me.invoke(null, in.getDenseBlockValues(), i*n, n) : 
 					me.invoke(null, in.getSparseBlock().values(i), in.getSparseBlock().indexes(i), 
 						in.getSparseBlock().pos(i), in.getSparseBlock().size(i), n));
 				
@@ -700,7 +700,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			for( int i=0; i<m; i++ ) {
 				//execute vector primitive via reflection
 				double[] ret1 = (double[]) ((type1 == InputType.VECTOR_DENSE) ? 
-					me.invoke(null, in.getDenseBlock(), i*n, n) : 
+					me.invoke(null, in.getDenseBlockValues(), i*n, n) : 
 					me.invoke(null, in.getSparseBlock().values(i), in.getSparseBlock().indexes(i), 
 						in.getSparseBlock().pos(i), in.getSparseBlock().size(i), n));
 				
@@ -749,11 +749,11 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				//execute vector primitive via reflection
 				double[] ret1 = null;
 				if( type1==InputType.SCALAR && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.max(), inB.getDenseBlock(), i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.max(), inB.getDenseBlockValues(), i*n, n);
 				else if( type1==InputType.VECTOR_DENSE && type2==InputType.SCALAR )
-					ret1 = (double[]) me.invoke(null, inA.getDenseBlock(), inB.max(), i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.getDenseBlockValues(), inB.max(), i*n, n);
 				else if( type1==InputType.VECTOR_DENSE && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.getDenseBlock(), inB.getDenseBlock(), i*n, i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.getDenseBlockValues(), inB.getDenseBlockValues(), i*n, i*n, n);
 				else if( type1==InputType.VECTOR_SPARSE && type2==InputType.SCALAR )
 					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.max(), inA.getSparseBlock().indexes(i), 
 						inA.getSparseBlock().pos(i), inA.getSparseBlock().size(i), n);
@@ -761,7 +761,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 					ret1 = (double[]) me.invoke(null, inA.max(), inB.getSparseBlock().values(i), 
 						inB.getSparseBlock().indexes(i), inB.getSparseBlock().pos(i), inB.getSparseBlock().size(i), n);
 				else if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.getDenseBlock(), 
+					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.getDenseBlockValues(), 
 						inA.getSparseBlock().indexes(i), inA.getSparseBlock().pos(i), i*n, inA.getSparseBlock().size(i), n);
 				
 				//execute comparison operation

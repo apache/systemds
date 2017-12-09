@@ -248,15 +248,15 @@ public class LibMatrixDNNHelper {
 		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
-			outputArray= params.output.getDenseBlock();
+			outputArray= params.output.getDenseBlockValues();
 			numOutCols = params.input1.getNumColumns();
 		}
 		
 		@Override
 		public Long call() throws Exception {
 			if(!_params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
-				double [] inputArr = _params.input1.getDenseBlock();
-				double [] doutArr = _params.input2.getDenseBlock();
+				double [] inputArr = _params.input1.getDenseBlockValues();
+				double [] doutArr = _params.input2.getDenseBlockValues();
 				for(int i = _rl*numOutCols; i < _ru*numOutCols; i++) {
 					outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
 				}
@@ -293,11 +293,11 @@ public class LibMatrixDNNHelper {
 	private static ArrayList<MatrixBlock> splitFilter(ConvolutionParameters _params) {
 		ArrayList<MatrixBlock> ret = new ArrayList<>();
 		int RS = _params.R*_params.S; int CRS = _params.C*_params.R*_params.S;
-		double [] filter = _params.input2.getDenseBlock(); int S = _params.S;
+		double [] filter = _params.input2.getDenseBlockValues(); int S = _params.S;
 		for(int c = 0; c < _params.C; c++) {
 			MatrixBlock mb = new MatrixBlock(_params.K, RS, false);
 			mb.allocateDenseBlock(); long nnz = 0;
-			double [] outputArr = mb.getDenseBlock();
+			double [] outputArr = mb.getDenseBlockValues();
 			if(filter != null) {
 				for(int k = 0; k < _params.K; k++) {
 					int outOffset = k*RS;
@@ -348,8 +348,8 @@ public class LibMatrixDNNHelper {
 			ret.sparse = false;
 			if(ret.getDenseBlock() == null)
 				ret.allocateDenseBlock();
-			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
-				ret.denseBlock, m1.rlen, m1.clen, m2.clen, 1);
+			NativeHelper.matrixMultDenseDense(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
+				ret.getDenseBlockValues(), m1.rlen, m1.clen, m2.clen, 1);
 		}
 		
 		//no need to maintain nnz exactly, as consumed by other operations
@@ -484,7 +484,8 @@ public class LibMatrixDNNHelper {
 			}
 		}
 		else {
-			System.arraycopy(input.getDenseBlock(), n*input.getNumColumns(), ret, 0, input.getNumColumns());
+			System.arraycopy(input.getDenseBlockValues(),
+				n*input.getNumColumns(), ret, 0, input.getNumColumns());
 		}
 	}
 	
@@ -500,13 +501,13 @@ public class LibMatrixDNNHelper {
 		
 		double [] outputArray = null;
 		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
+			outputArray = params.output.getDenseBlockValues();
 		else {
 			throw new DMLRuntimeException("Only dense output is implemented");
 		}
 		
 		if(!input.isInSparseFormat()) {
-			double [] inputArray = input.getDenseBlock();
+			double [] inputArray = input.getDenseBlockValues();
 			doCol2IMDenseInput(0, outputN, inputArray, outputArray, params);
 		}
 		else {

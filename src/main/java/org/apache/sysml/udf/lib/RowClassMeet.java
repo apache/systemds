@@ -98,8 +98,8 @@ public class RowClassMeet extends PackageFunction {
 			int nc = Math.max(A.getNumColumns(), B.getNumColumns());
 			MatrixBlock C = new MatrixBlock(nr, nc, false).allocateBlock();
 			MatrixBlock N = new MatrixBlock(nr, nc, false).allocateBlock();
-			double[] dC = C.getDenseBlock();
-			double[] dN = N.getDenseBlock();
+			double[] dC = C.getDenseBlockValues();
+			double[] dN = N.getDenseBlockValues();
 			//wrap both A and B into side inputs for efficient sparse access
 			SideInput sB = CodegenUtils.createSideInput(B);
 			boolean mv = (B.getNumRows() == 1);
@@ -128,7 +128,7 @@ public class RowClassMeet extends PackageFunction {
 					}
 				}
 				else {
-					double [] denseBlk = A.getDenseBlock();
+					double [] denseBlk = A.getDenseBlockValues();
 					if(denseBlk == null) break;
 					for(int j = 0; j < numCols; j++) {
 						int aVal = (int) denseBlk[ai+j];

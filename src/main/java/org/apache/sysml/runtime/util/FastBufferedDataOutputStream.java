@@ -74,22 +74,22 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)b;
     }
 
-    @Override
-    public void write(byte[] b, int off, int len) 
-    	throws IOException 
-    {
+	@Override
+	public void write(byte[] b, int off, int len) 
+		throws IOException 
+	{
 		if (len >= _bufflen) {
-		    flushBuffer();
-		    out.write(b, off, len);
-		    return;
+			flushBuffer();
+			out.write(b, off, len);
+			return;
 		}
 		if (len > _bufflen - _count) {
-		    flushBuffer();
+			flushBuffer();
 		}
 		System.arraycopy(b, off, _buff, _count, len);
 		_count += len;
-    }
-	   
+	}
+
     @Override
     public void flush() 
     	throws IOException 

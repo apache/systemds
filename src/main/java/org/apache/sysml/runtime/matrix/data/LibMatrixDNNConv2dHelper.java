@@ -71,11 +71,12 @@ public class LibMatrixDNNConv2dHelper {
 					}
 					
 					// Add the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-					add(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
+					add(matMultOutBlock, _params.output.getDenseBlockValues(), n*K*PQ, K, PQ);
 				}
 				// Add bias to current row if necessary, always dense
 				if(_params.bias != null)
-					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
+					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlockValues(),
+						_params.bias.getDenseBlockValues(), K, PQ);
 			}
 			if(DMLScript.FINEGRAINED_STATISTICS) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
@@ -109,7 +110,7 @@ public class LibMatrixDNNConv2dHelper {
 					}
 				}
 				else {
-					LibMatrixMult.vectAdd(src.denseBlock, dest, 0, destPos, K*PQ);
+					LibMatrixMult.vectAdd(src.getDenseBlockValues(), dest, 0, destPos, K*PQ);
 				}
 			}
 		}
@@ -152,11 +153,12 @@ public class LibMatrixDNNConv2dHelper {
 				}
 				
 				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-				partialCopy1(outMM, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
+				partialCopy1(outMM, _params.output.getDenseBlockValues(), n*K*PQ, K, PQ);
 				
 				// Add bias to current row if necessary, always dense
 				if(_params.bias != null)
-					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
+					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlockValues(),
+						_params.bias.getDenseBlockValues(), K, PQ);
 			}
 			
 			if(DMLScript.FINEGRAINED_STATISTICS) {
@@ -188,7 +190,7 @@ public class LibMatrixDNNConv2dHelper {
 				}
 			}
 			else 
-				System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
+				System.arraycopy(src.getDenseBlockValues(), 0, dest, destPos, K * PQ);
 		}
 	}
 	
@@ -226,7 +228,8 @@ public class LibMatrixDNNConv2dHelper {
 				
 				// Add bias to current row if necessary, always dense
 				if(_params.bias != null)
-					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
+					LibMatrixDNNHelper.addBias(n, _params.output.getDenseBlockValues(),
+						_params.bias.getDenseBlockValues(), K, PQ);
 			}
 			
 			//multi-threaded nnz maintenance of current working set
@@ -240,7 +243,7 @@ public class LibMatrixDNNConv2dHelper {
 			//src is [PQ x K] -> [K x PQ] -> [1 x KPQ]
 			if(src.isInSparseFormat()) {
 				SparseBlock sblock = src.sparseBlock;
-				double[] c = dest.denseBlock;
+				double[] c = dest.getDenseBlockValues();
 				for(int i = 0; i < src.getNumRows(); i++) {
 					if( sblock.isEmpty(i) ) continue;
 					int apos = sblock.pos(i);
@@ -253,8 +256,8 @@ public class LibMatrixDNNConv2dHelper {
 				}
 			}
 			else {
-				double[] a = src.denseBlock;
-				double[] c = dest.denseBlock;
+				double[] a = src.getDenseBlockValues();
+				double[] c = dest.getDenseBlockValues();
 				final int blocksizeIJ = 128; //128KB for L2
 				//cache-conscious blocked execution
 				for( int bi = 0; bi < PQ; bi+=blocksizeIJ )
@@ -291,10 +294,10 @@ public class LibMatrixDNNConv2dHelper {
 					int alen = _params.input1.getSparseBlock().size(n);
 					int[] aix = _params.input1.getSparseBlock().indexes(n);
 					double[] avals = _params.input1.getSparseBlock().values(n);
-					NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
+					NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlockValues(), temp, 
 							1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
 							_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
-					System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
+					System.arraycopy(temp, 0, _params.output.getDenseBlockValues(), n*KPQ, KPQ);
 				}
 			}
 			//multi-threaded nnz maintenance of current working set

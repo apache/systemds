@@ -36,26 +36,31 @@ public class DenseBlockLDRB extends DenseBlock
 	}
 	
 	public DenseBlockLDRB(int rlen, int clen, int blen) {
-		reset(rlen, clen, blen);
+		reset(rlen, clen, blen, 0);
 	}
 	
 	@Override
 	public void reset() {
-		reset(rlen, clen, blen);
+		reset(rlen, clen, blen, 0);
 	}
 
 	@Override
 	public void reset(int rlen, int clen) {
-		reset(rlen, clen, blen);
+		reset(rlen, clen, blen, 0);
 	}
 	
-	private void reset(int rlen, int clen, int blen) {
+	@Override
+	public void reset(int rlen, int clen, double v) {
+		reset(rlen, clen, blen, v);
+	}
+	
+	private void reset(int rlen, int clen, int blen, double v) {
 		long llen = (long) rlen * clen;
 		int numPart = (int)Math.ceil((double)rlen / blen);
 		if( this.blen == blen && llen < capacity() ) {
 			for(int i=0; i<numPart; i++) {
 				int len = Math.min((i+1)*blen,rlen)-i*blen;
-				Arrays.fill(data[i], 0, len, 0);
+				Arrays.fill(data[i], 0, len, v);
 			}
 		}
 		else {
@@ -63,9 +68,10 @@ public class DenseBlockLDRB extends DenseBlock
 			for(int i=0; i<numPart; i++) {
 				int len = Math.min((i+1)*blen,rlen)-i*blen;
 				data[i] = new double[len];
+				if( v != 0 )
+					Arrays.fill(data[i], v);
 			}
 		}
-		
 		this.rlen = rlen;
 		this.clen = clen;
 		this.blen = blen;
@@ -104,6 +110,18 @@ public class DenseBlockLDRB extends DenseBlock
 		}
 		return nnz;
 	}
+	
+	@Override
+	public long countNonZeros(int rl, int ru, int cl, int cu) {
+		long nnz = 0;
+		for(int bi=index(rl); bi<index(ru); bi++) {
+			double[] a = data[bi];
+			for(int i=pos(bi), ix=pos(bi)*clen; i<blen(bi); i++, ix+=clen)
+				for( int j=cl; j<cu; j++ )
+					nnz += (a[ix+j]!=0) ? 1 : 0;
+		}
+		return nnz;
+	}
 
 	@Override
 	public double[][] values() {
@@ -131,13 +149,53 @@ public class DenseBlockLDRB extends DenseBlock
 	}
 
 	@Override
+	public void set(double v) {
+		for(int i=0; i<numBlocks(); i++)
+			Arrays.fill(data[i], v);
+	}
+	
+	@Override
+	public void set(int rl, int ru, int cl, int cu, double v) {
+		for(int bi=index(rl); bi<=index(ru); bi++) {
+			int imin = pos(bi);
+			int imax = Math.min(ru, (bi+1)*blen)-bi;
+			for(int i=imin, ix=imin*clen; i<imax; i++, ix+=clen)
+				Arrays.fill(data, ix+cl, ix+cu, v);
+		}
+	}
+
+	@Override
 	public void set(int r, int c, double v) {
 		data[index(r)][pos(r, c)] = v;
 	}
 
 	@Override
+	public void set(int r, double[] v) {
+		System.arraycopy(v, 0, data[index(r)], pos(r), v.length);
+	}
+
+	@Override
 	public double get(int r, int c) {
 		return data[index(r)][pos(r, c)];
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0; i<rlen; i++) {
+			double[] data = values(index(i));
+			int ix = pos(i);
+			for(int j=0; j<clen; j++) {
+				sb.append(data[ix+j]);
+				sb.append("\t");
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+	
+	private int blen(int bix) {
+		return Math.min(blen, rlen-bix*blen);
 	}
 
 	private static int blocksize(int rlen, int clen) {

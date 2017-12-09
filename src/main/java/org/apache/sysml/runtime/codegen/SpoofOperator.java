@@ -112,7 +112,7 @@ public abstract class SpoofOperator implements Serializable
 			}
 			else {
 				b[i-offset] = new SideInput(
-					in.getDenseBlock(), null, clen);
+					in.getDenseBlockValues(), null, clen);
 			}
 		}
 		

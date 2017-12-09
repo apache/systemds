@@ -46,7 +46,7 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 		public Long call() throws Exception {
 			int CHW = _params.C*_params.H*_params.W;
 			double [] ret = new double[CHW];
-			double [] filterArr = _params.input1.getDenseBlock();
+			double [] filterArr = _params.input1.getDenseBlockValues();
 			double [] dout_n = new double[_params.P*_params.Q*_params.K];
 			for(int n = _rl; n < _ru; n++) {
 				LibMatrixDNNHelper.getRowInDenseFormat(_params.input2, n, dout_n);
@@ -55,7 +55,7 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 				NativeHelper.conv2dBackwardDataDense(filterArr, dout_n, ret, 1, 
 						_params.C, _params.H, _params.W, _params.K, 
 						_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
-				System.arraycopy(ret, 0, _params.output.getDenseBlock(), n*CHW, CHW);
+				System.arraycopy(ret, 0, _params.output.getDenseBlockValues(), n*CHW, CHW);
 			}
 			//multi-threaded nnz maintenance of current working set
 			return _params.output.recomputeNonZeros(_rl, _ru-1);

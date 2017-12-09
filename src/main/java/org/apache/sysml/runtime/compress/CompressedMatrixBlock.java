@@ -1188,7 +1188,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		//special handling init value for rowmins/rowmax
 		if( op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin ) {
 			double val = Double.MAX_VALUE * ((((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX)?-1:1);
-			Arrays.fill(ret.getDenseBlock(), val);
+			ret.getDenseBlock().set(val);
 		}
 		
 		//core unary aggregate
@@ -1820,7 +1820,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				_ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
 				_ret.allocateDenseBlock();
 				if( _op.aggOp.increOp.fn instanceof Builtin )
-					System.arraycopy(ret.getDenseBlock(), 0, _ret.getDenseBlock(), 0, ret.getNumRows()*ret.getNumColumns());
+					System.arraycopy(ret.getDenseBlockValues(), 0,
+						_ret.getDenseBlockValues(), 0, ret.getNumRows()*ret.getNumColumns());
 			}
 			else { //colSums
 				_ret = ret;
@@ -2117,7 +2118,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			ColGroupValue grpVal = (ColGroupValue)grp;
 			MatrixBlock vals = grpVal.getValuesAsBlock();
 			int[] counts = grpVal.getCounts(true);
-			SortUtils.sortByValue(0, vals.getNumRows(), vals.getDenseBlock(), counts);
+			double[] data = (vals.getDenseBlock()!=null) ? vals.getDenseBlockValues() : null;
+			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
 			MatrixBlock counts2 = ColGroupValue.getCountsAsBlock(counts);
 			return vals.sortOperations(counts2, result);
 		}

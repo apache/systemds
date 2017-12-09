@@ -310,7 +310,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			outputBlock = new MatrixBlock(C, 1, false).allocateBlock();
-			double [] output = outputBlock.getDenseBlock();
+			double [] output = outputBlock.getDenseBlockValues();
 			if(input.isInSparseFormat()) {
 				SparseBlock sblock = input.getSparseBlock();
 				for(int n = 0; n < input.getNumRows(); n++) {
@@ -333,7 +333,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				}
 			}
 			else {
-				double [] inArr = input.getDenseBlock();
+				double [] inArr = input.getDenseBlockValues();
 				if(inArr != null) {
 					KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 					for(int c = 0; c < C; c++) {
@@ -348,7 +348,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					}
 				}
 			}
-			outputBlock.recomputeNonZeros(getExtendedOpcode());
+			outputBlock.recomputeNonZeros();
 		}
 		
 		// release inputs/outputs
@@ -468,7 +468,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// bias_add(empty mb, bias)
 				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
 				for(int n = 0;  n < params.N; n++) 
-					ConvolutionUtils.fillBias(bias, outputBlock.getDenseBlock(), n, n+1, params.N, params.K, params.P*params.Q);
+					ConvolutionUtils.fillBias(bias, outputBlock.getDenseBlockValues(),
+						n, n+1, params.N, params.K, params.P*params.Q);
 			}
 			else {
 				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();

@@ -114,7 +114,7 @@ public class CumSumProd extends PackageFunction {
 			allocateOutput();
 			
 			// Copy X to Y
-			denseBlock = retMB.getDenseBlock();
+			denseBlock = retMB.getDenseBlockValues();
 			if(X.isInSparseFormat()) {
 				Iterator<IJV> iter = X.getSparseBlockIterator();
 				while(iter.hasNext()) {
@@ -124,7 +124,7 @@ public class CumSumProd extends PackageFunction {
 			}
 			else {
 				if(X.getDenseBlock() != null)
-					System.arraycopy(X.getDenseBlock(), 0, denseBlock, 0, denseBlock.length);
+					System.arraycopy(X.getDenseBlockValues(), 0, denseBlock, 0, denseBlock.length);
 			}
 			
 			if(!isReverse) {
@@ -181,7 +181,7 @@ public class CumSumProd extends PackageFunction {
 			}
 		}
 		else {
-			double [] CBlk = C.getDenseBlock();
+			double [] CBlk = C.getDenseBlockValues();
 			if(CBlk != null) {
 				if(!isCVector) {
 					for(int j = i*numRetCols; j < (i+1)*numRetCols; j++) {
@@ -219,7 +219,7 @@ public class CumSumProd extends PackageFunction {
 			}
 		}
 		else {
-			double [] CBlk = C.getDenseBlock();
+			double [] CBlk = C.getDenseBlockValues();
 			if(CBlk != null) {
 				if(!isCVector) {
 					for(int j = i*numRetCols; j < (i+1)*numRetCols; j++) {

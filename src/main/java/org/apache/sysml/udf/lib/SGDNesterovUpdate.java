@@ -86,11 +86,11 @@ public class SGDNesterovUpdate extends PackageFunction {
 			// v = mu * v - lr * dX - lr*lambda*X
 			updatedV = new Matrix( "tmp_" + rand.nextLong(), v.getNumRows(), v.getNumColumns(), ValueType.Double );
 			MatrixBlock updatedVMB = allocateDenseMatrixBlock(updatedV);
-			double [] updatedVData = updatedVMB.getDenseBlock();
+			double [] updatedVData = updatedVMB.getDenseBlockValues();
 			if(isDense(v) && isDense(dX) && isDense(X)) {
-				double [] vArr = v.getDenseBlock();
-				double [] dXArr = dX.getDenseBlock();
-				double [] XArr = X.getDenseBlock();
+				double [] vArr = v.getDenseBlockValues();
+				double [] dXArr = dX.getDenseBlockValues();
+				double [] XArr = X.getDenseBlockValues();
 				int nnz = 0;
 				for(int i = 0; i < updatedVData.length; i++) {
 					updatedVData[i] = mu*vArr[i] - lr*dXArr[i] - lr*lambda*XArr[i];
@@ -110,10 +110,10 @@ public class SGDNesterovUpdate extends PackageFunction {
 			// X = X - mu * v_prev + (1 + mu) * v
 			updatedX = new Matrix( "tmp_" + rand.nextLong(), X.getNumRows(), X.getNumColumns(), ValueType.Double );
 			MatrixBlock updatedXMB = allocateDenseMatrixBlock(updatedX);
-			double [] updatedXData = updatedXMB.getDenseBlock();
+			double [] updatedXData = updatedXMB.getDenseBlockValues();
 			if(isDense(X) && isDense(v)) {
-				double [] XArr = X.getDenseBlock();
-				double [] vPrevArr = v.getDenseBlock();
+				double [] XArr = X.getDenseBlockValues();
+				double [] vPrevArr = v.getDenseBlockValues();
 				int nnz = 0; double muPlus1 = mu+1;
 				for(int i = 0; i < updatedXData.length; i++) {
 					updatedXData[i] = XArr[i] - mu*vPrevArr[i] + muPlus1*updatedVData[i];
@@ -123,7 +123,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 			}
 			else if(isDense(v)) {
 				copy(X, updatedXData);
-				double [] vPrevArr = v.getDenseBlock();
+				double [] vPrevArr = v.getDenseBlockValues();
 				int nnz = 0; double muPlus1 = mu+1;
 				for(int i = 0; i < updatedXData.length; i++) {
 					updatedXData[i] += - mu*vPrevArr[i] + muPlus1*updatedVData[i];
@@ -172,7 +172,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 			}
 		}
 		else {
-			double [] denseBlock = in.getDenseBlock();
+			double [] denseBlock = in.getDenseBlockValues();
 			if(denseBlock != null) {
 				// If not empty block
 				for(int i = 0; i < out.length; i++) {
@@ -192,7 +192,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 			}
 		}
 		else {
-			double [] denseBlock = src.getDenseBlock();
+			double [] denseBlock = src.getDenseBlockValues();
 			if(denseBlock != null) {
 				// If not empty block
 				System.arraycopy(denseBlock, 0, dest, 0, dest.length);

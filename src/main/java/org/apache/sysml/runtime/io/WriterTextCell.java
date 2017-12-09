@@ -91,7 +91,7 @@ public class WriterTextCell extends MatrixWriter
 			StringBuilder sb = new StringBuilder();
 			
 			if( sparse ) //SPARSE
-			{			   
+			{
 				Iterator<IJV> iter = src.getSparseBlockIterator(rl, ru);
 				while( iter.hasNext() )
 				{
@@ -111,7 +111,7 @@ public class WriterTextCell extends MatrixWriter
 			{
 				for( int i=rl; i<ru; i++ )
 				{
-					String rowIndex = Integer.toString(i+1);					
+					String rowIndex = Integer.toString(i+1);
 					for( int j=0; j<clen; j++ )
 					{
 						double lvalue = src.getValueDenseUnsafe(i, j);

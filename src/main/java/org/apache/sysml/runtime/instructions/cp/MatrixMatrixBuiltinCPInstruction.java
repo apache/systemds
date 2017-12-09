@@ -39,14 +39,13 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		throws DMLRuntimeException
 	{
 		String opcode = getOpcode();
-        
-        if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
-        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
-    		ec.setMatrixOutput(output.getName(), solution, getExtendedOpcode());
-        	return;
-        }
+
+		if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
+			MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+			ec.setMatrixOutput(output.getName(), solution, getExtendedOpcode());
+			return;
+		}
 		
-        /* Default behavior of this instruction */
 		String output_name = output.getName();
 		BinaryOperator bop = (BinaryOperator) _optr;
 		
@@ -62,7 +61,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		if( checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock) ) {
  			retBlock.examSparsity();
  		}
-        
+
 		ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 	}
 }

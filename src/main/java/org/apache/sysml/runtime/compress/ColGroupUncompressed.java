@@ -279,7 +279,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
 		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlock();
+		double[] b = shortVector.getDenseBlockValues();
 		for (int colIx = 0; colIx < clen; colIx++)
 			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
 		shortVector.recomputeNonZeros();
@@ -296,7 +296,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
 		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlock();
+		double[] b = shortVector.getDenseBlockValues();
 		for (int colIx = 0; colIx < clen; colIx++)
 			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
 		shortVector.recomputeNonZeros();
@@ -314,7 +314,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		// copying partialResult to the proper indices of the result
 		if( !pret.isEmptyBlock(false) ) {
-			double[] rsltArr = result.getDenseBlock();
+			double[] rsltArr = result.getDenseBlockValues();
 			for (int colIx = 0; colIx < _colIndexes.length; colIx++)
 				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
 			result.recomputeNonZeros();
@@ -329,7 +329,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		// copying partialResult to the proper indices of the result
 		if( !pret.isEmptyBlock(false) ) {
-			double[] rsltArr = result.getDenseBlock();
+			double[] rsltArr = result.getDenseBlockValues();
 			for (int colIx = 0; colIx < _colIndexes.length; colIx++)
 				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
 			result.recomputeNonZeros();
@@ -490,7 +490,7 @@ public class ColGroupUncompressed extends ColGroup
 				}
 				else {
 					final int clen = getNumCols();
-					double[] a = _data.getDenseBlock();
+					double[] a = _data.getDenseBlockValues();
 					for(int j=0, aix=rowIx*clen; j<clen; j++)
 						buff[_colIndexes[j]] = a[aix+j];
 				}

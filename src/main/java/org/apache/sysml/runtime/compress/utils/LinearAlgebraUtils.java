@@ -145,7 +145,7 @@ public class LinearAlgebraUtils
 	}
 	
 	public static void copyNonZerosToUpperTriangle( MatrixBlock ret, MatrixBlock tmp, int ix ) {
-		double[] a = tmp.getDenseBlock();
+		double[] a = tmp.getDenseBlockValues();
 		for(int i=0; i<tmp.getNumColumns(); i++) {
 			if( a[i] != 0 ) {
 				ret.setValueDenseUnsafe(

@@ -56,6 +56,16 @@ public abstract class DenseBlock implements Serializable
 	public abstract void reset(int rlen, int clen);
 	
 	/**
+	 * Resets the dense block by setting the given value.
+	 * 
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param v value
+	 */
+	public abstract void reset(int rlen, int clen, double v);
+	
+	
+	/**
 	 * Get the number of rows.
 	 * 
 	 * @return number of rows
@@ -91,6 +101,19 @@ public abstract class DenseBlock implements Serializable
 	 * @return number of non-zeros
 	 */
 	public abstract long countNonZeros();
+	
+	/**
+	 * Compute the number of non-zero values, which potentially 
+	 * makes a full pass over the underlying blocks.
+	 * 
+	 * @param rl row lower index
+	 * @param ru row upper index (exclusive)
+	 * @param cl column lower index 
+	 * @param cu column upper index (exclusive)
+	 * @return number of non-zeros
+	 */
+	public abstract long countNonZeros(int rl, int ru, int cl, int cu);
+	
 	
 	/**
 	 * Get the allocated blocks.
@@ -136,6 +159,26 @@ public abstract class DenseBlock implements Serializable
 	public abstract int pos(int r, int c);
 	
 	/**
+	 * Set the given value for the entire dense block (fill).
+	 * 
+	 * @param v value
+	 */
+	public abstract void set(double v);
+	
+	/**
+	 * Set the given value for an entire index range of the 
+	 * dense block (fill).
+	 * 
+	 * @param rl row lower index
+	 * @param ru row upper index (exclusive)
+	 * @param cl column lower index 
+	 * @param cu column upper index (exclusive)
+	 * @param v value
+	 */
+	public abstract void set(int rl, int ru, int cl, int cu, double v);
+	
+	
+	/**
 	 * Set the given value for a given row and column.
 	 * 
 	 * @param r row index
@@ -145,6 +188,14 @@ public abstract class DenseBlock implements Serializable
 	public abstract void set(int r, int c, double v);
 	
 	/**
+	 * Copy the given vector into the given row.
+	 * 
+	 * @param r row index
+	 * @param v value vector
+	 */
+	public abstract void set(int r, double[] v);
+	
+	/**
 	 * Get the value for a given row and column.
 	 * 
 	 * @param r row index
@@ -152,4 +203,7 @@ public abstract class DenseBlock implements Serializable
 	 * @return value
 	 */
 	public abstract double get(int r, int c);
+	
+	@Override 
+	public abstract String toString();
 }

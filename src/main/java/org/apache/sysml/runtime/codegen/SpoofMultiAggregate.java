@@ -94,7 +94,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		//result allocation and preparations
 		out.reset(1, _aggOps.length, false);
 		out.allocateDenseBlock();
-		double[] c = out.getDenseBlock();
+		double[] c = out.getDenseBlockValues();
 		setInitialOutputValues(c);
 		
 		//input preparation
@@ -109,7 +109,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			if( inputs.get(0) instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)inputs.get(0), b, scalars, c, m, n, 0, m);
 			else if( !inputs.get(0).isInSparseFormat() )
-				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, 0, m);
+				executeDense(inputs.get(0).getDenseBlockValues(), b, scalars, c, m, n, 0, m);
 			else	
 				executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, m, n, sparseSafe, 0, m);
 		}
@@ -307,7 +307,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			if( _a instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _rlen, _clen, _rl, _ru);
 			else if( !_a.isInSparseFormat() )
-				executeDense(_a.getDenseBlock(), _b, _scalars, c, _rlen, _clen, _rl, _ru);
+				executeDense(_a.getDenseBlockValues(), _b, _scalars, c, _rlen, _clen, _rl, _ru);
 			else	
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _rlen, _clen, _safe, _rl, _ru);
 			return c;

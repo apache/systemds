@@ -184,7 +184,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	public void decompressToBlock(MatrixBlock target, int colpos) {
 		int nrow = getNumRows();
 		int ncol = getNumCols();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		int nnz = 0;
 		for( int i = 0; i < nrow; i++ )
 			nnz += ((c[i] = _values[_data[i]*ncol+colpos])!=0) ? 1 : 0;
@@ -224,7 +224,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) throws DMLRuntimeException {
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 
@@ -247,7 +247,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 		throws DMLRuntimeException 
 	{
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
@@ -280,7 +280,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) 
 		throws DMLRuntimeException 
 	{
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
@@ -341,7 +341,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		//pre-aggregate nnz per value tuple
 		double[] vals = sumAllValues(kplus, kbuff, false);

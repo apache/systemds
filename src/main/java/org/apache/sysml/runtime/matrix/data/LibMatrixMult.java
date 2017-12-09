@@ -219,7 +219,7 @@ public class LibMatrixMult
 			ret.nonZeros = 0; //reset after execute
 			for( Future<Object> task : taskret ) {
 				if( pm2r )
-					vectAdd((double[])task.get(), ret.denseBlock, 0, 0, ret.rlen*ret.clen);
+					vectAdd((double[])task.get(), ret.getDenseBlockValues(), 0, 0, ret.rlen*ret.clen);
 				else
 					ret.nonZeros += (Long)task.get();
 			}
@@ -329,7 +329,7 @@ public class LibMatrixMult
 			pool.shutdown();
 			//aggregate partial results
 			for( Future<double[]> task : taskret )
-				vectAdd(task.get(), ret.denseBlock, 0, 0, mX.clen);
+				vectAdd(task.get(), ret.getDenseBlockValues(), 0, 0, mX.clen);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -926,9 +926,9 @@ public class LibMatrixMult
 	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
 	{
-		double[] a = m1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = m1.getDenseBlockValues();
+		double[] b = m2.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		final int m = m1.rlen;
 		final int n = m2.clen;
 		final int cd = m1.clen;
@@ -1113,8 +1113,8 @@ public class LibMatrixMult
 	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
-		double[] a = m1.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = m1.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		int m = m1.rlen;
 		int cd = m1.clen;
 		int n = m2.clen;
@@ -1183,8 +1183,8 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{
 		SparseBlock a = m1.sparseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] b = m2.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		final int m = m1.rlen;
 		final int n = m2.clen;
 		final int cd = m2.rlen;
@@ -1390,7 +1390,7 @@ public class LibMatrixMult
 	{	
 		SparseBlock a = m1.sparseBlock;
 		SparseBlock b = m2.sparseBlock;
-		double[] c = ret.denseBlock;
+		double[] c = ret.getDenseBlockValues();
 		int m = m1.rlen;
 		int cd = m1.clen;
 		int n = m2.clen;
@@ -1591,10 +1591,10 @@ public class LibMatrixMult
 
 	private static void matrixMultChainDense(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
-		double[] a = mX.denseBlock;
-		double[] b = mV.denseBlock;
-		double[] w = (mW!=null) ? mW.denseBlock : null;
-		double[] c = ret.denseBlock;
+		double[] a = mX.getDenseBlockValues();
+		double[] b = mV.getDenseBlockValues();
+		double[] w = (mW!=null) ? mW.getDenseBlockValues() : null;
+		double[] c = ret.getDenseBlockValues();
 		final int cd = mX.clen; //features in X
 		boolean weights = (ct == ChainType.XtwXv);
 		boolean weights2 = (ct == ChainType.XtXvy);
@@ -1644,9 +1644,9 @@ public class LibMatrixMult
 	private static void matrixMultChainSparse(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
 		SparseBlock a = mX.sparseBlock;
-		double[] b = mV.denseBlock;
-		double[] w = (mW!=null) ? mW.denseBlock : null;
-		double[] c = ret.denseBlock;
+		double[] b = mV.getDenseBlockValues();
+		double[] w = (mW!=null) ? mW.getDenseBlockValues() : null;
+		double[] c = ret.getDenseBlockValues();
 		boolean weights = (ct == ChainType.XtwXv);
 		boolean weights2 = (ct == ChainType.XtXvy);
 		
@@ -1677,8 +1677,8 @@ public class LibMatrixMult
 	{
 		//2) transpose self matrix multiply dense
 		// (compute only upper-triangular matrix due to symmetry)
-		double[] a = m1.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] a = m1.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		int m = m1.rlen;
 		int n = m1.clen;
 		
@@ -1809,7 +1809,7 @@ public class LibMatrixMult
 		//2) transpose self matrix multiply sparse
 		// (compute only upper-triangular matrix due to symmetry)
 		SparseBlock a = m1.sparseBlock;
-		double[] c = ret.denseBlock;
+		double[] c = ret.getDenseBlockValues();
 		int m = m1.rlen;
 		int n = m1.clen;
 
@@ -1930,9 +1930,9 @@ public class LibMatrixMult
 	private static void matrixMultPermuteDense(MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		double[] a = pm1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret1.denseBlock;
+		double[] a = pm1.getDenseBlockValues();
+		double[] b = m2.getDenseBlockValues();
+		double[] c = ret1.getDenseBlockValues();
 
 		final int n = m2.clen;
 		final int brlen = ret1.getNumRows();
@@ -1953,7 +1953,7 @@ public class LibMatrixMult
 				if( lastblk!=-1 && lastblk<blk ){ 
 					ret2.sparse = false;
 					ret2.allocateDenseBlock();
-					c = ret2.denseBlock;		
+					c = ret2.getDenseBlockValues();
 				}
 		
 				//memcopy entire dense row into target position
@@ -1965,8 +1965,8 @@ public class LibMatrixMult
 
 	private static void matrixMultPermuteDenseSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int rl, int ru)
 	{
-		double[] a = pm1.denseBlock;
-		double[] b = m2.denseBlock;
+		double[] a = pm1.getDenseBlockValues();
+		double[] b = m2.getDenseBlockValues();
 		SparseBlock c = ret1.sparseBlock;
 
 		final int n = m2.clen;
@@ -2002,7 +2002,7 @@ public class LibMatrixMult
 
 	private static void matrixMultPermuteSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int rl, int ru)
 	{
-		double[] a = pm1.denseBlock;
+		double[] a = pm1.getDenseBlockValues();
 		SparseBlock b = m2.sparseBlock;
 		SparseBlock c = ret1.sparseBlock;
 
@@ -2012,7 +2012,7 @@ public class LibMatrixMult
 		for( int i=rl; i<ru; i++ ) 
 		{
 			//compute block index and in-block indexes
-			int pos = UtilFunctions.toInt( a[ i ]); //safe cast			
+			int pos = UtilFunctions.toInt( a[ i ]); //safe cast
 			if( pos > 0 ) //selected row
 			{
 				int bpos = (pos-1) % brlen;
@@ -2036,10 +2036,10 @@ public class LibMatrixMult
 
 	private static void matrixMultWSLossDense(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt, int rl, int ru)
 	{
-		double[] x = mX.denseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
-		double[] w = (mW!=null)? mW.denseBlock : null;
+		double[] x = mX.getDenseBlockValues();
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
+		double[] w = (mW!=null)? mW.getDenseBlockValues() : null;
 		final int n = mX.clen;
 		final int cd = mU.clen;
 		double wsloss = 0;
@@ -2111,8 +2111,8 @@ public class LibMatrixMult
 	{
 		SparseBlock x = mX.sparseBlock;
 		SparseBlock w = (mW!=null)? mW.sparseBlock : null;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int n = mX.clen; 
 		final int cd = mU.clen;
 		double wsloss = 0; 
@@ -2262,7 +2262,7 @@ public class LibMatrixMult
 			}
 			else //DENSE
 			{
-				double[] w = mW.denseBlock;
+				double[] w = mW.getDenseBlockValues();
 				
 				for( int i=rl, wix=rl*n; i<ru; i++, wix+=n )
 					for( int j=0; j<n; j++)
@@ -2295,7 +2295,7 @@ public class LibMatrixMult
 			}
 			else //DENSE
 			{
-				double[] x = mX.denseBlock;
+				double[] x = mX.getDenseBlockValues();
 				
 				for( int i=rl, xix=rl*n; i<ru; i++, xix+=n )
 					for( int j=0; j<n; j++)
@@ -2344,7 +2344,7 @@ public class LibMatrixMult
 				}	
 			}
 			else { //DENSE
-				double[] x = mX.denseBlock;
+				double[] x = mX.getDenseBlockValues();
 				for( int i=rl, xix=rl*n; i<ru; i++, xix+=n )
 					for( int j=0; j<n; j++)
 						if( x[xix+j] != 0 ) {
@@ -2367,16 +2367,16 @@ public class LibMatrixMult
 		matrixMultTransposeSelf(mV, tmp2, true, k);
 		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) + 
 			((tmp1.sparse || tmp2.sparse) ? dotProductGeneric(tmp1, tmp2) :
-			dotProduct(tmp1.denseBlock, tmp2.denseBlock, mU.clen*mU.clen)));
+			dotProduct(tmp1.getDenseBlockValues(), tmp2.getDenseBlockValues(), mU.clen*mU.clen)));
 	}
 
 	private static void matrixMultWSigmoidDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 		throws DMLRuntimeException 
 	{	
-		double[] w = mW.denseBlock;
-		double[] c = ret.denseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] w = mW.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		
@@ -2413,8 +2413,8 @@ public class LibMatrixMult
 	{
 		SparseBlock w = mW.sparseBlock;
 		SparseBlock c = ret.sparseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int cd = mU.clen;
 		
 		boolean flagminus = (wt==WSigmoidType.MINUS || wt==WSigmoidType.LOG_MINUS); 
@@ -2469,8 +2469,8 @@ public class LibMatrixMult
 		else //DENSE
 		{
 			//w and c always in same representation
-			double[] w = mW.denseBlock;
-			double[] c = ret.denseBlock;
+			double[] w = mW.getDenseBlockValues();
+			double[] c = ret.getDenseBlockValues();
 		
 			for( int i=rl, ix=rl*n; i<ru; i++ )
 				for( int j=0; j<n; j++, ix++) {
@@ -2495,11 +2495,11 @@ public class LibMatrixMult
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		
-		double[] w = mW.denseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
-		double[] x = (mX==null) ? null : mX.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] w = mW.getDenseBlockValues();
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
+		double[] x = (mX==null) ? null : mX.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
@@ -2543,9 +2543,9 @@ public class LibMatrixMult
 		final int cd = mU.clen;
 		
 		SparseBlock w = mW.sparseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
-		double[] c = ret.denseBlock;
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
 		SparseBlock x = (mX==null) ? null : mX.sparseBlock;
 		
 		//approach: iterate over non-zeros of w, selective mm computation
@@ -2555,7 +2555,7 @@ public class LibMatrixMult
 		final int blocksizeI = (int) (8L*mW.rlen*mW.clen/mW.nonZeros);
 		final int blocksizeJ = left ? Math.max(8,Math.min(L2_CACHESIZE/(mU.clen*8), blocksizeI)) : blocksizeI;
 		
-		int[] curk = new int[blocksizeI];		
+		int[] curk = new int[blocksizeI];
 		boolean[] aligned = (four&&!scalar) ? new boolean[blocksizeI] : null;
 		
 		//blocked execution over row blocks
@@ -2583,7 +2583,7 @@ public class LibMatrixMult
 					int wpos = w.pos(i);
 					int wlen = w.size(i);
 					int[] wix = w.indexes(i);
-					double[] wval = w.values(i);				
+					double[] wval = w.values(i);
 					
 					int k = wpos + curk[i-bi];
 					if( basic ) {
@@ -2632,7 +2632,7 @@ public class LibMatrixMult
 		final int cd = mU.clen;
 
 		//output always in dense representation
-		double[] c = ret.denseBlock;
+		double[] c = ret.getDenseBlockValues();
 		
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE
@@ -2665,7 +2665,7 @@ public class LibMatrixMult
 		}
 		else //DENSE
 		{
-			double[] w = mW.denseBlock;
+			double[] w = mW.getDenseBlockValues();
 		
 			for( int i=rl, ix=rl*n; i<ru; i++, ix+=n )
 				for( int j=cl; j<cu; j++)
@@ -2686,9 +2686,9 @@ public class LibMatrixMult
 
 	private static void matrixMultWCeMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
-		double[] w = mW.denseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] w = mW.getDenseBlockValues();
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		double wceval = 0;
@@ -2720,8 +2720,8 @@ public class LibMatrixMult
 	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
 		SparseBlock w = mW.sparseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		double wceval = 0; 
@@ -2730,7 +2730,7 @@ public class LibMatrixMult
 		// blocked over ij, while maintaining front of column indexes, where the
 		// blocksize is chosen such that we reuse each vector on average 8 times.
 		final int blocksizeIJ = (int) (8L*mW.rlen*mW.clen/mW.nonZeros); 
-		int[] curk = new int[blocksizeIJ];			
+		int[] curk = new int[blocksizeIJ];
 		
 		for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
 			int bimin = Math.min(ru, bi+blocksizeIJ);
@@ -2783,7 +2783,7 @@ public class LibMatrixMult
 		}
 		else //DENSE
 		{
-			double[] w = mW.denseBlock;
+			double[] w = mW.getDenseBlockValues();
 		
 			for( int i=rl, ix=rl*n; i<ru; i++ )
 				for( int j=0; j<n; j++, ix++) {
@@ -2794,7 +2794,6 @@ public class LibMatrixMult
 					}
 				}
 		}
-		
 
 		ret.quickSetValue(0, 0, wceval);
 	}
@@ -2802,10 +2801,10 @@ public class LibMatrixMult
 	private static void matrixMultWuMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn, int rl, int ru) 
 		throws DMLRuntimeException 
 	{	
-		double[] w = mW.denseBlock;
-		double[] c = ret.denseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] w = mW.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		
@@ -2841,8 +2840,8 @@ public class LibMatrixMult
 	{
 		SparseBlock w = mW.sparseBlock;
 		SparseBlock c = ret.sparseBlock;
-		double[] u = mU.denseBlock;
-		double[] v = mV.denseBlock;
+		double[] u = mU.getDenseBlockValues();
+		double[] v = mV.getDenseBlockValues();
 		final int cd = mU.clen;
 		
 		boolean flagmult = (wt==WUMMType.MULT); 
@@ -2895,8 +2894,8 @@ public class LibMatrixMult
 		else //DENSE
 		{
 			//w and c always in same representation
-			double[] w = mW.denseBlock;
-			double[] c = ret.denseBlock;
+			double[] w = mW.getDenseBlockValues();
+			double[] c = ret.getDenseBlockValues();
 		
 			for( int i=rl, ix=rl*n; i<ru; i++ )
 				for( int j=0; j<n; j++, ix++) {
@@ -3527,7 +3526,7 @@ public class LibMatrixMult
 		if( ret.rlen != ret.clen )
 			throw new RuntimeException("Invalid non-squared input matrix.");
 		
-		final double[] c = ret.denseBlock;
+		final double[] c = ret.getDenseBlockValues();
 		final int n = ret.rlen;
 		long nnz = 0;
 		
@@ -3780,7 +3779,7 @@ public class LibMatrixMult
 			if( !_pm2r )
 				return _ret.recomputeNonZeros(rl, ru-1, cl, cu-1);
 			else
-				return _ret.getDenseBlock();
+				return _ret.getDenseBlockValues();
 		}
 	}
 
@@ -3819,8 +3818,7 @@ public class LibMatrixMult
 			//NOTE: we dont do global aggregation from concurrent tasks in order
 			//to prevent synchronization (sequential aggregation led to better 
 			//performance after JIT)
-			
-			return ret.getDenseBlock();
+			return ret.getDenseBlockValues();
 		}
 	}
 

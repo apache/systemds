@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -137,7 +138,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			getMinColsMatrixSideInputs(inputs) : -1;
 		if( !aggIncr || !out.isAllocated() )
 			allocateOutputMatrix(m, n, n2, out);
-		double[] c = out.getDenseBlock();
+		double[] c = out.getDenseBlockValues();
 		final boolean flipOut = _type.isRowTypeB1ColumnAgg()
 			&& LibSpoofPrimitives.isFlipOuter(out.getNumRows(), out.getNumColumns());
 		
@@ -218,7 +219,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 				//aggregate partial results
 				int len = _type.isColumnAgg() ? out.getNumRows()*out.getNumColumns() : 1;
 				for( Future<double[]> task : taskret )
-					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, len);
+					LibMatrixMult.vectAdd(task.get(), out.getDenseBlockValues(), 0, 0, len);
 				out.recomputeNonZeros();
 			}
 			else {
@@ -286,15 +287,16 @@ public abstract class SpoofRowwise extends SpoofOperator
 		out.setNumColumns(rlen);
 	}
 	
-	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 
+	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
-		if( a == null )
+		double[] data = (a != null) ? a.values(0) : null;
+		if( data == null )
 			return;
 		
 		SideInput[] lb = createSparseSideInputs(b, true);
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			//call generated method
-			genexec( a, aix, lb, scalars, c, n, i );
+			genexec( data, aix, lb, scalars, c, n, i );
 		}
 	}
 	
@@ -414,11 +416,11 @@ public abstract class SpoofRowwise extends SpoofOperator
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
 			
 			if( _a instanceof CompressedMatrixBlock )
-				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c.getDenseBlockValues(), _clen, _rl, _ru);
 			else if( !_a.isInSparseFormat() )
-				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlockValues(), _clen, _rl, _ru);
 			else
-				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlockValues(), _clen, _rl, _ru);
 			
 			if( _reqVectMem > 0 )
 				LibSpoofPrimitives.cleanupThreadLocalMemory();

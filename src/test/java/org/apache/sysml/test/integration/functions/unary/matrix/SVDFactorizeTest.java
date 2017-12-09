@@ -34,15 +34,15 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + SVDFactorizeTest.class.getSimpleName() + "/";
 
 	private final static int rows1 = 500;
-	private final static int rows2 = 2500;
+	private final static int rows2 = 1500;
 	private final static int cols1 = 400;
-	private final static int cols2 = 2200;
+	private final static int cols2 = 1200;
 	private final static double sparsity = 0.9;
 	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "D" })   ); 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "D" }));
 	}
 	
 	@Test
@@ -86,7 +86,7 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	}
 	
 	private void runTestSVDFactorize( int rows, int cols, RUNTIME_PLATFORM rt)
-	{		
+	{
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
 		
@@ -109,10 +109,9 @@ public class SVDFactorizeTest extends AutomatedTestBase
 			// Expected matrix = 1x1 zero matrix 
 			double[][] D  = new double[1][1];
 			D[0][0] = 0.0;
-			writeExpectedMatrix("D", D);		
+			writeExpectedMatrix("D", D);
 			
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1);
+			runTest(true, false, null, -1);
 			compareResults(1e-8);
 		}
 		finally {
@@ -121,5 +120,4 @@ public class SVDFactorizeTest extends AutomatedTestBase
 			
 		}
 	}
-	
 }

@@ -422,7 +422,7 @@ public class RDDConverterUtils
 			return Vectors.sparse(row.getNumColumns(), 
 					row.getSparseBlock().indexes(0), row.getSparseBlock().values(0));
 		else // DENSE ROW
-			return Vectors.dense(row.getDenseBlock());
+			return Vectors.dense(row.getDenseBlockValues());
 	}
 	
 	/////////////////////////////////

@@ -124,9 +124,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddVar);
 		boolean noKeyChange = preservesPartitioning(mcIn, _uaggOp.indexFn); 
-				
+		
 		//execute UAggOuterChain instruction
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 
 		if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 		{
@@ -168,7 +168,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			sec.setMatrixOutput(output.getName(), tmp, getExtendedOpcode());
 		}
 		else //R/C AGG (output is rdd)
-		{			
+		{
 			//put output RDD handle into symbol table
 			updateUnaryAggOutputMatrixCharacteristics(sec);
 			
@@ -250,7 +250,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			return new RDDMapUAggOuterChainIterator(arg0);	
+			return new RDDMapUAggOuterChainIterator(arg0);
 		}
 		
 		private class RDDMapUAggOuterChainIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
@@ -272,9 +272,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 				if((LibMatrixOuterAgg.isRowIndexMax(_uaggOp)) || (LibMatrixOuterAgg.isRowIndexMin(_uaggOp)))
 					bvi = _bvi.getValue();
 
-				LibMatrixOuterAgg.resetOutputMatix(in1Ix, in1Val, outIx, outVal, _uaggOp);
+				LibMatrixOuterAgg.resetOutputMatrix(in1Ix, in1Val, outIx, outVal, _uaggOp);
 				LibMatrixOuterAgg.aggregateMatrix(in1Val, outVal, _bv.value(), bvi, _bOp, _uaggOp);
-
+				
 				return new Tuple2<>(outIx, outVal);
 			}
 		}

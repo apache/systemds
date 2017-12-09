@@ -75,7 +75,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				
 				//ensure correct sparse/dense output representation
 				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
-					resultBlock.examSparsity(getExtendedOpcode());
+					resultBlock.examSparsity();
 			}
 			
 			//unpin output
@@ -115,7 +115,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			
 			//ensure correct sparse/dense output representation
 			//(memory guarded by release of input)
-			resultBlock.examSparsity(getExtendedOpcode());
+			resultBlock.examSparsity();
 			
 			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock, updateType, getExtendedOpcode());

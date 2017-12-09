@@ -97,9 +97,9 @@ public class ReaderTextCellParallel extends MatrixReader
 
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
-			ret.recomputeNonZeros();			
+			ret.recomputeNonZeros();
 		ret.examSparsity();
-		
+
 		return ret;
 	}
 

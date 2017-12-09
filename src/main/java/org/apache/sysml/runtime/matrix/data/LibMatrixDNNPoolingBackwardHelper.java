@@ -40,8 +40,8 @@ public class LibMatrixDNNPoolingBackwardHelper {
 			_rl = rl; _ru = ru;
 			_params = params;
 			this.performReluBackward = performReluBackward;
-			inputArray = params.input1.getDenseBlock();
-			doutArray = params.input2.getDenseBlock();
+			inputArray = params.input1.getDenseBlockValues();
+			doutArray = params.input2.getDenseBlockValues();
 			output = params.output;
 			C = params.C; CHW = params.C*params.H*params.W; HW = params.H*params.W;
 			P = params.P; Q = params.Q; CPQ = params.C*params.P*params.Q;
@@ -52,7 +52,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		
 		@Override
 		public Long call() throws Exception {
-			double[] out = output.getDenseBlock();
+			double[] out = output.getDenseBlockValues();
 			for(int n = _rl; n < _ru; n++)  {
 				for (int c = 0; c < C; c++) {
 					final int inputOffset = n*CHW + c*HW;
@@ -86,7 +86,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 			_rl = rl; _ru = ru;
 			_params = params;
 			this.performReluBackward = performReluBackward;
-			inputArray = params.input1.getDenseBlock();
+			inputArray = params.input1.getDenseBlockValues();
 			dout = params.input2;
 			output = params.output;
 			C = params.C; CHW = params.C*params.H*params.W; HW = params.H*params.W;
@@ -99,7 +99,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		
 		@Override
 		public Long call() throws Exception {
-			double[] out = output.getDenseBlock();
+			double[] out = output.getDenseBlockValues();
 			for(int n = _rl; n < _ru; n++)  {
 				if( !dout.sparseBlock.isEmpty(n) ) {
 					int [] tensorIndexes = new int[3];
@@ -226,8 +226,8 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		}
 		
 		protected void maxpoolingBackward(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
-			double[] dout = doutput.getDenseBlock();
-			double[] out = output.getDenseBlock();
+			double[] dout = doutput.getDenseBlockValues();
+			double[] out = output.getDenseBlockValues();
 			final int doutOffset = n*CPQ + c*PQ;
 			for( int pq = 0; pq < PQ; pq++ )
 				out[ outOffset + maxIx[pq] ] += dout[ doutOffset + pq ];
@@ -276,7 +276,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		@Override
 		protected void maxpoolingBackward(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
 			SparseBlock sblock = doutput.getSparseBlock();
-			double[] out = output.getDenseBlock();
+			double[] out = output.getDenseBlockValues();
 			if( sblock.isEmpty(n) )
 				return;
 			int apos = sblock.pos(n);

@@ -35,7 +35,7 @@ public abstract class DenseBlock implements Serializable
 
 	public enum Type {
 		DRB, //dense row block
-		LDBR, //large dense row block
+		LDRB, //large dense row block
 	}
 	
 	/**

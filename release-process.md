@@ -382,6 +382,17 @@ file and remove all the `@Ignore` annotations from all the tests. Then run the N
 	mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
 
 
+# Run other GPU Unit Tests 
+
+	rm result.txt
+	for t in AggregateUnaryOpTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests
+	do
+		mvn -Dit.test="org.apache.sysml.test.gpu."$t verify -PgpuTests &> tmp.txt
+		SUCCESS=`grep "BUILD SUCCESS" tmp.txt`
+		echo $t" => "$SUCCESS >> result.txt
+		rm tmp.txt
+	done
+
 # Voting
 
 Following a successful release candidate vote by SystemML PMC members on the SystemML mailing list, the release candidate

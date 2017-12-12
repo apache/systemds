@@ -60,6 +60,8 @@ supportedLayers = {
     keras.layers.Conv2D: 'Convolution',
     keras.layers.MaxPooling2D: 'Pooling',
     keras.layers.AveragePooling2D: 'Pooling',
+	keras.layers.SimpleRNN: 'RNN',
+    keras.layers.LSTM: 'LSTM',
 	keras.layers.Flatten: 'None',
     keras.layers.BatchNormalization: 'None',
     keras.layers.Activation: 'None'
@@ -122,6 +124,9 @@ def _parseActivation(layer, customLayerName=None):
 		return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':_getBottomLayers(layer) }}
 
 
+def _shouldParseActivation(layer):
+    ignore_activation = [ keras.layers.SimpleRNN , keras.layers.LSTM ]
+    return hasattr(layer, 'activation') and (type(layer) not in ignore_activation) and keras.activations.serialize(layer.activation) != 'linear'
 
 def _parseKerasLayer(layer):
 	layerType = type(layer)
@@ -135,7 +140,7 @@ def _parseKerasLayer(layer):
 		ret = { 'layer': { 'name':layer.name, 'type':'Data', 'top':layer.name, paramName:param[paramName] } }
 	else:
 		ret = { 'layer': { 'name':layer.name, 'type':supportedLayers[layerType], 'bottom':_getBottomLayers(layer), 'top':layer.name, paramName:param[paramName] } }
-	return [ ret, _parseActivation(layer, layer.name + '_activation') ] if hasattr(layer, 'activation') and keras.activations.serialize(layer.activation) != 'linear'  else [ ret ]
+	return [ ret, _parseActivation(layer, layer.name + '_activation') ] if _shouldParseActivation(layer)  else [ ret ]
 
 
 def _parseBatchNorm(layer):
@@ -164,6 +169,15 @@ def getPoolingParam(layer, pool='MAX'):
 	padding = [layer.pool_size[0] / 2, layer.pool_size[1] / 2] if layer.padding == 'same' else [0, 0]
 	return {'pool':pool, 'kernel_h':layer.pool_size[0], 'kernel_w':layer.pool_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
+def getRecurrentParam(layer):
+	if(not layer.use_bias):
+		raise Exception('Only use_bias=True supported for recurrent layers')
+	if(keras.activations.serialize(layer.activation) != 'tanh'):
+		raise Exception('Only tanh activation supported for recurrent layers')
+	if(layer.dropout != 0 or layer.recurrent_dropout != 0):
+		raise Exception('Only dropout not supported for recurrent layers')
+	return {'num_output': layer.units, 'return_sequences': str(layer.return_sequences).lower() }
+
 # TODO: Update AveragePooling2D when we add maxpooling support 
 layerParamMapping = {
     keras.layers.InputLayer: lambda l: \
@@ -184,6 +198,10 @@ layerParamMapping = {
         {'pooling_param': getPoolingParam(l, 'MAX')},
     keras.layers.AveragePooling2D: lambda l: \
         {'pooling_param': getPoolingParam(l, 'MAX')},
+    keras.layers.SimpleRNN: lambda l: \
+        {'recurrent_param': getRecurrentParam(l)},
+    keras.layers.LSTM: lambda l: \
+        {'recurrent_param': getRecurrentParam(l)},
     }
 
 def _checkIfValid(myList, fn, errorMessage):
@@ -235,6 +253,13 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		f.write(defaultSolver)
 
 
+def getInputMatrices(layer):
+	if type(layer) == keras.layers.LSTM or type(layer) == keras.layers.SimpleRNN:
+		weights = layer.get_weights()
+		return [np.vstack((weights[0], weights[1])), np.matrix(weights[2]) ]
+	else:
+		return [ getNumPyMatrixFromKerasWeight(param) for param in layer.get_weights() ]
+
 def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
 	_checkIfValid(kerasModel.layers, lambda layer: False if len(layer.get_weights()) <= 4 or len(layer.get_weights()) != 3 else True, 'Unsupported number of weights:')
 	layers = [layer for layer in kerasModel.layers if len(layer.get_weights()) > 0]
@@ -243,7 +268,7 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
 	dmlLines = []
 	script_java = sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml('')
 	for layer in layers:
-		inputMatrices = [ getNumPyMatrixFromKerasWeight(param) for param in layer.get_weights() ]
+		inputMatrices = getInputMatrices(layer)
 		potentialVar = [ layer.name + '_weight', layer.name + '_bias',  layer.name + '_1_weight', layer.name + '_1_bias' ]
 		for i in range(len(inputMatrices)):
 			dmlLines = dmlLines + [ 'write(' + potentialVar[i] + ', "' + outDirectory + '/' + potentialVar[i] + '.mtx", format="binary");\n' ]

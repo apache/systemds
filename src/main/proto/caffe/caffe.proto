@@ -959,6 +959,12 @@ message RecurrentParameter {
   // blobs.  The number of additional bottom/top blobs required depends on the
   // recurrent architecture -- e.g., 1 for RNNs, 2 for LSTMs.
   optional bool expose_hidden = 5 [default = false];
+
+  // ========================================================================  
+  // SystemML extension:
+  // Whether to return `out` at all timesteps, or just for the final timestep.
+  optional bool return_sequences = 6 [default = false];
+  // ========================================================================
 }
 
 // Message that stores parameters used by ReductionLayer

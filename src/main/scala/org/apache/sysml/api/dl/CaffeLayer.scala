@@ -882,6 +882,80 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
   override def biasShape(): Array[Int]   = Array(1, numNeurons.toInt)
 }
 
+
+class RNN(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  val return_sequences = param.getRecurrentParam.getReturnSequences
+  
+  // ---------------------------------------------------------
+  // Note: since Caffe doesnot have return_sequences, number of output is same as number of neurons
+  def M():String = param.getRecurrentParam.getNumOutput.toString
+  // ---------------------------------------------------------
+  
+  def timesteps():String = bottomLayerOutputShape._1
+  def input_features():String = bottomLayerOutputShape._2
+  def output_features():Int = param.getRecurrentParam.getNumOutput
+  override def sourceFileName = "rnn"
+  override def outputShape               = if(return_sequences) (timesteps, output_features.toString, "1") else (output_features.toString, "1", "1")
+  override def biasShape(): Array[Int]   = Array(1, M.toInt)
+  override def weightShape(): Array[Int] = Array(input_features.toInt + M.toInt, M.toInt)
+  
+  override def init(dmlScript: StringBuilder) = {
+    invokeInit(dmlScript, List[String](weight, bias, out0), Caffe2DML.batchSize, input_features, M)
+  }
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    invokeForward(dmlScript, List[String](out, cache_out), X, weight, bias, timesteps, input_features, return_sequences.toString.toUpperCase, out0)
+  }
+  
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0), dout, X, weight, bias,
+        timesteps, input_features, return_sequences.toString.toUpperCase, out0, cache_out)
+  }
+  
+  val cache_out = "cache_out_" + id
+  val out0 = "out0_" + id
+  val dout0 = "dout0_" + id
+}
+
+class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  val return_sequences = param.getRecurrentParam.getReturnSequences
+  
+  // ---------------------------------------------------------
+  // Note: since Caffe doesnot have return_sequences, number of output is same as number of neurons
+  def M():String = param.getRecurrentParam.getNumOutput.toString
+  // ---------------------------------------------------------
+  
+  def timesteps():String = bottomLayerOutputShape._1
+  def input_features():String = bottomLayerOutputShape._2
+  def output_features():Int = param.getRecurrentParam.getNumOutput
+  override def sourceFileName = "lstm"
+  override def outputShape               = if(return_sequences) (timesteps, output_features.toString, "1") else (output_features.toString, "1", "1")
+  override def biasShape(): Array[Int]   = Array(1, 4*M.toInt)
+  override def weightShape(): Array[Int] = Array(input_features.toInt + M.toInt, 4*M.toInt)
+  
+  override def init(dmlScript: StringBuilder) = {
+    invokeInit(dmlScript, List[String](weight, bias, out0, c0), Caffe2DML.batchSize, input_features, M)
+  }
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0)
+  }
+  
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
+        timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
+  }
+  
+  val cache_out = "cache_out_" + id
+  val out0 = "out0_" + id
+  val dout0 = "dout0_" + id
+  val c0 = "cellState0_" + id
+  val dc0 = "dcellState0_" + id
+  val c = "cellState_" + id
+  val cache_c = "cache_c_" + id
+  val cache_ifog = "cache_ifog_" + id
+}
+
 class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
   override def sourceFileName                 = "max_pool2d_builtin"

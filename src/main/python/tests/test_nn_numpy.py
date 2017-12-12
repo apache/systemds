@@ -38,7 +38,7 @@ import unittest
 
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM
 from keras import backend as K
 from keras.models import Model
 from systemml.mllearn import Keras2DML
@@ -81,6 +81,57 @@ class TestNNLibrary(unittest.TestCase):
         keras_model.add(Dropout(0.25))
         keras_model.add(Dense(10, activation='softmax'))
         self.failUnless(are_predictions_all_close(keras_model))    
+
+    def test_simplernn_predictions1(self):
+        data_dim = 16
+        timesteps = 8
+        num_classes = 10
+        batch_size = 64
+        model = Sequential()
+        model.add(SimpleRNN(32, return_sequences=False, input_shape=(timesteps, data_dim)))
+        model.add(Dense(10, activation='softmax'))
+        x_train = np.random.random((batch_size, timesteps, data_dim))
+        y_train = np.random.random((batch_size, num_classes))
+        from systemml.mllearn import Keras2DML
+        sysml_model = Keras2DML(spark, model, input_shape=(timesteps,data_dim,1), weights='weights_dir').set(debug=True)
+        keras_preds = model.predict(x_train).flatten()
+        sysml_preds = sysml_model.predict_proba(x_train.reshape((batch_size, -1))).flatten()
+        self.failUnless(np.allclose(sysml_preds, keras_preds))
+
+    def test_simplernn_predictions2(self):
+        data_dim = 16
+        timesteps = 8
+        num_classes = 10
+        batch_size = 100
+        model = Sequential()
+        model.add(SimpleRNN(32, return_sequences=False, input_shape=(timesteps, data_dim)))
+        model.add(Dense(10, activation='softmax'))
+        x_train = np.random.random((batch_size, timesteps, data_dim))
+        y_train = np.random.random((batch_size, num_classes))
+        from systemml.mllearn import Keras2DML
+        sysml_model = Keras2DML(spark, model, input_shape=(timesteps,data_dim,1), weights='weights_dir').set(debug=True)
+        keras_preds = model.predict(x_train).flatten()
+        sysml_preds = sysml_model.predict_proba(x_train.reshape((batch_size, -1))).flatten()
+        self.failUnless(np.allclose(sysml_preds, keras_preds))
+
+    def test_lstm_predictions1(self):
+        data_dim = 32
+        timesteps = 8
+        num_classes = 10
+        batch_size = 64
+        w1 = np.random.random((data_dim, 4*data_dim))
+        w2 = np.random.random((data_dim, 4*data_dim))
+        b = np.zeros(128)
+        model = Sequential()
+        model.add(LSTM(32, return_sequences=False, recurrent_activation='sigmoid', input_shape=(timesteps, data_dim),  weights=[w1, w2, b]))
+        model.add(Dense(10, activation='softmax'))
+        x_train = np.random.random((batch_size, timesteps, data_dim))
+        y_train = np.random.random((batch_size, num_classes))
+        from systemml.mllearn import Keras2DML
+        sysml_model = Keras2DML(spark, model, input_shape=(timesteps,data_dim,1), weights='weights_dir').set(debug=True)
+        keras_preds = model.predict(x_train)
+        sysml_preds = sysml_model.predict_proba(x_train.reshape((batch_size, -1)))
+        np.allclose(sysml_preds, keras_preds)
 
 if __name__ == '__main__':
     unittest.main()

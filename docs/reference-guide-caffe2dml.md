@@ -168,6 +168,61 @@ layer {
 }
 ```
 
+## Recurrent Layers
+
+### RNN Layer
+
+In a simple RNN, the output of the previous timestep is fed back in as an additional input at the current timestep.
+
+Invokes [nn/layers/rnn.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/rnn.dml) layer.
+
+**Required Parameters:**
+
+- num_output: number of output
+- return_sequences: Whether to return output at all timesteps, or just for the final timestep.
+
+**Sample Usage:**
+```
+layer {
+        top: "rnn_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "RNN"
+        name: "rnn_1"
+        bottom: "rnn_1_input"
+}
+```
+
+### LSTM Layer
+
+In an LSTM, an internal cell state is maintained, additive
+interactions operate over the cell state at each timestep, and
+some amount of this cell state is exposed as output at each
+timestep.  Additionally, the output of the previous timestep is fed
+back in as an additional input at the current timestep.
+   
+Invokes [nn/layers/lstm.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/lstm.dml) layer.
+
+**Required Parameters:**
+
+- num_output: number of output
+- return_sequences: Whether to return output at all timesteps, or just for the final timestep.
+
+**Sample Usage:**
+```
+layer {
+        top: "lstm_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "LSTM"
+        name: "lstm_1"
+        bottom: "lstm_1_input"
+}
+```
 
 ## Common Layers
 

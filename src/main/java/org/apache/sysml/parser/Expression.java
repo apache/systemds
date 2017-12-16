@@ -135,7 +135,8 @@ public abstract class Expression implements ParseInfo
 		TANH,
 		TRACE, 
 		TRANS,
-		VAR
+		VAR,
+		XOR
 	}
 
 	/**

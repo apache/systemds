@@ -2661,6 +2661,11 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+
+		case XOR:
+			Hop.OpOp2 mathOpx;
+			mathOpx = Hop.OpOp2.XOR;
+
 		case ABS:
 		case SIN:
 		case COS:

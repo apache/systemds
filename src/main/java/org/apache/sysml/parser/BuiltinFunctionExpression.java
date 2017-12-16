@@ -1369,6 +1369,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MEDIAN:
 			checkNumParameters(1);
 			break;
+		case XOR:
+			checkNumParameters(2);
+			break;
 		case LOG:
 			if (getSecondExpr() != null) {
 			  checkNumParameters(2);
@@ -1733,6 +1736,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )
 			bifop = Expression.BuiltinFunctionOp.OUTER;
+		else if ( functionName.equals("xor") )
+			bifop = Expression.BuiltinFunctionOp.XOR;
 		else
 			return null;
 		

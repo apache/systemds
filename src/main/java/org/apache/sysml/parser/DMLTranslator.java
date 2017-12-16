@@ -2665,6 +2665,7 @@ public class DMLTranslator
 		case XOR:
 			Hop.OpOp2 mathOpx;
 			mathOpx = Hop.OpOp2.XOR;
+			break;
 
 		case ABS:
 		case SIN:

@@ -80,12 +80,36 @@ public abstract class DenseBlock implements Serializable
 	public abstract int numBlocks();
 	
 	/**
+	 * Get the number of rows per block, except last one.
+	 * 
+	 * @return number of rows in block
+	 */
+	public abstract int blockSize();
+	
+	/**
+	 * Get the number of rows of the given block.
+	 * 
+	 * @param bix block index
+	 * @return number of rows in block
+	 */
+	public abstract int blockSize(int bix);
+	
+	/**
 	 * Get the length of the dense block as the product
 	 * of row and column dimensions.
 	 * 
 	 * @return length
 	 */
 	public abstract long size();
+	
+	/**
+	 * Get the length of the given block.
+	 * 
+	 * @param bix block index
+	 * @return length
+	 */
+	public abstract int size(int bix);
+	
 	
 	/**
 	 * Get the total length of allocated blocks.
@@ -194,6 +218,14 @@ public abstract class DenseBlock implements Serializable
 	 * @param v value vector
 	 */
 	public abstract void set(int r, double[] v);
+	
+	/**
+	 * Copy the given dense block.
+	 * 
+	 * @param db dense block
+	 */
+	public abstract void set(DenseBlock db);
+	
 	
 	/**
 	 * Get the value for a given row and column.

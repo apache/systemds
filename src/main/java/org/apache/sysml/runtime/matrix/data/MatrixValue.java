@@ -41,7 +41,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 @SuppressWarnings("rawtypes")
 public abstract class MatrixValue implements WritableComparable 
 {
-	
 	static public class CellIndex {
 		public int row;
 		public int column;
@@ -152,8 +151,6 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
 	throws DMLRuntimeException;
-	
-	public abstract void unaryOperationsInPlace(UnaryOperator op) throws DMLRuntimeException;
 
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
 			MatrixValue newWithCorrection)	throws DMLRuntimeException;

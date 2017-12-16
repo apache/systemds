@@ -174,10 +174,4 @@ public class WeightedCell extends MatrixCell
 		c3.setWeight(weight);
 		return c3;
 	}
-
-	@Override
-	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLRuntimeException {
-		value=op.fn.execute(value);
-	}
 }

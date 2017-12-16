@@ -1926,14 +1926,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void unaryOperationsInPlace(UnaryOperator op) 
-			throws DMLRuntimeException {
-		printDecompressWarning("unaryOperationsInPlace");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		tmp.unaryOperationsInPlace(op);
-	}
-
-	@Override
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 			throws DMLRuntimeException {
 		printDecompressWarning("binaryOperations", (MatrixBlock)thatValue);

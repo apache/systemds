@@ -266,12 +266,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		return c3;
 	}
 
-	@Override
-	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLRuntimeException {
-		value=op.fn.execute(value);
-	}
-
 	public int compareTo(MatrixCell o) {
 		return Double.compare(this.value, o.value);
 	}

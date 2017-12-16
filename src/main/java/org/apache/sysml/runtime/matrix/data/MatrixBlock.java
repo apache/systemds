@@ -1094,10 +1094,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int n = clen;
 		
 		//allocate target in memory-efficient CSR format
-		int nnz = (int) nonZeros;
+		int lnnz = (int) nonZeros;
 		int[] rptr = new int[m+1];
-		int[] indexes = new int[nnz];
-		double[] values = new double[nnz];
+		int[] indexes = new int[lnnz];
+		double[] values = new double[lnnz];
 		for( int i=0, pos=0, aix=0; i<m; i++ ) {
 			for(int j=0; j<n; j++, aix++) {
 				double aval = a[aix];
@@ -1110,10 +1110,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			rptr[i+1]=pos;
 		}
 		sparseBlock = new SparseBlockCSR(
-			rptr, indexes, values, nnz);
+			rptr, indexes, values, lnnz);
 		
 		//update nnz and cleanup dense block
-		nonZeros = nnz;
 		denseBlock = null;
 	}
 	
@@ -2626,7 +2625,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//allocate output
 		if( ret == null )
 			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
-		else 
+		else
 			ret.reset(rlen, clen, sp);
 		
 		//core execute
@@ -2663,7 +2662,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return;
 		
 		final int m = rlen;
-		final int n = clen;
 		
 		if( sparse && ret.sparse ) //SPARSE <- SPARSE
 		{
@@ -2691,7 +2689,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else if( sparse ) //DENSE <- SPARSE
 		{
-			SparseBlock a = sparseBlock;			
+			SparseBlock a = sparseBlock;
 			
 			for(int i=0; i<m; i++) {
 				if( a.isEmpty(i) ) continue;
@@ -2712,15 +2710,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//allocate dense output block
 			ret.allocateDenseBlock();
-			double[] a = getDenseBlockValues();
-			double[] c = ret.getDenseBlockValues();
-			int len = m * n;
+			DenseBlock da = getDenseBlock();
+			DenseBlock dc = ret.getDenseBlock();
 			
 			//unary op, incl nnz maintenance
-			int nnz = 0;
-			for( int i=0; i<len; i++ ) {
-				c[i] = op.fn.execute(a[i]);
-				nnz += (c[i] != 0) ? 1 : 0;
+			long nnz = 0;
+			for( int bi=0; bi<da.numBlocks(); bi++ ) {
+				double[] a = da.values(bi);
+				double[] c = dc.values(bi);
+				int len = da.size(bi);
+				for( int i=0; i<len; i++ ) {
+					c[i] = op.fn.execute(a[i]);
+					nnz += (c[i] != 0) ? 1 : 0;
+				}
 			}
 			ret.nonZeros = nnz;
 		}
@@ -2750,113 +2752,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public void unaryOperationsInPlace(UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		if(op.sparseSafe)
-			sparseUnaryOperationsInPlace(op);
-		else
-			denseUnaryOperationsInPlace(op);
-	}
-	
-	/**
-	 * only apply to non zero cells
-	 * 
-	 * @param op unary operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	private void sparseUnaryOperationsInPlace(UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		//early abort possible since sparse-safe
-		if( isEmptyBlock(false) )
-			return;
-		
-		if(sparse)
-		{
-			nonZeros=0;
-			for(int r=0; r<Math.min(rlen, sparseBlock.numRows()); r++)
-			{
-				if(sparseBlock.isEmpty(r)) 
-					continue;
-				
-				int apos = sparseBlock.pos(r);
-				int alen = sparseBlock.size(r);
-				int[] aix = sparseBlock.indexes(r);
-				double[] avals = sparseBlock.values(r);
-				
-				int pos=0;
-				for(int i=apos; i<apos+alen; i++)
-				{
-					double v=op.fn.execute(avals[i]);
-					if(v!=0) {
-						avals[pos]=v;
-						aix[pos]=aix[i];
-						pos++;
-						nonZeros++;
-					}
-				}
-				//TODO perf sparse block: truncate replaced by deleteIndexrange
-				sparseBlock.deleteIndexRange(r, pos, clen);
-			}
-			
-		}
-		else
-		{
-			double[] a = getDenseBlockValues();
-			int limit = rlen*clen;
-			long nnz = 0;
-			for(int i=0; i<limit; i++) {
-				a[i] = op.fn.execute(a[i]);
-				if(a[i] != 0)
-					nnz++;
-			}
-			nonZeros = nnz;
-		}
-	}
-	
-	private void denseUnaryOperationsInPlace(UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		if( sparse ) //SPARSE MATRIX
-		{
-			double v;
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					v=op.fn.execute(quickGetValue(r, c));
-					quickSetValue(r, c, v);
-				}
-		}
-		else//DENSE MATRIX
-		{
-			//early abort not possible because not sparsesafe
-			if(denseBlock==null)
-				allocateDenseBlock();
-			
-			//compute values in-place and update nnz
-			double[] a = getDenseBlockValues();
-			final int limit = rlen*clen;
-			int lnnz = 0;
-			for( int i=0; i<limit; i++ ) {
-				a[i] = op.fn.execute(a[i]);
-				if( a[i]!=0 )
-					lnnz++;
-			}		
-			nonZeros = lnnz;
-			
-			//IBM JVM bug (JDK6) causes crash for certain inputs (w/ infinities) 
-			//nonZeros = 0;
-			//for(int i=0; i<limit; i++)
-			//{
-			//	denseBlock[i]=op.fn.execute(denseBlock[i]);
-			//	if(denseBlock[i]!=0)
-			//		nonZeros++;
-			//}
-		}
-	}
-
-	@Override
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 		throws DMLRuntimeException
 	{
@@ -2869,7 +2764,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//compute output dimensions
 		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
-				         == BinaryAccessType.OUTER_VECTOR_VECTOR); 
+				== BinaryAccessType.OUTER_VECTOR_VECTOR); 
 		int rows = rlen;
 		int cols = outer ? that.clen : clen;
 		

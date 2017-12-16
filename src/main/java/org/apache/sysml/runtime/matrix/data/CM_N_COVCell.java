@@ -172,12 +172,6 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLRuntimeException {
-		throw new DMLRuntimeException("operation not supported fro WeightedCell");
-	}
-
-	@Override
 	public void readFields(DataInput in) throws IOException {
 		cm.w=in.readDouble();
 		cm.mean.read(in);

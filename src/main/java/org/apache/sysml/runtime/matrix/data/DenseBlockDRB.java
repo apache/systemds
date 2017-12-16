@@ -74,9 +74,24 @@ public class DenseBlockDRB extends DenseBlock
 	public int numBlocks() {
 		return 1;
 	}
+	
+	@Override
+	public int blockSize() {
+		return rlen;
+	}
+	
+	@Override
+	public int blockSize(int bix) {
+		return rlen;
+	}
 
 	@Override
 	public long size() {
+		return rlen * clen;
+	}
+	
+	@Override
+	public int size(int bix) {
 		return rlen * clen;
 	}
 
@@ -149,6 +164,11 @@ public class DenseBlockDRB extends DenseBlock
 	@Override
 	public void set(int r, int c, double v) {
 		data[pos(r, c)] = v;
+	}
+	
+	@Override
+	public void set(DenseBlock db) {
+		System.arraycopy(db.values(0), 0, data, 0, rlen*clen);
 	}
 
 	@Override

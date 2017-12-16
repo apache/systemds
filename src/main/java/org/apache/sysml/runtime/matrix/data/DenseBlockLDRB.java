@@ -86,10 +86,25 @@ public class DenseBlockLDRB extends DenseBlock
 	public int numBlocks() {
 		return data.length;
 	}
+	
+	@Override
+	public int blockSize() {
+		return blen;
+	}
+	
+	@Override
+	public int blockSize(int bix) {
+		return Math.min(blen, rlen-bix*blen);
+	}
 
 	@Override
 	public long size() {
 		return (long)rlen * clen;
+	}
+	
+	@Override
+	public int size(int bix) {
+		return blockSize(bix) * clen;
 	}
 
 	@Override
@@ -116,7 +131,8 @@ public class DenseBlockLDRB extends DenseBlock
 		long nnz = 0;
 		for(int bi=index(rl); bi<index(ru); bi++) {
 			double[] a = data[bi];
-			for(int i=pos(bi), ix=pos(bi)*clen; i<blen(bi); i++, ix+=clen)
+			int blen = blockSize(bi);
+			for(int i=pos(bi), ix=pos(bi)*clen; i<blen; i++, ix+=clen)
 				for( int j=cl; j<cu; j++ )
 					nnz += (a[ix+j]!=0) ? 1 : 0;
 		}
@@ -171,7 +187,13 @@ public class DenseBlockLDRB extends DenseBlock
 
 	@Override
 	public void set(int r, double[] v) {
-		System.arraycopy(v, 0, data[index(r)], pos(r), v.length);
+		System.arraycopy(v, 0, data[index(r)], pos(r), clen);
+	}
+	
+	@Override
+	public void set(DenseBlock db) {
+		for(int bi=0; bi<numBlocks(); bi++)
+			System.arraycopy(db.values(bi), 0, data[bi], 0, size(bi));
 	}
 
 	@Override
@@ -192,10 +214,6 @@ public class DenseBlockLDRB extends DenseBlock
 			sb.append("\n");
 		}
 		return sb.toString();
-	}
-	
-	private int blen(int bix) {
-		return Math.min(blen, rlen-bix*blen);
 	}
 
 	private static int blocksize(int rlen, int clen) {

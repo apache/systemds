@@ -39,6 +39,7 @@ import org.junit.runners.Suite;
 	ModulusTest.class,
 	MultiplicationTest.class,
 	OrTest.class,
+	XorTest.class,
 	PowerTest.class,
 	SubtractionTest.class
 })

@@ -151,6 +151,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "max"  , CPType.BuiltinBinary);
 		String2CPInstructionType.put( "min"  , CPType.BuiltinBinary);
 		String2CPInstructionType.put( "solve"  , CPType.BuiltinBinary);
+		String2CPInstructionType.put( "xor"  , CPType.BuiltinBinary);
 		
 		String2CPInstructionType.put( "exp"   , CPType.BuiltinUnary);
 		String2CPInstructionType.put( "abs"   , CPType.BuiltinUnary);

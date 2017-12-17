@@ -53,8 +53,8 @@ public class BinaryOperator  extends Operator implements Serializable
 	
 	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
-		super (p instanceof Plus || p instanceof Multiply 
-			|| p instanceof Minus || p instanceof And || p instanceof Or 
+		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
+			|| p instanceof And || p instanceof Or
 			|| p instanceof PlusMultiply || p instanceof MinusMultiply);
 		fn = p;
 	}
@@ -90,6 +90,7 @@ public class BinaryOperator  extends Operator implements Serializable
 			else if( bfc == BuiltinCode.MAX ) 	return OpOp2.MAX;
 			else if( bfc == BuiltinCode.LOG ) 	return OpOp2.LOG;
 			else if( bfc == BuiltinCode.LOG_NZ ) return OpOp2.LOG_NZ;
+			else if( bfc == BuiltinCode.XOR )	return OpOp2.XOR;
 		}
 		
 		//non-supported ops (not required for sparsity estimates):

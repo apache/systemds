@@ -683,7 +683,7 @@ public class DMLTranslator
 					l.addToDag(dag);
 				}
 				
-				// Instructions for Lobs DAGs
+				// Instructions for Lops DAGs
 				instruct = dag.getJobs(sb, config);
 				rtpb.addInstructions(instruct);
 			}
@@ -2661,6 +2661,14 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+
+		case XOR:
+			Hop.OpOp2 mathOpx;
+			mathOpx = Hop.OpOp2.XOR;
+
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, mathOpx, expr, expr2);
+			break;
+
 		case ABS:
 		case SIN:
 		case COS:

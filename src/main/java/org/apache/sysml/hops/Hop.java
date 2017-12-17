@@ -1077,7 +1077,7 @@ public abstract class Hop implements ParseInfo
 	// Operations that require two operands
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
-		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
+		MIN, MAX, AND, OR, XOR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM,
 		CENTRALMOMENT, COVARIANCE, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
@@ -1219,6 +1219,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.MIN, Binary.OperationTypes.MIN);
 		HopsOpOp2LopsB.put(OpOp2.MAX, Binary.OperationTypes.MAX);
 		HopsOpOp2LopsB.put(OpOp2.AND, Binary.OperationTypes.OR);
+		HopsOpOp2LopsB.put(OpOp2.XOR, Binary.OperationTypes.OR);
 		HopsOpOp2LopsB.put(OpOp2.OR, Binary.OperationTypes.AND);
 		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
@@ -1244,6 +1245,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.MAX, BinaryScalar.OperationTypes.MAX);
 		HopsOpOp2LopsBS.put(OpOp2.AND, BinaryScalar.OperationTypes.AND);
 		HopsOpOp2LopsBS.put(OpOp2.OR, BinaryScalar.OperationTypes.OR);
+		HopsOpOp2LopsBS.put(OpOp2.XOR, BinaryScalar.OperationTypes.XOR);
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
@@ -1442,6 +1444,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
+		HopsOpOp2String.put(OpOp2.XOR, "xor");
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
@@ -1528,6 +1531,7 @@ public abstract class Hop implements ParseInfo
 		else if( "==".equals(op) ) return OpOp2.EQUAL;
 		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
 		else if( "|".equals(op) ) return OpOp2.OR;
+		else if( "xor".equals(op) ) return OpOp2.XOR;
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;

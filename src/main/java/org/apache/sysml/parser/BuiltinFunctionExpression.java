@@ -1253,6 +1253,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					// override computed value type for special cases
 					if( getOpCode() == BuiltinFunctionOp.LOG )
 						output.setValueType(ValueType.DOUBLE);
+					else if( getOpCode() == BuiltinFunctionOp.XOR )
+						output.setValueType(ValueType.DOUBLE);
 				}
 			} 
 			else {
@@ -1342,6 +1344,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CEIL:
 		case FLOOR:
 		case MEDIAN:
+		case XOR:
 			return true;
 		default:
 			return false;
@@ -1368,6 +1371,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case FLOOR:
 		case MEDIAN:
 			checkNumParameters(1);
+			break;
+		case XOR:
+			checkNumParameters(2);
 			break;
 		case LOG:
 			if (getSecondExpr() != null) {
@@ -1733,6 +1739,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )
 			bifop = Expression.BuiltinFunctionOp.OUTER;
+		else if ( functionName.equals("xor") )
+			bifop = Expression.BuiltinFunctionOp.XOR;
 		else
 			return null;
 		

@@ -35,7 +35,7 @@ public class BinaryScalar extends Lop
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
-		AND, OR, 
+		AND, OR, XOR,
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
 	}
@@ -145,6 +145,10 @@ public class BinaryScalar extends Lop
 				return "&&";
 			case OR:
 				return "||";
+
+			/* Boolean built in binary function */
+			case XOR:
+				return "xor";
 			
 			/* Builtin Functions */
 			case LOG:

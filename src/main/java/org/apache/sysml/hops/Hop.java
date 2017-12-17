@@ -1245,7 +1245,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.MAX, BinaryScalar.OperationTypes.MAX);
 		HopsOpOp2LopsBS.put(OpOp2.AND, BinaryScalar.OperationTypes.AND);
 		HopsOpOp2LopsBS.put(OpOp2.OR, BinaryScalar.OperationTypes.OR);
-		//HopsOpOp2LopsBS.put(OpOp2.XOR, BinaryScalar.OperationTypes.XOR);
+		HopsOpOp2LopsBS.put(OpOp2.XOR, BinaryScalar.OperationTypes.XOR);
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);

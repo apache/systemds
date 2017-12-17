@@ -1735,6 +1735,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )
 			bifop = Expression.BuiltinFunctionOp.OUTER;
+		else if ( functionName.equals("xor") )
+			bifop = Expression.BuiltinFunctionOp.XOR;
 		else
 			return null;
 		

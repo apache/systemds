@@ -683,7 +683,7 @@ public class DMLTranslator
 					l.addToDag(dag);
 				}
 				
-				// Instructions for Lobs DAGs
+				// Instructions for Lops DAGs
 				instruct = dag.getJobs(sb, config);
 				rtpb.addInstructions(instruct);
 			}
@@ -2661,6 +2661,12 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+
+		case XOR:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+				ValueType.BOOLEAN, Hop.OpOp2.XOR, expr, expr2);
+			break;
+
 		case ABS:
 		case SIN:
 		case COS:
@@ -2671,7 +2677,7 @@ public class DMLTranslator
 		case SINH:
 		case COSH:
 		case TANH:
-		case SIGN:	
+		case SIGN:
 		case SQRT:
 		case EXP:
 		case ROUND:

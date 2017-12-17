@@ -72,6 +72,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
@@ -499,6 +500,8 @@ public class InstructionUtils
 			return new BinaryOperator(And.getAndFnObject());
 		else if(opcode.equalsIgnoreCase("||"))
 			return new BinaryOperator(Or.getOrFnObject());
+		else if(opcode.equalsIgnoreCase("xor"))
+			return new BinaryOperator(Xor.getXorFnObject());
 		else if(opcode.equalsIgnoreCase("+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-"))

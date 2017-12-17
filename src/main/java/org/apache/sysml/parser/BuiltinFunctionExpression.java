@@ -445,7 +445,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(id.getValueType());
 			break;
-			
+		
+		case XOR:
 		case MIN:
 		case MAX:
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
@@ -1342,6 +1343,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CEIL:
 		case FLOOR:
 		case MEDIAN:
+		case XOR:
 			return true;
 		default:
 			return false;

@@ -133,6 +133,7 @@ public class CPInstructionParser extends InstructionParser
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPType.BooleanBinary);
 		String2CPInstructionType.put( "||"   , CPType.BooleanBinary);
+		String2CPInstructionType.put( "xor"  , CPType.BooleanBinary);
 		
 		String2CPInstructionType.put( "!"    , CPType.BooleanUnary);
 

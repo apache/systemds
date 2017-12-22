@@ -214,16 +214,17 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		throws HopsException
 	{
 		List<StatementBlock> sbs = dmlp.getStatementBlocks();
-		
-		if( sbs.size()==1 & !(sbs.get(0) instanceof IfStatementBlock 
-			|| sbs.get(0) instanceof WhileStatementBlock 
-			|| sbs.get(0) instanceof ForStatementBlock) ) 
-		{
-			//recursively process all dag roots
-			if( sbs.get(0).getHops()!=null ) {
-				Hop.resetVisitStatus(sbs.get(0).getHops());
-				for( Hop root : sbs.get(0).getHops() )
-					rRemoveCheckpointReadWrite(root);
+
+		if(!sbs.isEmpty()) {
+			if (sbs.size() == 1 & !(sbs.get(0) instanceof IfStatementBlock
+					|| sbs.get(0) instanceof WhileStatementBlock
+					|| sbs.get(0) instanceof ForStatementBlock)) {
+				//recursively process all dag roots
+				if (sbs.get(0).getHops() != null) {
+					Hop.resetVisitStatus(sbs.get(0).getHops());
+					for (Hop root : sbs.get(0).getHops())
+						rRemoveCheckpointReadWrite(root);
+				}
 			}
 		}
 	}

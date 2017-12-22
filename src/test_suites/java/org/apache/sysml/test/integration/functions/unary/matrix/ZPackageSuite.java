@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	ATanTest.class,
 	CastAsScalarTest.class,
 	CosTest.class,
+	CholeskyTest.class,
 	DiagTest.class,
 	EigenFactorizeTest.class,
 	FullCummaxTest.class,

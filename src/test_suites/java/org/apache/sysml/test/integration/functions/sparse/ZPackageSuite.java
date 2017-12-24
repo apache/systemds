@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	SparseBlockIndexRange.class,
 	SparseBlockIterator.class,
 	SparseBlockMemEstimate.class,
+	SparseBlockMerge.class,
 	SparseBlockScan.class,
 	SparseBlockSize.class,
 })

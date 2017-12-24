@@ -277,7 +277,7 @@ public class SparseBlockCOO extends SparseBlock
 		//scan to begin of row index partition
 		while( index>0 && _rindexes[index-1]==r )
 			index--;
-		return index;	
+		return index;
 	}
 
 	@Override
@@ -295,7 +295,7 @@ public class SparseBlockCOO extends SparseBlock
 				shiftLeftAndDelete(index);
 				return true; // nnz--
 			}
-			else { 	
+			else {
 				_values[index] = v;
 				return false;
 			} 
@@ -319,12 +319,16 @@ public class SparseBlockCOO extends SparseBlock
 		int alen = row.size();
 		int[] aix = row.indexes();
 		double[] avals = row.values();
+		//delete existing values in range if necessary 
 		deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		//prepare free space (allocate and shift)
+		int lsize = _size+alen;
+		if( _values.length < lsize )
+			resize(lsize);
 		shiftRightByN(pos, alen);
 		Arrays.fill(_rindexes, pos, pos+alen, r);
 		System.arraycopy(aix, 0, _cindexes, pos, alen);
 		System.arraycopy(avals, 0, _values, pos, alen);
-		_size+=alen;
 	}
 
 	@Override
@@ -334,7 +338,7 @@ public class SparseBlockCOO extends SparseBlock
 	
 		if( _size==_values.length ) 
 			resize();
-		insert(_size, r, c, v);	
+		insert(_size, r, c, v);
 	}
 
 	@Override
@@ -390,10 +394,11 @@ public class SparseBlockCOO extends SparseBlock
 		//sort _cindexes/_values by _cindexes per row partition
 		int index = 0;
 		while( index < _size ){
-			int r = _rindexes[index];		
+			int r = _rindexes[index];
 			int len = 0;
 			while( r == _rindexes[index] ) {
-				len ++;	index ++;	
+				len ++;
+				index ++;
 			}
 			SortUtils.sortByIndex(index-len, index, _cindexes, _values);
 		}
@@ -403,7 +408,7 @@ public class SparseBlockCOO extends SparseBlock
 	public void sort(int r) {
 		int pos = pos(r);
 		int len = size(r);
-				
+		
 		if( len<=100 || !SortUtils.isSorted(pos, pos+len, _cindexes) )
 			SortUtils.sortByIndex(pos, pos+len, _cindexes, _values);
 	}
@@ -530,7 +535,7 @@ public class SparseBlockCOO extends SparseBlock
 
 	private void resize() {
 		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
+		double tmpCap = Math.ceil(_values.length * RESIZE_FACTOR1);
 		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
 		
 		resize(newCap);
@@ -545,11 +550,11 @@ public class SparseBlockCOO extends SparseBlock
 
 	private void resizeAndInsert(int ix, int r, int c, double v) {
 		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
+		double tmpCap = Math.ceil(_values.length * RESIZE_FACTOR1);
 		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
 		
 		int[] oldrindexes = _rindexes;
-		int[] oldcindexes = _cindexes;		
+		int[] oldcindexes = _cindexes;
 		double[] oldvalues = _values;
 		_rindexes = new int[newCap];
 		_cindexes = new int[newCap];
@@ -588,8 +593,7 @@ public class SparseBlockCOO extends SparseBlock
 		_size--;
 	}
 
-	private void shiftRightByN(int ix, int n) 
-	{		
+	private void shiftRightByN(int ix, int n) {
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_rindexes, ix, _rindexes, ix+n, _size-ix);
 		System.arraycopy(_cindexes, ix, _cindexes, ix+n, _size-ix);

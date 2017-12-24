@@ -533,6 +533,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public SparseBlock getSparseBlock() {
 		return sparseBlock;
 	}
+	
+	public void setSparseBlock(SparseBlock sblock) {
+		sparseBlock = sblock;
+	}
 
 	public Iterator<IJV> getSparseBlockIterator() {
 		//check for valid format, should have been checked from outside
@@ -1682,7 +1686,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( sparse )
 			mergeIntoSparse(that, appendOnly);
 		else
-			mergeIntoDense(that);	
+			mergeIntoDense(that);
 		
 		//maintain number of nonzeros
 		nonZeros = nnz;
@@ -1722,49 +1726,46 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly)
 	{
+		SparseBlock a = sparseBlock;
+		final boolean COO = (a instanceof SparseBlockCOO);
+		final int m = rlen;
+		final int n = clen;
+		
 		if( that.sparse ) //SPARSE <- SPARSE
 		{
-			SparseBlock a = sparseBlock;
 			SparseBlock b = that.sparseBlock;
-			int m = rlen;
 			
 			for( int i=0; i<m; i++ ) 
 			{
-				if( !b.isEmpty(i) )
+				if( b.isEmpty(i) ) continue;
+				if( !COO && a.isEmpty(i) ) {
+					//copy entire sparse row (no sort required)
+					a.set(i, b.get(i), true);
+				}
+				else
 				{
-					if( a.isEmpty(i) ) {
-						//copy entire sparse row (no sort required)
-						a.set(i, b.get(i), true); 
-					}
-					else
-					{
-						boolean appended = false;
-						int bpos = b.pos(i);
-						int blen = b.size(i);
-						int[] bix = b.indexes(i);
-						double[] bval = b.values(i);
-						for( int j=bpos; j<bpos+blen; j++ ) {
-							if( bval[j] != 0 ) {
-								a.append(i, bix[j], bval[j]);
-								appended = true;
-							}
+					boolean appended = false;
+					int bpos = b.pos(i);
+					int blen = b.size(i);
+					int[] bix = b.indexes(i);
+					double[] bval = b.values(i);
+					for( int j=bpos; j<bpos+blen; j++ ) {
+						if( bval[j] != 0 ) {
+							a.append(i, bix[j], bval[j]);
+							appended = true;
 						}
-						//only sort if value appended
-						if( !appendOnly && appended )
-							a.sort(i);		
 					}
+					//only sort if value appended
+					if( !appendOnly && appended )
+						a.sort(i);
 				}
 			}
 		}
 		else //SPARSE <- DENSE
 		{
-			SparseBlock a = sparseBlock;
 			double[] b = that.getDenseBlockValues();
-			int m = rlen;
-			int n = clen;
 			
-			for( int i=0, bix=0; i<m; i++, bix+=n )
-			{
+			for( int i=0, bix=0; i<m; i++, bix+=n ) {
 				boolean appended = false;
 				for( int j=0; j<n; j++ ) {
 					if( b[bix+j] != 0 ) {
@@ -1773,10 +1774,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					}
 				}
 				//only sort if value appended
-				if( !appendOnly && appended )
+				if( !COO && !appendOnly && appended )
 					a.sort(i);
 			}
 		}
+		
+		//full sort of coordinate blocks
+		if( COO && !appendOnly )
+			a.sort();
 	}
 	
 	////////

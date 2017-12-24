@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ------------------------------------------
+# Mode finding for binary Laplace GPC
+# ------------------------------------------
+
+K = rand(rows=5, cols=5, min=0.0000001, max=1)
+
+mode = function (matrix[double] K)
+  return (matrix[double] f) {
+
+  /* INPUT:
+   * K : covariance matrix
+   * y : target vector
+   *
+   * OUTPUT:
+   * f : mode
+   */
+
+  I = diag( matrix(1, rows=nrow(K), cols=1) )
+
+  # step 2. initialize f = 0
+  f = matrix(0, rows=nrow(K), cols=ncol(K))
+
+  # compute the derivative
+  D = 1 / ( 1+exp(-f) )
+
+  # step 3. repeat.. for convergence
+  i = 1;
+  while( i < 10 ) {
+
+    # step 4. W = - ∇∇log p(y|f)
+    W = D %*% (1-D)
+
+    # compute the square root of W
+    W_sr = W ^ 0.5
+
+    # step 5(b). B = I + W^0.5 K W^0.5
+    B = I + (W_sr) %*% K %*% (W_sr)
+
+    # step 5(a). L = cholesky( I + W^0.5 K W^0.5)
+    L = cholesky(B) # L is a lower triangular matrix
+
+    # step 6. b = W f + ∇log p(y|f)
+    b = W %*% f + D
+
+    # step 7. a = b - W^0.5 t(L) \ (L\(W^0.5 K b))
+    a = b - W_sr %*% solve( t(L), solve(L, W_sr %*% K %*% b) )
+
+    # step 8. f = K a
+    f = K %*% a
+
+    i = i + 1
+  }
+
+
+}
+
+tmp = mode(K)
+
+for( i in 1:nrow(tmp) ) {
+  for( j in 1:ncol(tmp) ) {
+    print("("+ i +","+ j +") "+ as.scalar(tmp[i,j]))
+  }
+  print("")
+}

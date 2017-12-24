@@ -27,19 +27,19 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 
-	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode,
-			String istr) {
+	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(CPType.BuiltinUnary, op, in, out, opcode, istr);
 	}
 
 	public static BuiltinUnaryCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException
 	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -49,8 +49,7 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 		ValueFunction func = null;
 		
 		//print or stop or cumulative aggregates
-		if( parts.length==4 ) 
-		{
+		if( parts.length==4 ) {
 			opcode = parts[0];
 			in.split(parts[1]);
 			out.split(parts[2]);
@@ -61,15 +60,15 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 			else
 				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 		}
-		else //2+1, general case
-		{
+		else { //2+1, general case
 			opcode = parseUnaryInstruction(str, in, out);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
 			if(in.getDataType() == DataType.SCALAR)
 				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 			else if(in.getDataType() == DataType.MATRIX)
-				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, opcode, str);
+				return new MatrixBuiltinCPInstruction(LibCommonsMath.isSupportedUnaryOperation(opcode) ?
+					null : new UnaryOperator(func), in, out, opcode, str);
 		}
 		
 		return null;

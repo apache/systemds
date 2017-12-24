@@ -281,7 +281,8 @@ public class LibCommonsMath
 		if ( !in.isSquare() )
 			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a " + in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
 
-		CholeskyDecomposition cholesky = new CholeskyDecomposition(in);
+		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, 1e-14,
+			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		
 		return DataConverter.convertToMatrixBlock(rmL.getData());

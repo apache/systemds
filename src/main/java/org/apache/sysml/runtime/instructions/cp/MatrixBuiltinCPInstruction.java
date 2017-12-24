@@ -35,7 +35,6 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{	
-		UnaryOperator u_op = (UnaryOperator) _optr;
 		String output_name = output.getName();
 		
 		String opcode = getOpcode();
@@ -44,6 +43,7 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 			ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 		}
 		else {
+			UnaryOperator u_op = (UnaryOperator) _optr;
 			MatrixBlock inBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 			MatrixBlock retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
 		

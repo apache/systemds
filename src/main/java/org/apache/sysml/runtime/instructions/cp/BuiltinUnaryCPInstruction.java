@@ -21,31 +21,24 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.Arrays;
 
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 import static org.apache.sysml.runtime.instructions.InstructionUtils.isBuiltinFunction;
 
-public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
-
-	protected CPOperand _out;
+public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 
 	protected BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode,
 										String istr) {
 		super(CPType.BuiltinUnary, op, in, out, opcode, istr);
-		_out = out;
 	}
 
 	public static BuiltinUnaryCPInstruction parseInstruction ( String str )
@@ -76,7 +69,7 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 		{
 			opcode = parseUnaryInstruction(str, in, out);
 			if(LibCommonsMath.isSupportedUnaryOperation(opcode)) {
-				return new BuiltinUnaryCPInstruction(null, in, out, opcode, str);
+				return new MatrixBuiltinCPInstruction(null, in, out, opcode, str);
 			}
 			else if(isBuiltinFunction(opcode)) {
 				func = Builtin.getBuiltinFnObject(opcode);
@@ -92,21 +85,5 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 		}
 
 		return null;
-	}
-
-	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException
-	{
-		String opcode = getOpcode();
-		MatrixObject mo = ec.getMatrixObject(input1.getName());
-		MatrixBlock out = null;
-
-		if(LibCommonsMath.isSupportedUnaryOperation(opcode))
-			out = LibCommonsMath.unaryOperations(mo, opcode);
-		else
-			throw new DMLRuntimeException("Invalid opcode in Builtin Unary instruction: " + opcode);
-
-		ec.setMatrixOutput(_out.getName(), out);
 	}
 }

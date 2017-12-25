@@ -23,21 +23,26 @@
 # Mode finding for binary Laplace GPC
 # ------------------------------------------
 
-K = rand(rows=5, cols=5, min=0.0000001, max=1)
-r = rand(rows=4, cols=1, min=-1, max=+1)
-y = matrix("1", rows=1, cols=1);
+# Inputs
 
-for( l in 1:nrow(r)) {
-  if(as.scalar(r[l,]) < 0.0) {
-    y = rbind(y,as.matrix(-1))
-  }
-  else {
-    y = rbind(y,as.matrix(1));
-  }
-}
+X = matrix(" 0.826062790211596	0.183227263001437	0.515246335524849	-0.532011376808821	-1.17421233145682	-1.06421341288933
+             1.52697668673337	-1.02976754356662	0.261406324055383	1.68210359466318	-0.192239517539275	1.60345729812004
+             0.466914435684700	0.949221831131023	-0.941485770955434	-0.875729346160017	-0.274070229932602	1.23467914689078
+             -0.209713338388737	0.307061919146703	-0.162337672803828	-0.483815050110121	1.53007251442410	-0.229626450963181
+             0.625190357087626	0.135174942099456	-0.146054634331526	-0.712004549027423	-0.249024742513714	-1.50615970397972 ", rows=5, cols=6)
+
+y = matrix(" -1 1 1 -1 -1 ", rows=5, cols=1)
+
+# covariance matrix
+K = matrix("     9.9090    4.3453   -2.0279    2.0109 4.3453
+                 4.3453    9.6392    0.8006    4.6520 9.6392
+                -2.0279    0.8006    4.6162    0.7838 0.8006
+                 2.0109    4.6520    0.7838    6.4825 4.6520
+                 4.3453    9.6392    0.8006    4.6520 9.6392 ", rows=5, cols=5);
+
 
 mode = function (matrix[double] K, matrix[double] y )
-  return (matrix[double] B) {
+  return (matrix[double] D, matrix[double] D2) {
 
   /* INPUT:
    * K : covariance matrix
@@ -45,6 +50,7 @@ mode = function (matrix[double] K, matrix[double] y )
    *
    * OUTPUT:
    * f : mode
+   * llh : log likelihood, log p(y|f)
    */
 
   I = diag( matrix(1, rows=nrow(K), cols=1) )
@@ -55,7 +61,7 @@ mode = function (matrix[double] K, matrix[double] y )
 
   # step 3. repeat.. for convergence
   i = 1;
-  while( i < 100) {
+  while( i < 10000) {
 
     # compute the derivative
     # D = ∇log p(y|f)
@@ -63,6 +69,7 @@ mode = function (matrix[double] K, matrix[double] y )
 
     # step 4. W = - ∇∇log p(y|f)
     cp = 1/(1+exp(-f)) # class probability
+    D2 = cp * (1-cp)
     W = diag(cp * (1-cp))
 
     # compute the square root of W
@@ -74,13 +81,25 @@ mode = function (matrix[double] K, matrix[double] y )
     # step 5(a). L = cholesky( I + W^0.5 K W^0.5)
     L = cholesky(B) # L is a lower triangular matrix
 
+    # step 6. b = W f + ∇log p(y|f)
+    b = W %*% f + D
+
+    # step 7. a = b - W^0.5 t(L) \ (L\(W^0.5 K b))
+    a = b - W_sr %*% solve( t(L), solve(L, W_sr %*% K %*% b) )
+
+    # step 8. f = K a
+    f = K %*% a
+
     i = i + 1
   }
 
+  yf = y * f
+
+  llh = -log( 1 + exp(-y * f) )
 
 }
 
-tmp = mode(K, y)
+[tmp, yf] = mode(K, y)
 
 
 for( i in 1:nrow(tmp) ) {
@@ -90,36 +109,9 @@ for( i in 1:nrow(tmp) ) {
   print("")
 }
 
-/*
-   # step 4. W = - ∇∇log p(y|f)
-    W = D %*% (1-D)
-
-    # compute the square root of W
-    W_sr = W ^ 0.5
-
-    # step 5(b). B = I + W^0.5 K W^0.5
-    B = I + (W_sr) %*% K %*% (W_sr)
-
-    # step 5(a). L = cholesky( I + W^0.5 K W^0.5)
-    L = cholesky(B) # L is a lower triangular matrix
-
-    # step 6. b = W f + ∇log p(y|f)
-    b = D + W %*% f
-
-    # step 7. a = b - W^0.5 t(L) \ (L\(W^0.5 K b))
-    a = b - W_sr %*% solve( t(L), solve(L, W_sr %*% K %*% b) )
-
-    # step 8. f = K a
-    f = K %*% a
-
-    i = i + 1
-
-*/
-/*
-for( i in 1:nrow(y) ) {
-  for( j in 1:ncol(y) ) {
-    print("("+ i +","+ j +") "+ as.scalar(y[i,j]))
+for( i in 1:nrow(yf) ) {
+  for( j in 1:ncol(yf) ) {
+    print("("+ i +","+ j +") "+ as.scalar(yf[i,j]))
   }
   print("")
 }
-*/

@@ -24,9 +24,20 @@
 # ------------------------------------------
 
 K = rand(rows=5, cols=5, min=0.0000001, max=1)
+r = rand(rows=4, cols=1, min=-1, max=+1)
+y = matrix("1", rows=1, cols=1);
 
-mode = function (matrix[double] K)
-  return (matrix[double] f) {
+for( l in 1:nrow(r)) {
+  if(as.scalar(r[l,]) < 0.0) {
+    y = rbind(y,as.matrix(-1))
+  }
+  else {
+    y = rbind(y,as.matrix(1));
+  }
+}
+
+mode = function (matrix[double] K, matrix[double] y )
+  return (matrix[double] B) {
 
   /* INPUT:
    * K : covariance matrix
@@ -39,16 +50,48 @@ mode = function (matrix[double] K)
   I = diag( matrix(1, rows=nrow(K), cols=1) )
 
   # step 2. initialize f = 0
-  f = matrix(0, rows=nrow(K), cols=ncol(K))
+  f = matrix(0, rows=nrow(K), cols=1)
 
-  # compute the derivative
-  D = 1 / ( 1+exp(-f) )
 
   # step 3. repeat.. for convergence
   i = 1;
-  while( i < 10 ) {
+  while( i < 100) {
+
+    # compute the derivative
+    # D = ∇log p(y|f)
+    D = (y+1)/2 - 1 / (1 + exp(-f))
 
     # step 4. W = - ∇∇log p(y|f)
+    cp = 1/(1+exp(-f)) # class probability
+    W = diag(cp * (1-cp))
+
+    # compute the square root of W
+    W_sr = W ^ 0.5
+
+    # step 5(b). B = I + W^0.5 K W^0.5
+    B = I + (W_sr) %*% K %*% (W_sr)
+
+    # step 5(a). L = cholesky( I + W^0.5 K W^0.5)
+    L = cholesky(B) # L is a lower triangular matrix
+
+    i = i + 1
+  }
+
+
+}
+
+tmp = mode(K, y)
+
+
+for( i in 1:nrow(tmp) ) {
+  for( j in 1:ncol(tmp) ) {
+    print("("+ i +","+ j +") "+ as.scalar(tmp[i,j]))
+  }
+  print("")
+}
+
+/*
+   # step 4. W = - ∇∇log p(y|f)
     W = D %*% (1-D)
 
     # compute the square root of W
@@ -61,7 +104,7 @@ mode = function (matrix[double] K)
     L = cholesky(B) # L is a lower triangular matrix
 
     # step 6. b = W f + ∇log p(y|f)
-    b = W %*% f + D
+    b = D + W %*% f
 
     # step 7. a = b - W^0.5 t(L) \ (L\(W^0.5 K b))
     a = b - W_sr %*% solve( t(L), solve(L, W_sr %*% K %*% b) )
@@ -70,16 +113,13 @@ mode = function (matrix[double] K)
     f = K %*% a
 
     i = i + 1
-  }
 
-
-}
-
-tmp = mode(K)
-
-for( i in 1:nrow(tmp) ) {
-  for( j in 1:ncol(tmp) ) {
-    print("("+ i +","+ j +") "+ as.scalar(tmp[i,j]))
+*/
+/*
+for( i in 1:nrow(y) ) {
+  for( j in 1:ncol(y) ) {
+    print("("+ i +","+ j +") "+ as.scalar(y[i,j]))
   }
   print("")
 }
+*/

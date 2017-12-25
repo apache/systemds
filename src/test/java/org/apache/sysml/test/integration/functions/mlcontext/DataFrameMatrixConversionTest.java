@@ -30,6 +30,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -169,7 +170,27 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	public void testVectorConversionWideSparseUnknown() {
 		testDataFrameConversion(true, cols3, false, true);
 	}
+	
+	@Test
+	public void testVectorConversionMultiUltraSparse() {
+		testDataFrameConversionUltraSparse(true, false);
+	}
+	
+	@Test
+	public void testVectorConversionMultiUltraSparseUnknown() {
+		testDataFrameConversionUltraSparse(true, true);
+	}
 
+	@Test
+	public void testRowConversionMultiUltraSparse() {
+		testDataFrameConversionUltraSparse(false, false);
+	}
+	
+	@Test
+	public void testRowConversionMultiUltraSparseUnknown() {
+		testDataFrameConversionUltraSparse(false, true);
+	}
+	
 	private void testDataFrameConversion(boolean vector, int cols, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
@@ -212,6 +233,48 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		}
 	}
 
+	private void testDataFrameConversionUltraSparse(boolean vector, boolean unknownDims) {
+		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
+		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
+
+		try
+		{
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			
+			//generate input data and setup metadata
+			double[][] A = getRandomMatrix(rows1, 1, -10, 10, 0.7, 2373);
+			MatrixBlock mbA0 = DataConverter.convertToMatrixBlock(A);
+			MatrixBlock mbA = LibMatrixReorg.diag(mbA0, new MatrixBlock(rows1, rows1, true));
+			
+			int blksz = ConfigurationManager.getBlocksize();
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, rows1, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
+
+			//get binary block input rdd
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
+			
+			//matrix - dataframe - matrix conversion
+			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(spark, in, mc1, vector);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
+			
+			//get output matrix block
+			MatrixBlock mbB0 = SparkExecutionContext.toMatrixBlock(out, rows1, rows1, blksz, blksz, -1);
+			MatrixBlock mbB = LibMatrixReorg.diag(mbB0, new MatrixBlock(rows1, 1, false));
+			
+			//compare matrix blocks
+			double[][] B = DataConverter.convertToDoubleMatrix(mbB);
+			TestUtils.compareMatrices(A, B, rows1, 1, eps);
+		}
+		catch( Exception ex ) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
+			DMLScript.rtplatform = oldPlatform;
+		}
+	}
+	
 	@AfterClass
 	public static void tearDownClass() {
 		// stop underlying spark context to allow single jvm tests (otherwise the

@@ -147,9 +147,12 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	 * @return new capacity for resizing
 	 */
 	private int newCapacity() {
-		return (int) ((values.length < estimatedNzs) ?
-			Math.min(estimatedNzs, values.length*SparseBlock.RESIZE_FACTOR1) :
-			Math.min(maxNzs, Math.ceil(values.length*SparseBlock.RESIZE_FACTOR2)));
+		final double currLen = values.length;
+		//scale length exponentially based on estimated number of non-zeros
+		final int nextLen = (int)Math.ceil(currLen * ((currLen < estimatedNzs) ? 
+			SparseBlock.RESIZE_FACTOR1 : SparseBlock.RESIZE_FACTOR2));
+		//cap at max number of non-zeros with robustness of initial zero
+		return Math.max(2, Math.min(maxNzs, nextLen));
 	}
 
 	@Override

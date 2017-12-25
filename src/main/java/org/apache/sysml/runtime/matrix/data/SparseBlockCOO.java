@@ -211,7 +211,7 @@ public class SparseBlockCOO extends SparseBlock
 			System.arraycopy(_rindexes, pos+len, _rindexes, pos, _size-(pos+len));
 			System.arraycopy(_cindexes, pos+len, _cindexes, pos, _size-(pos+len));
 			System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
-			_size -= len;	
+			_size -= len;
 		}
 	}
 	
@@ -230,7 +230,7 @@ public class SparseBlockCOO extends SparseBlock
 		double rix0 = _rindexes[pos];
 		int cnt = 0;
 		while( pos<_size && rix0 == _rindexes[pos++] )
-			cnt ++;		
+			cnt ++;
 		return cnt;
 	}
 	
@@ -393,10 +393,10 @@ public class SparseBlockCOO extends SparseBlock
 		
 		//sort _cindexes/_values by _cindexes per row partition
 		int index = 0;
-		while( index < _size ){
+		while( index < _size ) {
 			int r = _rindexes[index];
 			int len = 0;
-			while( r == _rindexes[index] ) {
+			while( index < _size && r == _rindexes[index] ) {
 				len ++;
 				index ++;
 			}
@@ -574,7 +574,7 @@ public class SparseBlockCOO extends SparseBlock
 		insert(ix, r, c, v);
 	}
 
-	private void shiftRightAndInsert(int ix, int r, int c, double v)  {		
+	private void shiftRightAndInsert(int ix, int r, int c, double v) {
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_rindexes, ix, _rindexes, ix+1, _size-ix);
 		System.arraycopy(_cindexes, ix, _cindexes, ix+1, _size-ix);
@@ -605,7 +605,7 @@ public class SparseBlockCOO extends SparseBlock
 		_rindexes[ix] = r;
 		_cindexes[ix] = c;
 		_values[ix] = v;
-		_size++;	
+		_size++;
 	}
 	
 	/**

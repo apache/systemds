@@ -1756,7 +1756,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						}
 					}
 					//only sort if value appended
-					if( !appendOnly && appended )
+					if( !COO && !appendOnly && appended )
 						a.sort(i);
 				}
 			}
@@ -1769,7 +1769,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				boolean appended = false;
 				for( int j=0; j<n; j++ ) {
 					if( b[bix+j] != 0 ) {
-						appendValue(i, j, b[bix+j]);
+						appendValue(i, j, b[bix+j]); //incl alloc
 						appended = true;
 					}
 				}

@@ -32,6 +32,7 @@ public class SparseBlockMerge extends AutomatedTestBase
 {
 	private final static int rows = 1000;
 	private final static int cols = 1000;
+	private final static double sparsity0 = 0.000005;
 	private final static double sparsity1 = 0.001;
 	private final static double sparsity2 = 0.01;
 	private final static double sparsity3 = 0.1;
@@ -41,6 +42,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 	}
 
+	@Test
+	public void testMergeMCSR_MCSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR, sparsity0);
+	}
+	
 	@Test
 	public void testMergeMCSR_MCSR_1()  {
 		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR, sparsity1);
@@ -54,6 +60,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	@Test
 	public void testMergeMCSR_MCSR_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR, sparsity3);
+	}
+	
+	@Test
+	public void testMergeMCSR_CSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.CSR, sparsity0);
 	}
 	
 	@Test
@@ -72,6 +83,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMergeMCSR_COO_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.COO, sparsity0);
+	}
+	
+	@Test
 	public void testMergeMCSR_COO_1()  {
 		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.COO, sparsity1);
 	}
@@ -84,6 +100,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	@Test
 	public void testMergeMCSR_COO_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.COO, sparsity3);
+	}
+	
+	@Test
+	public void testMergeCSR_CSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.CSR, sparsity0);
 	}
 	
 	@Test
@@ -102,6 +123,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMergeCSR_MCSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSR, sparsity0);
+	}
+	
+	@Test
 	public void testMergeCSR_MCSR_1()  {
 		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSR, sparsity1);
 	}
@@ -114,6 +140,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	@Test
 	public void testMergeCSR_MCSR_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSR, sparsity3);
+	}
+	
+	@Test
+	public void testMergeCSR_COO_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.COO, sparsity0);
 	}
 	
 	@Test
@@ -132,6 +163,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMergeCOO_COO_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.COO, sparsity0);
+	}
+	
+	@Test
 	public void testMergeCOO_COO_1()  {
 		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.COO, sparsity1);
 	}
@@ -147,6 +183,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMergeCOO_MCSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSR, sparsity0);
+	}
+	
+	@Test
 	public void testMergeCOO_MCSR_1()  {
 		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSR, sparsity1);
 	}
@@ -159,6 +200,11 @@ public class SparseBlockMerge extends AutomatedTestBase
 	@Test
 	public void testMergeCOO_MCSR_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSR, sparsity3);
+	}
+	
+	@Test
+	public void testMergeCOO_CSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.CSR, sparsity0);
 	}
 	
 	@Test
@@ -212,16 +258,18 @@ public class SparseBlockMerge extends AutomatedTestBase
 			//check correct values
 			long count = 0;
 			SparseBlock sblock = mb1.getSparseBlock();
-			for( int i=0; i<rows; i++) {
-				if( sblock.isEmpty(i) ) continue;
-				int alen = sblock.size(i);
-				int apos = sblock.pos(i);
-				int[] aix = sblock.indexes(i);
-				double[] avals = sblock.values(i);
-				for( int j=0; j<alen; j++ ) {
-					if( avals[apos+j] != A[i][aix[apos+j]] )
-						Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
-					count++;
+			if( sblock != null ) {
+				for( int i=0; i<rows; i++) {
+					if( sblock.isEmpty(i) ) continue;
+					int alen = sblock.size(i);
+					int apos = sblock.pos(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for( int j=0; j<alen; j++ ) {
+						if( avals[apos+j] != A[i][aix[apos+j]] )
+							Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
+						count++;
+					}
 				}
 			}
 			if( count != nnz )

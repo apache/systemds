@@ -422,7 +422,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		long lnnz = 0;
 		for( int i=rl, ix=rl*n; i<ru; i++ )
@@ -439,7 +439,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private long executeDenseRowAggSum(DenseBlock a, SideInput[] b, double[] scalars,
 		double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -460,7 +460,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException 
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
 		ValueFunction vfun = getAggFunction();
@@ -490,7 +490,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private long executeDenseColAggSum(DenseBlock a, SideInput[] b, double[] scalars,
 		double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -513,7 +513,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException 
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
 		ValueFunction vfun = getAggFunction();
@@ -544,7 +544,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException 
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -562,7 +562,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException 
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		
 		//safe aggregation for min/max w/ handling of zero entries
 		//note: sparse safe with zero value as min/max handled outside

@@ -131,7 +131,12 @@ public class DenseBlockDRB extends DenseBlock
 	}
 
 	@Override
-	public double[] values(int bix) {
+	public double[] values(int r) {
+		return data;
+	}
+	
+	@Override
+	public double[] valuesAt(int bix) {
 		return data;
 	}
 
@@ -168,7 +173,7 @@ public class DenseBlockDRB extends DenseBlock
 	
 	@Override
 	public void set(DenseBlock db) {
-		System.arraycopy(db.values(0), 0, data, 0, rlen*clen);
+		System.arraycopy(db.valuesAt(0), 0, data, 0, rlen*clen);
 	}
 
 	@Override

@@ -100,4 +100,9 @@ public class BinaryOperator  extends Operator implements Serializable
 			
 		return OpOp2.INVALID;
 	}
+	
+	@Override
+	public String toString() {
+		return "BinaryOperator("+fn.getClass().getSimpleName()+")";
+	}
 }

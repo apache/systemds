@@ -289,7 +289,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
-		double[] data = (a != null) ? a.values(0) : null;
+		double[] data = (a != null) ? a.valuesAt(0) : null;
 		if( data == null )
 			return;
 		

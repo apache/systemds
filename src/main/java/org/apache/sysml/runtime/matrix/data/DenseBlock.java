@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.io.Serializable;
 
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
+
 /**
  * This DenseBlock is an abstraction for different dense, row-major 
  * matrix formats. For efficient dense operations, this API does not
@@ -146,6 +148,15 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract double[][] values();
 	
+	/**
+	 * Get the allocated block for the given row. This call
+	 * is equivalent to valuesAt(indexes(r)).
+	 * 
+	 * @param r row index
+	 * @return block
+	 */
+	public abstract double[] values(int r);
+	
 	
 	/**
 	 * Get an allocated block.
@@ -153,7 +164,7 @@ public abstract class DenseBlock implements Serializable
 	 * @param bix block index
 	 * @return block
 	 */
-	public abstract double[] values(int bix);
+	public abstract double[] valuesAt(int bix);
 	
 	/**
 	 * Get the block index for a given row.
@@ -226,6 +237,27 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract void set(DenseBlock db);
 	
+	/**
+	 * Copy the given kahan object sum and correction.
+	 * 
+	 * @param kbuff kahan object
+	 */
+	public void set(KahanObject kbuff) {
+		set(0, 0, kbuff._sum);
+		set(0, 1, kbuff._correction);
+	}
+	
+	/**
+	 * Copy the given kahan object sum and correction
+	 * into the given row.
+	 * 
+	 * @param r row index
+	 * @param kbuff kahan object
+	 */
+	public void set(int r, KahanObject kbuff) {
+		set(r, 0, kbuff._sum);
+		set(r, 1, kbuff._correction);
+	}
 	
 	/**
 	 * Get the value for a given row and column.

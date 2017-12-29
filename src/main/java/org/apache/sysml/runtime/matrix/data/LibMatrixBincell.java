@@ -274,8 +274,8 @@ public class LibMatrixBincell
 			double[] b = m2.getDenseBlockValues(); // always single block
 			
 			for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-				double[] a = da.values(bi);
-				double[] c = dc.values(bi);
+				double[] a = da.valuesAt(bi);
+				double[] c = dc.valuesAt(bi);
 				int len = dc.blockSize(bi);
 				int off = bi * dc.blockSize();
 				for( int i=0, ix=0; i<len; i++, ix+=clen )
@@ -317,7 +317,7 @@ public class LibMatrixBincell
 			else if( da==null ) //left empty
 			{
 				//compute first row
-				double[] c = dc.values(0);
+				double[] c = dc.valuesAt(0);
 				for( int j=0; j<clen; j++ ) {
 					c[j] = op.fn.execute( 0, b[j] );
 					nnz += (c[j] != 0) ? rlen : 0;
@@ -329,8 +329,8 @@ public class LibMatrixBincell
 			else //default case (incl right empty) 
 			{
 				for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-					double[] a = da.values(bi);
-					double[] c = dc.values(bi);
+					double[] a = da.valuesAt(bi);
+					double[] c = dc.valuesAt(bi);
 					int len = dc.blockSize(bi);
 					for( int i=0, ix=0; i<len; i++, ix+=clen )
 						for( int j=0; j<clen; j++ ) {
@@ -647,7 +647,7 @@ public class LibMatrixBincell
 		{
 			SparseBlock a = m1.sparseBlock;
 			for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-				double[] c = dc.values(bi);
+				double[] c = dc.valuesAt(bi);
 				int blen = dc.blockSize(bi);
 				int off = bi * dc.blockSize();
 				for( int i=0, ix=0; i<blen; i++, ix+=n ) {
@@ -676,7 +676,7 @@ public class LibMatrixBincell
 		{
 			SparseBlock a = m2.sparseBlock;
 			for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-				double[] c = dc.values(bi);
+				double[] c = dc.valuesAt(bi);
 				int blen = dc.blockSize(bi);
 				int off = bi * dc.blockSize();
 				for( int i=0, ix=0; i<blen; i++, ix+=n ) {
@@ -698,8 +698,8 @@ public class LibMatrixBincell
 		{
 			if( !m2.isEmptyBlock(false) ) {
 				for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-					double[] a = m2.getDenseBlock().values(bi);
-					double[] c = dc.values(bi);
+					double[] a = m2.getDenseBlock().valuesAt(bi);
+					double[] c = dc.valuesAt(bi);
 					int len = dc.size(bi);
 					for( int i=0; i<len; i++ ) {
 						c[i] = op.fn.execute(c[i], a[i]);
@@ -729,9 +729,9 @@ public class LibMatrixBincell
 		//compute dense-dense binary, maintain nnz on-the-fly
 		long lnnz = 0;
 		for( int bi=0; bi<da.numBlocks(); bi++ ) {
-			double[] a = da.values(bi);
-			double[] b = db.values(bi);
-			double[] c = dc.values(bi);
+			double[] a = da.valuesAt(bi);
+			double[] b = db.valuesAt(bi);
+			double[] c = dc.valuesAt(bi);
 			int len = da.size(bi);
 			for( int i=0; i<len; i++ ) {
 				c[i] = fn.execute(a[i], b[i]);
@@ -815,7 +815,7 @@ public class LibMatrixBincell
 		
 		long lnnz = 0;
 		for( int bi=0; bi<dc.numBlocks(); bi++ ) {
-			double[] c = dc.values(bi);
+			double[] c = dc.valuesAt(bi);
 			for( int r=bi*dc.blockSize(), off=0; r<rlen; r++, off+=clen ) {
 				double value = m1.quickGetValue(r, 0);
 				int ixPos1 = Arrays.binarySearch(b, value);
@@ -1025,7 +1025,7 @@ public class LibMatrixBincell
 			long nnz = m * n;
 			for(int bi=0; bi<dc.numBlocks(); bi++) {
 				int blen = dc.blockSize(bi);
-				double[] c = dc.values(bi);
+				double[] c = dc.valuesAt(bi);
 				for(int i=bi*dc.blockSize(), cix=i*n; i<blen && i<m; i++, cix+=n) {
 					if( a.isEmpty(i) ) continue;
 					int apos = a.pos(i);
@@ -1058,8 +1058,8 @@ public class LibMatrixBincell
 		//compute scalar operation, incl nnz maintenance
 		long nnz = 0;
 		for( int bi=0; bi<da.numBlocks(); bi++) {
-			double[] a = da.values(bi);
-			double[] c = dc.values(bi);
+			double[] a = da.valuesAt(bi);
+			double[] c = dc.valuesAt(bi);
 			int limit = da.size(bi);
 			for( int i=0; i<limit; i++ ) {
 				c[i] = op.executeScalar( a[i] );

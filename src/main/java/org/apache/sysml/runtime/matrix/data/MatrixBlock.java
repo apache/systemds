@@ -527,7 +527,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public double[] getDenseBlockValues() {
 		return (denseBlock != null) ?
-			denseBlock.values(0) : null;
+			denseBlock.valuesAt(0) : null;
 	}
 	
 	public SparseBlock getSparseBlock() {
@@ -2721,8 +2721,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//unary op, incl nnz maintenance
 			long nnz = 0;
 			for( int bi=0; bi<da.numBlocks(); bi++ ) {
-				double[] a = da.values(bi);
-				double[] c = dc.values(bi);
+				double[] a = da.valuesAt(bi);
+				double[] c = dc.valuesAt(bi);
 				int len = da.size(bi);
 				for( int i=0; i<len; i++ ) {
 					c[i] = op.fn.execute(a[i]);
@@ -4116,12 +4116,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}
 		}
+		
+		//prepare result matrix block
 		if(result==null)
 			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		
 		MatrixBlock ret = (MatrixBlock) result;
+		
 		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
 			if( op.getNumThreads() > 1 )
 				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
@@ -4146,90 +4148,51 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//initialize result
 		if(op.aggOp.initialValue!=0)
 			result.reset(result.rlen, result.clen, op.aggOp.initialValue);
-		
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
-		KahanObject buffer=new KahanObject(0,0);
-		int r = 0, c = 0;
+		KahanObject buffer = new KahanObject(0,0);
 		
-		if(sparse)
-		{
-			if(sparseBlock!=null)
-			{
-				SparseBlock a = sparseBlock;
-				
-				for(r=0; r<Math.min(rlen, a.numRows()); r++)
-				{
-					if(a.isEmpty(r)) 
-						continue;
-					int apos = a.pos(r);
-					int alen = a.size(r);
-					int[] aix = a.indexes(r);
-					double[] aval = a.values(r);
-					
-					for(int i=apos; i<apos+alen; i++) {
-						tempCellIndex.set(r, aix[i]);
-						op.indexFn.execute(tempCellIndex, tempCellIndex);
-						incrementalAggregateUnaryHelp(op.aggOp, result, 
-								tempCellIndex.row, tempCellIndex.column, aval[i], buffer);
-					}
+		if( sparse && sparseBlock!=null ) {
+			SparseBlock a = sparseBlock;
+			for(int r=0; r<Math.min(rlen, a.numRows()); r++) {
+				if(a.isEmpty(r)) continue;
+				int apos = a.pos(r);
+				int alen = a.size(r);
+				int[] aix = a.indexes(r);
+				double[] aval = a.values(r);
+				for(int i=apos; i<apos+alen; i++) {
+					tempCellIndex.set(r, aix[i]);
+					op.indexFn.execute(tempCellIndex, tempCellIndex);
+					incrementalAggregateUnaryHelp(op.aggOp, result, 
+							tempCellIndex.row, tempCellIndex.column, aval[i], buffer);
 				}
 			}
 		}
-		else
-		{
-			if(denseBlock!=null)
-			{
-				double[] a = getDenseBlockValues();
-				int limit=rlen*clen;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					tempCellIndex.set(r, c);
+		else if( !sparse && denseBlock!=null ) {
+			DenseBlock a = getDenseBlock();
+			for(int i=0; i<rlen; i++)
+				for(int j=0; j<clen; j++) {
+					tempCellIndex.set(i, j);
 					op.indexFn.execute(tempCellIndex, tempCellIndex);
-					incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, a[i], buffer);
+					incrementalAggregateUnaryHelp(op.aggOp, result,
+						tempCellIndex.row, tempCellIndex.column, a.get(i, j), buffer);
 				}
-			}
 		}
 	}
 	
 	private void denseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result,
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) throws DMLRuntimeException
 	{
-		//initialize 
 		if(op.aggOp.initialValue!=0)
 			result.reset(result.rlen, result.clen, op.aggOp.initialValue);
-		
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		KahanObject buffer=new KahanObject(0,0);
-		
 		for(int i=0; i<rlen; i++)
-			for(int j=0; j<clen; j++)
-			{
+			for(int j=0; j<clen; j++) {
 				tempCellIndex.set(i, j);
 				op.indexFn.execute(tempCellIndex, tempCellIndex);
-
-				if(op.aggOp.correctionExists
-				   && op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN
-				   && op.aggOp.increOp.fn instanceof Builtin 
-				   && ( ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX
-				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX) 
-				        ){
-					double currMaxValue = result.quickGetValue(i, 1);
-					long newMaxIndex = UtilFunctions.computeCellIndex(indexesIn.getColumnIndex(), blockingFactorCol, j);
-					double newMaxValue = quickGetValue(i, j);
-					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
-						   
-					//System.out.println("currV="+currMaxValue+",newV="+newMaxValue+",newIX="+newMaxIndex+",update="+update);
-					if(update == 1){
-						result.quickSetValue(i, 0, newMaxIndex);
-						result.quickSetValue(i, 1, newMaxValue);
-					}
-				}else
-					incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, quickGetValue(i,j), buffer);
+				incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, quickGetValue(i,j), buffer);
 			}
 	}
-	
 	
 	private static void incrementalAggregateUnaryHelp(AggregateOperator aggOp, MatrixBlock result, int row, int column, 
 			double newvalue, KahanObject buffer) throws DMLRuntimeException
@@ -4846,7 +4809,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op, int k) 
-		throws DMLRuntimeException 		
+		throws DMLRuntimeException
 	{
 		//setup input matrices
 		MatrixBlock target = checkType(tgt);
@@ -4868,16 +4831,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			numGroups = ngroups;
 		
 		// Determine the number of groups
-		if( numGroups <= 0 ) //reuse if available
-		{
+		if( numGroups <= 0 ) { //reuse if available
 			double min = this.min();
 			double max = this.max();
-			
 			if ( min <= 0 )
 				throw new DMLRuntimeException("Invalid value (" + min + ") encountered in 'groups' while computing groupedAggregate");
 			if ( max <= 0 )
 				throw new DMLRuntimeException("Invalid value (" + max + ") encountered in 'groups' while computing groupedAggregate.");
-		
 			numGroups = (int) max;
 		}
 	

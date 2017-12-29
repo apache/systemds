@@ -119,7 +119,7 @@ public class DenseBlockLDRB extends DenseBlock
 	public long countNonZeros() {
 		long nnz = 0;
 		for(int i=0; i<numBlocks(); i++ ) {
-			double[] a = values(i);
+			double[] a = valuesAt(i);
 			for(int j=0; j<a.length; j++)
 				nnz += (a[j]!=0) ? 1 : 0;
 		}
@@ -143,9 +143,14 @@ public class DenseBlockLDRB extends DenseBlock
 	public double[][] values() {
 		return data;
 	}
+	
+	@Override
+	public double[] values(int r) {
+		return data[r / blen];
+	}
 
 	@Override
-	public double[] values(int bix) {
+	public double[] valuesAt(int bix) {
 		return data[bix];
 	}
 
@@ -193,7 +198,7 @@ public class DenseBlockLDRB extends DenseBlock
 	@Override
 	public void set(DenseBlock db) {
 		for(int bi=0; bi<numBlocks(); bi++)
-			System.arraycopy(db.values(bi), 0, data[bi], 0, size(bi));
+			System.arraycopy(db.valuesAt(bi), 0, data[bi], 0, size(bi));
 	}
 
 	@Override
@@ -205,7 +210,7 @@ public class DenseBlockLDRB extends DenseBlock
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		for(int i=0; i<rlen; i++) {
-			double[] data = values(index(i));
+			double[] data = values(i);
 			int ix = pos(i);
 			for(int j=0; j<clen; j++) {
 				sb.append(data[ix+j]);

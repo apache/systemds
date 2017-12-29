@@ -1076,7 +1076,7 @@ public class BasicUnaryAggregateTest extends AutomatedTestBase
 			if( compress )
 				cmb.compress();
 			
-			//matrix-vector uncompressed						
+			//matrix-vector uncompressed
 			MatrixBlock ret1 = (MatrixBlock)mb.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, 1000, null, true);
 			
 			//matrix-vector compressed

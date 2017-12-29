@@ -357,15 +357,17 @@ public class ColGroupUncompressed extends ColGroup
 		
 		//shift result into correct column indexes
 		if( op.indexFn instanceof ReduceRow ) {
-			//clear corrections
-			for( int i=0; i<_colIndexes.length; i++ )
-				if( op.aggOp.correctionExists )
-					ret.quickSetValue(0, i+_colIndexes.length, 0);
-			//shift partial results
+			//shift partial results, incl corrections
 			for( int i=_colIndexes.length-1; i>=0; i-- ) {
 				double val = ret.quickGetValue(0, i);
 				ret.quickSetValue(0, i, 0);
 				ret.quickSetValue(0, _colIndexes[i], val);
+				if( op.aggOp.correctionExists )
+					for(int j=1; j<ret.getNumRows(); j++) {
+						double corr = ret.quickGetValue(j, i);
+						ret.quickSetValue(j, i, 0);
+						ret.quickSetValue(j, _colIndexes[i], corr);
+					}
 			}
 		}
 	}

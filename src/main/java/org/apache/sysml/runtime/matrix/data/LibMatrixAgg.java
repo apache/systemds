@@ -285,7 +285,7 @@ public class LibMatrixAgg
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if( in.isEmptyBlock(false) ){
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
-		}	
+		}
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, false); //always dense
@@ -1499,7 +1499,7 @@ public class LibMatrixAgg
 		final int n = in.clen;
 		
 		DenseBlock da = in.getDenseBlock();
-		DenseBlock dc = in.getDenseBlock();
+		DenseBlock dc = out.getDenseBlock();
 		double[] a = in.getDenseBlockValues();
 		double[] c = out.getDenseBlockValues();
 		

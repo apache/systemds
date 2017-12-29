@@ -40,6 +40,8 @@ import org.apache.sysml.runtime.io.MatrixWriterFactory;
 import org.apache.sysml.runtime.io.ReadProperties;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
+import org.apache.sysml.runtime.matrix.data.DenseBlockFactory;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
@@ -321,8 +323,34 @@ public class DataConverter
 		}
 		return ret;
 	}
+	
+	public static DenseBlock convertToDenseBlock(MatrixBlock mb) {
+		return convertToDenseBlock(mb, true);
+	}
+	
+	public static DenseBlock convertToDenseBlock(MatrixBlock mb, boolean deep) {
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		DenseBlock ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+			mb.getDenseBlock() : DenseBlockFactory.createDenseBlock(rows, cols); //0-initialized
+		
+		if( !mb.isEmptyBlock(false) ) {
+			if( mb.isInSparseFormat() ) {
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				while( iter.hasNext() ) {
+					IJV cell = iter.next();
+					ret.set(cell.getI(), cols+cell.getJ(), cell.getV());
+				}
+			}
+			else if( deep ) {
+				ret.set(mb.getDenseBlock());
+			}
+		}
+		
+		return ret;
+	}
 
-	public static double[] convertToDoubleVector( MatrixBlock mb ) {
+	public static double[] convertToDoubleVector(MatrixBlock mb) {
 		return convertToDoubleVector(mb, true);
 	}
 	
@@ -333,8 +361,7 @@ public class DataConverter
 		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
 			mb.getDenseBlockValues() : new double[rows*cols]; //0-initialized
 		
-		if( !mb.isEmptyBlock(false) )
-		{
+		if( !mb.isEmptyBlock(false) ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {

@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -81,7 +82,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			return new DoubleObject(0);
 		
 		//input preparation
-		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		DenseBlock[] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
 		SideInput[] b = prepInputMatrices(inputs, 3, false);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -97,7 +98,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		if( a instanceof CompressedMatrixBlock )
 			executeCellwiseCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out, m, n, k, _outerProductType, 0, m, 0, n);
 		else if( !a.isInSparseFormat() )
-			executeCellwiseDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
+			executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
 		else
 			executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
 		return new DoubleObject(out.getDenseBlock().get(0, 0));
@@ -117,7 +118,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			return execute(inputs, scalarObjects); //sequential
 		
 		//input preparation
-		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		DenseBlock[] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
 		SideInput[] b = prepInputMatrices(inputs, 3, false);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -185,7 +186,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		out.allocateBlock();
 		
 		//input preparation
-		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		DenseBlock[] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
 		SideInput[] b = prepInputMatrices(inputs, 3, false);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -200,19 +201,19 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			case LEFT_OUTER_PRODUCT:
 			case RIGHT_OUTER_PRODUCT:
 				if( a instanceof CompressedMatrixBlock )
-					executeCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out.getDenseBlockValues(), 
+					executeCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out.getDenseBlock(),
 						m, n, k, _outerProductType, 0, m, 0, ((CompressedMatrixBlock)a).getNumColGroups());
 				else if( !a.isInSparseFormat() )
-					executeDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
+					executeDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
 				else
-					executeSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
+					executeSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
 				
 			case CELLWISE_OUTER_PRODUCT:
 				if( a instanceof CompressedMatrixBlock )
 					executeCellwiseCompressed((CompressedMatrixBlock)a, ab[0], ab[1], b, scalars, out, m, n, k, _outerProductType, 0, m, 0, n);
 				else if( !a.isInSparseFormat() )
-					executeCellwiseDense(a.getDenseBlockValues(), ab[0], ab[1], b, scalars, out.getDenseBlockValues(), m, n, k, _outerProductType, 0, m, 0, n);
+					executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
 				else 
 					executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, m, n, k, a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
@@ -267,7 +268,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			return execute(inputs, scalarObjects, out); //sequential
 		
 		//input preparation
-		double[][] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
+		DenseBlock[] ab = getDenseMatrices(prepInputMatrices(inputs, 1, 2, true, false));
 		SideInput[] b = prepInputMatrices(inputs, 3, false);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -338,8 +339,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		return UtilFunctions.roundToNext(base, k);
 	}
 	
-	private void executeDense(double[] a, double[] u, double[] v, SideInput[] b, double[] scalars,
-		double[] c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
+	private void executeDense(DenseBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars,
+		DenseBlock c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
 	{
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
@@ -357,17 +358,23 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				int bjmin = Math.min(cu, bj+blocksizeIJ);
 				
 				//core computation
-				for( int i=bi, ix=bi*n, uix=bi*k; i<bimin; i++, ix+=n, uix+=k )
-					for( int j=bj, vix=bj*k; j<bjmin; j++, vix+=k)
-						if( a[ix+j] != 0 ) {
+				for( int i=bi; i<bimin; i++ ) {
+					double[] avals = a.values(i);
+					double[] uvals = u.values(i);
+					int aix = a.pos(i), uix = u.pos(i);
+					for( int j=bj; j<bjmin; j++)
+						if( avals[aix+j] != 0 ) {
+							int vix = v.pos(j);
 							cix = (type == OutProdType.LEFT_OUTER_PRODUCT) ? vix : uix;
-							genexecDense( a[ix+j], u, uix, v, vix, b, scalars, c, cix, m, n, k, i, j); 
+							genexecDense( avals[aix+j], uvals, uix, v.values(j), vix,
+								b, scalars, c.values(j), cix, m, n, k, i, j); 
 						}
+				}
 			}
 	}
 	
-	private void executeCellwiseDense(double[] a, double[] u, double[] v, SideInput[] b, double[] scalars,
-		double[] c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
+	private void executeCellwiseDense(DenseBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars,
+		DenseBlock c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
 	{
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
@@ -385,21 +392,32 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				int bjmin = Math.min(cu, bj+blocksizeIJ);
 				
 				//core computation
-				for( int i=bi, ix=bi*n, uix=bi*k; i<bimin; i++, ix+=n, uix+=k )
-					for( int j=bj, vix=bj*k; j<bjmin; j++, vix+=k)
-						if( a[ix+j] != 0 ) {
-							if(type == OutProdType.CELLWISE_OUTER_PRODUCT)
-								c[ix+j] = genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j );
-							else
-								sum += genexecCellwise( a[ix+j], u, uix, v, vix, b, scalars, m, n, k, i, j);
-						}
+				for( int i=bi; i<bimin; i++ ) {
+					double[] avals = a.values(i);
+					double[] uvals = u.values(i);
+					int aix = a.pos(i), uix = u.pos(i);
+					if(type == OutProdType.CELLWISE_OUTER_PRODUCT) {
+						double[] cvals = c.values(i);
+						for( int j=bj; j<bjmin; j++)
+							if( avals[aix+j] != 0 )
+								cvals[aix+j] = genexecCellwise( avals[aix+j], uvals, uix,
+									v.values(j), v.pos(j), b, scalars, m, n, k, i, j );
+					}
+					else {
+						for( int j=bj; j<bjmin; j++)
+							if( avals[aix+j] != 0 )
+								sum += genexecCellwise( avals[aix+j], uvals, uix,
+									v.values(j), v.pos(j), b, scalars, m, n, k, i, j);
+						
+					}
+				}
 			}
 		if( type != OutProdType.CELLWISE_OUTER_PRODUCT )
-			c[0] = sum;
+			c.set(0, 0, sum);
 	}
 	
-	private void executeSparse(SparseBlock sblock, double[] u, double[] v, SideInput[] b, double[] scalars,
-		double[] c, int m, int n, int k, long nnz, OutProdType type, int rl, int ru, int cl, int cu) 
+	private void executeSparse(SparseBlock sblock, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars,
+		DenseBlock c, int m, int n, int k, long nnz, OutProdType type, int rl, int ru, int cl, int cu) 
 	{
 		boolean left = (_outerProductType== OutProdType.LEFT_OUTER_PRODUCT);
 		
@@ -414,21 +432,24 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			//for ultra-sparse matrices, we do not allocate the index array because
 			//its allocation and maintenance can dominate the total runtime.
 			SideInput[] lb = createSparseSideInputs(b);
-				
+			
 			//core wdivmm block matrix mult
-			for( int i=rl, uix=rl*k; i<ru; i++, uix+=k ) {
+			for( int i=rl; i<ru; i++ ) {
 				if( sblock.isEmpty(i) ) continue;
 				
 				int wpos = sblock.pos(i);
 				int wlen = sblock.size(i);
 				int[] wix = sblock.indexes(i);
-				double[] wval = sblock.values(i);
+				double[] wvals = sblock.values(i);
+				double[] uvals = u.values(i);
+				int uix = u.pos(i);
 				
 				int index = (cl==0||sblock.isEmpty(i)) ? 0 : sblock.posFIndexGTE(i,cl);
 				index = wpos + ((index>=0) ? index : n);
 				for( ; index<wpos+wlen && wix[index]<cu; index++ ) {
-					genexecDense(wval[index], u, uix, v, wix[index]*k, lb, scalars, c,
-						(left ? wix[index]*k : uix), m, n, k, i, wix[index]);
+					int jix = wix[index];
+					genexecDense(wvals[index], uvals, uix, v.values(jix), v.pos(jix), lb, scalars,
+						c.values(jix), (left ? v.pos(jix) : uix), m, n, k, i, wix[index]);
 				}
 			}
 		}
@@ -454,18 +475,21 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				{
 					int bjmin = Math.min(cu, bj+blocksizeJ);
 					//core wdivmm block matrix mult
-					for( int i=bi, uix=bi*k; i<bimin; i++, uix+=k ) {
+					for( int i=bi; i<bimin; i++ ) {
 						if( sblock.isEmpty(i) ) continue;
 						
 						int wpos = sblock.pos(i);
 						int wlen = sblock.size(i);
 						int[] wix = sblock.indexes(i);
-						double[] wval = sblock.values(i);
+						double[] wvals = sblock.values(i);
+						double[] uvals = u.values(i);
+						int uix = u.pos(i);
 						
 						int index = wpos + curk[i-bi];
 						for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
-							genexecDense(wval[index], u, uix, v, wix[index]*k, b, scalars, c,
-								(left ? wix[index]*k : uix), m, n, k, i, wix[index]);
+							int jix = wix[index];
+							genexecDense(wvals[index], uvals, uix, v.values(jix), v.pos(jix), b, scalars,
+								c.values(jix), (left ? wix[index]*k : uix), m, n, k, i, wix[index]);
 						}
 						curk[i-bi] = index - wpos;
 					}
@@ -474,7 +498,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 	}
 	
-	private void executeCellwiseSparse(SparseBlock sblock, double[] u, double[] v, SideInput[] b, double[] scalars, 
+	private void executeCellwiseSparse(SparseBlock sblock, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars, 
 		MatrixBlock out, int m, int n, int k, long nnz, OutProdType type, int rl, int ru, int cl, int cu ) 
 	{
 		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
@@ -485,7 +509,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		if( !out.isInSparseFormat() ) //DENSE
 		{
-			double[] c = out.getDenseBlockValues();
+			DenseBlock c = out.getDenseBlock();
 			double tmp = 0;
 			for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
 				int bimin = Math.min(ru, bi+blocksizeIJ);
@@ -494,27 +518,34 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				//blocked execution over column blocks
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
 					int bjmin = Math.min(n, bj+blocksizeIJ);
-					for( int i=bi, uix=bi*k; i<bimin; i++, uix+=k ) {
+					for( int i=bi; i<bimin; i++ ) {
 						if( sblock.isEmpty(i) ) continue;
 						int wpos = sblock.pos(i);
 						int wlen = sblock.size(i);
 						int[] wix = sblock.indexes(i);
-						double[] wval = sblock.values(i);
+						double[] wvals = sblock.values(i);
+						double[] cvals = c.values(i);
+						double[] uvals = u.values(i);
+						int uix = u.pos(i);
 						int index = wpos + curk[i-bi];
 						if( type == OutProdType.CELLWISE_OUTER_PRODUCT )
-							for( ; index<wpos+wlen && wix[index]<bjmin; index++ )
-								c[wix[index]] = genexecCellwise( wval[index], 
-									u, uix, v, wix[index]*k, b, scalars, m, n, k, i, wix[index] );
+							for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
+								int jix = wix[index];
+								cvals[jix] = genexecCellwise( wvals[index],
+									uvals, uix, v.values(jix), v.pos(jix), b, scalars, m, n, k, i, wix[index] );
+							}
 						else
-							for( ; index<wpos+wlen && wix[index]<bjmin; index++ )
-								tmp += genexecCellwise( wval[index], 
-									u, uix, v, wix[index]*k, b, scalars, m, n, k, i, wix[index]);
+							for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
+								int jix = wix[index];
+								tmp += genexecCellwise( wvals[index], 
+									uvals, uix, v.values(jix), v.pos(jix), b, scalars, m, n, k, i, wix[index]);
+							}
 						curk[i-bi] = index - wpos;
 					}
 				}
 			}
 			if( type != OutProdType.CELLWISE_OUTER_PRODUCT )
-				c[0] = tmp;
+				c.set(0, 0, tmp);
 		}
 		else //SPARSE
 		{
@@ -526,16 +557,19 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				//blocked execution over column blocks
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
 					int bjmin = Math.min(n, bj+blocksizeIJ);
-					for( int i=bi, uix=bi*k; i<bimin; i++, uix+=k ) {
+					for( int i=bi; i<bimin; i++ ) {
 						if( sblock.isEmpty(i) ) continue;
 						int wpos = sblock.pos(i);
 						int wlen = sblock.size(i);
 						int[] wix = sblock.indexes(i);
 						double[] wval = sblock.values(i);
+						double[] uvals = u.values(i);
+						int uix = u.pos(i);
 						int index = wpos + curk[i-bi];
 						for( ; index<wpos+wlen && wix[index]<bjmin; index++ ) {
-							c.append(i, wix[index], genexecCellwise( wval[index], u, uix, v,
-								wix[index]*k, b, scalars, m, n, k, i, wix[index] ));
+							int jix = wix[index];
+							c.append(i, wix[index], genexecCellwise( wval[index], uvals, uix,
+								v.values(jix), v.pos(jix), b, scalars, m, n, k, i, wix[index] ));
 						}
 						curk[i-bi] = index - wpos;
 					}
@@ -544,8 +578,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 	}
 	
-	private void executeCompressed(CompressedMatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars, 
-			double[] c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu) 
+	private void executeCompressed(CompressedMatrixBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars, 
+		DenseBlock c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu) 
 	{
 		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
 		//compressed data is access in a column-major order 
@@ -556,14 +590,17 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			a.getIterator(rl, ru, cl, cu, false); //cl/cu -> colgroups
 		while( iter.hasNext() ) {
 			IJV cell = iter.next();
-			int uix = cell.getI() * k;
-			int vix = cell.getJ() * k;
-			genexecDense(cell.getV(), u, uix, v, vix, b, scalars, c,
+			double[] uvals = u.values(cell.getI());
+			double[] vvals = v.values(cell.getJ());
+			double[] cvals = c.values(left?cell.getJ():cell.getI());
+			int uix = u.pos(cell.getI());
+			int vix = v.pos(cell.getJ());
+			genexecDense(cell.getV(), uvals, uix, vvals, vix, b, scalars, cvals,
 				left ? vix : uix, m, n, k, cell.getI(), cell.getJ());
 		}
 	}
 	
-	private void executeCellwiseCompressed(CompressedMatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars,
+	private void executeCellwiseCompressed(CompressedMatrixBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars,
 		MatrixBlock out, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu )
 	{
 		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
@@ -576,21 +613,23 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		Iterator<IJV> iter = a.getIterator(rl, ru, false);
 		while( iter.hasNext() ) {
 			IJV cell = iter.next();
-			int uix = cell.getI() * k;
-			int vix = cell.getJ() * k;
+			double[] uvals = u.values(cell.getI());
+			double[] vvals = v.values(cell.getJ());
+			int uix = u.pos(cell.getI());
+			int vix = v.pos(cell.getJ());
 			if( type == OutProdType.CELLWISE_OUTER_PRODUCT ) {
 				if( out.isInSparseFormat() ) {
 					csblock.allocate(cell.getI());
 					csblock.append(cell.getI(), cell.getJ(),
-						genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ()));
+						genexecCellwise(cell.getV(), uvals, uix, vvals, vix, b, scalars, m, n, k, cell.getI(), cell.getJ()));
 				}
 				else {
 					c[cell.getI()*n+cell.getJ()] =
-						genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
+						genexecCellwise(cell.getV(), uvals, uix, vvals, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
 				}
 			}
 			else {
-				c[0] += genexecCellwise(cell.getV(), u, uix, v, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
+				c[0] += genexecCellwise(cell.getV(), uvals, uix, vvals, vix, b, scalars, m, n, k, cell.getI(), cell.getJ());
 			}
 		}
 	}
@@ -604,8 +643,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private class ParExecTask implements Callable<Long> 
 	{
 		private final MatrixBlock _a;
-		private final double[] _u;
-		private final double[] _v;
+		private final DenseBlock _u;
+		private final DenseBlock _v;
 		private final SideInput[] _b;
 		private final double[] _scalars;
 		private final MatrixBlock _c;
@@ -618,7 +657,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		private final int _cl;
 		private final int _cu;
 		
-		protected ParExecTask( MatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars , MatrixBlock c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu ) {
+		protected ParExecTask( MatrixBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars , MatrixBlock c, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu ) {
 			_a = a;
 			_u = u;
 			_v = v;
@@ -642,17 +681,17 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				case LEFT_OUTER_PRODUCT:
 				case RIGHT_OUTER_PRODUCT:
 					if( _a instanceof CompressedMatrixBlock )
-						executeCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else if( !_a.isInSparseFormat() )
-						executeDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeDense(_a.getDenseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else
-						executeSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
+						executeSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
 					break;
 				case CELLWISE_OUTER_PRODUCT:
 					if( _a instanceof CompressedMatrixBlock )
 						executeCellwiseCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, _c, _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else if( !_c.isInSparseFormat() )
-						executeCellwiseDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, _c.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+						executeCellwiseDense(_a.getDenseBlock(), _u, _v, _b, _scalars, _c.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 					else 
 						executeCellwiseSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, _c, _rlen, _clen, _k, _a.getNonZeros(), _type,  _rl, _ru, _cl, _cu);
 					break;
@@ -671,8 +710,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	private class ParOuterProdAggTask implements Callable<Double> 
 	{
 		private final MatrixBlock _a;
-		private final double[] _u;
-		private final double[] _v;
+		private final DenseBlock _u;
+		private final DenseBlock _v;
 		private final SideInput[] _b;
 		private final double[] _scalars;
 		private final int _rlen;
@@ -684,7 +723,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		private final int _cl;
 		private final int _cu;
 		
-		protected ParOuterProdAggTask( MatrixBlock a, double[] u, double[] v, SideInput[] b, double[] scalars, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu ) {
+		protected ParOuterProdAggTask( MatrixBlock a, DenseBlock u, DenseBlock v, SideInput[] b, double[] scalars, int m, int n, int k, OutProdType type, int rl, int ru, int cl, int cu ) {
 			_a = a;
 			_u = u;
 			_v = v;
@@ -707,7 +746,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			if( _a instanceof CompressedMatrixBlock )
 				executeCellwiseCompressed((CompressedMatrixBlock)_a, _u, _v, _b, _scalars, out, _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 			else if( !_a.isInSparseFormat() )
-				executeCellwiseDense(_a.getDenseBlockValues(), _u, _v, _b, _scalars, out.getDenseBlockValues(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
+				executeCellwiseDense(_a.getDenseBlock(), _u, _v, _b, _scalars, out.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 			else
 				executeCellwiseSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, out, _rlen, _clen, _k, _a.getNonZeros(), _type, _rl, _ru, _cl, _cu);
 			return out.quickGetValue(0, 0);

@@ -289,14 +289,15 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
-		double[] data = (a != null) ? a.valuesAt(0) : null;
-		if( data == null )
+		//TODO handle large dense outputs (potentially misaligned)
+		if( a == null )
 			return;
 		
 		SideInput[] lb = createSparseSideInputs(b, true);
-		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
-			//call generated method
-			genexec( data, aix, lb, scalars, c, n, i );
+		for( int i=rl; i<ru; i++ ) {
+			double[] avals = a.values(i);
+			int aix = a.pos(i);
+			genexec( avals, aix, lb, scalars, c, n, i );
 		}
 	}
 	

@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -102,7 +103,7 @@ public abstract class SpoofOperator implements Serializable
 				if( in.getNumColumns()==1 && in.isEmptyBlock(false) ) //dense empty
 					b[i-offset] = new SideInput(null, null, clen);
 				else {
-					b[i-offset] = new SideInput(DataConverter.convertToDoubleVector(in), null, clen);
+					b[i-offset] = new SideInput(DataConverter.convertToDenseBlock(in, false), null, clen);
 					LOG.warn(getClass().getName()+": Converted "+in.getNumRows()+"x"+in.getNumColumns()+
 						", nnz="+in.getNonZeros()+" sideways input matrix from sparse to dense.");
 				}
@@ -111,8 +112,7 @@ public abstract class SpoofOperator implements Serializable
 				b[i-offset] = new SideInput(null, in, clen);
 			}
 			else {
-				b[i-offset] = new SideInput(
-					in.getDenseBlockValues(), null, clen);
+				b[i-offset] = new SideInput(in.getDenseBlock(), null, clen);
 			}
 		}
 		
@@ -142,8 +142,8 @@ public abstract class SpoofOperator implements Serializable
 		return ret;
 	}
 	
-	public static double[][] getDenseMatrices(SideInput[] inputs) {
-		double[][] ret = new double[inputs.length][];
+	public static DenseBlock[] getDenseMatrices(SideInput[] inputs) {
+		DenseBlock[] ret = new DenseBlock[inputs.length];
 		for( int i=0; i<inputs.length; i++ )
 			ret[i] = inputs[i].ddat;
 		return ret;
@@ -204,7 +204,7 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(SideInput data, int rowIndex) {
 		//note: wrapper sideinput guaranteed to exist
-		return (data.ddat!=null) ? data.ddat[rowIndex] :
+		return (data.ddat!=null) ? data.ddat.valuesAt(0)[rowIndex] :
 			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, 0) : 0;
 	}
 	
@@ -216,7 +216,7 @@ public abstract class SpoofOperator implements Serializable
 	
 	protected static double getValue(SideInput data, int n, int rowIndex, int colIndex) {
 		//note: wrapper sideinput guaranteed to exist
-		return (data.ddat!=null) ? data.ddat[rowIndex*n+colIndex] : 
+		return (data.ddat!=null) ? data.ddat.get(rowIndex, colIndex) :
 			(data instanceof SideInputSparseCell) ? 
 			((SideInputSparseCell)data).next(rowIndex, colIndex) :
 			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, colIndex) : 0;
@@ -235,19 +235,19 @@ public abstract class SpoofOperator implements Serializable
 	}
 	
 	public static class SideInput {
-		public final double[] ddat;
+		public final DenseBlock ddat;
 		public final MatrixBlock mdat;
 		public final int clen;
-		public SideInput(double[] ddata, MatrixBlock mdata, int clength) {
+		public SideInput(DenseBlock ddata, MatrixBlock mdata, int clength) {
 			ddat = ddata;
 			mdat = mdata;
 			clen = clength;
 		}
 		public int pos(int r) {
-			return r * clen;
+			return (ddat!=null) ? ddat.pos(r) : r * clen;
 		}
 		public double[] values(int r) {
-			return ddat;
+			return (ddat!=null) ? ddat.values(r) : null;
 		}
 		public double getValue(int r, int c) {
 			return SpoofOperator.getValue(this, clen, r, c);

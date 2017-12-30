@@ -162,8 +162,11 @@ public class DenseBlockDRB extends DenseBlock
 	
 	@Override
 	public void set(int rl, int ru, int cl, int cu, double v) {
-		for(int i=rl, ix=rl*clen; i<ru; i++, ix+=clen)
-			Arrays.fill(data, ix+cl, ix+cu, v);
+		if( cl==0 && cu == clen )
+			Arrays.fill(data, rl*clen, ru*clen, v);
+		else
+			for(int i=rl, ix=rl*clen; i<ru; i++, ix+=clen)
+				Arrays.fill(data, ix+cl, ix+cu, v);
 	}
 
 	@Override
@@ -174,6 +177,18 @@ public class DenseBlockDRB extends DenseBlock
 	@Override
 	public void set(DenseBlock db) {
 		System.arraycopy(db.valuesAt(0), 0, data, 0, rlen*clen);
+	}
+	
+	@Override
+	public void set(int rl, int ru, int cl, int cu, DenseBlock db) {
+		double[] a = db.valuesAt(0);
+		if( cl == 0 && cu == clen)
+			System.arraycopy(a, 0, data, rl*clen+cl, (int)db.size());
+		else {
+			int len = cu - cl;
+			for(int i=rl, ix1=0, ix2=rl*clen+cl; i<ru; i++, ix1+=len, ix2+=clen)
+				System.arraycopy(a, ix1, data, ix2, len);
+		}
 	}
 
 	@Override

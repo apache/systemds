@@ -177,11 +177,17 @@ public class DenseBlockLDRB extends DenseBlock
 	
 	@Override
 	public void set(int rl, int ru, int cl, int cu, double v) {
-		for(int bi=index(rl); bi<=index(ru); bi++) {
-			int imin = pos(bi);
-			int imax = Math.min(ru, (bi+1)*blen)-bi;
-			for(int i=imin, ix=imin*clen; i<imax; i++, ix+=clen)
-				Arrays.fill(data, ix+cl, ix+cu, v);
+		boolean rowBlock = (cl == 0 && cu == clen);
+		final int bil = index(rl);
+		final int biu = index(ru-1);
+		for(int bi=bil; bi<=biu; bi++) {
+			int lpos = (bi==bil) ? pos(rl) : 0;
+			int len = (bi==biu) ? pos(ru-1)-lpos+clen : blockSize(bi)*clen;
+			if( rowBlock )
+				Arrays.fill(data[bi], lpos, lpos+len, v);
+			else
+				for(int i=lpos; i<lpos+len; i+=clen)
+					Arrays.fill(data[bi], i+cl, i+cu, v);
 		}
 	}
 
@@ -199,6 +205,14 @@ public class DenseBlockLDRB extends DenseBlock
 	public void set(DenseBlock db) {
 		for(int bi=0; bi<numBlocks(); bi++)
 			System.arraycopy(db.valuesAt(bi), 0, data[bi], 0, size(bi));
+	}
+	
+	@Override
+	public void set(int rl, int ru, int cl, int cu, DenseBlock db) {
+		for(int i=rl; i<ru; i++) {
+			System.arraycopy(db.values(i-rl),
+				db.pos(i-rl), values(i), pos(i, cl), cu-cl);
+		}
 	}
 
 	@Override

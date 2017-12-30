@@ -238,6 +238,19 @@ public abstract class DenseBlock implements Serializable
 	public abstract void set(DenseBlock db);
 	
 	/**
+	 * Copy the given dense block into the specified
+	 * index range.
+	 * 
+	 * @param rl row lower index
+	 * @param ru row upper index (exclusive)
+	 * @param cl column lower index 
+	 * @param cu column upper index (exclusive)
+	 * @param db dense block
+	 */
+	public abstract void set(int rl, int ru, int cl, int cu, DenseBlock db);
+	
+	
+	/**
 	 * Copy the given kahan object sum and correction.
 	 * 
 	 * @param kbuff kahan object

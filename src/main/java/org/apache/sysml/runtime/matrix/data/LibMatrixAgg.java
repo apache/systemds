@@ -1639,7 +1639,7 @@ public class LibMatrixAgg
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			sum(a.valuesAt(bi), lpos, len, kbuff, kplus);
 		}
 		c.set(kbuff);
@@ -1701,7 +1701,7 @@ public class LibMatrixAgg
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			sum(a.valuesAt(bi), lpos, len, kbuff, kplusSq);
 		}
 		c.set(kbuff);
@@ -1859,7 +1859,7 @@ public class LibMatrixAgg
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			tmp = builtin(a.valuesAt(bi), lpos, tmp, len, builtin);
 		}
 		c.set(0, 0, tmp);
@@ -1957,7 +1957,7 @@ public class LibMatrixAgg
 		int tlen = 0;
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			mean(a.valuesAt(bi), lpos, len, 0, kbuff, kmean);
 			tlen += len;
 		}
@@ -2027,7 +2027,7 @@ public class LibMatrixAgg
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			var(a.valuesAt(bi), lpos, len, cbuff, cm);
 		}
 		// store results: { var | mean, count, m2 correction, mean correction }
@@ -2109,7 +2109,7 @@ public class LibMatrixAgg
 		double tmp = 1;
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi);
+			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
 			tmp *= product( a.valuesAt(bi), lpos, len );
 		}
 		c.set(0, 0, tmp);

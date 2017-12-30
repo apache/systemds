@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.Arrays;
 
+import org.apache.sysml.runtime.util.UtilFunctions;
+
 public class DenseBlockDRB extends DenseBlock
 {
 	private static final long serialVersionUID = 8546723684649816489L;
@@ -113,14 +115,12 @@ public class DenseBlockDRB extends DenseBlock
 	@Override
 	public long countNonZeros(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
-		if( cl==0 && cu==clen ) { //specific case: all cols
-			for( int i=rl*clen; i<ru*clen; i++ )
-				nnz += (data[i]!=0) ? 1 : 0;
+		if( cl == 0 && cu == clen ) { //specific case: all cols
+			nnz += UtilFunctions.computeNnz(data, rl*clen, (ru-rl)*clen);
 		}
 		else {
 			for( int i=rl, ix=rl*clen; i<ru; i++, ix+=clen )
-				for( int j=cl; j<cu; j++ )
-					nnz += (data[ix+j]!=0) ? 1 : 0;
+				nnz += UtilFunctions.computeNnz(data, ix+cl, cu-cl);
 		}
 		return nnz;
 	}

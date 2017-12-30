@@ -3755,7 +3755,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				DenseBlock a = getDenseBlock();
 				double[] c = dest.getDenseBlockValues();
 				for( int i=rl; i<=ru; i++ )
-					c[i] = a.get(i, cl);
+					c[i-rl] = a.get(i, cl);
 			}
 		}
 		else { // GENERAL RANGE INDEXING

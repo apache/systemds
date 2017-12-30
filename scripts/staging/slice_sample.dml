@@ -1,0 +1,93 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Surrogate Slice Sampling Algorithm
+ */
+
+gauss_dist = function(matrix[double] f, matrix[double] M, matrix[double] K)
+  return (matrix[double] out) {
+
+  #out = 1 / abs( 2 * 3.1415 * K ) %*% exp( - 0.5 * t(f - M) %*% (K^-1) %*% (f - M) )
+  out = (abs( 2 * 3.1415 * K) ^ -0.5) %*% exp( - 0.5 * t(f - M) %*% (K^-1) %*% (f - M) )
+}
+
+V1 = rand(rows=3, cols=3)
+V = V1 %*% t(V1)
+M = matrix(1, rows=3, cols=1)
+f = matrix(0, rows=3, cols=1)
+tmp = gauss_dist(f, M, V)
+
+# inputs: theta, f, sigma, model
+
+slice_sample = function(matrix[double] f, matrix[double] theta, matrix[double] sigma)
+  return (matrix[double] f, matrix[double] theta) {
+
+  # 1. Draw Surrogate Data: g ~ N(f, Stheta)
+  g = ( 1 / abs(2 * 3.1415 * Stheta)^.5 ) %*% exp(- (0) %*% (Stheta)^-1 %*% (0) )
+
+  # 2. Compute implied latent variates
+  eta = ( cholesky(R_theta) )^-1 %*% (f - M_theta_g)
+
+  # 3. Randomly center a bracket
+  nu = rand(min=0.000000001, max=sigma)
+
+  theta_min = theta - nu
+  theta_max = theta_min + sigma
+
+  # 4. Draw u ~ Uniform(0,1)
+  u = rand(max=0.000000001, max=1, pdf="uniform")
+
+  # 5. Determine threshold
+  y = u %*% llh %*% gauss_dist(g, 0, Sigtheta + Stheta) %*% ph(theta)
+
+  goodluck = 10
+
+  for( i in 1:goodluck) {
+
+    # 6. Draw proposal
+    theta_dash = rand(min=theta_min, max=theta_max)
+
+    # 7. Compute function: f' = cholesky(R_theta) eta + M_theta'_g
+    f_dash = cholesky(R_theta) %*% eta + M_theta1_g
+
+    # 8. if L(f') N(g;0, sigtheta' + Stheta') ph(theta') > y
+    cond = llh %*% gauss_dist(g, 0, sigtheta' + Stheta') %*% ph(theta_dash)
+
+    if (cond > y) {
+
+      # 9. return f', theta'
+      f = f_dash
+      theta = theta_dash
+    }
+
+    # 10. else if theta' < theta
+    else if(theta_dash < theta) {
+      # 11. Shrink bracket minimum: theta_min = theta'
+      theta_min = theta_dash
+    } else {
+      # 13. Shrink bracket maximum: theta_max = theta'
+      theta_max = theta_dash
+    }
+
+  }
+
+}

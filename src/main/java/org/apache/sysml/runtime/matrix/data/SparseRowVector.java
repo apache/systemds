@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public final class SparseRowVector extends SparseRow implements Serializable 
 {
@@ -288,9 +289,7 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		}
 		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+len; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
+		int lnnz = UtilFunctions.computeNnz(v, vix, len);
 		
 		//prepare free space (allocate and shift)
 		int lsize = size+lnnz-(end-start);

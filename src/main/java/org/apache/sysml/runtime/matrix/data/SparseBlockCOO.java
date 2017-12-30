@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * SparseBlock implementation that realizes a traditional 'coordinate matrix'
@@ -345,12 +346,10 @@ public class SparseBlockCOO extends SparseBlock
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
 		//delete existing values in range if necessary 
 		deleteIndexRange(r, cl, cu);
-
+		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+vlen; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
-
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
+		
 		//prepare free space (allocate and shift)
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )

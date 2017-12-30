@@ -368,21 +368,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return reset;
 	}
 
-	public void allocateSparseRowsBlock() {
-		allocateSparseRowsBlock(true);
+	public boolean allocateSparseRowsBlock() {
+		return allocateSparseRowsBlock(true);
 	}
 
-	public void allocateSparseRowsBlock(boolean clearNNZ) {
+	public boolean allocateSparseRowsBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
 		//but do not replace existing block even if not in default type
-		if( sparseBlock == null || sparseBlock.numRows()<rlen ) {
-			sparseBlock = SparseBlockFactory.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
+		boolean reset = sparseBlock == null || sparseBlock.numRows()<rlen;
+		if( reset ) {
+			sparseBlock = SparseBlockFactory
+				.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
 		}
-		
 		//clear nnz if necessary
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		return reset;
 	}
 	
 	public void allocateAndResetSparseRowsBlock(boolean clearNNZ, SparseBlock.Type stype)
@@ -1087,7 +1089,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	private void denseToSparse()
 	{
-		double[] a = getDenseBlockValues();
+		DenseBlock a = getDenseBlock();
 		
 		//set target representation, early abort on empty blocks
 		sparse = true;
@@ -1097,31 +1099,53 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int m = rlen;
 		final int n = clen;
 		
-		//allocate target in memory-efficient CSR format
-		int lnnz = (int) nonZeros;
-		int[] rptr = new int[m+1];
-		int[] indexes = new int[lnnz];
-		double[] values = new double[lnnz];
-		for( int i=0, pos=0, aix=0; i<m; i++ ) {
-			for(int j=0; j<n; j++, aix++) {
-				double aval = a[aix];
-				if( aval != 0 ) {
-					indexes[pos] = j;
-					values[pos] = aval;
-					pos++;
+		if( nonZeros <= Integer.MAX_VALUE ) {
+			//allocate target in memory-efficient CSR format
+			int lnnz = (int) nonZeros;
+			int[] rptr = new int[m+1];
+			int[] indexes = new int[lnnz];
+			double[] values = new double[lnnz];
+			for( int i=0, pos=0; i<m; i++ ) {
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				for(int j=0; j<n; j++) {
+					double aval = avals[aix+j];
+					if( aval != 0 ) {
+						indexes[pos] = j;
+						values[pos] = aval;
+						pos++;
+					}
 				}
+				rptr[i+1]=pos;
 			}
-			rptr[i+1]=pos;
+			sparseBlock = new SparseBlockCSR(
+				rptr, indexes, values, lnnz);
 		}
-		sparseBlock = new SparseBlockCSR(
-			rptr, indexes, values, lnnz);
+		else {
+			//fallback to less-memory efficient MCSR format,
+			//which however allows much larger sparse matrices
+			if( !allocateSparseRowsBlock() )
+				reset(); //reset if not allocated
+			SparseBlock sblock = sparseBlock;
+			for( int i=0; i<m; i++ ) {
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				//compute nnz per row (not via recomputeNonZeros as sparse allocated)
+				int lnnz = UtilFunctions.computeNnz(avals, aix, clen);
+				if( lnnz <= 0 ) continue;
+				//allocate sparse row and append non-zero values
+				sblock.allocate(i, lnnz);
+				for( int j=0; j<n; j++ )
+					sblock.append(i, j, avals[aix+j]);
+			}
+		}
 		
 		//update nnz and cleanup dense block
 		denseBlock = null;
 	}
 	
 	public void sparseToDense()
-		throws DMLRuntimeException 
+		throws DMLRuntimeException
 	{
 		//set target representation, early abort on empty blocks
 		sparse = false;
@@ -1139,18 +1163,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//copy sparse to dense
 		SparseBlock a = sparseBlock;
-		double[] c = getDenseBlockValues();
+		DenseBlock c = getDenseBlock();
 		
-		for( int i=0, cix=0; i<rlen; i++, cix+=clen)
-			if( !a.isEmpty(i) ) {
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				for(int j=apos; j<apos+alen; j++)
-					if( avals[j] != 0 )
-						c[ cix+aix[j] ] = avals[j];
-			}
+		for( int i=0; i<rlen; i++ ) {
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			double[] cvals = c.values(i);
+			int cix = c.pos(i);
+			for( int j=apos; j<apos+alen; j++ )
+				if( avals[j] != 0 )
+					cvals[cix+aix[j]] = avals[j];
+		}
 		
 		//cleanup sparse rows
 		sparseBlock = null;
@@ -1254,10 +1280,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public void copy(MatrixValue thatValue) 
-	{
+	public void copy(MatrixValue thatValue) {
 		MatrixBlock that = checkType(thatValue);
-		
 		//copy into automatically determined representation
 		copy( that, that.evalSparseFormatInMemory() );
 	}
@@ -1536,12 +1560,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				&& c.isEmpty(rix) ) //special case MCSR append
 			{
 				//count nnz per row (fits likely in L1 cache)
-				int lnnz = 0;
-				for( int j=0; j<src.clen; j++ )
-					lnnz += (a[ix+j]!=0) ? 1 : 0;
-					
+				int lnnz = UtilFunctions.computeNnz(a, ix, src.clen);
+				
 				//allocate row once and copy values
-				if( lnnz > 0 ) {	
+				if( lnnz > 0 ) {
 					c.allocate(rix, lnnz);
 					for( int j=0; j<src.clen; j++ ) {
 						double val = a[ix+j];
@@ -1879,9 +1901,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	private void readSparseBlock(DataInput in) 
 		throws IOException 
-	{			
-		allocateSparseRowsBlock(false);
-		resetSparse();
+	{
+		if( !allocateSparseRowsBlock(false) )
+			resetSparse(); //reset if not allocated
 		
 		if( in instanceof MatrixBlockDataInput ) { //fast deserialize
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;

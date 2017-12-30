@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * SparseBlock implementation that realizes a traditional 'compressed sparse row'
@@ -507,10 +508,8 @@ public class SparseBlockCSR extends SparseBlock
 			deleteIndexRange(r, cl, cu);
 		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+vlen; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
-
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
+		
 		//prepare free space (allocate and shift)
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )
@@ -546,8 +545,7 @@ public class SparseBlockCSR extends SparseBlock
 		//step 1: determine output nnz
 		int nnz = _size - (int)size(rl, ru, cl, cu);
 		if( v != null )
-			for( int i=vix; i<vix+vlen; i++ )
-				nnz += (v[i]!=0) ? 1: 0;
+			nnz += UtilFunctions.computeNnz(v, vix, vlen);
 		
 		//step 2: reallocate if necessary
 		if( _values.length < nnz )

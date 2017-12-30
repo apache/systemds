@@ -559,6 +559,13 @@ public class UtilFunctions
 			return (!sobj.equals("0") && !sobj.equals("0.0"));
 		}
 	}
+	
+	public static int computeNnz(double[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
 
 	public static ValueType[] nCopies(int n, ValueType vt) {
 		ValueType[] ret = new ValueType[n];

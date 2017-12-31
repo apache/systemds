@@ -503,7 +503,7 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-		//delete existing values in range if necessary 
+		//delete existing values in range if necessary
 		if( !isEmpty(r) )
 			deleteIndexRange(r, cl, cu);
 		
@@ -526,6 +526,29 @@ public class SparseBlockCSR extends SparseBlock
 				index2++;
 			}
 		incrPtr(r+1, lnnz);
+	}
+	
+	@Override
+	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//delete existing values in range if necessary
+		if( !isEmpty(r) )
+			deleteIndexRange(r, cl, cu);
+		
+		//prepare free space (allocate and shift)
+		int lsize = _size+vlen;
+		if( _values.length < lsize )
+			resize(lsize);
+		int index = internPosFIndexGT(r, cl);
+		int index2 = (index>0)?index:pos(r+1);
+		shiftRightByN(index2, vlen);
+		
+		//insert values
+		for( int i=vpos; i<vpos+vlen; i++ ) {
+			_indexes[ index2 ] = cl+vix[i];
+			_values[ index2 ] = v[i];
+			index2++;
+		}
+		incrPtr(r+1, vlen);
 	}
 	
 	/**

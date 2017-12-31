@@ -268,13 +268,23 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
-	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int len) {
+	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
 		if( !isAllocated(r) )
 			_rows[r] = new SparseRowVector();
 		else if( _rows[r] instanceof SparseRowScalar )
 			_rows[r] = new SparseRowVector(_rows[r]);
 		//different sparse row semantics: upper bound inclusive
-		((SparseRowVector)_rows[r]).setIndexRange(cl, cu-1, v, vix, len);
+		((SparseRowVector)_rows[r]).setIndexRange(cl, cu-1, v, vix, vlen);
+	}
+	
+	@Override
+	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		if( !isAllocated(r) )
+			_rows[r] = new SparseRowVector();
+		else if( _rows[r] instanceof SparseRowScalar )
+			_rows[r] = new SparseRowVector(_rows[r]);
+		//different sparse row semantics: upper bound inclusive
+		((SparseRowVector)_rows[r]).setIndexRange(cl, cu-1, v, vix, vpos, vlen);
 	}
 
 	@Override

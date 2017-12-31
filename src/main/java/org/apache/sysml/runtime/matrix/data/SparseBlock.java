@@ -323,7 +323,7 @@ public abstract class SparseBlock implements Serializable
 	public abstract void append(int r, int c, double v);
 	
 	/**
-	 * Sets a sorted array of non-zeros values into the column range [cl,cu) 
+	 * Sets a dense array of non-zeros values into the column range [cl,cu) 
 	 * in row r. The passed value array may be larger and the relevant range 
 	 * is given by [vix,vix+len).
 	 * 
@@ -335,6 +335,20 @@ public abstract class SparseBlock implements Serializable
 	 * @param vlen number of relevant values 
 	 */
 	public abstract void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen);
+	
+	/**
+	 * Sets a sparse array of non-zeros values and indexes into the column range [cl,cu) 
+	 * in row r. The passed value array may be larger.
+	 * 
+	 * @param r    row index starting at 0
+	 * @param cl   lower column index starting at 0
+	 * @param cu   upper column index starting at 0
+	 * @param v    value array
+	 * @param vix  column index array
+	 * @param vpos start index in value and index arrays
+	 * @param vlen number of relevant values 
+	 */
+	public abstract void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen);
 	
 	/**
 	 * Deletes all non-zero values of the given column range [cl,cu) in row r.

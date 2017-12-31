@@ -344,7 +344,7 @@ public class SparseBlockCOO extends SparseBlock
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-		//delete existing values in range if necessary 
+		//delete existing values in range if necessary
 		deleteIndexRange(r, cl, cu);
 		
 		//determine input nnz
@@ -365,6 +365,27 @@ public class SparseBlockCOO extends SparseBlock
 				_values[ index ] = v[i];
 				index++;
 			}
+	}
+	
+	@Override
+	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//delete existing values in range if necessary
+		deleteIndexRange(r, cl, cu);
+		
+		//prepare free space (allocate and shift)
+		int lsize = _size+vlen;
+		if( _values.length < lsize )
+			resize(lsize);
+		int index = internPosFIndexGT(r, cl);
+		shiftRightByN((index>0)?index:pos(r+1), vlen);
+		
+		//insert values
+		for( int i=vpos; i<vpos+vlen; i++ ) {
+			_rindexes[ index ] = r;
+			_cindexes[ index ] = cl+vix[i];
+			_values[ index ] = v[i];
+			index++;
+		}
 	}
 
 	@Override

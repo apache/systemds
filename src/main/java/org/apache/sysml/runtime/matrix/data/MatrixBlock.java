@@ -1429,8 +1429,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			copyDenseToDense(rl, ru, cl, cu, src, awareDestNZ);
 	}
 
-	private void copySparseToSparse(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
-	{
+	private void copySparseToSparse(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ) {
 		//handle empty src and dest
 		if( src.isEmptyBlock(false) ) {
 			if( awareDestNZ && sparseBlock != null )
@@ -1438,54 +1437,37 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return;
 		}
 		
-		if(sparseBlock==null)
-			allocateSparseRowsBlock(false);
-		else if( awareDestNZ ) {
-			copyEmptyToSparse(rl, ru, cl, cu, true);
-			//explicit clear if awareDestNZ because more efficient since
-			//src will have multiple columns and only few overwriting values
-		}
-		
-		SparseBlock a = src.sparseBlock;
-		SparseBlock b = sparseBlock;
+		allocateSparseRowsBlock(false);
 		
 		//copy values
-		for( int i=0; i<src.rlen; i++ )
-		{
-			if( !a.isEmpty(i) )
-			{
-				int apos = a.pos(i); 
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				
-				if( b.isEmpty(rl+i) ) {
-					b.allocate(rl+i, estimatedNNzsPerRow, clen);
-					for( int j=apos; j<apos+alen; j++ )
-						b.append(rl+i, cl+aix[j], avals[j]);
-					if( awareDestNZ )
-						nonZeros += b.size(rl+i);
+		SparseBlock a = src.sparseBlock;
+		SparseBlock b = sparseBlock;
+		for( int i=0; i<src.rlen; i++ ) {
+			if( a.isEmpty(i) ) { 
+				copyEmptyToSparse(rl+i, rl+i, cl, cu, true);
+				continue;
+			}
+			int apos = a.pos(i); 
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			//copy row into empty target row
+			if( b.isEmpty(rl+i) ) {
+				if( cl == 0 ) { //no index offset needed 
+					appendRow(rl+i, a.get(i), false);
+					nonZeros -= alen; //avoid nnz corruption
 				}
-				else if( awareDestNZ ) //general case (w/ awareness NNZ)
-				{
-					int lnnz = b.size(rl+i);
-					if( cl==cu && cl==aix[apos] ) {
-						b.set(rl+i, cl, avals[apos] );
-					}
-					else {
-						//TODO perf sparse row
-						b.deleteIndexRange(rl+i, cl, cu+1);
-						for( int j=apos; j<apos+alen; j++ )
-							b.set(rl+i, cl+aix[j], avals[j]);
-					}
-					nonZeros += (b.size(rl+i) - lnnz);
+				else {
+					b.allocate(rl+i, alen);
+					b.setIndexRange(rl+i, cl, cu+1, avals, aix, apos, alen);
 				}
-				else //general case (w/o awareness NNZ)
-				{
-					//TODO perf sparse row
-					for( int j=apos; j<apos+alen; j++ )
-						b.set(rl+i, cl+aix[j], avals[j]);
-				}
+				nonZeros += awareDestNZ ? alen : 0;
+			}
+			//insert row into non-empty target row
+			else { //general case
+				int lnnz = b.size(rl+i);
+				b.setIndexRange(rl+i, cl, cu+1, avals, aix, apos, alen);
+				nonZeros += awareDestNZ ? (b.size(rl+i) - lnnz) : 0;
 			}
 		}
 	}

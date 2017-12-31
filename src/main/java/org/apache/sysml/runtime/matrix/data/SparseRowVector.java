@@ -261,35 +261,24 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		size -= (end-start);
 	}
 	
-	/**
-	 * Inserts a dense vector into a column range; calling this methods helps to
-	 * avoid repeated shifting of remaining values/indexes for every set value. 
-	 * 
-	 * @param lowerCol lower column index
-	 * @param upperCol upper column index
-	 * @param v dense vector
-	 * @param vix ?
-	 * @param len ?
-	 */
-	public void setIndexRange(int lowerCol, int upperCol, double[] v, int vix, int len)
-	{
-		int start = searchIndexesFirstGTE(lowerCol);
+	public void setIndexRange(int cl, int cu, double[] v, int vix, int vlen) {
+		//handle special cases
+		int start = searchIndexesFirstGTE(cl);
 		if( start < 0 ) { //nothing to delete/shift
-			for( int i=vix; i<vix+len; i++ )
-				append(lowerCol+i-vix, v[i]);
+			for( int i=vix; i<vix+vlen; i++ )
+				append(cl+i-vix, v[i]);
 			return;
 		}
-		
-		int end = searchIndexesFirstGT(upperCol);
+		int end = searchIndexesFirstGT(cu);
 		if( end < 0 ) { //delete all remaining
 			size = start;
-			for( int i=vix; i<vix+len; i++ )
-				append(lowerCol+i-vix, v[i]);
+			for( int i=vix; i<vix+vlen; i++ )
+				append(cl+i-vix, v[i]);
 			return;
 		}
 		
 		//determine input nnz
-		int lnnz = UtilFunctions.computeNnz(v, vix, len);
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
 		
 		//prepare free space (allocate and shift)
 		int lsize = size+lnnz-(end-start);
@@ -298,14 +287,44 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		shiftRightByN(end, lnnz-(end-start));
 		
 		//insert values
-		for( int i=vix, pos=start; i<vix+len; i++ )
+		for( int i=vix, pos=start; i<vix+vlen; i++ )
 			if( v[i] != 0 ) {
 				values[ pos ] = v[i];
-				indexes[ pos ] = lowerCol+i-vix;
+				indexes[ pos ] = cl+i-vix;
 				pos++;
 			}
 	}
 
+	public void setIndexRange(int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//handle special cases
+		int start = searchIndexesFirstGTE(cl);
+		if( start < 0 ) { //nothing to delete/shift
+			for( int i=vpos; i<vpos+vlen; i++ )
+				append(cl+vix[i], v[i]);
+			return;
+		}
+		int end = searchIndexesFirstGT(cu);
+		if( end < 0 ) { //delete all remaining
+			size = start;
+			for( int i=vpos; i<vpos+vlen; i++ )
+				append(cl+vix[i], v[i]);
+			return;
+		}
+		
+		//prepare free space (allocate and shift)
+		int lsize = size+vlen-(end-start);
+		if( values.length < lsize )
+			recap(lsize);
+		shiftRightByN(end, vlen-(end-start));
+		
+		//insert values
+		for( int i=vpos, pos=start; i<vpos+vlen; i++ ) {
+			values[ pos ] = v[i];
+			indexes[ pos ] = cl+vix[i];
+			pos++;
+		}
+	}
+	
 	private void resizeAndInsert(int index, int col, double v) {
 		//allocate new arrays
 		int newCap = newCapacity();

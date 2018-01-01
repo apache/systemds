@@ -45,19 +45,20 @@ slice_sample = function(matrix[double] f, matrix[double] theta, matrix[double] s
   g = ( 1 / abs(2 * 3.1415 * Stheta)^.5 ) %*% exp(- (0) %*% (Stheta)^-1 %*% (0) )
 
   # 2. Compute implied latent variates
-  eta = ( cholesky(R_theta) )^-1 %*% (f - M_theta_g)
+  eta = ( cholesky(R_theta) )^-1 %*% (f - M_theta_g) # M_theta_g = R_theta %*% Stheta %*% g^-1
 
   # 3. Randomly center a bracket
   nu = rand(min=0.000000001, max=sigma)
 
   theta_min = theta - nu
-  theta_max = theta_min + sigma
+  theta_max = theta_min + sigma # it can be *, instead of +
+                                # for width-2 top hat prior, take sigma = 2
 
   # 4. Draw u ~ Uniform(0,1)
   u = rand(max=0.000000001, max=1, pdf="uniform")
 
   # 5. Determine threshold
-  y = u %*% llh %*% gauss_dist(g, 0, Sigtheta + Stheta) %*% ph(theta)
+  y = u %*% llh %*% gauss_dist(g, 0, K + Stheta) %*% ph(theta) # ph -> means hyperparameters
 
   goodluck = 10
 
@@ -70,7 +71,7 @@ slice_sample = function(matrix[double] f, matrix[double] theta, matrix[double] s
     f_dash = cholesky(R_theta) %*% eta + M_theta1_g
 
     # 8. if L(f') N(g;0, sigtheta' + Stheta') ph(theta') > y
-    cond = llh %*% gauss_dist(g, 0, sigtheta' + Stheta') %*% ph(theta_dash)
+    cond = llh %*% gauss_dist(g, 0, K' + Stheta') %*% ph(theta_dash)
 
     if (cond > y) {
 

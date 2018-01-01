@@ -309,7 +309,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		//read bitmaps
 		int totalLen = in.readInt();
 		_ptr = new int[numVals+1];
-		_data = new char[totalLen];		
+		_data = new char[totalLen];
 		for( int i=0, off=0; i<numVals; i++ ) {
 			int len = in.readInt();
 			_ptr[i] = off;
@@ -343,7 +343,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		int totalLen = 0;
 		for( int i=0; i<numVals; i++ )
 			totalLen += len(i);
-		out.writeInt(totalLen);	
+		out.writeInt(totalLen);
 		for( int i=0; i<numVals; i++ ) {
 			int len = len(i);
 			int off = _ptr[i];

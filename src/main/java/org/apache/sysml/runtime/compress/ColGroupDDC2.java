@@ -29,6 +29,7 @@ import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
@@ -298,7 +299,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 			postScaling(vals, c);
 		}
 		else //general case
-		{	
+		{
 			//iterate over codes, compute all, and add to the result
 			for( int i=0; i<nrow; i++ ) {
 				double aval = a.getData(i, 0);
@@ -339,9 +340,10 @@ public class ColGroupDDC2 extends ColGroupDDC
 	
 	@Override
 	protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
+		//note: due to corrections the output might be a large dense block
+		DenseBlock c = result.getDenseBlock();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] c = result.getDenseBlockValues();
 		
 		//pre-aggregate nnz per value tuple
 		double[] vals = sumAllValues(kplus, kbuff, false);
@@ -349,10 +351,12 @@ public class ColGroupDDC2 extends ColGroupDDC
 		//scan data and add to result (use kahan plus not general KahanFunction
 		//for correctness in case of sqk+)
 		for( int i=rl; i<ru; i++ ) {
-			kbuff.set(c[2*i], c[2*i+1]);
+			double[] cvals = c.values(i);
+			int cix = c.pos(i);
+			kbuff.set(cvals[cix], cvals[cix+1]);
 			kplus2.execute2(kbuff, vals[_data[i]]);
-			c[2*i] = kbuff._sum;
-			c[2*i+1] = kbuff._correction;
+			cvals[cix] = kbuff._sum;
+			cvals[cix+1] = kbuff._correction;
 		}
 	}
 	

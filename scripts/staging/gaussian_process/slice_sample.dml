@@ -41,24 +41,35 @@ tmp = gauss_dist(f, M, V)
 slice_sample = function(matrix[double] f, matrix[double] theta, matrix[double] sigma)
   return (matrix[double] f, matrix[double] theta) {
 
+  # Default values
+  sigma = 2 # for width 2 top hat prior
+
+  Stheta = alpha * diag( matrix(1, rows=nrow(f), cols=1))
+  #Stheta = ((nu^-1) - diag(K)^-1)^-1
+
   # 1. Draw Surrogate Data: g ~ N(f, Stheta)
-  g = ( 1 / abs(2 * 3.1415 * Stheta)^.5 ) %*% exp(- (0) %*% (Stheta)^-1 %*% (0) )
+  g = ( 1 / abs(2 * 3.1415 * Stheta)^.5 ) %*% exp( matrix(0, rows=nrow(Stheta), cols=ncol(Stheta)) ) # exp(- as.matrix(0) %*% (Stheta)^-1 %*% (0) )
+
+  # calculate R_theta
+  R_theta = (K^-1 + S^-1)^-1 # can also be written as, K - K (K + Stheta)^-1 K
+  M_theta_g = R_theta %*% Stheta %*% g^-1
 
   # 2. Compute implied latent variates
   eta = ( cholesky(R_theta) )^-1 %*% (f - M_theta_g) # M_theta_g = R_theta %*% Stheta %*% g^-1
 
   # 3. Randomly center a bracket
-  nu = rand(min=0.000000001, max=sigma)
+  nu = rand(rows=1, cols=1, min=0.000000001, max=sigma, pdf="uniform")
 
   theta_min = theta - nu
   theta_max = theta_min + sigma # it can be *, instead of +
                                 # for width-2 top hat prior, take sigma = 2
 
   # 4. Draw u ~ Uniform(0,1)
-  u = rand(max=0.000000001, max=1, pdf="uniform")
+  u = rand(rows=1, cols=1, max=0.000000001, max=1, pdf="uniform")
 
   # 5. Determine threshold
   y = u %*% llh %*% gauss_dist(g, 0, K + Stheta) %*% ph(theta) # ph -> means hyperparameters
+                                                               # it may not be llh, it is conditional likelihood function
 
   goodluck = 10
 

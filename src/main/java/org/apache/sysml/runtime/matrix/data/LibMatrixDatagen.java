@@ -236,7 +236,7 @@ public class LibMatrixDatagen
 		if( out.sparse )
 			out.allocateSparseRowsBlock();
 		else
-			out.allocateDenseBlock();	
+			out.allocateDenseBlock();
 		
 		int nrb = (int) Math.ceil((double)rows/rpb);
 		int ncb = (int) Math.ceil((double)cols/cpb);
@@ -323,7 +323,7 @@ public class LibMatrixDatagen
 		if( out.sparse )
 			out.allocateSparseRowsBlock();
 		else
-			out.allocateDenseBlock();	
+			out.allocateDenseBlock();
 	
 		int nrb = (int) Math.ceil((double)rows/rpb);
 		int ncb = (int) Math.ceil((double)cols/cpb);
@@ -351,7 +351,7 @@ public class LibMatrixDatagen
 				int cu = parcol ? Math.min((i+1)*blklen, parnb) : ncb;
 				long[] lseeds = sliceSeedsForCP(seeds, rl, ru, cl, cu, nrb, ncb);
 				tasks.add(new RandTask(rl, ru, cl, cu, out, 
-						rgen, lnnzInBlocks, bSeed, lseeds) );	
+						rgen, lnnzInBlocks, bSeed, lseeds) );
 			}
 			List<Future<Object>> ret = pool.invokeAll(tasks);
 			pool.shutdown();
@@ -544,7 +544,7 @@ public class LibMatrixDatagen
 				// Note that, "pdf" parameter applies only to cell values and the individual cells 
 				// are always selected uniformly at random.
 				UniformPRNGenerator nnzPRNG = new UniformPRNGenerator(seed);
-
+				
 				// block-level sparsity, which may differ from overall sparsity in the matrix.
 				// (e.g., border blocks may fall under skinny matrix turn point, in CP this would be 
 				// irrelevant but we need to ensure consistency with MR)
@@ -556,17 +556,15 @@ public class LibMatrixDatagen
 					int ridx=0, cidx=0; // idx translates into (ridx, cidx) entry within the block
 					int skip = -1;
 					double p = sparsity;
-			        
+					
 					// Prob [k-1 zeros before a nonzero] = Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1), where p=sparsity
 					double log1mp = Math.log(1-p);
 					long blocksize = blockrows*blockcols;
 					while(idx < blocksize) {
 						skip = (int) Math.ceil( Math.log(nnzPRNG.nextDouble())/log1mp )-1;
 						idx = idx+skip+1;
-
 						if ( idx > blocksize)
 							break;
-						
 						// translate idx into (r,c) within the block
 						ridx = (idx-1)/blockcols;
 						cidx = (idx-1)%blockcols;
@@ -577,11 +575,13 @@ public class LibMatrixDatagen
 				}
 				else {
 					if (sparsity == 1.0) {
-						double[] c = out.getDenseBlockValues();
-						int cix = rowoffset*cols + coloffset;
-						for(int ii = 0; ii < blockrows; ii++, cix+=cols)
+						DenseBlock c = out.getDenseBlock();
+						for(int ii = 0; ii < blockrows; ii++) {
+							double[] cvals = c.values(rowoffset+ii);
+							int cix = c.pos(rowoffset+ii, coloffset);
 							for(int jj = 0; jj < blockcols; jj++)
-								c[cix+jj] = min + (range * valuePRNG.nextDouble());
+								cvals[cix+jj] = min + (range * valuePRNG.nextDouble());
+						}
 					}
 					else {
 						if (out.sparse ) {
@@ -605,17 +605,19 @@ public class LibMatrixDatagen
 							}
 						}
 						else {
-							double[] c = out.getDenseBlockValues();
-							int cix = rowoffset*cols + coloffset;
-							for(int ii = 0; ii < blockrows; ii++, cix+=cols)
+							DenseBlock c = out.getDenseBlock();
+							for(int ii = 0; ii < blockrows; ii++) {
+								double[] cvals = c.values(rowoffset+ii);
+								int cix = c.pos(rowoffset+ii, coloffset);
 								for(int jj = 0; jj < blockcols; jj++)
 									if(nnzPRNG.nextDouble() <= sparsity)
-										c[cix+jj] =  min + (range * valuePRNG.nextDouble());
+										cvals[cix+jj] =  min + (range * valuePRNG.nextDouble());
+							}
 						}
 					}
 				} // sparse or dense 
 			} // cbj
-		} // rbi	
+		} // rbi
 	}
 
 	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) 

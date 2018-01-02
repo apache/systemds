@@ -336,20 +336,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return this;
 	}
 	
-	public boolean allocateDenseBlock(boolean clearNNZ) 
-	{
-		long limit = (long)rlen * clen;
-		
-		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
-		if( limit > Integer.MAX_VALUE ) {
-			String execType = OptimizerUtils.isSparkExecutionMode() ? "SPARK" : "MR";
-			throw new RuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") "
-				+ "exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). "
-				+ "Please, report this issue and reduce the JVM heapsize to execute "
-				+ "this operation in "+execType+".");
-		}
-		
+	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
+		long limit = (long)rlen * clen;
 		boolean reset = (denseBlock == null || denseBlock.capacity() < limit);
 		if( denseBlock == null )
 			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
@@ -524,8 +513,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public double[] getDenseBlockValues() {
-		return (denseBlock != null) ?
-			denseBlock.valuesAt(0) : null;
+		//this method is used as a short-hand for all operations that
+		//guaranteed only deal with dense blocks of a single block.
+		if( denseBlock != null && denseBlock.numBlocks() > 1 ) {
+			throw new RuntimeException("Large dense in-memory block (with numblocks="+denseBlock.numBlocks()+") "
+				+ "allocated but operation access to first block only, which might cause incorrect results.");
+		}
+		return (denseBlock != null) ? denseBlock.valuesAt(0) : null;
 	}
 	
 	public SparseBlock getSparseBlock() {
@@ -2002,13 +1996,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		out.writeByte( BlockType.DENSE_BLOCK.ordinal() );
 		
-		int limit=rlen*clen;
-		double[] a = getDenseBlockValues();
-		if( out instanceof MatrixBlockDataOutput ) //fast serialize
-			((MatrixBlockDataOutput)out).writeDoubleArray(limit, a);
-		else //general case (if fast serialize not supported)
-			for(int i=0; i<limit; i++)
-				out.writeDouble(a[i]);
+		DenseBlock a = getDenseBlock();
+		if( out instanceof MatrixBlockDataOutput ) { //fast serialize
+			MatrixBlockDataOutput mout = (MatrixBlockDataOutput)out;
+			for(int i=0; i<a.numBlocks(); i++)
+				mout.writeDoubleArray(a.size(i), a.valuesAt(i));
+		}
+		else { //general case (if fast serialize not supported)
+			for(int i=0; i<a.numBlocks(); i++) {
+				double[] avals = a.values(i);
+				int limit = a.size(i);
+				for(int j=0; j<limit; j++)
+					out.writeDouble(avals[j]);
+			}
+		}
 	}
 
 	private void writeSparseBlock(DataOutput out) 

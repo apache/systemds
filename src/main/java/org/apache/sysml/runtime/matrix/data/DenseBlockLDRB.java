@@ -61,15 +61,15 @@ public class DenseBlockLDRB extends DenseBlock
 		int numPart = (int)Math.ceil((double)rlen / blen);
 		if( this.blen == blen && llen < capacity() ) {
 			for(int i=0; i<numPart; i++) {
-				int len = Math.min((i+1)*blen,rlen)-i*blen;
-				Arrays.fill(data[i], 0, len, v);
+				int lrlen = (int)(Math.min((i+1)*blen,rlen)-i*blen);
+				Arrays.fill(data[i], 0, lrlen*clen, v);
 			}
 		}
 		else {
 			data = new double[numPart][];
 			for(int i=0; i<numPart; i++) {
-				int len = Math.min((i+1)*blen,rlen)-i*blen;
-				data[i] = new double[len];
+				int lrlen = (int)(Math.min((i+1)*blen,rlen)-i*blen);
+				data[i] = new double[lrlen*clen];
 				if( v != 0 )
 					Arrays.fill(data[i], v);
 			}
@@ -120,11 +120,8 @@ public class DenseBlockLDRB extends DenseBlock
 	@Override
 	public long countNonZeros() {
 		long nnz = 0;
-		for(int i=0; i<numBlocks(); i++ ) {
-			double[] a = valuesAt(i);
-			for(int j=0; j<a.length; j++)
-				nnz += (a[j]!=0) ? 1 : 0;
-		}
+		for(int i=0; i<numBlocks(); i++ )
+			nnz += UtilFunctions.computeNnz(valuesAt(i), 0, size(i));
 		return nnz;
 	}
 	

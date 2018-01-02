@@ -96,14 +96,14 @@ public class RDDAggregateUtils
 
 	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in )
 	{
-		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
+		//stable sum of blocks per key, by passing correction blocks along with aggregates
 		JavaPairRDD<MatrixIndexes, KahanObject> tmp = 
 				in.combineByKey( new CreateCellCombinerFunction(), 
 							     new MergeSumCellValueFunction(), 
 							     new MergeSumCellCombinerFunction() );
 		
-		//strip-off correction blocks from 					     
-		JavaPairRDD<MatrixIndexes, Double> out =  
+		//strip-off correction blocks from
+		JavaPairRDD<MatrixIndexes, Double> out =
 				tmp.mapValues( new ExtractDoubleCell() );
 		
 		//return the aggregate rdd
@@ -152,13 +152,13 @@ public class RDDAggregateUtils
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
 			AggregateOperator aop, int numPartitions, boolean deepCopyCombiner )
 	{
-		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
+		//stable sum of blocks per key, by passing correction blocks along with aggregates
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateCorrBlockCombinerFunction(deepCopyCombiner), 
+				in.combineByKey( new CreateCorrBlockCombinerFunction(deepCopyCombiner),
 							     new MergeAggBlockValueFunction(aop), 
 							     new MergeAggBlockCombinerFunction(aop), numPartitions );
 		
-		//strip-off correction blocks from 					     
+		//strip-off correction blocks from
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
 				tmp.mapValues( new ExtractMatrixBlock() );
 		

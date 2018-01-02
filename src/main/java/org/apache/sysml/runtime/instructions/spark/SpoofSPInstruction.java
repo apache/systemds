@@ -144,13 +144,10 @@ public class SpoofSPInstruction extends SPInstruction {
 				
 				if( (op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock())
 					|| (op.getCellType()==CellType.COL_AGG && mcIn.getRows() > mcIn.getRowsPerBlock())) {
-					//TODO investigate if some other side effect of correct blocks
 					long numBlocks = (op.getCellType()==CellType.ROW_AGG ) ? 
 						mcIn.getNumRowBlocks() : mcIn.getNumColBlocks();
-					if( out.partitions().size() > numBlocks )
-						out = RDDAggregateUtils.aggByKeyStable(out, aggop, (int)numBlocks, false);
-					else
-						out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
+					out = RDDAggregateUtils.aggByKeyStable(out, aggop,
+						(int)Math.min(out.getNumPartitions(), numBlocks), false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -189,11 +186,9 @@ public class SpoofSPInstruction extends SPInstruction {
 				out = in.mapPartitionsToPair(new OuterProductFunction(
 					_class.getName(), _classBytes, bcVect2, bcMatrices, scalars), true);
 				if(type == OutProdType.LEFT_OUTER_PRODUCT || type == OutProdType.RIGHT_OUTER_PRODUCT ) {
-					//TODO investigate if some other side effect of correct blocks
-					if( in.partitions().size() > mcOut.getNumRowBlocks()*mcOut.getNumColBlocks() )
-						out = RDDAggregateUtils.sumByKeyStable(out, (int)(mcOut.getNumRowBlocks()*mcOut.getNumColBlocks()), false);
-					else
-						out = RDDAggregateUtils.sumByKeyStable(out, false);	
+					long numBlocks = mcOut.getNumRowBlocks() * mcOut.getNumColBlocks();
+					out = RDDAggregateUtils.sumByKeyStable(out,
+						(int)Math.min(out.getNumPartitions(), numBlocks), false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -231,13 +226,9 @@ public class SpoofSPInstruction extends SPInstruction {
 			else //row-agg or no-agg 
 			{
 				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
-					//TODO investigate if some other side effect of correct blocks
-					if( out.partitions().size() > mcIn.getNumRowBlocks() )
-						out = RDDAggregateUtils.sumByKeyStable(out, (int)mcIn.getNumRowBlocks(), false);
-					else
-						out = RDDAggregateUtils.sumByKeyStable(out, false);
+					out = RDDAggregateUtils.sumByKeyStable(out,
+						(int)Math.min(out.getNumPartitions(), mcIn.getNumRowBlocks()), false);
 				}
-				
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
 				//maintain lineage info and output characteristics

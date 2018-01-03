@@ -277,7 +277,8 @@ public class LibMatrixReorg
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
 			MatrixBlock outblk1 = new MatrixBlock(blklen1, inblk.getNumColumns(), inblk.isInSparseFormat());
 			MatrixBlock tmp1 = tmpblk.sliceOperations(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
-			outblk1.leftIndexingOperations(tmp1, ipos1, outblk1.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
+			outblk1.leftIndexingOperations(tmp1, ipos1, ipos1+tmp1.getNumRows()-1,
+				0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
 			out.add(new IndexedMatrixValue(outix1, outblk1));
 			
 			//slice second block (if necessary)

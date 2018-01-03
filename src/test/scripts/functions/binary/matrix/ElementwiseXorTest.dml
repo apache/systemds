@@ -19,24 +19,15 @@
 #
 #-------------------------------------------------------------
 
-test = function() {
-  A = matrix("1 1
-              0 0", rows=2, cols=2);
+A = read($1);
+B = read($2);
+computedMatrix = read($3)
 
-  B = matrix("1 0
-              0 1", rows=2, cols=2);
+C1 = xor(A, B);
 
- #x = xor(TRUE,TRUE);
-  n = 1.0;
-  m = TRUE;
-  x2 = xor(A , B);
- # y = x2[1,1]
-  print(as.scalar(x2[1,1]))
-  print(as.scalar(x2[1,1]))
-  print(as.scalar(x2[2,1]))
-  print(as.scalar(x2[1,2]))
-  print(as.scalar(x2[2,2]))
-  #print(toString(x2))
-}
+diff = sum(computedMatrix - C1)
+Answer = as.matrix(1);
+D = Answer * diff
+write(D, $4);
 
-tmp = test()
+

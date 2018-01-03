@@ -41,4 +41,16 @@ public class Xor extends ValueFunction implements Serializable
 	public boolean execute(boolean in1, boolean in2) {
 		return in1 != in2;
 	}
+
+	@Override
+	public double execute(double in1, double in2) {
+
+		return (in1 != in2) ? 1 : 0;
+	}
+
+/*	@Override
+	public boolean compute(double in1, boolean in2) {
+
+		return ((in1>0) != in2);
+	}*/
 }

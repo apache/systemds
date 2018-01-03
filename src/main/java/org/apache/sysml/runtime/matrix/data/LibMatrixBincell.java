@@ -788,9 +788,9 @@ public class LibMatrixBincell
 	 * 
 	 * This will do cell wise operation for &lt;, &lt;=, &gt;, &gt;=, == and != operators.
 	 * 
-	 * @param mbLeft left matrix
-	 * @param mbRight right matrix
-	 * @param mbOut output matrix
+	 * @param m1 left matrix
+	 * @param m2 right matrix
+	 * @param ret output matrix
 	 * @param bOp binary operator
 	 * 
 	 */
@@ -989,7 +989,7 @@ public class LibMatrixBincell
 	 * Since this operation is sparse-unsafe, ret should always be passed in dense representation.
 	 * 
 	 * @param m1 input matrix
-	 * @param m2 result matrix
+	 * @param ret result matrix
 	 * @param op scalar operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */

@@ -3488,19 +3488,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix,
 			int rl, int ru, int cl, int cu, MatrixBlock ret, UpdateType update)
 		throws DMLRuntimeException 
-	{	
+	{
 		// Check the validity of bounds
-		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
-				|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
-							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"].");
+		if( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," 
+				+ (cl+1)+":"+(cu+1)+"] " + "must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"].");
 		}
-		
-		if ( (ru-rl+1) < rhsMatrix.getNumRows() || (cu-cl+1) < rhsMatrix.getNumColumns()) {
+		if( (ru-rl+1) != rhsMatrix.getNumRows() || (cu-cl+1) != rhsMatrix.getNumColumns() ) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
-					"dimensions of the source matrix ["+rhsMatrix.getNumRows()+"x" + rhsMatrix.getNumColumns() + "] " +
-					"do not match the shape of the matrix specified by indices [" +
-					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
+				"dimensions of the source matrix ["+rhsMatrix.getNumRows()+"x" + rhsMatrix.getNumColumns() + "] " +
+				"do not match the shape of the matrix specified by indices [" +
+				(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "] (i.e., ["+(ru-rl+1)+"x"+(cu-cl+1)+"]).");
 		}
 		
 		MatrixBlock result = ret;

@@ -151,7 +151,7 @@ else {
 					baseStats[17,i] = numModes;
 
           if (max_kind > 1) {
-					  countsArray[,i] = cat_counts;
+					  countsArray[1:nrow(cat_counts),i] = cat_counts;
 					}
 				}
 			}

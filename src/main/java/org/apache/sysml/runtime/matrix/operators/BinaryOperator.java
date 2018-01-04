@@ -55,7 +55,7 @@ public class BinaryOperator  extends Operator implements Serializable
 	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
 		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
-			|| p instanceof And || p instanceof Or
+			|| p instanceof And || p instanceof Or || p instanceof Xor
 			|| p instanceof PlusMultiply || p instanceof MinusMultiply);
 		fn = p;
 	}

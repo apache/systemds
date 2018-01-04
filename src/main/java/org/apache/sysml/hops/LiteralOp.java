@@ -223,6 +223,8 @@ public class LiteralOp extends Hop
 				return value_double;
 			case STRING:
 				return Double.parseDouble(value_string);
+			case BOOLEAN:
+				return value_boolean ? 1 : 0;
 			default:
 				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
 		}

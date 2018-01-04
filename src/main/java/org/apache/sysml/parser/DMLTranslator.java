@@ -2664,7 +2664,7 @@ public class DMLTranslator
 
 		case XOR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-				ValueType.BOOLEAN, Hop.OpOp2.XOR, expr, expr2);
+				target.getValueType(), Hop.OpOp2.XOR, expr, expr2);
 			break;
 
 		case ABS:

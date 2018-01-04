@@ -21,7 +21,9 @@
 package org.apache.sysml.runtime.matrix.operators;
 
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Not;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Xor;
 
 public class UnaryOperator extends Operator 
 {
@@ -35,18 +37,18 @@ public class UnaryOperator extends Operator
 	}
 	
 	public UnaryOperator(ValueFunction p, int numThreads) {
-		super(p instanceof Builtin && 
+		super(p instanceof Not || (p instanceof Builtin &&
 			((Builtin)p).bFunc==Builtin.BuiltinCode.SIN || ((Builtin)p).bFunc==Builtin.BuiltinCode.TAN 
 			// sinh and tanh are zero only at zero, else they are nnz
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SINH || ((Builtin)p).bFunc==Builtin.BuiltinCode.TANH
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.ROUND || ((Builtin)p).bFunc==Builtin.BuiltinCode.ABS
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SQRT || ((Builtin)p).bFunc==Builtin.BuiltinCode.SPROP
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SELP || ((Builtin)p).bFunc==Builtin.BuiltinCode.LOG_NZ
-			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SIGN );
+			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SIGN ));
 		fn = p;
 		k = numThreads;
 	}
-	
+
 	public int getNumThreads() {
 		return k;
 	}

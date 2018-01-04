@@ -111,7 +111,7 @@ public class DenseBlockLDRB extends DenseBlock
 
 	@Override
 	public long capacity() {
-		int len = 0;
+		long len = 0;
 		for(int i=0; i<numBlocks(); i++)
 			len += data[i].length;
 		return len;

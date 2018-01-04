@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -28,6 +29,8 @@ public class DenseBlockLDRB extends DenseBlock
 {
 	private static final long serialVersionUID = -7285459683402612969L;
 
+	private static final boolean PARALLEL_ALLOC = true;
+	
 	private double[][] data;
 	private int rlen;
 	private int clen;
@@ -56,6 +59,7 @@ public class DenseBlockLDRB extends DenseBlock
 		reset(rlen, clen, blen, v);
 	}
 	
+	@SuppressWarnings("resource")
 	private void reset(int rlen, int clen, int blen, double v) {
 		long llen = (long) rlen * clen;
 		int numPart = (int)Math.ceil((double)rlen / blen);
@@ -67,16 +71,23 @@ public class DenseBlockLDRB extends DenseBlock
 		}
 		else {
 			data = new double[numPart][];
-			for(int i=0; i<numPart; i++) {
-				int lrlen = (int)(Math.min((i+1)*blen,rlen)-i*blen);
-				data[i] = new double[lrlen*clen];
-				if( v != 0 )
-					Arrays.fill(data[i], v);
-			}
+			IntStream range = PARALLEL_ALLOC ?
+				IntStream.range(0, numPart).parallel() :
+				IntStream.range(0, numPart);
+			range.forEach(i ->
+				data[i] = allocArray(i, rlen, clen, blen, v));
 		}
 		this.rlen = rlen;
 		this.clen = clen;
 		this.blen = blen;
+	}
+	
+	private static double[] allocArray(int i, int rlen, int clen, int blen, double v) {
+		int lrlen = (int)(Math.min((i+1)*blen,rlen)-i*blen);
+		double[] ret = new double[lrlen*clen];
+		if( v != 0 )
+			Arrays.fill(ret, v);
+		return ret;
 	}
 
 	@Override

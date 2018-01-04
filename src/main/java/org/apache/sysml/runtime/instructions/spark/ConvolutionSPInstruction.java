@@ -61,8 +61,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Convolution;
+		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
@@ -72,9 +71,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
-		_sptype = SPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
@@ -84,10 +82,9 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
-		_sptype = SPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
@@ -95,9 +92,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	}
 
 	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
-		_sptype = SPINSTRUCTION_TYPE.Convolution;
 	}
 
 	public static ConvolutionSPInstruction parseInstruction( String str ) throws DMLRuntimeException {

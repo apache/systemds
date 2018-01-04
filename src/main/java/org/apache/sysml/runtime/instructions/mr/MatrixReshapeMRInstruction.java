@@ -36,13 +36,11 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	private MatrixCharacteristics _mcIn = null;
 	private MatrixCharacteristics _mcOut = null;
 
-	// MB: cache should be integrated with tempValues, but for n blocks
 	private ArrayList<IndexedMatrixValue> _cache = null;
 
 	private MatrixReshapeMRInstruction(Operator op, byte in, long rows, long cols, boolean byrow, byte out,
 			String istr) {
-		super(op, in, out, istr);
-		mrtype = MRINSTRUCTION_TYPE.MMTSJ;
+		super(MRType.MMTSJ, op, in, out, istr);
 		instString = istr;
 		_mcOut = new MatrixCharacteristics(rows, cols, -1, -1);
 		_byrow = byrow;

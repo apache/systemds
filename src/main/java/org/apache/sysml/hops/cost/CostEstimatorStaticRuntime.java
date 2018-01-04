@@ -56,7 +56,7 @@ import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
 import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
@@ -263,7 +263,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					if( instCat != null && instCat.length()>0 ) {
 						String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
 						for( String tmp : linst ) {
-							if(InstructionUtils.getMRType(tmp)==MRINSTRUCTION_TYPE.Aggregate)
+							if(InstructionUtils.getMRType(tmp)==MRType.Aggregate)
 								shuffleCosts += numMap * getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
 										      + numPMap * getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
 										      + numPMap * getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed;
@@ -277,7 +277,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
 					for( String tmp : linst ){
 						Object[] o = extractMRInstStatistics(tmp, vs);
-						if(InstructionUtils.getMRType(tmp)==MRINSTRUCTION_TYPE.Aggregate)
+						if(InstructionUtils.getMRType(tmp)==MRType.Aggregate)
 							o[1] = new String[]{String.valueOf(numMap)};
 						String opcode = InstructionUtils.getOpCode(tmp);
 						reduceCosts += getInstTimeEstimate(opcode, (VarStats[])o[0], (String[])o[1], ExecType.MR);
@@ -1063,7 +1063,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//reduction by factor 2 because matrix mult better than
 					//average flop count
 					if( MMTSJType.valueOf(args[0]).isLeft() ) { //lefttranspose
-						if( !rightSparse ) //dense						
+						if( !rightSparse ) //dense
 							return d1m * d1n * d1s * d1n /2;
 						else //sparse
 							return d1m * d1n * d1s * d1n * d1s /2; 
@@ -1074,25 +1074,21 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						else //sparse
 							return   d1m * d1n * d1s //reorg sparse
 							       + d1m * d1n * d1s * d1n * d1s /2; //core tsmm
-					}					
+					}
 					return 0;
 				
 				case Partition:
 					return d1m * d1n * d1s + //partitioning costs
-						   (inMR ? 0 : //include write cost if in CP  	
+						   (inMR ? 0 : //include write cost if in CP
 							getHDFSWriteTime(d1m, d1n, d1s)* DEFAULT_FLOPS);
-					
-				case INVALID:
-					return 0;
 				
 				default: 
 					throw new DMLRuntimeException("CostEstimator: unsupported instruction type: "+optype);
 			}
-				
 		}
 		
 		//if not found in CP instructions
-		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get(optype);
+		MRType mrtype = MRInstructionParser.String2MRInstructionType.get(optype);
 		if ( mrtype != null ) //for specific MR ops
 		{
 			switch(mrtype)

@@ -41,17 +41,12 @@ public class BinUaggChainInstruction extends UnaryInstruction {
 	private MatrixIndexes _tmpIx = null;
 	private MatrixValue _tmpVal = null;
 
-	private BinUaggChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, byte in1, byte out,
-			String istr) {
-		super(null, in1, out, istr);
-
+	private BinUaggChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, byte in1, byte out, String istr) {
+		super(MRType.BinUaggChain, null, in1, out, istr);
 		_bOp = bop;
 		_uaggOp = uaggop;
-
 		_tmpIx = new MatrixIndexes();
 		_tmpVal = new MatrixBlock();
-
-		mrtype = MRINSTRUCTION_TYPE.BinUaggChain;
 		instString = istr;
 	}
 

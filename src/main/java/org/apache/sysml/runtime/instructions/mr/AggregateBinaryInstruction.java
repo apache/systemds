@@ -50,10 +50,8 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	private boolean _outputEmptyBlocks = true;
 
 	private AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr) {
-		super(op, in1, in2, out);
-		mrtype = MRINSTRUCTION_TYPE.AggregateBinary;
+		super(MRType.AggregateBinary, op, in1, in2, out);
 		instString = istr;
-
 		_opcode = opcode;
 	}
 

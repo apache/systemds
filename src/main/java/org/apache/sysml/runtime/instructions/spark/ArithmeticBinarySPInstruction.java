@@ -30,10 +30,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction {
 
-	ArithmeticBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.ArithmeticBinary;
+	protected ArithmeticBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.ArithmeticBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static ArithmeticBinarySPInstruction parseInstruction ( String str ) 

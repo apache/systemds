@@ -31,8 +31,7 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction {
 
 	protected BuiltinUnarySPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.BuiltinUnary;
+		super(SPType.BuiltinUnary, op, in, out, opcode, istr);
 	}
 
 	public static BuiltinUnarySPInstruction parseInstruction ( String str ) 

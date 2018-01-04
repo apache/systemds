@@ -58,8 +58,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 
 	private QuaternaryInstruction(Operator op, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU,
 			boolean cacheV, String istr) {
-		super(op, out);
-		mrtype = MRINSTRUCTION_TYPE.Quaternary;
+		super(MRType.Quaternary, op, out);
 		instString = istr;
 
 		_input1 = in1;

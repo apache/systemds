@@ -52,7 +52,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 	protected CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean hasHeader,
 			String delim, boolean fill, double fillValue, String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+		super(SPType.CSVReblock, op, in, out, opcode, instr);
 		_brlen = br;
 		_bclen = bc;
 		_hasHeader = hasHeader;

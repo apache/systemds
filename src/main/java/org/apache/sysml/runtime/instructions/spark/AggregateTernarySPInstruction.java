@@ -41,10 +41,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 
-	private AggregateTernarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.AggregateTernary;
+	private AggregateTernarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(SPType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	public static AggregateTernarySPInstruction parseInstruction( String str ) 

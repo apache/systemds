@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class DataPartitionMRInstruction extends UnaryInstruction {
 
 	private DataPartitionMRInstruction(Operator op, byte in, byte out, String istr) {
-		super(op, in, out, istr);
+		super(MRType.Partition, op, in, out, istr);
 	}
 
 	public static DataPartitionMRInstruction parseInstruction ( String str ) 

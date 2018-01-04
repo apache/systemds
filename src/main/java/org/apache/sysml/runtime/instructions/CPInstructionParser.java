@@ -428,7 +428,7 @@ public class CPInstructionParser extends InstructionParser
 				return MMChainCPInstruction.parseInstruction(str);
 			
 			case Partition:
-				return DataPartitionCPInstruction.parseInstruction(str);	
+				return DataPartitionCPInstruction.parseInstruction(str);
 		
 			case CentralMoment:
 				return CentralMomentCPInstruction.parseInstruction(str);
@@ -437,12 +437,10 @@ public class CPInstructionParser extends InstructionParser
 				return CovarianceCPInstruction.parseInstruction(str);
 	
 			case Compression:
-				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);	
+				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);
 			
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);
-			
-			case INVALID:
 			
 			default: 
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

@@ -38,10 +38,8 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase {
 	private long _bclen = -1;
 
 	private GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, int ngroups, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.GroupedAggregate;
+		super(MRType.GroupedAggregate, op, in, out);
 		instString = istr;
-
 		_weights = weights;
 		_ngroups = ngroups;
 	}

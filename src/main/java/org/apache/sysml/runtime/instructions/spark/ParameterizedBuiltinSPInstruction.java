@@ -90,8 +90,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 	private ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr, boolean bRmEmptyBC) {
-		super(op, null, null, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.ParameterizedBuiltin;
+		super(SPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
 		_bRmEmptyBC = bRmEmptyBC;
 	}

@@ -39,8 +39,7 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 
 	private BinUaggChainSPInstruction(CPOperand in, CPOperand out, BinaryOperator bop, AggregateUnaryOperator uaggop,
 			String opcode, String istr) {
-		super(null, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.BinUaggChain;
+		super(SPType.BinUaggChain, null, in, out, opcode, istr);
 		_bOp = bop;
 		_uaggOp = uaggop;
 

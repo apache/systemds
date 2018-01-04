@@ -48,10 +48,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
 	private double _initValue = 0;
 
-	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init,
-			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CumsumOffset;
+	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, String opcode, String istr) {
+		super(SPType.CumsumOffset, op, in1, in2, out, opcode, istr);
 
 		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());

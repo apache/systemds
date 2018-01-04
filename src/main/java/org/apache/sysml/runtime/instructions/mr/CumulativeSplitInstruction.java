@@ -36,7 +36,7 @@ public class CumulativeSplitInstruction extends UnaryInstruction {
 	private double _initValue = 0;
 
 	private CumulativeSplitInstruction(byte in, byte out, double init, String istr) {
-		super(null, in, out, istr);
+		super(MRType.CumsumSplit, null, in, out, istr);
 		_initValue = init;
 	}
 

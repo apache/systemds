@@ -39,8 +39,7 @@ public class RandInstruction extends DataGenMRInstruction {
 	private RandInstruction(Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double minValue,
 			double maxValue, double sparsity, long seed, String probabilityDensityFunction, String params,
 			String baseDir, String istr) {
-		super(op, DataGenMethod.RAND, in, out, rows, cols, rpb, cpb, baseDir);
-		mrtype = MRINSTRUCTION_TYPE.Rand;
+		super(MRType.Rand, op, DataGenMethod.RAND, in, out, rows, cols, rpb, cpb, baseDir);
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;

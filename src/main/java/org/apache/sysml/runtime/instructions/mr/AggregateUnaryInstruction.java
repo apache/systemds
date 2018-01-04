@@ -37,10 +37,8 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 	private boolean _dropCorr = false;
 
 	protected AggregateUnaryInstruction(Operator op, byte in, byte out, boolean dropCorr, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.AggregateUnary;
+		super(MRType.AggregateUnary, op, in, out);
 		instString = istr;
-
 		_dropCorr = dropCorr;
 	}
 

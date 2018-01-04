@@ -50,9 +50,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 
 	private MatrixReshapeSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 			CPOperand out, String opcode, String istr) {
-		super(op, in1, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MatrixReshape;
-
+		super(SPType.MatrixReshape, op, in1, out, opcode, istr);
 		_opRows = in2;
 		_opCols = in3;
 		_opByRow = in4;

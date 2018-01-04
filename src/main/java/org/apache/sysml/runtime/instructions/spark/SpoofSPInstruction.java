@@ -75,10 +75,9 @@ public class SpoofSPInstruction extends SPInstruction {
 
 	private SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode,
 			String str) {
-		super(opcode, str);
+		super(SPType.SpoofFused, opcode, str);
 		_class = cls;
 		_classBytes = classBytes;
-		_sptype = SPINSTRUCTION_TYPE.SpoofFused;
 		_in = in;
 		_out = out;
 	}

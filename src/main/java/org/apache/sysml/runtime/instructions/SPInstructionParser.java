@@ -75,7 +75,7 @@ import org.apache.sysml.runtime.instructions.spark.RelationalBinarySPInstruction
 import org.apache.sysml.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysml.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
@@ -88,219 +88,219 @@ import org.apache.sysml.runtime.instructions.spark.ZipmmSPInstruction;
 
 public class SPInstructionParser extends InstructionParser 
 {	
-	public static final HashMap<String, SPINSTRUCTION_TYPE> String2SPInstructionType;
+	public static final HashMap<String, SPType> String2SPInstructionType;
 	static {
 		String2SPInstructionType = new HashMap<>();
 		
 		//unary aggregate operators
-		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uark+"   , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uack+"   , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uasqk+" 	, SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarsqk+" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uacsqk+" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uamean"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarmean" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uacmean" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uavar"   , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarvar"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uacvar"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uamax"   , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarmax"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarimax",  SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uacmax"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uamin"   , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarmin"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uarimin" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uacmin"  , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "ua+"     , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uar+"    , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uac+"    , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "ua*"     , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uatrace" , SPINSTRUCTION_TYPE.AggregateUnary);
-		String2SPInstructionType.put( "uaktrace", SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uak+"   	, SPType.AggregateUnary);
+		String2SPInstructionType.put( "uark+"   , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uack+"   , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uasqk+" 	, SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarsqk+" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacsqk+" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uamean"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarmean" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacmean" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uavar"   , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarvar"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacvar"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uamax"   , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarmax"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarimax",  SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacmax"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uamin"   , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarmin"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarimin" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacmin"  , SPType.AggregateUnary);
+		String2SPInstructionType.put( "ua+"     , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uar+"    , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uac+"    , SPType.AggregateUnary);
+		String2SPInstructionType.put( "ua*"     , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uatrace" , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uaktrace", SPType.AggregateUnary);
 
 		//binary aggregate operators (matrix multiplication operators)
-		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
-		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
-		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM); //single-pass tsmm
-		String2SPInstructionType.put( "tsmm2"      , SPINSTRUCTION_TYPE.TSMM2); //multi-pass tsmm
-		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
-		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
-		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
-		String2SPInstructionType.put( "zipmm"      , SPINSTRUCTION_TYPE.ZIPMM);
-		String2SPInstructionType.put( "pmapmm"     , SPINSTRUCTION_TYPE.PMAPMM);
+		String2SPInstructionType.put( "mapmm"      , SPType.MAPMM);
+		String2SPInstructionType.put( "mapmmchain" , SPType.MAPMMCHAIN);
+		String2SPInstructionType.put( "tsmm"       , SPType.TSMM); //single-pass tsmm
+		String2SPInstructionType.put( "tsmm2"      , SPType.TSMM2); //multi-pass tsmm
+		String2SPInstructionType.put( "cpmm"   	   , SPType.CPMM);
+		String2SPInstructionType.put( "rmm"        , SPType.RMM);
+		String2SPInstructionType.put( "pmm"        , SPType.PMM);
+		String2SPInstructionType.put( "zipmm"      , SPType.ZIPMM);
+		String2SPInstructionType.put( "pmapmm"     , SPType.PMAPMM);
 		
-		String2SPInstructionType.put( "uaggouterchain", SPINSTRUCTION_TYPE.UaggOuterChain);
+		String2SPInstructionType.put( "uaggouterchain", SPType.UaggOuterChain);
 		
 		//ternary aggregate operators
-		String2SPInstructionType.put( "tak+*"      , SPINSTRUCTION_TYPE.AggregateTernary);
-		String2SPInstructionType.put( "tack+*"     , SPINSTRUCTION_TYPE.AggregateTernary);
+		String2SPInstructionType.put( "tak+*"      , SPType.AggregateTernary);
+		String2SPInstructionType.put( "tack+*"     , SPType.AggregateTernary);
 
 		// Neural network operators
-		String2SPInstructionType.put( "conv2d",                 SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "conv2d_bias_add", SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "relu_maxpooling",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d",                 SPType.Convolution);
+		String2SPInstructionType.put( "conv2d_bias_add", SPType.Convolution);
+		String2SPInstructionType.put( "maxpooling",             SPType.Convolution);
+		String2SPInstructionType.put( "relu_maxpooling",          SPType.Convolution);
 		
-		String2SPInstructionType.put( RightIndex.OPCODE, SPINSTRUCTION_TYPE.MatrixIndexing);
-		String2SPInstructionType.put( LeftIndex.OPCODE, SPINSTRUCTION_TYPE.MatrixIndexing);
-		String2SPInstructionType.put( "mapLeftIndex" , SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( RightIndex.OPCODE, SPType.MatrixIndexing);
+		String2SPInstructionType.put( LeftIndex.OPCODE, SPType.MatrixIndexing);
+		String2SPInstructionType.put( "mapLeftIndex" , SPType.MatrixIndexing);
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
-		String2SPInstructionType.put( "r'"   	   , SPINSTRUCTION_TYPE.Reorg);
-		String2SPInstructionType.put( "rev"   	   , SPINSTRUCTION_TYPE.Reorg);
-		String2SPInstructionType.put( "rdiag"      , SPINSTRUCTION_TYPE.Reorg);
-		String2SPInstructionType.put( "rshape"     , SPINSTRUCTION_TYPE.MatrixReshape);
-		String2SPInstructionType.put( "rsort"      , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "r'"   	   , SPType.Reorg);
+		String2SPInstructionType.put( "rev"   	   , SPType.Reorg);
+		String2SPInstructionType.put( "rdiag"      , SPType.Reorg);
+		String2SPInstructionType.put( "rshape"     , SPType.MatrixReshape);
+		String2SPInstructionType.put( "rsort"      , SPType.Reorg);
 		
-		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "-"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "*"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "/"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "%%"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "1-*"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "map+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map-"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map*"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map/"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map%%"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map1-*"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "+"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "-"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "*"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "/"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "%%"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "%/%"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "1-*"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "^"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "^2"   , SPType.ArithmeticBinary); 
+		String2SPInstructionType.put( "*2"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "+*"   , SPType.ArithmeticBinary); 
+		String2SPInstructionType.put( "-*"   , SPType.ArithmeticBinary); 
+		String2SPInstructionType.put( "map+"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map-"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map*"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map/"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map%%"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map%/%"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map1-*"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map^"    , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map+*"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map-*"   , SPType.ArithmeticBinary);
 		
 		// Relational Instruction Opcodes 
-		String2SPInstructionType.put( "=="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "!="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "<"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( ">"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "<="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( ">="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map>"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map>="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map<"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map<="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map=="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map!="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "=="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "!="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "<"    , SPType.RelationalBinary);
+		String2SPInstructionType.put( ">"    , SPType.RelationalBinary);
+		String2SPInstructionType.put( "<="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( ">="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map>"    , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map>="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map<"    , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map<="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map=="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "map!="   , SPType.RelationalBinary);
 		
 		// Boolean Instruction Opcodes 
-		String2SPInstructionType.put( "&&"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "||"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "xor"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "!"    , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "map&&"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map||"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "mapxor"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map!"    , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "&&"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "||"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "xor"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "!"    , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "map&&"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map||"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "mapxor"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map!"    , SPType.BuiltinUnary);
 		
 		// REBLOCK Instruction Opcodes 
-		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
-		String2SPInstructionType.put( "csvrblk", SPINSTRUCTION_TYPE.CSVReblock);
+		String2SPInstructionType.put( "rblk"   , SPType.Reblock);
+		String2SPInstructionType.put( "csvrblk", SPType.CSVReblock);
 	
 		// Spark-specific instructions
-		String2SPInstructionType.put( Checkpoint.OPCODE, SPINSTRUCTION_TYPE.Checkpoint);
-		String2SPInstructionType.put( Compression.OPCODE, SPINSTRUCTION_TYPE.Compression);
+		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
+		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
 		
 		// Builtin Instruction Opcodes 
-		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
-		String2SPInstructionType.put( "log_nz"  , SPINSTRUCTION_TYPE.Builtin);
+		String2SPInstructionType.put( "log"  , SPType.Builtin);
+		String2SPInstructionType.put( "log_nz"  , SPType.Builtin);
 
 		// Boolean Binary builtin
-		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
-		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
-		String2SPInstructionType.put( "mapmax"  , SPINSTRUCTION_TYPE.BuiltinBinary);
-		String2SPInstructionType.put( "mapmin"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		String2SPInstructionType.put( "max"  , SPType.BuiltinBinary);
+		String2SPInstructionType.put( "min"  , SPType.BuiltinBinary);
+		String2SPInstructionType.put( "mapmax"  , SPType.BuiltinBinary);
+		String2SPInstructionType.put( "mapmin"  , SPType.BuiltinBinary);
 		
-		String2SPInstructionType.put( "exp"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "abs"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sin"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "cos"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "tan"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "asin"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "acos"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "atan"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sinh"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "cosh"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "tanh"   , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sign"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sqrt"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "plogp" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "sel+", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "exp"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "abs"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sin"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "cos"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "tan"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "asin"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "acos"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "atan"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sinh"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "cosh"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "tanh"   , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sign"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sqrt"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "plogp" , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "round" , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "ceil"  , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "floor" , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sprop", SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sigmoid", SPType.BuiltinUnary);
+		String2SPInstructionType.put( "sel+", SPType.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "groupedagg"	 , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "mapgroupedagg", SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rmempty"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "replace"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rexpand"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "transformapply",SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "transformdecode",SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "transformencode",SPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2SPInstructionType.put( "groupedagg"	 , SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "mapgroupedagg", SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rmempty"	     , SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "replace"	     , SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rexpand"	     , SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformapply",SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformdecode",SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformencode",SPType.MultiReturnBuiltin);
 		
-		String2SPInstructionType.put( "mappend", SPINSTRUCTION_TYPE.MAppend);
-		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);
-		String2SPInstructionType.put( "gappend", SPINSTRUCTION_TYPE.GAppend);
-		String2SPInstructionType.put( "galignedappend", SPINSTRUCTION_TYPE.GAlignedAppend);
-		String2SPInstructionType.put( "cbind", SPINSTRUCTION_TYPE.BuiltinNary);
-		String2SPInstructionType.put( "rbind", SPINSTRUCTION_TYPE.BuiltinNary);
+		String2SPInstructionType.put( "mappend", SPType.MAppend);
+		String2SPInstructionType.put( "rappend", SPType.RAppend);
+		String2SPInstructionType.put( "gappend", SPType.GAppend);
+		String2SPInstructionType.put( "galignedappend", SPType.GAlignedAppend);
+		String2SPInstructionType.put( "cbind", SPType.BuiltinNary);
+		String2SPInstructionType.put( "rbind", SPType.BuiltinNary);
 		
-		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
-		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPINSTRUCTION_TYPE.Rand);
-		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPINSTRUCTION_TYPE.Rand);
+		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
+		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);
+		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPType.Rand);
 		
 		//ternary instruction opcodes
-		String2SPInstructionType.put( "ctable", SPINSTRUCTION_TYPE.Ternary);
-		String2SPInstructionType.put( "ctableexpand", SPINSTRUCTION_TYPE.Ternary);
+		String2SPInstructionType.put( "ctable", SPType.Ternary);
+		String2SPInstructionType.put( "ctableexpand", SPType.Ternary);
 		
 		//quaternary instruction opcodes
-		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedSquaredLossR.OPCODE, SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedSigmoid.OPCODE,      SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedSigmoidR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedDivMM.OPCODE,        SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedDivMMR.OPCODE,       SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedCrossEntropy.OPCODE, SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedCrossEntropyR.OPCODE,SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedUnaryMM.OPCODE,      SPINSTRUCTION_TYPE.Quaternary);
-		String2SPInstructionType.put( WeightedUnaryMMR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPType.Quaternary);
+		String2SPInstructionType.put( WeightedSquaredLossR.OPCODE, SPType.Quaternary);
+		String2SPInstructionType.put( WeightedSigmoid.OPCODE,      SPType.Quaternary);
+		String2SPInstructionType.put( WeightedSigmoidR.OPCODE,     SPType.Quaternary);
+		String2SPInstructionType.put( WeightedDivMM.OPCODE,        SPType.Quaternary);
+		String2SPInstructionType.put( WeightedDivMMR.OPCODE,       SPType.Quaternary);
+		String2SPInstructionType.put( WeightedCrossEntropy.OPCODE, SPType.Quaternary);
+		String2SPInstructionType.put( WeightedCrossEntropyR.OPCODE,SPType.Quaternary);
+		String2SPInstructionType.put( WeightedUnaryMM.OPCODE,      SPType.Quaternary);
+		String2SPInstructionType.put( WeightedUnaryMMR.OPCODE,     SPType.Quaternary);
 		
 		//cumsum/cumprod/cummin/cummax
-		String2SPInstructionType.put( "ucumack+"  , SPINSTRUCTION_TYPE.CumsumAggregate);
-		String2SPInstructionType.put( "ucumac*"   , SPINSTRUCTION_TYPE.CumsumAggregate);
-		String2SPInstructionType.put( "ucumacmin" , SPINSTRUCTION_TYPE.CumsumAggregate);
-		String2SPInstructionType.put( "ucumacmax" , SPINSTRUCTION_TYPE.CumsumAggregate);
-		String2SPInstructionType.put( "bcumoffk+" , SPINSTRUCTION_TYPE.CumsumOffset);
-		String2SPInstructionType.put( "bcumoff*"  , SPINSTRUCTION_TYPE.CumsumOffset);
-		String2SPInstructionType.put( "bcumoffmin", SPINSTRUCTION_TYPE.CumsumOffset);
-		String2SPInstructionType.put( "bcumoffmax", SPINSTRUCTION_TYPE.CumsumOffset);
+		String2SPInstructionType.put( "ucumack+"  , SPType.CumsumAggregate);
+		String2SPInstructionType.put( "ucumac*"   , SPType.CumsumAggregate);
+		String2SPInstructionType.put( "ucumacmin" , SPType.CumsumAggregate);
+		String2SPInstructionType.put( "ucumacmax" , SPType.CumsumAggregate);
+		String2SPInstructionType.put( "bcumoffk+" , SPType.CumsumOffset);
+		String2SPInstructionType.put( "bcumoff*"  , SPType.CumsumOffset);
+		String2SPInstructionType.put( "bcumoffmin", SPType.CumsumOffset);
+		String2SPInstructionType.put( "bcumoffmax", SPType.CumsumOffset);
 
 		//central moment, covariance, quantiles (sort/pick)
-		String2SPInstructionType.put( "cm"     , SPINSTRUCTION_TYPE.CentralMoment);
-		String2SPInstructionType.put( "cov"    , SPINSTRUCTION_TYPE.Covariance);
-		String2SPInstructionType.put( "qsort"  , SPINSTRUCTION_TYPE.QSort);
-		String2SPInstructionType.put( "qpick"  , SPINSTRUCTION_TYPE.QPick);
+		String2SPInstructionType.put( "cm"     , SPType.CentralMoment);
+		String2SPInstructionType.put( "cov"    , SPType.Covariance);
+		String2SPInstructionType.put( "qsort"  , SPType.QSort);
+		String2SPInstructionType.put( "qpick"  , SPType.QPick);
 		
-		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
+		String2SPInstructionType.put( "binuaggchain", SPType.BinUaggChain);
 		
-		String2SPInstructionType.put( "write"	, SPINSTRUCTION_TYPE.Write);
+		String2SPInstructionType.put( "write"	, SPType.Write);
 	
-		String2SPInstructionType.put( "castdtm" , SPINSTRUCTION_TYPE.Cast);
-		String2SPInstructionType.put( "castdtf"	, SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtm" , SPType.Cast);
+		String2SPInstructionType.put( "castdtf"	, SPType.Cast);
 		
-		String2SPInstructionType.put( "spoof"	, SPINSTRUCTION_TYPE.SpoofFused);
+		String2SPInstructionType.put( "spoof"	, SPType.SpoofFused);
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) 
@@ -309,7 +309,7 @@ public class SPInstructionParser extends InstructionParser
 		if ( str == null || str.isEmpty() )
 			return null;
 
-		SPINSTRUCTION_TYPE cptype = InstructionUtils.getSPType(str); 
+		SPType cptype = InstructionUtils.getSPType(str); 
 		if ( cptype == null )
 			// return null;
 			throw new DMLRuntimeException("Invalid SP Instruction Type: " + str);
@@ -319,7 +319,7 @@ public class SPInstructionParser extends InstructionParser
 		return spinst;
 	}
 	
-	public static SPInstruction parseSingleInstruction ( SPINSTRUCTION_TYPE sptype, String str ) 
+	public static SPInstruction parseSingleInstruction ( SPType sptype, String str ) 
 		throws DMLRuntimeException 
 	{	
 		if ( str == null || str.isEmpty() ) 
@@ -475,8 +475,7 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Cast:
 				return CastSPInstruction.parseInstruction(str);
-				
-			case INVALID:
+			
 			default:
 				throw new DMLRuntimeException("Invalid SP Instruction Type: " + sptype );
 		}

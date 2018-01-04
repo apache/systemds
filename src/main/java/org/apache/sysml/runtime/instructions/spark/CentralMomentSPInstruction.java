@@ -43,9 +43,8 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 
 public class CentralMomentSPInstruction extends UnarySPInstruction {
 
-	private CentralMomentSPInstruction(CMOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String str) {
-		super(op, in1, in2, in3, out, opcode, str);
+	private CentralMomentSPInstruction(CMOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
+		super(SPType.CentralMoment, op, in1, in2, in3, out, opcode, str);
 	}
 
 	public static CentralMomentSPInstruction parseInstruction(String str)

@@ -47,9 +47,9 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 	private SparkAggType _aggtype = null;
 	private AggregateOperator _aop = null;
 
-	protected AggregateUnarySPInstruction(AggregateUnaryOperator auop, AggregateOperator aop, CPOperand in,
+	protected AggregateUnarySPInstruction(SPType type, AggregateUnaryOperator auop, AggregateOperator aop, CPOperand in,
 			CPOperand out, SparkAggType aggtype, String opcode, String istr) {
-		super(auop, in, out, opcode, istr);
+		super(type, auop, in, out, opcode, istr);
 		_aggtype = aggtype;
 		_aop = aop;
 	}
@@ -71,7 +71,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		
 		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
 		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
-		return new AggregateUnarySPInstruction(aggun, aop, in1, out, aggtype, opcode, str);
+		return new AggregateUnarySPInstruction(SPType.AggregateUnary, aggun, aop, in1, out, aggtype, opcode, str);
 	}
 	
 	@Override

@@ -75,8 +75,8 @@ import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -195,11 +195,11 @@ public class InstructionUtils
 		return str.substring(ix1+1, ix2);
 	}
 
-	public static MRINSTRUCTION_TYPE getMRType( String str ) {
+	public static MRType getMRType( String str ) {
 		return MRInstructionParser.String2MRInstructionType.get( getOpCode(str) ); 
 	}
 
-	public static SPINSTRUCTION_TYPE getSPType( String str ) {
+	public static SPType getSPType( String str ) {
 		return SPInstructionParser.String2SPInstructionType.get( getOpCode(str) ); 
 	}
 

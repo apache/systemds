@@ -42,8 +42,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 	public boolean complementary = false;
 
 	private ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.ZeroOut;
+		super(MRType.ZeroOut, op, in, out);
 		instString = istr;
 		indexRange = rng;
 	}

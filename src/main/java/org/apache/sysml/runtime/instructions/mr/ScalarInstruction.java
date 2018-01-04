@@ -34,8 +34,7 @@ import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 public class ScalarInstruction extends UnaryMRInstructionBase {
 
 	private ScalarInstruction(ScalarOperator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
+		super(MRType.ArithmeticBinary, op, in, out);
 		instString = istr;
 	}
 

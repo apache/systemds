@@ -53,7 +53,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 
 	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
 			String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+		super(SPType.Reblock, op, in, out, opcode, instr);
 		brlen = br;
 		bclen = bc;
 		outputEmptyBlocks = emptyBlocks;

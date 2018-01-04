@@ -34,10 +34,8 @@ public class MMTSJMRInstruction extends UnaryInstruction {
 	private MMTSJType _type = null;
 
 	private MMTSJMRInstruction(Operator op, byte in, MMTSJType type, byte out, String istr) {
-		super(op, in, out, istr);
-		mrtype = MRINSTRUCTION_TYPE.MMTSJ;
+		super(MRType.MMTSJ, op, in, out, istr);
 		instString = istr;
-
 		_type = type;
 	}
 

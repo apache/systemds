@@ -67,8 +67,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 	private boolean _bSortIndInMem = false;
 
 	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Reorg;
+		super(SPType.Reorg, op, in, out, opcode, istr);
 	}
 
 	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out,
@@ -77,7 +76,6 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		_col = col;
 		_desc = desc;
 		_ixret = ixret;
-		_sptype = SPINSTRUCTION_TYPE.Reorg;
 		_bSortIndInMem = bSortIndInMem;
 	}
 

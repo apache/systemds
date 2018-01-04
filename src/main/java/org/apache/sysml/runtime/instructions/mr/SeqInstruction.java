@@ -34,8 +34,7 @@ public class SeqInstruction extends DataGenMRInstruction {
 
 	private SeqInstruction(Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double fromValue,
 			double toValue, double incrValue, String baseDir, String istr) {
-		super(op, DataGenMethod.SEQ, in, out, rows, cols, rpb, cpb, baseDir);
-		mrtype = MRINSTRUCTION_TYPE.Seq;
+		super(MRType.Seq, op, DataGenMethod.SEQ, in, out, rows, cols, rpb, cpb, baseDir);
 		this.fromValue = fromValue;
 		this.toValue = toValue;
 		this.incrValue = incrValue;

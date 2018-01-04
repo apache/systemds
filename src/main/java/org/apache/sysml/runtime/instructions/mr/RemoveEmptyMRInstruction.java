@@ -40,9 +40,8 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction {
 	private boolean _rmRows = true;
 
 	private RemoveEmptyMRInstruction(Operator op, byte in1, byte in2, long len, boolean rmRows, byte out, String istr) {
-		super(op, in1, in2, out, istr);
+		super(MRType.RemoveEmpty, op, in1, in2, out, istr);
 		instString = istr;
-
 		_len = len;
 		_rmRows = rmRows;
 	}

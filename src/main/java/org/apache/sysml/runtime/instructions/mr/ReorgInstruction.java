@@ -42,18 +42,15 @@ public class ReorgInstruction extends UnaryMRInstructionBase {
 	private boolean _outputEmptyBlocks = true;
 
 	private ReorgInstruction(ReorgOperator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Reorg;
+		super(MRType.Reorg, op, in, out);
 		instString = istr;
 	}
 
-	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
-	{
+	public void setInputMatrixCharacteristics( MatrixCharacteristics in ) {
 		_mcIn = in; 
 	}
 	
-	public void setOutputEmptyBlocks( boolean flag )
-	{
+	public void setOutputEmptyBlocks( boolean flag ) {
 		_outputEmptyBlocks = flag; 
 	}
 	

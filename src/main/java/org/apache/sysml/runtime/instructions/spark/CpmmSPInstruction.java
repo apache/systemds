@@ -52,10 +52,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class CpmmSPInstruction extends BinarySPInstruction {
 	private SparkAggType _aggtype;
 
-	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, SparkAggType aggtype,
-			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CPMM;
+	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
+		super(SPType.CPMM, op, in1, in2, out, opcode, istr);
 		_aggtype = aggtype;
 	}
 

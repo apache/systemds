@@ -30,10 +30,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class RelationalBinarySPInstruction extends BinarySPInstruction {
 
-	protected RelationalBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.RelationalBinary;
+	protected RelationalBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.RelationalBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static RelationalBinarySPInstruction parseInstruction ( String str ) 

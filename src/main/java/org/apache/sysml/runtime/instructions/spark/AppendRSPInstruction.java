@@ -29,10 +29,8 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 public abstract class AppendRSPInstruction extends BinarySPInstruction {
 	protected boolean _cbind = true;
 
-	AppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.RAppend;
+	protected AppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind, String opcode, String istr) {
+		super(SPType.RAppend, op, in1, in2, out, opcode, istr);
 		_cbind = cbind;
 	}
 

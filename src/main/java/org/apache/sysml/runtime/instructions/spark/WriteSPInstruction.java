@@ -57,11 +57,10 @@ public class WriteSPInstruction extends SPInstruction {
 	private FileFormatProperties formatProperties;
 
 	private WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
-		super(opcode, str);
+		super(SPType.Write, opcode, str);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
-
 		formatProperties = null; // set in case of csv
 	}
 

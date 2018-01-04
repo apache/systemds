@@ -62,9 +62,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 
 	private MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type,
 			boolean outputEmpty, SparkAggType aggtype, String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MAPMM;
-
+		super(SPType.MAPMM, op, in1, in2, out, opcode, istr);
 		_type = type;
 		_outputEmpty = outputEmpty;
 		_aggtype = aggtype;

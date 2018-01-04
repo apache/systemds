@@ -34,10 +34,8 @@ import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 
 public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction {
 
-	protected BuiltinBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.BuiltinBinary;
+	protected BuiltinBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.BuiltinBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static BuiltinBinarySPInstruction parseInstruction ( String str ) 

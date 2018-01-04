@@ -42,8 +42,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 	private CPOperand output;
 	
 	protected BuiltinNarySPInstruction(CPOperand[] in, CPOperand out, String opcode, String istr) {
-		super(opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.BuiltinNary;
+		super(SPType.BuiltinNary, opcode, istr);
 		inputs = in;
 		output = out;
 	}

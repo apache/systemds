@@ -41,14 +41,12 @@ import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
 public class CovarianceSPInstruction extends BinarySPInstruction {
 
-	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in, in2, out, opcode, istr);
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.Covariance, op, in, in2, out, opcode, istr);
 	}
 
-	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
-		super(op, in, in2, out, opcode, istr);
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(SPType.Covariance, op, in, in2, out, opcode, istr);
 	}
 
 	public static CovarianceSPInstruction parseInstruction(String str)

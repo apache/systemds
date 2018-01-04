@@ -47,10 +47,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
 	private StorageLevel _level = null;
 
-	private CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode,
-			String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Checkpoint;
+	private CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode, String istr) {
+		super(SPType.Checkpoint, op, in, out, opcode, istr);
 		_level = level;
 	}
 

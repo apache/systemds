@@ -52,6 +52,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -318,7 +319,7 @@ public class SortMR
 			String[] sparts = InstructionUtils.getInstructionParts ( str );
 			byte in = Byte.parseByte(sparts[1]);
 			byte out = Byte.parseByte(sparts[2]);
-			return new UnaryInstruction(null, in, out, str);
+			return new UnaryInstruction(MRType.Sort, null, in, out, str);
 		}
 	}
 

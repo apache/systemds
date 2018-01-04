@@ -23,8 +23,8 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 
 
 public class InstructionParser 
@@ -46,7 +46,7 @@ public class InstructionParser
 		}
 		else if ( execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
 		{
-			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
+			SPType sptype = InstructionUtils.getSPType(str); 
 			if( sptype == null )
 				throw new DMLRuntimeException("Unknown SPARK instruction: " + str);
 			return SPInstructionParser.parseSingleInstruction (sptype, str);
@@ -59,7 +59,7 @@ public class InstructionParser
 			return GPUInstructionParser.parseSingleInstruction (gputype, str);
 		}
 		else if ( execType.equalsIgnoreCase("MR") ) {
-			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
+			MRType mrtype = InstructionUtils.getMRType(str); 
 			if( mrtype == null )
 				throw new DMLRuntimeException("Unknown MR instruction: " + str);
 			return MRInstructionParser.parseSingleInstruction (mrtype, str);

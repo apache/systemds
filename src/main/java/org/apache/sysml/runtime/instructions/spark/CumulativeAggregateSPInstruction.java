@@ -39,10 +39,8 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
 public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction {
 
-	private CumulativeAggregateSPInstruction(AggregateUnaryOperator op, CPOperand in1, CPOperand out, String opcode,
-			String istr) {
-		super(op, null, in1, out, null, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CumsumAggregate;
+	private CumulativeAggregateSPInstruction(AggregateUnaryOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
+		super(SPType.CumsumAggregate, op, null, in1, out, null, opcode, istr);
 	}
 
 	public static CumulativeAggregateSPInstruction parseInstruction( String str ) 
@@ -50,7 +48,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields ( parts, 2 );
-				
+		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);

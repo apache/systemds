@@ -66,10 +66,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 
 	private QuaternarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 			CPOperand out, boolean cacheU, boolean cacheV, String opcode, String str) {
-		super(op, in1, in2, in3, out, opcode, str);
-		_sptype = SPINSTRUCTION_TYPE.Quaternary;
+		super(SPType.Quaternary, op, in1, in2, in3, out, opcode, str);
 		_input4 = in4;
-
 		_cacheU = cacheU;
 		_cacheV = cacheV;
 	}

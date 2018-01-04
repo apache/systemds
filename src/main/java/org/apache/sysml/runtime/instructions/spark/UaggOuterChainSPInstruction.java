@@ -69,14 +69,10 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 
 	private UaggOuterChainSPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
 			CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(bop, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.UaggOuterChain;
-
+		super(SPType.UaggOuterChain, bop, in1, in2, out, opcode, istr);
 		_uaggOp = uaggop;
 		_aggOp = aggop;
 		_bOp = bop;
-
-		_sptype = SPINSTRUCTION_TYPE.UaggOuterChain;
 		instString = istr;
 	}
 

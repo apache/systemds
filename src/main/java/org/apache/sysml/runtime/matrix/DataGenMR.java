@@ -44,7 +44,7 @@ import org.apache.sysml.runtime.instructions.MRInstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -130,7 +130,7 @@ public class DataGenMR
 			dataGenInsStr=dataGenInsStr+Lop.INSTRUCTION_DELIMITOR+dataGenInstructions[i];
 			
 			MRInstruction mrins = MRInstructionParser.parseSingleInstruction(dataGenInstructions[i]);
-			MRINSTRUCTION_TYPE mrtype = mrins.getMRInstructionType();
+			MRType mrtype = mrins.getMRInstructionType();
 			DataGenMRInstruction genInst = (DataGenMRInstruction) mrins;
 			
 			rlens[i]  = genInst.getRows();
@@ -141,7 +141,7 @@ public class DataGenMR
 			maxbrlen = Math.max(maxbrlen, brlens[i]);
 			maxbclen = Math.max(maxbclen, bclens[i]);
 
-			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
+			if ( mrtype == MRType.Rand ) 
 			{
 				RandInstruction randInst = (RandInstruction) mrins;
 				inputs[i]=LibMatrixDatagen.generateUniqueSeedPath(genInst.getBaseDir());
@@ -186,7 +186,7 @@ public class DataGenMR
 				}
 				inputInfos[i] = InputInfo.TextCellInputInfo;
 			}
-			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
+			else if ( mrtype == MRType.Seq ) {
 				SeqInstruction seqInst = (SeqInstruction) mrins;
 				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".seqinput";
 				maxsparsity = 1.0; //always dense

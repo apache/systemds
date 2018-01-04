@@ -34,8 +34,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class CompressionSPInstruction extends UnarySPInstruction {
 
 	private CompressionSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Compression;
+		super(SPType.Compression, op, in, out, opcode, istr);
 	}
 
 	public static CompressionSPInstruction parseInstruction ( String str ) 

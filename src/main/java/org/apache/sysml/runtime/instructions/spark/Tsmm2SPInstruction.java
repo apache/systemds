@@ -57,8 +57,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 	private MMTSJType _type = null;
 
 	private Tsmm2SPInstruction(Operator op, CPOperand in1, CPOperand out, MMTSJType type, String opcode, String istr) {
-		super(op, in1, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.TSMM2;
+		super(SPType.TSMM2, op, in1, out, opcode, istr);
 		_type = type;
 	}
 

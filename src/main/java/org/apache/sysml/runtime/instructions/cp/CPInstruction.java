@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class CPInstruction extends Instruction 
 {
-	public enum CPType { INVALID, 
+	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, 
 		Ternary, Quaternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, BuiltinNary, 
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, 

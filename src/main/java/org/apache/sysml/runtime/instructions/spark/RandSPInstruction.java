@@ -89,7 +89,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			CPOperand rows, CPOperand cols, int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
 			String dir, String probabilityDensityFunction, String pdfParams,
 			CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
+		super(SPType.Rand, op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;

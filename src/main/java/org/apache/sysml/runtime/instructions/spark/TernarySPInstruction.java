@@ -64,7 +64,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 	private TernarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
+		super(SPType.Ternary, op, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
 		_outDim2 = outputDim2;

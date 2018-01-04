@@ -36,7 +36,7 @@ public class CumulativeOffsetInstruction extends BinaryInstruction {
 	private UnaryOperator _uop = null;
 
 	private CumulativeOffsetInstruction(byte in1, byte in2, byte out, String opcode, String istr) {
-		super(null, in1, in2, out, istr);
+		super(MRType.CumsumOffset, null, in1, in2, out, istr);
 
 		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());

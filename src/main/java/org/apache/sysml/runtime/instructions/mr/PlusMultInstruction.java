@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class PlusMultInstruction extends BinaryInstruction {
 	private PlusMultInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
-		super(op, in1, in2, out, istr);
+		super(MRType.ArithmeticBinary2, op, in1, in2, out, istr);
 	}
 
 	public static PlusMultInstruction parseInstruction ( String str ) 

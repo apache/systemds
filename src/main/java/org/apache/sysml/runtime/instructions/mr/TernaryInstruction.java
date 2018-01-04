@@ -42,30 +42,9 @@ public class TernaryInstruction extends MRInstruction {
 	public double scalar_input3;
 	private long _outputDim1, _outputDim2;
 
-	/**
-	 * Single matrix input
-	 * 
-	 * @param op
-	 *            operation type
-	 * @param in1
-	 *            input 1 (byte)
-	 * @param scalar_in2
-	 *            input 2 (double)
-	 * @param scalar_in3
-	 *            input 3 (double)
-	 * @param out
-	 *            output
-	 * @param outputDim1
-	 *            output dimension 1
-	 * @param outputDim2
-	 *            output dimension 2
-	 * @param istr
-	 *            instruction string
-	 */
-	private TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out,
+	private TernaryInstruction(MRType type, OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out,
 			long outputDim1, long outputDim2, String istr) {
-		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Ternary;
+		super(type, null, out);
 		_op = op;
 		input1 = in1;
 		scalar_input2 = scalar_in2;
@@ -75,30 +54,9 @@ public class TernaryInstruction extends MRInstruction {
 		instString = istr;
 	}
 
-	/**
-	 * Two matrix inputs
-	 * 
-	 * @param op
-	 *            operation type
-	 * @param in1
-	 *            input 1 (byte)
-	 * @param in2
-	 *            input 2 (byte)
-	 * @param scalar_in3
-	 *            input 3 (double)
-	 * @param out
-	 *            output
-	 * @param outputDim1
-	 *            output dimension 1
-	 * @param outputDim2
-	 *            output dimension 2
-	 * @param istr
-	 *            instruction string
-	 */
-	private TernaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1,
+	private TernaryInstruction(MRType type, OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1,
 			long outputDim2, String istr) {
-		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Ternary;
+		super(type, null, out);
 		_op = op;
 		input1 = in1;
 		input2 = in2;
@@ -108,30 +66,9 @@ public class TernaryInstruction extends MRInstruction {
 		instString = istr;
 	}
 
-	/**
-	 * Two matrix input
-	 * 
-	 * @param op
-	 *            operation type
-	 * @param in1
-	 *            input 1 (byte)
-	 * @param scalar_in2
-	 *            input 2 (double)
-	 * @param in3
-	 *            input 3 (byte)
-	 * @param out
-	 *            output
-	 * @param outputDim1
-	 *            output dimension 1
-	 * @param outputDim2
-	 *            output dimension 2
-	 * @param istr
-	 *            instruction string
-	 */
-	private TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1,
+	private TernaryInstruction(MRType type, OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1,
 			long outputDim2, String istr) {
-		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Ternary;
+		super(type, null, out);
 		_op = op;
 		input1 = in1;
 		scalar_input2 = scalar_in2;
@@ -141,30 +78,9 @@ public class TernaryInstruction extends MRInstruction {
 		instString = istr;
 	}
 
-	/**
-	 * Three matrix inputs
-	 * 
-	 * @param op
-	 *            operation type
-	 * @param in1
-	 *            input 1 (byte)
-	 * @param in2
-	 *            input 2 (byte)
-	 * @param in3
-	 *            input 3 (byte)
-	 * @param out
-	 *            output
-	 * @param outputDim1
-	 *            output dimension 1
-	 * @param outputDim2
-	 *            output dimension 2
-	 * @param istr
-	 *            instruction string
-	 */
-	protected TernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1,
+	protected TernaryInstruction(MRType type, OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1,
 			long outputDim2, String istr) {
-		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Ternary;
+		super(type, null, out);
 		_op = op;
 		input1 = in1;
 		input2 = in2;
@@ -214,27 +130,27 @@ public class TernaryInstruction extends MRInstruction {
 			case CTABLE_TRANSFORM: {
 				in2 = Byte.parseByte(parts[2]);
 				in3 = Byte.parseByte(parts[3]);
-				return new TernaryInstruction(op, in1, in2, in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(MRType.Ternary, op, in1, in2, in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_SCALAR_WEIGHT: {
 				in2 = Byte.parseByte(parts[2]);
 				double scalar_in3 = Double.parseDouble(parts[3]);
-				return new TernaryInstruction(op, in1, in2, scalar_in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(MRType.Ternary, op, in1, in2, scalar_in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_EXPAND_SCALAR_WEIGHT: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				double type = Double.parseDouble(parts[3]); //used as type (1 left, 0 right)
-				return new TernaryInstruction(op, in1, scalar_in2, type, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(MRType.Ternary, op, in1, scalar_in2, type, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_HISTOGRAM: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				double scalar_in3 = Double.parseDouble(parts[3]);
-				return new TernaryInstruction(op, in1, scalar_in2, scalar_in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(MRType.Ternary, op, in1, scalar_in2, scalar_in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				in3 = Byte.parseByte(parts[3]);
-				return new TernaryInstruction(op, in1, scalar_in2, in3, out, outputDim1, outputDim2, str);	
+				return new TernaryInstruction(MRType.Ternary, op, in1, scalar_in2, in3, out, outputDim1, outputDim2, str);	
 			}
 			default:
 				throw new DMLRuntimeException("Unrecognized opcode in Ternary Instruction: " + op);	

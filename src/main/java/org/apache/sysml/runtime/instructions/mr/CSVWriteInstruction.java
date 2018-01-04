@@ -33,8 +33,7 @@ public class CSVWriteInstruction extends UnaryMRInstructionBase {
 	public boolean sparse = DataExpression.DEFAULT_DELIM_SPARSE;
 
 	public CSVWriteInstruction(Operator op, byte in, byte out, String del, String hdr, boolean sps, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.CSVWrite;
+		super(MRType.CSVWrite, op, in, out);
 		delim=del;
 		header=hdr;
 		sparse=sps;

@@ -53,12 +53,11 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 *            instruction string
 	 */
 	private MapMultChainInstruction(ChainType type, byte in1, byte in2, byte out, String istr) {
-		super(null, out);
+		super(MRType.MapMultChain, null, out);
 		_chainType = type;
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = -1;
-		mrtype = MRINSTRUCTION_TYPE.MapMultChain;
 		instString = istr;
 	}
 
@@ -72,17 +71,12 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @param out output byte
 	 * @param istr instruction string
 	 */
-	public MapMultChainInstruction(ChainType type, byte in1, byte in2, byte in3, byte out, String istr)
-	{
-		super(null, out);
-		
+	public MapMultChainInstruction(ChainType type, byte in1, byte in2, byte in3, byte out, String istr) {
+		super(MRType.MapMultChain, null, out);
 		_chainType = type;
-		
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = in3;
-		
-		mrtype = MRINSTRUCTION_TYPE.MapMultChain;
 		instString = istr;
 	}
 	

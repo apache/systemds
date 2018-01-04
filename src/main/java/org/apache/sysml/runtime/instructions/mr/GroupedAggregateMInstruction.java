@@ -41,7 +41,7 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 	private int _ngroups = -1;
 
 	private GroupedAggregateMInstruction(Operator op, byte in1, byte in2, byte out, int ngroups, String istr) {
-		super(op, in1, in2, out);
+		super(MRType.GroupedAggregate, op, in1, in2, out);
 		_ngroups = ngroups;
 	}
 

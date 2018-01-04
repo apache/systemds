@@ -33,18 +33,16 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 	public CPOperand output;
 	public CPOperand input1, input2, input3;
 
-	protected ComputationSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, opcode, istr);
+	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = null;
 		output = out;
 	}
 
-	protected ComputationSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
-		super(op, opcode, istr);
+	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;

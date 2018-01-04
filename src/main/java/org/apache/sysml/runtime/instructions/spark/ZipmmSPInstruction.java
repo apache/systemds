@@ -47,9 +47,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 
 	private ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean tRewrite,
 			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.ZIPMM;
-
+		super(SPType.ZIPMM, op, in1, in2, out, opcode, istr);
 		_tRewrite = tRewrite;
 	}
 

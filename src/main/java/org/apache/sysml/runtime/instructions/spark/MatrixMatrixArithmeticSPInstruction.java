@@ -29,13 +29,6 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 	protected MatrixMatrixArithmeticSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) throws DMLRuntimeException {
 		super(op, in1, in2, out, opcode, istr);
-
-		// sanity check opcodes
-		if (!(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
-				|| opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
-				|| opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("1-*"))) {
-			throw new DMLRuntimeException("Unknown opcode in MatrixMatrixArithmeticSPInstruction: " + toString());
-		}
 	}
 
 	@Override
@@ -45,5 +38,4 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 		//common binary matrix-matrix process instruction
 		super.processMatrixMatrixBinaryInstruction(ec);
 	}
-	
 }

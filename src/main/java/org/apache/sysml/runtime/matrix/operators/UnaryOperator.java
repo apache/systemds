@@ -35,7 +35,7 @@ public class UnaryOperator extends Operator
 	}
 	
 	public UnaryOperator(ValueFunction p, int numThreads) {
-		super(p instanceof Builtin && 
+		super(p instanceof Builtin &&
 			((Builtin)p).bFunc==Builtin.BuiltinCode.SIN || ((Builtin)p).bFunc==Builtin.BuiltinCode.TAN 
 			// sinh and tanh are zero only at zero, else they are nnz
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SINH || ((Builtin)p).bFunc==Builtin.BuiltinCode.TANH

@@ -128,13 +128,11 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "-nz"  , CPType.ArithmeticBinary); //special - case
 		String2CPInstructionType.put( "+*"  , CPType.ArithmeticBinary); 
 		String2CPInstructionType.put( "-*"  , CPType.ArithmeticBinary); 
-
 		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPType.BooleanBinary);
 		String2CPInstructionType.put( "||"   , CPType.BooleanBinary);
 		String2CPInstructionType.put( "xor"  , CPType.BooleanBinary);
-		
 		String2CPInstructionType.put( "!"    , CPType.BooleanUnary);
 
 		// Relational Instruction Opcodes 

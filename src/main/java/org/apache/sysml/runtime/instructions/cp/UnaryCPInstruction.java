@@ -24,6 +24,7 @@ import org.apache.sysml.runtime.functionobjects.Not;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 
@@ -87,11 +88,19 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 		}
 		return opcode;
 	}
-	
+
 	static SimpleOperator getSimpleUnaryOperator(String opcode)
 			throws DMLRuntimeException {
 		if (opcode.equalsIgnoreCase("!"))
 			return new SimpleOperator(Not.getNotFnObject());
+
+		throw new DMLRuntimeException("Unknown unary operator " + opcode);
+	}
+
+	static UnaryOperator getUnaryOperator(String opcode)
+		throws DMLRuntimeException {
+		if (opcode.equalsIgnoreCase("!"))
+			return new UnaryOperator(Not.getNotFnObject());
 
 		throw new DMLRuntimeException("Unknown unary operator " + opcode);
 	}

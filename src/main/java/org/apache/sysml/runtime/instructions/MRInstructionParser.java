@@ -184,6 +184,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "^2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2MRInstructionType.put( "*2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2MRInstructionType.put( "-nz"  , MRINSTRUCTION_TYPE.ArithmeticBinary); //special - case
+		String2MRInstructionType.put( "&&"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "||"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "xor"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "+*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
 		String2MRInstructionType.put( "-*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
 		
@@ -203,7 +206,10 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "map<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-	
+		String2MRInstructionType.put( "map&&"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map||"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "mapxor"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		
 		String2MRInstructionType.put( "uaggouterchain", MRINSTRUCTION_TYPE.UaggOuterChain);
 		
 		// REORG Instruction Opcodes 

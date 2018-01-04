@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	ElementwiseAdditionMultiplicationTest.class,
 	ElementwiseAdditionTest.class,
 	ElementwiseDivisionTest.class,
+	ElementwiseLogicalTest.class,
 	ElementwiseModulusTest.class,
 	ElementwiseMultiplicationTest.class,
 	ElementwiseSubtractionTest.class,

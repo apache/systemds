@@ -131,7 +131,6 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "zipmm"      , SPINSTRUCTION_TYPE.ZIPMM);
 		String2SPInstructionType.put( "pmapmm"     , SPINSTRUCTION_TYPE.PMAPMM);
 		
-		
 		String2SPInstructionType.put( "uaggouterchain", SPINSTRUCTION_TYPE.UaggOuterChain);
 		
 		//ternary aggregate operators
@@ -175,14 +174,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map1-*"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "map+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "map-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "map>"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map>="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map<"    , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map<="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map=="   , SPINSTRUCTION_TYPE.RelationalBinary);
-		String2SPInstructionType.put( "map!="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "map-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		
 		// Relational Instruction Opcodes 
 		String2SPInstructionType.put( "=="   , SPINSTRUCTION_TYPE.RelationalBinary);
@@ -191,6 +184,22 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( ">"    , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "<="   , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( ">="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map>"    , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map>="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map<"    , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map<="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map=="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "map!="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		
+		// Boolean Instruction Opcodes 
+		String2SPInstructionType.put( "&&"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "||"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "xor"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "!"    , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "map&&"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "map||"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "mapxor"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "map!"    , SPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
@@ -203,7 +212,8 @@ public class SPInstructionParser extends InstructionParser
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
 		String2SPInstructionType.put( "log_nz"  , SPINSTRUCTION_TYPE.Builtin);
-		
+
+		// Boolean Binary builtin
 		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "mapmax"  , SPINSTRUCTION_TYPE.BuiltinBinary);
@@ -366,7 +376,7 @@ public class SPInstructionParser extends InstructionParser
 				
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);
-			
+				
 			//ternary instructions
 			case Ternary:
 				return TernarySPInstruction.parseInstruction(str);

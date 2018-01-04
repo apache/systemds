@@ -1956,12 +1956,12 @@ public class DMLTranslator
 			right = processExpression(source.getRight(), null, hops);
 		}
 
-	    //prepare target identifier and ensure that output type is boolean 
-	    //(type should not be determined by target (e.g., string for print)
-	    if (target == null) {
-	        target = createTarget(source);
-	    }
-	    target.setValueType(ValueType.BOOLEAN);
+		//prepare target identifier and ensure that output type is boolean 
+		//(type should not be determined by target (e.g., string for print)
+		if (target == null)
+			target = createTarget(source);
+		if( target.getDataType().isScalar() )
+			target.setValueType(ValueType.BOOLEAN);
 		
 		if (source.getRight() == null) {
 			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
@@ -2664,7 +2664,7 @@ public class DMLTranslator
 
 		case XOR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-				ValueType.BOOLEAN, Hop.OpOp2.XOR, expr, expr2);
+				target.getValueType(), Hop.OpOp2.XOR, expr, expr2);
 			break;
 
 		case ABS:

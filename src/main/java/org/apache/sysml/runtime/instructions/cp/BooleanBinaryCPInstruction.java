@@ -29,30 +29,26 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class BooleanBinaryCPInstruction extends BinaryCPInstruction {
 
-	private BooleanBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+	protected BooleanBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
 		super(CPType.BooleanBinary, op, in1, in2, out, opcode, istr);
 	}
 
-	public static BooleanBinaryCPInstruction parseInstruction (String str) 
+	public static BinaryCPInstruction parseInstruction (String str)
 		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
-		
-		// Boolean operations must be performed on BOOLEAN
-		ValueType vt1 = in1.getValueType();
-		ValueType vt2 = in2.getValueType();
-		ValueType vt3 = out.getValueType();
-		if ( vt1 != ValueType.BOOLEAN || vt3 != ValueType.BOOLEAN 
-				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
-			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
-		
-		// Determine appropriate Function Object based on opcode	
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
-		return new BooleanBinaryCPInstruction(bop, in1, in2, out, opcode, str);
+		
+		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
+			return new BooleanBinaryCPInstruction(bop, in1, in2, out, opcode, str);
+		else if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
+			return new MatrixMatrixArithmeticCPInstruction(bop, in1, in2, out, opcode, str);
+		else
+			return new ScalarMatrixArithmeticCPInstruction(bop, in1, in2, out, opcode, str);
 	}
 	
 	@Override

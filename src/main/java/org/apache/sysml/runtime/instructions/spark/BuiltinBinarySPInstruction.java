@@ -66,7 +66,7 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction {
 		}
 		else //default builtin function
 		{
-			opcode = parseBinaryInstruction(str, in1, in2, out);	
+			opcode = parseBinaryInstruction(str, in1, in2, out);
 			func = Builtin.getBuiltinFnObject(opcode);
 		}
 		
@@ -74,7 +74,7 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction {
 		if( func == null )
 			throw new DMLRuntimeException("Failed to create builtin value function for opcode: "+opcode);
 		
-		// Determine appropriate Function Object based on opcode			
+		// Determine appropriate Function Object based on opcode
 		if (in1.getDataType() != in2.getDataType()) //MATRIX-SCALAR
 		{
 			return new MatrixScalarBuiltinSPInstruction(new RightScalarOperator(func, 0), in1, in2, out, opcode, str);					

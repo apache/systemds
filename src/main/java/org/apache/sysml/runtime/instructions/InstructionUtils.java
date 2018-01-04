@@ -679,10 +679,12 @@ public class InstructionUtils
 			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
 		else if(opcode.equalsIgnoreCase(">=") || opcode.equalsIgnoreCase("map>="))
 			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase("&&"))
+		else if(opcode.equalsIgnoreCase("&&") || opcode.equalsIgnoreCase("map&&"))
 			return new BinaryOperator(And.getAndFnObject());
-		else if(opcode.equalsIgnoreCase("||"))
+		else if(opcode.equalsIgnoreCase("||") || opcode.equalsIgnoreCase("map||"))
 			return new BinaryOperator(Or.getOrFnObject());
+		else if(opcode.equalsIgnoreCase("xor") || opcode.equalsIgnoreCase("mapxor"))
+			return new BinaryOperator(Xor.getXorFnObject());
 		else if(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("map+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("map-"))

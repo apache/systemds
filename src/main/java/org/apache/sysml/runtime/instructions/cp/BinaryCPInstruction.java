@@ -20,14 +20,14 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 
-	protected BinaryCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
+	protected BinaryCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
 
@@ -36,6 +36,26 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		super(type, op, in1, in2, in3, out, opcode, istr);
 	}
 
+	public static BinaryCPInstruction parseInstruction( String str ) 
+		throws DMLRuntimeException 
+	{
+		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		String opcode = parseBinaryInstruction(str, in1, in2, out);
+		
+		checkOutputDataType(in1, in2, out);
+		
+		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
+		
+		if( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR ) 
+			return new BinaryScalarScalarCPInstruction(operator, in1, in2, out, opcode, str);
+		else if( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
+			return new BinaryMatrixMatrixCPInstruction(operator, in1, in2, out, opcode, str);
+		else
+			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
+	}
+	
 	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
 		throws DMLRuntimeException
 	{	

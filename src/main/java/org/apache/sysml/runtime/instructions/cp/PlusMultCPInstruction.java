@@ -32,7 +32,7 @@ public class PlusMultCPInstruction extends ComputationCPInstruction {
 	
 	private PlusMultCPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String str) {
-		super(CPType.ArithmeticBinary, op, in1, in2, in3, out, opcode, str);
+		super(CPType.Binary, op, in1, in2, in3, out, opcode, str);
 	}
 
 	public static PlusMultCPInstruction parseInstruction(String str)

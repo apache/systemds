@@ -50,7 +50,7 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -477,7 +477,7 @@ public class ProgramRecompiler
 		
 		//create instruction set
 		ArrayList<Instruction> tmp = new ArrayList<>();
-		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
+		Instruction inst = BinaryCPInstruction.parseInstruction(str);
 		tmp.add(inst);
 		
 		return tmp;

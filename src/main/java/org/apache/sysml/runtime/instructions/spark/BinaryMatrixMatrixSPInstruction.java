@@ -24,17 +24,17 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixMatrixBuiltinSPInstruction extends BuiltinBinarySPInstruction {
+public class BinaryMatrixMatrixSPInstruction extends BinarySPInstruction {
 
-	protected MatrixMatrixBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
+	protected BinaryMatrixMatrixSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) throws DMLRuntimeException {
+		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
-	{	
+	{
 		//common binary matrix-matrix process instruction
 		super.processMatrixMatrixBinaryInstruction(ec);
 	}

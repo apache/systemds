@@ -870,16 +870,20 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				    		|| optype.equals("uarimax") || optype.equals("ua*") )
 				    	return d1m * d1n;
 					
-				    return 0;	
+				    return 0;
 				    
-				case ArithmeticBinary: //opcodes: +, -, *, /, ^ (incl. ^2, *2)
+				case Binary: //opcodes: +, -, *, /, ^ (incl. ^2, *2),
+					//max, min, solve, ==, !=, <, >, <=, >=  
+					//note: all relational ops are not sparsesafe
 					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
 					if( optype.equals("+") || optype.equals("-") //sparse safe
 						&& ( leftSparse || rightSparse ) )
 						return d1m*d1n*d1s + d2m*d2n*d2s;
+					else if( optype.equals("solve") ) //see also MultiReturnBuiltin
+						return d1m * d1n * d1n; //for 1kx1k ~ 1GFLOP -> 0.5s
 					else
 						return d3m*d3n;
-					
+				
 				case Ternary: //opcodes: ctable
 					if( optype.equals("ctable") ){
 						if( leftSparse )
@@ -888,10 +892,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 							return d1m * d1n;
 					}
 					return 0;
-					
+				
 				case BooleanBinary: //opcodes: &&, ||
 					return 1; //always scalar-scalar
-						
+				
 				case BooleanUnary: //opcodes: !
 					return 1; //always scalar-scalar
 
@@ -902,14 +906,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						return 3 * d3m * d3n;
 					else //unary
 						return d3m * d3n;
-					
-				case BuiltinBinary: //opcodes: max, min, solve
-					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
-					if( optype.equals("solve") ) //see also MultiReturnBuiltin
-						return d1m * d1n * d1n; //for 1kx1k ~ 1GFLOP -> 0.5s
-					else //default
-						return d3m * d3n;
-
 					
 				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
 					//TODO add cost functions for commons math builtins: inverse, cholesky
@@ -945,11 +941,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return DEFAULT_NFLOP_CP * 
 					       (((leftSparse) ? d1m * d1n * d1s : d1m * d1n ) +
 					        ((rightSparse) ? d2m * d2n * d2s : d2m * d2n ));
-					
-				case RelationalBinary: //opcodes: ==, !=, <, >, <=, >=  
-					//note: all relational ops are not sparsesafe
-					return d3m * d3n; //covers all combinations of scalar and matrix  
-					
+				
 				case Variable: //opcodes: assignvar, cpvar, rmvar, rmfilevar, assignvarwithfile, attachfiletovar, valuepick, iqsize, read, write, createvar, setfilename, castAsMatrix
 					if( optype.equals("write") ){
 						boolean text = args[0].equals("textcell") || args[0].equals("csv");

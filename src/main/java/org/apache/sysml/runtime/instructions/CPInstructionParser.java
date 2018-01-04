@@ -33,10 +33,9 @@ import org.apache.sysml.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanUnaryCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
@@ -60,7 +59,6 @@ import org.apache.sysml.runtime.instructions.cp.PlusMultCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuaternaryCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
@@ -115,19 +113,19 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		
 		// Arithmetic Instruction Opcodes 
-		String2CPInstructionType.put( "+"    , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "-"    , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "*"    , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "/"    , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "%%"   , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "%/%"  , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "^"    , CPType.ArithmeticBinary);
-		String2CPInstructionType.put( "1-*"  , CPType.ArithmeticBinary); //special * case
-		String2CPInstructionType.put( "^2"   , CPType.ArithmeticBinary); //special ^ case
-		String2CPInstructionType.put( "*2"   , CPType.ArithmeticBinary); //special * case
-		String2CPInstructionType.put( "-nz"  , CPType.ArithmeticBinary); //special - case
-		String2CPInstructionType.put( "+*"  , CPType.ArithmeticBinary); 
-		String2CPInstructionType.put( "-*"  , CPType.ArithmeticBinary); 
+		String2CPInstructionType.put( "+"    , CPType.Binary);
+		String2CPInstructionType.put( "-"    , CPType.Binary);
+		String2CPInstructionType.put( "*"    , CPType.Binary);
+		String2CPInstructionType.put( "/"    , CPType.Binary);
+		String2CPInstructionType.put( "%%"   , CPType.Binary);
+		String2CPInstructionType.put( "%/%"  , CPType.Binary);
+		String2CPInstructionType.put( "^"    , CPType.Binary);
+		String2CPInstructionType.put( "1-*"  , CPType.Binary); //special * case
+		String2CPInstructionType.put( "^2"   , CPType.Binary); //special ^ case
+		String2CPInstructionType.put( "*2"   , CPType.Binary); //special * case
+		String2CPInstructionType.put( "-nz"  , CPType.Binary); //special - case
+		String2CPInstructionType.put( "+*"   , CPType.Binary);
+		String2CPInstructionType.put( "-*"   , CPType.Binary);
 		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPType.BooleanBinary);
@@ -136,20 +134,20 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "!"    , CPType.BooleanUnary);
 
 		// Relational Instruction Opcodes 
-		String2CPInstructionType.put( "=="   , CPType.RelationalBinary);
-		String2CPInstructionType.put( "!="   , CPType.RelationalBinary);
-		String2CPInstructionType.put( "<"    , CPType.RelationalBinary);
-		String2CPInstructionType.put( ">"    , CPType.RelationalBinary);
-		String2CPInstructionType.put( "<="   , CPType.RelationalBinary);
-		String2CPInstructionType.put( ">="   , CPType.RelationalBinary);
+		String2CPInstructionType.put( "=="   , CPType.Binary);
+		String2CPInstructionType.put( "!="   , CPType.Binary);
+		String2CPInstructionType.put( "<"    , CPType.Binary);
+		String2CPInstructionType.put( ">"    , CPType.Binary);
+		String2CPInstructionType.put( "<="   , CPType.Binary);
+		String2CPInstructionType.put( ">="   , CPType.Binary);
 		
 		// Builtin Instruction Opcodes 
 		String2CPInstructionType.put( "log"  , CPType.Builtin);
 		String2CPInstructionType.put( "log_nz"  , CPType.Builtin);
 
-		String2CPInstructionType.put( "max"  , CPType.BuiltinBinary);
-		String2CPInstructionType.put( "min"  , CPType.BuiltinBinary);
-		String2CPInstructionType.put( "solve"  , CPType.BuiltinBinary);
+		String2CPInstructionType.put( "max"  , CPType.Binary);
+		String2CPInstructionType.put( "min"  , CPType.Binary);
+		String2CPInstructionType.put( "solve"  , CPType.Binary);
 		
 		String2CPInstructionType.put( "exp"   , CPType.BuiltinUnary);
 		String2CPInstructionType.put( "abs"   , CPType.BuiltinUnary);
@@ -320,12 +318,12 @@ public class CPInstructionParser extends InstructionParser
 			case AggregateTernary:
 				return AggregateTernaryCPInstruction.parseInstruction(str);
 				
-			case ArithmeticBinary:
+			case Binary:
 				String opcode = InstructionUtils.getOpCode(str);
 				if( opcode.equals("+*") || opcode.equals("-*")  )
 					return PlusMultCPInstruction.parseInstruction(str);
 				else
-					return ArithmeticBinaryCPInstruction.parseInstruction(str);
+					return BinaryCPInstruction.parseInstruction(str);
 			
 			case Ternary:
 				return TernaryCPInstruction.parseInstruction(str);
@@ -338,9 +336,6 @@ public class CPInstructionParser extends InstructionParser
 				
 			case BooleanUnary:
 				return BooleanUnaryCPInstruction.parseInstruction(str);
-				
-			case BuiltinBinary:
-				return BuiltinBinaryCPInstruction.parseInstruction(str);
 				
 			case BuiltinUnary:
 				return BuiltinUnaryCPInstruction.parseInstruction(str);
@@ -362,9 +357,6 @@ public class CPInstructionParser extends InstructionParser
 	
 			case Append:
 				return AppendCPInstruction.parseInstruction(str);
-				
-			case RelationalBinary:
-				return RelationalBinaryCPInstruction.parseInstruction(str);
 			
 			case Variable:
 				return VariableCPInstruction.parseInstruction(str);
@@ -412,7 +404,7 @@ public class CPInstructionParser extends InstructionParser
 						return BuiltinUnaryCPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
-						return BuiltinBinaryCPInstruction.parseInstruction(str);
+						return BinaryCPInstruction.parseInstruction(str);
 					}
 				}
 				else {

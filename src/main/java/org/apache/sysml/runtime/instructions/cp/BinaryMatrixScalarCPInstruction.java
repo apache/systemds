@@ -26,31 +26,30 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
-//TODO rename to MatrixScalar...
-public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstruction {
+public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 
-	protected ScalarMatrixRelationalCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+	protected BinaryMatrixScalarCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
+		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
-	{	
+	{
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
 		MatrixBlock inBlock = ec.getMatrixInput(mat.getName(), getExtendedOpcode());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
-		
+
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		
 		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
 		
 		ec.releaseMatrixInput(mat.getName(), getExtendedOpcode());
-
+		
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
  			retBlock.examSparsity();

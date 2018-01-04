@@ -43,9 +43,8 @@ import org.apache.sysml.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendGSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendMSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendRSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BinUaggChainSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.BuiltinBinarySPInstruction;
+import org.apache.sysml.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinNarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
@@ -71,7 +70,6 @@ import org.apache.sysml.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ReblockSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
@@ -154,51 +152,51 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "rshape"     , SPType.MatrixReshape);
 		String2SPInstructionType.put( "rsort"      , SPType.Reorg);
 		
-		String2SPInstructionType.put( "+"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "-"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "*"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "/"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "%%"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "%/%"  , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "1-*"  , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "^"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "^2"   , SPType.ArithmeticBinary); 
-		String2SPInstructionType.put( "*2"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "+*"   , SPType.ArithmeticBinary); 
-		String2SPInstructionType.put( "-*"   , SPType.ArithmeticBinary); 
-		String2SPInstructionType.put( "map+"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map-"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map*"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map/"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map%%"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map%/%"  , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map1-*"  , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map^"    , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map+*"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map-*"   , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "+"    , SPType.Binary);
+		String2SPInstructionType.put( "-"    , SPType.Binary);
+		String2SPInstructionType.put( "*"    , SPType.Binary);
+		String2SPInstructionType.put( "/"    , SPType.Binary);
+		String2SPInstructionType.put( "%%"   , SPType.Binary);
+		String2SPInstructionType.put( "%/%"  , SPType.Binary);
+		String2SPInstructionType.put( "1-*"  , SPType.Binary);
+		String2SPInstructionType.put( "^"    , SPType.Binary);
+		String2SPInstructionType.put( "^2"   , SPType.Binary);
+		String2SPInstructionType.put( "*2"   , SPType.Binary);
+		String2SPInstructionType.put( "+*"   , SPType.Binary);
+		String2SPInstructionType.put( "-*"   , SPType.Binary);
+		String2SPInstructionType.put( "map+"    , SPType.Binary);
+		String2SPInstructionType.put( "map-"    , SPType.Binary);
+		String2SPInstructionType.put( "map*"    , SPType.Binary);
+		String2SPInstructionType.put( "map/"    , SPType.Binary);
+		String2SPInstructionType.put( "map%%"   , SPType.Binary);
+		String2SPInstructionType.put( "map%/%"  , SPType.Binary);
+		String2SPInstructionType.put( "map1-*"  , SPType.Binary);
+		String2SPInstructionType.put( "map^"    , SPType.Binary);
+		String2SPInstructionType.put( "map+*"   , SPType.Binary);
+		String2SPInstructionType.put( "map-*"   , SPType.Binary);
 		
 		// Relational Instruction Opcodes 
-		String2SPInstructionType.put( "=="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "!="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "<"    , SPType.RelationalBinary);
-		String2SPInstructionType.put( ">"    , SPType.RelationalBinary);
-		String2SPInstructionType.put( "<="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( ">="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map>"    , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map>="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map<"    , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map<="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map=="   , SPType.RelationalBinary);
-		String2SPInstructionType.put( "map!="   , SPType.RelationalBinary);
+		String2SPInstructionType.put( "=="   , SPType.Binary);
+		String2SPInstructionType.put( "!="   , SPType.Binary);
+		String2SPInstructionType.put( "<"    , SPType.Binary);
+		String2SPInstructionType.put( ">"    , SPType.Binary);
+		String2SPInstructionType.put( "<="   , SPType.Binary);
+		String2SPInstructionType.put( ">="   , SPType.Binary);
+		String2SPInstructionType.put( "map>"    , SPType.Binary);
+		String2SPInstructionType.put( "map>="   , SPType.Binary);
+		String2SPInstructionType.put( "map<"    , SPType.Binary);
+		String2SPInstructionType.put( "map<="   , SPType.Binary);
+		String2SPInstructionType.put( "map=="   , SPType.Binary);
+		String2SPInstructionType.put( "map!="   , SPType.Binary);
 		
 		// Boolean Instruction Opcodes 
-		String2SPInstructionType.put( "&&"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "||"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "xor"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "&&"   , SPType.Binary);
+		String2SPInstructionType.put( "||"   , SPType.Binary);
+		String2SPInstructionType.put( "xor"  , SPType.Binary);
 		String2SPInstructionType.put( "!"    , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "map&&"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "map||"   , SPType.ArithmeticBinary);
-		String2SPInstructionType.put( "mapxor"  , SPType.ArithmeticBinary);
+		String2SPInstructionType.put( "map&&"   , SPType.Binary);
+		String2SPInstructionType.put( "map||"   , SPType.Binary);
+		String2SPInstructionType.put( "mapxor"  , SPType.Binary);
 		String2SPInstructionType.put( "map!"    , SPType.BuiltinUnary);
 		
 		// REBLOCK Instruction Opcodes 
@@ -214,10 +212,10 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "log_nz"  , SPType.Builtin);
 
 		// Boolean Binary builtin
-		String2SPInstructionType.put( "max"  , SPType.BuiltinBinary);
-		String2SPInstructionType.put( "min"  , SPType.BuiltinBinary);
-		String2SPInstructionType.put( "mapmax"  , SPType.BuiltinBinary);
-		String2SPInstructionType.put( "mapmin"  , SPType.BuiltinBinary);
+		String2SPInstructionType.put( "max"  , SPType.Builtin);
+		String2SPInstructionType.put( "min"  , SPType.Builtin);
+		String2SPInstructionType.put( "mapmax"  , SPType.Builtin);
+		String2SPInstructionType.put( "mapmin"  , SPType.Builtin);
 		
 		String2SPInstructionType.put( "exp"   , SPType.BuiltinUnary);
 		String2SPInstructionType.put( "abs"   , SPType.BuiltinUnary);
@@ -367,15 +365,12 @@ public class SPInstructionParser extends InstructionParser
 			case Reorg:
 				return ReorgSPInstruction.parseInstruction(str);
 				
-			case ArithmeticBinary:
+			case Binary:
 				String opcode = InstructionUtils.getOpCode(str);
 				if( opcode.equals("+*") || opcode.equals("-*")  )
 					return PlusMultSPInstruction.parseInstruction(str);
-				else			
-					return ArithmeticBinarySPInstruction.parseInstruction(str);
-				
-			case RelationalBinary:
-				return RelationalBinarySPInstruction.parseInstruction(str);
+				else
+					return BinarySPInstruction.parseInstruction(str);
 				
 			//ternary instructions
 			case Ternary:
@@ -400,15 +395,12 @@ public class SPInstructionParser extends InstructionParser
 						return BuiltinUnarySPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
-						return BuiltinBinarySPInstruction.parseInstruction(str);
+						return BinarySPInstruction.parseInstruction(str);
 					}
 				}
 				else {
 					throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
 				}
-				
-			case BuiltinBinary:
-				return BuiltinBinarySPInstruction.parseInstruction(str);
 				
 			case BuiltinUnary:
 				return BuiltinUnarySPInstruction.parseInstruction(str);

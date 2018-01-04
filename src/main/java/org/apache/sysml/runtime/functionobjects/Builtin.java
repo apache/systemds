@@ -114,8 +114,11 @@ public class Builtin extends ValueFunction
 		return bFunc;
 	}
 
-	public static Builtin getBuiltinFnObject (String str) 
-	{
+	public static boolean isBuiltinFnObject(String str) {
+		return String2BuiltinCode.containsKey(str);
+	}
+	
+	public static Builtin getBuiltinFnObject(String str) {
 		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}

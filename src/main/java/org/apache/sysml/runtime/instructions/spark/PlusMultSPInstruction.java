@@ -30,10 +30,10 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-public class PlusMultSPInstruction extends ArithmeticBinarySPInstruction {
+public class PlusMultSPInstruction extends BinarySPInstruction {
 	private PlusMultSPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String str) throws DMLRuntimeException {
-		super(op, in1, in2, out, opcode, str);
+		super(SPType.Binary, op, in1, in2, out, opcode, str);
 		input3 = in3;
 
 		// sanity check opcodes
@@ -52,7 +52,7 @@ public class PlusMultSPInstruction extends ArithmeticBinarySPInstruction {
 		CPOperand outOperand = new CPOperand(parts[4]);
 		BinaryOperator bOperator = new BinaryOperator(opcode.equals("+*") ? 
 				PlusMultiply.getPlusMultiplyFnObject():MinusMultiply.getMinusMultiplyFnObject());
-		return new PlusMultSPInstruction(bOperator,operand1, operand2, operand3, outOperand, opcode,str);	
+		return new PlusMultSPInstruction(bOperator,operand1, operand2, operand3, outOperand, opcode,str);
 	}
 	
 	@Override

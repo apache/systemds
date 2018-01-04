@@ -20,9 +20,10 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -46,6 +47,49 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
 	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
+	}
+	
+	public static BinarySPInstruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
+		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		String opcode = null;
+		boolean isBroadcast = false;
+		VectorType vtype = null;
+		
+		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) {
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			InstructionUtils.checkNumFields ( parts, 5 );
+			
+			opcode = parts[0];
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			out.split(parts[3]);
+			vtype = VectorType.valueOf(parts[5]);
+			isBroadcast = true;
+		}
+		else {
+			opcode = parseBinaryInstruction(str, in1, in2, out);
+		}
+		
+		DataType dt1 = in1.getDataType();
+		DataType dt2 = in2.getDataType();
+		
+		Operator operator = InstructionUtils.parseExtendedBinaryOrBuiltinOperator(opcode, in1, in2);
+		
+		if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX) {
+			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX) {
+				if(isBroadcast)
+					return new BinaryMatrixBVectorSPInstruction(operator, in1, in2, out, vtype, opcode, str);
+				else
+					return new BinaryMatrixMatrixSPInstruction(operator, in1, in2, out, opcode, str);
+			}
+			else
+				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
+		}
+		return null;
 	}
 
 	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)

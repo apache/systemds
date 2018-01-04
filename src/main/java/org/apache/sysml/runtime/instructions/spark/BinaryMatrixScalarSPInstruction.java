@@ -17,35 +17,25 @@
  * under the License.
  */
 
-
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixBVectorRelationalSPInstruction extends RelationalBinarySPInstruction {
-	private VectorType _vtype = null;
+public class BinaryMatrixScalarSPInstruction extends BinarySPInstruction {
 
-	protected MatrixBVectorRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			VectorType vtype, String opcode, String istr) throws DMLRuntimeException {
-		super(op, in1, in2, out, opcode, istr);
-		_vtype = vtype;
-		// sanity check opcodes
-		if (!(opcode.equalsIgnoreCase("map==") || opcode.equalsIgnoreCase("map!=") || opcode.equalsIgnoreCase("map<")
-				|| opcode.equalsIgnoreCase("map>") || opcode.equalsIgnoreCase("map<=")
-				|| opcode.equalsIgnoreCase("map>="))) {
-			throw new DMLRuntimeException("Unknown opcode in MatrixBVectorRelationalSPInstruction: " + toString());
-		}
+	protected BinaryMatrixScalarSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
+		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
-	{	
-		//common binary matrix-broadcast vector process instruction
-		super.processMatrixBVectorBinaryInstruction(ec, _vtype);
+	{
+		//common binary matrix-scalar process instruction
+		super.processMatrixScalarBinaryInstruction(ec);
 	}
 }

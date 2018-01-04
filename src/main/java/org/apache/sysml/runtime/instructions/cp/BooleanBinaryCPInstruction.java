@@ -46,9 +46,9 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction {
 		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
 			return new BooleanBinaryCPInstruction(bop, in1, in2, out, opcode, str);
 		else if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
-			return new MatrixMatrixArithmeticCPInstruction(bop, in1, in2, out, opcode, str);
+			return new BinaryMatrixMatrixCPInstruction(bop, in1, in2, out, opcode, str);
 		else
-			return new ScalarMatrixArithmeticCPInstruction(bop, in1, in2, out, opcode, str);
+			return new BinaryMatrixScalarCPInstruction(bop, in1, in2, out, opcode, str);
 	}
 	
 	@Override

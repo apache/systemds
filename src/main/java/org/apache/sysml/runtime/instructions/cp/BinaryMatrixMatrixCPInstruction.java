@@ -27,11 +27,11 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction {
+public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
-	protected MatrixMatrixBuiltinCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
+	protected BinaryMatrixMatrixCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String opcode, String istr) {
+		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
@@ -39,29 +39,31 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		throws DMLRuntimeException
 	{
 		String opcode = getOpcode();
-
 		if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
-			MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+			MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(
+				ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
 			ec.setMatrixOutput(output.getName(), solution, getExtendedOpcode());
 			return;
 		}
 		
-		String output_name = output.getName();
-		BinaryOperator bop = (BinaryOperator) _optr;
-		
+		// Read input matrices
 		MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		
-		MatrixBlock retBlock = (MatrixBlock) inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
-	
+		// Perform computation using input matrices, and produce the result matrix
+		BinaryOperator bop = (BinaryOperator) _optr;
+		MatrixBlock retBlock = (MatrixBlock) (inBlock1.binaryOperations (bop, inBlock2, new MatrixBlock()));
+		
+		// Release the memory occupied by input matrices
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 		
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock) ) {
- 			retBlock.examSparsity();
- 		}
-
-		ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
+			retBlock.examSparsity();
+		}
+		
+		// Attach result matrix with MatrixObject associated with output_name
+		ec.setMatrixOutput(output.getName(), retBlock, getExtendedOpcode());
 	}
 }

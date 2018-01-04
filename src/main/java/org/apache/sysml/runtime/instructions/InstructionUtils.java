@@ -74,6 +74,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
@@ -82,6 +83,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
@@ -481,6 +483,28 @@ public class InstructionUtils
 		return aggun;
 	}
 
+	public static Operator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 
+		throws DMLRuntimeException 
+	{
+		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
+		return Builtin.isBuiltinFnObject(opcode) ?
+			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :
+				new BinaryOperator( Builtin.getBuiltinFnObject(opcode))) :
+			(matrixScalar ? parseScalarBinaryOperator(opcode, in1.getDataType().isScalar()) :
+				parseBinaryOperator(opcode));
+	}
+	
+	public static Operator parseExtendedBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 
+		throws DMLRuntimeException 
+	{
+		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
+		return Builtin.isBuiltinFnObject(opcode) ?
+			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :
+				new BinaryOperator( Builtin.getBuiltinFnObject(opcode))) :
+			(matrixScalar ? parseScalarBinaryOperator(opcode, in1.getDataType().isScalar()) :
+				parseExtendedBinaryOperator(opcode));
+	}
+	
 	public static BinaryOperator parseBinaryOperator(String opcode) 
 		throws DMLRuntimeException
 	{

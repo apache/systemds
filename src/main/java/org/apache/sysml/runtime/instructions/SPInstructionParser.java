@@ -198,6 +198,12 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map||"   , SPType.Binary);
 		String2SPInstructionType.put( "mapxor"  , SPType.Binary);
 		
+		// Builtin Instruction Opcodes
+		String2SPInstructionType.put( "max"     , SPType.Binary);
+		String2SPInstructionType.put( "min"     , SPType.Binary);
+		String2SPInstructionType.put( "mapmax"  , SPType.Binary);
+		String2SPInstructionType.put( "mapmin"  , SPType.Binary);
+		
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPType.Reblock);
 		String2SPInstructionType.put( "csvrblk", SPType.CSVReblock);
@@ -210,12 +216,6 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "log"  , SPType.Builtin);
 		String2SPInstructionType.put( "log_nz"  , SPType.Builtin);
 
-		// Boolean Binary builtin
-		String2SPInstructionType.put( "max"  , SPType.Builtin);
-		String2SPInstructionType.put( "min"  , SPType.Builtin);
-		String2SPInstructionType.put( "mapmax"  , SPType.Builtin);
-		String2SPInstructionType.put( "mapmin"  , SPType.Builtin);
-		
 		String2SPInstructionType.put( "exp"   , SPType.Unary);
 		String2SPInstructionType.put( "abs"   , SPType.Unary);
 		String2SPInstructionType.put( "sin"   , SPType.Unary);

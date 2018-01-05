@@ -2599,9 +2599,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock ret = checkType(result);
 		
 		// estimate the sparsity structure of result matrix
-		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
-		if (!op.sparseSafe)
-			sp = false; // if the operation is not sparse safe, then result will be in dense format
+		// by default, we guess result.sparsity=input.sparsity, unless not sparse safe
+		boolean sp = this.sparse && op.sparseSafe;
 		
 		//allocate output
 		if( ret == null )
@@ -2643,6 +2642,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return;
 		
 		final int m = rlen;
+		final int n = clen;
 		
 		if( sparse && ret.sparse ) //SPARSE <- SPARSE
 		{
@@ -2671,21 +2671,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else if( sparse ) //DENSE <- SPARSE
 		{
 			SparseBlock a = sparseBlock;
-			
+			DenseBlock c = ret.denseBlock;
+			long nnz = (ret.nonZeros > 0) ?
+				(long) m*n-a.size() : 0;
 			for(int i=0; i<m; i++) {
 				if( a.isEmpty(i) ) continue;
-			
 				int apos = a.pos(i);
 				int alen = a.size(i);
 				int[] aix = a.indexes(i);
 				double[] avals = a.values(i);
-				
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
 				for( int j=apos; j<apos+alen; j++ ) {
 					double val = op.fn.execute(avals[j]);
-					ret.appendValue(i, aix[j], val);
+					cvals[cix + aix[j]] = val; 
+					nnz += (val != 0) ? 1 : 0;
 				}
 			}
-			//nnz maintained on appendValue
+			ret.nonZeros = nnz;
 		}
 		else //DENSE <- DENSE
 		{
@@ -2713,7 +2716,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException
 	{
 		//prepare 0-value init (determine if unnecessarily sparse-unsafe)
-		double val0 = op.fn.execute(0);
+		double val0 = op.fn.execute(0d);
 		
 		final int m = rlen;
 		final int n = clen;
@@ -2727,8 +2730,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//redirection to sparse safe operation w/ init by val0
-		if( sparse && val0 != 0 )
+		if( sparse && val0 != 0 ) {
 			ret.reset(m, n, val0);
+			ret.nonZeros = (long)m * n;
+		}
 		sparseUnaryOperations(op, ret);
 	}
 

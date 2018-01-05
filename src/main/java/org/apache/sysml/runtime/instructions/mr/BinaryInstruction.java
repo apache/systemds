@@ -51,7 +51,7 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
 		if( bop != null )
-			return new BinaryInstruction(MRType.ArithmeticBinary, bop, in1, in2, out, str);
+			return new BinaryInstruction(MRType.Binary, bop, in1, in2, out, str);
 		else
 			return null;
 	}

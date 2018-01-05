@@ -893,12 +893,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}
 					return 0;
 				
-				case BooleanBinary: //opcodes: &&, ||
-					return 1; //always scalar-scalar
-				
-				case BooleanUnary: //opcodes: !
-					return 1; //always scalar-scalar
-
 				case Builtin: //opcodes: log 
 					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
 					//note: can be unary or binary
@@ -907,7 +901,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else //unary
 						return d3m * d3n;
 					
-				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
+				case Unary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
 					//TODO add cost functions for commons math builtins: inverse, cholesky
 					if( optype.equals("print") ) //scalar only
 						return 1;
@@ -1123,10 +1117,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					       + 2 * d2n * d1n * d1m * (leftSparse?d1s:1.0) //ba(+*)
 					       + d2n * d1n; //r(t)
 					
-				case ArithmeticBinary: //opcodes: s-r, so, max, min, 
-					                   //         >, >=, <, <=, ==, != 
-					//TODO Should be relational 
-				
+				case Binary: //opcodes: s-r, so, max, min, 
+					//         >, >=, <, <=, ==, != 
 					//note: all relational ops are not sparsesafe
 					return d3m * d3n; //covers all combinations of scalar and matrix  
 	

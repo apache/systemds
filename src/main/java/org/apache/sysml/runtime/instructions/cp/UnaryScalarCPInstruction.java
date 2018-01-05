@@ -25,11 +25,11 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
+public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 
-	protected ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+	protected UnaryScalarCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, opcode, instr);
 	}
 
@@ -38,13 +38,12 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 		throws DMLRuntimeException 
 	{	
 		String opcode = getOpcode();
-		SimpleOperator dop = (SimpleOperator) _optr;
 		ScalarObject sores = null;
 		ScalarObject so = null;
 		
 		//get the scalar input 
 		so = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
-			
+		
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String outString = so.getLanguageSpecificStringValue();
@@ -61,17 +60,13 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
 			throw new DMLScriptException(so.getStringValue());
 		}
 		else {
-			//Inputs for all builtins other than PRINT are treated as DOUBLE.
-			if ( so instanceof IntObject  && output.getValueType() == ValueType.INT )
-			{
-				long rval = (long) dop.fn.execute(so.getLongValue());
-				sores = (ScalarObject) new IntObject(rval);
-			}
-			else 
-			{
-				double rval = dop.fn.execute(so.getDoubleValue());
-				sores = (ScalarObject) new DoubleObject(rval);
-			}
+			UnaryOperator dop = (UnaryOperator) _optr;
+			if ( so instanceof IntObject && output.getValueType() == ValueType.INT )
+				sores = new IntObject((long)dop.fn.execute(so.getLongValue()));
+			else if( so instanceof BooleanObject && output.getValueType() == ValueType.BOOLEAN )
+				sores = new BooleanObject(dop.fn.execute(so.getBooleanValue()));
+			else
+				sores = new DoubleObject(dop.fn.execute(so.getDoubleValue()));
 		}
 		
 		ec.setScalarOutput(output.getName(), sores);

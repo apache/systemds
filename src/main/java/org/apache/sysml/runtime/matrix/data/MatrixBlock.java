@@ -2670,6 +2670,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else if( sparse ) //DENSE <- SPARSE
 		{
+			ret.allocateDenseBlock(false);
 			SparseBlock a = sparseBlock;
 			DenseBlock c = ret.denseBlock;
 			long nnz = (ret.nonZeros > 0) ?
@@ -2693,7 +2694,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else //DENSE <- DENSE
 		{
 			//allocate dense output block
-			ret.allocateDenseBlock();
+			ret.allocateDenseBlock(false);
 			DenseBlock da = getDenseBlock();
 			DenseBlock dc = ret.getDenseBlock();
 			

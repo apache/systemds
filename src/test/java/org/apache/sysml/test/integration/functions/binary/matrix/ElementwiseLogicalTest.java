@@ -49,8 +49,8 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 
 	private final static int rows = 2100;
 	private final static int cols = 70;
-	private final static double sparsity1 = 0.9;//dense
-	private final static double sparsity2 = 0.1;//sparse
+	private final static double sparsity1 = 0.1;//sparse
+	private final static double sparsity2 = 0.9;//dense
 	private final static double eps = 1e-10;
 	
 	@Override
@@ -121,36 +121,35 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 		runLogical(TEST_NAME2, true, ExecType.MR);
 	}
 
-//TODO support for unary not requires some more cleanups
-//	@Test
-//	public void testNotDenseCP() {
-//		runLogical(TEST_NAME3, false, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testNotSparseCP() {
-//		runLogical(TEST_NAME3, true, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testNotDenseSP() {
-//		runLogical(TEST_NAME3, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testNotSparseSP() {
-//		runLogical(TEST_NAME3, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testNotDenseMR() {
-//		runLogical(TEST_NAME3, false, ExecType.MR);
-//	}
-//	
-//	@Test
-//	public void testNotSparseMR() {
-//		runLogical(TEST_NAME3, true, ExecType.MR);
-//	}
+	@Test
+	public void testNotDenseCP() {
+		runLogical(TEST_NAME3, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testNotSparseCP() {
+		runLogical(TEST_NAME3, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testNotDenseSP() {
+		runLogical(TEST_NAME3, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotSparseSP() {
+		runLogical(TEST_NAME3, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotDenseMR() {
+		runLogical(TEST_NAME3, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotSparseMR() {
+		runLogical(TEST_NAME3, true, ExecType.MR);
+	}
 	
 	@Test
 	public void testXorDenseCP() {

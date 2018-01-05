@@ -38,27 +38,12 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class OperationsOnMatrixValues 
 {
-	
-	public static void performScalarIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, ScalarOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.scalarOperations(op, valueOut);
-	}
-	
-	public static void performUnaryIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.unaryOperations(op, valueOut);
-	}
-
 	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			         MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) 
 		throws DMLRuntimeException

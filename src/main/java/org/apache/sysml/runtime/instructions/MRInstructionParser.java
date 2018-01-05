@@ -154,6 +154,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "sprop", MRType.Unary);
 		String2MRInstructionType.put( "sigmoid", MRType.Unary);
 		String2MRInstructionType.put( "sel+", MRType.Unary);
+		String2MRInstructionType.put( "!", MRType.Unary);
 		
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRType.MMTSJ);
@@ -162,53 +163,53 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "binuaggchain", MRType.BinUaggChain);
 		
 		// BINARY and SCALAR Instruction Opcodes 
-		String2MRInstructionType.put( "+"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "-"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "s-r"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "*"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "/"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "%%"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "%/%"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "1-*"  , MRType.ArithmeticBinary); //special * case
-		String2MRInstructionType.put( "so"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "^"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "max"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "min"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( ">"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( ">="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "<"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "<="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "=="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "!="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "^"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "^2"   , MRType.ArithmeticBinary); //special ^ case
-		String2MRInstructionType.put( "*2"   , MRType.ArithmeticBinary); //special * case
-		String2MRInstructionType.put( "-nz"  , MRType.ArithmeticBinary); //special - case
-		String2MRInstructionType.put( "&&"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "||"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "xor"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "+*"   , MRType.ArithmeticBinary2); 
-		String2MRInstructionType.put( "-*"   , MRType.ArithmeticBinary2); 
+		String2MRInstructionType.put( "+"    , MRType.Binary);
+		String2MRInstructionType.put( "-"    , MRType.Binary);
+		String2MRInstructionType.put( "s-r"  , MRType.Binary);
+		String2MRInstructionType.put( "*"    , MRType.Binary);
+		String2MRInstructionType.put( "/"    , MRType.Binary);
+		String2MRInstructionType.put( "%%"   , MRType.Binary);
+		String2MRInstructionType.put( "%/%"  , MRType.Binary);
+		String2MRInstructionType.put( "1-*"  , MRType.Binary); //special * case
+		String2MRInstructionType.put( "so"   , MRType.Binary);
+		String2MRInstructionType.put( "^"    , MRType.Binary);
+		String2MRInstructionType.put( "max"  , MRType.Binary);
+		String2MRInstructionType.put( "min"  , MRType.Binary);
+		String2MRInstructionType.put( ">"    , MRType.Binary);
+		String2MRInstructionType.put( ">="   , MRType.Binary);
+		String2MRInstructionType.put( "<"    , MRType.Binary);
+		String2MRInstructionType.put( "<="   , MRType.Binary);
+		String2MRInstructionType.put( "=="   , MRType.Binary);
+		String2MRInstructionType.put( "!="   , MRType.Binary);
+		String2MRInstructionType.put( "^"    , MRType.Binary);
+		String2MRInstructionType.put( "^2"   , MRType.Binary); //special ^ case
+		String2MRInstructionType.put( "*2"   , MRType.Binary); //special * case
+		String2MRInstructionType.put( "-nz"  , MRType.Binary); //special - case
+		String2MRInstructionType.put( "&&"   , MRType.Binary);
+		String2MRInstructionType.put( "||"   , MRType.Binary);
+		String2MRInstructionType.put( "xor"  , MRType.Binary);
+		String2MRInstructionType.put( "+*"   , MRType.Binary2); 
+		String2MRInstructionType.put( "-*"   , MRType.Binary2); 
 		
-		String2MRInstructionType.put( "map+"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map-"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map*"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map/"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map%%"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map%/%"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map1-*"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map^"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "mapmax"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "mapmin"  , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map>"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map>="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map<"    , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map<="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map=="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map!="   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map&&"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "map||"   , MRType.ArithmeticBinary);
-		String2MRInstructionType.put( "mapxor"  , MRType.ArithmeticBinary);
+		String2MRInstructionType.put( "map+"    , MRType.Binary);
+		String2MRInstructionType.put( "map-"    , MRType.Binary);
+		String2MRInstructionType.put( "map*"    , MRType.Binary);
+		String2MRInstructionType.put( "map/"    , MRType.Binary);
+		String2MRInstructionType.put( "map%%"   , MRType.Binary);
+		String2MRInstructionType.put( "map%/%"  , MRType.Binary);
+		String2MRInstructionType.put( "map1-*"  , MRType.Binary);
+		String2MRInstructionType.put( "map^"    , MRType.Binary);
+		String2MRInstructionType.put( "mapmax"  , MRType.Binary);
+		String2MRInstructionType.put( "mapmin"  , MRType.Binary);
+		String2MRInstructionType.put( "map>"    , MRType.Binary);
+		String2MRInstructionType.put( "map>="   , MRType.Binary);
+		String2MRInstructionType.put( "map<"    , MRType.Binary);
+		String2MRInstructionType.put( "map<="   , MRType.Binary);
+		String2MRInstructionType.put( "map=="   , MRType.Binary);
+		String2MRInstructionType.put( "map!="   , MRType.Binary);
+		String2MRInstructionType.put( "map&&"   , MRType.Binary);
+		String2MRInstructionType.put( "map||"   , MRType.Binary);
+		String2MRInstructionType.put( "mapxor"  , MRType.Binary);
 		
 		String2MRInstructionType.put( "uaggouterchain", MRType.UaggOuterChain);
 		
@@ -326,7 +327,7 @@ public class MRInstructionParser extends InstructionParser
 			case Aggregate:
 				return AggregateInstruction.parseInstruction(str);
 				
-			case ArithmeticBinary: {
+			case Binary: {
 				String opcode = InstructionUtils.getOpCode(str);
 				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				// extract datatypes of first and second input operands
@@ -343,7 +344,7 @@ public class MRInstructionParser extends InstructionParser
 				}
 			}
 			
-			case ArithmeticBinary2:
+			case Binary2:
 				return PlusMultInstruction.parseInstruction(str);
 			
 			case AggregateBinary:

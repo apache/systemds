@@ -19,11 +19,16 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.Arrays;
+
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.Not;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public abstract class UnaryCPInstruction extends ComputationCPInstruction {
@@ -40,6 +45,41 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String instr) {
 		super(type, op, in1, in2, in3, out, opcode, instr);
+	}
+	
+	public static UnaryCPInstruction parseInstruction ( String str ) 
+		throws DMLRuntimeException
+	{
+		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = null;
+		ValueFunction func = null;
+		
+		//print or stop or cumulative aggregates
+		if( parts.length==4 ) {
+			opcode = parts[0];
+			in.split(parts[1]);
+			out.split(parts[2]);
+			func = Builtin.getBuiltinFnObject(opcode);
+			
+			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucummin","ucummax"}).contains(opcode) )
+				return new UnaryMatrixCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
+			else
+				return new UnaryScalarCPInstruction(null, in, out, opcode, str);
+		}
+		else { //2+1, general case
+			opcode = parseUnaryInstruction(str, in, out);
+			
+			if(in.getDataType() == DataType.SCALAR)
+				return new UnaryScalarCPInstruction(InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
+			else if(in.getDataType() == DataType.MATRIX)
+				return new UnaryMatrixCPInstruction(LibCommonsMath.isSupportedUnaryOperation(opcode) ?
+					null : InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
+		}
+		
+		return null;
 	}
 
 	static String parseUnaryInstruction(String instr, CPOperand in,
@@ -87,21 +127,5 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 			throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
 		}
 		return opcode;
-	}
-
-	static SimpleOperator getSimpleUnaryOperator(String opcode)
-			throws DMLRuntimeException {
-		if (opcode.equalsIgnoreCase("!"))
-			return new SimpleOperator(Not.getNotFnObject());
-
-		throw new DMLRuntimeException("Unknown unary operator " + opcode);
-	}
-
-	static UnaryOperator getUnaryOperator(String opcode)
-		throws DMLRuntimeException {
-		if (opcode.equalsIgnoreCase("!"))
-			return new UnaryOperator(Not.getNotFnObject());
-
-		throw new DMLRuntimeException("Unknown unary operator " + opcode);
 	}
 }

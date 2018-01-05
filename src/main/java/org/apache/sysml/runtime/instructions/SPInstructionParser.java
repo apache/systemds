@@ -46,7 +46,6 @@ import org.apache.sysml.runtime.instructions.spark.AppendRSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BinUaggChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinNarySPInstruction;
-import org.apache.sysml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
@@ -80,6 +79,7 @@ import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TsmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.UaggOuterChainSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ZipmmSPInstruction;
 
@@ -193,11 +193,10 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "&&"   , SPType.Binary);
 		String2SPInstructionType.put( "||"   , SPType.Binary);
 		String2SPInstructionType.put( "xor"  , SPType.Binary);
-		String2SPInstructionType.put( "!"    , SPType.BuiltinUnary);
+		String2SPInstructionType.put( "!"    , SPType.Unary);
 		String2SPInstructionType.put( "map&&"   , SPType.Binary);
 		String2SPInstructionType.put( "map||"   , SPType.Binary);
 		String2SPInstructionType.put( "mapxor"  , SPType.Binary);
-		String2SPInstructionType.put( "map!"    , SPType.BuiltinUnary);
 		
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPType.Reblock);
@@ -217,26 +216,26 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "mapmax"  , SPType.Builtin);
 		String2SPInstructionType.put( "mapmin"  , SPType.Builtin);
 		
-		String2SPInstructionType.put( "exp"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "abs"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sin"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "cos"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "tan"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "asin"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "acos"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "atan"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sinh"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "cosh"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "tanh"   , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sign"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sqrt"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "plogp" , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "round" , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "ceil"  , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "floor" , SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sprop", SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sigmoid", SPType.BuiltinUnary);
-		String2SPInstructionType.put( "sel+", SPType.BuiltinUnary);
+		String2SPInstructionType.put( "exp"   , SPType.Unary);
+		String2SPInstructionType.put( "abs"   , SPType.Unary);
+		String2SPInstructionType.put( "sin"   , SPType.Unary);
+		String2SPInstructionType.put( "cos"   , SPType.Unary);
+		String2SPInstructionType.put( "tan"   , SPType.Unary);
+		String2SPInstructionType.put( "asin"  , SPType.Unary);
+		String2SPInstructionType.put( "acos"  , SPType.Unary);
+		String2SPInstructionType.put( "atan"  , SPType.Unary);
+		String2SPInstructionType.put( "sinh"   , SPType.Unary);
+		String2SPInstructionType.put( "cosh"   , SPType.Unary);
+		String2SPInstructionType.put( "tanh"   , SPType.Unary);
+		String2SPInstructionType.put( "sign"  , SPType.Unary);
+		String2SPInstructionType.put( "sqrt"  , SPType.Unary);
+		String2SPInstructionType.put( "plogp" , SPType.Unary);
+		String2SPInstructionType.put( "round" , SPType.Unary);
+		String2SPInstructionType.put( "ceil"  , SPType.Unary);
+		String2SPInstructionType.put( "floor" , SPType.Unary);
+		String2SPInstructionType.put( "sprop", SPType.Unary);
+		String2SPInstructionType.put( "sigmoid", SPType.Unary);
+		String2SPInstructionType.put( "sel+", SPType.Unary);
 		
 		// Parameterized Builtin Functions
 		String2SPInstructionType.put( "groupedagg"	 , SPType.ParameterizedBuiltin);
@@ -392,7 +391,7 @@ public class SPInstructionParser extends InstructionParser
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
 					if ( parts.length == 3 ) {
 						// B=log(A), y=log(x)
-						return BuiltinUnarySPInstruction.parseInstruction(str);
+						return UnaryMatrixSPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
 						return BinarySPInstruction.parseInstruction(str);
@@ -402,8 +401,8 @@ public class SPInstructionParser extends InstructionParser
 					throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
 				}
 				
-			case BuiltinUnary:
-				return BuiltinUnarySPInstruction.parseInstruction(str);
+			case Unary:
+				return UnaryMatrixSPInstruction.parseInstruction(str);
 			
 			case BuiltinNary:
 				return BuiltinNarySPInstruction.parseInstruction(str);

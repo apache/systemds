@@ -62,6 +62,7 @@ import org.apache.sysml.runtime.functionobjects.MinusNz;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
+import org.apache.sysml.runtime.functionobjects.Not;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
@@ -481,6 +482,12 @@ public class InstructionUtils
 		}
 		
 		return aggun;
+	}
+	
+	public static UnaryOperator parseUnaryOperator(String opcode) {
+		return opcode.equals("!") ?
+			new UnaryOperator(Not.getNotFnObject()) :
+			new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 	}
 
 	public static Operator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 

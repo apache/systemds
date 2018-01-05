@@ -21,19 +21,30 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction {
+public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 
-	protected MatrixBuiltinSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+	protected UnaryMatrixSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		super(SPType.Unary, op, in, out, opcode, instr);
+	}
+	
+	public static UnarySPInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		String opcode = parseUnaryInstruction(str, in, out);
+		return new UnaryMatrixSPInstruction(
+			InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
 	}
 
 	@Override 

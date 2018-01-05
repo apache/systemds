@@ -38,7 +38,7 @@ public class BinaryMInstruction extends BinaryMRInstructionBase implements IDist
 	private VectorType _vectorType = null;
 
 	private BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out, String istr) {
-		super(MRType.ArithmeticBinary, op, in1, in2, out);
+		super(MRType.Binary, op, in1, in2, out);
 		instString = istr;
 		_vectorType = vtype;
 	}

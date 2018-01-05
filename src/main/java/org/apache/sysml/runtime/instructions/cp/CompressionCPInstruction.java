@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class CompressionCPInstruction extends UnaryCPInstruction {
+public class CompressionCPInstruction extends ComputationCPInstruction {
 
 	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);

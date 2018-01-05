@@ -31,9 +31,9 @@ public abstract class CPInstruction extends Instruction
 {
 	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary,
-		Binary, Ternary, Quaternary, BooleanBinary, BooleanUnary, BuiltinUnary, BuiltinNary, 
-		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, 
-		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick, 
+		Unary, Binary, Ternary, Quaternary, BuiltinNary,
+		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
+		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, MatrixReshape, Partition, Compression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Convolution }
 	

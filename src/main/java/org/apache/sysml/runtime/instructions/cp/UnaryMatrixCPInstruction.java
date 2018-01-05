@@ -26,9 +26,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction {
-	protected MatrixBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
+	protected UnaryMatrixCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		super(CPType.Unary, op, in, out, opcode, instr);
 	}
 
 	@Override 

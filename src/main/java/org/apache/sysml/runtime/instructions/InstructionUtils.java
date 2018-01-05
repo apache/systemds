@@ -79,6 +79,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
+import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -493,6 +494,8 @@ public class InstructionUtils
 	public static Operator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 
 		throws DMLRuntimeException 
 	{
+		if( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) )
+			return null;
 		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
 		return Builtin.isBuiltinFnObject(opcode) ?
 			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :

@@ -129,8 +129,17 @@ public abstract class DenseBlock implements Serializable
 	public abstract long countNonZeros();
 	
 	/**
+	 * Compute the number of non-zero values for the given row,
+	 * which potentially makes a full pass over the underlying row.
+	 * 
+	 * @param r row index
+	 * @return number of non-zeros
+	 */
+	public abstract int countNonZeros(int r);
+	
+	/**
 	 * Compute the number of non-zero values, which potentially 
-	 * makes a full pass over the underlying blocks.
+	 * makes a full pass over the underlying blocks in the row range.
 	 * 
 	 * @param rl row lower index
 	 * @param ru row upper index (exclusive)

@@ -137,6 +137,11 @@ public class DenseBlockLDRB extends DenseBlock
 	}
 	
 	@Override
+	public int countNonZeros(int r) {
+		return UtilFunctions.computeNnz(values(r), pos(r), clen);
+	}
+	
+	@Override
 	public long countNonZeros(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
 		boolean rowBlock = (cl == 0 && cu == clen);

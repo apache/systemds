@@ -448,6 +448,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		case XOR:
 		case BITWISE_AND:
+		case BITWISE_OR:
+		case BITWISE_XOR:
+		case BITWISE_SHIFTL:
+		case BITWISE_SHIFTR:
 		case MIN:
 		case MAX:
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
@@ -1346,6 +1350,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MEDIAN:
 		case XOR:
 		case BITWISE_AND:
+		case BITWISE_OR:
+		case BITWISE_XOR:
+		case BITWISE_SHIFTL:
+		case BITWISE_SHIFTR:
 			return true;
 		default:
 			return false;
@@ -1741,6 +1749,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.XOR;
 		else if ( functionName.equals("bitwAnd") )
 			bifop = Expression.BuiltinFunctionOp.BITWISE_AND;
+		else if ( functionName.equals("bitwOr") )
+			bifop = Expression.BuiltinFunctionOp.BITWISE_OR;
+		else if ( functionName.equals("bitwXor") )
+			bifop = Expression.BuiltinFunctionOp.BITWISE_XOR;
+		else if ( functionName.equals("bitwShiftL") )
+			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTL;
+		else if ( functionName.equals("bitwShiftR") )
+			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTR;
 		else
 			return null;
 		

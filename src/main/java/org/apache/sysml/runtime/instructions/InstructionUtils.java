@@ -511,6 +511,14 @@ public class InstructionUtils
 			return new BinaryOperator(Xor.getXorFnObject());
 		else if(opcode.equalsIgnoreCase("bitwAnd"))
 			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
+		else if(opcode.equalsIgnoreCase("bitwOr"))
+			return new BinaryOperator(BitwOr.getBitwOrFnObject());
+		else if(opcode.equalsIgnoreCase("bitwXor"))
+			return new BinaryOperator(BitwXor.getBitwXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftL"))
+			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftR"))
+			return new BinaryOperator(BitwShiftR.getBitwAndFnObject());
 		else if(opcode.equalsIgnoreCase("+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-"))
@@ -694,6 +702,16 @@ public class InstructionUtils
 			return new BinaryOperator(Or.getOrFnObject());
 		else if(opcode.equalsIgnoreCase("xor") || opcode.equalsIgnoreCase("mapxor"))
 			return new BinaryOperator(Xor.getXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwAnd") || opcode.equalsIgnoreCase("mapbitwAnd"))
+			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
+		else if(opcode.equalsIgnoreCase("bitwOr") || opcode.equalsIgnoreCase("mapbitwOr"))
+			return new BinaryOperator(BitwOr.getBitwOrFnObject());
+		else if(opcode.equalsIgnoreCase("bitwXor") || opcode.equalsIgnoreCase("mapbitwXor"))
+			return new BinaryOperator(BitwXor.getBitwXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftL") || opcode.equalsIgnoreCase("mapbitwShiftL"))
+			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftR") || opcode.equalsIgnoreCase("mapbitwShiftR"))
+			return new BinaryOperator(BitwShiftR.getBitwAndFnObject());
 		else if(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("map+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("map-"))

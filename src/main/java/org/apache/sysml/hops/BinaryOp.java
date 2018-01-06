@@ -1609,7 +1609,9 @@ public class BinaryOp extends Hop
 		         ||op==OpOp2.AND     ||op==OpOp2.OR 
 		         ||op == OpOp2.XOR
 		         ||op==OpOp2.LOG     ||op==OpOp2.POW
-		         ||op==OpOp2.BITWISE_AND);
+		         ||op==OpOp2.BITWISE_AND ||op==OpOp2.BITWISE_OR
+				 ||op==OpOp2.BITWISE_XOR ||op==OpOp2.BITWISE_SHIFTL
+				 ||op==OpOp2.BITWISE_SHIFTR);
 	}
 	
 	public boolean isPPredOperation()

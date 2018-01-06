@@ -189,6 +189,10 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "||"   , MRType.Binary);
 		String2MRInstructionType.put( "xor"  , MRType.Binary);
 		String2MRInstructionType.put( "bitwAnd", MRType.Binary);
+		String2MRInstructionType.put( "bitwOr", MRType.Binary);
+		String2MRInstructionType.put( "bitwXor", MRType.Binary);
+		String2MRInstructionType.put( "bitwShiftL", MRType.Binary);
+		String2MRInstructionType.put( "bitwShiftR", MRType.Binary);
 		String2MRInstructionType.put( "+*"   , MRType.Binary2); 
 		String2MRInstructionType.put( "-*"   , MRType.Binary2); 
 		

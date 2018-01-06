@@ -194,11 +194,19 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "||"   , SPType.Binary);
 		String2SPInstructionType.put( "xor"  , SPType.Binary);
 		String2SPInstructionType.put( "bitwAnd", SPType.Binary);
+		String2SPInstructionType.put( "bitwOr", SPType.Binary);
+		String2SPInstructionType.put( "bitwXor", SPType.Binary);
+		String2SPInstructionType.put( "bitwShiftL", SPType.Binary);
+		String2SPInstructionType.put( "bitwShiftR", SPType.Binary);
 		String2SPInstructionType.put( "!"    , SPType.Unary);
 		String2SPInstructionType.put( "map&&"   , SPType.Binary);
 		String2SPInstructionType.put( "map||"   , SPType.Binary);
 		String2SPInstructionType.put( "mapxor"  , SPType.Binary);
 		String2SPInstructionType.put( "mapbitwAnd", SPType.Binary);
+		String2SPInstructionType.put( "mapbitwOr", SPType.Binary);
+		String2SPInstructionType.put( "mapbitwXor", SPType.Binary);
+		String2SPInstructionType.put( "mapbitwShiftL", SPType.Binary);
+		String2SPInstructionType.put( "mapbitwShiftR", SPType.Binary);
 		
 		// Builtin Instruction Opcodes
 		String2SPInstructionType.put( "max"     , SPType.Binary);

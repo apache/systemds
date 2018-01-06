@@ -37,7 +37,8 @@ public class BinaryOperator  extends Operator implements Serializable
 		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
 			|| p instanceof And || p instanceof Or || p instanceof Xor
 			|| p instanceof PlusMultiply || p instanceof MinusMultiply
-			|| p instanceof BitwAnd);
+			|| p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor
+			|| p instanceof BitwShiftL || p instanceof BitwShiftR);
 		fn = p;
 	}
 	
@@ -66,6 +67,10 @@ public class BinaryOperator  extends Operator implements Serializable
 		else if( fn instanceof Or )				return OpOp2.OR;
 		else if( fn instanceof Xor )			return OpOp2.XOR;
 		else if( fn instanceof BitwAnd )		return OpOp2.BITWISE_AND;
+		else if( fn instanceof BitwOr )			return OpOp2.BITWISE_OR;
+		else if( fn instanceof BitwXor )		return OpOp2.BITWISE_XOR;
+		else if( fn instanceof BitwShiftL )		return OpOp2.BITWISE_SHIFTL;
+		else if( fn instanceof BitwShiftR )		return OpOp2.BITWISE_SHIFTR;
 		else if( fn instanceof Power )			return OpOp2.POW;
 		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {

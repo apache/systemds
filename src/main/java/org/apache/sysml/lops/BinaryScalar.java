@@ -36,8 +36,8 @@ public class BinaryScalar extends Lop
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, XOR,
-		LOG,POW,MAX,MIN,PRINT,
-		IQSIZE, BITWISE_AND,
+		LOG,POW,MAX,MIN,PRINT,IQSIZE,
+		BITWISE_AND, BITWISE_OR, BITWISE_XOR, BITWISE_SHIFTL, BITWISE_SHIFTR, //Bitwise operations
 	}
 	
 	private final OperationTypes operation;
@@ -151,6 +151,15 @@ public class BinaryScalar extends Lop
 				return "xor";
 			case BITWISE_AND:
 				return "bitwAnd";
+			case BITWISE_OR:
+				return "bitwOr";
+			case BITWISE_XOR:
+				return "bitwXor";
+			case BITWISE_SHIFTL:
+				return "bitwShiftL";
+			case BITWISE_SHIFTR:
+				return "bitwShiftR";
+
 			/* Builtin Functions */
 			case LOG:
 				return "log";

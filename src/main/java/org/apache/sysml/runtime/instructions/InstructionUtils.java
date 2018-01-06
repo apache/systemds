@@ -24,6 +24,7 @@ import java.util.StringTokenizer;
 import org.apache.sysml.lops.AppendM;
 import org.apache.sysml.lops.BinaryM;
 import org.apache.sysml.lops.GroupedAggregateM;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMultChain;
 import org.apache.sysml.lops.PMMJ;
@@ -191,9 +192,13 @@ public class InstructionUtils
 		
 		return ret;
 	}
+	
+	public static ExecType getExecType( String str ) {
+		int ix = str.indexOf(Instruction.OPERAND_DELIM);
+		return ExecType.valueOf(str.substring(0, ix));
+	}
 
-	public static String getOpCode( String str ) 
-	{
+	public static String getOpCode( String str ) {
 		int ix1 = str.indexOf(Instruction.OPERAND_DELIM);
 		int ix2 = str.indexOf(Instruction.OPERAND_DELIM, ix1+1);
 		return str.substring(ix1+1, ix2);

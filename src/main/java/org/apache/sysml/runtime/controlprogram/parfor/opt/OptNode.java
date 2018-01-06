@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -91,9 +92,6 @@ public class OptNode
 	private ExecType                  _etype   = null;
 	private int                       _k       = -1;
 	private HashMap<ParamType,String> _params  = null;
-	
-	//node statistics (only present for physical plans and leaf nodes)
-	private OptNodeStatistics         _stats   = null;
 	
 	//line numbers (for explain)
 	private int                       _beginLine = -1;
@@ -202,14 +200,6 @@ public class OptNode
 
 	public void setK(int k) {
 		_k = k;
-	}
-	
-	public OptNodeStatistics getStatistics() {
-		return _stats;
-	}
-	
-	public void setStatistics(OptNodeStatistics stats) {
-		_stats = stats;
 	}
 
 	public boolean exchangeChild(OptNode oldNode, OptNode newNode) {
@@ -334,7 +324,7 @@ public class OptNode
 	}
 
 	public int getTotalK() {
-		int k = 1;		
+		int k = 1;
 		if( !isLeaf() )
 			for( OptNode n : _childs )
 				k = Math.max(k, n.getTotalK() );
@@ -404,13 +394,13 @@ public class OptNode
 	public void checkAndCleanupLeafNodes() {
 		if( isLeaf() )
 			return;
-		for( int i=0; i<_childs.size(); i++ ) {
-			OptNode n = _childs.get(i);
+		Iterator<OptNode> iter = _childs.iterator();
+		while( iter.hasNext() ) {
+			OptNode n = iter.next();
 			n.checkAndCleanupLeafNodes();
 			if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST 
 				&& n._ntype != NodeType.FUNCCALL ) {
-				_childs.remove(i);
-				i--;
+				iter.remove();
 			}
 		}
 	}

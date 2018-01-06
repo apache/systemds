@@ -28,44 +28,42 @@ import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 
 
 public class InstructionParser 
-{		
+{
 	public static Instruction parseSingleInstruction ( String str ) 
 		throws DMLRuntimeException 
-	{	
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 		
-		String execType = str.split(Instruction.OPERAND_DELIM)[0]; 
-		if (   execType.equalsIgnoreCase(ExecType.CP.toString()) 
-			|| execType.equalsIgnoreCase(ExecType.CP_FILE.toString()) ) 
-		{
-			CPType cptype = InstructionUtils.getCPType(str); 
-			if( cptype == null )
-				throw new DMLRuntimeException("Unknown CP instruction: " + str);
-			return CPInstructionParser.parseSingleInstruction (cptype, str);
-		}
-		else if ( execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
-		{
-			SPType sptype = InstructionUtils.getSPType(str); 
-			if( sptype == null )
-				throw new DMLRuntimeException("Unknown SPARK instruction: " + str);
-			return SPInstructionParser.parseSingleInstruction (sptype, str);
-		}
-		else if ( execType.equalsIgnoreCase(ExecType.GPU.toString()) ) 
-		{
-			GPUINSTRUCTION_TYPE gputype = InstructionUtils.getGPUType(str); 
-			if( gputype == null )
-				throw new DMLRuntimeException("Unknown GPU instruction: " + str);
-			return GPUInstructionParser.parseSingleInstruction (gputype, str);
-		}
-		else if ( execType.equalsIgnoreCase("MR") ) {
-			MRType mrtype = InstructionUtils.getMRType(str); 
-			if( mrtype == null )
-				throw new DMLRuntimeException("Unknown MR instruction: " + str);
-			return MRInstructionParser.parseSingleInstruction (mrtype, str);
-		}
-		else {
-			throw new DMLRuntimeException("Unknown execution type in instruction: " + str);
+		ExecType et = InstructionUtils.getExecType(str);
+		switch( et ) {
+			case CP:
+			case CP_FILE: {
+				CPType cptype = InstructionUtils.getCPType(str);
+				if( cptype == null )
+					throw new DMLRuntimeException("Unknown CP instruction: " + str);
+				return CPInstructionParser.parseSingleInstruction (cptype, str);
+			}
+			case SPARK: {
+				SPType sptype = InstructionUtils.getSPType(str);
+				if( sptype == null )
+					throw new DMLRuntimeException("Unknown SPARK instruction: " + str);
+				return SPInstructionParser.parseSingleInstruction (sptype, str);
+			}
+			case GPU: {
+				GPUINSTRUCTION_TYPE gputype = InstructionUtils.getGPUType(str);
+				if( gputype == null )
+					throw new DMLRuntimeException("Unknown GPU instruction: " + str);
+				return GPUInstructionParser.parseSingleInstruction (gputype, str);
+			}
+			case MR: {
+				MRType mrtype = InstructionUtils.getMRType(str);
+				if( mrtype == null )
+					throw new DMLRuntimeException("Unknown MR instruction: " + str);
+				return MRInstructionParser.parseSingleInstruction (mrtype, str);
+			}
+			default:
+				throw new DMLRuntimeException("Unknown execution type in instruction: " + str);
 		}
 	}
 	

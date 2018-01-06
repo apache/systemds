@@ -286,10 +286,6 @@ public class OptTreeConverter
 				throw new DMLRuntimeException("Unsupported instruction type.");
 		}
 		
-		//create statistics 
-		OptNodeStatistics stats = analyzeStatistics(inst, node, vars);
-		node.setStatistics(stats);
-		
 		return node;
 	}
 
@@ -465,9 +461,10 @@ public class OptTreeConverter
 			
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() ) {
-				if( containsMRJobInstruction(pb, false, false) )
+				boolean isSparkExec = OptimizerUtils.isSparkExecutionMode();
+				if( !isSparkExec && containsMRJobInstruction(pb, false, false) )
 					node.setExecType(ExecType.MR);
-				else if(containsMRJobInstruction(pb, false, true))
+				else if( isSparkExec && containsMRJobInstruction(pb, false, true))
 					node.setExecType(ExecType.SPARK);
 			}
 		}
@@ -622,7 +619,7 @@ public class OptTreeConverter
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
-		}		
+		}
 		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP)
 		{
 			//do nothing
@@ -630,53 +627,25 @@ public class OptTreeConverter
 		else 
 		{
 			ret =   containsMRJobInstruction(pb, true, true)
-			      | (inclFunctions && containsFunctionCallInstruction(pb));
+				|| (inclFunctions && containsFunctionCallInstruction(pb));
 		}
 
 		return ret;
 	}
 
-	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile, boolean inclSpark )
-	{
+	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile, boolean inclSpark ) {
 		return containsMRJobInstruction(pb.getInstructions(), inclCPFile, inclSpark);
 	}
 
-	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark )
-	{
-		boolean ret = false;
-		if( instSet!=null )
-			for( Instruction inst : instSet )
-				if(    inst instanceof MRJobInstruction
-					|| (inclSpark && inst instanceof SPInstruction)	
-					|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)))
-				{
-					ret = true;
-					break;
-				}
-
-		return ret;
+	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark ) {
+		return instSet.stream().anyMatch(inst -> inst instanceof MRJobInstruction
+			|| (inclSpark && inst instanceof SPInstruction)
+			|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)));
 	}
 
-	public static boolean containsFunctionCallInstruction( ProgramBlock pb )
-	{
-		boolean ret = false;
-		for( Instruction inst : pb.getInstructions() )
-			if( inst instanceof FunctionCallCPInstruction )
-			{
-				ret = true;
-				break;
-			}
-
-		return ret;
-	}	
-
-	private static OptNodeStatistics analyzeStatistics(Instruction inst, OptNode on, LocalVariableMap vars) 
-		throws DMLRuntimeException 
-	{
-		//since the performance test tool for offline profiling has been removed,
-		//we return default values
-		
-		return new OptNodeStatistics(); //default values
+	public static boolean containsFunctionCallInstruction( ProgramBlock pb ) {
+		return pb.getInstructions().stream()
+			.anyMatch(inst -> inst instanceof FunctionCallCPInstruction);
 	}
 
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
@@ -700,22 +669,22 @@ public class OptTreeConverter
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pbParent;
 			replaceProgramBlock( ipb.getChildBlocksIfBody(), pbOld, pbNew );
-			replaceProgramBlock( ipb.getChildBlocksElseBody(), pbOld, pbNew );				
+			replaceProgramBlock( ipb.getChildBlocksElseBody(), pbOld, pbNew );
 		}
 		else if( pbParent instanceof WhileProgramBlock )
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pbParent;
-			replaceProgramBlock( wpb.getChildBlocks(), pbOld, pbNew );			
+			replaceProgramBlock( wpb.getChildBlocks(), pbOld, pbNew );
 		}
 		else if( pbParent instanceof ForProgramBlock || pbParent instanceof ParForProgramBlock )
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pbParent;
-			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );	
+			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
 		}
 		else if( pbParent instanceof FunctionProgramBlock )
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock) pbParent;
-			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );	
+			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
 		}
 		else
 			throw new DMLRuntimeException("Optimizer doesn't support "+pbParent.getClass().getName());

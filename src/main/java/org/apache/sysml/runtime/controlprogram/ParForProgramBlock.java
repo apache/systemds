@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -750,17 +751,16 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		try
 		{
-			// Step 1) init parallel workers, task queue and threads
+			// Step 1) create task queue and init workers in parallel
+			// (including preparation of update-in-place variables)
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			for( int i=0; i<_numThreads; i++ ) {
-				//create parallel workers as (lazy) deep copies
-				//including preparation of update-in-place variables
+			IntStream.range(0, _numThreads).parallel().forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
-				threads[i].setPriority(Thread.MAX_PRIORITY); 
-			}
+				threads[i].setPriority(Thread.MAX_PRIORITY);
+			});
 			
 			// start threads (from now on waiting for tasks)
 			for( Thread thread : threads )
@@ -1346,10 +1346,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param ec execution context
 	 * @param index the index of the worker
 	 * @return local parworker
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec, int index)
-		throws DMLRuntimeException
 	{
 		LocalParWorker pw = null; 
 		
@@ -1393,7 +1391,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			pw.setFunctionNames(fnNames);
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+			throw new RuntimeException(ex);
 		}
 		
 		return pw;

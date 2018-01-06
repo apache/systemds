@@ -34,7 +34,7 @@ public class OptTreePlanMapping
 	
 	protected IDSequence _idSeq;
 	protected Map<Long, OptNode> _id_optnode;
-    
+	    
 	public OptTreePlanMapping()
 	{
 		_idSeq = new IDSequence();

@@ -136,7 +136,8 @@ public abstract class Expression implements ParseInfo
 		TRACE, 
 		TRANS,
 		VAR,
-		XOR
+		XOR,
+		BITWISE_AND,
 	}
 
 	/**

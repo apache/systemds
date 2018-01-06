@@ -41,40 +41,8 @@ import org.apache.sysml.lops.WeightedSquaredLossR;
 import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.And;
-import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.*;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysml.runtime.functionobjects.CM;
-import org.apache.sysml.runtime.functionobjects.Divide;
-import org.apache.sysml.runtime.functionobjects.Equals;
-import org.apache.sysml.runtime.functionobjects.GreaterThan;
-import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
-import org.apache.sysml.runtime.functionobjects.IndexFunction;
-import org.apache.sysml.runtime.functionobjects.IntegerDivide;
-import org.apache.sysml.runtime.functionobjects.KahanPlus;
-import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysml.runtime.functionobjects.LessThan;
-import org.apache.sysml.runtime.functionobjects.LessThanEquals;
-import org.apache.sysml.runtime.functionobjects.Mean;
-import org.apache.sysml.runtime.functionobjects.Minus;
-import org.apache.sysml.runtime.functionobjects.Minus1Multiply;
-import org.apache.sysml.runtime.functionobjects.MinusMultiply;
-import org.apache.sysml.runtime.functionobjects.MinusNz;
-import org.apache.sysml.runtime.functionobjects.Modulus;
-import org.apache.sysml.runtime.functionobjects.Multiply;
-import org.apache.sysml.runtime.functionobjects.Multiply2;
-import org.apache.sysml.runtime.functionobjects.Not;
-import org.apache.sysml.runtime.functionobjects.NotEquals;
-import org.apache.sysml.runtime.functionobjects.Or;
-import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.functionobjects.PlusMultiply;
-import org.apache.sysml.runtime.functionobjects.Power;
-import org.apache.sysml.runtime.functionobjects.Power2;
-import org.apache.sysml.runtime.functionobjects.ReduceAll;
-import org.apache.sysml.runtime.functionobjects.ReduceCol;
-import org.apache.sysml.runtime.functionobjects.ReduceDiag;
-import org.apache.sysml.runtime.functionobjects.ReduceRow;
-import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
@@ -541,6 +509,8 @@ public class InstructionUtils
 			return new BinaryOperator(Or.getOrFnObject());
 		else if(opcode.equalsIgnoreCase("xor"))
 			return new BinaryOperator(Xor.getXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwAnd"))
+			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
 		else if(opcode.equalsIgnoreCase("+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-"))

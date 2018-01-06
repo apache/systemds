@@ -2667,6 +2667,11 @@ public class DMLTranslator
 				target.getValueType(), Hop.OpOp2.XOR, expr, expr2);
 			break;
 
+		case BITWISE_AND:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BITWISE_AND, expr, expr2);
+			break;
+
 		case ABS:
 		case SIN:
 		case COS:

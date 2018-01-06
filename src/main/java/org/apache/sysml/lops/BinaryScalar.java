@@ -37,7 +37,7 @@ public class BinaryScalar extends Lop
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, XOR,
 		LOG,POW,MAX,MIN,PRINT,
-		IQSIZE,
+		IQSIZE, BITWISE_AND,
 	}
 	
 	private final OperationTypes operation;
@@ -149,7 +149,8 @@ public class BinaryScalar extends Lop
 			/* Boolean built in binary function */
 			case XOR:
 				return "xor";
-			
+			case BITWISE_AND:
+				return "bitwAnd";
 			/* Builtin Functions */
 			case LOG:
 				return "log";

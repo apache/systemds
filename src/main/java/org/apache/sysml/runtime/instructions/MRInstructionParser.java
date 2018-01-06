@@ -188,6 +188,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "&&"   , MRType.Binary);
 		String2MRInstructionType.put( "||"   , MRType.Binary);
 		String2MRInstructionType.put( "xor"  , MRType.Binary);
+		String2MRInstructionType.put( "bitwAnd", MRType.Binary);
 		String2MRInstructionType.put( "+*"   , MRType.Binary2); 
 		String2MRInstructionType.put( "-*"   , MRType.Binary2); 
 		
@@ -210,6 +211,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "map&&"   , MRType.Binary);
 		String2MRInstructionType.put( "map||"   , MRType.Binary);
 		String2MRInstructionType.put( "mapxor"  , MRType.Binary);
+		String2MRInstructionType.put( "mapbitwAnd", MRType.Binary);
 		
 		String2MRInstructionType.put( "uaggouterchain", MRType.UaggOuterChain);
 		

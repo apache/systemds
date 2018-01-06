@@ -129,6 +129,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "&&"   , CPType.Binary);
 		String2CPInstructionType.put( "||"   , CPType.Binary);
 		String2CPInstructionType.put( "xor"  , CPType.Binary);
+		String2CPInstructionType.put( "bitwAnd", CPType.Binary);
 		String2CPInstructionType.put( "!"    , CPType.Unary);
 
 		// Relational Instruction Opcodes 

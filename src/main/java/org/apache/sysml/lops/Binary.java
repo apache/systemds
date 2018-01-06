@@ -36,7 +36,7 @@ public class Binary extends Lop
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MINUS1_MULTIPLY, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, XOR,
-		MAX, MIN, POW, SOLVE, NOTSUPPORTED
+		MAX, MIN, POW, SOLVE, BITWISE_AND, NOTSUPPORTED
 	}
 
 	private OperationTypes operation;
@@ -160,7 +160,8 @@ public class Binary extends Lop
 		/* Binary Builtin Function */
 		case XOR:
 			return "xor";
-
+		case BITWISE_AND:
+			return "bitwAnd";
 
 		/* Builtin Functions */
 		case MIN:

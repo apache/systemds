@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -37,7 +37,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public abstract class ResultMerge 
 {
-	
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
 	
 	protected static final String NAME_SUFFIX = "_rm";
@@ -47,13 +46,11 @@ public abstract class ResultMerge
 	protected MatrixObject[] _inputs      = null; 
 	protected String         _outputFName = null;
 	
-	protected ResultMerge( )
-	{
-		
+	protected ResultMerge( ) {
+		//do nothing
 	}
 	
-	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename )
-	{
+	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename ) {
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
@@ -90,11 +87,9 @@ public abstract class ResultMerge
 	 * @param appendOnly ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
-		throws DMLRuntimeException
-	{
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) throws DMLRuntimeException {
 		//pass through to matrix block operations
-		out.merge(in, appendOnly);	
+		out.merge(in, appendOnly);
 	}
 
 	/**
@@ -106,7 +101,7 @@ public abstract class ResultMerge
 	 * @param compare ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
+	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, DenseBlock compare ) 
 		throws DMLRuntimeException
 	{
 		//Notes for result correctness:
@@ -115,51 +110,48 @@ public abstract class ResultMerge
 		// * Explicit NaN awareness because for cases were original matrix contains
 		//   NaNs, since NaN != NaN, otherwise we would potentially overwrite results
 		
-		if( in.isInSparseFormat() ) //sparse input format
-		{
+		if( in.isEmptyBlock(false) ) {
+			for( int i=0; i<in.getNumRows(); i++ )
+				for( int j=0; j<in.getNumColumns(); j++ )
+					if( compare.get(i, j) != 0 )
+						out.quickSetValue(i, j, 0);
+		}
+		else if( in.isInSparseFormat() ) { //SPARSE
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
 			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
-				{	
-				    double value = in.getValueSparseUnsafe(i,j);  //input value
-					if(   (value != compare[i][j] && !Double.isNaN(value) )     //for new values only (div)
-						|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
+				for( int j=0; j<cols; j++ ) {
+					double value = in.getValueSparseUnsafe(i,j);  //input value
+					if(   (value != compare.get(i,j) && !Double.isNaN(value) )     //for new values only (div)
+						|| Double.isNaN(value) != Double.isNaN(compare.get(i,j)) ) //NaN awareness 
 					{
-				    	out.quickSetValue( i, j, value );	
+						out.quickSetValue(i, j, value);
 					}
 				}
 		}
-		else //dense input format
-		{
-			//for a merge this case will seldom happen, as each input MatrixObject
-			//has at most 1/numThreads of all values in it.
+		else { //DENSE
+			//guaranteed allocated due to empty case above
+			DenseBlock a = in.getDenseBlock();
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
-			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
-				{
-				    double value = in.getValueDenseUnsafe(i,j);  //input value
-				    if(    (value != compare[i][j] && !Double.isNaN(value) )    //for new values only (div)
-				    	|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
-				    {
-				    	out.quickSetValue( i, j, value );	
-				    }
+			for( int i=0; i<rows; i++ ) {
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				for( int j=0; j<cols; j++ ) {
+					double value = avals[aix+j]; //input value
+					if( (value != compare.get(i,j) && !Double.isNaN(value) ) //for new values only (div)
+						|| Double.isNaN(value) != Double.isNaN(compare.get(i,j)) ) //NaN awareness
+					{
+						out.quickSetValue( i, j, value );
+					}
 				}
-		}	
+			}
+		}
 	}
 
-	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in )
-	{
-		MatrixCharacteristics mc = out.getMatrixCharacteristics();
-		long outNNZ = mc.getNonZeros();	
-		long ret = outNNZ;
-		for( MatrixObject tmp : in ) {
-			MatrixCharacteristics tmpmc = tmp.getMatrixCharacteristics();
-			long inNNZ = tmpmc.getNonZeros();
-			ret +=  (inNNZ - outNNZ);
-		}
-		
-		return ret;
+	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in ) {
+		//sum of nnz of input (worker result) - output var existing nnz
+		return -(in.size() * out.getMatrixCharacteristics().getNonZeros())
+			+ in.stream().mapToLong(m -> m.getMatrixCharacteristics().getNonZeros()).sum();
 	}
 }

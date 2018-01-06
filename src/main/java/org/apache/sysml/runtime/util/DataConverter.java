@@ -339,7 +339,7 @@ public class DataConverter
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret.set(cell.getI(), cols+cell.getJ(), cell.getV());
+					ret.set(cell.getI(), cell.getJ(), cell.getV());
 				}
 			}
 			else if( deep ) {

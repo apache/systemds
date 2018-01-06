@@ -29,11 +29,9 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class ResultMergeLocalAutomatic extends ResultMerge
 {
-	
 	private ResultMerge _rm = null;
 	
-	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename )
-	{
+	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename ) {
 		super( out, in, outputFilename );
 	}
 
@@ -72,6 +70,6 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
 		
-		return _rm.executeParallelMerge(par);	
+		return _rm.executeParallelMerge(par);
 	}
 }

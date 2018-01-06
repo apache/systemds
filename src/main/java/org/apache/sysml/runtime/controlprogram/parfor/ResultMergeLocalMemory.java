@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -40,13 +41,11 @@ import org.apache.sysml.runtime.util.DataConverter;
  * 
  */
 public class ResultMergeLocalMemory extends ResultMerge
-{	
-	
+{
 	//internal comparison matrix
-	private double[][]        _compare     = null;
+	private DenseBlock _compare = null;
 	
-	public ResultMergeLocalMemory( MatrixObject out, MatrixObject[] in, String outputFilename )
-	{
+	public ResultMergeLocalMemory( MatrixObject out, MatrixObject[] in, String outputFilename ) {
 		super( out, in, outputFilename );
 	}
 	
@@ -73,7 +72,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			boolean appendOnly = outMBNew.isInSparseFormat();
 			
 			//create compare matrix if required (existing data in result)
-			_compare = createCompareMatrix(outMB);
+			_compare = getCompareMatrix(outMB);
 			if( _compare != null )
 				outMBNew.copy(outMB);
 			
@@ -88,7 +87,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 						LOG.trace("ResultMerge (local, in-memory): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 					
 					//read/pin input_i
-					MatrixBlock inMB = in.acquireRead();	
+					MatrixBlock inMB = in.acquireRead();
 					
 					//core merge 
 					merge( outMBNew, inMB, appendOnly );
@@ -117,15 +116,13 @@ public class ResultMergeLocalMemory extends ResultMerge
 			outMBNew.examSparsity(); 
 			
 			//create output
-			if( flagMerged )
-			{		
+			if( flagMerged ) {
 				//create new output matrix 
 				//(e.g., to prevent potential export<->read file access conflict in specific cases of 
 				// local-remote nested parfor))
-				moNew = createNewMatrixObject( outMBNew );	
+				moNew = createNewMatrixObject( outMBNew );
 			}
-			else
-			{
+			else {
 				moNew = _output; //return old matrix, to prevent copy
 			}
 			
@@ -172,7 +169,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 				outMBNew.allocateDenseBlockUnsafe((int)rows, (int)cols);
 				
 				//create compare matrix if required (existing data in result)
-				_compare = createCompareMatrix(outMB);
+				_compare = getCompareMatrix(outMB);
 				if( _compare != null )
 					outMBNew.copy(outMB);
 				
@@ -201,10 +198,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 				//create new output matrix 
 				//(e.g., to prevent potential export<->read file access conflict in specific cases of 
 				// local-remote nested parfor))
-				moNew = createNewMatrixObject( outMBNew );	
+				moNew = createNewMatrixObject( outMBNew );
 			}
-			else
-			{
+			else {
 				moNew = _output; //return old matrix, to prevent copy
 			}
 			
@@ -220,10 +216,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 		return moNew;
 	}
 
-	private static double[][] createCompareMatrix( MatrixBlock output ) {
+	private static DenseBlock getCompareMatrix( MatrixBlock output ) {
 		//create compare matrix only if required
-		if( output.getNonZeros() > 0 )
-			return DataConverter.convertToDoubleMatrix( output );
+		if( !output.isEmptyBlock(false) )
+			return DataConverter.convertToDenseBlock(output, false);
 		return null;
 	}
 

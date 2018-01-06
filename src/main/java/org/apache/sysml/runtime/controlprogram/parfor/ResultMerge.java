@@ -151,7 +151,8 @@ public abstract class ResultMerge
 
 	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in ) {
 		//sum of nnz of input (worker result) - output var existing nnz
-		return -(in.size() * out.getMatrixCharacteristics().getNonZeros())
-			+ in.stream().mapToLong(m -> m.getMatrixCharacteristics().getNonZeros()).sum();
+		long outNNZ = out.getMatrixCharacteristics().getNonZeros();
+		return outNNZ - in.size() * outNNZ + in.stream()
+			.mapToLong(m -> m.getMatrixCharacteristics().getNonZeros()).sum();
 	}
 }

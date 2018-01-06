@@ -19,10 +19,16 @@
 #
 #-------------------------------------------------------------
 
-A = read($1);
-B = read($2);
+args <- commandArgs(TRUE)
+options(digits=22)
 
-C = bitwAnd(A, B);
+library("Matrix")
 
-write(C, $3);
+A <- readMM(paste(args[1], "A.mtx", sep=""))
+B <- readMM(paste(args[1], "B.mtx", sep=""))
+
+n = 2
+C = bitwShiftR(A, n); # in R, only supported over matrix-scalar
+
+writeMM(as(C, "CsparseMatrix"), paste(args[2], "C", sep=""));
 

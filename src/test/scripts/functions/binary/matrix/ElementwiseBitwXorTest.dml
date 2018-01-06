@@ -22,7 +22,7 @@
 A = read($1);
 B = read($2);
 
-C = bitwAnd(A, B);
+C = bitwXor(A, B);
 
 write(C, $3);
 

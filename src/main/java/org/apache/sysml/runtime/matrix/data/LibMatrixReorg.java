@@ -101,9 +101,8 @@ public class LibMatrixReorg
 	{
 		ReorgType type = getReorgType(op);
 		
-		switch( type )
-		{
-			case TRANSPOSE: 
+		switch( type ) {
+			case TRANSPOSE:
 				if( op.getNumThreads() > 1 )
 					return transpose(in, out, op.getNumThreads());
 				else
@@ -111,11 +110,10 @@ public class LibMatrixReorg
 			case REV:
 				return rev(in, out);
 			case DIAG:
-				return diag(in, out); 
+				return diag(in, out);
 			case SORT:
 				SortIndex ix = (SortIndex) op.fn;
 				return sort(in, out, ix.getCols(), ix.getDecreasing(), ix.getIndexReturn());
-			
 			default:
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
 		}
@@ -341,7 +339,7 @@ public class LibMatrixReorg
 			
 			if( !sparse && clen == 1 ) { //DENSE COLUMN VECTOR
 				//in-place quicksort, unstable (no indexes needed)
-				out.copy( in ); //dense
+				out.copy( in ); //dense (always single block)
 				Arrays.sort(out.getDenseBlockValues());
 				if( desc )
 					sortReverseDense(out);
@@ -351,7 +349,7 @@ public class LibMatrixReorg
 		else //SORT INDEX
 		{
 			if( in.isEmptyBlock(false) ) { //EMPTY INPUT BLOCK
-				out.allocateDenseBlock(false);
+				out.allocateDenseBlock(false); //single block
 				double[] c = out.getDenseBlockValues();
 				for( int i=0; i<rlen; i++ )
 					c[i] = i+1; //seq(1,n)
@@ -391,8 +389,10 @@ public class LibMatrixReorg
 			//copy input data in sorted order into result
 			if( !sparse ) { //DENSE
 				out.allocateDenseBlock(false);
+				DenseBlock a = in.getDenseBlock();
+				DenseBlock c = out.getDenseBlock();
 				for( int i=0; i<rlen; i++ )
-					System.arraycopy(in.getDenseBlockValues(), vix[i]*clen, out.getDenseBlockValues(), i*clen, clen);
+					System.arraycopy(a.values(vix[i]), a.pos(vix[i]), c.values(i), c.pos(i), clen);
 			}
 			else { //SPARSE
 				out.allocateSparseRowsBlock(false);
@@ -405,8 +405,9 @@ public class LibMatrixReorg
 		else {
 			//copy sorted index vector into result
 			out.allocateDenseBlock(false);
+			DenseBlock c = out.getDenseBlock();
 			for( int i=0; i<rlen; i++ )
-				out.setValueDenseUnsafe(i, 0, vix[i]+1);
+				c.set(i, 0, vix[i]+1);
 		}
 		
 		return out;
@@ -439,7 +440,7 @@ public class LibMatrixReorg
 			if( SHALLOW_COPY_REORG )
 				out.copyShallow(in);
 			else
-				out.copy(in); 
+				out.copy(in);
 			return out;
 		}
 	
@@ -981,33 +982,35 @@ public class LibMatrixReorg
 		return cnt;
 	}
 
-	private static void reverseDense(MatrixBlock in, MatrixBlock out) 
+	private static void reverseDense(MatrixBlock in, MatrixBlock out)
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int len = m * n;
 		
 		//set basic meta data and allocate output
 		out.sparse = false;
 		out.nonZeros = in.nonZeros;
 		out.allocateDenseBlock(false);
 		
-		double[] a = in.getDenseBlockValues();
-		double[] c = out.getDenseBlockValues();
-		
 		//copy all rows into target positions
 		if( n == 1 ) { //column vector
+			double[] a = in.getDenseBlockValues();
+			double[] c = out.getDenseBlockValues();
 			for( int i=0; i<m; i++ )
 				c[m-1-i] = a[i];
 		}
 		else { //general matrix case
-			for( int i=0, aix=0; i<m; i++, aix+=n )
-				System.arraycopy(a, aix, c, len-aix-n, n);
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = out.getDenseBlock();
+			for( int i=0; i<m; i++ ) {
+				final int ri = m - 1 - i;
+				System.arraycopy(a.values(i), a.pos(i), c.values(ri), c.pos(ri), n);
+			}
 		}
 	}
 
-	private static void reverseSparse(MatrixBlock in, MatrixBlock out) 
+	private static void reverseSparse(MatrixBlock in, MatrixBlock out)
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
@@ -1018,15 +1021,12 @@ public class LibMatrixReorg
 		
 		out.allocateSparseRowsBlock(false);
 		
+		//copy all rows into target positions
 		SparseBlock a = in.getSparseBlock();
 		SparseBlock c = out.getSparseBlock();
-		
-		//copy all rows into target positions
-		for( int i=0; i<m; i++ ) {
-			if( !a.isEmpty(i) ) {
-				c.set(m-1-i, a.get(i), true);	
-			}
-		}
+		for( int i=0; i<m; i++ )
+			if( !a.isEmpty(i) )
+				c.set(m-1-i, a.get(i), true);
 	}
 	
 	/**
@@ -1092,14 +1092,17 @@ public class LibMatrixReorg
 	 */
 	private static void diagM2V( MatrixBlock in, MatrixBlock out )
 	{
+		DenseBlock c = out.allocateBlock().getDenseBlock();
 		int rlen = in.rlen;
-		
-		for( int i=0; i<rlen; i++ )
-		{
+		int nnz = 0;
+		for( int i=0; i<rlen; i++ ) {
 			double val = in.quickGetValue(i, i);
-			if( val != 0 )
-				out.quickSetValue(i, 0, val);
+			if( val != 0 ) {
+				c.set(i, 0, val);
+				nnz++;
+			}
 		}
+		out.setNonZeros(nnz);
 	}
 
 	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
@@ -1113,7 +1116,7 @@ public class LibMatrixReorg
 			return;
 		
 		//shallow dense by-row reshape (w/o result allocation)
-		if( SHALLOW_COPY_REORG && rowwise ) {
+		if( SHALLOW_COPY_REORG && rowwise && in.denseBlock.numBlocks()==1 ) {
 			//since the physical representation of dense matrices is always the same,
 			//we don't need to create a copy, given our copy on write semantics.
 			//however, note that with update in-place this would be an invalid optimization
@@ -1125,42 +1128,45 @@ public class LibMatrixReorg
 		out.allocateDenseBlock(false);
 		
 		//dense reshape
-		double[] a = in.getDenseBlockValues();
-		double[] c = out.getDenseBlockValues();
+		DenseBlock a = in.getDenseBlock();
+		DenseBlock c = out.getDenseBlock();
 		
-		if( rowwise )
-		{
+		if( rowwise ) {
 			//VECTOR-MATRIX, MATRIX-VECTOR, GENERAL CASE
 			//pure copy of rowwise internal representation
-			System.arraycopy(a, 0, c, 0, c.length);
-		}	
-		else //colwise
-		{
-			if( rlen==1 || clen==1 ) //VECTOR->MATRIX
-			{
+			c.set(a);
+		}
+		else { //colwise
+			if( rlen==1 || clen==1 ) { //VECTOR->MATRIX
 				//note: cache-friendly on a but not on c
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
 				for( int j=0, aix=0; j<cols; j++ )
 					for( int i=0, cix=0; i<rows; i++, cix+=cols )
-						c[ cix + j ] = a[ aix++ ];
+						cvals[ cix + j ] = avals[ aix++ ];
 			}
-			else if( rows==1 || cols==1 ) //MATRIX->VECTOR	
+			else if( rows==1 || cols==1 ) //MATRIX->VECTOR
 			{
 				//note: cache-friendly on c but not on a
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
 				for( int j=0, cix=0; j<clen; j++ )
 					for( int i=0, aix=0; i<rlen; i++, aix+=clen )
-						c[ cix++ ] = a[ aix + j ];
+						cvals[ cix++ ] = avals[ aix + j ];
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on c but not an a
-				for( int i=0, cix=0; i<rows; i++ )
-					for( int j=0, aix2=i; j<cols; j++, aix2+=rows )
-					{
+				for( int i=0; i<rows; i++ ) {
+					double[] cvals = c.values(i);
+					int cix = c.pos(i);
+					for( int j=0, aix2=i; j<cols; j++, aix2+=rows ) {
 						int ai = aix2%rlen;
 						int aj = aix2/rlen;
-						c[ cix++ ] = a[ ai*clen+aj ];
-					}			
-				//index conversion c[i,j]<- a[k,l]: 
+						cvals[cix+j] = a.get(ai,aj);
+					}
+				}
+				//index conversion c[i,j]<- a[k,l]:
 				// k = (rows*j+i)%rlen
 				// l = (rows*j+i)/rlen
 			}
@@ -1194,16 +1200,14 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on a and c; append-only
 				c.allocate(0, estnnz, cols);
-				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
-				{
-					if( !a.isEmpty(i) ) {
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ )
-							c.append(0, cix+aix[j], avals[j]);
-					}
+				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ )
+						c.append(0, cix+aix[j], avals[j]);
 				}
 			}
 			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
@@ -1231,22 +1235,19 @@ public class LibMatrixReorg
 				//note: cache-friendly on a but not c; append-only
 				//long cix because total cells in sparse can be larger than int
 				long cix = 0;
-				
-				for( int i=0; i<rlen; i++ ) 
-				{
+				for( int i=0; i<rlen; i++ ) {
 					if( !a.isEmpty(i) ){
 						int apos = a.pos(i);
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ )
-						{
+						double[] avals = a.values(i);
+						for( int j=apos; j<apos+alen; j++ ) {
 							int ci = (int)((cix+aix[j])/cols);
 							int cj = (int)((cix+aix[j])%cols);
 							c.allocate(ci, estnnz, cols);
 							c.append(ci, cj, avals[j]);
 						}
-					}	
+					}
 					
 					cix += clen;
 				}
@@ -1265,35 +1266,31 @@ public class LibMatrixReorg
 					int alen = a.size(0); //always pos 0
 					int[] aix = a.indexes(0);
 					double[] avals = a.values(0);
-					for( int j=0; j<alen; j++ ) 
-					{
+					for( int j=0; j<alen; j++ ) {
 						int ci = aix[j]%rows;
-						int cj = aix[j]/rows;       
+						int cj = aix[j]/rows;
 						c.allocate(ci, estnnz, cols);
 						c.append(ci, cj, avals[j]);
 					}
-				}								
+				}
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on a but not c; append&sort, in-place w/o shifts
-				for( int i=0; i<rlen; i++ ) 
-				{
-					if( !a.isEmpty(i) ){
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ )
-						{
-							//long tmpix because total cells in sparse can be larger than int
-							long tmpix = (long)aix[j]*rlen+i;
-							int ci = (int)(tmpix%rows);
-							int cj = (int)(tmpix/rows); 
-							c.allocate(ci, estnnz, cols);
-							c.append(ci, cj, avals[j]);
-						}
-					}	
+				for( int i=0; i<rlen; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						//long tmpix because total cells in sparse can be larger than int
+						long tmpix = (long)aix[j]*rlen+i;
+						int ci = (int)(tmpix%rows);
+						int cj = (int)(tmpix/rows); 
+						c.allocate(ci, estnnz, cols);
+						c.append(ci, cj, avals[j]);
+					}
 				}
 				out.sortSparseRows();
 			}
@@ -1314,26 +1311,30 @@ public class LibMatrixReorg
 		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
-		double[] a = in.getDenseBlockValues();
+		DenseBlock a = in.getDenseBlock();
 		SparseBlock c = out.sparseBlock;
 		
-		if( rowwise )
-		{
+		if( rowwise ) {
 			//NOTES on special cases
 			// * vector-matrix, matrix-vector not really different from general
 			
 			//GENERAL CASE: MATRIX->MATRIX
 			//note: cache-friendly on a and c; append-only
-			for( int i=0, aix=0; i<rows; i++ ) 
-				for( int j=0; j<cols; j++ )
-				{
-					double val = a[aix++];
+			for( int i=0; i<rlen; i++ ) {
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				for( int j=0; j<clen; j++ ) {
+					double val = avals[aix+j];
 					if( val != 0 ) {
-						c.allocate(i, estnnz, cols);
-						c.append(i, j, val);
+						long cix = (long) i*clen+j;
+						int ci = (int)(cix / cols);
+						int cj = (int)(cix % cols);
+						c.allocate(ci, estnnz, cols);
+						c.append(ci, cj, val);
 					}
 				}
-		}	
+			}
+		}
 		else //colwise
 		{
 			//NOTES on special cases
@@ -1342,10 +1343,10 @@ public class LibMatrixReorg
 			if( rlen==1 ) //VECTOR->MATRIX
 			{
 				//note: cache-friendly on a but not c; append-only
+				double[] avals = a.valuesAt(0);
 				for( int j=0, aix=0; j<cols; j++ )
-					for( int i=0; i<rows; i++ ) 
-					{
-						double val = a[aix++];
+					for( int i=0; i<rows; i++ ) {
+						double val = avals[aix++];
 						if( val != 0 ) {
 							c.allocate(i, estnnz, cols);
 							c.append(i, j, val);
@@ -1356,16 +1357,15 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on c but not a; append-only
 				for( int i=0; i<rows; i++ )
-					for( int j=0, aix2=i; j<cols; j++, aix2+=rows )
-					{
+					for( int j=0, aix2=i; j<cols; j++, aix2+=rows ) {
 						int ai = aix2%rlen;
 						int aj = aix2/rlen;
-						double val = a[ ai*clen+aj ];
+						double val = a.get(ai, aj);
 						if( val != 0 ) {
 							c.allocate(i, estnnz, cols);
 							c.append(i, j, val);
 						}
-					}			
+					}
 			}
 		}
 	}
@@ -1385,7 +1385,7 @@ public class LibMatrixReorg
 		
 		//sparse/dense reshape
 		SparseBlock a = in.sparseBlock;
-		double[] c = out.getDenseBlockValues();
+		DenseBlock c = out.getDenseBlock();
 		
 		if( rowwise )
 		{
@@ -1394,18 +1394,20 @@ public class LibMatrixReorg
 			
 			//GENERAL CASE: MATRIX->MATRIX
 			//note: cache-friendly on a and c
-			for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
-			{
+			for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
 				if( !a.isEmpty(i) ) {
 					int apos = a.pos(i);
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);	
-					for( int j=apos; j<apos+alen; j++ )
-						c[cix+aix[j]] = avals[j];
-				}	
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						int ci = (cix+aix[j]) / cols;
+						int cj = (cix+aix[j]) % cols;
+						c.set(ci, cj, avals[j]);
+					}
+				}
 			}
-		}	
+		}
 		else //colwise
 		{
 			//NOTES on special cases
@@ -1414,35 +1416,34 @@ public class LibMatrixReorg
 			if( rlen==1 ) //VECTOR->MATRIX
 			{
 				//note: cache-friendly on a but not c
-				if( !a.isEmpty(0) ){
+				double[] cvals = c.valuesAt(0);
+				if( !a.isEmpty(0) ) {
 					int apos = a.pos(0);
 					int alen = a.size(0);
 					int[] aix = a.indexes(0);
-					double[] avals = a.values(0);	
+					double[] avals = a.values(0);
 					for( int j=apos; j<apos+alen; j++ ) {
 						int ci = aix[j]%rows;
-						int cj = aix[j]/rows;       
-						c[ci*cols+cj] = avals[j];
+						int cj = aix[j]/rows;
+						cvals[ci*cols+cj] = avals[j];
 					}
-				}								
+				}
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on a but not c
-				for( int i=0; i<rlen; i++ ) 
-				{
-					if( !a.isEmpty(i) ){
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ ) {
-							int tmpix = aix[j]*rlen+i;
-							int ci = tmpix%rows;
-							int cj = tmpix/rows;   
-							c[ci*cols+cj] = avals[j];
-						}
-					}	
+				for( int i=0; i<rlen; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						int tmpix = aix[j]*rlen+i;
+						int ci = tmpix%rows;
+						int cj = tmpix/rows;
+						c.set(ci, cj, avals[j]);
+					}
 				}
 			}
 		}
@@ -1674,10 +1675,10 @@ public class LibMatrixReorg
 
 	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
 		throws DMLRuntimeException 
-	{	
+	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		boolean[] flags = null; 
+		boolean[] flags = null;
 		int rlen2 = 0; 
 		
 		//Step 0: special case handling
@@ -1715,15 +1716,18 @@ public class LibMatrixReorg
 					rlen2 += (flags[i] = !a.isEmpty(i)) ? 1 : 0;
 			}
 			else { //DENSE
-				double[] a = in.getDenseBlockValues();
-				for(int i=0, aix=0; i<m; i++, aix+=n)
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
 					for(int j=0; j<n; j++)
-						if( a[aix+j] != 0 ) {
+						if( avals[aix+j] != 0 ) {
 							flags[i] = true;
 							rlen2++;
 							//early abort for current row
 							break; 
 						}
+				}
 			}
 		} 
 		else {
@@ -1759,25 +1763,26 @@ public class LibMatrixReorg
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{
 			ret.allocateDenseBlock();
-			double[] a = in.getDenseBlockValues();
-			double[] c = ret.getDenseBlockValues();
-			
-			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = ret.getDenseBlock();
+			for( int i=0, ci=0; i<m; i++ )
 				if( flags[i] ) {
-					System.arraycopy(a, aix, c, cix, n);
-					cix += n; //target index
+					System.arraycopy(a.values(i),
+						a.pos(i), c.values(ci), c.pos(ci), n);
+					ci++; //target row index
 				}
 		}
 		else //SPARSE <- DENSE
 		{
 			ret.allocateSparseRowsBlock();
-			double[] a = in.getDenseBlockValues();
-			
-			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+			DenseBlock a = in.getDenseBlock();
+			for( int i=0, ci=0; i<m; i++ )
 				if( flags[i] ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
 					for( int j=0; j<n; j++ )
-						ret.appendValue(cix, j, a[aix+j]);
-					cix++;
+						ret.appendValue(ci, j, avals[aix+j]);
+					ci++;
 				}
 		}
 		
@@ -1785,7 +1790,7 @@ public class LibMatrixReorg
 		ret.nonZeros = (select==null) ?
 			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
-
+		
 		return ret;
 	}
 
@@ -1802,10 +1807,8 @@ public class LibMatrixReorg
 		if (select == null) 
 		{
 			flags = new boolean[ n ]; //false
-			if( in.sparse ) //SPARSE 
-			{
+			if( in.sparse ) { //SPARSE 
 				SparseBlock a = in.sparseBlock;
-				
 				for( int i=0; i<m; i++ ) 
 					if ( !a.isEmpty(i) ) {
 						int apos = a.pos(i);
@@ -1815,19 +1818,19 @@ public class LibMatrixReorg
 							flags[ aix[j] ] = true;
 					}
 			}
-			else //DENSE
-			{
-				double[] a = in.getDenseBlockValues();
-				for(int i=0, aix=0; i<m; i++)
-					for(int j=0; j<n; j++, aix++)
-						if( a[aix] != 0 )
-							flags[j] = true;
+			else { //DENSE
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
+					for( int j=0; j<n; j++ )
+						flags[j] |= (avals[aix+j] != 0);
+				}
 			}
 		} 
 		else {
 			flags = DataConverter.convertToBooleanVector(select);
 		}
-
 		
 		//Step 2: determine number of columns
 		int clen2 = 0;
@@ -1866,7 +1869,6 @@ public class LibMatrixReorg
 			{
 				//note: output dense or sparse
 				SparseBlock a = in.sparseBlock;
-				
 				for( int i=0; i<m; i++ )
 					if ( !a.isEmpty(i) ) {
 						int apos = a.pos(i);
@@ -1878,26 +1880,32 @@ public class LibMatrixReorg
 								ret.appendValue(i, cix[aix[j]], avals[j]);
 					}
 			}
-			else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
-			{
+			else if( !in.sparse && !ret.sparse ) { //DENSE <- DENSE
 				ret.allocateDenseBlock();
-				double[] a = in.getDenseBlockValues();
-				double[] c = ret.getDenseBlockValues();
-				
-				for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
-					for(int j=0; j<n; j++, aix++)
+				DenseBlock a = in.getDenseBlock();
+				DenseBlock c = ret.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					double[] cvals = c.values(i);
+					int aix = a.pos(i);
+					int lcix = c.pos(i);
+					for( int j=0; j<n; j++ )
 						if( flags[j] )
-							 c[ lcix+cix[j] ] = a[aix];	
+							 cvals[ lcix+cix[j] ] = avals[aix+j];
+				}
 			}
-			else //SPARSE <- DENSE
-			{
+			else { //SPARSE <- DENSE
 				ret.allocateSparseRowsBlock();
-				double[] a = in.getDenseBlockValues();
-				
-				for(int i=0, aix=0; i<m; i++)
-					for(int j=0; j<n; j++, aix++)
-						if( flags[j] && a[aix]!=0 )
-							 ret.appendValue(i, cix[j], a[aix]);
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
+					for( int j=0; j<n; j++ ) {
+						double aval = avals[aix+j];
+						if( flags[j] && aval!=0 )
+							 ret.appendValue(i, cix[j], aval);
+					}
+				}
 			}
 		}
 		
@@ -1926,7 +1934,7 @@ public class LibMatrixReorg
 		double[] tmp = new double[Math.min(blksize,clen)];
 		
 		//expand input vertically  (input vector likely dense 
-		//but generic implementation for general case)		
+		//but generic implementation for general case)
 		for( int i=0; i<clen; i+=blksize )
 		{
 			//create sorted block indexes (append buffer)
@@ -2014,6 +2022,8 @@ public class LibMatrixReorg
 		
 		//expand input horizontally (input vector likely dense 
 		//but generic implementation for general case)
+		DenseBlock cd = ret.getDenseBlock();
+		SparseBlock cs = ret.getSparseBlock();
 		for( int i=rl; i<ru; i++ )
 		{
 			//get value and cast if necessary (table)
@@ -2031,12 +2041,12 @@ public class LibMatrixReorg
 				if( cix != null ) {
 					cix[i] = (int)(val-1);
 				}
-				else if( ret.isInSparseFormat() ) {
-					ret.sparseBlock.allocate(i, 1);
-					ret.sparseBlock.append(i, (int)(val-1), 1);
+				else if( ret.sparse ) {
+					cs.allocate(i, 1);
+					cs.append(i, (int)(val-1), 1);
 				}
 				else
-					ret.setValueDenseUnsafe(i, (int)(val-1), 1);
+					cd.set(i, (int)(val-1), 1);
 				lnnz ++;
 			}
 		}

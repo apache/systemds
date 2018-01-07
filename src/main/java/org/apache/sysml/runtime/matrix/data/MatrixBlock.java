@@ -625,19 +625,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return denseBlock.get(r, c);
 	}
 
-	/**
-	 * This can be only called when you know you have properly allocated spaces for a dense representation
-	 * and r and c are in the the range of the dimension
-	 * Note: this function won't keep track of the nozeros
-	 * 
-	 * @param r row
-	 * @param c column
-	 * @param v value
-	 */
-	public void setValueDenseUnsafe(int r, int c, double v) {
-		denseBlock.set(r, c, v);
-	}
-	
 	public double getValueSparseUnsafe(int r, int c) {
 		if(sparseBlock==null || sparseBlock.isEmpty(r))
 			return 0;
@@ -3247,10 +3234,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		MatrixBlock result = checkType(ret);
 
-		//compute output dimensions and sparsity flag
+		//compute output dimensions and sparsity, note that for diagM2V,
+		//the input nnz might be much larger than the nnz of the output
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.fn.computeDimension( rlen, clen, tempCellIndex );
-		boolean sps = evalSparseFormatInMemory(tempCellIndex.row, tempCellIndex.column, nonZeros);
+		long ennz = Math.min(nonZeros, (long)tempCellIndex.row*tempCellIndex.column);
+		boolean sps = evalSparseFormatInMemory(tempCellIndex.row, tempCellIndex.column, ennz);
 
 		//prepare output matrix block w/ right meta data
 		if( result == null )
@@ -3284,28 +3273,31 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				}
 			}
 			else if( !sparse && denseBlock != null ) {
-				if( result.isInSparseFormat() ) //SPARSE<-DENSE
-				{
-					double[] a = getDenseBlockValues();
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ ) {
+				if( result.isInSparseFormat() ) { //SPARSE<-DENSE
+					DenseBlock a = getDenseBlock();
+					for( int i=0; i<rlen; i++ ) {
+						double[] avals = a.values(i);
+						int aix = a.pos(i);
+						for( int j=0; j<clen; j++ ) {
 							temp.set(i, j);
 							op.fn.execute(temp, temp);
-							result.appendValue(temp.row, temp.column, a[aix]);	
+							result.appendValue(temp.row, temp.column, avals[aix+j]);
 						}
+					}
 				}
-				else //DENSE<-DENSE
-				{
+				else { //DENSE<-DENSE
 					result.allocateDenseBlock();
-					double[] a = getDenseBlockValues();
-					double[] c = result.getDenseBlockValues();
-					int n = result.clen;
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ ) {
+					DenseBlock a = getDenseBlock();
+					DenseBlock c = result.getDenseBlock();
+					for( int i=0; i<rlen; i++ ) {
+						double[] avals = a.values(i);
+						int aix = a.pos(i);
+						for( int j=0; j<clen; j++ ) {
 							temp.set(i, j);
 							op.fn.execute(temp, temp);
-							c[temp.row*n+temp.column] = a[aix];	
+							c.set(temp.row, temp.column, avals[aix+j]);
 						}
+					}
 					result.nonZeros = nonZeros;
 				}
 			}

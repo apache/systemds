@@ -428,41 +428,37 @@ public class LibMatrixDatagen
 		//set meta data and allocate dense block
 		out.reset(size, 1, false);
 		out.allocateDenseBlock();
+		DenseBlock a = out.getDenseBlock();
 		seed = (seed == -1 ? System.nanoTime() : seed);
 		
 		if ( !replace ) 
 		{
 			// reservoir sampling
-			
 			for(int i=1; i <= size; i++) 
-				out.setValueDenseUnsafe(i-1, 0, i );
+				a.set(i-1, 0, i );
 			
 			Random rand = new Random(seed);
-			for(int i=size+1; i <= range; i++) 
-			{
+			for(int i=size+1; i <= range; i++) {
 				if(rand.nextInt(i) < size)
-					out.setValueDenseUnsafe( rand.nextInt(size), 0, i );
+					a.set( rand.nextInt(size), 0, i );
 			}
 			
 			// randomize the sample (Algorithm P from Knuth's ACP)
 			// -- needed especially when the differnce between range and size is small)
 			double tmp;
 			int idx;
-			for(int i=size-1; i >= 1; i--) 
-			{
+			for(int i=size-1; i >= 1; i--) {
 				idx = rand.nextInt(i);
 				// swap i^th and idx^th entries
-				tmp = out.getValueDenseUnsafe(idx, 0);
-				out.setValueDenseUnsafe(idx, 0, out.getValueDenseUnsafe(i, 0));
-				out.setValueDenseUnsafe(i, 0, tmp);
+				tmp = a.get(idx, 0);
+				a.set(idx, 0, a.get(i, 0));
+				a.set(i, 0, tmp);
 			}
-	
 		}
-		else 
-		{
+		else {
 			Random r = new Random(seed);
 			for(int i=0; i < size; i++) 
-				out.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
+				a.set(i, 0, 1+nextLong(r, range) );
 		}
 		
 		out.recomputeNonZeros();

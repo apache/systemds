@@ -41,6 +41,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
@@ -198,10 +199,9 @@ public class ReaderTextCellParallel extends MatrixReader
 			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 			
 			try
-			{			
-				
+			{
 				// Read the header lines, if reading from a matrixMarket file
-				if ( _matrixMarket ) {					
+				if ( _matrixMarket ) {
 					// skip until end-of-comments (%% or %)
 					boolean foundComment = false;
 					while( reader.next(key, value) && value.toString().charAt(0) == '%'  ) {
@@ -215,7 +215,7 @@ public class ReaderTextCellParallel extends MatrixReader
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
 						double lvalue = st.nextDoubleForParallel();
-						synchronized( _dest ){ //sparse requires lock	
+						synchronized( _dest ){ //sparse requires lock
 							_dest.appendValue(row, col, lvalue);
 							lnnz++;
 						}
@@ -249,21 +249,22 @@ public class ReaderTextCellParallel extends MatrixReader
 				} 
 				else //DENSE<-value
 				{
+					DenseBlock a = _dest.getDenseBlock();
 					while( reader.next(key, value) ) {
 						st.reset( value.toString() ); //reinit tokenizer
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
 						double lvalue = st.nextDoubleForParallel();
-						_dest.setValueDenseUnsafe( row, col, lvalue );
+						a.set( row, col, lvalue );
 						lnnz += (lvalue!=0) ? 1 : 0;
 					}
 				}
 			}
-			catch(Exception ex)	{
+			catch(Exception ex) {
 				//post-mortem error handling and bounds checking
 				if( row < 0 || row + 1 > _rlen || col < 0 || col + 1 > _clen )
 					throw new RuntimeException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
-							  "out of overall matrix range [1:"+_rlen+",1:"+_clen+"]. ", ex);
+						"out of overall matrix range [1:"+_rlen+",1:"+_clen+"]. ", ex);
 				else
 					throw new RuntimeException("Unable to read matrix in text cell format. ", ex);
 			}

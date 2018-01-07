@@ -37,6 +37,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
@@ -135,12 +136,13 @@ public class ReaderTextCell extends MatrixReader
 					} 
 					else //DENSE<-value
 					{
+						DenseBlock a = dest.getDenseBlock();
 						while( reader.next(key, value) ) {
 							st.reset( value.toString() ); //reinit tokenizer
 							row = st.nextInt()-1;
 							col = st.nextInt()-1;
 							double lvalue = st.nextDouble();
-							dest.setValueDenseUnsafe( row, col, lvalue );
+							a.set( row, col, lvalue );
 						}
 					}
 				}
@@ -220,13 +222,13 @@ public class ReaderTextCell extends MatrixReader
 			} 
 			else //DENSE<-value
 			{
-				while( (value=br.readLine())!=null )
-				{
+				DenseBlock a = dest.getDenseBlock();
+				while( (value=br.readLine())!=null ) {
 					st.reset( value ); //reinit tokenizer
 					row = st.nextInt()-1;
-					col = st.nextInt()-1;	
+					col = st.nextInt()-1;
 					double lvalue = st.nextDouble();
-					dest.setValueDenseUnsafe( row, col, lvalue );
+					a.set( row, col, lvalue );
 				}
 			}
 		}

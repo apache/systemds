@@ -42,6 +42,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -421,14 +422,12 @@ public class ReaderTextCSVParallel extends MatrixReader
 					} 
 					else // DENSE<-value
 					{
-						while (reader.next(key, value)) // foreach line
-						{
+						DenseBlock a = _dest.getDenseBlock();
+						while (reader.next(key, value)) { // foreach line
 							String cellStr = value.toString().trim();
 							String[] parts = IOUtilFunctions.split(cellStr, _delim);
 							col = 0;
-
-							for (String part : parts) // foreach cell
-							{
+							for (String part : parts) { // foreach cell
 								part = part.trim();
 								if (part.isEmpty()) {
 									noFillEmpty |= !_fill;
@@ -438,7 +437,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 									cellValue = IOUtilFunctions.parseDoubleParallel(part);
 								}
 								if( cellValue != 0 ) {
-									_dest.setValueDenseUnsafe(row, col, cellValue);
+									a.set(row, col, cellValue);
 									lnnz++;
 								}
 								col++;

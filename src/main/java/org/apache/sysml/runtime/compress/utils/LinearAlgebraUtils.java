@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.compress.utils;
 
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -146,12 +147,10 @@ public class LinearAlgebraUtils
 	
 	public static void copyNonZerosToUpperTriangle( MatrixBlock ret, MatrixBlock tmp, int ix ) {
 		double[] a = tmp.getDenseBlockValues();
-		for(int i=0; i<tmp.getNumColumns(); i++) {
-			if( a[i] != 0 ) {
-				ret.setValueDenseUnsafe(
-					(ix<i)?ix:i, (ix<i)?i:ix, a[i]);
-			}
-		}
+		DenseBlock c = ret.getDenseBlock();
+		for(int i=0; i<tmp.getNumColumns(); i++)
+			if( a[i] != 0 )
+				c.set((ix<i)?ix:i, (ix<i)?i:ix, a[i]);
 	}
 	
 	/**

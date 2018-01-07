@@ -1202,7 +1202,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			try {
 				//compute uncompressed column group in parallel (otherwise bottleneck)
 				if( uc != null )
-					 ret = (MatrixBlock)uc.getData().aggregateUnaryOperations(op, ret, blockingFactorRow, blockingFactorCol, indexesIn, false);					
+					uc.unaryAggregateOperations(op, ret);
 				//compute all compressed column groups
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();

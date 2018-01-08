@@ -212,7 +212,7 @@ public class LibMatrixReorg
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
-		}	
+		}
 		
 		//System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
@@ -745,35 +745,54 @@ public class LibMatrixReorg
 		final int n = in.clen;
 		final int n2 = out.clen;
 		
-		double[] a = in.getDenseBlockValues();
-		double[] c = out.getDenseBlockValues();
+		DenseBlock a = in.getDenseBlock();
+		DenseBlock c = out.getDenseBlock();
 		
 		if( m==1 || n==1 ) //VECTOR TRANSPOSE
 		{
-			//plain memcopy, in case shallow dense copy no applied 
+			//plain memcopy, in case shallow dense copy no applied
+			//input/output guaranteed single block
 			int ix = rl+cl; int len = ru+cu-ix-1;
-			System.arraycopy(a, ix, c, ix, len);
+			System.arraycopy(a.valuesAt(0), ix, c.valuesAt(0), ix, len);
 		}
 		else //MATRIX TRANSPOSE
 		{
 			//blocking according to typical L2 cache sizes 
 			final int blocksizeI = 128;
-			final int blocksizeJ = 128; 
+			final int blocksizeJ = 128;
 			
 			//blocked execution
-			for( int bi = rl; bi<ru; bi+=blocksizeI )
-				for( int bj = cl; bj<cu; bj+=blocksizeJ )
-				{
+			if( a.numBlocks()==1 && c.numBlocks()==1 ) { //<16GB
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
+				for( int bi = rl; bi<ru; bi+=blocksizeI ) {
 					int bimin = Math.min(bi+blocksizeI, ru);
-					int bjmin = Math.min(bj+blocksizeJ, cu);
-					//core transpose operation
-					for( int i=bi; i<bimin; i++ )
-					{
-						int aix = i * n + bj;
-						int cix = bj * n2 + i;
-						transposeRow(a, c, aix, cix, n2, bjmin-bj);
+					for( int bj = cl; bj<cu; bj+=blocksizeJ ) {
+						int bjmin = Math.min(bj+blocksizeJ, cu);
+						//core transpose operation
+						for( int i=bi; i<bimin; i++ ) {
+							int aix = i * n + bj;
+							int cix = bj * n2 + i;
+							transposeRow(avals, cvals, aix, cix, n2, bjmin-bj);
+						}
 					}
 				}
+			}
+			else { //general case > 16GB (multiple blocks)
+				for( int bi = rl; bi<ru; bi+=blocksizeI ) {
+					int bimin = Math.min(bi+blocksizeI, ru);
+					for( int bj = cl; bj<cu; bj+=blocksizeJ ) {
+						int bjmin = Math.min(bj+blocksizeJ, cu);
+						//core transpose operation
+						for( int i=bi; i<bimin; i++ ) {
+							double[] avals = a.values(i);
+							int aix = a.pos(i);
+							for( int j=bj; j<bjmin; j++ )
+								c.set(j, i, avals[ aix+j ]);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -787,34 +806,36 @@ public class LibMatrixReorg
 		final int n2 = out.clen;
 		final int ennz2 = (int) (in.nonZeros/m2); 
 		
-		double[] a = in.getDenseBlockValues();
+		DenseBlock a = in.getDenseBlock();
 		SparseBlock c = out.getSparseBlock();
 		
 		if( out.rlen == 1 ) //VECTOR-VECTOR
-		{	
+		{
 			c.allocate(0, (int)in.nonZeros); 
-			c.setIndexRange(0, 0, m, a, 0, m);
+			c.setIndexRange(0, 0, m, a.valuesAt(0), 0, m);
 		}
 		else //general case: MATRIX-MATRIX
 		{
 			//blocking according to typical L2 cache sizes 
 			final int blocksizeI = 128;
-			final int blocksizeJ = 128; 
+			final int blocksizeJ = 128;
 			
 			//blocked execution
-			for( int bi = 0; bi<m; bi+=blocksizeI )
-				for( int bj = 0; bj<n; bj+=blocksizeJ )
-				{
-					int bimin = Math.min(bi+blocksizeI, m);
+			for( int bi = 0; bi<m; bi+=blocksizeI ) {
+				int bimin = Math.min(bi+blocksizeI, m);
+				for( int bj = 0; bj<n; bj+=blocksizeJ ) {
 					int bjmin = Math.min(bj+blocksizeJ, n);
 					//core transpose operation
-					for( int i=bi; i<bimin; i++ )
-						for( int j=bj, aix=i*n+bj; j<bjmin; j++, aix++ )
-						{
+					for( int i=bi; i<bimin; i++ ) {
+						double[] avals = a.values(i);
+						int aix = a.pos(i);
+						for( int j=bj; j<bjmin; j++ ) {
 							c.allocate(j, ennz2, n2); 
-							c.append(j, i, a[aix]);
+							c.append(j, i, avals[aix+j]);
 						}
+					}
 				}
+			}
 		}
 	}
 
@@ -886,10 +907,9 @@ public class LibMatrixReorg
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int n2 = out.clen;
 		
 		SparseBlock a = in.getSparseBlock();
-		double[] c = out.getDenseBlockValues();
+		DenseBlock c = out.getDenseBlock();
 		
 		if( m==1 ) //ROW VECTOR TRANSPOSE
 		{
@@ -897,8 +917,9 @@ public class LibMatrixReorg
 			int alen = a.size(0); //always pos 0
 			int[] aix = a.indexes(0);
 			double[] avals = a.values(0);
+			double[] cvals = c.valuesAt(0);
 			for( int j=0; j<alen; j++ )
-				c[ aix[j] ] = avals[j];
+				cvals[aix[j]] = avals[j];
 		}
 		else //MATRIX TRANSPOSE
 		{
@@ -910,44 +931,35 @@ public class LibMatrixReorg
 			int[] ix = new int[blocksizeI];
 			
 			//blocked execution
-			for( int bi = rl; bi<ru; bi+=blocksizeI )
-			{
+			for( int bi = rl; bi<ru; bi+=blocksizeI ) {
 				Arrays.fill(ix, 0);
-				for( int bj = 0; bj<n; bj+=blocksizeJ )
-				{
-					int bimin = Math.min(bi+blocksizeI, ru);
+				int bimin = Math.min(bi+blocksizeI, ru);
+				for( int bj = 0; bj<n; bj+=blocksizeJ ) {
 					int bjmin = Math.min(bj+blocksizeJ, n);
-	
 					//core transpose operation
-					for( int i=bi, iix=0; i<bimin; i++, iix++ )
-					{
-						if( !a.isEmpty(i) ) {
-							int apos = a.pos(i);
-							int alen = a.size(i);
-							int[] aix = a.indexes(i);
-							double[] avals = a.values(i);
-							int j = ix[iix]; //last block boundary
-							for( ; j<alen && aix[apos+j]<bjmin; j++ )
-								c[ aix[apos+j]*n2+i ] = avals[ apos+j ];
-							ix[iix] = j; //keep block boundary
-						}
+					for( int i=bi, iix=0; i<bimin; i++, iix++ ) {
+						if( a.isEmpty(i) ) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						int j = ix[iix]; //last block boundary
+						for( ; j<alen && aix[apos+j]<bjmin; j++ )
+							c.set(aix[apos+j], i, avals[apos+j]);
+						ix[iix] = j; //keep block boundary
 					}
 				}
 			}
 		}
 	}
 
-	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
-	{
+	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len ) {
 		final int bn = len%8;
-		
 		//compute rest (not aligned to 8-blocks)
 		for( int j=0; j<bn; j++, aix++, cix+=n2 )
 			c[ cix ] = a[ aix+0 ];
-		
 		//unrolled 8-blocks
-		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 )
-		{
+		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 ) {
 			c[ cix + 0*n2 ] = a[ aix+0 ];
 			c[ cix + 1*n2 ] = a[ aix+1 ];
 			c[ cix + 2*n2 ] = a[ aix+2 ];

@@ -859,12 +859,13 @@ public class LibMatrixReorg
 					c.allocate(i, cnt[i]);
 		}
 		
-		//blocking according to typical L2 cache sizes 
-		final int blocksizeI = 128;
-		final int blocksizeJ = 128;
+		//blocking according to typical L2 cache sizes w/ awareness of sparsity
+		final long xsp = (long)in.rlen*in.clen/in.nonZeros;
+		final int blocksizeI = Math.max(128, (int) (8*xsp));
+		final int blocksizeJ = Math.max(128, (int) (8*xsp));
 	
 		//temporary array for block boundaries (for preventing binary search) 
-		int[] ix = new int[blocksizeI];
+		int[] ix = new int[Math.min(blocksizeI, ru-rl)];
 		
 		//blocked execution
 		for( int bi=rl; bi<ru; bi+=blocksizeI )
@@ -873,27 +874,25 @@ public class LibMatrixReorg
 			//find column starting positions
 			int bimin = Math.min(bi+blocksizeI, ru);
 			if( cl > 0 ) {
-				for( int i=bi; i<bimin; i++ )
-					if( !a.isEmpty(i) ) {
-						int j = a.posFIndexGTE(i, cl);
-						ix[i-bi] = (j>=0) ? j : a.size(i);
-					}
+				for( int i=bi; i<bimin; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int j = a.posFIndexGTE(i, cl);
+					ix[i-bi] = (j>=0) ? j : a.size(i);
+				}
 			}
 			
 			for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
 				int bjmin = Math.min(bj+blocksizeJ, cu);
-
 				//core block transpose operation
 				for( int i=bi; i<bimin; i++ ) {
 					if( a.isEmpty(i) ) continue;
-					
 					int apos = a.pos(i);
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
 					double[] avals = a.values(i);
 					int j = ix[i-bi] + apos; //last block boundary
 					for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
-						c.allocate(aix[j], ennz2,n2);
+						c.allocate(aix[j], ennz2, n2);
 						c.append(aix[j], i, avals[j]);
 					}
 					ix[i-bi] = j - apos; //keep block boundary

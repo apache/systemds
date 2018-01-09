@@ -256,7 +256,6 @@ public class LibMatrixDatagen
 	 * 
      * @param out output matrix block
      * @param rgen random matrix generator
-     * @param nnzInBlocks number of non-zeros in blocks
      * @param bigrand Well1024a pseudo-random number generator
      * @param bSeed seed for random generator
      * @param k ?

@@ -5343,7 +5343,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (-Inf,+Inf).
 	 * 
 	 * @param rgen random matrix generator
-	 * @param nnzInBlock number of nonzeros in block
 	 * @param bigrand ?
 	 * @param bSeed seed value
 	 * @return matrix block
@@ -5371,7 +5370,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (-Inf,+Inf).
 	 * 
 	 * @param rgen random matrix generator
-	 * @param nnzInBlock number of nonzeros in block
 	 * @param bigrand ?
 	 * @param bSeed seed value
 	 * @param k ?

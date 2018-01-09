@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.stream.LongStream;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -5315,19 +5314,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		MatrixBlock out = new MatrixBlock();
 		Well1024a bigrand = null;
-		LongStream nnzInBlock = null;
 
 		//setup seeds and nnz per block
-		if( !LibMatrixDatagen.isShortcutRandOperation(rgen._min, rgen._max, rgen._sparsity, rgen._pdf) ){
+		if( !LibMatrixDatagen.isShortcutRandOperation(rgen._min, rgen._max, rgen._sparsity, rgen._pdf) )
 			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-			nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rgen._rows, rgen._cols, rgen._rowsPerBlock, rgen._colsPerBlock, rgen._sparsity);
-		}
 		
 		//generate rand data
 		if (k > 1)
-			out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1, k);
+			out.randOperationsInPlace(rgen, bigrand, -1, k);
 		else
-			out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1);
+			out.randOperationsInPlace(rgen, bigrand, -1);
 		
 		return out;
 	}
@@ -5353,12 +5349,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock randOperationsInPlace(
-								RandomMatrixGenerator rgen, LongStream nnzInBlock, 
-								Well1024a bigrand, long bSeed ) 
+	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed ) 
 		throws DMLRuntimeException
 	{
-		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, bigrand, bSeed );
+		LibMatrixDatagen.generateRandomMatrix(this, rgen, bigrand, bSeed);
 		return this;
 	}
 	
@@ -5385,11 +5379,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, 
-			LongStream nnzInBlock, Well1024a bigrand, long bSeed, int k) 
+			Well1024a bigrand, long bSeed, int k) 
 		throws DMLRuntimeException
 	{
-		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, 
-				bigrand, bSeed, k );
+		LibMatrixDatagen.generateRandomMatrix(this, rgen, bigrand, bSeed, k);
 		return this;
 	}
 	

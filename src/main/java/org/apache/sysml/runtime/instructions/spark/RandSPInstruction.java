@@ -24,9 +24,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.PrimitiveIterator;
 import java.util.Random;
-import java.util.stream.LongStream;
 
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
@@ -275,10 +273,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 		
 		//step 3: seed generation 
-		JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = null;
+		JavaPairRDD<MatrixIndexes, Long> seedsRDD = null;
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
-		LongStream nnz = LibMatrixDatagen.computeNNZperBlock(lrows, lcols, rowsInBlock, colsInBlock, sparsity);
-		PrimitiveIterator.OfLong nnzIter = nnz.iterator();
 		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( lrows, lcols, rowsInBlock, 
 			colsInBlock, sparsity); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
@@ -288,14 +284,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 		//a) in-memory seed rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
-			ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>> seeds = 
-					new ArrayList<>();
+			ArrayList<Tuple2<MatrixIndexes, Long>> seeds = new ArrayList<>();
 			for( long i=0; i<numBlocks; i++ ) {
 				long r = 1 + i/numColBlocks;
 				long c = 1 + i%numColBlocks;
 				MatrixIndexes indx = new MatrixIndexes(r, c);
 				Long seedForBlock = bigrand.nextLong();
-				seeds.add(new Tuple2<>(indx, new Tuple2<>(seedForBlock, nnzIter.nextLong())));
+				seeds.add(new Tuple2<>(indx, seedForBlock));
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
@@ -320,8 +315,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 					sb.append(1 + i%numColBlocks);
 					sb.append(',');
 					sb.append(bigrand.nextLong());
-					sb.append(',');
-					sb.append(nnzIter.nextLong());
 					pw.println(sb.toString());
 					sb.setLength(0);
 				}
@@ -643,19 +636,17 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class ExtractSeedTuple implements PairFunction<String, MatrixIndexes, Tuple2<Long,Long>> {
+	private static class ExtractSeedTuple implements PairFunction<String, MatrixIndexes, Long> {
 		private static final long serialVersionUID = 3973794676854157101L;
 
 		@Override
-		public Tuple2<MatrixIndexes, Tuple2<Long, Long>> call(String arg)
+		public Tuple2<MatrixIndexes, Long> call(String arg)
 				throws Exception 
 		{
 			String[] parts = IOUtilFunctions.split(arg, ",");
 			MatrixIndexes ix = new MatrixIndexes(
-					Long.parseLong(parts[0]), Long.parseLong(parts[1]));
-			Tuple2<Long,Long> seed = new Tuple2<>(
-					Long.parseLong(parts[2]), Long.parseLong(parts[3]));
-			return new Tuple2<>(ix,seed);
+				Long.parseLong(parts[0]), Long.parseLong(parts[1]));
+			return new Tuple2<>(ix,Long.parseLong(parts[2]));
 		}
 	}
 
@@ -668,7 +659,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class GenerateRandomBlock implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Long, Long> >, MatrixIndexes, MatrixBlock> 
+	private static class GenerateRandomBlock implements PairFunction<Tuple2<MatrixIndexes, Long>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1616346120426470173L;
 		
@@ -695,7 +686,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Long, Long>> kv) 
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Long> kv) 
 			throws Exception 
 		{
 			//compute local block size: 
@@ -704,14 +695,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 			long blockColIndex = ix.getColumnIndex();
 			int lrlen = UtilFunctions.computeBlockSize(_rlen, blockRowIndex, _brlen);
 			int lclen = UtilFunctions.computeBlockSize(_clen, blockColIndex, _bclen);
-			long seed = kv._2._1;
-			long blockNNZ = kv._2._2;
+			long seed = kv._2;
 			
 			MatrixBlock blk = new MatrixBlock();
-			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-					_pdf, lrlen, lclen, lrlen, lclen,   
-					_sparsity, _min, _max, _pdfParams );
-			blk.randOperationsInPlace(rgen, LongStream.of(blockNNZ), null, seed);
+			RandomMatrixGenerator rgen = LibMatrixDatagen
+				.createRandomMatrixGenerator(_pdf, lrlen, lclen,
+					lrlen, lclen,_sparsity, _min, _max, _pdfParams);
+			blk.randOperationsInPlace(rgen, null, seed);
 			return new Tuple2<>(kv._1, blk);
 		}
 	}

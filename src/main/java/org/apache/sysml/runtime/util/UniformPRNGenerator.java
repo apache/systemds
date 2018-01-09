@@ -24,21 +24,19 @@ import java.util.Random;
 
 public class UniformPRNGenerator extends PRNGenerator {
 
-	private Random runif = null;
+	private final Random runif;
 	
 	public UniformPRNGenerator() {
-		super();
+		runif = new Random();
 	}
 	
-	public UniformPRNGenerator(long sd) {
-		super();
-		setSeed(sd);
+	public UniformPRNGenerator(long seed) {
+		runif = new Random(seed);
 	}
 
 	@Override
-	public void setSeed(long sd) {
-		seed = sd;
-		runif = new Random(seed);
+	public void setSeed(long seed) {
+		runif.setSeed(seed);
 	}
 
 	@Override

@@ -109,6 +109,11 @@ public class DenseBlockLDRB extends DenseBlock
 	public int blockSize(int bix) {
 		return Math.min(blen, rlen-bix*blen);
 	}
+	
+	@Override
+	public boolean isContiguous() {
+		return rlen <= blen;
+	}
 
 	@Override
 	public long size() {

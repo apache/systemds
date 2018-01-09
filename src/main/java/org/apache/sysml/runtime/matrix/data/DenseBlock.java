@@ -97,6 +97,14 @@ public abstract class DenseBlock implements Serializable
 	public abstract int blockSize(int bix);
 	
 	/**
+	 * Indicates if the dense block has a single
+	 * underlying block, i.e., if numBlocks==1.
+	 * 
+	 * @return true if single block
+	 */
+	public abstract boolean isContiguous();
+	
+	/**
 	 * Get the length of the dense block as the product
 	 * of row and column dimensions.
 	 * 

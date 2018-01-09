@@ -86,6 +86,11 @@ public class DenseBlockDRB extends DenseBlock
 	public int blockSize(int bix) {
 		return rlen;
 	}
+	
+	@Override
+	public boolean isContiguous() {
+		return true;
+	}
 
 	@Override
 	public long size() {

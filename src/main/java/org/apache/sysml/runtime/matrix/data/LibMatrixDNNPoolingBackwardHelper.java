@@ -21,6 +21,8 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
+
 /**
  * This class contains the set of operators used for performing pooling backward
  */
@@ -99,24 +101,22 @@ public class LibMatrixDNNPoolingBackwardHelper {
 		
 		@Override
 		public Long call() throws Exception {
+			CellIndex3 ix = new CellIndex3();
 			double[] out = output.getDenseBlockValues();
+			SparseBlock sblock = dout.sparseBlock;
 			for(int n = _rl; n < _ru; n++)  {
-				if( !dout.sparseBlock.isEmpty(n) ) {
-					int [] tensorIndexes = new int[3];
-					int apos = dout.sparseBlock.pos(n);
-					int alen = dout.sparseBlock.size(n);
-					int[] aix = dout.sparseBlock.indexes(n);
-					double[] avals = dout.sparseBlock.values(n);
-					for(int j = apos; j < apos+alen; j++) {
-						LibMatrixDNNHelper.computeTensorIndexes(aix[j], tensorIndexes, P, Q);
-						int c = tensorIndexes[0];
-						int p = tensorIndexes[1];
-						int q = tensorIndexes[2];
-						final int inputOffset = n*CHW + c*HW;
-						int maxIndex = LibMatrixDNNHelper.getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
-						if(maxIndex != -1)
-							out[maxIndex] += avals[j];
-					}
+				if( sblock.isEmpty(n) ) continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				for(int j = apos; j < apos+alen; j++) {
+					ix = LibMatrixDNNHelper.computeTensorIndexes(aix[j], P, Q, ix);
+					final int inputOffset = n*CHW + ix.ix1*HW;
+					int maxIndex = LibMatrixDNNHelper.getMaxIndex(ix.ix2, ix.ix3,
+						inputOffset, inputArray, _params, performReluBackward);
+					if(maxIndex != -1)
+						out[maxIndex] += avals[j];
 				}
 			}
 			//thread-local nnz maintenance

@@ -18,6 +18,8 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
+
 /**
  * This class contains the different implementation of rotate180 operation
  */
@@ -90,21 +92,18 @@ public class LibMatrixDNNRotate180Helper {
 			if( sblock==null || sblock.isEmpty(inputN) )
 				return;
 			
+			CellIndex3 ix = new CellIndex3();
 			int outputOffset = outputN*params.P*params.Q;
-			int [] tensorIndexes = new int[3];
 			int apos = sblock.pos(inputN);
 			int alen = sblock.size(inputN);
 			int[] aix = sblock.indexes(inputN);
 			double[] avals = sblock.values(inputN);
 			for(int j = apos; j < apos+alen; j++) {
-				LibMatrixDNNHelper.computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
-				int k = tensorIndexes[0];
-				int p = tensorIndexes[1];
-				int q = tensorIndexes[2];
+				ix = LibMatrixDNNHelper.computeTensorIndexes(aix[j], params.P, params.Q, ix);
 				if( trans )
-					out.appendValue(k, outputOffset + p*params.Q + q, avals[j]);
+					out.appendValue(ix.ix1, outputOffset + ix.ix2*params.Q + ix.ix3, avals[j]);
 				else
-					out.appendValue(outputOffset + p*params.Q + q, k, avals[j]);
+					out.appendValue(outputOffset + ix.ix2*params.Q + ix.ix3, ix.ix1, avals[j]);
 			}
 		}
 	}

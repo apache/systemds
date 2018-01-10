@@ -1,0 +1,87 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ------------------------------------
+# Selecting the next point to evaluate
+# ------------------------------------
+
+# Inputs: X, y
+
+# 1. sample M sobol points in D dimensions
+X_cand = sobol(M, D) # sobol M points for each dimension
+
+# 2. Generate H Gaussian Process Hyperparameter Samples
+# keep only H dimensions of given total D dimensions
+# we apply model selection for gaussian process
+#
+for( h in 1:H) {
+  # 3. sample theta_h
+  # we use surrogate slice sampling algorithm
+}
+
+# 4. Evaluate the acquistion for a point from the candidate points
+tmp = 0
+for( m in nrows(X_cand) ) { # select a point from X_cand matrix
+
+  x_m = X_cand[m,]
+
+  calculated = EI(x_m, X, y, theta)  # give input data, theta_h (h is from 1 to H)
+
+  if( tmp < calculated) {
+    x_best = x_m
+  } else {
+    x_best = x_best
+  }
+  tmp = calculated
+}
+
+# 5. x_next = argmax( EI( X_cand ) ) # given input data, and theta_h (h is from 1 to H)
+
+x_next = x_best
+
+# --------------------
+# Expected Improvement
+# --------------------
+
+# pred_mean_f -> from gpr
+# pred_var_f  -> from gpr
+
+# u = (fun_best - mean_f) / (var_f)^0.5
+# ncdf = cdf(u)
+# npdf = pdf(u)
+# ei   = ( (var_f)^0.5 ) * (u*ncdf + npdf)
+
+
+EI = function(matrix[double] x_m, matrix[double] X, matrix[double] y, matrix[double] theta)
+  return(double out) {
+
+  [pred_mean_f, pred_var_f] = gpr::gpr(x)
+
+  fun_best = f(x)
+
+  u = (fun_best - pred_mean_f) / (pred_var_f)^0.5
+
+  cum_df = cdf(u)
+  prob_df = pdf(u)
+
+  out = ( (pred_var_f)^0.5 * (u * cum_df + prob_df) )
+
+}

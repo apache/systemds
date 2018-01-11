@@ -29,18 +29,8 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.recompile.Recompiler.ResetType;
-import org.apache.sysml.lops.Binary;
-import org.apache.sysml.lops.BinaryScalar;
-import org.apache.sysml.lops.CSVReBlock;
-import org.apache.sysml.lops.Checkpoint;
-import org.apache.sysml.lops.Compression;
-import org.apache.sysml.lops.Data;
-import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.*;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.Nary;
-import org.apache.sysml.lops.ReBlock;
-import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseInfo;
@@ -1067,6 +1057,7 @@ public abstract class Hop implements ParseInfo
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT, //1-X*Y
+		BITWISE_AND, BITWISE_OR, BITWISE_XOR, BITWISE_SHIFTL, BITWISE_SHIFTR, //Bitwise boolean operations
 	}
 
 	// Operations that require 3 operands
@@ -1208,6 +1199,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
 		HopsOpOp2LopsB.put(OpOp2.LOG, Binary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsB.put(OpOp2.BITWISE_AND, Binary.OperationTypes.BITWISE_AND);
+		HopsOpOp2LopsB.put(OpOp2.BITWISE_OR, Binary.OperationTypes.BITWISE_OR);
+		HopsOpOp2LopsB.put(OpOp2.BITWISE_XOR, Binary.OperationTypes.BITWISE_XOR);
+		HopsOpOp2LopsB.put(OpOp2.BITWISE_SHIFTL, Binary.OperationTypes.BITWISE_SHIFTL);
+		HopsOpOp2LopsB.put(OpOp2.BITWISE_SHIFTR, Binary.OperationTypes.BITWISE_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
@@ -1233,6 +1229,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
+		HopsOpOp2LopsBS.put(OpOp2.BITWISE_AND, BinaryScalar.OperationTypes.BITWISE_AND);
+		HopsOpOp2LopsBS.put(OpOp2.BITWISE_OR, BinaryScalar.OperationTypes.BITWISE_OR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWISE_XOR, BinaryScalar.OperationTypes.BITWISE_XOR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWISE_SHIFTL, BinaryScalar.OperationTypes.BITWISE_SHIFTL);
+		HopsOpOp2LopsBS.put(OpOp2.BITWISE_SHIFTR, BinaryScalar.OperationTypes.BITWISE_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
@@ -1259,6 +1260,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysml.lops.Unary.OperationTypes.POW);
 		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT_NZ);
 		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp2LopsU.put(OpOp2.BITWISE_AND, Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.BITWISE_OR, Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.BITWISE_XOR, Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.BITWISE_SHIFTL, Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.BITWISE_SHIFTR, Unary.OperationTypes.NOTSUPPORTED);
 	}
 
 	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1429,6 +1435,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
 		HopsOpOp2String.put(OpOp2.XOR, "xor");
+		HopsOpOp2String.put(OpOp2.BITWISE_AND, "bitwAnd");
+		HopsOpOp2String.put(OpOp2.BITWISE_OR,  "bitwOr");
+		HopsOpOp2String.put(OpOp2.BITWISE_XOR, "bitwXor");
+		HopsOpOp2String.put(OpOp2.BITWISE_SHIFTL, "bitwShiftL");
+		HopsOpOp2String.put(OpOp2.BITWISE_SHIFTR, "bitwShiftR");
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
@@ -1519,6 +1530,7 @@ public abstract class Hop implements ParseInfo
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;
+		else if("bitwAnd".equals(op) ) return OpOp2.BITWISE_AND;
 		
 		return null;		
 	}

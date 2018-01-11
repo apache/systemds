@@ -65,10 +65,14 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 				sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );
 			}
 			else if( so1 instanceof IntObject || so2 instanceof IntObject ) {
-				double tmp = dop.fn.execute(so1.getLongValue(), so2.getLongValue());
-				if( tmp > Long.MAX_VALUE ) //cast to long if no overflow, otherwise controlled exception
-					throw new DMLRuntimeException("Integer operation created numerical result overflow ("+tmp+" > "+Long.MAX_VALUE+").");
-				sores = new IntObject((long) tmp);
+				if( opcode.equals("bitwAnd")) // if both of them are integers boolean case may not work, (1,1)
+					sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );
+				else {
+					double tmp = dop.fn.execute(so1.getLongValue(), so2.getLongValue());
+					if (tmp > Long.MAX_VALUE) //cast to long if no overflow, otherwise controlled exception
+						throw new DMLRuntimeException("Integer operation created numerical result overflow (" + tmp + " > " + Long.MAX_VALUE + ").");
+					sores = new IntObject((long) tmp);
+				}
 			}
 			else { //all boolean
 				//NOTE: boolean-boolean arithmetic treated as double for consistency with R

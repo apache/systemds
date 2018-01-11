@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
+import org.apache.sysml.runtime.util.UtilFunctions;
+
 import java.io.Serializable;
 
 
@@ -40,6 +42,6 @@ public class BitwAnd extends ValueFunction implements Serializable
 
 	@Override
 	public double execute(double in1, double in2) {
-		return (double)( (long)(in1) & (long)(in2) );
+		return (double)( UtilFunctions.toLong(in1) & UtilFunctions.toLong(in2) );
 	}
 }

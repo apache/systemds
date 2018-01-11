@@ -578,7 +578,34 @@ The parameter `lr_policy` specifies the learning rate decay policy. Caffe2DML su
 - `inv`: return `base_lr * (1 + gamma * iter) ^ (- power)`
 - `poly`: the effective learning rate follows a polynomial decay, to be zero by the max_iter. return `base_lr (1 - iter/max_iter) ^ (power)`
 - `sigmoid`: the effective learning rate follows a sigmod decay return b`ase_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))`
-      
+
+
+The parameters `base_lr` and  `lr_policy` are required and other parameters are optional:
+```
+lr_policy: "step" # learning rate policy: drop the learning rate in "steps"
+                  # by a factor of gamma every stepsize iterations (required)
+base_lr: 0.01     # begin training at a learning rate of 0.01 (required)
+gamma: 0.95       # drop the learning rate by the given factor (optional, default value: 0.95)
+stepsize: 100000  # drop the learning rate every 100K iterations (optional, default value: 100000)
+power: 0.75       # (optional, default value: 0.75)
+``` 
+
+#### How do I regularize weight matrices in the neural network ?
+
+The user can specify the type of regularization using the parameter `regularization_type` in the solver file.
+The valid values are `L2` (default) and `L1`.
+Caffe2DML then invokes the backward function of the layers `nn/layers/l2_reg.dml` and `nn/layers/l1_reg.dml` respectively.
+The regularation strength is set using the property `weight_decay` in the solver file:
+```
+regularization_type: "L2"
+weight_decay: 5e-4
+```
+
+Like learning rate, you can customize the regularation strength of a given layer by specifying the property `decay_mult` in the network file:
+```
+param { lr_mult: 1 decay_mult: 1 }
+```  
+
 #### How to set batch size ?
 
 Batch size is set in `data_param` of the Data layer:

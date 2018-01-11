@@ -105,6 +105,17 @@ public abstract class DenseBlock implements Serializable
 	public abstract boolean isContiguous();
 	
 	/**
+	 * Indicates if the dense block has a single
+	 * underlying block for the given row range.
+	 * 
+	 * @param rl row lower index
+	 * @param ru row upper index (inclusive)
+	 * @return true if single block in row range
+	 */
+	public abstract boolean isContiguous(int rl, int ru);
+	
+	
+	/**
 	 * Get the length of the dense block as the product
 	 * of row and column dimensions.
 	 * 

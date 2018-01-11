@@ -114,6 +114,11 @@ public class DenseBlockLDRB extends DenseBlock
 	public boolean isContiguous() {
 		return rlen <= blen;
 	}
+	
+	@Override
+	public boolean isContiguous(int rl, int ru) {
+		return isContiguous() || index(rl)==index(ru);
+	}
 
 	@Override
 	public long size() {

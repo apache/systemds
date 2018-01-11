@@ -18,19 +18,206 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**
- * This class contains the set of operators used for performing pooling backward
+ * This class contains the set of operators used for performing pooling
  */
-public class LibMatrixDNNPoolingBackwardHelper {
+public class LibMatrixDNNPooling {
+	
+	// *********************************** low-level runtime operator selection ***********************************************
+	// *********************************** based on runtime properties (sparsity, native, etc) ********************************
+	// These methods help reduce branch miss predictions and instruction-cache misses.
+	// Also, they simplify the design of LibMatrixDNN and help in code-maintenance.
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing maxpooling operation
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing maxpooling operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getMaxPoolingWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(params.input1.isInSparseFormat())
+				ret.add(new SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else
+				ret.add(new DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+		}
+		return ret;
+	}
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing maxpooling backward operation
+	 * 
+	 * @param params convolution parameters
+	 * @param performReluBackward whether to perform ReLU backward
+	 * @return list of callable tasks for performing maxpooling backward operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getMaxPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		boolean sparse1 = params.input1.isInSparseFormat();
+		boolean sparse2 = params.input2.isInSparseFormat();
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if( !sparse1 && !sparse2 )
+				ret.add(new PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( !sparse1 && sparse2 )
+				ret.add(new PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( sparse1 && !sparse2 ) 
+				ret.add(new PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			else if( sparse1 && sparse2 )
+				ret.add(new PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+		}
+		return ret;
+	}
+	
+	private static class DenseMaxPooling implements Callable<Long> 
+	{
+		private final int _rl, _ru; 
+		private final ConvolutionParameters _params;
+		
+		public DenseMaxPooling(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			final int C = _params.C, P = _params.P, Q = _params.Q;
+			final int R = _params.R, S = _params.S, H = _params.H, W = _params.W;
+			final int HW = _params.H*_params.W;
+			final int CHW = _params.C*_params.H*_params.W;
+			final int CPQ = C*P*Q;
+			double[] in = _params.input1.getDenseBlockValues();
+			double[] out = _params.output.getDenseBlockValues();
+			
+			double minValForMaxPoolOperations = _params.minValForMaxPoolOperations;
+			
+			//thread-local initialization of output block 
+			if( !(_params.isStride1Pad0() && _params.isAllOnes(P, Q, W)) )
+				Arrays.fill(out, _rl*CPQ, _ru*CPQ, minValForMaxPoolOperations);
+			
+			if( _params.isStride1Pad0() && _params.isAllOnes(P, Q, W) ) { 
+				//quick-path w/o materialized index arrays and 
+				//simplified inner loops for P = 1, Q = 1, W = 1
+				int lenh = Math.min(R,H);
+				for(int i = _rl, oix=_rl*C; i < _ru; i++, oix+=C)
+					for (int c = 0, off=i*CHW; c < C; c++, off+=H)
+						out[oix+c] = max(minValForMaxPoolOperations, in, off, lenh);
+			}
+			else if( _params.isStride1Pad0() ) {
+				//quick-path w/o materialized index arrays 
+				for(int i = _rl; i < _ru; i++)
+					for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+						for (int p = 0; p < P; p++, oix+=Q)
+							for (int h = p; h < Math.min(p+R,H); h++)
+								for (int q = 0, off2=off+h*W; q < Q; q++)
+									out[oix+q] = max(out[oix+q], in, off2+q, Math.min(S,W-q));
+			}
+			else { //general case
+				int[] hl = _params.start_indexes_h, hu = _params.end_indexes_h;
+				int[] wl = _params.start_indexes_w, wu = _params.end_indexes_w;
+				for(int i = _rl; i < _ru; i++)
+					for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+						for (int p = 0; p < P; p++, oix+=Q)
+							for (int h = hl[p]; h < hu[p]; h++)
+								for (int q = 0, off2=off+h*W; q < Q; q++)
+									out[oix+q] = max(out[oix+q], in, off2+wl[q], wu[q]-wl[q]);
+			}
+			
+			//thread-local recomputation of non-zeros
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
+		}
+	}
+	
+	private static class SparseMaxPooling implements Callable<Long> 
+	{
+		private final int _rl, _ru; 
+		private final ConvolutionParameters _params;
+		private double [] outputArray;
+		private final int C, P, Q, W, H, CPQ, PQ;
+		
+		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+			outputArray = params.output.getDenseBlockValues();
+			C = params.C; P = params.P; Q = params.Q; H = params.H; 
+			W = params.W;
+			CPQ = C*P*Q;
+			PQ = P*Q;
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			//thread-local initialization of output block 
+			Arrays.fill(outputArray, _rl *CPQ, _ru*CPQ, _params.minValForMaxPoolOperations);
+			
+			for(int n = _rl; n < _ru; n++)  {
+				if( !_params.input1.sparseBlock.isEmpty(n) ) {
+					final int apos = _params.input1.sparseBlock.pos(n);
+					final int alen = _params.input1.sparseBlock.size(n);
+					final int [] aix = _params.input1.sparseBlock.indexes(n);
+					final double [] avals = _params.input1.sparseBlock.values(n);
+					int chw = 0; int index = apos;
+					for (int c = 0; c < C; c++) {
+						final int outOffset = n*CPQ + c*PQ;
+						for(int h = 0; h < H; h++) {
+							for(int w = 0; w < W; w++, chw++) {
+								// Take into account zero values as well
+								double nchwVal = 0;
+								if(aix[index] == chw) {
+									nchwVal = avals[index++];
+									// Ensure that we satisfy the condition index < apos+alen
+									if(index >= apos+alen) index--;
+								}
+								// Perform maxpooling without binary search :)
+								// Tradeoff as compared to dense maxpooling: 
+								// In dense maxpooling, iteration space CPQHW where H and W iterations are restricted by _params.start_indexes_h[p] 
+								// and are eligible for JIT optimizations.
+								// In sparse maxpooling, iteration space CHWPQ without HW restrictions.
+								for (int p = 0; p < P; p++) {
+									if(h >= _params.start_indexes_h[p] && h < _params.end_indexes_h[p]) {
+										final int outOffsetWithp = outOffset + p*Q;
+										for (int q = 0; q < Q; q++) {
+											if(w >= _params.start_indexes_w[q] && w < _params.end_indexes_w[q]) {
+												outputArray[outOffsetWithp + q] = Math.max(outputArray[outOffsetWithp + q], nchwVal);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				else {
+					// Empty input image
+					Arrays.fill(outputArray, n*CPQ, (n+1)*CPQ, 0);
+				}
+			}
+			
+			//thread-local recomputation of non-zeros
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
+		}
+	}
+	
+	//BACKWARD
+	
 	/**
 	 * Performs the maxpooling backward operation for dense input and dense error (dout)
 	 */
-	public static class PoolingBackwardDenseDense implements Callable<Long> 
+	private static class PoolingBackwardDenseDense implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params; 
@@ -61,7 +248,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 					final int outputOffset = n*CPQ + c*PQ;
 					for (int p = 0; p < P; p++) {
 						for (int q = 0; q < Q; q++) {
-							int maxIndex = LibMatrixDNNHelper.getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
+							int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
 							if(maxIndex != -1)
 								out[maxIndex] += doutArray[outputOffset +  p * Q + q];
 						}
@@ -76,14 +263,14 @@ public class LibMatrixDNNPoolingBackwardHelper {
 	/**
 	 * Performs the maxpooling backward operation for dense input and sparse error (dout)
 	 */
-	public static class PoolingBackwardDenseSparse implements Callable<Long> 
+	private static class PoolingBackwardDenseSparse implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params; 
 		MatrixBlock output; 
 		boolean performReluBackward;
 		double [] inputArray;  MatrixBlock dout;
-		int C; int CHW; int P; int Q; int HW;
+		int CHW; int P; int Q; int HW;
 		public PoolingBackwardDenseSparse(int rl, int ru, ConvolutionParameters params, boolean performReluBackward) {
 			_rl = rl; _ru = ru;
 			_params = params;
@@ -91,7 +278,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 			inputArray = params.input1.getDenseBlockValues();
 			dout = params.input2;
 			output = params.output;
-			C = params.C; CHW = params.C*params.H*params.W; HW = params.H*params.W;
+			CHW = params.C*params.H*params.W; HW = params.H*params.W;
 			P = params.P; Q = params.Q; 
 			if (inputArray == null || output.getDenseBlock() == null )
 				throw new RuntimeException("Incorrect usage: empty inputs");
@@ -113,7 +300,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 				for(int j = apos; j < apos+alen; j++) {
 					ix = LibMatrixDNNHelper.computeTensorIndexes(aix[j], P, Q, ix);
 					final int inputOffset = n*CHW + ix.ix1*HW;
-					int maxIndex = LibMatrixDNNHelper.getMaxIndex(ix.ix2, ix.ix3,
+					int maxIndex = getMaxIndex(ix.ix2, ix.ix3,
 						inputOffset, inputArray, _params, performReluBackward);
 					if(maxIndex != -1)
 						out[maxIndex] += avals[j];
@@ -127,7 +314,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 	/**
 	 * Performs the maxpooling backward operation for sparse input and dense error (dout)
 	 */
-	public static class PoolingBackwardSparseDense implements Callable<Long> 
+	private static class PoolingBackwardSparseDense implements Callable<Long> 
 	{
 		private final int _rl, _ru; 
 		private final ConvolutionParameters _params; 
@@ -263,7 +450,7 @@ public class LibMatrixDNNPoolingBackwardHelper {
 	/**
 	 * Performs the maxpooling backward operation for sparse input and sparse error (dout)
 	 */
-	public static class PoolingBackwardSparseSparse extends PoolingBackwardSparseDense
+	private static class PoolingBackwardSparseSparse extends PoolingBackwardSparseDense
 	{
 		public PoolingBackwardSparseSparse(int rl, int ru, ConvolutionParameters params, boolean relu) {
 			super(rl, ru, params, relu, params.input2, params.output);
@@ -295,5 +482,51 @@ public class LibMatrixDNNPoolingBackwardHelper {
 				out[ outOffset + maxIx[pq] ] += avals[j];
 			}
 		}
+	}
+	
+	private static double max(final double aval, double[] b, final int bi, final int len) {
+		double ret = aval;
+		for( int i = bi; i < bi+len; i++ )
+			ret = Math.max(ret, b[i]);
+		return ret;
+	}
+	
+	/**
+	 * Returns the index of cell with maximum value. This method is optimized for dense input
+	 * 
+	 * @param p output feature map height
+	 * @param q output feature map width
+	 * @param inputOffset offset to be used for input index
+	 * @param inputArray input array
+	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
+	 * @return index of cell with maximum value
+	 */
+	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params, boolean performReluBackward) {
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
+		
+		int maxIndex = -1; 
+		double maxVal = -Double.MAX_VALUE;
+		
+		// Note: We do not treat pad as zero and hence we don't do:  
+		// maxVal = 0 
+		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
+		
+		// Find maxIndex
+		double currDoutVal = -1;
+		for (int h = start_index_h; h < end_index_h; h++) {
+			for (int w = start_index_w; w < end_index_w; w++) {
+				currDoutVal = inputArray[inputOffset +  h*params.W + w];
+				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
+				if(maxVal < currDoutVal) {
+					maxIndex = inputOffset +  h*params.W + w;
+					maxVal = currDoutVal;
+				}
+			}
+		}
+		return maxIndex;
 	}
 }

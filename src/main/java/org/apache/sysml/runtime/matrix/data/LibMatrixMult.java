@@ -1369,7 +1369,7 @@ public class LibMatrixMult
 			int k2 = (ru==cd) ? alen : a.posFIndexGTE(i, ru);
 			k2 = (k2>=0) ? apos+k2 : apos+alen;
 			
-			if( b.isContiguous(aix[k1], aix[k2-1]) ) {
+			if( k1==k2 || b.isContiguous(aix[k1], aix[k2-1]) ) {
 				double[] bvals = b.values(aix[k1]);
 				int base = aix[k1]*n - b.pos(aix[k1]);
 				//rest not aligned to blocks of 4 rows

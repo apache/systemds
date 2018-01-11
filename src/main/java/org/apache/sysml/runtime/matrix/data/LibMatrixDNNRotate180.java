@@ -23,11 +23,11 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 /**
  * This class contains the different implementation of rotate180 operation
  */
-public class LibMatrixDNNRotate180Helper {
-
-	static interface Rotate180Worker {
+public class LibMatrixDNNRotate180
+{
+	public static interface Rotate180Worker {
 		public void execute(int inputN, int outputN);
-		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out, 
+		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out,
 			ConvolutionParameters params, boolean zeroOutSparseOutput, boolean trans) {
 			if(!in.isInSparseFormat()) 
 				return new DenseRotate180Worker(in, out.getDenseBlockValues(), params);
@@ -39,11 +39,10 @@ public class LibMatrixDNNRotate180Helper {
 	/**
 	 * Performing dense rotate180 (general case)
 	 */
-	static class DenseRotate180Worker implements Rotate180Worker {
-
-		double [] inputArray; double [] outputArray;  
-		ConvolutionParameters params;
-		public DenseRotate180Worker(MatrixBlock input, double [] outputArray,  ConvolutionParameters params) {
+	private static class DenseRotate180Worker implements Rotate180Worker {
+		private final double[] inputArray, outputArray;
+		private final ConvolutionParameters params;
+		public DenseRotate180Worker(MatrixBlock input, double[] outputArray,  ConvolutionParameters params) {
 			this.outputArray = outputArray;
 			this.params = params;
 			inputArray = input.getDenseBlockValues();
@@ -71,12 +70,12 @@ public class LibMatrixDNNRotate180Helper {
 	 * Why are we allocating the output of rotate180 in dense format ? 
 	 * Because the number of rows of output (i.e. NPQ) is much larger than number of columns (i.e. K) 
 	 */
-	static class SparseRotate180Worker implements Rotate180Worker {
+	private static class SparseRotate180Worker implements Rotate180Worker {
 		private final MatrixBlock in, out;
 		private final ConvolutionParameters params;
 		private final boolean trans;
 		
-		public SparseRotate180Worker(MatrixBlock input, MatrixBlock output, 
+		public SparseRotate180Worker(MatrixBlock input, MatrixBlock output,
 			ConvolutionParameters params, boolean trans) {
 			this.in = input;
 			this.out = output;

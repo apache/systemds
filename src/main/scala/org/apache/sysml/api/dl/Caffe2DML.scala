@@ -357,6 +357,10 @@ class Caffe2DML(val sc: SparkContext,
     
     System.out.println("* => memory in megabytes assuming the parameters (input, output activations, weights and backpropagation errors) are in double precision and in dense format.")
   }
+  
+  def setDebugFlags(isDebug:Boolean):Unit = {
+    net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
+  }
 
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
@@ -368,9 +372,11 @@ class Caffe2DML(val sc: SparkContext,
     // Flags passed by user
     val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
+    setDebugFlags(DEBUG_TRAINING)
 
     appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
-    readInputData(net, true)         // Read X_full and y_full
+    val performOneHotEncoding = !inputs.containsKey("$perform_one_hot_encoding") || inputs.get("$perform_one_hot_encoding").toBoolean
+    readInputData(net, true, performOneHotEncoding)         // Read X_full and y_full
     // Initialize the layers and solvers. Reads weights and bias if $weights is set.
     initWeights(net, solver, inputs.containsKey("$weights"), layersToIgnore)
 
@@ -389,7 +395,7 @@ class Caffe2DML(val sc: SparkContext,
     // ----------------------------------------------------------------------------
     // Main logic
     forBlock("iter", "1", "max_iter") {
-      performTrainingIter(lossLayers, shouldValidate)
+      performTrainingIter(lossLayers, shouldValidate, performOneHotEncoding)
       if (getTrainAlgo.toLowerCase.equals("batch")) {
         assign(tabDMLScript, "e", "iter")
         tabDMLScript.append("# Learning rate\n")
@@ -414,11 +420,14 @@ class Caffe2DML(val sc: SparkContext,
     val script = dml(trainingScript).in(inputs)
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
+    
+    setDebugFlags(false)
+    
     (script, "X_full", "y_full")
   }
   // ================================================================================================
 
-  private def performTrainingIter(lossLayers: List[IsLossLayer], shouldValidate: Boolean): Unit =
+  private def performTrainingIter(lossLayers: List[IsLossLayer], shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit =
     getTrainAlgo.toLowerCase match {
       case "minibatch" =>
         getTrainingBatch(tabDMLScript)
@@ -426,14 +435,14 @@ class Caffe2DML(val sc: SparkContext,
         // Perform forward, backward and update on minibatch
         forward; backward; update
         // -------------------------------------------------------
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       case "batch" => {
         // -------------------------------------------------------
         // Perform forward, backward and update on entire dataset
         forward; backward; update
         // -------------------------------------------------------
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       }
       case "allreduce_parallel_batches" => {
@@ -469,7 +478,7 @@ class Caffe2DML(val sc: SparkContext,
           // -------------------------------------------------------
           assign(tabDMLScript, "Xb", "X_group_batch")
           assign(tabDMLScript, "yb", "y_group_batch")
-          displayLoss(lossLayers(0), shouldValidate)
+          displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
           performSnapshot
         }
       }
@@ -496,7 +505,7 @@ class Caffe2DML(val sc: SparkContext,
         // -------------------------------------------------------
         assign(tabDMLScript, "Xb", "X_group_batch")
         assign(tabDMLScript, "yb", "y_group_batch")
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       }
       case _ => throw new DMLRuntimeException("Unsupported train algo:" + getTrainAlgo)
@@ -537,7 +546,7 @@ class Caffe2DML(val sc: SparkContext,
     }
 
   // Append the DML to display training and validation loss
-  private def displayLoss(lossLayer: IsLossLayer, shouldValidate: Boolean): Unit = {
+  private def displayLoss(lossLayer: IsLossLayer, shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit = {
     if (solverParam.getDisplay > 0) {
       // Append the DML to compute training loss
       if (!getTrainAlgo.toLowerCase.startsWith("allreduce")) {
@@ -550,7 +559,9 @@ class Caffe2DML(val sc: SparkContext,
           tabDMLScript.append(
             print(dmlConcat(asDMLString("Iter:"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
           )
-          printClassificationReport
+          if(performOneHotEncoding) {
+            printClassificationReport
+          }
         }
       } else {
         Caffe2DML.LOG.info("Training loss is not printed for train_algo=" + getTrainAlgo)
@@ -743,9 +754,11 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
 
     val DEBUG_PREDICTION = if (estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_PREDICTION) "TRUE" else "FALSE")
+    estimator.setDebugFlags(DEBUG_PREDICTION)
 
     appendHeaders(net, solver, false) // Appends DML corresponding to source and externalFunction statements.
-    readInputData(net, false)         // Read X_full and y_full
+    val performOneHotEncoding = !estimator.inputs.containsKey("$perform_one_hot_encoding") || estimator.inputs.get("$perform_one_hot_encoding").toBoolean
+    readInputData(net, false, performOneHotEncoding)         // Read X_full and y_full
     assign(tabDMLScript, "X", "X_full")
 
     // Initialize the layers and solvers. Reads weights and bias if readWeights is true.
@@ -837,6 +850,9 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, estimator.mloutput.getMatrix(l.weight)))
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, estimator.mloutput.getMatrix(l.bias)))
     }
+    
+    estimator.setDebugFlags(false)
+    
     (script, "X_full")
   }
   // ================================================================================================

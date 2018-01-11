@@ -257,7 +257,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val freeMem = Runtime.getRuntime().freeMemory();
     if(freeMem < OptimizerUtils.getLocalMemBudget()) {
     	val LOG = LogFactory.getLog(classOf[BaseSystemMLClassifierModel].getName())
-    	LOG.warn("SystemML local memory budget:" + OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " mb. Approximate free memory abailable:" + OptimizerUtils.toMB(freeMem));
+    	LOG.warn("SystemML local memory budget:" + OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " mb. Approximate free memory available:" + OptimizerUtils.toMB(freeMem));
     }
     val ret = (new MLContext(sc)).execute(script1).getMatrix("Prediction").toMatrixBlock
 

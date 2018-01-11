@@ -28,6 +28,8 @@ from itertools import chain, imap
 from ..converters import *
 from ..classloader import *
 import keras
+from keras import backend as K
+from keras.layers import Activation
 
 try:
     import py4j.java_gateway
@@ -137,7 +139,7 @@ def _parseKerasLayer(layer):
 	param = layerParamMapping[layerType](layer)
 	paramName = param.keys()[0]
 	if layerType == keras.layers.InputLayer:
-		ret = { 'layer': { 'name':layer.name, 'type':'Data', 'top':layer.name, paramName:param[paramName] } }
+		ret = { 'layer': { 'name':layer.name, 'type':'Data', paramName:param[paramName], 'top':layer.name, 'top':'label' } }
 	else:
 		ret = { 'layer': { 'name':layer.name, 'type':supportedLayers[layerType], 'bottom':_getBottomLayers(layer), 'top':layer.name, paramName:param[paramName] } }
 	return [ ret, _parseActivation(layer, layer.name + '_activation') ] if _shouldParseActivation(layer)  else [ ret ]
@@ -155,8 +157,6 @@ specialLayers = {
     keras.layers.BatchNormalization: _parseBatchNorm
     }
 	
-batchSize = 64
-
 def getConvParam(layer):
 	stride = (1, 1) if layer.strides is None else layer.strides
 	padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2] if layer.padding == 'same' else [0, 0]
@@ -181,7 +181,7 @@ def getRecurrentParam(layer):
 # TODO: Update AveragePooling2D when we add maxpooling support 
 layerParamMapping = {
     keras.layers.InputLayer: lambda l: \
-        {'data_param': {'batch_size': batchSize}},
+        {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l: \
         {'inner_product_param': {'num_output': l.units}},
     keras.layers.Dropout: lambda l: \
@@ -210,16 +210,58 @@ def _checkIfValid(myList, fn, errorMessage):
 	if len(unsupported_elems) != 0:
 		raise ValueError(errorMessage + str(np.array(myList)[unsupported_elems]))
 
-def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath):
+def _transformLayer(layer, batch_size):
+	if type(layer) == keras.layers.InputLayer:
+		layer.batch_size = batch_size
+	return [ layer ]
+
+def _appendKerasLayers(fileHandle, kerasLayers, batch_size):
+	if len(kerasLayers) >= 1:
+		transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasLayers)))  
+		jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
+		parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
+		fileHandle.write(''.join(parsedLayers))
+		fileHandle.write('\n')
+	
+def lossLayerStr(layerType, bottomLayer):
+	return 'layer {\n  name: "loss"\n  type: "' + layerType + '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
+	
+def _appendKerasLayerWithoutActivation(fileHandle, layer, batch_size):
+	if type(layer) != keras.layers.Activation:
+		lastLayerActivation = layer.activation
+		layer.activation = keras.activations.linear
+		_appendKerasLayers(fileHandle, [layer], batch_size)
+		layer.activation = lastLayerActivation
+
+def _getExactlyOneBottomLayer(layer):
+	bottomLayers = _getBottomLayers(layer)
+	if len(bottomLayers) != 1:
+		raise Exception('Expected only one bottom layer for ' + str(layer.name) + ', but found ' + str(bottomLayers))
+	return bottomLayers[0]
+
+def _isMeanSquaredError(loss):
+	return loss == 'mean_squared_error' or loss == 'mse' or loss == 'MSE' 
+	
+def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
-	#unsupported_layers = np.array([False if type(layer) in supportedLayers else True for layer in kerasModel.layers])
-	#if len(np.where(unsupported_layers)[0]) != 0:
-	#	raise TypeError('Unsupported Layers:' + str(np.array(kerasModel.layers)[np.where(unsupported_layers)[0]]))
-	# Core logic: model.layers.flatMap(layer => _parseJSONObject(_parseKerasLayer(layer)))
-	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), kerasModel.layers)))
-	parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
 	with open(outCaffeNetworkFilePath, 'w') as f:
-		f.write(''.join(parsedLayers))
+		# Write the parsed layers for all but the last layer
+		_appendKerasLayers(f, kerasModel.layers[:-1], batch_size)
+		# Now process the last layer with loss
+		lastLayer = kerasModel.layers[-1]
+		if _isMeanSquaredError(kerasModel.loss):
+			_appendKerasLayers(f, [ lastLayer ], batch_size)
+			f.write(lossLayerStr('EuclideanLoss', lastLayer.name))
+		elif kerasModel.loss == 'categorical_crossentropy':
+			_appendKerasLayerWithoutActivation(f, lastLayer, batch_size)
+			bottomLayer = _getExactlyOneBottomLayer(lastLayer) if type(lastLayer) == keras.layers.Activation else lastLayer.name  
+			lastLayerActivation = str(keras.activations.serialize(lastLayer.activation))
+			if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
+				f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+			else:
+				raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
+		else:
+			raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
 
 
 def getNumPyMatrixFromKerasWeight(param):
@@ -234,23 +276,52 @@ def getNumPyMatrixFromKerasWeight(param):
 
 
 defaultSolver = """
-base_lr: 0.01
-momentum: 0.9
-weight_decay: 5e-4
-lr_policy: "exp"
-gamma: 0.95
-display: 100
 solver_mode: CPU
-type: "SGD"
-max_iter: 2000
-test_iter: 10
-test_interval: 500
 """
 
-def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath):
+def evaluateValue(val):
+	if type(val) == int or type(val) == float:
+		return float(val)
+	else:
+		return K.eval(val)
+	
+def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
+	if type(kerasModel.optimizer) == keras.optimizers.SGD:
+		solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
+	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+		solver = 'type: "Adagrad"\n'
+	elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+		solver = 'type: "Adam"\n'
+	else:
+		raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
+	base_lr = evaluateValue(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
+	gamma = evaluateValue(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
 	with open(outCaffeSolverFilePath, 'w') as f:
 		f.write('net: "' + caffeNetworkFilePath + '"\n')
 		f.write(defaultSolver)
+		f.write(solver)
+		f.write('lr_policy: "' + lr_policy + '"\n')
+		f.write('regularization_type: "' + str(regularization_type) + '"\n')
+		f.write('weight_decay: ' + str(weight_decay) + '\n')
+		f.write('max_iter: ' + str(max_iter) + '\ntest_iter: ' + str(test_iter) + '\ntest_interval: ' + str(test_interval) + '\n')
+		f.write('display: ' + str(display) + '\n')
+		f.write('base_lr: ' + str(base_lr) + '\n')
+		f.write('gamma: ' + str(gamma) + '\n')
+		if type(kerasModel.optimizer) == keras.optimizers.SGD:
+			momentum = evaluateValue(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
+			f.write('momentum: ' + str(momentum) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+			momentum = evaluateValue(kerasModel.optimizer.beta_1) if hasattr(kerasModel.optimizer, 'beta_1') else 0.9
+			momentum2 = evaluateValue(kerasModel.optimizer.beta_2) if hasattr(kerasModel.optimizer, 'beta_2') else 0.999
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('momentum: ' + str(momentum) + '\n')
+			f.write('momentum2: ' + str(momentum2) + '\n')
+			f.write('delta: ' + str(delta) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('delta: ' + str(delta) + '\n')
+		else:
+			raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
 
 
 def getInputMatrices(layer):

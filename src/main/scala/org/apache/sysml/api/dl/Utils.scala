@@ -71,12 +71,14 @@ object Utils {
     val momentum = if (solver.hasMomentum) solver.getMomentum else 0.0
     val lambda   = if (solver.hasWeightDecay) solver.getWeightDecay else 0.0
     val delta    = if (solver.hasDelta) solver.getDelta else 0.0
+    val regularizationType = if(solver.hasRegularizationType) solver.getRegularizationType else "L2"
 
     solver.getType.toLowerCase match {
-      case "sgd"      => new SGD(lambda, momentum)
-      case "adagrad"  => new AdaGrad(lambda, delta)
-      case "nesterov" => new Nesterov(lambda, momentum)
-      case _          => throw new DMLRuntimeException("The solver type is not supported: " + solver.getType + ". Try: SGD, AdaGrad or Nesterov.")
+      case "sgd"      => new SGD(regularizationType, lambda, momentum)
+      case "adagrad"  => new AdaGrad(regularizationType, lambda, delta)
+      case "nesterov" => new Nesterov(regularizationType, lambda, momentum)
+      case "adam" 	  => new Adam(regularizationType, lambda, momentum, if(solver.hasMomentum2) solver.getMomentum2 else 0.0, delta)
+      case _          => throw new DMLRuntimeException("The solver type is not supported: " + solver.getType + ". Try: SGD, AdaGrad or Nesterov or Adam.")
     }
 
   }

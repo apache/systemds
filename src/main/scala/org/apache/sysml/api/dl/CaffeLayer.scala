@@ -42,6 +42,22 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedOutputShape
   }
   // -------------------------------------------------
+  var debugLayer = false
+  def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String, optionalString:String=""):Unit = {
+    if(debugLayer) {
+      val msg = " in " + sourceFileName + "(" + optionalString + ") script."
+      if(expectedNumRows != null) {
+        dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
+        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + msg + " Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
+        dmlScript.append("\n}\n")
+      }
+      if(expectedNumCols != null) {
+        dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
+        dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + msg + " Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
+        dmlScript.append("\n}\n")
+      }
+    }
+  }
   var computedBottomLayerOutputShape: (String, String, String) = null
   def bottomLayerOutputShape: (String, String, String) = {
     if (computedBottomLayerOutputShape == null) {
@@ -532,27 +548,25 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
 
 // L2 loss function.
 class EuclideanLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
-  override def sourceFileName: String = if (!isSegmentationProblem()) "l2_loss" else throw new DMLRuntimeException("Segmentation is not supported for EuclideanLoss in Caffe2DML yet")
+  override def sourceFileName: String = "l2_loss"
   override def weightShape(): Array[Int] = null
   override def biasShape(): Array[Int]   = null
   
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out), scores, "yb")
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = 
+    assign(dmlScript, out, scores)
   
-  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit = 
+  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit =  {
+      invokeForward(dmlScript, List[String](out), scores, "yb")
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id + outSuffix), scores, "yb")
-  
-  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit =
-    if (!isSegmentationProblem()) {
-      val tabBuilder = new StringBuilder
-      for (i <- 0 until numTabs) tabBuilder.append("\t")
-      val tabs = tabBuilder.toString
-      dmlScript.append("tmp_loss = l2_loss::forward(" + commaSep(out, "yb") + ")\n")
-      dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
-      dmlScript.append(tabs).append("accuracy = -1\n")
-    } else {
-      throw new RuntimeException("Computation of loss for SoftmaxWithLoss is not implemented for segmentation problem")
-    }
+  }
+  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit = {
+    val tabBuilder = new StringBuilder
+    for (i <- 0 until numTabs) tabBuilder.append("\t")
+    val tabs = tabBuilder.toString
+    invokeForward(dmlScript, List[String]("tmp_loss"), scores, "yb")
+    dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
+    dmlScript.append(tabs).append("accuracy = -1\n")
+  }
 }
 
 class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
@@ -853,8 +867,14 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    * Outputs:
    *  - out: Outputs, of shape (N, M).
    */
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    val D = numFeatures
+    val M = numNeurons
+    validateDimensions(dmlScript, X, null, D)
+    validateDimensions(dmlScript, weight, D, M, "forward")
+    validateDimensions(dmlScript, bias, "1", M)
     invokeForward(dmlScript, List[String](out), X, weight, bias)
+  }
   /*
    * Computes the backward pass for a fully-connected (affine) layer
    * with M neurons.
@@ -870,8 +890,15 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - dW: Gradient wrt `W`, of shape (D, M).
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) =
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val D = numFeatures
+    val M = numNeurons
+    validateDimensions(dmlScript, dout, null, M)
+    validateDimensions(dmlScript, X, null, D)
+    validateDimensions(dmlScript, weight, D, M, "backward")
+    validateDimensions(dmlScript, bias, "1", M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  }
   // -------------------------------------------------
   // num_output (c_o): the number of filters
   def numNeurons  = param.getInnerProductParam.getNumOutput.toString
@@ -935,15 +962,44 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   
   override def init(dmlScript: StringBuilder) = {
     invokeInit(dmlScript, List[String](weight, bias, out0, c0), Caffe2DML.batchSize, input_features, M)
+    // Also, initialize gradient wrt `c` to empty matrix 
+    dmlScript.append(dc0 + " = matrix(0, rows=" + Caffe2DML.batchSize + ", cols=" + M + ")\n")
   }
   
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
-    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0)
+    val N:String = null // output_features.toString
+    val T = timesteps()
+    val D = input_features()
+    validateDimensions(dmlScript, X, N, T + "*" + D)
+    validateDimensions(dmlScript, out0, N, M)
+    validateDimensions(dmlScript, c0, N, M)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
+    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
+    // This validates whether the output is of correct dimensions
+    validateDimensions(dmlScript, out, null, int_mult(outputShape._1, outputShape._2, outputShape._3))
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val T = timesteps()
+    val D = input_features()
+    if(return_sequences) {
+      validateDimensions(dmlScript, dout, null, T + "*" + M)
+    }
+    else {
+      validateDimensions(dmlScript, dout, null, M)
+    }
+    validateDimensions(dmlScript, dc0, null, M)
+    validateDimensions(dmlScript, X, null, T + "*" + D)
+    validateDimensions(dmlScript, out0, null, M)
+    validateDimensions(dmlScript, c0, null, M)
+    validateDimensions(dmlScript, cache_out, T, null)
+    validateDimensions(dmlScript, cache_c, T, null)
+    validateDimensions(dmlScript, cache_ifog, T, null)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
-        timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
+        T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }
   
   val cache_out = "cache_out_" + id

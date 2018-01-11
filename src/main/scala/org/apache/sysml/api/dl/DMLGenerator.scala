@@ -261,6 +261,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
   // Appends DML corresponding to source and externalFunction statements.
   def appendHeaders(net: CaffeNetwork, solver: CaffeSolver, isTraining: Boolean): Unit = {
     // Append source statements for layers as well as solver
+    source(net, solver, if (isTraining) Array[String]("l1_reg") else null)
     source(net, solver, if (isTraining) Array[String]("l2_reg") else null)
 
     if (isTraining) {
@@ -284,14 +285,16 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     assign(tabDMLScript, varName, "read(" + pathVar + ")")
   }
 
-  def readInputData(net: CaffeNetwork, isTraining: Boolean): Unit = {
+  def readInputData(net: CaffeNetwork, isTraining: Boolean, performOneHotEncoding:Boolean): Unit = {
     // Read and convert to one-hot encoding
     readMatrix("X_full", "$X")
     if (isTraining) {
       readMatrix("y_full", "$y")
       tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(y_full)\n")
-      tabDMLScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
-      tabDMLScript.append("y_full = table(seq(1," + Caffe2DML.numImages + ",1), y_full, " + Caffe2DML.numImages + ", " + Utils.numClasses(net) + ")\n")
+      if(performOneHotEncoding) {
+        tabDMLScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
+        tabDMLScript.append("y_full = table(seq(1," + Caffe2DML.numImages + ",1), y_full, " + Caffe2DML.numImages + ", " + Utils.numClasses(net) + ")\n")
+      }
     } else {
       tabDMLScript.append(Caffe2DML.numImages + " = nrow(X_full)\n")
     }

@@ -2662,9 +2662,30 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
 
+		// Boolean binary
 		case XOR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp2.XOR, expr, expr2);
+			break;
+		case BITWISE_AND:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BW_AND, expr, expr2);
+			break;
+		case BITWISE_OR:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BW_OR, expr, expr2);
+			break;
+		case BITWISE_XOR:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BW_XOR, expr, expr2);
+			break;
+		case BITWISE_SHIFTL:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BW_SHIFTL, expr, expr2);
+			break;
+		case BITWISE_SHIFTR:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.BW_SHIFTR, expr, expr2);
 			break;
 
 		case ABS:

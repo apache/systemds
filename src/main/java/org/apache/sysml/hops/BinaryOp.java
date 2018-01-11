@@ -222,7 +222,7 @@ public class BinaryOp extends Hop
 				break;
 			}
 			default:
-				constructLopsBinaryDefault();	
+				constructLopsBinaryDefault();
 		}
 
 		//add reblock/checkpoint lops if necessary
@@ -627,12 +627,11 @@ public class BinaryOp extends Hop
 				ot = HopsOpOp2LopsU.get(op);
 
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
-						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
+				getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
 			setOutputDimensions(unary1);
 			setLineNumbers(unary1);
 			setLops(unary1);
-			
 		} 
 		else 
 		{
@@ -1597,18 +1596,18 @@ public class BinaryOp extends Hop
 				&& getInput().get(1) == that2.getInput().get(1));
 	}
 	
-	public boolean supportsMatrixScalarOperations()
-	{
-		return (   op==OpOp2.PLUS    ||op==OpOp2.MINUS 
-		         ||op==OpOp2.MULT    ||op==OpOp2.DIV
-		         ||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
-		         ||op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-		         ||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL
-		         ||op==OpOp2.MIN     ||op==OpOp2.MAX
-		         ||op==OpOp2.AND     ||op==OpOp2.OR 
-		         ||op == OpOp2.XOR
-		         ||op==OpOp2.LOG     ||op==OpOp2.POW );
+	public boolean supportsMatrixScalarOperations() {
+		return ( op==OpOp2.PLUS ||op==OpOp2.MINUS
+				||op==OpOp2.MULT ||op==OpOp2.DIV
+				||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
+				||op==OpOp2.LESS ||op==OpOp2.LESSEQUAL
+				||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
+				||op==OpOp2.EQUAL ||op==OpOp2.NOTEQUAL
+				||op==OpOp2.MIN ||op==OpOp2.MAX
+				||op==OpOp2.LOG ||op==OpOp2.POW
+				||op==OpOp2.AND ||op==OpOp2.OR ||op==OpOp2.XOR
+				||op==OpOp2.BW_AND ||op==OpOp2.BW_OR ||op==OpOp2.BW_XOR
+				||op==OpOp2.BW_SHIFTL ||op==OpOp2.BW_SHIFTR);
 	}
 	
 	public boolean isPPredOperation()

@@ -42,6 +42,11 @@ import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.And;
+import org.apache.sysml.runtime.functionobjects.BitwAnd;
+import org.apache.sysml.runtime.functionobjects.BitwOr;
+import org.apache.sysml.runtime.functionobjects.BitwShiftL;
+import org.apache.sysml.runtime.functionobjects.BitwShiftR;
+import org.apache.sysml.runtime.functionobjects.BitwXor;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -85,11 +90,11 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 
@@ -397,7 +402,7 @@ public class InstructionUtils
 				CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.LASTROW;
 		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, corr);
 		IndexFunction ixfun = opcode.equalsIgnoreCase("tak+*") ? 
-			ReduceAll.getReduceAllFnObject() : ReduceRow.getReduceRowFnObject();					
+			ReduceAll.getReduceAllFnObject() : ReduceRow.getReduceRowFnObject();
 		
 		return new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg, ixfun, numThreads);
 	}
@@ -541,6 +546,16 @@ public class InstructionUtils
 			return new BinaryOperator(Or.getOrFnObject());
 		else if(opcode.equalsIgnoreCase("xor"))
 			return new BinaryOperator(Xor.getXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwAnd"))
+			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
+		else if(opcode.equalsIgnoreCase("bitwOr"))
+			return new BinaryOperator(BitwOr.getBitwOrFnObject());
+		else if(opcode.equalsIgnoreCase("bitwXor"))
+			return new BinaryOperator(BitwXor.getBitwXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftL"))
+			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftR"))
+			return new BinaryOperator(BitwShiftR.getBitwShiftRFnObject());
 		else if(opcode.equalsIgnoreCase("+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-"))
@@ -680,7 +695,46 @@ public class InstructionUtils
 				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 		}
-		
+		else if ( opcode.equalsIgnoreCase("&&") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(And.getAndFnObject(), constant) :
+				new RightScalarOperator(And.getAndFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("||") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(Or.getOrFnObject(), constant) :
+				new RightScalarOperator(Or.getOrFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("xor") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(Xor.getXorFnObject(), constant) :
+				new RightScalarOperator(Xor.getXorFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("bitwAnd") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(BitwAnd.getBitwAndFnObject(), constant) :
+				new RightScalarOperator(BitwAnd.getBitwAndFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("bitwOr") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(BitwOr.getBitwOrFnObject(), constant) :
+				new RightScalarOperator(BitwOr.getBitwOrFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("bitwXor") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(BitwXor.getBitwXorFnObject(), constant) :
+				new RightScalarOperator(BitwXor.getBitwXorFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("bitwShiftL") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(BitwShiftL.getBitwShiftLFnObject(), constant) :
+				new RightScalarOperator(BitwShiftL.getBitwShiftLFnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("bitwShiftR") ) {
+			return arg1IsScalar ?
+				new LeftScalarOperator(BitwShiftR.getBitwShiftRFnObject(), constant) :
+				new RightScalarOperator(BitwShiftR.getBitwShiftRFnObject(), constant);
+		}
 		//operations that only exist for performance purposes (all unary or commutative operators)
 		else if ( opcode.equalsIgnoreCase("*2") ) {
 			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), constant);
@@ -724,6 +778,16 @@ public class InstructionUtils
 			return new BinaryOperator(Or.getOrFnObject());
 		else if(opcode.equalsIgnoreCase("xor") || opcode.equalsIgnoreCase("mapxor"))
 			return new BinaryOperator(Xor.getXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwAnd") || opcode.equalsIgnoreCase("mapbitwAnd"))
+			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
+		else if(opcode.equalsIgnoreCase("bitwOr") || opcode.equalsIgnoreCase("mapbitwOr"))
+			return new BinaryOperator(BitwOr.getBitwOrFnObject());
+		else if(opcode.equalsIgnoreCase("bitwXor") || opcode.equalsIgnoreCase("mapbitwXor"))
+			return new BinaryOperator(BitwXor.getBitwXorFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftL") || opcode.equalsIgnoreCase("mapbitwShiftL"))
+			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
+		else if(opcode.equalsIgnoreCase("bitwShiftR") || opcode.equalsIgnoreCase("mapbitwShiftR"))
+			return new BinaryOperator(BitwShiftR.getBitwShiftRFnObject());
 		else if(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("map+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
 		else if(opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("map-"))

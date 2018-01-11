@@ -24,7 +24,13 @@ import java.io.Serializable;
 
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.runtime.functionobjects.And;
+import org.apache.sysml.runtime.functionobjects.BitwAnd;
+import org.apache.sysml.runtime.functionobjects.BitwOr;
+import org.apache.sysml.runtime.functionobjects.BitwShiftL;
+import org.apache.sysml.runtime.functionobjects.BitwShiftR;
+import org.apache.sysml.runtime.functionobjects.BitwXor;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
@@ -44,7 +50,6 @@ import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.functionobjects.Xor;
-import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 
 public class BinaryOperator  extends Operator implements Serializable
 {
@@ -56,7 +61,9 @@ public class BinaryOperator  extends Operator implements Serializable
 		//binaryop is sparse-safe iff (0 op 0) == 0
 		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
 			|| p instanceof And || p instanceof Or || p instanceof Xor
-			|| p instanceof PlusMultiply || p instanceof MinusMultiply);
+			|| p instanceof PlusMultiply || p instanceof MinusMultiply
+			|| p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor
+			|| p instanceof BitwShiftL || p instanceof BitwShiftR);
 		fn = p;
 	}
 	
@@ -84,6 +91,11 @@ public class BinaryOperator  extends Operator implements Serializable
 		else if( fn instanceof And )			return OpOp2.AND;
 		else if( fn instanceof Or )				return OpOp2.OR;
 		else if( fn instanceof Xor )			return OpOp2.XOR;
+		else if( fn instanceof BitwAnd )		return OpOp2.BW_AND;
+		else if( fn instanceof BitwOr )			return OpOp2.BW_OR;
+		else if( fn instanceof BitwXor )		return OpOp2.BW_XOR;
+		else if( fn instanceof BitwShiftL )		return OpOp2.BW_SHIFTL;
+		else if( fn instanceof BitwShiftR )		return OpOp2.BW_SHIFTR;
 		else if( fn instanceof Power )			return OpOp2.POW;
 		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {

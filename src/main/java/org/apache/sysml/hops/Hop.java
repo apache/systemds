@@ -40,6 +40,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.Nary;
 import org.apache.sysml.lops.ReBlock;
+import org.apache.sysml.lops.Unary;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -311,12 +312,12 @@ public abstract class Hop implements ParseInfo
 					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
 				{
 					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
-							getDataType(), getValueType(), et);
+						getDataType(), getValueType(), et);
 				}
-				else //TEXT / MM / BINARYBLOCK / BINARYCELL  
+				else //TEXT / MM / BINARYBLOCK / BINARYCELL
 				{
 					reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
-		                    getDataType(), getValueType(), _outputEmptyBlocks, et);
+						getDataType(), getValueType(), _outputEmptyBlocks, et);
 				}
 			}
 			catch( LopsException ex ) {
@@ -373,10 +374,10 @@ public abstract class Hop implements ParseInfo
 				}
 			
 				//construct checkpoint w/ right storage level
-				Lop input = getLops();			
+				Lop input = getLops();
 				Lop chkpoint = new Checkpoint(input, getDataType(), getValueType(), 
 						serializedStorage ? Checkpoint.getSerializeStorageLevelString() :
-								            Checkpoint.getDefaultStorageLevelString() );
+						Checkpoint.getDefaultStorageLevelString() );
 				
 				setOutputDimensions( chkpoint );
 				setLineNumbers( chkpoint );
@@ -415,7 +416,7 @@ public abstract class Hop implements ParseInfo
 		{
 			try
 			{
-				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);				
+				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);
 				setOutputDimensions( compress );
 				setLineNumbers( compress );
 				setLops( compress );
@@ -1067,6 +1068,7 @@ public abstract class Hop implements ParseInfo
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT, //1-X*Y
+		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //bitwise operations
 	}
 
 	// Operations that require 3 operands
@@ -1208,6 +1210,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
 		HopsOpOp2LopsB.put(OpOp2.LOG, Binary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsB.put(OpOp2.BW_AND, Binary.OperationTypes.BW_AND);
+		HopsOpOp2LopsB.put(OpOp2.BW_OR, Binary.OperationTypes.BW_OR);
+		HopsOpOp2LopsB.put(OpOp2.BW_XOR, Binary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsB.put(OpOp2.BW_SHIFTL, Binary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsB.put(OpOp2.BW_SHIFTR, Binary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
@@ -1233,6 +1240,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
+		HopsOpOp2LopsBS.put(OpOp2.BW_AND, BinaryScalar.OperationTypes.BW_AND);
+		HopsOpOp2LopsBS.put(OpOp2.BW_OR, BinaryScalar.OperationTypes.BW_OR);
+		HopsOpOp2LopsBS.put(OpOp2.BW_XOR, BinaryScalar.OperationTypes.BW_XOR);
+		HopsOpOp2LopsBS.put(OpOp2.BW_SHIFTL, BinaryScalar.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsBS.put(OpOp2.BW_SHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
@@ -1251,14 +1263,20 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsU.put(OpOp2.GREATER, org.apache.sysml.lops.Unary.OperationTypes.GREATER_THAN);
 		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.apache.sysml.lops.Unary.OperationTypes.EQUALS);
 		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.apache.sysml.lops.Unary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysml.lops.Unary.OperationTypes.AND);
+		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysml.lops.Unary.OperationTypes.OR);
+		HopsOpOp2LopsU.put(OpOp2.XOR, org.apache.sysml.lops.Unary.OperationTypes.XOR);
 		HopsOpOp2LopsU.put(OpOp2.MAX, org.apache.sysml.lops.Unary.OperationTypes.MAX);
 		HopsOpOp2LopsU.put(OpOp2.MIN, org.apache.sysml.lops.Unary.OperationTypes.MIN);
 		HopsOpOp2LopsU.put(OpOp2.LOG, org.apache.sysml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysml.lops.Unary.OperationTypes.POW);
 		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT_NZ);
 		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp2LopsU.put(OpOp2.BW_AND, Unary.OperationTypes.BW_AND);
+		HopsOpOp2LopsU.put(OpOp2.BW_OR, Unary.OperationTypes.BW_OR);
+		HopsOpOp2LopsU.put(OpOp2.BW_XOR, Unary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsU.put(OpOp2.BW_SHIFTL, Unary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsU.put(OpOp2.BW_SHIFTR, Unary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1429,6 +1447,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
 		HopsOpOp2String.put(OpOp2.XOR, "xor");
+		HopsOpOp2String.put(OpOp2.BW_AND, "bitwAnd");
+		HopsOpOp2String.put(OpOp2.BW_OR,  "bitwOr");
+		HopsOpOp2String.put(OpOp2.BW_XOR, "bitwXor");
+		HopsOpOp2String.put(OpOp2.BW_SHIFTL, "bitwShiftL");
+		HopsOpOp2String.put(OpOp2.BW_SHIFTR, "bitwShiftR");
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
@@ -1519,8 +1542,13 @@ public abstract class Hop implements ParseInfo
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;
+		else if("bitwAnd".equals(op) ) return OpOp2.BW_AND;
+		else if("bitwOr".equals(op) ) return OpOp2.BW_OR;
+		else if("bitwXor".equals(op) ) return OpOp2.BW_XOR;
+		else if("bitwShiftL".equals(op) ) return OpOp2.BW_SHIFTL;
+		else if("bitwShiftR".equals(op) ) return OpOp2.BW_SHIFTR;
 		
-		return null;		
+		return null;
 	}
 
 	/////////////////////////////////////

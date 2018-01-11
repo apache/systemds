@@ -97,7 +97,6 @@ public abstract class Hop implements ParseInfo
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
 	protected double _processingMemEstimate = 0;
 	protected double _spBroadcastMemEstimate = 0;
-	protected boolean _validCPSizeEstimate = false;
 	
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
@@ -215,23 +214,12 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()
-	{		
-		if( _etype == ExecType.CP )
-		{
-			boolean invalid = false;
-			
-			//Step 1: check dimensions of output and all inputs (INTEGER)
-			invalid |= !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
+	{
+		if( _etype == ExecType.CP || _etype == ExecType.GPU ) {
+			//check dimensions of output and all inputs (INTEGER)
+			boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
 			for( Hop in : getInput() )
 				invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
-			
-			//Step 2: check valid output and input sizes for cp (<16GB for DENSE)
-			//(if the memory estimate is smaller than max_numcells we are guaranteed to have it in sparse representation)
-			invalid |= !(  OptimizerUtils.isValidCPMatrixSize(_dim1, _dim2, OptimizerUtils.getSparsity(_dim1, _dim2, _nnz))
-					    || getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || _validCPSizeEstimate );
-			for( Hop in : getInput() )
-				invalid |= !(   OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz))
-						     || in.getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || in._validCPSizeEstimate);
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
@@ -712,10 +700,6 @@ public abstract class Hop implements ParseInfo
 		
 		//final estimate (sum of inputs/intermediates/output)
 		_memEstimate = getInputOutputSize();
-		
-		//update optional valid cp size estimate (based on worst-case dimensions)
-		_validCPSizeEstimate = (wstats!=null) ? OptimizerUtils.isValidCPMatrixSize(
-			wstats[0], wstats[1], OptimizerUtils.getSparsity(wstats[0], wstats[1], wstats[2])) : false;
 	}
 	
 	/**

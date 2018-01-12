@@ -90,7 +90,7 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 			
 			//create new bin at end of list
 			if( !assigned ) {
-				bins.add(Arrays.asList(items[i]));
+				bins.add(new ArrayList<>(Arrays.asList(items[i])));
 				binWeights.add(BIN_CAPACITY-itemWeights[i]);
 			}
 		}

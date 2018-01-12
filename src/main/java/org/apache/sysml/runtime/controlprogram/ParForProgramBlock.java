@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -1301,7 +1302,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws CacheException 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		HashSet<String> blacklist = new HashSet<>(Arrays.asList(blacklistNames));
+		Set<String> blacklist = UtilFunctions.asSet(blacklistNames);
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{

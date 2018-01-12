@@ -740,31 +740,22 @@ public class Recompiler
 		return ret;
 	}
 	
-	private static Hop rDeepCopyHopsDag( Hop hops, HashMap<Long,Hop> memo ) 
+	private static Hop rDeepCopyHopsDag( Hop hop, HashMap<Long,Hop> memo ) 
 		throws CloneNotSupportedException
 	{
-		Hop ret = memo.get(hops.getHopID());
+		Hop ret = memo.get(hop.getHopID());
 	
 		//create clone if required 
-		if( ret == null ) 
-		{
-			ret = (Hop) hops.clone();
-			ArrayList<Hop> tmp = new ArrayList<>();
+		if( ret == null ) {
+			ret = (Hop) hop.clone();
 			
-			//create new childs
-			for( Hop in : hops.getInput() )
-			{
-				Hop newIn = rDeepCopyHopsDag(in, memo);
-				tmp.add(newIn);
+			//create new childs and modify references
+			for( Hop in : hop.getInput() ) {
+				Hop tmp = rDeepCopyHopsDag(in, memo);
+				ret.getInput().add(tmp);
+				tmp.getParent().add(ret);
 			}
-			//modify references of childs
-			for( Hop in : tmp )
-			{
-				ret.getInput().add(in);
-				in.getParent().add(ret);
-			}
-			
-			memo.put(hops.getHopID(), ret);
+			memo.put(hop.getHopID(), ret);
 		}
 		
 		return ret;
@@ -1548,8 +1539,9 @@ public class Recompiler
 				int ix1 = params.get(DataExpression.RAND_ROWS);
 				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
-				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
-				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
+				HashMap<Long, Long> memo = new HashMap<>();
+				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars, memo);
+				d.refreshColsParameterInformation(d.getInput().get(ix2), vars, memo);
 				updatedSizeExpr = initUnknown & d.dimsKnown();
 			} 
 			else if ( d.getOp() == DataGenMethod.SEQ ) 
@@ -1558,9 +1550,10 @@ public class Recompiler
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
-				double from = d.computeBoundsInformation(d.getInput().get(ix1), vars);
-				double to = d.computeBoundsInformation(d.getInput().get(ix2), vars);
-				double incr = d.computeBoundsInformation(d.getInput().get(ix3), vars);
+				HashMap<Long, Double> memo = new HashMap<>();
+				double from = d.computeBoundsInformation(d.getInput().get(ix1), vars, memo);
+				double to = d.computeBoundsInformation(d.getInput().get(ix2), vars, memo);
+				double incr = d.computeBoundsInformation(d.getInput().get(ix3), vars, memo);
 				
 				//special case increment 
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) {
@@ -1584,8 +1577,9 @@ public class Recompiler
 		{
 			ReorgOp d = (ReorgOp) hop;
 			boolean initUnknown = !d.dimsKnown();
-			d.refreshRowsParameterInformation(d.getInput().get(1), vars);
-			d.refreshColsParameterInformation(d.getInput().get(2), vars);
+			HashMap<Long, Long> memo = new HashMap<>();
+			d.refreshRowsParameterInformation(d.getInput().get(1), vars, memo);
+			d.refreshColsParameterInformation(d.getInput().get(2), vars, memo);
 			updatedSizeExpr = initUnknown & d.dimsKnown();
 		}
 		//update size expression for indexing according to symbol table entries
@@ -1597,10 +1591,11 @@ public class Recompiler
 			Hop input4 = iop.getInput().get(3); //inpColL
 			Hop input5 = iop.getInput().get(4); //inpColU
 			boolean initUnknown = !iop.dimsKnown();
-			double rl = iop.computeBoundsInformation(input2, vars);
-			double ru = iop.computeBoundsInformation(input3, vars);
-			double cl = iop.computeBoundsInformation(input4, vars);
-			double cu = iop.computeBoundsInformation(input5, vars);
+			HashMap<Long, Double> memo = new HashMap<>();
+			double rl = iop.computeBoundsInformation(input2, vars, memo);
+			double ru = iop.computeBoundsInformation(input3, vars, memo);
+			double cl = iop.computeBoundsInformation(input4, vars, memo);
+			double cu = iop.computeBoundsInformation(input5, vars, memo);
 			if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
 				iop.setDim1( (long)(ru-rl+1) );
 			if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
@@ -1727,14 +1722,14 @@ public class Recompiler
 					{
 						ret = false;
 						break;
-					}			
+					}
 				}
 				//default case (known dimensions)
 				else
 				{
 					long nnz = mo.getNnz();
 					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
-					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
+					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
 					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
 						|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
 						|| mem >= OptimizerUtils.getLocalMemBudget() ) 

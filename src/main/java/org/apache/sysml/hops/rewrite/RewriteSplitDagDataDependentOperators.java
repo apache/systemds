@@ -77,7 +77,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		//DAG splits not required for forced single node
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
 			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
-			return new ArrayList<>(Arrays.asList(sb));
+			return Arrays.asList(sb);
 		
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 	

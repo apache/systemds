@@ -135,8 +135,7 @@ public class PlanningCoCoder
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Cocoding: process "+singletonGroups.length);
 		
-		List<PlanningCoCodingGroup> workset = 
-			new ArrayList<>(Arrays.asList(singletonGroups));
+		List<PlanningCoCodingGroup> workset = Arrays.asList(singletonGroups);
 		
 		//establish memo table for extracted column groups
 		PlanningMemoTable memo = new PlanningMemoTable();

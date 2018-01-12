@@ -606,4 +606,12 @@ public class UtilFunctions
 				ret.add(element);
 		return ret;
 	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(T... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( T element : inputs )
+			ret.add(element);
+		return ret;
+	}
 }

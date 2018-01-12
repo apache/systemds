@@ -23,7 +23,6 @@ package org.apache.sysml.runtime.compress;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -128,7 +127,7 @@ public class ColGroupUncompressed extends ColGroup
 	 *            compressed columns to subsume. Must contain at least one
 	 *            element.
 	 */
-	public ColGroupUncompressed(ArrayList<ColGroup> groupsToDecompress) 
+	public ColGroupUncompressed(List<ColGroup> groupsToDecompress) 
 	{
 		super(mergeColIndices(groupsToDecompress),
 				groupsToDecompress.get(0)._numRows);
@@ -186,7 +185,7 @@ public class ColGroupUncompressed extends ColGroup
 	 *            UncompressedColGroup
 	 * @return a merged set of column indices across all those groups
 	 */
-	private static int[] mergeColIndices(ArrayList<ColGroup> groupsToDecompress) 
+	private static int[] mergeColIndices(List<ColGroup> groupsToDecompress) 
 	{
 		// Pass 1: Determine number of columns
 		int sz = 0;

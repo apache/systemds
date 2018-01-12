@@ -1648,87 +1648,72 @@ public abstract class Hop implements ParseInfo
 		
 		return ret;
 	}
-
-	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars )
-	{
-		long size = computeSizeInformation(input, vars);
-		
-		//always set the computed size not just if known (positive) in order to allow 
-		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
-		setDim1( size );
+	
+	//always set the computed size not just if known (positive) in order to allow 
+	//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
+	
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars ) {
+		setDim1(computeSizeInformation(input, vars));
 	}
 
-	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars )
-	{
-		long size = computeSizeInformation(input, vars);
-
-		//always set the computed size not just if known (positive) in order to allow 
-		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
-		setDim2( size );
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+		setDim1(computeSizeInformation(input, vars, memo));
+	}
+	
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars ) {
+		setDim2(computeSizeInformation(input, vars));
+	}
+	
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+		setDim2(computeSizeInformation(input, vars, memo));
 	}
 
-	public long computeSizeInformation( Hop input, LocalVariableMap vars )
+	public long computeSizeInformation( Hop input, LocalVariableMap vars ) {
+		return computeSizeInformation(input, vars, new HashMap<Long,Long>());
+	}
+	
+	public long computeSizeInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo )
 	{
 		long ret = -1;
-		
-		try 
-		{
-			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, new HashMap<Long,Long>(), vars);
+		try {
+			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, memo, vars);
 			if( tmp!=Long.MAX_VALUE )
 				ret = tmp;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute size information.", ex);
 			ret = -1;
 		}
-		
 		return ret;
 	}
 
-	public double computeBoundsInformation( Hop input ) 
-	{
+	public double computeBoundsInformation( Hop input ) {
 		double ret = Double.MAX_VALUE;
-		
-		try
-		{
+		try {
 			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, new HashMap<Long, Double>());
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
-		
 		return ret;
 	}
 	
-	/**
-	 * Computes bound information for sequence if possible, otherwise returns
-	 * Double.MAX_VALUE
-	 * 
-	 * @param input high-level operator
-	 * @param vars local variable map
-	 * @return bounds information
-	 */
-	public double computeBoundsInformation( Hop input, LocalVariableMap vars ) 
-	{
+	public double computeBoundsInformation( Hop input, LocalVariableMap vars ) {
+		return computeBoundsInformation(input, vars, new HashMap<Long, Double>());
+	}
+	
+	public double computeBoundsInformation( Hop input, LocalVariableMap vars, HashMap<Long, Double> memo ) {
 		double ret = Double.MAX_VALUE;
-		
-		try
-		{
-			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, new HashMap<Long, Double>(), vars);
-
+		try {
+			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, memo, vars);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
-		
 		return ret;
 	}
-	
 	
 	/**
 	 * Compute worst case estimate for size expression based on worst-case
@@ -1860,8 +1845,8 @@ public abstract class Hop implements ParseInfo
 		_updateType = that._updateType;
 
 		//no copy of lops (regenerated)
-		_parent = new ArrayList<>();
-		_input = new ArrayList<>();
+		_parent = new ArrayList<>(_parent.size());
+		_input = new ArrayList<>(_input.size());
 		_lops = null;
 		
 		_etype = that._etype;

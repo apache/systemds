@@ -245,7 +245,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException {
+			throws LopsException, DMLRuntimeException {
 		if (config != null) {
 			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
@@ -638,7 +638,8 @@ public class Dag<N extends Lop>
 	 * @throws LopsException if LopsException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
+	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst)
+		throws LopsException {
 		for(Lop n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
@@ -646,9 +647,9 @@ public class Dag<N extends Lop>
 				
 				if ( !((Data)n).isLiteral() ) {
 					try {
-						String inst_string = n.getInstructions();						
+						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
-						currInstr.setLocation(n);						
+						currInstr.setLocation(n);
 						inst.add(currInstr);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
@@ -771,7 +772,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<Lop> node_v)
-			throws LopsException, IOException, DMLRuntimeException
+			throws LopsException, DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Grouping DAG ============");

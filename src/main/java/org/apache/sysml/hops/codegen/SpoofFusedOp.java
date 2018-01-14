@@ -288,6 +288,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		ret._class = _class;
 		ret._distSupported = _distSupported;
 		ret._numThreads = _numThreads;
+		ret._constDim2 = _constDim2;
 		ret._dimsType = _dimsType;
 		return ret;
 	}
@@ -298,10 +299,12 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		if( !(that instanceof SpoofFusedOp) )
 			return false;
 		
-		SpoofFusedOp that2 = (SpoofFusedOp)that;		
+		SpoofFusedOp that2 = (SpoofFusedOp)that;
+		//note: class implies dims type as well
 		boolean ret = ( _class.equals(that2._class)
 				&& _distSupported == that2._distSupported
 				&& _numThreads == that2._numThreads
+				&& _constDim2 == that2._constDim2
 				&& getInput().size() == that2.getInput().size());
 		
 		if( ret ) {

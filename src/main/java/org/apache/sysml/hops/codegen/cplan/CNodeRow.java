@@ -179,6 +179,7 @@ public class CNodeRow extends CNodeTpl
 	public int hashCode() {
 		if( _hash == 0 ) {
 			int h = UtilFunctions.intHashCode(super.hashCode(), _type.hashCode());
+			h = UtilFunctions.intHashCode(h, Long.hashCode(_constDim2));
 			_hash = UtilFunctions.intHashCode(h, Integer.hashCode(_numVectors));
 		}
 		return _hash;

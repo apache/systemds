@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.codegen;
+package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 
@@ -34,7 +34,7 @@ import org.apache.sysml.test.utils.TestUtils;
 public class AlgorithmGLM extends AutomatedTestBase 
 {	
 	private final static String TEST_NAME1 = "Algorithm_GLM";
-	private final static String TEST_DIR = "functions/codegen/";
+	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmGLM.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);

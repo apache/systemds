@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.codegen;
+package org.apache.sysml.test.integration.functions.codegenalg;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -26,23 +26,16 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	APICodegenTest.class,
-	CellwiseTmplTest.class,
-	CompressedCellwiseTest.class,
-	CompressedMultiAggregateTest.class,
-	CompressedOuterProductTest.class,
-	CompressedRowAggregateTest.class,
-	CompressedRowAggregateLargeTest.class,
-	CPlanComparisonTest.class,
-	CPlanVectorPrimitivesTest.class,
-	DAGCellwiseTmplTest.class,
-	MiscPatternTest.class,
-	MultiAggTmplTest.class,
-	OuterProdTmplTest.class,
-	RowAggTmplTest.class,
-	RowVectorComparisonTest.class,
-	SparseSideInputTest.class,
-	SumProductChainTest.class,
+	AlgorithmARIMA.class,
+	AlgorithmAutoEncoder.class,
+	AlgorithmGLM.class,
+	AlgorithmKMeans.class,
+	AlgorithmL2SVM.class,
+	AlgorithmLinregCG.class,
+	AlgorithmMDABivar.class,
+	AlgorithmMLogreg.class,
+	AlgorithmMSVM.class,
+	AlgorithmPNMF.class,
 })
 
 

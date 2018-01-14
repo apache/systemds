@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.codegen;
+package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 
@@ -31,94 +31,112 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-public class AlgorithmAutoEncoder extends AutomatedTestBase 
-{
-	private final static String TEST_NAME1 = "Algorithm_AutoEncoder";
-	private final static String TEST_DIR = "functions/codegen/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmAutoEncoder.class.getSimpleName() + "/";
+public class AlgorithmKMeans extends AutomatedTestBase 
+{	
+	private final static String TEST_NAME1 = "Algorithm_KMeans";
+	private final static String TEST_DIR = "functions/codegenalg/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmKMeans.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
-	private final static int rows = 2468;
-	private final static int cols = 784;
+	//private final static double eps = 1e-5;
 	
+	private final static int rows = 3972;
+	private final static int cols = 972;
+		
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private final static int H1 = 500;
-	private final static int H2 = 2;
-	private final static double epochs = 2; 
+	private final static double epsilon = 0.000000001;
+	private final static double maxiter = 10;
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "w" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" })); 
 	}
 
 	@Test
-	public void testAutoEncoder256DenseCP() {
-		runGLMTest(256, false, false, ExecType.CP);
+	public void testKMeansDenseBinSingleRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, false, 2, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder256DenseRewritesCP() {
-		runGLMTest(256, false, true, ExecType.CP);
+	public void testKMeansSparseBinSingleRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, true, 2, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder256SparseCP() {
-		runGLMTest(256, true, false, ExecType.CP);
+	public void testKMeansDenseBinSingleCP() {
+		runKMeansTest(TEST_NAME1, false, false, 2, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder256SparseRewritesCP() {
-		runGLMTest(256, true, true, ExecType.CP);
+	public void testKMeansSparseBinSingleCP() {
+		runKMeansTest(TEST_NAME1, false, true, 2, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512DenseCP() {
-		runGLMTest(512, false, false, ExecType.CP);
+	public void testKMeansDenseBinMultiRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, false, 2, 10, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512DenseRewritesCP() {
-		runGLMTest(512, false, true, ExecType.CP);
+	public void testKMeansSparseBinMultiRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, true, 2, 10, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512SparseCP() {
-		runGLMTest(512, true, false, ExecType.CP);
+	public void testKMeansDenseBinMultiCP() {
+		runKMeansTest(TEST_NAME1, false, false, 2, 10, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512SparseRewritesCP() {
-		runGLMTest(512, true, true, ExecType.CP);
-	}
-	
-	//Note: limited cases for SPARK, as lazy evaluation 
-	//causes very long execution time for this algorithm
-	
-	@Test
-	public void testAutoEncoder256DenseRewritesSpark() {
-		runGLMTest(256, false, true, ExecType.SPARK);
+	public void testKMeansSparseBinMultiCP() {
+		runKMeansTest(TEST_NAME1, false, true, 2, 10, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder256SparseRewritesSpark() {
-		runGLMTest(256, true, true, ExecType.SPARK);
+	public void testKMeansDenseMulSingleRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, false, 20, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512DenseRewritesSpark() {
-		runGLMTest(512, false, true, ExecType.SPARK);
+	public void testKMeansSparseMulSingleRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, true, 20, 1, ExecType.CP);
 	}
 	
 	@Test
-	public void testAutoEncoder512SparseRewritesSpark() {
-		runGLMTest(512, true, true, ExecType.SPARK);
+	public void testKMeansDenseMulSingleCP() {
+		runKMeansTest(TEST_NAME1, false, false, 20, 1, ExecType.CP);
 	}
 	
-	private void runGLMTest(int batchsize, boolean sparse, boolean rewrites, ExecType instType)
+	@Test
+	public void testKMeansSparseMulSingleCP() {
+		runKMeansTest(TEST_NAME1, false, true, 20, 1, ExecType.CP);
+	}
+	
+	@Test
+	public void testKMeansDenseMulMultiRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, false, 20, 10, ExecType.CP);
+	}
+	
+	@Test
+	public void testKMeansSparseMulMultiRewritesCP() {
+		runKMeansTest(TEST_NAME1, true, true, 20, 10, ExecType.CP);
+	}
+	
+	@Test
+	public void testKMeansDenseMulMultiCP() {
+		runKMeansTest(TEST_NAME1, false, false, 20, 10, ExecType.CP);
+	}
+	
+	@Test
+	public void testKMeansSparseMulMultiCP() {
+		runKMeansTest(TEST_NAME1, false, true, 20, 10, ExecType.CP);
+	}
+	
+	private void runKMeansTest( String testname, boolean rewrites, boolean sparse, int centroids, int runs, ExecType instType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -134,29 +152,27 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 
 		try
 		{
-			String TEST_NAME = TEST_NAME1;
+			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/staging/autoencoder-2layer.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"),
-				"H1="+H1, "H2="+H2, "EPOCH="+epochs, "BATCH="+batchsize, 
-				"W1_out="+output("W1"), "b1_out="+output("b1"),
-				"W2_out="+output("W2"), "b2_out="+output("b2"),
-				"W3_out="+output("W3"), "b3_out="+output("b3"),
-				"W4_out="+output("W4"), "b4_out="+output("b4")};
+			fullDMLScriptName = "scripts/algorithms/Kmeans.dml";
+			programArgs = new String[]{ "-explain", "-stats",
+				"-nvargs", "X="+input("X"), "k="+String.valueOf(centroids), "runs="+String.valueOf(runs), 
+				"tol="+String.valueOf(epsilon), "maxi="+String.valueOf(maxiter), "C="+output("C")};
+
+			//rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
+			//	String.valueOf(maxiter), expectedDir());
+
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
 			writeInputMatrixWithMTD("X", X, true);
 			
-			//run script
 			runTest(true, false, null, -1); 
-			//TODO R script
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") 
-				|| heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			rtplatform = platformOld;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.codegen;
+package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 import java.util.HashMap;
@@ -33,23 +33,23 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-public class AlgorithmPNMF extends AutomatedTestBase 
+public class AlgorithmMSVM extends AutomatedTestBase 
 {	
-	private final static String TEST_NAME1 = "Algorithm_PNMF";
-	private final static String TEST_DIR = "functions/codegen/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmPNMF.class.getSimpleName() + "/";
+	private final static String TEST_NAME1 = "Algorithm_MSVM";
+	private final static String TEST_DIR = "functions/codegenalg/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMSVM.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private final static double eps = 1e-5;
 	
 	private final static int rows = 1468;
-	private final static int cols = 1207;
-	private final static int rank = 20;
+	private final static int cols = 1007;
 		
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
+	private final static int intercept = 0;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 	
@@ -60,27 +60,46 @@ public class AlgorithmPNMF extends AutomatedTestBase
 	}
 
 	@Test
-	public void testPNMFDenseCP() {
-		runPNMFTest(TEST_NAME1, false, false, ExecType.CP);
+	public void testMSVMDenseBinRewritesCP() {
+		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP);
 	}
 	
 	@Test
-	public void testPNMFSparseCP() {
-		runPNMFTest(TEST_NAME1, false, true, ExecType.CP);
+	public void testMSVMSparseBinRewritesCP() {
+		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP);
 	}
 	
-	//TODO requires proper handling of blocksize constraints
-	//@Test
-	//public void testPNMFDenseSP() {
-	//	runPNMFTest(TEST_NAME1, false, false, ExecType.SPARK);
-	//}
+	@Test
+	public void testMSVMDenseBinCP() {
+		runMSVMTest(TEST_NAME1, false, false, 2, ExecType.CP);
+	}
 	
-	//@Test
-	//public void testPNMFSparseSP() {
-	//	runPNMFTest(TEST_NAME1, false, true, ExecType.SPARK);
-	//}
-
-	private void runPNMFTest( String testname, boolean rewrites, boolean sparse, ExecType instType)
+	@Test
+	public void testMSVMSparseBinCP() {
+		runMSVMTest(TEST_NAME1, false, true, 2, ExecType.CP);
+	}
+	
+	@Test
+	public void testMSVMDenseMulRewritesCP() {
+		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP);
+	}
+	
+	@Test
+	public void testMSVMSparseMulRewritesCP() {
+		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP);
+	}
+	
+	@Test
+	public void testMSVMDenseMulCP() {
+		runMSVMTest(TEST_NAME1, false, false, 4, ExecType.CP);
+	}
+	
+	@Test
+	public void testMSVMSparseMulCP() {
+		runMSVMTest(TEST_NAME1, false, true, 4, ExecType.CP);
+	}
+	
+	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -100,34 +119,29 @@ public class AlgorithmPNMF extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/staging/PNMF.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-args", input("X"), 
-				input("W"), input("H"), String.valueOf(rank), String.valueOf(epsilon), 
-				String.valueOf(maxiter), output("W"), output("H")};
+			fullDMLScriptName = "scripts/algorithms/m-svm.dml";
+			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
+					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 
-			rCmd = getRCmd(inputDir(), String.valueOf(rank), String.valueOf(epsilon), 
+			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate actual datasets
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 234);
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
 			writeInputMatrixWithMTD("X", X, true);
-			double[][] W = getRandomMatrix(rows, rank, 0, 0.025, 1.0, 3);
-			writeInputMatrixWithMTD("W", W, true);
-			double[][] H = getRandomMatrix(rank, cols, 0, 0.025, 1.0, 7);
-			writeInputMatrixWithMTD("H", H, true);
+			double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 1, numClasses, 1.0, 136));
+			writeInputMatrixWithMTD("Y", y, true);
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlW = readDMLMatrixFromHDFS("W");
-			HashMap<CellIndex, Double> dmlH = readDMLMatrixFromHDFS("H");
-			HashMap<CellIndex, Double> rW = readRMatrixFromFS("W");
-			HashMap<CellIndex, Double> rH = readRMatrixFromFS("H");
-			TestUtils.compareMatrices(dmlW, rW, eps, "Stat-DML", "Stat-R");
-			TestUtils.compareMatrices(dmlH, rH, eps, "Stat-DML", "Stat-R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

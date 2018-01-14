@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.codegen;
+package org.apache.sysml.test.integration.functions.codegenalg;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,23 +25,23 @@ import org.junit.runners.Parameterized;
 
 import java.io.File;
 
-import org.apache.sysml.test.integration.applications.MDABivariateStatsTest;
+import org.apache.sysml.test.integration.applications.ArimaTest;
 
 @RunWith(value = Parameterized.class)
-public class AlgorithmMDABivar extends MDABivariateStatsTest 
+public class AlgorithmARIMA extends ArimaTest 
 {
-	private final static String LOCAL_TEST_DIR = "functions/codegen/";
+	private final static String LOCAL_TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF);
 	
-	public AlgorithmMDABivar(int n, int m, int li, int lml) {
-		super(n, m, li, lml);
-		TEST_CLASS_DIR = TEST_DIR + AlgorithmMDABivar.class.getSimpleName() + "/";
+	public AlgorithmARIMA(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean, int useJacobi) {
+		super(m, p, d, q, P, D, Q, s, include_mean, useJacobi);
+		TEST_CLASS_DIR = TEST_DIR + AlgorithmARIMA.class.getSimpleName() + "/";
 	}
 
 	@Test
-	public void testMDABivariateStatsDml() {
-		testMDABivariateStats(ScriptType.DML);
+	public void testArimaDml() {
+		testArima(ScriptType.DML);
 	}
 	
 	@Override

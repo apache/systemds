@@ -137,7 +137,7 @@ if (dir == "forward") {
 
     AICs[1, i] = AIC_1;
 
-    beta_out_all[, (i - 1) * y_ncol + 1 : i * y_ncol] = beta_out_i[, 1:1];
+    beta_out_all[1:nrow(beta_out_i), (i - 1) * y_ncol + 1 : i * y_ncol] = beta_out_i[, 1:1];
 
   }
 
@@ -192,7 +192,7 @@ if (dir == "forward") {
         tmp[1, 1] = i;
         columns_fixed_ordered_2 = append(columns_fixed_ordered, tmp )
         [AIC_2, beta_out_i] = linear_regression (X, y, m_orig, columns_fixed_ordered_2, write_beta, 0);
-        beta_out_all_2[, (i - 1) * y_ncol + 1 : i * y_ncol] = beta_out_i[,1:1];
+        beta_out_all_2[1:nrow(beta_out_i), (i - 1) * y_ncol + 1 : i * y_ncol] = beta_out_i[,1:1];
 
         AICs[1, i] = AIC_2;
       }

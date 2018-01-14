@@ -956,8 +956,10 @@ public abstract class Hop implements ParseInfo
 		
 		//reset recompile flag
 		if( (et == null || getExecType() == et || getExecType() == null)
-			&& (reset==ResetType.RESET || (reset==ResetType.RESET_KNOWN_DIMS && dimsKnown())) )
+			&& (reset==ResetType.RESET || (reset==ResetType.RESET_KNOWN_DIMS && dimsKnown()))
+			&& !(_requiresCheckpoint && getLops() instanceof Checkpoint && !dimsKnown(true)) ) {
 			_requiresRecompile = false;
+		}
 		
 		setVisited();
 	}

@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
 	AlgorithmMLogreg.class,
 	AlgorithmMSVM.class,
 	AlgorithmPNMF.class,
+	AlgorithmStepwiseRegression.class,
 })
 
 

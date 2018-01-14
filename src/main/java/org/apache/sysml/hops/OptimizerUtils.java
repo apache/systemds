@@ -1294,8 +1294,10 @@ public class OptimizerUtils
 			{
 				switch( uroot.getOp() )
 				{
-					case SQRT:	ret = Math.sqrt(lval); break;
+					case SQRT:  ret = Math.sqrt(lval); break;
 					case ROUND: ret = Math.round(lval); break;
+					case CEIL:  ret = Math.ceil(lval); break;
+					case FLOOR: ret = Math.floor(lval); break;
 					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
 					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
 					case CAST_AS_DOUBLE: ret = lval; break;
@@ -1331,8 +1333,10 @@ public class OptimizerUtils
 			{
 				switch( uroot.getOp() )
 				{
-					case SQRT:	ret = Math.sqrt(lval); break;
+					case SQRT:  ret = Math.sqrt(lval); break;
 					case ROUND: ret = Math.round(lval); break;
+					case CEIL:  ret = Math.ceil(lval); break;
+					case FLOOR: ret = Math.floor(lval); break;
 					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
 					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
 					case CAST_AS_DOUBLE: ret = lval; break;

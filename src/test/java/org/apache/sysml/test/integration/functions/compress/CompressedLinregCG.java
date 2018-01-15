@@ -105,7 +105,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME1 = SCRIPT_DIR + "functions/compress/";
-			String HOME2 = SCRIPT_DIR + "functions/codegen/";
+			String HOME2 = SCRIPT_DIR + "functions/codegenalg/";
 			fullDMLScriptName = "scripts/algorithms/LinearRegCG.dml";
 			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),

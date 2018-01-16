@@ -33,7 +33,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 
 	private CentralMomentCPInstruction(CMOperator cm, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String str) {
-		super(cm, in1, in2, in3, out, opcode, str);
+		super(cm, in1, in2, in3, out, AUType.DEFAULT, opcode, str);
 	}
 
 	public static CentralMomentCPInstruction parseInstruction(String str)

@@ -35,34 +35,44 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
-public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
-
-	private AggregateUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		this(op, in, null, null, out, opcode, istr);
+public class AggregateUnaryCPInstruction extends UnaryCPInstruction
+{
+	public enum AUType {
+		NROW, NCOL, LENGTH,
+		DEFAULT;
+		public boolean isMeta() {
+			return this != DEFAULT;
+		}
+	}
+	
+	private final AUType _type;
+	
+	private AggregateUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, AUType type, String opcode, String istr) {
+		this(op, in, null, null, out, type, opcode, istr);
 	}
 
 	protected AggregateUnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
+			AUType type, String opcode, String istr) {
 		super(CPType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
+		_type = type;
 	}
-
+	
 	public static AggregateUnaryCPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];		
+		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		
 		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
-												   in1,  out, opcode, str);
+				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		}
-		else //DEFAULT BEHAVIOR
-		{
+		else { //DEFAULT BEHAVIOR
 			AggregateUnaryOperator aggun = InstructionUtils
 				.parseBasicAggregateUnaryOperator(opcode, Integer.parseInt(parts[3]));
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
+			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.DEFAULT, opcode, str);
 		}
 	}
 	
@@ -73,22 +83,15 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 		String output_name = output.getName();
 		String opcode = getOpcode();
 		
-		if( opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")  )
+		if( _type.isMeta() ) //nrow/ncol/length
 		{
 			//check existence of input variable
-			if( !ec.getVariables().keySet().contains(input1.getName()) ){
+			if( !ec.getVariables().keySet().contains(input1.getName()) )
 				throw new DMLRuntimeException("Variable '"+input1.getName()+"' does not exist.");
-			}
 			
 			//get meta data information
 			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
-			long rval = -1;
-			if(opcode.equalsIgnoreCase("nrow"))
-				rval = mc.getRows();
-			else if(opcode.equalsIgnoreCase("ncol"))
-				rval = mc.getCols();
-			else if(opcode.equalsIgnoreCase("length"))
-				rval = mc.getRows() * mc.getCols();
+			long rval = getSizeMetaData(_type, mc);
 
 			//check for valid output, and acquire read if necessary
 			//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
@@ -97,12 +100,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
 			if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 			{
-				if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+				if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
 					|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
 				{
-					if( OptimizerUtils.isHadoopExecutionMode() ) {
+					if( OptimizerUtils.isHadoopExecutionMode() )
 						LOG.warn("Reading csv input frame of unkown size into memory for '"+opcode+"'.");
-					}
 					
 					//read the input matrix/frame and explicitly refresh meta data
 					CacheableData<?> obj = ec.getCacheableData(input1.getName());
@@ -112,12 +114,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 					
 					//update meta data information
 					mc = ec.getMatrixCharacteristics(input1.getName());
-					if(opcode.equalsIgnoreCase("nrow"))
-						rval = mc.getRows();
-					else if(opcode.equalsIgnoreCase("ncol"))
-						rval = mc.getCols();
-					else if(opcode.equalsIgnoreCase("length"))
-						rval = mc.getRows() * mc.getCols();
+					rval = getSizeMetaData(_type, mc);
 				}
 				else {
 					throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
@@ -125,36 +122,33 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			}
 			
 			//create and set output scalar
-			ScalarObject ret = null;
-			switch( output.getValueType() ) {
-				case INT:	  ret = new IntObject(rval); break;
-				case DOUBLE:  ret = new DoubleObject(rval); break;
-				case STRING:  ret = new StringObject(String.valueOf(rval)); break;
-				
-				default: 
-					throw new DMLRuntimeException("Invalid output value type: "+output.getValueType());
-			}
-			ec.setScalarOutput(output_name, ret);
-			return;
+			ec.setScalarOutput(output_name, new IntObject(rval));
 		}
-		else 
-		{
-			/* Default behavior for AggregateUnary Instruction */
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());		
+		else { //DEFAULT
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
 			
-			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
+				matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
 			
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-			
+			ec.releaseMatrixInput(input1.getName());
 			if(output.getDataType() == DataType.SCALAR){
 				DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
 				ec.setScalarOutput(output_name, ret);
 			} else{
 				// since the computed value is a scalar, allocate a "temp" output matrix
-				ec.setMatrixOutput(output_name, resultBlock, getExtendedOpcode());
+				ec.setMatrixOutput(output_name, resultBlock);
 			}
 		}
 	}
-
+	
+	private static long getSizeMetaData(AUType type, MatrixCharacteristics mc) {
+		switch( type ) {
+			case NROW: return mc.getRows();
+			case NCOL: return mc.getCols();
+			case LENGTH: return mc.getRows() * mc.getCols();
+			default:
+				throw new RuntimeException("Opcode not applicable: "+type.name());
+		}
+	}
 }

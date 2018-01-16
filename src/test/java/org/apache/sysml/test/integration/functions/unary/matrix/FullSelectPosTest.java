@@ -199,13 +199,11 @@ public class FullSelectPosTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check generated opcode
-			if( rewrites ){
-				String expected_op = "sel+";
-				if ( instType == ExecType.SPARK )
-					expected_op = Instruction.SP_INST_PREFIX+"sel+";
-				
+			if( rewrites ) {
+				String expected_op = (instType == ExecType.SPARK) ? Instruction.SP_INST_PREFIX+"max" : "max";
 				if(instType == ExecType.CP || instType == ExecType.SPARK)
-					Assert.assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op) || Statistics.getCPHeavyHitterOpCodes().contains("gpu_sel+"));
+					Assert.assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op)
+						|| Statistics.getCPHeavyHitterOpCodes().contains("gpu_max"));
 			}
 		}
 		finally

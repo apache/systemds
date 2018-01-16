@@ -107,7 +107,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR));
 		if(!isScalar) {
 			switch(_op) {
-				case SELP:case EXP:case SQRT:case LOG:case ABS:
+				case EXP:case SQRT:case LOG:case ABS:
 				case ROUND:case FLOOR:case CEIL:
 				case SIN:case COS: case TAN:
 				case ASIN:case ACOS:case ATAN:
@@ -155,15 +155,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 					if( optype == null )
 						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
 					
-					UnaryCP unary1 = null;
-					if((_op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL || _op == Hop.OpOp1.LENGTH) &&
-						input instanceof UnaryOp && ((UnaryOp) input).getOp() == OpOp1.SELP) {
-						// Dimensions does not change during sel+ operation.
-						// This case is helpful to avoid unnecessary sel+ operation for fused maxpooling.
-						unary1 = new UnaryCP(input.getInput().get(0).constructLops(), optype, getDataType(), getValueType());
-					}
-					else
-						unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
+					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 
@@ -606,12 +598,12 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.COSH || _op==OpOp1.SINH || _op==OpOp1.TANH 
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
-				|| _op==OpOp1.SPROP || _op==OpOp1.SELP ) //sparsity preserving
+				|| _op==OpOp1.SPROP ) //sparsity preserving
 			{
 				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 			}
 			else 
-				ret = new long[]{mc.getRows(), mc.getCols(), -1};	
+				ret = new long[]{mc.getRows(), mc.getCols(), -1};
 		}
 		
 		return ret;

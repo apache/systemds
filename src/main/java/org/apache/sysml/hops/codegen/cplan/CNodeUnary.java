@@ -39,7 +39,7 @@ public class CNodeUnary extends CNode
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH,
-		SELP, SPROP, SIGMOID; 
+		SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
 			for( UnaryType ut : values()  )
@@ -135,8 +135,6 @@ public class CNodeUnary extends CNode
 					return "    double %TMP% = FastMath.ceil(%IN1%);\n";
 				case FLOOR:
 					return "    double %TMP% = FastMath.floor(%IN1%);\n";
-				case SELP:
-					return "    double %TMP% = (%IN1%>0) ? %IN1% : 0;\n";
 				case SPROP:
 					return "    double %TMP% = %IN1% * (1 - %IN1%);\n";
 				case SIGMOID:
@@ -174,7 +172,7 @@ public class CNodeUnary extends CNode
 		public boolean isSparseSafeScalar() {
 			return ArrayUtils.contains(new UnaryType[]{
 				POW2, MULT2, ABS, ROUND, CEIL, FLOOR, SIGN, 
-				SIN, TAN, SELP, SPROP}, this);
+				SIN, TAN, SPROP}, this);
 		}
 	}
 	
@@ -337,7 +335,6 @@ public class CNodeUnary extends CNode
 			case ROUND:
 			case CEIL:
 			case FLOOR:
-			case SELP:
 			case SPROP:
 			case SIGMOID:
 			case LOG_NZ:

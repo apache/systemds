@@ -81,7 +81,6 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "-*",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		
 		// Unary Builtin functions
-		String2GPUInstructionType.put( "sel+",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "exp",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "log",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "abs",   GPUINSTRUCTION_TYPE.BuiltinUnary);

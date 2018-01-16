@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
@@ -164,7 +165,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	private static boolean isInputReLU(Hop input) {
-		return input instanceof UnaryOp && ((UnaryOp) input).getOp() == OpOp1.SELP;
+		return HopRewriteUtils.isBinary(input, OpOp2.MAX)
+			&& (HopRewriteUtils.isLiteralOfValue(input.getInput().get(0), 0)
+			|| HopRewriteUtils.isLiteralOfValue(input.getInput().get(1), 0));
 	}
 	
 	private static boolean isInputConv2d(Hop input) {

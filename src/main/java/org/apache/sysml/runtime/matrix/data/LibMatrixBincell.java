@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
@@ -38,6 +39,7 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -935,11 +937,12 @@ public class LibMatrixBincell
 			throw new DMLRuntimeException("Unsupported safe binary scalar operations over different input/output representation: "+m1.sparse+" "+ret.sparse);
 		
 		boolean copyOnes = (op.fn instanceof NotEquals && op.getConstant()==0);
-		boolean allocExact = (op.fn instanceof Multiply 
-			|| op.fn instanceof Multiply2 || op.fn instanceof Power2);
+		boolean allocExact = (op.fn instanceof Multiply || op.fn instanceof Multiply2 
+			|| op.fn instanceof Power2 || Builtin.isBuiltinCode(op.fn, BuiltinCode.MAX)
+			|| Builtin.isBuiltinCode(op.fn, BuiltinCode.MIN));
 		
 		if( m1.sparse ) //SPARSE <- SPARSE
-		{	
+		{
 			//allocate sparse row structure
 			ret.allocateSparseRowsBlock();
 			SparseBlock a = m1.sparseBlock;

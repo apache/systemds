@@ -1056,8 +1056,7 @@ public abstract class Hop implements ParseInfo
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
-		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
-		SELP, //select positive: X * (X>0)
+		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 	}
 
@@ -1312,7 +1311,6 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysml.lops.Unary.OperationTypes.SPROP);
 		HopsOpOp1LopsU.put(OpOp1.SIGMOID, org.apache.sysml.lops.Unary.OperationTypes.SIGMOID);
-		HopsOpOp1LopsU.put(OpOp1.SELP, org.apache.sysml.lops.Unary.OperationTypes.SELP);
 		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_MATRIX);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_FRAME);

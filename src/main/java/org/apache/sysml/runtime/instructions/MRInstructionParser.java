@@ -153,7 +153,6 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "floor", MRType.Unary);
 		String2MRInstructionType.put( "sprop", MRType.Unary);
 		String2MRInstructionType.put( "sigmoid", MRType.Unary);
-		String2MRInstructionType.put( "sel+", MRType.Unary);
 		String2MRInstructionType.put( "!", MRType.Unary);
 		
 		// Specific UNARY Instruction Opcodes

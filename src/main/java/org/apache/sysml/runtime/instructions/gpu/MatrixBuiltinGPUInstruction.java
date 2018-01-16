@@ -44,8 +44,6 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
 		switch(opcode) {
-			case "sel+":
-				LibMatrixCuDNN.relu(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "exp":
 				LibMatrixCUDA.exp(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sqrt":

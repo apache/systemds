@@ -1116,8 +1116,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			UnaryOp uop = (UnaryOp) hi; //valid unary op
 			if( uop.getOp()==OpOp1.ABS || uop.getOp()==OpOp1.SIGN
-				|| uop.getOp()==OpOp1.SELP || uop.getOp()==OpOp1.CEIL
-				|| uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
+				|| uop.getOp()==OpOp1.CEIL || uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
 			{
 				//clear link unary-binary
 				Hop input = uop.getInput().get(0);
@@ -1293,66 +1292,40 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					BinaryOp bleft = (BinaryOp)left;
 					Hop left1 = bleft.getInput().get(0);
-					Hop left2 = bleft.getInput().get(1);		
+					Hop left2 = bleft.getInput().get(1);
 				
 					if( left2 instanceof LiteralOp &&
-						HopRewriteUtils.getDoubleValue((LiteralOp)left2)==0 &&	
-						left1 == right && bleft.getOp() == OpOp2.GREATER  ) 
+						HopRewriteUtils.getDoubleValue((LiteralOp)left2)==0 &&
+						left1 == right && (bleft.getOp() == OpOp2.GREATER || bleft.getOp() == OpOp2.GREATEREQUAL ) )
 					{
-						UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);
-						HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
+						BinaryOp binary = HopRewriteUtils.createBinary(right, new LiteralOp(0), OpOp2.MAX);
+						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);
 						HopRewriteUtils.cleanupUnreferenced(bop, left);
-						hi = unary;
+						hi = binary;
 						applied = true;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp1");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-max0a");
 					}
-				}				
+				}
 				if( !applied && right instanceof BinaryOp ) //X*(X>0)
 				{
 					BinaryOp bright = (BinaryOp)right;
 					Hop right1 = bright.getInput().get(0);
-					Hop right2 = bright.getInput().get(1);		
+					Hop right2 = bright.getInput().get(1);
 				
 					if( right2 instanceof LiteralOp &&
-						HopRewriteUtils.getDoubleValue((LiteralOp)right2)==0 &&	
-						right1 == left && bright.getOp() == OpOp2.GREATER )
+						HopRewriteUtils.getDoubleValue((LiteralOp)right2)==0 &&
+						right1 == left && bright.getOp() == OpOp2.GREATER || bright.getOp() == OpOp2.GREATEREQUAL )
 					{
-						UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
-						HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
+						BinaryOp binary = HopRewriteUtils.createBinary(left, new LiteralOp(0), OpOp2.MAX);
+						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);
 						HopRewriteUtils.cleanupUnreferenced(bop, left);
-						hi = unary;
+						hi = binary;
 						applied= true;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp2");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-max0b");
 					}
 				}
-			}
-			
-			//select positive (selp) operator; pattern: max(X,0) -> selp+
-			if( !applied && bop.getOp() == OpOp2.MAX && left.getDataType()==DataType.MATRIX 
-					&& right instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)right)==0 )
-			{
-				UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
-				HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
-				HopRewriteUtils.cleanupUnreferenced(bop);
-				hi = unary;
-				applied = true;
-				
-				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
-			}
-			
-			//select positive (selp) operator; pattern: max(0,X) -> selp+
-			if( !applied && bop.getOp() == OpOp2.MAX && right.getDataType()==DataType.MATRIX 
-					&& left instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left)==0 )
-			{
-				UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);
-				HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
-				HopRewriteUtils.cleanupUnreferenced(bop);
-				hi = unary;
-				applied = true;
-				
-				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp4");
 			}
 		}
 		

@@ -43,7 +43,7 @@ public class Unary extends Lop
 		AND, OR, XOR, BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR,
 		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
-		SPROP, SIGMOID, SELP, SUBTRACT_NZ, LOG_NZ,
+		SPROP, SIGMOID, SUBTRACT_NZ, LOG_NZ,
 		CAST_AS_MATRIX, CAST_AS_FRAME,
 		NOTSUPPORTED
 	}
@@ -312,9 +312,6 @@ public class Unary extends Lop
 			
 		case SIGMOID:
 			return "sigmoid";
-		
-		case SELP:
-			return "sel+";
 		
 		case CAST_AS_MATRIX:
 			return UnaryCP.CAST_AS_MATRIX_OPCODE;

@@ -21,11 +21,13 @@
 package org.apache.sysml.runtime.matrix.operators;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 
 /**
  * Scalar operator for scalar-matrix operations with scalar 
@@ -40,7 +42,9 @@ public class LeftScalarOperator extends ScalarOperator
 		super(p, cst, (p instanceof GreaterThan && cst<=0)
 			|| (p instanceof GreaterThanEquals && cst<0)
 			|| (p instanceof LessThan && cst>=0)
-			|| (p instanceof LessThanEquals && cst>0));
+			|| (p instanceof LessThanEquals && cst>0)
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MAX) && cst<=0)
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0));
 	}
 	
 	@Override

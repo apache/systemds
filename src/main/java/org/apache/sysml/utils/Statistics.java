@@ -533,11 +533,12 @@ public class Statistics
 	 * @param timeNanos time in nano seconds
 	 */
 	public static void maintainCPHeavyHitters( String instName, long timeNanos ) {
-		//maintain instruction entry 
+		//maintain instruction entry (w/ robustness for concurrent updates)
 		InstStats tmp = _instStats.get(instName);
 		if( tmp == null ) {
-			tmp = new InstStats();
-			_instStats.put(instName, tmp);
+			InstStats tmp0 = new InstStats();
+			InstStats tmp1 = _instStats.putIfAbsent(instName, tmp0);
+			tmp = (tmp1 != null) ? tmp1 : tmp0;
 		}
 		
 		//thread-local maintenance of instruction stats

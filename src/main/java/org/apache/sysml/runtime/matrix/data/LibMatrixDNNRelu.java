@@ -23,17 +23,15 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 /**
  * This class contains the different implementation of rotate180 operation
  */
 public class LibMatrixDNNRelu
 {
-	private static BinaryOperator PLUS = new BinaryOperator(Plus.getPlusFnObject());
+	private static ScalarOperator GT0 = InstructionUtils.parseScalarBinaryOperator(">", false, 0);
 
 	
 	/**
@@ -55,35 +53,94 @@ public class LibMatrixDNNRelu
 	/**
 	 * Performs the operation: (X gt 0) * dout
 	 */
-	public static class ReluBackward implements Callable<Long> 
+	public static class ReluBackward implements Callable<Long>
 	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
-		double [] outputArray; int numOutCols;
+		public final int _rl, _ru; 
+		private final ConvolutionParameters _params;
 		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
-			outputArray= params.output.getDenseBlockValues();
-			numOutCols = params.input1.getNumColumns();
 		}
 		
 		@Override
 		public Long call() throws Exception {
+			//note: X (m x n), dout (m x n) -> out (m x n)
+			DenseBlock out = _params.output.getDenseBlock();
+			final int n = _params.input1.getNumColumns();
 			if(!_params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
-				double [] inputArr = _params.input1.getDenseBlockValues();
-				double [] doutArr = _params.input2.getDenseBlockValues();
-				for(int i = _rl*numOutCols; i < _ru*numOutCols; i++) {
-					outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
+				DenseBlock x = _params.input1.getDenseBlock();
+				DenseBlock dout = _params.input2.getDenseBlock();
+				for(int i = _rl; i < _ru; i++) {
+					double[] xvals = x.values(i), doutvals = dout.values(i), cvals = out.values(i);
+					int xpos = x.pos(i), doutpos = dout.pos(i), cpos = out.pos(i);
+					for(int j=0; j<n; j++)
+						cvals[cpos+j] = xvals[xpos+j] > 0 ? doutvals[doutpos +j] : 0;
 				}
 			}
 			else {
-				// Perform (X > 0)
-				ConvolutionUtils.scalarOperations(_params.input1, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
-					InstructionUtils.parseScalarBinaryOperator(">", false, 0));
-				// Then perform (X > 0) * dout
-				ConvolutionUtils.binaryOperationInPlace(_params.input2, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, PLUS);
+				scalarOperations(_params.input1, out, n, _rl, _ru, GT0);      // (X > 0)
+				binaryOperationInPlacePlus(_params.input2, out, n, _rl, _ru); // (X > 0) * dout
 			}
 			return 0L;
+		}
+	}
+	
+	private static void scalarOperations(MatrixBlock src, DenseBlock c,
+			int destNumCols, int src_rl, int src_ru, ScalarOperator op)
+		throws DMLRuntimeException
+	{
+		if(src.isInSparseFormat()) {
+			for(int i = src_rl; i < src_ru; i++) {
+				if( src.getSparseBlock().isEmpty(i) ) continue;
+				int apos = src.getSparseBlock().pos(i);
+				int alen = src.getSparseBlock().size(i);
+				int[] aix = src.getSparseBlock().indexes(i);
+				double[] avals = src.getSparseBlock().values(i);
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
+				for(int j = apos; j < apos+alen; j++)
+					cvals[ cix+aix[j] ] = op.executeScalar(avals[j]);
+			}
+		}
+		else {
+			DenseBlock a = src.getDenseBlock();
+			for(int i = src_rl; i < src_ru; i++) {
+				double[] avals = a.values(i), cvals = c.values(i);
+				int aix = a.pos(i), cix = c.pos(i);
+				for(int j=0; j<destNumCols; j++)
+					cvals[cix+j] = op.executeScalar(avals[aix+j]);
+			}
+		}
+	}
+	
+	private static void binaryOperationInPlacePlus(MatrixBlock src,
+		DenseBlock c, int destNumCols, int src_rl, int src_ru)
+		throws DMLRuntimeException 
+	{
+		if( src.isEmptyBlock(false) )
+			return; //do nothing (add 0);
+		
+		if(src.isInSparseFormat()) {
+			for(int i = src_rl; i < src_ru; i++) {
+				if( src.getSparseBlock().isEmpty(i) ) continue;
+				int apos = src.getSparseBlock().pos(i);
+				int alen = src.getSparseBlock().size(i);
+				int[] aix = src.getSparseBlock().indexes(i);
+				double[] avals = src.getSparseBlock().values(i);
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
+				for(int j = apos; j < apos+alen; j++)
+					cvals[ cix+aix[j] ] += avals[j];
+			}
+		}
+		else { //DENSE
+			DenseBlock a = src.getDenseBlock();
+			for(int i = src_rl; i < src_ru; i++) {
+				double[] avals = a.values(i), cvals = c.values(i);
+				int aix = a.pos(i), cix = c.pos(i);
+				for(int j=0; j<destNumCols; j++)
+					cvals[cix+j] += avals[aix+j];
+			}
 		}
 	}
 }

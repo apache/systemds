@@ -29,10 +29,9 @@ public class LibMatrixDNNRotate180
 		public void execute(int inputN, int outputN);
 		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out,
 			ConvolutionParameters params, boolean zeroOutSparseOutput, boolean trans) {
-			if(!in.isInSparseFormat()) 
-				return new DenseRotate180Worker(in, out.getDenseBlockValues(), params);
-			else
-				return new SparseRotate180Worker(in, out, params, trans);
+			return in.isInSparseFormat() ?
+				new SparseRotate180Worker(in, out, params, trans) :
+				new DenseRotate180Worker(in, out, params);
 		}
 	}
 	
@@ -40,27 +39,24 @@ public class LibMatrixDNNRotate180
 	 * Performing dense rotate180 (general case)
 	 */
 	private static class DenseRotate180Worker implements Rotate180Worker {
-		private final double[] inputArray, outputArray;
+		private final DenseBlock in, out;
 		private final ConvolutionParameters params;
-		public DenseRotate180Worker(MatrixBlock input, double[] outputArray,  ConvolutionParameters params) {
-			this.outputArray = outputArray;
+		public DenseRotate180Worker(MatrixBlock input, MatrixBlock output, ConvolutionParameters params) {
+			this.in = input.getDenseBlock();
+			this.out = output.getDenseBlock();
 			this.params = params;
-			inputArray = input.getDenseBlockValues();
-			if(inputArray == null || outputArray == null)
-				throw new RuntimeException("Incorrect usage: empty inputs");
 		}
 		
 		@Override
 		public void execute(int inputN, int outputN) {
-			int outputOffset = outputN*params.K*params.P*params.Q;
-			for (int k = 0; k < params.K; k++) {
-				for (int p = 0; p < params.P; p++) {
-					for (int q = 0; q < params.Q; q++) {
-						outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = 
-								inputArray[inputN*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q + q];
-					}
-				}
-			}
+			//note: in (m x KPQ) -> out (m x KPQ)
+			double[] avals = in.values(inputN), cvals = out.values(outputN);
+			int aix = in.pos(inputN), cix = out.pos(outputN);
+			int K = params.K, P = params.P, Q = params.Q;
+			for (int k = 0; k < K; k++)
+				for (int p = 0; p < P; p++)
+					for (int q = 0; q < Q; q++)
+						cvals[cix + p*Q*K + q*K + k] = avals[aix + k*P*Q + p*Q + q];
 		}
 	}
 	

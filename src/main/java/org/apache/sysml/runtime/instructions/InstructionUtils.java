@@ -594,10 +594,8 @@ public class InstructionUtils
 	 * @param opcode the opcode
 	 * @param arg1IsScalar ?
 	 * @return scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar) 
-		throws DMLRuntimeException
 	{
 		//for all runtimes that set constant dynamically (cp/spark)
 		double default_constant = 0;
@@ -612,10 +610,8 @@ public class InstructionUtils
 	 * @param arg1IsScalar ?
 	 * @param constant ?
 	 * @return scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant)
-		throws DMLRuntimeException
 	{
 		//commutative operators
 		if ( opcode.equalsIgnoreCase("+") ){ 
@@ -754,8 +750,8 @@ public class InstructionUtils
 			return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
 		}
 		
-		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
-	}	
+		throw new RuntimeException("Unknown binary opcode " + opcode);
+	}
 
 	public static BinaryOperator parseExtendedBinaryOperator(String opcode) 
 		throws DMLRuntimeException

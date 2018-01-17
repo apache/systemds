@@ -2100,87 +2100,83 @@ public class DMLTranslator
 		
 		// construct hop based on opcode
 		switch(source.getOpCode()) {
-		case CDF:
-		case INVCDF:
-		case QNORM:
-		case QT:
-		case QF:
-		case QCHISQ:
-		case QEXP:
-		case PNORM:
-		case PT:
-		case PF:
-		case PCHISQ:
-		case PEXP:
-			currBuiltinOp = constructDfHop(target.getName(), target.getDataType(), target.getValueType(), source.getOpCode(), paramHops);
-			break;
+			case CDF:
+			case INVCDF:
+			case QNORM:
+			case QT:
+			case QF:
+			case QCHISQ:
+			case QEXP:
+			case PNORM:
+			case PT:
+			case PF:
+			case PCHISQ:
+			case PEXP:
+				currBuiltinOp = constructDfHop(target.getName(), target.getDataType(), target.getValueType(), source.getOpCode(), paramHops);
+				break;
 			
-		case GROUPEDAGG:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.GROUPEDAGG, paramHops);
-			break;
-		
-		case RMEMPTY:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.RMEMPTY, paramHops);
-			break;
+			case GROUPEDAGG:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+						target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.GROUPEDAGG, paramHops);
+				break;
 			
-		case REPLACE:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.REPLACE, paramHops);
-			break;	
+			case RMEMPTY:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+						target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.RMEMPTY, paramHops);
+				break;
 			
-		case ORDER:
-			ArrayList<Hop> inputs = new ArrayList<>();
-			inputs.add(paramHops.get("target"));
-			inputs.add(paramHops.get("by"));
-			inputs.add(paramHops.get("decreasing"));
-			inputs.add(paramHops.get("index.return"));
+			case REPLACE:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+						target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.REPLACE, paramHops);
+				break;
 			
-			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
+			case ORDER:
+				ArrayList<Hop> inputs = new ArrayList<>();
+				inputs.add(paramHops.get("target"));
+				inputs.add(paramHops.get("by"));
+				inputs.add(paramHops.get("decreasing"));
+				inputs.add(paramHops.get("index.return"));
+				
+				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
+				
+				break;
 			
-			break;
-		
-		case TRANSFORMAPPLY:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-				target.getName(), target.getDataType(), target.getValueType(), 
-				ParamBuiltinOp.TRANSFORMAPPLY, paramHops);
-			break;
-		
-		case TRANSFORMDECODE:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-				target.getName(), target.getDataType(), target.getValueType(), 
-				ParamBuiltinOp.TRANSFORMDECODE, paramHops);
-			break;
-		
-		case TRANSFORMCOLMAP:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-				target.getName(), target.getDataType(), target.getValueType(), 
-				ParamBuiltinOp.TRANSFORMCOLMAP, paramHops);
-			break;
-
-		case TRANSFORMMETA:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-				target.getName(), target.getDataType(), target.getValueType(), 
-				ParamBuiltinOp.TRANSFORMMETA, paramHops);
-			break;
-		
-		case TOSTRING:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TOSTRING, 
-									paramHops);
-			break;
+			case TRANSFORMAPPLY:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), 
+					ParamBuiltinOp.TRANSFORMAPPLY, paramHops);
+				break;
 			
-		default:
+			case TRANSFORMDECODE:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), 
+					ParamBuiltinOp.TRANSFORMDECODE, paramHops);
+				break;
 			
-			LOG.error(source.printErrorLocation() + 
-					"processParameterizedBuiltinFunctionExpression() -- Unknown operation:  "
-							+ source.getOpCode());
+			case TRANSFORMCOLMAP:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), 
+					ParamBuiltinOp.TRANSFORMCOLMAP, paramHops);
+				break;
 			
-			throw new ParseException(source.printErrorLocation() + 
-					"processParameterizedBuiltinFunctionExpression() -- Unknown operation:  "
-							+ source.getOpCode());
+			case TRANSFORMMETA:
+				currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), 
+					ParamBuiltinOp.TRANSFORMMETA, paramHops);
+				break;
+			
+			case TOSTRING:
+				//check for input data type and only compile toString Hop for matrices/frames,
+				//for scalars, we compile (s + "") to ensure consistent string output value types
+				currBuiltinOp = !paramHops.get("target").getDataType().isScalar() ?
+					new ParameterizedBuiltinOp(target.getName(), target.getDataType(), 
+						target.getValueType(), ParamBuiltinOp.TOSTRING, paramHops) :
+					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
+				break;
+			
+			default:
+				throw new ParseException(source.printErrorLocation() + 
+					"processParameterizedBuiltinFunctionExpression() -- Unknown operation: " + source.getOpCode());
 		}
 		
 		setIdentifierParams(currBuiltinOp, source.getOutput());

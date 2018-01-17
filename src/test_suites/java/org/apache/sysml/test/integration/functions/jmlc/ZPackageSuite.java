@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	FrameLeftIndexingTest.class,
 	FrameReadMetaTest.class,
 	FrameTransformTest.class,
+	InputToStringTest.class,
 	JMLCClonedPreparedScriptTest.class,
 	JMLCInputOutputTest.class,
 	JMLCInputStreamReadTest.class,

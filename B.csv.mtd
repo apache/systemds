@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 3,
+    "cols": 6,
+    "nnz": 17,
+    "format": "csv",
+    "header": false,
+    "sep": ",",
+    "author": "mboehm",
+    "created": "2018-01-16 16:09:58 PST"
+}

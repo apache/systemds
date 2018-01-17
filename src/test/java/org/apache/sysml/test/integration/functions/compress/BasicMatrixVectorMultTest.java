@@ -171,10 +171,10 @@ public class BasicMatrixVectorMultTest extends AutomatedTestBase
 			//matrix-vector uncompressed
 			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop);
-			MatrixBlock ret1 = (MatrixBlock)mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
+			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
 			
 			//matrix-vector compressed
-			MatrixBlock ret2 = (MatrixBlock)cmb.aggregateBinaryOperations(cmb, vector, new MatrixBlock(), abop);
+			MatrixBlock ret2 = cmb.aggregateBinaryOperations(cmb, vector, new MatrixBlock(), abop);
 			
 			//compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);

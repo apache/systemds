@@ -32,7 +32,7 @@ import org.apache.sysml.parser.Expression.*;
  * Currently, this lop is used only in case of CTABLE functionality.
  */
 
-public class Ternary extends Lop 
+public class Ctable extends Lop 
 {
 	private boolean _ignoreZeros = false;
 	
@@ -48,11 +48,11 @@ public class Ternary extends Lop
 	OperationTypes operation;
 	
 
-	public Ternary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		this(inputLops, op, dt, vt, false, et);
 	}
 	
-	public Ternary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
+	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
 		super(Lop.Type.Ternary, dt, vt);
 		init(inputLops, op, et);
 		_ignoreZeros = ignoreZeros;
@@ -133,7 +133,7 @@ public class Ternary extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		if( operation != Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+		if( operation != Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
 			sb.append( "ctable" );
 		else
 			sb.append( "ctableexpand" );

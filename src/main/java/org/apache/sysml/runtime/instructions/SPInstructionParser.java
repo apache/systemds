@@ -74,7 +74,7 @@ import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysml.runtime.instructions.spark.SpoofSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
+import org.apache.sysml.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TsmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantileSortSPInstruction;
@@ -268,8 +268,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPType.Rand);
 		
 		//ternary instruction opcodes
-		String2SPInstructionType.put( "ctable", SPType.Ternary);
-		String2SPInstructionType.put( "ctableexpand", SPType.Ternary);
+		String2SPInstructionType.put( "ctable", SPType.Ctable);
+		String2SPInstructionType.put( "ctableexpand", SPType.Ctable);
 		
 		//quaternary instruction opcodes
 		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPType.Quaternary);
@@ -381,8 +381,8 @@ public class SPInstructionParser extends InstructionParser
 					return BinarySPInstruction.parseInstruction(str);
 				
 			//ternary instructions
-			case Ternary:
-				return TernarySPInstruction.parseInstruction(str);
+			case Ctable:
+				return CtableSPInstruction.parseInstruction(str);
 				
 			//quaternary instructions
 			case Quaternary:

@@ -71,44 +71,44 @@ public class OperationsOnMatrixValues
 	}
 	
 	// ------------- Ternary Operations -------------
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
 			int brlen, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
 	}
 	// -----------------------------------------------------
 	
@@ -240,13 +240,12 @@ public class OperationsOnMatrixValues
 		valueIn.aggregateUnaryOperations(op, valueOut, brlen, bclen, indexesIn);
 	}
 	
-	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
-			MatrixIndexes indexesOut, MatrixValue valueOut, AggregateBinaryOperator op)
+	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixBlock value1, MatrixIndexes indexes2, MatrixBlock value2, 
+			MatrixIndexes indexesOut, MatrixBlock valueOut, AggregateBinaryOperator op)
 	throws DMLRuntimeException
 	{
 		//compute output index
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
-		
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
 			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
@@ -254,11 +253,9 @@ public class OperationsOnMatrixValues
 			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
-	public static MatrixValue performAggregateBinaryIgnoreIndexes(
-			MatrixValue value1, MatrixValue value2,
-			MatrixValue valueOut, AggregateBinaryOperator op) 
+	public static MatrixValue performAggregateBinaryIgnoreIndexes(MatrixBlock value1, MatrixBlock value2,
+			MatrixBlock valueOut, AggregateBinaryOperator op) 
 	throws DMLRuntimeException {
-			
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
 			value2.aggregateBinaryOperations(value1, value2, valueOut, op);

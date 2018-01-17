@@ -59,7 +59,7 @@ import org.apache.sysml.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.TernaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
@@ -254,8 +254,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPType.StringInit);
 		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPType.Rand);
 		
-		String2CPInstructionType.put( "ctable", 		CPType.Ternary);
-		String2CPInstructionType.put( "ctableexpand", 	CPType.Ternary);
+		String2CPInstructionType.put( "ctable", 		CPType.Ctable);
+		String2CPInstructionType.put( "ctableexpand", 	CPType.Ctable);
 		
 		//central moment, covariance, quantiles (sort/pick)
 		String2CPInstructionType.put( "cm"    , CPType.CentralMoment);
@@ -327,8 +327,8 @@ public class CPInstructionParser extends InstructionParser
 				else
 					return BinaryCPInstruction.parseInstruction(str);
 			
-			case Ternary:
-				return TernaryCPInstruction.parseInstruction(str);
+			case Ctable:
+				return CtableCPInstruction.parseInstruction(str);
 			
 			case Quaternary:
 				return QuaternaryCPInstruction.parseInstruction(str);

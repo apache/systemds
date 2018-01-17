@@ -54,7 +54,7 @@ import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MapMultChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
 import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
-import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -408,9 +408,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					attr = new String[]{rbinst.isRemoveRows()?"0":"1"};
 				}
 			}
-			else if( mrinst instanceof TernaryInstruction )
+			else if( mrinst instanceof CtableInstruction )
 			{
-				TernaryInstruction tinst = (TernaryInstruction) mrinst;
+				CtableInstruction tinst = (CtableInstruction) mrinst;
 				vs[0] = stats[ tinst.input1 ];
 				vs[1] = stats[ tinst.input2 ];
 				vs[2] = stats[ tinst.input3 ];
@@ -884,7 +884,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else
 						return d3m*d3n;
 				
-				case Ternary: //opcodes: ctable
+				case Ctable: //opcodes: ctable
 					if( optype.equals("ctable") ){
 						if( leftSparse )
 							return d1m * d1n * d1s; //add
@@ -1139,7 +1139,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//note: covers scalar, matrix, matrix-scalar
 					return d3m * d3n;
 					
-				case Ternary: //opcodes: ctabletransform, ctabletransformscalarweight, ctabletransformhistogram, ctabletransformweightedhistogram
+				case Ctable: //opcodes: ctabletransform, ctabletransformscalarweight, ctabletransformhistogram, ctabletransformweightedhistogram
 					//note: copy from cp
 					if( leftSparse )
 						return d1m * d1n * d1s; //add

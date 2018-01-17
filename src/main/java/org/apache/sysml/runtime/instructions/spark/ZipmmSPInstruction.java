@@ -129,7 +129,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock tmp = (MatrixBlock)in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 				
 			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
-			return (MatrixBlock)tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
+			return tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
 		}
 	}
 }

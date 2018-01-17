@@ -29,7 +29,7 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import org.apache.sysml.lops.Ternary;
+import org.apache.sysml.lops.Ctable;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -53,7 +53,7 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class TernarySPInstruction extends ComputationSPInstruction {
+public class CtableSPInstruction extends ComputationSPInstruction {
 	private String _outDim1;
 	private String _outDim2;
 	private boolean _dim1Literal;
@@ -61,10 +61,10 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 	private boolean _isExpand;
 	private boolean _ignoreZeros;
 
-	private TernarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	private CtableSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
-		super(SPType.Ternary, op, in1, in2, in3, out, opcode, istr);
+		super(SPType.Ctable, op, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
 		_outDim2 = outputDim2;
@@ -73,7 +73,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		_ignoreZeros = ignoreZeros;
 	}
 
-	public static TernarySPInstruction parseInstruction(String inst) 
+	public static CtableSPInstruction parseInstruction(String inst) 
 		throws DMLRuntimeException
 	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
@@ -100,7 +100,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TernarySPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+		return new CtableSPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
 	}
 
 
@@ -116,9 +116,9 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
 		double scalar_input2 = -1, scalar_input3 = -1;
 		
-		Ternary.OperationTypes ctableOp = Ternary.findCtableOperationByInputDataTypes(
+		Ctable.OperationTypes ctableOp = Ctable.findCtableOperationByInputDataTypes(
 				input1.getDataType(), input2.getDataType(), input3.getDataType());
-		ctableOp = _isExpand ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
+		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
@@ -354,13 +354,13 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 
 		private static final long serialVersionUID = 5348127596473232337L;
 
-		Ternary.OperationTypes ctableOp;
+		Ctable.OperationTypes ctableOp;
 		double scalar_input2; double scalar_input3;
 		String instString;
 		Operator optr;
 		boolean ignoreZeros;
 		
-		public PerformCTableMapSideOperation(Ternary.OperationTypes ctableOp, double scalar_input2, double scalar_input3, String instString, Operator optr, boolean ignoreZeros) {
+		public PerformCTableMapSideOperation(Ctable.OperationTypes ctableOp, double scalar_input2, double scalar_input3, String instString, Operator optr, boolean ignoreZeros) {
 			this.ctableOp = ctableOp;
 			this.scalar_input2 = scalar_input2;
 			this.scalar_input3 = scalar_input3;
@@ -395,8 +395,8 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 					if(in1==null || in2==null || in3 == null )
 						break;	
 					else
-						OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
-                                in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);
+						OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), in2.getIndexes(),
+							in2.getValue(), in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);
 					break;
 				}
 				case CTABLE_TRANSFORM_SCALAR_WEIGHT: 
@@ -408,12 +408,12 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 					if(in1==null || in2==null )
 						break;
 					else
-						matBlock1.ternaryOperations((SimpleOperator)optr, kv._2.get(1), scalar_input3, ignoreZeros, ctableResult, ctableResultBlock);
+						matBlock1.ctableOperations((SimpleOperator)optr, kv._2.get(1), scalar_input3, ignoreZeros, ctableResult, ctableResultBlock);
 						break;
 				}
 				case CTABLE_TRANSFORM_HISTOGRAM: {
 					expectedALSize(1, kv._2);
-					OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, 
+					OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), scalar_input2, 
 							scalar_input3, ctableResult, ctableResultBlock, optr);
 					break;
 				}
@@ -425,7 +425,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 					if(in1==null || in3==null)
 						break;
 					else
-						OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, 
+						OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), scalar_input2, 
 								in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);		
 					break;
 				}

@@ -74,7 +74,7 @@ import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
 import org.apache.sysml.runtime.instructions.mr.ReplicateInstruction;
 import org.apache.sysml.runtime.instructions.mr.ScalarInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
-import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
@@ -239,11 +239,11 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "csvrblk", MRType.CSVReblock);
 		
 		// Ternary Reorg Instruction Opcodes 
-		String2MRInstructionType.put( "ctabletransform", MRType.Ternary);
-		String2MRInstructionType.put( "ctabletransformscalarweight", MRType.Ternary);
-		String2MRInstructionType.put( "ctableexpandscalarweight", MRType.Ternary);
-		String2MRInstructionType.put( "ctabletransformhistogram", MRType.Ternary);
-		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRType.Ternary);
+		String2MRInstructionType.put( "ctabletransform", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformscalarweight", MRType.Ctable);
+		String2MRInstructionType.put( "ctableexpandscalarweight", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformhistogram", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRType.Ctable);
 		
 		// Quaternary Instruction Opcodes
 		String2MRInstructionType.put( WeightedSquaredLoss.OPCODE,  MRType.Quaternary);
@@ -362,8 +362,8 @@ public class MRInstructionParser extends InstructionParser
 			case AggregateUnary:
 				return AggregateUnaryInstruction.parseInstruction(str);
 				
-			case Ternary: 
-				return TernaryInstruction.parseInstruction(str);
+			case Ctable: 
+				return CtableInstruction.parseInstruction(str);
 			
 			case Quaternary: 
 				return QuaternaryInstruction.parseInstruction(str);

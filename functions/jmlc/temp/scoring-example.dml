@@ -1,0 +1,12 @@
+X = read("./tmp/X", rows=-1, cols=-1);
+W = read("./tmp/W", rows=-1, cols=-1);
+
+numRows = nrow(X);
+numCols = ncol(X);
+b = W[numCols+1,]
+scores = X %*% W[1:numCols,] + b;
+predicted_y = rowIndexMax(scores);
+
+print('pred:' + toString(predicted_y))
+
+write(predicted_y, "./tmp", format="text");

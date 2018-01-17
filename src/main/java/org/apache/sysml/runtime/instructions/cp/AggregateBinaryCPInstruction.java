@@ -74,7 +74,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		//compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		MatrixBlock main = (matBlock2 instanceof CompressedMatrixBlock) ? matBlock2 : matBlock1;
-		MatrixBlock ret = (MatrixBlock) main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		MatrixBlock ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
 		
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

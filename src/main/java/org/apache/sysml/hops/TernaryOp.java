@@ -34,7 +34,7 @@ import org.apache.sysml.lops.PickByCount;
 import org.apache.sysml.lops.PlusMult;
 import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.lops.SortKeys;
-import org.apache.sysml.lops.Ternary;
+import org.apache.sysml.lops.Ctable;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.CombineBinary.OperationTypes;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -412,7 +412,7 @@ public class TernaryOp extends Hop
 		DataType dt1 = getInput().get(0).getDataType(); 
 		DataType dt2 = getInput().get(1).getDataType(); 
 		DataType dt3 = getInput().get(2).getDataType(); 
-		Ternary.OperationTypes ternaryOpOrig = Ternary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+		Ctable.OperationTypes ternaryOpOrig = Ctable.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
  		
 		// Compute lops for all inputs
 		Lop[] inputLops = new Lop[getInput().size()];
@@ -428,8 +428,8 @@ public class TernaryOp extends Hop
 		if ( et == ExecType.CP  || et == ExecType.SPARK) 
 		{	
 			//for CP we support only ctable expand left
-			Ternary.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
-				Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
+			Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
+				Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
 			boolean ignoreZeros = false;
 			
 			if( isMatrixIgnoreZeroRewriteApplicable() ) { 
@@ -438,7 +438,7 @@ public class TernaryOp extends Hop
 				inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
 			}
 			
-			Ternary ternary = new Ternary(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
+			Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
 			
 			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			setLineNumbers(ternary);
@@ -459,8 +459,8 @@ public class TernaryOp extends Hop
 		else //MR
 		{
 			//for MR we support both ctable expand left and right
-			Ternary.OperationTypes ternaryOp = isSequenceRewriteApplicable() ? 
-				Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
+			Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable() ? 
+				Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
 			
 			Group group1 = null, group2 = null, group3 = null, group4 = null;
 			group1 = new Group(inputLops[0], Group.OperationTypes.Sort, getDataType(), getValueType());
@@ -468,7 +468,7 @@ public class TernaryOp extends Hop
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(group1);
 			
-			Ternary ternary = null;
+			Ctable ternary = null;
 			// create "group" lops for MATRIX inputs
 			switch (ternaryOp) 
 			{
@@ -493,12 +493,12 @@ public class TernaryOp extends Hop
 					setLineNumbers(group3);
 					
 					if ( inputLops.length == 3 )
-						ternary = new Ternary(
+						ternary = new Ctable(
 							new Lop[] {group1, group2, group3}, ternaryOp,
 							getDataType(), getValueType(), et);	
 					else 
 						// output dimensions are given
-						ternary = new Ternary(
+						ternary = new Ctable(
 							new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
 							ternaryOp, getDataType(), getValueType(), et);	
 					break;
@@ -515,11 +515,11 @@ public class TernaryOp extends Hop
 					setLineNumbers(group2);
 					
 					if ( inputLops.length == 3)
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1,group2,inputLops[2]},
 								ternaryOp, getDataType(), getValueType(), et);
 					else
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
 								ternaryOp, getDataType(), getValueType(), et);
 						
@@ -539,14 +539,14 @@ public class TernaryOp extends Hop
 					//TODO remove group, whenever we push it into the map task
 					
 					if (inputLops.length == 3)
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group, //matrix
 									getInput().get(2).constructLops(), //weight
 									new LiteralOp(left).constructLops() //left
 								},
 								ternaryOp, getDataType(), getValueType(), et);
 					else
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group, //matrix
 									getInput().get(2).constructLops(), //weight
 									new LiteralOp(left).constructLops(), //left
@@ -558,14 +558,14 @@ public class TernaryOp extends Hop
 				case CTABLE_TRANSFORM_HISTOGRAM:
 					// F=ctable(A,1) or F = ctable(A,1,1)
 					if ( inputLops.length == 3 )
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1, 
 									getInput().get(1).constructLops(),
 									getInput().get(2).constructLops()
 								},
 								ternaryOp, getDataType(), getValueType(), et);
 					else
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1, 
 									getInput().get(1).constructLops(),
 									getInput().get(2).constructLops(),
@@ -587,13 +587,13 @@ public class TernaryOp extends Hop
 					setLineNumbers(group3);
 					
 					if ( inputLops.length == 3)
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1,
 									getInput().get(1).constructLops(),
 									group3},
 								ternaryOp, getDataType(), getValueType(), et);
 					else
-						ternary = new Ternary(
+						ternary = new Ctable(
 								new Lop[] {group1,
 									getInput().get(1).constructLops(),
 									group3, inputLops[3], inputLops[4] },
@@ -611,7 +611,7 @@ public class TernaryOp extends Hop
 			
 			Lop lctable = ternary;
 			
-			if( !(_disjointInputs || ternaryOp == Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
+			if( !(_disjointInputs || ternaryOp == Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
 			{ 
 				//no need for aggregation if (1) input indexed disjoint	or one side is sequence	w/ 1 increment
 				
@@ -885,9 +885,9 @@ public class TernaryOp extends Hop
 						else if( isSequenceRewriteApplicable(false) )
 							setDim2( input2._dim1 );
 						//for ctable_histogram also one dimension is known
-						Ternary.OperationTypes ternaryOp = Ternary.findCtableOperationByInputDataTypes(
+						Ctable.OperationTypes ternaryOp = Ctable.findCtableOperationByInputDataTypes(
 																input1.getDataType(), input2.getDataType(), input3.getDataType());
-						if(  ternaryOp==Ternary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
+						if(  ternaryOp==Ctable.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
 							&& input2 instanceof LiteralOp )
 						{
 							setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input2) );

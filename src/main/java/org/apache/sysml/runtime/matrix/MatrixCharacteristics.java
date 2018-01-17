@@ -56,7 +56,7 @@ import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
 import org.apache.sysml.runtime.instructions.mr.ReplicateInstruction;
 import org.apache.sysml.runtime.instructions.mr.ScalarInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
-import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
@@ -377,7 +377,7 @@ public class MatrixCharacteristics implements Serializable
 			}
 		}
 		else if (ins instanceof CombineTernaryInstruction ) {
-			TernaryInstruction realIns=(TernaryInstruction)ins;
+			CtableInstruction realIns=(CtableInstruction)ins;
 			dimOut.set(dims.get(realIns.input1));
 		}
 		else if (ins instanceof CombineUnaryInstruction ) {
@@ -393,8 +393,8 @@ public class MatrixCharacteristics implements Serializable
 			MatrixCharacteristics dimIn = dims.get(realIns.input);
 			realIns.computeOutputCharacteristics(dimIn, dimOut);
 		}
-		else if (ins instanceof TernaryInstruction) {
-			TernaryInstruction realIns = (TernaryInstruction)ins;
+		else if (ins instanceof CtableInstruction) {
+			CtableInstruction realIns = (CtableInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
 			dimOut.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}

@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -42,9 +43,8 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 public class MMRJMRReducer extends ReduceBase
 implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 {
-	
 	private Reporter cachedReporter=null;
-	private MatrixValue resultblock=null;
+	private MatrixBlock resultblock=null;
 	private MatrixIndexes aggIndexes=new MatrixIndexes();
 	private TripleIndexes prevIndexes=new TripleIndexes(-1, -1, -1);
 	//aggregate binary instruction for the mmrj
@@ -106,14 +106,11 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	{
 		IndexedMatrixValue left = cachedValues.getFirst(aggBinInstruction.input1);
 		IndexedMatrixValue right= cachedValues.getFirst(aggBinInstruction.input2);
-	//	System.out.println("left: \n"+left.getValue());
-	//	System.out.println("right: \n"+right.getValue());
 		if(left!=null && right!=null)
 		{
 			try {
-				resultblock=left.getValue().aggregateBinaryOperations(left.getValue(), right.getValue(), 
+				resultblock=((MatrixBlock)left.getValue()).aggregateBinaryOperations((MatrixBlock)left.getValue(), (MatrixBlock)right.getValue(), 
 						resultblock, (AggregateBinaryOperator) aggBinInstruction.getOperator());
-		//		System.out.println("resultblock: \n"+resultblock);
 				IndexedMatrixValue out=cachedValues.getFirst(aggBinInstruction.output);
 				if(out==null)
 				{

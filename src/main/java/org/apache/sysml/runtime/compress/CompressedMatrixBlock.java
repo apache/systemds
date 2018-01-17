@@ -1086,18 +1086,18 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 	
 	@Override
-	public MatrixValue aggregateBinaryOperations(MatrixValue mv1, MatrixValue mv2, MatrixValue result, AggregateBinaryOperator op)
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock mv1, MatrixBlock mv2, MatrixBlock ret, AggregateBinaryOperator op)
 			throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
-			return super.aggregateBinaryOperations(mv1, mv2, result, op);
+			return super.aggregateBinaryOperations(mv1, mv2, ret, op);
 		}
 	
 		//multi-threaded mm of single uncompressed colgroup
 		if( isSingleUncompressedGroup() ){
 			MatrixBlock tmp = ((ColGroupUncompressed)_colGroups.get(0)).getData();
-			return tmp.aggregateBinaryOperations(this==mv1?tmp:mv1, this==mv2?tmp:mv2, result, op);
+			return tmp.aggregateBinaryOperations(this==mv1?tmp:mv1, this==mv2?tmp:mv2, ret, op);
 		}
 		
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
@@ -1107,7 +1107,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		int cl = mv2.getNumColumns();
 		
 		//create output matrix block
-		MatrixBlock ret = (MatrixBlock) result;
 		if( ret==null )
 			ret = new MatrixBlock(rl, cl, false, rl*cl);
 		else
@@ -2119,9 +2118,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
-			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
-			MatrixValue result, AggregateBinaryOperator op)
+	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index,
+			MatrixBlock m1Value, MatrixIndexes m2Index, MatrixBlock m2Value,
+			MatrixBlock result, AggregateBinaryOperator op)
 			throws DMLRuntimeException {
 		printDecompressWarning("aggregateBinaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
@@ -2199,84 +2198,84 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, double scalar,
+	public void ctableOperations(Operator op, double scalar,
 			MatrixValue that, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
-		left.ternaryOperations(op, scalar, right, resultMap, resultBlock);
+		left.ctableOperations(op, scalar, right, resultMap, resultBlock);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, double scalar,
+	public void ctableOperations(Operator op, double scalar,
 			double scalar2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		tmp.ternaryOperations(op, scalar, scalar2, resultMap, resultBlock);
+		tmp.ctableOperations(op, scalar, scalar2, resultMap, resultBlock);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, MatrixIndexes ix1,
+	public void ctableOperations(Operator op, MatrixIndexes ix1,
 			double scalar, boolean left, int brlen, CTableMap resultMap,
 			MatrixBlock resultBlock) throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		tmp.ternaryOperations(op, ix1, scalar, left, brlen, resultMap, resultBlock);
+		tmp.ctableOperations(op, ix1, scalar, left, brlen, resultMap, resultBlock);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, MatrixValue that,
+	public void ctableOperations(Operator op, MatrixValue that,
 			double scalar, boolean ignoreZeros, CTableMap resultMap,
 			MatrixBlock resultBlock) throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
-		left.ternaryOperations(op, right, scalar, ignoreZeros, resultMap, resultBlock);
+		left.ctableOperations(op, right, scalar, ignoreZeros, resultMap, resultBlock);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, MatrixValue that, double scalar, MatrixBlock resultBlock)
+	public void ctableOperations(Operator op, MatrixValue that, double scalar, MatrixBlock resultBlock)
 			throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
-		left.ternaryOperations(op, right, scalar, resultBlock);
+		left.ctableOperations(op, right, scalar, resultBlock);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, MatrixValue that,
+	public void ctableOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap)
 			throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
-		left.ternaryOperations(op, right1, right2, resultMap);
+		left.ctableOperations(op, right1, right2, resultMap);
 	}
 
 	@Override
-	public void ternaryOperations(Operator op, MatrixValue that,
+	public void ctableOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLRuntimeException {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
-		left.ternaryOperations(op, right1, right2, resultMap, resultBlock);
+		left.ctableOperations(op, right1, right2, resultMap, resultBlock);
 	}
 
 	@Override
-	public MatrixValue quaternaryOperations(QuaternaryOperator qop,
-			MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
+	public MatrixBlock quaternaryOperations(QuaternaryOperator qop,
+			MatrixBlock um, MatrixBlock vm, MatrixBlock wm, MatrixBlock out)
 			throws DMLRuntimeException {
 		return quaternaryOperations(qop, um, vm, wm, out, 1);
 	}
 
 	@Override
-	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, 
-			MatrixValue vm, MatrixValue wm, MatrixValue out, int k) 
+	public MatrixBlock quaternaryOperations(QuaternaryOperator qop, MatrixBlock um, 
+			MatrixBlock vm, MatrixBlock wm, MatrixBlock out, int k) 
 			throws DMLRuntimeException {
 		printDecompressWarning("quaternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;

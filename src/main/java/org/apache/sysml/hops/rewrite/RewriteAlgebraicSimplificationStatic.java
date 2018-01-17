@@ -1296,7 +1296,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 					if( left2 instanceof LiteralOp &&
 						HopRewriteUtils.getDoubleValue((LiteralOp)left2)==0 &&
-						left1 == right && (bleft.getOp() == OpOp2.GREATER || bleft.getOp() == OpOp2.GREATEREQUAL ) )
+						left1 == right && (bleft.getOp() == OpOp2.GREATER ) )
 					{
 						BinaryOp binary = HopRewriteUtils.createBinary(right, new LiteralOp(0), OpOp2.MAX);
 						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);
@@ -1315,7 +1315,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 					if( right2 instanceof LiteralOp &&
 						HopRewriteUtils.getDoubleValue((LiteralOp)right2)==0 &&
-						right1 == left && bright.getOp() == OpOp2.GREATER || bright.getOp() == OpOp2.GREATEREQUAL )
+						right1 == left && bright.getOp() == OpOp2.GREATER )
 					{
 						BinaryOp binary = HopRewriteUtils.createBinary(left, new LiteralOp(0), OpOp2.MAX);
 						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);

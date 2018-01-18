@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
 import org.apache.sysml.runtime.instructions.mr.ReplicateInstruction;
 import org.apache.sysml.runtime.instructions.mr.ScalarInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
+import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
@@ -375,6 +376,9 @@ public class MatrixCharacteristics implements Serializable
 			else { //default case
 				dimOut.set(mc1);	
 			}
+		}
+		else if( ins instanceof TernaryInstruction ) {
+			dimOut.set(dims.get(ins.getInputIndexes()[0]));
 		}
 		else if (ins instanceof CombineTernaryInstruction ) {
 			CtableInstruction realIns=(CtableInstruction)ins;

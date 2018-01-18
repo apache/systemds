@@ -31,8 +31,7 @@ import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PickByCount;
-import org.apache.sysml.lops.PlusMult;
-import org.apache.sysml.lops.RepMat;
+import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Ctable;
 import org.apache.sysml.lops.UnaryCP;
@@ -136,6 +135,7 @@ public class TernaryOp extends Hop
 			case CTABLE:
 			case INTERQUANTILE:
 			case QUANTILE:
+			case IFELSE:
 				return false;
 			case MINUS_MULT:
 			case PLUS_MULT:
@@ -175,7 +175,8 @@ public class TernaryOp extends Hop
 				
 				case PLUS_MULT:
 				case MINUS_MULT:
-					constructLopsPlusMult();
+				case IFELSE:
+					constructLopsTernaryDefault();
 					break;
 					
 				default:
@@ -186,10 +187,10 @@ public class TernaryOp extends Hop
 		catch(LopsException e) {
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 		}
-
+		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-				
+		
 		return getLops();
 	}
 
@@ -643,45 +644,49 @@ public class TernaryOp extends Hop
 		}
 	}
 
-	private void constructLopsPlusMult() 
+	private void constructLopsTernaryDefault() 
 		throws HopsException, LopsException 
 	{
-		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
-			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
-		
 		ExecType et = optFindExecType();
-		PlusMult plusmult = null;
+		if( getInput().stream().allMatch(h -> h.getDataType().isScalar()) )
+			et = ExecType.CP; //always CP for pure scalar operations
+		
+		Ternary plusmult = null;
 		
 		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
-			plusmult = new PlusMult(
-					getInput().get(0).constructLops(),
-					getInput().get(1).constructLops(),
-					getInput().get(2).constructLops(), 
-					_op, getDataType(),getValueType(), et );	
+			plusmult = new Ternary(HopsOpOp3Lops.get(_op),
+				getInput().get(0).constructLops(),
+				getInput().get(1).constructLops(),
+				getInput().get(2).constructLops(), 
+				getDataType(),getValueType(), et );
 		}
 		else { //MR
-			Hop left = getInput().get(0);
-			Hop right = getInput().get(2);
-			boolean requiresRep = BinaryOp.requiresReplication(left, right);
+			Hop first = getInput().get(0);
+			Hop second = getInput().get(1);
+			Hop third = getInput().get(2);
 			
-			Lop rightLop = right.constructLops();
-			if( requiresRep ) {
-				Lop offset = createOffsetLop(left, (right.getDim2()<=1)); //ncol of left input (determines num replicates)
-				rightLop = new RepMat(rightLop, offset, (right.getDim2()<=1), right.getDataType(), right.getValueType());
-				setOutputDimensions(rightLop);
-				setLineNumbers(rightLop);	
+			Lop firstLop = first.constructLops(); 
+			if( first.getDataType().isMatrix() ) {
+				firstLop = new Group(firstLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(firstLop);
+				setOutputDimensions(firstLop);
 			}
-		
-			Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, getDataType(), getValueType());
-			setLineNumbers(group1);
-			setOutputDimensions(group1);
-		
-			Group group2 = new Group(rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-			setLineNumbers(group2);
-			setOutputDimensions(group2);
+			Lop secondLop = second.constructLops(); 
+			if( second.getDataType().isMatrix() ) {
+				secondLop = new Group(secondLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(secondLop);
+				setOutputDimensions(secondLop);
+			}
+			Lop thirdLop = third.constructLops(); 
+			if( third.getDataType().isMatrix() ) {
+				thirdLop = new Group(thirdLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(thirdLop);
+				setOutputDimensions(thirdLop);
+			}
 			
-			plusmult = new PlusMult(group1, getInput().get(1).constructLops(), 
-					group2, _op, getDataType(),getValueType(), et );	
+			plusmult = new Ternary(HopsOpOp3Lops.get(_op),
+				firstLop, secondLop, thirdLop,
+				getDataType(),getValueType(), et );
 		}
 		
 		setOutputDimensions(plusmult);
@@ -697,8 +702,7 @@ public class TernaryOp extends Hop
 	}
 
 	@Override
-	public boolean allowsAllExecTypes()
-	{
+	public boolean allowsAllExecTypes() {
 		return true;
 	}
 
@@ -722,7 +726,8 @@ public class TernaryOp extends Hop
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
-			case MINUS_MULT: {
+			case MINUS_MULT:
+			case IFELSE: {
 				if (isGPUEnabled()) {
 					// For the GPU, the input is converted to dense
 					sparsity = 1.0;
@@ -805,6 +810,11 @@ public class TernaryOp extends Hop
 				if( mc[2].dimsKnown() )
 					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 				break;
+			case IFELSE:
+				for(MatrixCharacteristics lmc : mc)
+					if( lmc.dimsKnown() && lmc.getRows() > 0 ) //known matrix
+						return new long[]{lmc.getRows(), lmc.getCols(), -1};
+				break;
 			case PLUS_MULT:
 			case MINUS_MULT:
 				//compute back NNz
@@ -827,20 +837,17 @@ public class TernaryOp extends Hop
 
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
-		{
+		if( _etypeForced != null ) {
 			_etype = _etypeForced;
 		}
 		else
-		{	
+		{
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			else if ( (getInput().get(0).areDimsBelowThreshold() 
 					&& getInput().get(1).areDimsBelowThreshold()
-					&& getInput().get(2).areDimsBelowThreshold()) 
-					//|| (getInput().get(0).isVector() && getInput().get(1).isVector() && getInput().get(1).isVector() )
-				)
+					&& getInput().get(2).areDimsBelowThreshold()) )
 				_etype = ExecType.CP;
 			else
 				_etype = REMOTE;
@@ -908,17 +915,21 @@ public class TernaryOp extends Hop
 					// This part of the code is executed only when a vector of quantiles are computed
 					// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 					// TODO qx1
-					break;	
+					break;
 				
+				//default ternary operations
+				case IFELSE:
 				case PLUS_MULT:
 				case MINUS_MULT:
-					setDim1( getInput().get(0)._dim1 );
-					setDim2( getInput().get(0)._dim2 );
+					if( getDataType() == DataType.MATRIX ) {
+						setDim1( HopRewriteUtils.getMaxNrowInput(this) );
+						setDim2( HopRewriteUtils.getMaxNcolInput(this) );
+					}
 					break;
 				default:
 					throw new RuntimeException("Size information for operation (" + _op + ") can not be updated.");
 			}
-		}	
+		}
 	}
 	
 	@Override

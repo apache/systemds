@@ -17,20 +17,30 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.functionobjects;
+
+package org.apache.sysml.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-public abstract class ValueFunctionWithConstant extends ValueFunction implements Serializable
+import org.apache.sysml.runtime.functionobjects.IfElse;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
+import org.apache.sysml.runtime.functionobjects.TernaryValueFunction;
+
+public class TernaryOperator  extends Operator implements Serializable
 {
-	private static final long serialVersionUID = -4985988545393861058L;
-	protected double _constant;
+	private static final long serialVersionUID = 3456088891054083634L;
 	
-	public void setConstant(double constant) {
-		_constant = constant;
+	public final TernaryValueFunction fn;
+	
+	public TernaryOperator(TernaryValueFunction p) {
+		//ternaryop is sparse-safe iff (op 0 0 0) == 0
+		super (p instanceof PlusMultiply || p instanceof MinusMultiply || p instanceof IfElse);
+		fn = p;
 	}
 	
-	public double getConstant() {
-		return _constant;
+	@Override
+	public String toString() {
+		return "TernaryOperator("+fn.getClass().getSimpleName()+")";
 	}
 }

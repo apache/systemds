@@ -19,7 +19,6 @@
 
 package org.apache.sysml.lops;
 
-import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.lops.LopProperties.ExecLocation;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
@@ -30,12 +29,19 @@ import org.apache.sysml.parser.Expression.ValueType;
 /**
  * Lop to perform Sum of a matrix with another matrix multiplied by Scalar.
  */
-public class PlusMult extends Lop 
+public class Ternary extends Lop 
 {
-	public PlusMult(Lop input1, Lop input2, Lop input3, OpOp3 op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.PlusMult, dt, vt);
-		if(op == OpOp3.MINUS_MULT)
-			type=Lop.Type.MinusMult;
+	public enum OperationType {
+		PLUS_MULT,
+		MINUS_MULT,
+		IFELSE,
+	}
+	
+	private final OperationType _type;
+		
+	public Ternary(OperationType op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.Ternary, dt, vt);
+		_type = op;
 		init(input1, input2, input3, et);
 	}
 
@@ -43,9 +49,9 @@ public class PlusMult extends Lop
 		addInput(input1);
 		addInput(input2);
 		addInput(input3);
-		input1.addOutput(this);	
-		input2.addOutput(this);	
-		input3.addOutput(this);	
+		input1.addOutput(this);
+		input2.addOutput(this);
+		input3.addOutput(this);
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -57,28 +63,24 @@ public class PlusMult extends Lop
 		}
 		else if( et == ExecType.MR ) {
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
 			lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 	
 	@Override
 	public String toString() {
-		return "Operation = PlusMult";
+		return "Operation = t("+_type.name().toLowerCase()+")";
 	}
 	
 	public String getOpString() {
-		return (type==Lop.Type.PlusMult) ? "+*" : "-*";
+		switch( _type ) {
+			case PLUS_MULT: return "+*";
+			case MINUS_MULT: return "-*";
+			case IFELSE: return "ifelse";
+		}
+		return null;
 	}
 	
-	/**
-	 * Function to generate CP/Spark axpy.
-	 * 
-	 * input1: matrix1
-	 * input2: Scalar
-	 * input3: matrix2
-	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) 
 	{
@@ -89,20 +91,15 @@ public class PlusMult extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpString() );
 		
-		//matrix 1
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		
-		//scalar
-		sb.append( OPERAND_DELIMITOR );
-		if( getExecType()==ExecType.MR )
-			sb.append( getInputs().get(1).prepScalarLabel() );
-		else
-			sb.append( getInputs().get(1).prepScalarInputOperand(input2) );
-		
-		//matrix 2
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(2).prepInputOperand(input3) );
+		//process three operands
+		String[] inputs = new String[]{input1, input2, input3};
+		for( int i=0; i<3; i++ ) {
+			sb.append( OPERAND_DELIMITOR );
+			if( getExecType()==ExecType.MR && getInputs().get(i).getDataType().isScalar() )
+				sb.append( getInputs().get(i).prepScalarLabel() );
+			else
+				sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
+		}
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );

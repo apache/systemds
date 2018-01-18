@@ -1343,6 +1343,14 @@ public class HopRewriteUtils
 			|| sb instanceof ForStatementBlock); //incl parfor
 	}
 	
+	public static long getMaxNrowInput(Hop hop) {
+		return getMaxInputDim(hop, true);
+	}
+	
+	public static long getMaxNcolInput(Hop hop) {
+		return getMaxInputDim(hop, false);
+	}
+	
 	public static long getMaxInputDim(Hop hop, boolean dim1) {
 		return hop.getInput().stream().mapToLong(
 			h -> (dim1?h.getDim1():h.getDim2())).max().orElse(-1);

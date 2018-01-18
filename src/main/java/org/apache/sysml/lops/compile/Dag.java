@@ -1402,7 +1402,7 @@ public class Dag<N extends Lop>
 								node.getInputs().get(1).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					} 
-					else if (node.getInputs().size() == 3 || node.getType() == Type.Ternary) {
+					else if (node.getInputs().size() == 3 || node.getType() == Type.Ctable) {
 						inst_string = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(),
 								node.getInputs().get(1).getOutputParameters().getLabel(),
@@ -3119,11 +3119,11 @@ public class Dag<N extends Lop>
 				}
 
 				return output_index;
-			} else if (inputIndices.size() == 3 || node.getType() == Type.Ternary) {
+			} else if (inputIndices.size() == 3 || node.getType() == Type.Ctable) {
 				int output_index = start_index[0];
 				start_index[0]++;
 
-				if (node.getType() == Type.Ternary ) {
+				if (node.getType() == Type.Ctable ) {
 					// in case of CTABLE_TRANSFORM_SCALAR_WEIGHT: inputIndices.get(2) would be -1
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), inputIndices.get(1),

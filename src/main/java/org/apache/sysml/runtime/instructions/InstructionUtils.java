@@ -54,6 +54,7 @@ import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysml.runtime.functionobjects.IfElse;
 import org.apache.sysml.runtime.functionobjects.IndexFunction;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
@@ -95,6 +96,7 @@ import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 
@@ -580,12 +582,13 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if ( opcode.equalsIgnoreCase("+*") )
-			return new BinaryOperator(PlusMultiply.getPlusMultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase("-*") )
-			return new BinaryOperator(MinusMultiply.getMinusMultiplyFnObject());
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+	}
+	
+	public static TernaryOperator parseTernaryOperator(String opcode) {
+		return new TernaryOperator(opcode.equals("+*") ? PlusMultiply.getFnObject() :
+			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject());
 	}
 	
 	/**

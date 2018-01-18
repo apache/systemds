@@ -46,6 +46,16 @@ public abstract class ScalarObjectFactory
 		}
 	}
 	
+	public static ScalarObject createScalarObject(ValueType vt, double value) {
+		switch( vt ) {
+			case INT:     return new IntObject(UtilFunctions.toLong(value));
+			case DOUBLE:  return new DoubleObject(value);
+			case BOOLEAN: return new BooleanObject(value != 0);
+			case STRING:  return new StringObject(String.valueOf(value));
+			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
+		}
+	}
+	
 	public static ScalarObject createScalarObject(ValueType vt, ScalarObject so) {
 		switch( vt ) {
 			case DOUBLE:  return new DoubleObject(so.getDoubleValue());

@@ -55,7 +55,7 @@ public abstract class Lop
 		FunctionCallCP, FunctionCallCPSingle,               //CP function calls 
 		CumulativePartialAggregate, CumulativeSplitAggregate, CumulativeOffsetBinary, //MR cumsum/cumprod/cummin/cummax
 		WeightedSquaredLoss, WeightedSigmoid, WeightedDivMM, WeightedCeMM, WeightedUMM,
-		SortKeys, PickValues,
+		SortKeys, PickValues, Ctable,
 		Checkpoint,                                         //Spark persist into storage level
 		PlusMult, MinusMult,                                //CP
 		SpoofFused,                                         //CP/SP generated fused operator

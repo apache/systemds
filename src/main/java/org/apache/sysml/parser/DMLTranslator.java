@@ -2881,8 +2881,13 @@ public class DMLTranslator
 				currBuiltinOp=new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 					Hop.OpOp2.MEDIAN, expr, expr2);
 			}
-			break;	
+			break;
 		
+		case IFELSE:
+			currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				Hop.OpOp3.IFELSE, expr, expr2, expr3);
+			break;
+			
 		case SEQ:
 			HashMap<String,Hop> randParams = new HashMap<>();
 			randParams.put(Statement.SEQ_FROM, expr);

@@ -65,6 +65,10 @@ public class CPOperand
 		return _dataType;
 	}
 	
+	public boolean isMatrix() {
+		return _dataType.isMatrix();
+	}
+	
 	public boolean isLiteral() {
 		return _isLiteral;
 	}
@@ -86,6 +90,13 @@ public class CPOperand
 			_dataType = DataType.valueOf(opr[1]);
 			_valueType = ValueType.valueOf(opr[2]);
 			_isLiteral = false;
+		}
+		else if ( opr.length == 1 ) {
+			//note: for literals in MR instructions
+			_name = opr[0];
+			_dataType = DataType.SCALAR;
+			_valueType = ValueType.DOUBLE;
+			_isLiteral = true;
 		}
 		else {
 			_name = opr[0];

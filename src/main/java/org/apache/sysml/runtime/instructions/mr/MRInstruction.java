@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public abstract class MRInstruction extends Instruction {
 
 	public enum MRType {
-		Append, Aggregate, Binary, Binary2, AggregateBinary, AggregateUnary, Rand,
+		Append, Aggregate, Binary, Ternary, AggregateBinary, AggregateUnary, Rand,
 		Seq, CSVReblock, CSVWrite, Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTernary,
 		PickByCount, Partition, Ctable, Quaternary, CM_N_COV, MapGroupedAggregate, GroupedAggregate, RightIndex,
 		ZeroOut, MMTSJ, PMMJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain, CumsumAggregate, CumsumSplit,

@@ -548,6 +548,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.BOOLEAN);
 			break;
 			
+		case IFELSE:
+			checkNumParameters(3);
+			setTernaryOutputProperties(output, conditional);
+			break;
+			
 		case CBIND:
 		case RBIND:
 			//scalar string append (string concatenation with \n)
@@ -1289,6 +1294,29 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		output.setBlockDimensions (dims[2], dims[3]);
 	}
 	
+	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		DataType dt1 = getFirstExpr().getOutput().getDataType();
+		DataType dt2 = getSecondExpr().getOutput().getDataType();
+		DataType dt3 = getThirdExpr().getOutput().getDataType();
+		DataType dtOut = (dt1.isMatrix() || dt2.isMatrix() || dt3.isMatrix()) ?
+			DataType.MATRIX : DataType.SCALAR;
+		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
+			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), false, conditional);
+		if( dt1==DataType.MATRIX && dt3==DataType.MATRIX )
+			checkMatchingDimensions(getFirstExpr(), getThirdExpr(), false, conditional);
+		if( dt2==DataType.MATRIX && dt3==DataType.MATRIX )
+			checkMatchingDimensions(getSecondExpr(), getThirdExpr(), false, conditional);
+		long[] dims1 = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
+		long[] dims2 = getBinaryMatrixCharacteristics(getSecondExpr(), getThirdExpr());
+		output.setDataType(dtOut);
+		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE :
+			computeValueType(getSecondExpr(), getThirdExpr(), true));
+		output.setDimensions(Math.max(dims1[0], dims2[0]), Math.max(dims1[1], dims2[1]));
+		output.setBlockDimensions (Math.max(dims1[2], dims2[2]), Math.max(dims1[3], dims2[3]));
+	}
+	
 	private void expandArguments() {
 	
 		if ( _args == null ) {
@@ -1517,13 +1545,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private void checkMatchingDimensions(Expression expr1, Expression expr2) 
-		throws LanguageException 
-	{
+	private void checkMatchingDimensions(Expression expr1, Expression expr2) throws LanguageException {
 		checkMatchingDimensions(expr1, expr2, false);
 	}
 	
-	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
+	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) throws LanguageException {
+		checkMatchingDimensions(expr1, expr2, allowsMV, false);
+	}
+	
+	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV, boolean conditional) 
 		throws LanguageException 
 	{
 		if (expr1 != null && expr2 != null) {
@@ -1540,7 +1570,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				  || (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
 			{
 				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
-						+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+						+ this.getOpCode(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 	}
@@ -1757,6 +1787,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTL;
 		else if ( functionName.equals("bitwShiftR") )
 			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTR;
+		else if ( functionName.equals("ifelse") )
+			bifop = Expression.BuiltinFunctionOp.IFELSE;
 		else
 			return null;
 		

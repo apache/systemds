@@ -64,7 +64,7 @@ import org.apache.sysml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PMMJMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.ParameterizedBuiltinMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
-import org.apache.sysml.runtime.instructions.mr.PlusMultInstruction;
+import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.QuaternaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.RangeBasedReIndexInstruction;
@@ -192,8 +192,6 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "bitwXor", MRType.Binary);
 		String2MRInstructionType.put( "bitwShiftL", MRType.Binary);
 		String2MRInstructionType.put( "bitwShiftR", MRType.Binary);
-		String2MRInstructionType.put( "+*"   , MRType.Binary2); 
-		String2MRInstructionType.put( "-*"   , MRType.Binary2); 
 		
 		String2MRInstructionType.put( "map+"    , MRType.Binary);
 		String2MRInstructionType.put( "map-"    , MRType.Binary);
@@ -219,6 +217,11 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "mapbitwXor", MRType.Binary);
 		String2MRInstructionType.put( "mapbitwShiftL", MRType.Binary);
 		String2MRInstructionType.put( "mapbitwShiftR", MRType.Binary);
+		
+		// Ternary Instruction Opcodes
+		String2MRInstructionType.put( "+*",     MRType.Ternary); 
+		String2MRInstructionType.put( "-*",     MRType.Ternary); 
+		String2MRInstructionType.put( "ifelse", MRType.Ternary); 
 		
 		String2MRInstructionType.put( "uaggouterchain", MRType.UaggOuterChain);
 		
@@ -353,8 +356,8 @@ public class MRInstructionParser extends InstructionParser
 				}
 			}
 			
-			case Binary2:
-				return PlusMultInstruction.parseInstruction(str);
+			case Ternary:
+				return TernaryInstruction.parseInstruction(str);
 			
 			case AggregateBinary:
 				return AggregateBinaryInstruction.parseInstruction(str);

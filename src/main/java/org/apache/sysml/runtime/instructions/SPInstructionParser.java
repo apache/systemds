@@ -63,7 +63,7 @@ import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.PlusMultSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuaternarySPInstruction;
@@ -162,8 +162,6 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "^"    , SPType.Binary);
 		String2SPInstructionType.put( "^2"   , SPType.Binary);
 		String2SPInstructionType.put( "*2"   , SPType.Binary);
-		String2SPInstructionType.put( "+*"   , SPType.Binary);
-		String2SPInstructionType.put( "-*"   , SPType.Binary);
 		String2SPInstructionType.put( "map+"    , SPType.Binary);
 		String2SPInstructionType.put( "map-"    , SPType.Binary);
 		String2SPInstructionType.put( "map*"    , SPType.Binary);
@@ -271,6 +269,11 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "ctable", SPType.Ctable);
 		String2SPInstructionType.put( "ctableexpand", SPType.Ctable);
 		
+		//ternary instruction opcodes
+		String2SPInstructionType.put( "+*",     SPType.Ternary);
+		String2SPInstructionType.put( "-*",     SPType.Ternary);
+		String2SPInstructionType.put( "ifelse", SPType.Ternary);
+		
 		//quaternary instruction opcodes
 		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPType.Quaternary);
 		String2SPInstructionType.put( WeightedSquaredLossR.OPCODE, SPType.Quaternary);
@@ -374,12 +377,11 @@ public class SPInstructionParser extends InstructionParser
 				return ReorgSPInstruction.parseInstruction(str);
 				
 			case Binary:
-				String opcode = InstructionUtils.getOpCode(str);
-				if( opcode.equals("+*") || opcode.equals("-*")  )
-					return PlusMultSPInstruction.parseInstruction(str);
-				else
-					return BinarySPInstruction.parseInstruction(str);
-				
+				return BinarySPInstruction.parseInstruction(str);
+			
+			case Ternary:
+				return TernarySPInstruction.parseInstruction(str);
+			
 			//ternary instructions
 			case Ctable:
 				return CtableSPInstruction.parseInstruction(str);

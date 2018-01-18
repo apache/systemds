@@ -17,28 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.ternary;
+package org.apache.sysml.runtime.functionobjects;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.io.Serializable;
 
-/* Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	ABATernaryAggregateTest.class,
-	CentralMomentWeightsTest.class,
-	CovarianceWeightsTest.class,
-	CTableMatrixIgnoreZerosTest.class,
-	CTableSequenceTest.class,
-	FullIfElseTest.class,
-	QuantileWeightsTest.class,
-	TableOutputTest.class,
-	TernaryAggregateTest.class,
-})
+public class IfElse extends TernaryValueFunction implements Serializable
+{
+	private static final long serialVersionUID = -8660124936856173978L;
+	
+	private static IfElse singleObj = null;
 
+	private IfElse() {
+		// nothing to do here
+	}
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
+	public static IfElse getFnObject() {
+		if ( singleObj == null )
+			singleObj = new IfElse();
+		return singleObj;
+	}
+	
+	@Override
+	public double execute(double in1, double in2, double in3) {
+		return (in1 != 0) ? in2 : in3;
+	}
 }

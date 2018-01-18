@@ -78,6 +78,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
@@ -155,6 +156,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixBlock(MatrixBlock that) {
 		copy(that);
+	}
+	
+	public MatrixBlock(double val) {
+		reset(1, 1, false, 1, val);
+		nonZeros = (val != 0) ? 1 : 0;
 	}
 	
 	/**
@@ -2775,6 +2781,49 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//core binary cell operation
 		LibMatrixBincell.bincellOpInPlace(this, that, op);
+	}
+	
+	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret)
+		throws DMLRuntimeException
+	{
+		//TODO perf for special cases like ifelse
+		
+		final int m = Math.max(Math.max(rlen, m2.rlen), m3.rlen);
+		final int n = Math.max(Math.max(clen, m2.clen), m3.clen);
+		
+		//error handling 
+		if( (rlen != 1 && rlen != m) || (clen != 1 && clen != n)
+			|| (m2.rlen != 1 && m2.rlen != m) || (m2.clen != 1 && m2.clen != n)
+			|| (m3.rlen != 1 && m3.rlen != m) || (m3.clen != 1 && m3.clen != n) ) {
+			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
+				+ rlen + "x" + clen + " vs " + m2.rlen + "x" + m2.clen + " vs " + m3.rlen + "x" + m3.clen);
+		}
+		
+		//prepare inputs
+		final boolean s1 = (rlen==1 && clen==1);
+		final boolean s2 = (m2.rlen==1 && m2.clen==1);
+		final boolean s3 = (m3.rlen==1 && m3.clen==1);
+		final double d1 = s1 ? quickGetValue(0, 0) : Double.NaN;
+		final double d2 = s2 ? m2.quickGetValue(0, 0) : Double.NaN;
+		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
+		
+		//prepare result
+		ret.reset(m, n, false);
+		ret.allocateDenseBlock();
+		
+		//basic ternary operations
+		for( int i=0; i<m; i++ )
+			for( int j=0; j<n; j++ ) {
+				double in1 = s1 ? d1 : quickGetValue(i, j);
+				double in2 = s2 ? d2 : m2.quickGetValue(i, j);
+				double in3 = s3 ? d3 : m3.quickGetValue(i, j);
+				ret.appendValue(i, j, op.fn.execute(in1, in2, in3));
+			}
+		
+		//ensure correct output representation
+		ret.examSparsity();
+		
+		return ret;
 	}
 	
 	@Override

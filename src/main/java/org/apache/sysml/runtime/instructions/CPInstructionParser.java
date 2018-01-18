@@ -52,7 +52,7 @@ import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.PlusMultCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuaternaryCPInstruction;
@@ -122,8 +122,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "^2"   , CPType.Binary); //special ^ case
 		String2CPInstructionType.put( "*2"   , CPType.Binary); //special * case
 		String2CPInstructionType.put( "-nz"  , CPType.Binary); //special - case
-		String2CPInstructionType.put( "+*"   , CPType.Binary);
-		String2CPInstructionType.put( "-*"   , CPType.Binary);
 		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPType.Binary);
@@ -197,6 +195,11 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "transformcolmap",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformmeta",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformencode",CPType.MultiReturnParameterizedBuiltin);
+		
+		// Ternary Instruction Opcodes
+		String2CPInstructionType.put( "+*",      CPType.Ternary);
+		String2CPInstructionType.put( "-*",      CPType.Ternary);
+		String2CPInstructionType.put( "ifelse",  CPType.Ternary);
 		
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPType.Variable);
@@ -319,25 +322,24 @@ public class CPInstructionParser extends InstructionParser
 	
 			case AggregateTernary:
 				return AggregateTernaryCPInstruction.parseInstruction(str);
-				
-			case Binary:
-				String opcode = InstructionUtils.getOpCode(str);
-				if( opcode.equals("+*") || opcode.equals("-*")  )
-					return PlusMultCPInstruction.parseInstruction(str);
-				else
-					return BinaryCPInstruction.parseInstruction(str);
 			
-			case Ctable:
-				return CtableCPInstruction.parseInstruction(str);
-			
-			case Quaternary:
-				return QuaternaryCPInstruction.parseInstruction(str);
-				
 			case Unary:
 				return UnaryCPInstruction.parseInstruction(str);
 			
+			case Binary:
+				return BinaryCPInstruction.parseInstruction(str);
+			
+			case Ternary:
+				return TernaryCPInstruction.parseInstruction(str);
+			
+			case Quaternary:
+				return QuaternaryCPInstruction.parseInstruction(str);
+			
 			case BuiltinNary:
 				return BuiltinNaryCPInstruction.parseInstruction(str);
+			
+			case Ctable:
+				return CtableCPInstruction.parseInstruction(str);
 			
 			case Reorg:
 				return ReorgCPInstruction.parseInstruction(str);

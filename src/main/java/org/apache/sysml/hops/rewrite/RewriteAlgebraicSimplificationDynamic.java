@@ -2174,7 +2174,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop fuseAxpyBinaryOperationChain(Hop parent, Hop hi, int pos) 
 	{
-		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY		
+		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY
 		if( hi instanceof BinaryOp && !((BinaryOp) hi).isOuterVectorOperator()
 			&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) )
 		{
@@ -2186,6 +2186,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//pattern (a) X + s*Y -> X +* sY
 			if( bop.getOp() == OpOp2.PLUS && left.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& HopRewriteUtils.isEqualSize(left, right)
 				&& right.getParent().size() == 1 )           //single consumer s*Y
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
@@ -2197,18 +2198,19 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//pattern (b) s*Y + X -> X +* sY
 			else if( bop.getOp() == OpOp2.PLUS && right.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(left)
-				&& left.getParent().size() == 1              //single consumer s*Y
-				&& HopRewriteUtils.isEqualSize(left, right)) //correctness matrix-vector
+				&& HopRewriteUtils.isEqualSize(left, right)
+				&& left.getParent().size() == 1 )            //single consumer s*Y
 			{
 				Hop smid = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
 				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
 						right : HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
-				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");	
+				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");
 			}
 			//pattern (c) X - s*Y -> X -* sY
 			else if( bop.getOp() == OpOp2.MINUS && left.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& HopRewriteUtils.isEqualSize(left, right)
 				&& right.getParent().size() == 1 )           //single consumer s*Y
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 

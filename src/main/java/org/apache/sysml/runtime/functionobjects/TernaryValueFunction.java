@@ -17,28 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.ternary;
+package org.apache.sysml.runtime.functionobjects;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.io.Serializable;
 
-/* Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	ABATernaryAggregateTest.class,
-	CentralMomentWeightsTest.class,
-	CovarianceWeightsTest.class,
-	CTableMatrixIgnoreZerosTest.class,
-	CTableSequenceTest.class,
-	FullIfElseTest.class,
-	QuantileWeightsTest.class,
-	TableOutputTest.class,
-	TernaryAggregateTest.class,
-})
+import org.apache.sysml.runtime.DMLRuntimeException;
 
-
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
+public abstract class TernaryValueFunction extends ValueFunction implements Serializable
+{
+	private static final long serialVersionUID = 4837616587192612216L;
+	
+	public abstract double execute ( double in1, double in2, double in3 )
+		throws DMLRuntimeException;
 }

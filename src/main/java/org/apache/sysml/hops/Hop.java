@@ -40,6 +40,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.Nary;
 import org.apache.sysml.lops.ReBlock;
+import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.Unary;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -1074,7 +1075,7 @@ public abstract class Hop implements ParseInfo
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT, IFELSE
 	}
 	
 	// Operations that require 4 operands
@@ -1349,6 +1350,14 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
+	protected static final HashMap<OpOp3, Ternary.OperationType> HopsOpOp3Lops;
+	static {
+		HopsOpOp3Lops = new HashMap<>();
+		HopsOpOp3Lops.put(OpOp3.PLUS_MULT, Ternary.OperationType.PLUS_MULT);
+		HopsOpOp3Lops.put(OpOp3.MINUS_MULT, Ternary.OperationType.MINUS_MULT);
+		HopsOpOp3Lops.put(OpOp3.IFELSE, Ternary.OperationType.IFELSE);
+	}
+	
 	/**
 	 * Maps from a multiple (variable number of operands) Hop operation type to
 	 * the corresponding Lop operation type. This is called in the MultipleOp

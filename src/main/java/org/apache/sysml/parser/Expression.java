@@ -90,6 +90,7 @@ public abstract class Expression implements ParseInfo
 		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD,
 		EXP,
 		FLOOR,
+		IFELSE,
 		INTERQUANTILE,
 		INVERSE,
 		IQM,

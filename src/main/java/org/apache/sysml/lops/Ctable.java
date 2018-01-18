@@ -53,7 +53,7 @@ public class Ctable extends Lop
 	}
 	
 	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
-		super(Lop.Type.Ternary, dt, vt);
+		super(Lop.Type.Ctable, dt, vt);
 		init(inputLops, op, et);
 		_ignoreZeros = ignoreZeros;
 	}

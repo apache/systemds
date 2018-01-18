@@ -54,6 +54,7 @@ import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MapMultChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
 import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
+import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
@@ -395,7 +396,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				vs[0] = stats[ binst.input1 ];
 				vs[1] = stats[ binst.input2 ];
 				vs[2] = stats[ binst.output ];
-								
+				
 				if( vs[0] == null ) //scalar input, 
 					vs[0] = _scalarStats;
 				if( vs[1] == null ) //scalar input, 
@@ -407,6 +408,19 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					RemoveEmptyMRInstruction rbinst = (RemoveEmptyMRInstruction) mrinst;
 					attr = new String[]{rbinst.isRemoveRows()?"0":"1"};
 				}
+			}
+			else if( mrinst instanceof TernaryInstruction ) {
+				TernaryInstruction tinst = (TernaryInstruction) mrinst;
+				byte[] ix = tinst.getAllIndexes();
+				for(int i=0; i<ix.length-1; i++)
+					vs[0] = stats[ ix[i] ];
+				vs[2] = stats[ ix[ix.length-1] ];
+				if( vs[0] == null ) //scalar input,
+					vs[0] = _scalarStats;
+				if( vs[1] == null ) //scalar input,
+					vs[1] = _scalarStats;
+				if( vs[2] == null ) //scalar output
+					vs[2] = _scalarStats;
 			}
 			else if( mrinst instanceof CtableInstruction )
 			{
@@ -884,6 +898,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else
 						return d3m*d3n;
 				
+				case Ternary: //opcodes: +*, -*, ifelse
+					return 2 * d1m * d1n;
+					
 				case Ctable: //opcodes: ctable
 					if( optype.equals("ctable") ){
 						if( leftSparse )

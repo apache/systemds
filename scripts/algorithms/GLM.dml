@@ -1062,14 +1062,8 @@ get_trust_boundary_point =
     f_extra = 0.5 * sum (z * (r + g));
     f_change_1 = f_extra + (0.5 * tau_1 * pq + zq + gp) * tau_1;
     f_change_2 = f_extra + (0.5 * tau_2 * pq + zq + gp) * tau_2;
-    if (f_change_1 < f_change_2) {
-        new_z = z + (tau_1 * p);
-        f_change = f_change_1;
-    }
-    else {
-        new_z = z + (tau_2 * p);
-        f_change = f_change_2;
-    }
+    new_z = z + ifelse(f_change_1<f_change_2, tau_1, tau_2) * p;
+    f_change = min(f_change_1, f_change_2);
 }
 
 

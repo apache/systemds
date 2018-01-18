@@ -287,29 +287,16 @@ while (! converge)
 	}
 
 	alpha2 = obj_new - obj - gs;
-	if (alpha2 <= 0) {
-	   alpha = sigma3;
-	} 
-	else {
-	   alpha = max (sigma1, -0.5 * gs / alpha2);
-	}
+    alpha = ifelse(alpha2 <= 0, sigma3, max(sigma1, -0.5 * gs / alpha2));
 	
-	if (rho < eta0) {
-		delta = min (max (alpha, sigma1) * snorm, sigma2 * delta);
-	}
-	else {
-		if (rho < eta1) {
-			delta = max (sigma1 * delta, min (alpha * snorm, sigma2 * delta));
-		}
-		else { 
-			if (rho < eta2) {
-				delta = max (sigma1 * delta, min (alpha * snorm, sigma3 * delta));
-			}
-			else {
-				delta = max (delta, min (alpha * snorm, sigma3 * delta));
-			}
-		}
-	} 
+    if (rho < eta0)
+        delta = min (max (alpha, sigma1) * snorm, sigma2 * delta);
+    else if (rho < eta1)
+        delta = max (sigma1 * delta, min (alpha * snorm, sigma2 * delta));
+    else if (rho < eta2)
+        delta = max (sigma1 * delta, min (alpha * snorm, sigma3 * delta));
+    else
+        delta = max (delta, min (alpha * snorm, sigma3 * delta));
 	
 	if (is_trust_boundary_reached == 1)
 	{

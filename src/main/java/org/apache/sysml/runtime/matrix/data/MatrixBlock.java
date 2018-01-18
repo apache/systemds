@@ -2788,17 +2788,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//TODO perf for special cases like ifelse
 		
-		final int m = Math.max(Math.max(rlen, m2.rlen), m3.rlen);
-		final int n = Math.max(Math.max(clen, m2.clen), m3.clen);
-		
-		//error handling 
-		if( (rlen != 1 && rlen != m) || (clen != 1 && clen != n)
-			|| (m2.rlen != 1 && m2.rlen != m) || (m2.clen != 1 && m2.clen != n)
-			|| (m3.rlen != 1 && m3.rlen != m) || (m3.clen != 1 && m3.clen != n) ) {
-			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
-				+ rlen + "x" + clen + " vs " + m2.rlen + "x" + m2.clen + " vs " + m3.rlen + "x" + m3.clen);
-		}
-		
 		//prepare inputs
 		final boolean s1 = (rlen==1 && clen==1);
 		final boolean s2 = (m2.rlen==1 && m2.clen==1);
@@ -2806,6 +2795,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final double d1 = s1 ? quickGetValue(0, 0) : Double.NaN;
 		final double d2 = s2 ? m2.quickGetValue(0, 0) : Double.NaN;
 		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
+		final int m = Math.max(Math.max(rlen, m2.rlen), m3.rlen);
+		final int n = Math.max(Math.max(clen, m2.clen), m3.clen);
+		
+		//error handling 
+		if( (!s1 && (rlen != m || clen != n))
+			|| (!s2 && (m2.rlen != m || m2.clen != n))
+			|| (!s3 && (m3.rlen != m || m3.clen != n)) ) {
+			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
+				+ rlen + "x" + clen + " vs " + m2.rlen + "x" + m2.clen + " vs " + m3.rlen + "x" + m3.clen);
+		}
 		
 		//prepare result
 		ret.reset(m, n, false);

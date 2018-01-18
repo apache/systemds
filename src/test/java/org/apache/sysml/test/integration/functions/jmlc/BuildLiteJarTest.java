@@ -27,7 +27,7 @@ public class BuildLiteJarTest extends AutomatedTestBase
 {
 	@Override
 	public void setUp() {
-		//do nothing
+		BuildLiteExecution.setRootPrefix(baseDirectory);
 	}
 	
 	@Test
@@ -79,5 +79,10 @@ public class BuildLiteJarTest extends AutomatedTestBase
 	@Test
 	public void testJMLCTests() throws Exception {
 		BuildLiteExecution.jmlcTests();
+	}
+	
+	@Override
+	public void tearDown() {
+		BuildLiteExecution.setRootPrefix(null);
 	}
 }

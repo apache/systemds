@@ -207,7 +207,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			if(isSparseFilter && 
-				(OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0)) < intermediateMemoryBudget) {
+				(OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0)) < 
+					Math.min(LibMatrixCuDNNConvolutionAlgorithm.MAX_WORKSPACE_LIMIT_BYTES, intermediateMemoryBudget)) {
 				// Sparse filter conv2d
 				// Perform dense im2col
 				Pointer im2colPointer = denseIm2col(gCtx, instName, image, isSparseImage,

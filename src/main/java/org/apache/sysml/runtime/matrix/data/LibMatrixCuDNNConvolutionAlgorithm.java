@@ -57,7 +57,7 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
  */
 public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseable {
 	// Limit the workspace available to cudnn convolution operation to 1 GB
-	private static long MAX_WORKSPACE_LIMIT_BYTES = (long) 1e+9;
+	static long MAX_WORKSPACE_LIMIT_BYTES = (long) 1e+9;
 	
 	public int algo = -1;
 	public Pointer workSpace = new Pointer();

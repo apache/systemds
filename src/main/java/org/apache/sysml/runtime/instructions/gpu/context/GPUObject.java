@@ -514,6 +514,57 @@ public class GPUObject {
 		boolean isEmptyAndSparseAndAllocated = isSparseAndAllocated && getJcudaSparseMatrixPtr().nnz == 0;
 		return isEmptyAndSparseAndAllocated;
 	}
+		
+	/**
+	 * Being allocated is a prerequisite for computing nnz.
+	 * Note: if the matrix is in dense format, it explicitly re-computes the number of nonzeros.
+	 *
+	 * @param instName instruction name
+	 * @param recomputeDenseNNZ recompute NNZ if dense
+	 * @return the number of nonzeroes
+	 * @throws DMLRuntimeException if error
+	 */
+	public long getNnz(String instName, boolean recomputeDenseNNZ) throws DMLRuntimeException {
+		if(isAllocated()) {
+			if(LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat)) {
+				return getJcudaSparseMatrixPtr().nnz;
+			}
+			else {
+				if(!recomputeDenseNNZ)
+					return -1;
+				
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				GPUContext gCtx = getGPUContext();
+				cusparseHandle cusparseHandle = gCtx.getCusparseHandle();
+				cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
+				if (cusparseHandle == null)
+					throw new DMLRuntimeException("Expected cusparse to be initialized");
+				int rows = toIntExact(mat.getNumRows());
+				int cols = toIntExact(mat.getNumColumns());
+				Pointer nnzPerRowPtr = null;
+				Pointer nnzTotalDevHostPtr = null;
+				gCtx.ensureFreeSpace(getIntSizeOf(rows + 1));
+				nnzPerRowPtr = gCtx.allocate(getIntSizeOf(rows));
+				nnzTotalDevHostPtr = gCtx.allocate(getIntSizeOf(1));
+				LibMatrixCUDA.cudaSupportFunctions.cusparsennz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, rows, cols, matDescr, getJcudaDenseMatrixPtr(), rows,
+						nnzPerRowPtr, nnzTotalDevHostPtr);
+				int[] nnzC = { -1 };
+				cudaMemcpy(Pointer.to(nnzC), nnzTotalDevHostPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
+				if (nnzC[0] == -1) {
+					throw new DMLRuntimeException(
+							"cusparseDnnz did not calculate the correct number of nnz on the GPU");
+				}
+				gCtx.cudaFreeHelper(nnzPerRowPtr);
+				gCtx.cudaFreeHelper(nnzTotalDevHostPtr);
+				if(DMLScript.FINEGRAINED_STATISTICS) {
+					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
+			}
+				return nnzC[0];
+			}
+		}
+		else 
+			throw new DMLRuntimeException("Expected the GPU object to be allocated");
+	}
 
 	public boolean acquireDeviceRead(String opcode) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {

@@ -634,20 +634,27 @@ public class LibMatrixDNNConv2d
 			LibMatrixMult.vectAddInPlace(bias[k], out, cix, PQ);
 	}
 	
+	// ----------------------------------------------------------------------------------------------
+	// TODO: Support sparse native convolution operations without dense intermediates + dense matmult
+	// Currently, it will fall back to more optimized sparse Java-based operators.
 	private static boolean isEligibleForConv2dBackwardFilterSparseDense(ConvolutionParameters params) {
 		// NativeHelper.conv2dBackwardFilterSparseDense only if input is sparse. 
 		// dout converted to dense if sparse.
-		return params.enableNative && params.input1.isInSparseFormat();
+		// return params.enableNative && params.input1.isInSparseFormat();
+		return false;
 	}
 	
 	private static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
 		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
-		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
+		// return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
+		return false;
 	}
 	
 	private static boolean isEligibleForConv2dBackwardDataDense(ConvolutionParameters params) {
 		// NativeHelper.conv2dBackwardDataDense only if filter is dense. 
 		// dout converted to dense if sparse.
-		return params.enableNative && !params.input1.isInSparseFormat();
+		// return params.enableNative && !params.input1.isInSparseFormat();
+		return false;
 	}
+	// ----------------------------------------------------------------------------------------------
 }

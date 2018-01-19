@@ -192,6 +192,25 @@ public class LibMatrixCUDA {
 			return mo.getGPUObject(gCtx).isSparse();
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 	}
+	
+	/**
+	 * Note: if the matrix is in dense format, it explicitly re-computes the number of nonzeros.
+	 * 
+	 * @param gCtx a valid GPU context
+	 * @param instName instruction name
+	 * @param mo matrix object
+	 * @param recomputeDenseNNZ recompute NNZ if dense
+	 * @return number of non-zeroes
+	 * @throws DMLRuntimeException if error
+	 */
+	public static long getNnz(GPUContext gCtx, String instName, MatrixObject mo, boolean recomputeDenseNNZ) throws DMLRuntimeException {
+		if(mo.getGPUObject(gCtx) != null && mo.getGPUObject(gCtx).isAllocated()) {
+			return mo.getGPUObject(gCtx).getNnz(instName, recomputeDenseNNZ);
+		}
+		else {
+			return mo.getNnz();
+		}
+	}
 
 
 	protected static cusparseHandle getCusparseHandle(GPUContext gCtx) throws DMLRuntimeException{

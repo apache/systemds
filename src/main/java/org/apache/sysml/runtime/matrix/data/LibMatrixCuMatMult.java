@@ -268,7 +268,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * @throws DMLRuntimeException
 	 *             if error
 	 */
-	private static void sparseDenseMatMult(GPUContext gCtx, String instName, Pointer C, CSRPointer A, Pointer B,
+	static void sparseDenseMatMult(GPUContext gCtx, String instName, Pointer C, CSRPointer A, Pointer B,
 			long leftNumRows, long leftNumColumns, long rightNumRows, long rightNumColumns, long outRLen, long outCLen,
 			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
 		// t(C) = t(B) %*% t(A)

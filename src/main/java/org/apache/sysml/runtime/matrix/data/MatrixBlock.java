@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.Divide;
+import org.apache.sysml.runtime.functionobjects.IfElse;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
@@ -2786,8 +2787,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret)
 		throws DMLRuntimeException
 	{
-		//TODO perf for special cases like ifelse
-		
 		//prepare inputs
 		final boolean s1 = (rlen==1 && clen==1);
 		final boolean s2 = (m2.rlen==1 && m2.clen==1);
@@ -2797,6 +2796,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
 		final int m = Math.max(Math.max(rlen, m2.rlen), m3.rlen);
 		final int n = Math.max(Math.max(clen, m2.clen), m3.clen);
+		final long nnz = nonZeros;
 		
 		//error handling 
 		if( (!s1 && (rlen != m || clen != n))
@@ -2808,19 +2808,41 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//prepare result
 		ret.reset(m, n, false);
-		ret.allocateDenseBlock();
 		
-		//basic ternary operations
-		for( int i=0; i<m; i++ )
-			for( int j=0; j<n; j++ ) {
-				double in1 = s1 ? d1 : quickGetValue(i, j);
-				double in2 = s2 ? d2 : m2.quickGetValue(i, j);
-				double in3 = s3 ? d3 : m3.quickGetValue(i, j);
-				ret.appendValue(i, j, op.fn.execute(in1, in2, in3));
+		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) )
+		{
+			//special case for shallow-copy if-else
+			boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
+			MatrixBlock tmp = expr ? m2 : m3;
+			if( tmp.rlen==m && tmp.clen==n ) {
+				//shallow copy incl meta data
+				ret.copyShallow(tmp);
 			}
-		
-		//ensure correct output representation
-		ret.examSparsity();
+			else {
+				//fill output with given scalar value
+				double tmpVal = tmp.quickGetValue(0, 0);
+				if( tmpVal != 0 ) {
+					ret.allocateDenseBlock();
+					ret.denseBlock.set(tmpVal);
+					ret.nonZeros = (long)m * n;
+				}
+			}
+		}
+		else {
+			ret.allocateDenseBlock();
+			
+			//basic ternary operations
+			for( int i=0; i<m; i++ )
+				for( int j=0; j<n; j++ ) {
+					double in1 = s1 ? d1 : quickGetValue(i, j);
+					double in2 = s2 ? d2 : m2.quickGetValue(i, j);
+					double in3 = s3 ? d3 : m3.quickGetValue(i, j);
+					ret.appendValue(i, j, op.fn.execute(in1, in2, in3));
+				}
+			
+			//ensure correct output representation
+			ret.examSparsity();
+		}
 		
 		return ret;
 	}

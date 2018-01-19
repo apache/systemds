@@ -160,6 +160,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryCumulativeOp(hop, hi, i);   //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if dims(in)==dims(out); r(X)->X, if 1x1 dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
+			hi = removeUnnecessaryIfElseOperation(hop, hi, i);//e.g., ifelse(E, A, B) -> A, if E==TRUE or nnz(E)==length(E)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
@@ -443,6 +444,48 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = hnew;
 				LOG.debug("Applied removeUnnecessaryOuterProduct3 (line "+right.getBeginLine()+")");
 			}
+		}
+		
+		return hi;
+	}
+	
+	private static Hop removeUnnecessaryIfElseOperation(Hop parent, Hop hi, int pos) throws HopsException
+	{
+		if( !HopRewriteUtils.isTernary(hi, OpOp3.IFELSE) )
+			return hi;
+		
+		Hop expr = hi.getInput().get(0);
+		Hop first = hi.getInput().get(1);
+		Hop second = hi.getInput().get(2);
+		boolean applied = false;
+		
+		//pattern 1: ifelse(TRUE/FALSE, A, B) -> A/B (constant scalar predicate)
+		if( expr instanceof LiteralOp ) {
+			Hop hnew = ((LiteralOp)expr).getBooleanValue() ? first : second;
+			if( HopRewriteUtils.isEqualSize(hnew, hi) ) {
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos );
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied removeUnnecessaryIfElse1 (line "+hi.getBeginLine()+")");
+				hi = hnew; applied = true;
+			}
+		}
+		//pattern 2: ifelse(E, A, B) -> A/B if nnz(E)==length(E) or nnz(E)==0 (constant matrix predicate)
+		if( !applied && expr.getNnz()==expr.getLength() || expr.getNnz()==0 ) {
+			Hop hnew = expr.getNnz()==0 ? second : first;
+			if( HopRewriteUtils.isEqualSize(hnew, hi) ) {
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos );
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied removeUnnecessaryIfElse2 (line "+hi.getBeginLine()+")");
+				hi = hnew; applied = true;
+			}
+		}
+		//pattern 3: ifelse(E, A, A) -> A (same input)
+		if( !applied && first == second  //dep CSE
+			&& HopRewriteUtils.isEqualSize(first, hi) ){
+			HopRewriteUtils.replaceChildReference(parent, hi, first, pos );
+			HopRewriteUtils.cleanupUnreferenced(hi);
+			LOG.debug("Applied removeUnnecessaryIfElse3 (line "+hi.getBeginLine()+")");
+			hi = first;
 		}
 		
 		return hi;

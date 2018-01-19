@@ -1477,6 +1477,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
 		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
+		HopsOpOp3String.put(OpOp3.IFELSE, "ifelse");
 	}
 	
 	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;

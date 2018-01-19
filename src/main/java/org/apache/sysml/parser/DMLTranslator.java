@@ -1215,6 +1215,13 @@ public class DMLTranslator
 						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
 						printHop.setParseInfo(current);
 						output.add(printHop);
+					} else if (ptype == PRINTTYPE.ASSERT) {
+						Hop.OpOp1 op = Hop.OpOp1.ASSERT;
+						Expression source = ps.getExpressions().get(0);
+						Hop ae = processExpression(source, target, ids);
+						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
+						printHop.setParseInfo(current);
+						output.add(printHop);
 					} else if (ptype == PRINTTYPE.STOP) {
 						Hop.OpOp1 op = Hop.OpOp1.STOP;
 						Expression source = ps.getExpressions().get(0);

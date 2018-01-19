@@ -938,6 +938,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				case NCOL:
 				case NROW:
 				case PRINT:
+				case ASSERT:
 				case CAST_AS_BOOLEAN:
 				case CAST_AS_DOUBLE:
 				case CAST_AS_INT:

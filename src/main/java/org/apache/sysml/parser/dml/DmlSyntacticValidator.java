@@ -477,6 +477,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		Set<String> printStatements = new  HashSet<>();
 		printStatements.add("print");
 		printStatements.add("stop");
+		printStatements.add("assert");
 
 		Set<String> outputStatements = new HashSet<>();
 		outputStatements.add("write");

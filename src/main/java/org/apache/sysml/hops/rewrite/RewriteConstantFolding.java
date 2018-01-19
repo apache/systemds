@@ -260,7 +260,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
-				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT 
+				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT
+				&& ((UnaryOp)hop).getOp() != OpOp1.ASSERT
 				&& ((UnaryOp)hop).getOp() != OpOp1.STOP
 				&& hop.getDataType() == DataType.SCALAR);
 	}

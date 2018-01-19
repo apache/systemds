@@ -468,6 +468,10 @@ public class ParForStatementBlock extends ForStatementBlock
 					raiseValidateError("PARFOR loop dependency analysis: " +
 					                   "stop() statement is not allowed inside a parfor loop body." , false);
 				}
+				else if( s instanceof PrintStatement && ((PrintStatement)s).getType() == PRINTTYPE.ASSERT ) {
+					raiseValidateError("PARFOR loop dependency analysis: " +
+					                   "assert() statement is not allowed inside a parfor loop body." , false);
+				}
 				else
 				{
 					VariableSet vsUpdated = s.variablesUpdated();

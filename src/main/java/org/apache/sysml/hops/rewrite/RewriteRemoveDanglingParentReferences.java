@@ -108,6 +108,7 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 		return (hop instanceof DataOp && ((DataOp)hop).isWrite())
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.STOP)
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.PRINT)
+			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.ASSERT)
 			|| (hop instanceof NaryOp && ((NaryOp)hop).getOp()==OpOpN.PRINTF)
 			|| (hop instanceof FunctionOp)
 			|| (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.FUNCTIONOUTPUT);

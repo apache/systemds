@@ -36,7 +36,7 @@ public class PrintStatement extends Statement
 	 * built-in function.
 	 */
 	public enum PRINTTYPE {
-		PRINT, PRINTF, STOP
+		PRINT, PRINTF, STOP, ASSERT
 	}
 
 	protected PRINTTYPE _type; // print, printf, or stop
@@ -49,6 +49,9 @@ public class PrintStatement extends Statement
 			} else {
 				return PRINTTYPE.PRINTF;
 			}
+		}
+		else if (type.equalsIgnoreCase("assert")) {
+			return PRINTTYPE.ASSERT;
 		}
 		else if (type.equalsIgnoreCase("stop")) {
 			return PRINTTYPE.STOP;
@@ -105,7 +108,7 @@ public class PrintStatement extends Statement
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_type + "(");
-		if ((_type == PRINTTYPE.PRINT) || (_type == PRINTTYPE.STOP)) {
+		if ((_type == PRINTTYPE.PRINT) || (_type == PRINTTYPE.STOP) || (_type == PRINTTYPE.ASSERT)) {
 			Expression expression = expressions.get(0);
 			if (expression instanceof StringIdentifier) {
 				sb.append("\"");

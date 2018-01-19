@@ -59,6 +59,13 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 		else if ( opcode.equalsIgnoreCase("stop") ) {
 			throw new DMLScriptException(so.getStringValue());
 		}
+		else if ( opcode.equalsIgnoreCase("assert") ) {
+			sores = new BooleanObject(so.getBooleanValue());
+			if(!so.getBooleanValue()) {
+				String fileName = this.getFilename() == null ? "" : this.getFilename() + " "; 
+				throw new DMLScriptException("assertion failed at " + fileName  + this.getBeginLine() + ":" + this.getBeginColumn() + "-" + this.getEndLine() + ":" + this.getEndColumn());
+			}
+		}
 		else {
 			UnaryOperator dop = (UnaryOperator) _optr;
 			if ( so instanceof IntObject && output.getValueType() == ValueType.INT )

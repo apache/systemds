@@ -165,6 +165,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "sqrt"  , CPType.Unary);
 		String2CPInstructionType.put( "plogp" , CPType.Unary);
 		String2CPInstructionType.put( "print" , CPType.Unary);
+		String2CPInstructionType.put( "assert" , CPType.Unary);
 		String2CPInstructionType.put( "round" , CPType.Unary);
 		String2CPInstructionType.put( "ceil"  , CPType.Unary);
 		String2CPInstructionType.put( "floor" , CPType.Unary);

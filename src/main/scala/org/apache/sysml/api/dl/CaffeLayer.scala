@@ -43,21 +43,7 @@ trait CaffeLayer extends BaseDMLGenerator {
   }
   // -------------------------------------------------
   var debugLayer = false
-  def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String, optionalString:String=""):Unit = {
-    if(debugLayer) {
-      val msg = " in " + sourceFileName + "(" + optionalString + ") script."
-      if(expectedNumRows != null) {
-        dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
-        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + msg + " Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
-        dmlScript.append("\n}\n")
-      }
-      if(expectedNumCols != null) {
-        dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
-        dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + msg + " Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
-        dmlScript.append("\n}\n")
-      }
-    }
-  }
+  var caffe2dmlObj:Caffe2DML = null
   var computedBottomLayerOutputShape: (String, String, String) = null
   def bottomLayerOutputShape: (String, String, String) = {
     if (computedBottomLayerOutputShape == null) {
@@ -868,13 +854,12 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - out: Outputs, of shape (N, M).
    */
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
-    val D = numFeatures
-    val M = numNeurons
-    validateDimensions(dmlScript, X, null, D)
-    validateDimensions(dmlScript, weight, D, M, "forward")
-    validateDimensions(dmlScript, bias, "1", M)
+    if(debugLayer && caffe2dmlObj != null && !caffe2dmlObj.containsParfor) {
+      dmlScript.append("assert(ncol(" + X + ") == nrow(" + weight + ") | ncol(" + weight + ") == ncol(" + bias + ")); ")
+    }
     invokeForward(dmlScript, List[String](out), X, weight, bias)
   }
+    
   /*
    * Computes the backward pass for a fully-connected (affine) layer
    * with M neurons.
@@ -890,15 +875,9 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - dW: Gradient wrt `W`, of shape (D, M).
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
-    val D = numFeatures
-    val M = numNeurons
-    validateDimensions(dmlScript, dout, null, M)
-    validateDimensions(dmlScript, X, null, D)
-    validateDimensions(dmlScript, weight, D, M, "backward")
-    validateDimensions(dmlScript, bias, "1", M)
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = 
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
-  }
+  
   // -------------------------------------------------
   // num_output (c_o): the number of filters
   def numNeurons  = param.getInnerProductParam.getNumOutput.toString
@@ -970,34 +949,12 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     val N:String = null // output_features.toString
     val T = timesteps()
     val D = input_features()
-    validateDimensions(dmlScript, X, N, T + "*" + D)
-    validateDimensions(dmlScript, out0, N, M)
-    validateDimensions(dmlScript, c0, N, M)
-    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
-    // This validates whether the output is of correct dimensions
-    validateDimensions(dmlScript, out, null, int_mult(outputShape._1, outputShape._2, outputShape._3))
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
     val T = timesteps()
     val D = input_features()
-    if(return_sequences) {
-      validateDimensions(dmlScript, dout, null, T + "*" + M)
-    }
-    else {
-      validateDimensions(dmlScript, dout, null, M)
-    }
-    validateDimensions(dmlScript, dc0, null, M)
-    validateDimensions(dmlScript, X, null, T + "*" + D)
-    validateDimensions(dmlScript, out0, null, M)
-    validateDimensions(dmlScript, c0, null, M)
-    validateDimensions(dmlScript, cache_out, T, null)
-    validateDimensions(dmlScript, cache_c, T, null)
-    validateDimensions(dmlScript, cache_ifog, T, null)
-    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
         T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }

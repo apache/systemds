@@ -155,6 +155,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _splitDag;
 	}
 
+	private boolean isMergeablePrintStatement(Statement stmt) {
+		return ( stmt instanceof PrintStatement && (((PrintStatement)stmt).getType() == PRINTTYPE.STOP || ((PrintStatement)stmt).getType() == PRINTTYPE.ASSERT) );
+	}
 
     public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) throws LanguageException{
 
@@ -167,7 +170,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement
-			|| stmt instanceof FunctionStatement || ( stmt instanceof PrintStatement && ((PrintStatement)stmt).getType() == PRINTTYPE.STOP )/*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) /*|| stmt instanceof ELStatement*/ )
 		{
 			return false;
 		}

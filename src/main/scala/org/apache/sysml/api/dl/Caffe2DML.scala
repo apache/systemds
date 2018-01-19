@@ -305,6 +305,7 @@ class Caffe2DML(val sc: SparkContext,
 
   // TODO: throw error or warning if user tries to set solver_mode == GPU instead of using setGPU method
 
+  def containsParfor():Boolean = getTrainAlgo.toLowerCase.startsWith("allreduce") || getTestAlgo.toLowerCase.startsWith("allreduce")
   def getTrainAlgo(): String = if (inputs.containsKey("$train_algo")) inputs.get("$train_algo") else "minibatch"
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
 
@@ -360,6 +361,7 @@ class Caffe2DML(val sc: SparkContext,
   
   def setDebugFlags(isDebug:Boolean):Unit = {
     net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
+    net.getLayers.map(layer => {net.getCaffeLayer(layer).caffe2dmlObj = this})
   }
 
   // ================================================================================================

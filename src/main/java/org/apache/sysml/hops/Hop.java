@@ -1051,7 +1051,7 @@ public abstract class Hop implements ParseInfo
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
+		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		SVD,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
@@ -1344,6 +1344,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysml.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysml.lops.UnaryCP.OperationTypes.LENGTH);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysml.lops.UnaryCP.OperationTypes.PRINT);
+		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.apache.sysml.lops.UnaryCP.OperationTypes.ASSERT);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysml.lops.UnaryCP.OperationTypes.ROUND);
 		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.apache.sysml.lops.UnaryCP.OperationTypes.CEIL);
 		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.apache.sysml.lops.UnaryCP.OperationTypes.FLOOR);
@@ -1389,6 +1390,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp12String.put(OpOp1.NOT, "!");
 		HopsOpOp12String.put(OpOp1.NROW, "nrow");
 		HopsOpOp12String.put(OpOp1.PRINT, "print");
+		HopsOpOp12String.put(OpOp1.ASSERT, "assert");
 		HopsOpOp12String.put(OpOp1.ROUND, "round");
 		HopsOpOp12String.put(OpOp1.SIN, "sin");
 		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");

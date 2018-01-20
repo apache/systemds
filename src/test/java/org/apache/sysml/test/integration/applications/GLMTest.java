@@ -348,7 +348,7 @@ public abstract class GLMTest extends AutomatedTestBase
         	//of rows if these rewrites are enabled. Users can turn off rewrites if high accuracy is required. 
         	//However, in the future we might also consider to use Kahan plus for aggregations in matrix mult 
         	//(at least for the final aggregation of partial results from individual threads).
-        	eps = 0.0000016; //1.6x the error threshold
+        	eps = 0.000002; //2x the error threshold
         }		
         TestUtils.compareMatrices (wR, wSYSTEMML, eps * max_abs_beta, "wR", "wSYSTEMML");
     }

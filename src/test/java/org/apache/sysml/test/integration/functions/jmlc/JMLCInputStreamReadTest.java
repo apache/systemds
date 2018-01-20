@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.parser.Expression.DataType;
@@ -41,6 +42,7 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
+@Ignore
 public class JMLCInputStreamReadTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "jmlc";

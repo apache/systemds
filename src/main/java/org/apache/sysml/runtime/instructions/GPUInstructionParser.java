@@ -103,6 +103,8 @@ public class GPUInstructionParser  extends InstructionParser
 
 		// Binary Builtin functions
 		String2GPUInstructionType.put( "solve", GPUINSTRUCTION_TYPE.BuiltinBinary);
+		String2GPUInstructionType.put( "min", GPUINSTRUCTION_TYPE.BuiltinBinary);
+		String2GPUInstructionType.put( "max", GPUINSTRUCTION_TYPE.BuiltinBinary);
 
 		// Aggregate Unary
 		String2GPUInstructionType.put( "ua+"     , GPUINSTRUCTION_TYPE.AggregateUnary); // Sum

@@ -161,7 +161,7 @@ public class BinaryOp extends Hop
 				OpOp2 [] supportedOps = { OpOp2.MULT, OpOp2.PLUS, OpOp2.MINUS, OpOp2.DIV, OpOp2.POW, OpOp2.MINUS1_MULT, 
 						OpOp2.MODULUS, OpOp2.INTDIV, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
 			
-				if(isMatrixScalar && op == OpOp2.MINUS_NZ) {
+				if(isMatrixScalar && (op == OpOp2.MINUS_NZ || op == OpOp2.MIN || op == OpOp2.MAX)) {
 					// Only supported for matrix scalar:
 					return true;
 				}

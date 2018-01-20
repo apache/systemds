@@ -61,6 +61,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
@@ -1310,7 +1311,7 @@ public class LibMatrixCUDA {
 	 * @param op                operator
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
+	public static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
 			ScalarOperator op) throws DMLRuntimeException {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
@@ -1604,6 +1605,8 @@ public class LibMatrixCUDA {
 		else if(fn instanceof MinusNz) return 16;
 		else if(fn instanceof Modulus) return 17;
 		else if(fn instanceof IntegerDivide) return 18;
+		else if(fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MIN) return 11;
+		else if(fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MAX) return 12;
 
 		throw new DMLRuntimeException("The given value function is not supported:" + fn.getClass().getName());
 	}

@@ -47,25 +47,25 @@ X = X * maxFeatureValue
 w = Rand(rows=numFeatures, cols=1, min=-1, max=1, pdf="uniform", seed=0)
 w = w * maxWeight
 
-ot=X%*%w
-if(b!=0) {
+ot = X %*% w
+if( b != 0) {
 	b_mat = Rand(rows=1, cols=1, min=b, max=b, pdf="uniform")
-	w =  t(cbind(t(w), b_mat))
+	w =  rbind(w, t(b_mat))
 	ot = ot + b
 }
 
-prob = 1/(1+exp(-ot))
-if(addNoise == 1){
+prob = 1 / (1 + exp(-ot))
+if( addNoise == 1 ){
 	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
-}else{
+} 
+else {
 	print("this data generator generates the same dataset for both noise=0 and noise=1")
 	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
-	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
 }
+
 Y = 1 - 2 * (prob < r)
-if( $12 == 1 ) {
-  Y = (Y+3)/2;
-}
+if( $12 == 1 )
+  Y = (Y + 3) / 2
 
 write(w, $5, format=$11)
 write(X, $6, format=$11)

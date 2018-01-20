@@ -28,6 +28,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	AlgorithmARIMA.class,
 	AlgorithmAutoEncoder.class,
+	AlgorithmDatagen.class,
 	AlgorithmGLM.class,
 	AlgorithmKMeans.class,
 	AlgorithmL2SVM.class,

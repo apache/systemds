@@ -164,10 +164,24 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 	}
 	
-	private static boolean isInputReLU(Hop input) {
-		return HopRewriteUtils.isBinary(input, OpOp2.MAX)
-			&& (HopRewriteUtils.isLiteralOfValue(input.getInput().get(0), 0)
-			|| HopRewriteUtils.isLiteralOfValue(input.getInput().get(1), 0));
+	/**
+	 * Returns parent matrix X or null
+	 * @param input input hop
+	 * @return either null or X if input is max(X,0) or max(0,X)
+	 */
+	private static Hop isInputReLU(Hop input) {
+		if(HopRewriteUtils.isBinary(input, OpOp2.MAX)) {
+			if(HopRewriteUtils.isLiteralOfValue(input.getInput().get(0), 0)) {
+				return input.getInput().get(1);
+			}
+			else if(HopRewriteUtils.isLiteralOfValue(input.getInput().get(1), 0)) {
+				return input.getInput().get(0);
+			}
+			else
+				return null; 
+		}
+		else
+			return null;
 	}
 	
 	private static boolean isInputConv2d(Hop input) {
@@ -228,12 +242,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// RELU_MAX_POOLING and RELU_MAX_POOLING_BACKWARD is extremely useful for CP backend 
 		// by reducing unnecessary sparse-to-dense-to-sparse conversion.
 		// For other backends, this operators is not necessary as it reduces an additional relu operator.
-		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
-			lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
+		Hop parentReLU = isInputReLU(inputs.get(0));
+		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOLING && parentReLU != null) {
+			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOLING_BACKWARD && isInputReLU(inputs.get(0))) {
-			lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOLING_BACKWARD && parentReLU != null) {
+			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
 		}
 		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == ConvOp.BIAS_ADD && isInputConv2d(inputs.get(0))) {
@@ -651,11 +666,14 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * 
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private void inferCHWPQFromParentOp() throws DMLRuntimeException {Hop tmp = getInput().get(0);
-		while(isInputReLU(tmp) || isInputBiasAdd(tmp)) {
-			// Skip ReLU and bias_add and go to its parent
-			tmp = tmp.getInput().get(0);
-		}
+	private void inferCHWPQFromParentOp() throws DMLRuntimeException {
+		Hop tmp = getInput().get(0);
+		// Skip bias_add and go to its parent
+		tmp = isInputBiasAdd(tmp) ? tmp.getInput().get(0) : tmp;
+		Hop parentReLU = isInputReLU(tmp);
+		// Skip ReLU and go to its parent
+		tmp =  (parentReLU != null) ? parentReLU : tmp;
+		
 		// Cast tmp as parent
 		ConvolutionOp parentOp = (tmp instanceof ConvolutionOp) ? ((ConvolutionOp) tmp) : null; 
 		

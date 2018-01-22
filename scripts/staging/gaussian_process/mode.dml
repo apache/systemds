@@ -1,0 +1,116 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ------------------------------------------
+# Mode finding for binary Laplace GPC
+# ------------------------------------------
+
+# Inputs
+X = matrix(" 0.826062790211596  0.183227263001437    0.515246335524849  -0.532011376808821 -1.17421233145682 -1.06421341288933
+             1.52697668673337  -1.02976754356662     0.261406324055383   1.68210359466318  -0.192239517539275   1.60345729812004
+             0.466914435684700  0.949221831131023   -0.941485770955434  -0.875729346160017 -0.274070229932602   1.23467914689078
+             -0.209713338388737 0.307061919146703   -0.162337672803828  -0.483815050110121  1.53007251442410   -0.229626450963181
+             0.625190357087626  0.135174942099456   -0.146054634331526  -0.712004549027423 -0.249024742513714  -1.50615970397972 ", rows=5, cols=6)
+
+y = matrix(" -1 1 1 -1 -1 ", rows=5, cols=1)
+
+# covariance matrix
+K = matrix("     9.9090    4.3453   -2.0279    2.0109 4.3453
+                 4.3453    9.6392    0.8006    4.6520 9.6392
+                -2.0279    0.8006    4.6162    0.7838 0.8006
+                 2.0109    4.6520    0.7838    6.4825 4.6520
+                 4.3453    9.6392    0.8006    4.6520 9.6392 ", rows=5, cols=5);
+
+
+mode = function (matrix[double] K, matrix[double] y )
+  return (matrix[double] D, matrix[double] D2) {
+
+  /* INPUT:
+   * K : covariance matrix
+   * y : target vector
+   *
+   * OUTPUT:
+   * f : mode
+   * llh : log likelihood, log p(y|f)
+   */
+
+  I = diag( matrix(1, rows=nrow(K), cols=1) )
+
+  # step 2. initialize f = 0
+  f = matrix(0, rows=nrow(K), cols=1)
+
+
+  # step 3. repeat.. for convergence
+  i = 1;
+  while( i < 10000) {
+
+    # compute the derivative
+    # D = ∇log p(y|f)
+    D = (y+1)/2 - 1 / (1 + exp(-f))
+
+    # step 4. W = - ∇∇log p(y|f)
+    cp = 1/(1+exp(-f)) # class probability
+    D2 = cp * (1-cp)
+    W = diag(cp * (1-cp))
+
+    # compute the square root of W
+    W_sr = W ^ 0.5
+
+    # step 5(b). B = I + W^0.5 K W^0.5
+    B = I + (W_sr) %*% K %*% (W_sr)
+
+    # step 5(a). L = cholesky( I + W^0.5 K W^0.5)
+    L = cholesky(B) # L is a lower triangular matrix
+
+    # step 6. b = W f + ∇log p(y|f)
+    b = W %*% f + D
+
+    # step 7. a = b - W^0.5 t(L) \ (L\(W^0.5 K b))
+    a = b - W_sr %*% solve( t(L), solve(L, W_sr %*% K %*% b) )
+
+    # step 8. f = K a
+    f = K %*% a
+
+    i = i + 1
+  }
+
+  yf = y * f
+
+  llh = -log( 1 + exp(-y * f) )
+
+}
+
+[tmp, yf] = mode(K, y)
+
+
+for( i in 1:nrow(tmp) ) {
+  for( j in 1:ncol(tmp) ) {
+    print("("+ i +","+ j +") "+ as.scalar(tmp[i,j]))
+  }
+  print("")
+}
+
+for( i in 1:nrow(yf) ) {
+  for( j in 1:ncol(yf) ) {
+    print("("+ i +","+ j +") "+ as.scalar(yf[i,j]))
+  }
+  print("")
+}

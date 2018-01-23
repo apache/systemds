@@ -73,14 +73,13 @@ backward = function(matrix[double] dout, matrix[double] X,
   # Substituting Z = X %*% U and L = V, we get
   dV = t(U) %*% t(X) %*% dout
     
-  # TODO:
-  dU = ??
+  dU = t(X) %*% dout %*% t(V)
   
   db = colSums(dout)
 }
 
 init = function(int D, int M, int R)
-    return (matrix[double] W, matrix[double] b) {
+    return (matrix[double] U, matrix[double] V, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
    *

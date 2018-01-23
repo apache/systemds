@@ -90,14 +90,19 @@ trait CaffeLayer extends BaseDMLGenerator {
   // --------------------------------------------------------------------------------------
   // No need to override these methods in subclasses, instead classes that have weights and biases
   // should implement HasWeight and HasBias traits.
-  def dWeight(): String = throw new DMLRuntimeException("dWeight is not implemented in super class")
-  def dBias(): String   = throw new DMLRuntimeException("dBias is not implemented in super class")
   def weight(): String  = null;
   def weightShape(): Array[Int];
+  def dWeight(): String = throw new DMLRuntimeException("dWeight is not implemented in super class")
+  def shouldUpdateWeight(): Boolean = if (weight != null) true else false
   def bias(): String = null;
   def biasShape(): Array[Int];
-  def shouldUpdateWeight(): Boolean = if (weight != null) true else false
+  def dBias(): String   = throw new DMLRuntimeException("dBias is not implemented in super class")
   def shouldUpdateBias(): Boolean   = if (bias != null) true else false
+  
+  def extraWeight(): String  = null;
+  def extraWeightShape(): Array[Int] = null;
+  def dExtraWeight(): String = throw new DMLRuntimeException("dExtraWeight is not implemented in super class")
+  def shouldUpdateExtraWeight():Boolean = if(extraWeight != null) true else false
   // --------------------------------------------------------------------------------------
   // Helper methods to simplify the code of subclasses
   def invokeInit(dmlScript: StringBuilder, returnVariables: List[String], arguments: String*): Unit =
@@ -818,7 +823,8 @@ class Dropout(val param: LayerParameter, val id: Int, val net: CaffeNetwork) ext
 class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // -------------------------------------------------
   // TODO: bias_filler [default type: 'constant' value: 0]; bias_term [default true]: specifies whether to learn and apply a set of additive biases to the filter outputs
-  override def sourceFileName = "affine"
+  val isLowRank = param.getInnerProductParam.hasRank && param.getInnerProductParam.getRank > 0
+  override def sourceFileName = if(isLowRank) "low_rank_affine" else "affine"
   /*
    * Initialize the parameters of this layer.
    *
@@ -884,8 +890,11 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
   def numFeatures = int_mult(bottomLayerOutputShape._1, bottomLayerOutputShape._2, bottomLayerOutputShape._3)
   // n * c_o * 1 * 1
   override def outputShape               = (param.getInnerProductParam.getNumOutput.toString, "1", "1")
-  override def weightShape(): Array[Int] = Array(numFeatures.toInt, numNeurons.toInt)
+  override def weightShape(): Array[Int] = if(isLowRank) Array(numFeatures.toInt, param.getInnerProductParam.getRank) else Array(numFeatures.toInt, numNeurons.toInt)
   override def biasShape(): Array[Int]   = Array(1, numNeurons.toInt)
+  override def extraWeight(): String  = if(isLowRank) weight + "_extra" else null
+  override def extraWeightShape(): Array[Int] = Array(param.getInnerProductParam.getRank, numNeurons.toInt)
+  override def dExtraWeight(): String = if(isLowRank) dWeight + "_extra" else null
 }
 
 

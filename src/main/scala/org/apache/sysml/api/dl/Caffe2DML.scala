@@ -421,6 +421,7 @@ class Caffe2DML(val sc: SparkContext,
     // Set input/output variables and execute the script
     val script = dml(trainingScript).in(inputs)
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.extraWeight != null).map(l => script.out(l.extraWeight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
     
     setDebugFlags(false)
@@ -667,6 +668,7 @@ class Caffe2DML(val sc: SparkContext,
         tabDMLScript.append("snapshot_dir= \"" + solverParam.getSnapshotPrefix + "\" + \"/iter_\" + iter + \"/\"\n")
         val allLayers = net.getLayers.map(net.getCaffeLayer(_))
         allLayers.filter(_.weight != null).map(l => appendSnapshotWrite(l.weight, l.param.getName + "_weight.mtx"))
+        allLayers.filter(_.extraWeight != null).map(l => appendSnapshotWrite(l.extraWeight, l.param.getName + "_extra_weight.mtx"))
         allLayers.filter(_.bias != null).map(l => appendSnapshotWrite(l.bias, l.param.getName + "_bias.mtx"))
       }
     }
@@ -689,6 +691,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.weight), ncol(l.weight))))
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.extraWeight), ncol(l.extraWeight))))
         if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias))))
       })
   }
@@ -701,6 +704,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + " * weighting")
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
       })
   }
@@ -710,6 +714,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight)))
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight, matrix(colSums(l.dExtraWeight + "_agg"), nrow(l.extraWeight), ncol(l.extraWeight)))
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
       })
   }
@@ -744,7 +749,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
 
   def modelVariables(): List[String] = {
     val allLayers = net.getLayers.map(net.getCaffeLayer(_))
-    allLayers.filter(_.weight != null).map(_.weight) ++ allLayers.filter(_.bias != null).map(_.bias)
+    allLayers.filter(_.weight != null).map(_.weight) ++ allLayers.filter(_.extraWeight != null).map(_.extraWeight) ++ allLayers.filter(_.bias != null).map(_.bias)
   }
 
   // ================================================================================================
@@ -850,6 +855,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
     if (estimator.mloutput != null) {
       // fit was called
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, estimator.mloutput.getMatrix(l.weight)))
+      net.getLayers.map(net.getCaffeLayer(_)).filter(_.extraWeight != null).map(l => script.in(l.extraWeight, estimator.mloutput.getMatrix(l.extraWeight)))
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, estimator.mloutput.getMatrix(l.bias)))
     }
     

@@ -35,7 +35,7 @@ import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * The main purpose of this test is to verify various input combinations for
- * matrix-matrix logical operations that internally translate to binary operations.
+ * matrix-scalar logical operations that internally translate to binary operations.
  *
  */
 public class FullLogicalMatrixTest extends AutomatedTestBase

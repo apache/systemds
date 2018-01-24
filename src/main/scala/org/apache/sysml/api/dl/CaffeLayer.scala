@@ -899,7 +899,7 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
   override def weightShape(): Array[Int] = if(isLowRank) Array(numFeatures.toInt, param.getInnerProductParam.getRank) else Array(numFeatures.toInt, numNeurons.toInt)
   override def biasShape(): Array[Int]   = Array(1, numNeurons.toInt)
   override def extraWeight(): String  = if(isLowRank) weight + "_extra" else null
-  override def extraWeightShape(): Array[Int] = Array(param.getInnerProductParam.getRank, numNeurons.toInt)
+  override def extraWeightShape(): Array[Int] = if(isLowRank) Array(param.getInnerProductParam.getRank, numNeurons.toInt) else null
   override def dExtraWeight(): String = if(isLowRank) dWeight + "_extra" else null
 }
 

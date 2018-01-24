@@ -69,6 +69,10 @@ trait CaffeSolver {
       
       dmlScript.append("\t").append(layer.dWeight + "_reg = " + regularizationSource + "::backward(" + layer.weight + ", " + newLambda + ")\n")
       dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
+      if(layer.shouldUpdateExtraWeight) {
+        dmlScript.append("\t").append(layer.dExtraWeight + "_reg = " + regularizationSource + "::backward(" + layer.extraWeight + ", " + newLambda + ")\n")
+        dmlScript.append("\t").append(layer.dExtraWeight + " = " + layer.dExtraWeight + " + " + layer.dExtraWeight + "_reg\n")
+      }
     }
   }
 }
@@ -129,6 +133,7 @@ class SGD(regularizationType:String = "L2", lambda: Double = 5e-04, momentum: Do
     if (momentum == 0) {
       // Use sgd
       if (layer.shouldUpdateWeight) dmlScript.append("\t").append(layer.weight + " = sgd::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer)) + ")\n")
+      if (layer.shouldUpdateExtraWeight) dmlScript.append("\t").append(layer.extraWeight + " = sgd::update(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer)) + ")\n")
       if (layer.shouldUpdateBias) dmlScript.append("\t").append(layer.bias + " = sgd::update(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer)) + ")\n")
     } else {
       // Use sgd_momentum
@@ -138,6 +143,13 @@ class SGD(regularizationType:String = "L2", lambda: Double = 5e-04, momentum: Do
           .append(
             "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
             "= sgd_momentum::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + ")\n"
+          )
+      if (layer.shouldUpdateExtraWeight)
+        dmlScript
+          .append("\t")
+          .append(
+            "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
+            "= sgd_momentum::update(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + ")\n"
           )
       if (layer.shouldUpdateBias)
         dmlScript
@@ -151,6 +163,7 @@ class SGD(regularizationType:String = "L2", lambda: Double = 5e-04, momentum: Do
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit =
     if (momentum != 0) {
       if (layer.shouldUpdateWeight) dmlScript.append(layer.weight + "_v = sgd_momentum::init(" + layer.weight + ")\n")
+      if (layer.shouldUpdateExtraWeight) dmlScript.append(layer.extraWeight + "_v = sgd_momentum::init(" + layer.extraWeight + ")\n")
       if (layer.shouldUpdateBias) dmlScript.append(layer.bias + "_v = sgd_momentum::init(" + layer.bias + ")\n")
     }
   def sourceFileName: String = if (momentum == 0) "sgd" else "sgd_momentum"
@@ -193,6 +206,13 @@ class AdaGrad(regularizationType:String = "L2", lambda: Double = 5e-04, epsilon:
           "[" + commaSep(layer.weight, layer.weight + "_cache") + "] " +
           "= adagrad::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), epsilon.toString, layer.weight + "_cache") + ")\n"
         )
+    if (layer.shouldUpdateExtraWeight)
+      dmlScript
+        .append("\t")
+        .append(
+          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_cache") + "] " +
+          "= adagrad::update(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), epsilon.toString, layer.extraWeight + "_cache") + ")\n"
+        )
     if (layer.shouldUpdateBias)
       dmlScript
         .append("\t")
@@ -203,6 +223,7 @@ class AdaGrad(regularizationType:String = "L2", lambda: Double = 5e-04, epsilon:
   }
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     if (layer.shouldUpdateWeight) dmlScript.append(layer.weight + "_cache = adagrad::init(" + layer.weight + ")\n")
+    if (layer.shouldUpdateExtraWeight) dmlScript.append(layer.extraWeight + "_cache = adagrad::init(" + layer.extraWeight + ")\n")
     if (layer.shouldUpdateBias) dmlScript.append(layer.bias + "_cache = adagrad::init(" + layer.bias + ")\n")
   }
   def sourceFileName: String = "adagrad"
@@ -257,6 +278,15 @@ class Adam(regularizationType:String = "L2", lambda: Double = 5e-04, momentum:Do
               momentum.toString, momentum2.toString, delta.toString,  t,
               layer.weight + "_m", layer.weight + "_v") + ")\n"
         )
+    if (layer.shouldUpdateExtraWeight)
+      dmlScript
+        .append("\t")
+        .append(
+          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_m", layer.extraWeight + "_v") + "] " +
+          "= adam::update(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), 
+              momentum.toString, momentum2.toString, delta.toString,  t,
+              layer.extraWeight + "_m", layer.extraWeight + "_v") + ")\n"
+        )
     if (layer.shouldUpdateBias)
       dmlScript
         .append("\t")
@@ -269,6 +299,7 @@ class Adam(regularizationType:String = "L2", lambda: Double = 5e-04, momentum:Do
   }
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     if (layer.shouldUpdateWeight) dmlScript.append("[ " + layer.weight + "_m, " + layer.weight + "_v ] = adam::init(" + layer.weight + ")\n")
+    if (layer.shouldUpdateExtraWeight) dmlScript.append("[ " + layer.extraWeight + "_m, " + layer.extraWeight + "_v ] = adam::init(" + layer.extraWeight + ")\n")
     if (layer.shouldUpdateBias) dmlScript.append("[ " + layer.bias + "_m, " + layer.bias + "_v ] = adam::init(" + layer.bias + ")\n")
   }
   def sourceFileName: String = "adam"
@@ -320,6 +351,13 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
           "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
           "= " + fn + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
         )
+    if (layer.shouldUpdateExtraWeight)
+      dmlScript
+        .append("\t")
+        .append(
+          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
+          "= " + fn + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
+        )
     if (layer.shouldUpdateBias)
       dmlScript
         .append("\t")
@@ -330,6 +368,7 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
   }
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     if (layer.shouldUpdateWeight) dmlScript.append(layer.weight + "_v = sgd_nesterov::init(" + layer.weight + ")\n")
+    if (layer.shouldUpdateExtraWeight) dmlScript.append(layer.extraWeight + "_v = sgd_nesterov::init(" + layer.extraWeight + ")\n")
     if (layer.shouldUpdateBias) dmlScript.append(layer.bias + "_v = sgd_nesterov::init(" + layer.bias + ")\n")
   }
   def sourceFileName: String = "sgd_nesterov"

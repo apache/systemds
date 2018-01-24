@@ -313,7 +313,11 @@ class Caffe2DML(val sc: SparkContext,
     val numLayerInput =  if(!l.isInstanceOf[Data]) l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize else 0
     val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
     val numLayerError = numLayerOutput
-    val numLayerWeights = if(l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
+    val numLayerWeights = if(l.weightShape != null) {
+      val nWt = l.weightShape()(0).toLong * l.weightShape()(1).toLong
+      if(l.extraWeightShape != null) l.extraWeightShape()(0).toLong * l.extraWeightShape()(1).toLong + nWt
+      else nWt
+    } else 0
     val numLayerBias = if(l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
     val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
     if(isTraining) (numLayerInput + numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*Double.BYTES
@@ -337,7 +341,11 @@ class Caffe2DML(val sc: SparkContext,
         (l._1,
          layer.param.getType,
          "(, " + layer.outputShape._1 + ", " + layer.outputShape._2 + ", " + layer.outputShape._3 + ")",
-         if (layer.weightShape != null) "[" + layer.weightShape()(0) + " X " + layer.weightShape()(1) + "]" else "",
+         if (layer.weightShape != null) {
+           val wShapes = "[" + layer.weightShape()(0) + " X " + layer.weightShape()(1) + "]"
+           if (layer.extraWeightShape != null) wShapes + ", " +  "[" + layer.extraWeightShape()(0) + " X " + layer.extraWeightShape()(1) + "]"
+           else wShapes
+         } else "",
          if (layer.biasShape != null) "[" + layer.biasShape()(0) + " X " + layer.biasShape()(1) + "]" else "",
          layer.param.getTopList.mkString(","),
          layer.param.getBottomList.mkString(","), 
@@ -421,6 +429,7 @@ class Caffe2DML(val sc: SparkContext,
     // Set input/output variables and execute the script
     val script = dml(trainingScript).in(inputs)
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.extraWeight != null).map(l => script.out(l.extraWeight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
     
     setDebugFlags(false)
@@ -667,6 +676,7 @@ class Caffe2DML(val sc: SparkContext,
         tabDMLScript.append("snapshot_dir= \"" + solverParam.getSnapshotPrefix + "\" + \"/iter_\" + iter + \"/\"\n")
         val allLayers = net.getLayers.map(net.getCaffeLayer(_))
         allLayers.filter(_.weight != null).map(l => appendSnapshotWrite(l.weight, l.param.getName + "_weight.mtx"))
+        allLayers.filter(_.extraWeight != null).map(l => appendSnapshotWrite(l.extraWeight, l.param.getName + "_extra_weight.mtx"))
         allLayers.filter(_.bias != null).map(l => appendSnapshotWrite(l.bias, l.param.getName + "_bias.mtx"))
       }
     }
@@ -689,6 +699,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.weight), ncol(l.weight))))
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.extraWeight), ncol(l.extraWeight))))
         if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias))))
       })
   }
@@ -701,6 +712,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + " * weighting")
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
       })
   }
@@ -710,6 +722,7 @@ class Caffe2DML(val sc: SparkContext,
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight)))
+        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight, matrix(colSums(l.dExtraWeight + "_agg"), nrow(l.extraWeight), ncol(l.extraWeight)))
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
       })
   }
@@ -744,7 +757,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
 
   def modelVariables(): List[String] = {
     val allLayers = net.getLayers.map(net.getCaffeLayer(_))
-    allLayers.filter(_.weight != null).map(_.weight) ++ allLayers.filter(_.bias != null).map(_.bias)
+    allLayers.filter(_.weight != null).map(_.weight) ++ allLayers.filter(_.extraWeight != null).map(_.extraWeight) ++ allLayers.filter(_.bias != null).map(_.bias)
   }
 
   // ================================================================================================
@@ -850,6 +863,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
     if (estimator.mloutput != null) {
       // fit was called
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, estimator.mloutput.getMatrix(l.weight)))
+      net.getLayers.map(net.getCaffeLayer(_)).filter(_.extraWeight != null).map(l => script.in(l.extraWeight, estimator.mloutput.getMatrix(l.extraWeight)))
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, estimator.mloutput.getMatrix(l.bias)))
     }
     

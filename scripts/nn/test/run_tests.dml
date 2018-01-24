@@ -41,6 +41,7 @@ print("")
 
 # Core layers
 grad_check::affine()
+grad_check::low_rank_affine()
 grad_check::batch_norm1d()
 grad_check::batch_norm2d()
 grad_check::conv2d()

@@ -313,6 +313,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
       tabDMLScript.append("# Load the weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias\n")
       val allLayers = net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_))
       allLayers.filter(_.weight != null).map(l => tabDMLScript.append(readWeight(l.weight, l.param.getName + "_weight.mtx")))
+      allLayers.filter(_.extraWeight != null).map(l => tabDMLScript.append(readWeight(l.extraWeight, l.param.getName + "_extra_weight.mtx")))
       allLayers.filter(_.bias != null).map(l => tabDMLScript.append(readWeight(l.bias, l.param.getName + "_bias.mtx")))
     }
     net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))

@@ -833,6 +833,8 @@ message InnerProductParameter {
   // of the weight matrix. The weight matrix itself is not going to be transposed
   // but rather the transfer flag of operations will be toggled accordingly.
   optional bool transpose = 6 [default = false];
+  
+  optional int32 rank = 7 [default = 0]; // rank of U, V matrices
 }
 
 message InputParameter {

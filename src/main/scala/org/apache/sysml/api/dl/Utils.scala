@@ -171,6 +171,7 @@ object Utils {
     ml.execute(script)
   }
 
+  // TODO: Loading of extra weights is not supported
   def readCaffeNet(net: CaffeNetwork, netFilePath: String, weightsFilePath: String, inputVariables: java.util.HashMap[String, MatrixBlock]): NetParameter = {
     // Load network
     val reader: InputStreamReader     = getInputStreamReader(netFilePath);

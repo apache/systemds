@@ -313,7 +313,11 @@ class Caffe2DML(val sc: SparkContext,
     val numLayerInput =  if(!l.isInstanceOf[Data]) l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize else 0
     val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
     val numLayerError = numLayerOutput
-    val numLayerWeights = if(l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
+    val numLayerWeights = if(l.weightShape != null) {
+      val nWt = l.weightShape()(0).toLong * l.weightShape()(1).toLong
+      if(l.extraWeightShape != null) l.extraWeightShape()(0).toLong * l.extraWeightShape()(1).toLong + nWt
+      else nWt
+    } else 0
     val numLayerBias = if(l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
     val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
     if(isTraining) (numLayerInput + numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*Double.BYTES
@@ -337,7 +341,11 @@ class Caffe2DML(val sc: SparkContext,
         (l._1,
          layer.param.getType,
          "(, " + layer.outputShape._1 + ", " + layer.outputShape._2 + ", " + layer.outputShape._3 + ")",
-         if (layer.weightShape != null) "[" + layer.weightShape()(0) + " X " + layer.weightShape()(1) + "]" else "",
+         if (layer.weightShape != null) {
+           val wShapes = "[" + layer.weightShape()(0) + " X " + layer.weightShape()(1) + "]"
+           if (layer.extraWeightShape != null) wShapes + ", " +  "[" + layer.extraWeightShape()(0) + " X " + layer.extraWeightShape()(1) + "]"
+           else wShapes
+         } else "",
          if (layer.biasShape != null) "[" + layer.biasShape()(0) + " X " + layer.biasShape()(1) + "]" else "",
          layer.param.getTopList.mkString(","),
          layer.param.getBottomList.mkString(","), 

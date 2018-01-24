@@ -845,7 +845,10 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - W: Weights, of shape (D, M).
    *  - b: Biases, of shape (1, M).
    */
-  override def init(dmlScript: StringBuilder) = invokeInit(dmlScript, List[String](weight, bias), numFeatures, numNeurons)
+  override def init(dmlScript: StringBuilder) = {
+    if(isLowRank) invokeInit(dmlScript, List[String](weight, extraWeight, bias), numFeatures, numNeurons, param.getInnerProductParam.getRank.toString)
+    else invokeInit(dmlScript, List[String](weight, bias), numFeatures, numNeurons)
+  }
   /*
    * Computes the forward pass for an affine (fully-connected) layer
    * with M neurons.  The input data has N examples, each with D
@@ -863,7 +866,8 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
     if(debugLayer && caffe2dmlObj != null && !caffe2dmlObj.containsParfor) {
       dmlScript.append("assert(ncol(" + X + ") == nrow(" + weight + ") | ncol(" + weight + ") == ncol(" + bias + ")); ")
     }
-    invokeForward(dmlScript, List[String](out), X, weight, bias)
+    if(isLowRank) invokeForward(dmlScript, List[String](out), X, weight, extraWeight, bias)
+    else invokeForward(dmlScript, List[String](out), X, weight, bias)
   }
     
   /*
@@ -881,8 +885,10 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - dW: Gradient wrt `W`, of shape (D, M).
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) = 
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  override def backward(dmlScript: StringBuilder, outSuffix: String) =  {
+    if(isLowRank) invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dExtraWeight, dBias), dout, X, weight, extraWeight, bias)
+    else invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  }
   
   // -------------------------------------------------
   // num_output (c_o): the number of filters

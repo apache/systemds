@@ -420,7 +420,7 @@ public class IOUtilFunctions
 	 * @return the number of columns in the collection of csv file splits
 	 * @throws IOException if IOException occurs
 	 */
-	@SuppressWarnings({ "rawtypes" })
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static int countNumColumnsCSV(InputSplit[] splits, InputFormat informat, JobConf job, String delim ) 
 		throws IOException 
 	{

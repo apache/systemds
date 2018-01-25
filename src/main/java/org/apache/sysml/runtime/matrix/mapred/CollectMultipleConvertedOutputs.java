@@ -59,9 +59,8 @@ public class CollectMultipleConvertedOutputs
 		}
 	}
 	
-	public void directOutput(Writable key, Writable value, int output, Reporter reporter) 
-		throws IOException
-	{
+	@SuppressWarnings("unchecked")
+	public void directOutput(Writable key, Writable value, int output, Reporter reporter) throws IOException {
 		multipleOutputs.getCollector(Integer.toString(output), reporter).collect(key, value);
 	}
 

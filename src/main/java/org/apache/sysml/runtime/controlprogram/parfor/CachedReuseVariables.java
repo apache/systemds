@@ -43,7 +43,8 @@ public class CachedReuseVariables
 		//build reuse map if not created yet or evicted
 		if( tmp == null ) {
 			tmp = new LocalVariableMap(vars);
-			tmp.removeAllIn(new HashSet<>(blacklist));
+			tmp.removeAllIn((blacklist instanceof HashSet) ?
+				(HashSet<String>)blacklist : new HashSet<>(blacklist));
 			_data.put(pfid, new SoftReference<>(tmp));
 		}
 		//reuse existing reuse map

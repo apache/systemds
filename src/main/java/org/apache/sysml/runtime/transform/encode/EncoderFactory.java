@@ -45,6 +45,7 @@ public class EncoderFactory
 		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{

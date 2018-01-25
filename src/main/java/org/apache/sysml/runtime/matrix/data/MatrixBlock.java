@@ -559,7 +559,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//check for existing sparse block: return empty list
 		if( sparseBlock==null )
-			return Collections.EMPTY_LIST.iterator();
+			return Collections.emptyListIterator();
 		
 		//get iterator over sparse block
 		return sparseBlock.getIterator(rl, ru);

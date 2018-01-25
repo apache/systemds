@@ -599,6 +599,22 @@ public class UtilFunctions
 	}
 	
 	@SafeVarargs
+	public static <T> List<T> asList(List<T>... inputs) {
+		List<T> ret = new ArrayList<>();
+		for( List<T> list : inputs )
+			ret.addAll(list);
+		return ret;
+	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(List<T>... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( List<T> list : inputs )
+			ret.addAll(list);
+		return ret;
+	}
+	
+	@SafeVarargs
 	public static <T> Set<T> asSet(T[]... inputs) {
 		Set<T> ret = new HashSet<>();
 		for( T[] input : inputs )

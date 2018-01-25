@@ -565,6 +565,7 @@ public class Statistics
 	 * @return string representing the heavy hitter instructions in tabular
 	 *         format
 	 */
+	@SuppressWarnings("unchecked")
 	public static String getHeavyHitters(int num) {
 		int len = _instStats.size();
 		if (num <= 0 || len <= 0)

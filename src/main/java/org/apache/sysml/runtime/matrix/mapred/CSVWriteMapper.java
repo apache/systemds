@@ -41,6 +41,7 @@ public class CSVWriteMapper extends MapperBase implements Mapper<Writable, Writa
 	TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void map(Writable rawKey, Writable rawValue,
 			OutputCollector<TaggedFirstSecondIndexes, MatrixBlock> out,
 			Reporter reporter) throws IOException

@@ -29,6 +29,7 @@ public class ResultMergeRemoteSorting extends WritableComparator
 	}
 	
 	@Override
+	@SuppressWarnings("rawtypes")
 	public int compare(WritableComparable k1, WritableComparable k2) 
 	{
 		ResultMergeTaggedMatrixIndexes key1 = (ResultMergeTaggedMatrixIndexes)k1;

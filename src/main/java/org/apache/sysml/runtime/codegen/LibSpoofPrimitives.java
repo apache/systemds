@@ -206,10 +206,21 @@ public class LibSpoofPrimitives
 		System.arraycopy(a, 0, c, ci, len);
 	}
 	
+	public static void vectWrite(double[] a, double[] c, int ai, int ci, int len) {
+		if( a == null ) return;
+		System.arraycopy(a, ai, c, ci, len);
+	}
+	
 	public static void vectWrite(boolean[] a, boolean[] c, int[] aix) {
 		if( a == null ) return;
 		for( int i=0; i<aix.length; i++ )
 			c[aix[i]] = a[i];
+	}
+	
+	public static void vectWrite(boolean[] a, boolean[] c, int[] aix, int ai, int ci, int alen) {
+		if( a == null ) return;
+		for( int i=ai; i<ai+alen; i++ )
+			c[ci+aix[i]] = a[i];
 	}
 	
 	// cbind handling
@@ -1846,7 +1857,7 @@ public class LibSpoofPrimitives
 		memPool.remove();
 	}
 	
-	protected static double[] allocVector(int len, boolean reset) {
+	public static double[] allocVector(int len, boolean reset) {
 		return allocVector(len, reset, 0);
 	}
 	

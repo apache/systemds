@@ -33,7 +33,7 @@ source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/cross_entropy_loss2d.dml") as cross_entropy_loss2d
 source("nn/layers/dropout.dml") as dropout
-source("staging/fm.dml") as fm
+source("nn/layers/fm.dml") as fm
 source("nn/layers/l1_loss.dml") as l1_loss
 source("nn/layers/l1_reg.dml") as l1_reg
 source("nn/layers/l2_loss.dml") as l2_loss

@@ -1221,6 +1221,28 @@ public class LibMatrixReorg
 						c.append(0, cix+aix[j], avals[j]);
 				}
 			}
+			else if( cols%clen==0 //SPECIAL CSR N:1 MATRIX->MATRIX
+				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
+				&& a instanceof SparseBlockCSR ) { //int nnz
+				int[] aix = ((SparseBlockCSR)a).indexes();
+				int n = cols/clen, pos = 0;
+				int[] rptr = new int[rows+1];
+				int[] indexes = new int[(int)a.size()];
+				rptr[0] = 0;
+				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
+					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
+						if(a.isEmpty(i)) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						for( int j=apos; j<apos+alen; j++ )
+							indexes[pos++] = cix+aix[j];
+					}
+					rptr[ci+1] = pos;
+				}
+				//create CSR block with shallow copy of values
+				out.sparseBlock = new SparseBlockCSR(rptr, indexes,
+					((SparseBlockCSR)a).values(), pos);
+			}
 			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
 				int n = cols/clen;
 				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
@@ -1234,10 +1256,8 @@ public class LibMatrixReorg
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
 						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ ) {
-							int cj = (int)((cix+aix[j])%cols);
-							c.append(ci, cj, avals[j]);
-						}
+						for( int j=apos; j<apos+alen; j++ )
+							c.append(ci, cix+aix[j], avals[j]);
 					}
 				}
 			}

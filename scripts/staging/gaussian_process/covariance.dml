@@ -30,29 +30,17 @@ X = matrix(" 0.826062790211596  0.183227263001437    0.515246335524849  -0.53201
              0.625190357087626  0.135174942099456   -0.146054634331526  -0.712004549027423 -0.249024742513714  -1.50615970397972 ", rows=5, cols=6)
 
 # 2. initialize K, i.e, covariance matrix
-K= 1.0 * matrix(1, rows=n, cols=n) ;
+#K= 1.0 * matrix(1, rows=n, cols=n) ;
 
+K = -2 * X %*% t(X) + rowSums(X^2) %*% matrix(1, rows=1, cols=5) + matrix(1, rows=5, cols=1) %*% t( rowSums(X^2) )
+
+/*
 # 3. for each dimension
 for( di in 1:6) {
 
-  Xd = X[1:5,di]
-
-  for(n in 2:5) {
-    Xd = cbind(Xd, X[1:5,di])
-  }
+  Xd = X[1:5,di] %*% matrix(1, rows=1, cols=6);
 
   diff = Xd - t(Xd)
-
-  /* for example:
-  Xd = matrix("1 1
-               3 3")
-
-  t(Xd) = matrix("1 3
-                  1 3")
-
-  diff = Xd - t(Xd) = matrix("1-1 1-3
-                 3-1 3-3")
-  */
 
   ls = 0.1
 
@@ -63,6 +51,15 @@ for( di in 1:6) {
 
 tmp = cholesky(K)
 # 5. print the values
+for( i in 1:n) {
+  for(j in 1:n) {
+    print("("+ i +","+ j +")"+ " " + as.scalar( tmp[i,j] ) )
+  }
+}
+*/
+
+tmp = cholesky(K)
+
 for( i in 1:n) {
   for(j in 1:n) {
     print("("+ i +","+ j +")"+ " " + as.scalar( tmp[i,j] ) )

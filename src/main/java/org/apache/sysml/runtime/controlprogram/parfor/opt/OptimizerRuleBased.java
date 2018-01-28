@@ -657,7 +657,7 @@ public class OptimizerRuleBased extends Optimizer
 			base = h.getInput().get(0);
 			
 			//check result variable
-			if( !resultVars.contains(base.getName()) )
+			if( !ResultVar.contains(resultVars, base.getName()) )
 				ret = false;
 		}
 
@@ -1734,7 +1734,7 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		else if( n.getNodeType()== NodeType.HOP) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( h instanceof LeftIndexingOp && retVars.contains( h.getInput().get(0).getName() ) )
+			if( h instanceof LeftIndexingOp && ResultVar.contains(retVars, h.getInput().get(0).getName() ) )
 				ret &= (h.getParent().size()==1 
 					&& h.getParent().get(0).getName().equals(h.getInput().get(0).getName()));
 		}
@@ -1811,7 +1811,7 @@ public class OptimizerRuleBased extends Optimizer
 				if( h.getInput() != null )
 					for( Hop cn : h.getInput() )
 						if( cn instanceof DataOp && ((DataOp)cn).isRead()  //read data
-							&& !inplaceResultVars.contains(cn.getName())) //except in-place result vars
+							&& !ResultVar.contains(inplaceResultVars, cn.getName())) //except in-place result vars
 							sum += cn.getMemEstimate();
 			}
 		}
@@ -1868,15 +1868,13 @@ public class OptimizerRuleBased extends Optimizer
 				
 				if(    ch instanceof DataOp && ch.getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getName()) )
-					//&& !partitionedVars.contains(ch.getName()))
 				{
 					ret = true;
 					sharedVars.add(ch.getName());
 				}
-				else if( HopRewriteUtils.isTransposeOperation(ch)  
+				else if( HopRewriteUtils.isTransposeOperation(ch)
 					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getInput().get(0).getName()) )
-					//&& !partitionedVars.contains(ch.getInput().get(0).getName()))
 				{
 					ret = true;
 					sharedVars.add(ch.getInput().get(0).getName());
@@ -2182,7 +2180,7 @@ public class OptimizerRuleBased extends Optimizer
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		PResultMerge REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
 				PResultMerge.REMOTE_SPARK : PResultMerge.REMOTE_MR;
@@ -2224,7 +2222,7 @@ public class OptimizerRuleBased extends Optimizer
 		pfpb.setResultMerge(ret);
 			
 		// modify plan
-		n.addParam(ParamType.RESULT_MERGE, ret.toString());			
+		n.addParam(ParamType.RESULT_MERGE, ret.toString());
 
 		//recursively apply rewrite for parfor nodes
 		if( n.getChilds() != null )
@@ -2278,7 +2276,7 @@ public class OptimizerRuleBased extends Optimizer
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
-				if( resultVars.contains(varName) )
+				if( ResultVar.contains(resultVars, varName) )
 				{
 					ret = true;
 					if( checkSize && vars.keySet().contains(varName) )
@@ -2324,7 +2322,7 @@ public class OptimizerRuleBased extends Optimizer
 		for( ResultVar var : resultVars )
 		{
 			//Potential unknowns: for local result var of child parfor (but we're only interested in top level)
-			//Potential scalars: for disabled dependency analysis and unbounded scoping			
+			//Potential scalars: for disabled dependency analysis and unbounded scoping
 			Data dat = vars.get( var._name );
 			if( dat != null && dat instanceof MatrixObject ) 
 			{
@@ -2380,7 +2378,7 @@ public class OptimizerRuleBased extends Optimizer
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
-				if( resultVars.contains(varName) && vars.keySet().contains(varName) )
+				if( ResultVar.contains(resultVars, varName) && vars.keySet().contains(varName) )
 				{
 					//dims of result vars must be known at this point in time
 					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
@@ -2472,7 +2470,7 @@ public class OptimizerRuleBased extends Optimizer
 			try 
 			{
 				ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+					.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 				if( recPBs.contains(pfpb) ) 
 					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs, vars);
 			}

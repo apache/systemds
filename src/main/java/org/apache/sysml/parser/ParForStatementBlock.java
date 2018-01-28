@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1812,9 +1813,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		@Override
 		public boolean equals(Object that) {
-			if( !(that instanceof ResultVar) )
-				return false;
-			return _name.equals(((ResultVar)that)._name);
+			String varname = (that instanceof ResultVar) ?
+				((ResultVar)that)._name : that.toString();
+			return _name.equals(varname);
 		}
 		@Override
 		public int hashCode() {
@@ -1823,6 +1824,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		@Override
 		public String toString() {
 			return _name;
+		}
+		public static boolean contains(Collection<ResultVar> list, String varName) {
+			//helper function which is necessary because list.contains checks
+			//varName.equals(rvar) which always returns false because it not a string
+			return list.stream().anyMatch(rvar -> rvar.equals(varName));
 		}
 	}
 	

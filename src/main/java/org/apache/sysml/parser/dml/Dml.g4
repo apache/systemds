@@ -66,6 +66,7 @@ statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     // AssignmentStatement
     | targetList=dataIdentifier op=('<-'|'=') 'ifdef' '(' commandLineParam=dataIdentifier ','  source=expression ')' ';'*   # IfdefAssignmentStatement
     | targetList=dataIdentifier op=('<-'|'=') source=expression ';'*   # AssignmentStatement
+    | targetList=dataIdentifier op='+=' source=expression ';'*   # AccumulatorAssignmentStatement
     // ------------------------------------------
     // We don't support block statement
     // | '{' body+=expression ';'* ( body+=expression ';'* )*  '}' # BlockStatement

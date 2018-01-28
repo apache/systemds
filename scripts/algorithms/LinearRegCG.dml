@@ -186,10 +186,10 @@ while (i < max_iteration & norm_r2 > norm_r2_target)
         q = scale_X * q + shift_X %*% q [m_ext, ];
     }
 
-	q = q + lambda * p;
+	q += lambda * p;
 	a = norm_r2 / sum (p * q);
-	beta_unscaled = beta_unscaled + a * p;
-	r = r + a * q;
+	beta_unscaled += a * p;
+	r += a * q;
 	old_norm_r2 = norm_r2;
 	norm_r2 = sum (r ^ 2);
 	p = -r + (norm_r2 / old_norm_r2) * p;

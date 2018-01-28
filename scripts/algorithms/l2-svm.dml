@@ -138,8 +138,8 @@ while(continue & iter < maxiterations)  {
   }
 
   #update weights
-  w = w + step_sz*s
-  Xw = Xw + step_sz*Xd
+  w += step_sz * s
+  Xw += step_sz * Xd
   
   out = 1 - Y * Xw
   sv = (out > 0)
@@ -159,7 +159,6 @@ while(continue & iter < maxiterations)  {
   
   continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
   iter = iter + 1
-  
 }
 
 extra_model_params = matrix(0, rows=4, cols=1)

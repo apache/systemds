@@ -1264,10 +1264,21 @@ public class DMLTranslator
 				
 					// CASE: target is regular data identifier
 					if (!(target instanceof IndexedIdentifier)) {
-					
+						//process right hand side and accumulation
 						Hop ae = processExpression(source, target, ids);
+						if( ((AssignmentStatement)current).isAccumulator() ) {
+							DataIdentifier accum = liveIn.getVariable(target.getName());
+							if( accum == null )
+								throw new LanguageException("Invalid accumulator assignment "
+									+ "to non-existing variable "+target.getName()+".");
+							ae = HopRewriteUtils.createBinary(ids.get(target.getName()), ae, OpOp2.PLUS);
+							target.setProperties(accum.getOutput());
+						}
+						else
+							target.setProperties(source.getOutput());
 						ids.put(target.getName(), ae);
-						target.setProperties(source.getOutput());
+						
+						//add transient write if needed
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
@@ -1276,8 +1287,7 @@ public class DMLTranslator
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
-					} // end if (!(target instanceof IndexedIdentifier)) {
-					
+					} 
 					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, ids);
@@ -1287,12 +1297,12 @@ public class DMLTranslator
 						// obtain origDim values BEFORE they are potentially updated during setProperties call
 						//	(this is incorrect for LHS Indexing)
 						long origDim1 = ((IndexedIdentifier)target).getOrigDim1();
-						long origDim2 = ((IndexedIdentifier)target).getOrigDim2();						 
+						long origDim2 = ((IndexedIdentifier)target).getOrigDim2();
 						target.setProperties(source.getOutput());
 						((IndexedIdentifier)target).setOriginalDimensions(origDim1, origDim2);
 						
 						// preserve data type matrix of any index identifier
-						// (required for scalar input to left indexing)					
+						// (required for scalar input to left indexing)
 						if( target.getDataType() != DataType.MATRIX ) {
 							target.setDataType(DataType.MATRIX);
 							target.setValueType(ValueType.DOUBLE);
@@ -1308,10 +1318,8 @@ public class DMLTranslator
 							output.add(transientwrite);
 						}
 					}
-					
-					
 				}
-				else 
+				else
 				{
 					//assignment, function call
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;

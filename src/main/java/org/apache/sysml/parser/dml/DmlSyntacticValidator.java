@@ -62,6 +62,7 @@ import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
+import org.apache.sysml.parser.dml.DmlParser.AccumulatorAssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
@@ -922,6 +923,19 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	}
 
 	@Override
+	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {
+		if(ctx.targetList == null) {
+			notifyErrorListeners("incorrect parsing for accumulator assignment", ctx.start);
+			return;
+		}
+		//process as default assignment statement
+		exitAssignmentStatementHelper(ctx, ctx.targetList.getText(),
+			ctx.targetList.dataInfo, ctx.targetList.start, ctx.source.info, ctx.info);
+		//mark as accumulator
+		((AssignmentStatement)ctx.info.stmt).setAccumulator(true);
+	}
+	
+	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
 		checkValidDataType(ctx.ID().getText(), ctx.start);
 	}
@@ -955,6 +969,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override public void enterIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {}
 
+	@Override public void enterAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {}
+	
 	@Override public void enterConstStringIdExpression(ConstStringIdExpressionContext ctx) {}
 
 	@Override public void enterConstTrueExpression(ConstTrueExpressionContext ctx) {}

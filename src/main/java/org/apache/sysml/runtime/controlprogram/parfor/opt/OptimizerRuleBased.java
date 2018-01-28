@@ -414,9 +414,8 @@ public class OptimizerRuleBased extends Optimizer
 		if(    OptimizerUtils.isHybridExecutionMode()  //only if we are allowed to recompile
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
-			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
 			HashMap<String, PartitionFormat> cand2 = new HashMap<>();
-			for( String c : cand )
+			for( String c : pfsb.getReadOnlyParentVars() )
 			{
 				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
 				
@@ -424,7 +423,7 @@ public class OptimizerRuleBased extends Optimizer
 					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) 
 				{
 					cand2.put( c, dpf );
-				}	
+				}
 			}
 			
 			apply = rFindDataPartitioningCandidates(n, cand2, vars, thetaM);

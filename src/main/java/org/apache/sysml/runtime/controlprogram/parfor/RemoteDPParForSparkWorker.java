@@ -154,7 +154,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
-		_resultVars  = body.getResultVarNames();
+		_resultVars  = body.getResultVariables();
 		_numTasks    = 0;
 		_numIters    = 0;
 

@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	ForLoopPredicateTest.class,
+	ParForAccumulatorResultMergeTest.class,
 	ParForAdversarialLiteralsTest.class,
 	ParForBlockwiseDataPartitioningTest.class,
 	ParForColwiseDataPartitioningTest.class,

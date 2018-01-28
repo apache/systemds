@@ -93,9 +93,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	//instance members
 	private final long _ID;
-	private VariableSet       _vsParent   = null;
-	private ArrayList<String> _resultVars = null;
-	private Bounds            _bounds     = null;
+	private VariableSet          _vsParent   = null;
+	private ArrayList<ResultVar> _resultVars = null;
+	private Bounds               _bounds     = null;
 	
 	static
 	{
@@ -159,11 +159,15 @@ public class ParForStatementBlock extends ForStatementBlock
 		return _ID;
 	}
 
-	public ArrayList<String> getResultVariables() {
+	public ArrayList<ResultVar> getResultVariables() {
 		return _resultVars;
 	}
 	
-	private void addToResultVariablesNoDup( String var ) {
+	private void addToResultVariablesNoDup( String var, boolean accum ) {
+		addToResultVariablesNoDup(new ResultVar(var, accum));
+	}
+	
+	private void addToResultVariablesNoDup( ResultVar var ) {
 		if( !_resultVars.contains( var ) )
 			_resultVars.add( var );
 	}
@@ -344,16 +348,16 @@ public class ParForStatementBlock extends ForStatementBlock
 		//a) add own candidates
 		for( Candidate var : C )
 			if( check || var._dat.getDataType()!=DataType.SCALAR )
-				addToResultVariablesNoDup( var._var );
+				addToResultVariablesNoDup( var._var, var._isAccum );
 		//b) get and add child result vars (if required)
-		ArrayList<String> tmp = new ArrayList<>();
+		ArrayList<ResultVar> tmp = new ArrayList<>();
 		rConsolidateResultVars(pfs.getBody(), tmp);
-		for( String var : tmp )
-			if(_vsParent.containsVariable(var))
-				addToResultVariablesNoDup( var );
+		for( ResultVar var : tmp )
+			if(_vsParent.containsVariable(var._name))
+				addToResultVariablesNoDup(var);
 		if( LDEBUG )
-			for( String rvar : _resultVars )
-				LOG.debug("INFO: PARFOR final result variable: "+rvar);
+			for( ResultVar rvar : _resultVars )
+				LOG.debug("INFO: PARFOR final result variable: "+rvar._name);
 		
 		//cleanup function cache in order to prevent side effects between parfor statements
 		if( USE_FN_CACHE )
@@ -594,35 +598,25 @@ public class ParForStatementBlock extends ForStatementBlock
 			&& l2.eval(1L) == l1._b[0] );                 //aligned intercept
 	}
 	
-	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<String> vars) 
+	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<ResultVar> vars) 
 		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
 		{
 			if( sb instanceof ParForStatementBlock )
-			{
 				vars.addAll(((ParForStatementBlock)sb).getResultVariables());
-			}
 			
-			for( Statement s : sb._statements ) // foreach statement in statement block
-			{
+			for( Statement s : sb._statements ) {
 				if( s instanceof ForStatement || s instanceof ParForStatement )
-				{
 					rConsolidateResultVars(((ForStatement)s).getBody(), vars);
-				}
 				else if( s instanceof WhileStatement ) 
-				{
 					rConsolidateResultVars(((WhileStatement)s).getBody(), vars);
-				}
-				else if( s instanceof IfStatement ) 
-				{
+				else if( s instanceof IfStatement ) {
 					rConsolidateResultVars(((IfStatement)s).getIfBody(), vars);
 					rConsolidateResultVars(((IfStatement)s).getElseBody(), vars);
 				}
 				else if( s instanceof FunctionStatement ) 
-				{
 					rConsolidateResultVars(((FunctionStatement)s).getBody(), vars);
-				}
 			}
 		}
 	}
@@ -1807,6 +1801,29 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		
 		return ret;
+	}
+	
+	public static class ResultVar {
+		public final String _name;
+		public final boolean _isAccum;
+		public ResultVar(String name, boolean accum) {
+			_name = name;
+			_isAccum = accum;
+		}
+		@Override
+		public boolean equals(Object that) {
+			if( !(that instanceof ResultVar) )
+				return false;
+			return _name.equals(((ResultVar)that)._name);
+		}
+		@Override
+		public int hashCode() {
+			return _name.hashCode();
+		}
+		@Override
+		public String toString() {
+			return _name;
+		}
 	}
 	
 	private static class Candidate  {

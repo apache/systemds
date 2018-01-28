@@ -528,7 +528,6 @@ public class InstructionUtils
 	}
 	
 	public static BinaryOperator parseBinaryOperator(String opcode) 
-		throws DMLRuntimeException
 	{
 		if(opcode.equalsIgnoreCase("=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
@@ -583,7 +582,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
 		
-		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
 	
 	public static TernaryOperator parseTernaryOperator(String opcode) {

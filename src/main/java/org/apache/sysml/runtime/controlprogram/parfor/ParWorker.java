@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -43,11 +43,9 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
  */
 public abstract class ParWorker
 {
-	
 	protected static final Log LOG = LogFactory.getLog(ParWorker.class.getName());
 	
 	protected long                      _workerID    = -1;
-	
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
 
 	public ExecutionContext getExecutionContext() {
@@ -55,34 +53,28 @@ public abstract class ParWorker
 	}
 
 	protected ExecutionContext          _ec          = null;
-	protected ArrayList<String>         _resultVars  = null;
+	protected ArrayList<ResultVar>      _resultVars  = null;
 
 	protected boolean                   _monitor     = false;
 	
 	protected long                      _numTasks    = -1;
 	protected long                      _numIters    = -1;
 	
-	public ParWorker()
-	{
+	public ParWorker() {
 		//implicit constructor (required if parameters not known on object creation, 
 		//e.g., RemoteParWorkerMapper)
 	}
 	
-	public ParWorker( long ID, ParForBody body, boolean monitor )
-	{
+	public ParWorker( long ID, ParForBody body, boolean monitor ) {
 		_workerID    = ID;
-		
-		if( body != null )
-		{
+		if( body != null ) {
 			_childBlocks = body.getChildBlocks();
-			_ec          = body.getEc();
-			_resultVars  = body.getResultVarNames();
+			_ec = body.getEc();
+			_resultVars = body.getResultVariables();
 		}
-		
 		_monitor = monitor;
-		
-		_numTasks    = 0;
-		_numIters    = 0;
+		_numTasks = 0;
+		_numIters = 0;
 	}
 
 	public LocalVariableMap getVariables()
@@ -107,21 +99,15 @@ public abstract class ParWorker
 	 * 
 	 * @return number of executed iterations
 	 */
-	public long getExecutedIterations()
-	{
+	public long getExecutedIterations() {
 		return _numIters;
 	}
 
-	protected void pinResultVariables()
-	{
-		for( String var : _resultVars )
-		{
-			Data dat = _ec.getVariable(var);
+	protected void pinResultVariables() {
+		for( ResultVar var : _resultVars ) {
+			Data dat = _ec.getVariable(var._name);
 			if( dat instanceof MatrixObject )
-			{
-				MatrixObject mo = (MatrixObject)dat;
-				mo.enableCleanup(false); 
-			}
+				((MatrixObject)dat).enableCleanup(false);
 		}
 	}
 

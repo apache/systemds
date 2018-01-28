@@ -26,8 +26,10 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -38,22 +40,24 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 public abstract class ResultMerge 
 {
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
-	
 	protected static final String NAME_SUFFIX = "_rm";
+	protected static final BinaryOperator PLUS = InstructionUtils.parseBinaryOperator("+");
 	
 	//inputs to result merge
 	protected MatrixObject   _output      = null;
 	protected MatrixObject[] _inputs      = null; 
 	protected String         _outputFName = null;
+	protected boolean        _isAccum     = false;
 	
 	protected ResultMerge( ) {
 		//do nothing
 	}
 	
-	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename ) {
+	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
+		_isAccum = accum;
 	}
 	
 	/**
@@ -89,7 +93,10 @@ public abstract class ResultMerge
 	 */
 	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) throws DMLRuntimeException {
 		//pass through to matrix block operations
-		out.merge(in, appendOnly);
+		if( _isAccum )
+			out.binaryOperationsInPlace(PLUS, in);
+		else
+			out.merge(in, appendOnly);
 	}
 
 	/**
@@ -109,43 +116,31 @@ public abstract class ResultMerge
 		//   (using sparse iterator would miss values set to 0) 
 		// * Explicit NaN awareness because for cases were original matrix contains
 		//   NaNs, since NaN != NaN, otherwise we would potentially overwrite results
+		// * For the case of accumulation, we add out += (new-old) to ensure correct results
+		//   because all inputs have the old values replicated
 		
 		if( in.isEmptyBlock(false) ) {
+			if( _isAccum ) return; //nothing to do
 			for( int i=0; i<in.getNumRows(); i++ )
 				for( int j=0; j<in.getNumColumns(); j++ )
 					if( compare.get(i, j) != 0 )
 						out.quickSetValue(i, j, 0);
 		}
-		else if( in.isInSparseFormat() ) { //SPARSE
+		else { //SPARSE/DENSE
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ ) {
-					double value = in.getValueSparseUnsafe(i,j);  //input value
-					if(   (value != compare.get(i,j) && !Double.isNaN(value) )     //for new values only (div)
-						|| Double.isNaN(value) != Double.isNaN(compare.get(i,j)) ) //NaN awareness 
+					double valOld = compare.get(i,j);
+					double valNew = in.quickGetValue(i,j); //input value
+					if( (valNew != valOld && !Double.isNaN(valNew) )      //for changed values 
+						|| Double.isNaN(valNew) != Double.isNaN(valOld) ) //NaN awareness 
 					{
+						double value = !_isAccum ? valNew :
+							(out.quickGetValue(i, j) + (valNew - valOld));
 						out.quickSetValue(i, j, value);
 					}
 				}
-		}
-		else { //DENSE
-			//guaranteed allocated due to empty case above
-			DenseBlock a = in.getDenseBlock();
-			int rows = in.getNumRows();
-			int cols = in.getNumColumns();
-			for( int i=0; i<rows; i++ ) {
-				double[] avals = a.values(i);
-				int aix = a.pos(i);
-				for( int j=0; j<cols; j++ ) {
-					double value = avals[aix+j]; //input value
-					if( (value != compare.get(i,j) && !Double.isNaN(value) ) //for new values only (div)
-						|| Double.isNaN(value) != Double.isNaN(compare.get(i,j)) ) //NaN awareness
-					{
-						out.quickSetValue( i, j, value );
-					}
-				}
-			}
 		}
 	}
 

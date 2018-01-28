@@ -77,9 +77,9 @@ public class ResultMergeLocalFile extends ResultMerge
 	//internal comparison matrix
 	private IDSequence _seq = null;
 	
-	public ResultMergeLocalFile( MatrixObject out, MatrixObject[] in, String outputFilename )
+	public ResultMergeLocalFile( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum )
 	{
-		super( out, in, outputFilename );
+		super( out, in, outputFilename, accum );
 		
 		_seq = new IDSequence();
 	}
@@ -121,7 +121,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				merge( _outputFName, _output, inMO );
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
-				moNew = createNewMatrixObject( _output, inMO );	
+				moNew = createNewMatrixObject( _output, inMO );
 			}
 			else
 			{
@@ -146,7 +146,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		return executeSerialMerge();
 	}
 
-	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO ) 
+	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO)
 		throws DMLRuntimeException
 	{
 		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
@@ -156,9 +156,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
-		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
-				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
-		mc.setNonZeros( computeNonZeros(output, inMO) );
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
+		mc.setNonZeros(_isAccum ? -1 : computeNonZeros(output, inMO));
 		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );
 		

@@ -45,6 +45,7 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
@@ -726,7 +727,7 @@ public class ProgramConverter
 		throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
-		ArrayList<String> rVnames = body.getResultVarNames();
+		ArrayList<ResultVar> rVnames = body.getResultVariables();
 		ExecutionContext ec = body.getEc();
 		
 		if( pbs.isEmpty() )
@@ -741,7 +742,7 @@ public class ProgramConverter
 		//handle DMLScript UUID (propagate original uuid for writing to scratch space)
 		sb.append( DMLScript.getUUID() );
 		sb.append( COMPONENTS_DELIM );
-		sb.append( NEWLINE );		
+		sb.append( NEWLINE );
 		
 		//handle DML config
 		sb.append( ConfigurationManager.getDMLConfig().serializeDMLConfig() );
@@ -763,7 +764,7 @@ public class ProgramConverter
 		sb.append( NEWLINE );
 		
 		//handle result variable names
-		sb.append( serializeStringArrayList(rVnames) );
+		sb.append( serializeResultVariables(rVnames) );
 		sb.append( COMPONENTS_DELIM );
 		
 		//handle execution context
@@ -1024,6 +1025,18 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
+	public static String serializeResultVariables( ArrayList<ResultVar> vars) {
+		StringBuilder sb = new StringBuilder();
+		int count=0;
+		for( ResultVar var : vars ) {
+			if(count>0)
+				sb.append( ELEMENT_DELIM );
+			sb.append( var._isAccum ? var._name+"+" : var._name );
+			count++;
+		}
+		return sb.toString();
+	}
+	
 	public static String serializeStringArrayList( ArrayList<String> vars)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1179,7 +1192,7 @@ public class ProgramConverter
 			
 			sb.append( pfpb.getIterVar() );
 			sb.append( COMPONENTS_DELIM );
-			sb.append( serializeStringArrayList( pfpb.getResultVariables()) );
+			sb.append( serializeResultVariables( pfpb.getResultVariables()) );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( serializeStringHashMap( pfpb.getParForParams()) ); //parameters of nested parfor
 			sb.append( COMPONENTS_DELIM );
@@ -1323,13 +1336,13 @@ public class ProgramConverter
 		
 		//handle result variable names
 		String rvarStr = st.nextToken();
-		ArrayList<String> rvars = parseStringArrayList(rvarStr);
-		body.setResultVarNames(rvars);
+		ArrayList<ResultVar> rvars = parseResultVariables(rvarStr);
+		body.setResultVariables(rvars);
 		
 		//handle execution context
 		String ecStr = st.nextToken();
 		ExecutionContext ec = parseExecutionContext( ecStr, prog );
-			
+		
 		//handle program blocks
 		String spbs = st.nextToken();
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(spbs, prog, id);
@@ -1337,7 +1350,7 @@ public class ProgramConverter
 		body.setChildBlocks( pbs );
 		body.setEc( ec );
 		
-		return body;		
+		return body;
 	}
 
 	public static Program parseProgram( String in, int id ) 
@@ -1499,7 +1512,7 @@ public class ProgramConverter
 		
 		//inputs
 		String iterVar = st.nextToken();
-		ArrayList<String> resultVars = parseStringArrayList(st.nextToken());
+		ArrayList<ResultVar> resultVars = parseResultVariables(st.nextToken());
 		HashMap<String,String> params = parseStringHashMap(st.nextToken());
 		
 		//instructions 
@@ -1638,6 +1651,15 @@ public class ProgramConverter
 			}
 		}
 		return insts;
+	}
+	
+	private static ArrayList<ResultVar> parseResultVariables(String in) {
+		ArrayList<ResultVar> ret = new ArrayList<>();
+		for(String var : parseStringArrayList(in)) {
+			boolean accum = var.endsWith("+");
+			ret.add(new ResultVar(accum ? var.substring(0, var.length()-1) : var, accum));
+		}
+		return ret;
 	}
 
 	private static HashMap<String,String> parseStringHashMap( String in ) {

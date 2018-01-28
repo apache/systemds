@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -107,14 +108,15 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
-		_resultVars  = body.getResultVarNames();
+		_resultVars  = body.getResultVariables();
 		_numTasks    = 0;
 		_numIters    = 0;
 		
 		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
 		//we reuse everything except result variables and partitioned input matrices)
 		_ec.pinVariables(_ec.getVarList()); //avoid cleanup of shared inputs
-		Collection<String> blacklist = UtilFunctions.asSet(_resultVars, _ec.getVarListPartitioned());
+		Collection<String> blacklist = UtilFunctions.asSet(_resultVars.stream()
+			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
 		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist);
 		
 		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 

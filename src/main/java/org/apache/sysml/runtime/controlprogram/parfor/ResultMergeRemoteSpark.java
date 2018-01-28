@@ -54,9 +54,10 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	private int  _numMappers = -1;
 	private int  _numReducers = -1;
 	
-	public ResultMergeRemoteSpark(MatrixObject out, MatrixObject[] in, String outputFilename, ExecutionContext ec, int numMappers, int numReducers) 
+	public ResultMergeRemoteSpark(MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum,
+		ExecutionContext ec, int numMappers, int numReducers) 
 	{
-		super(out, in, outputFilename);
+		super(out, in, outputFilename, accum);
 		
 		_ec = ec;
 		_numMappers = numMappers;
@@ -83,8 +84,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 
 		try
 		{
-			if( _inputs != null && _inputs.length>0 )
-			{
+			if( _inputs != null && _inputs.length>0 ) {
 				//prepare compare
 				MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
@@ -97,24 +97,21 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				moNew = new MatrixObject(_output.getValueType(), _outputFName);
 				OutputInfo oiOld = metadata.getOutputInfo();
 				InputInfo iiOld = metadata.getInputInfo();
-				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
-						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
-				mc.setNonZeros( computeNonZeros(_output, Arrays.asList(_inputs)) );
+				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
+				mc.setNonZeros(_isAccum ? -1 : computeNonZeros(_output, Arrays.asList(_inputs)));
 				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
 				moNew.setRDDHandle( ro );
 			}
-			else
-			{
+			else {
 				moNew = _output; //return old matrix, to prevent copy
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
-		return moNew;		
+		return moNew;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -630,12 +630,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return 0;
 		return denseBlock.get(r, c);
 	}
-
-	public double getValueSparseUnsafe(int r, int c) {
-		if(sparseBlock==null || sparseBlock.isEmpty(r))
-			return 0;
-		return sparseBlock.get(r, c);
-	}
 	
 	/**
 	 * Append value is only used when values are appended at the end of each row for the sparse representation

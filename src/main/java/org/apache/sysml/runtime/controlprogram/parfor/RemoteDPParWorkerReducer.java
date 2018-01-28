@@ -154,8 +154,8 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			String in = MRJobConfiguration.getProgramBlocks(job);
 			ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
 			_childBlocks = body.getChildBlocks();
-			_ec          = body.getEc();				
-			_resultVars  = body.getResultVarNames();
+			_ec          = body.getEc();
+			_resultVars  = body.getResultVariables();
 	
 			//init local cache manager 
 			if( !CacheableData.isCachingActive() ) {
@@ -176,7 +176,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 				CacheableData.disableCaching();
 
 			_numTasks    = 0;
-			_numIters    = 0;			
+			_numIters    = 0;
 		}
 		catch(Exception ex)
 		{
@@ -192,8 +192,8 @@ public class RemoteDPParWorkerReducer extends ParWorker
 	}
 
 	@Override
-	public void close() 
-	    throws IOException 
+	public void close()
+	    throws IOException
 	{
 		try
 		{

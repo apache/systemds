@@ -45,8 +45,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 	//internal comparison matrix
 	private DenseBlock _compare = null;
 	
-	public ResultMergeLocalMemory( MatrixObject out, MatrixObject[] in, String outputFilename ) {
-		super( out, in, outputFilename );
+	public ResultMergeLocalMemory( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {
+		super( out, in, outputFilename, accum );
 	}
 	
 	@Override

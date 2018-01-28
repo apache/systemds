@@ -847,12 +847,11 @@ public class SparseBlockCSR extends SparseBlock
 	
 	private int newCapacity(int minsize) {
 		//compute new size until minsize reached
-		double tmpCap = _values.length;
+		double tmpCap = Math.max(_values.length, 1);
 		while( tmpCap < minsize ) {
 			tmpCap *= (tmpCap <= 1024) ? 
-					RESIZE_FACTOR1 : RESIZE_FACTOR2;
+				RESIZE_FACTOR1 : RESIZE_FACTOR2;
 		}
-		
 		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
 	}
 

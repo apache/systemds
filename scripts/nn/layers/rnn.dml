@@ -146,8 +146,8 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, mat
     }
     input = cbind(X_t, out_prev)  # shape (N, D+M)
     dout_t_raw = (1-out_t^2) * dout_t  # into tanh, shape (N, M)
-    dW = dW + t(input) %*% dout_t_raw  # shape (D+M, M)
-    db = db + colSums(dout_t_raw)  # shape (1, M)
+    dW += t(input) %*% dout_t_raw  # shape (D+M, M)
+    db += colSums(dout_t_raw)  # shape (1, M)
     dinput = dout_t_raw %*% t(W)  # shape (N, D+M)
     dX[,(t-1)*D+1:t*D] = dinput[,1:D]
     dout_prev = dinput[,D+1:D+M]  # shape (N, M)

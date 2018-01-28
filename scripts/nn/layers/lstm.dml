@@ -79,12 +79,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
   out_prev = out0
   c_prev = c0
   c = c_prev
-  if (return_sequences) {
-    out = matrix(0, rows=N, cols=T*M)
-  }
-  else {
-    out = matrix(0, rows=N, cols=M)
-  }
+  out = matrix(0, rows=N, cols=ifelse(return_sequences,T*M, M))
+  
   # caches to be used during the backward pass for performance
   cache_out = matrix(0, rows=T, cols=N*M)
   cache_c = matrix(0, rows=T, cols=N*M)

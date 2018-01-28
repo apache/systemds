@@ -19,22 +19,19 @@
 #
 #-------------------------------------------------------------
 
+# imports
+source("staging/gaussian_process/covariance.dml") as covariance
 
-cov = function(matrix[double] X)
-  return(matrix[double] out) {
+X = matrix("1 2 3
+            4 5 6
+            7 8 9", rows=3, cols=3);
 
-  K = -2 * X %*% t(X) + rowSums(X^2) + t( rowSums(X^2) )
-  out = exp(- 0.5 * K);
+# ability to give cholesky factorization, tests for the positive
+# definiteness of the covariance matrix.
+tmp = covariance::cov(X);
 
+for(ri in 1:nrow(X)) {
+  for(ci in 1:ncol(X)) {
+    print(as.scalar(tmp[ri, ci]) )
+  }
 }
-
-/*
-# for each dimension
-for( di in 1:d) {
-
-  Xd = X[1:n,di] %*% matrix(1, rows=1, cols=n);
-
-  diff = Xd - t(Xd)
-
-}
-*/

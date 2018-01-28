@@ -711,7 +711,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly && _isAccum )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -905,7 +905,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly && _isAccum )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -927,7 +927,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly && _isAccum )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 

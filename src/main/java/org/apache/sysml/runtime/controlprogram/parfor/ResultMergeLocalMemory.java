@@ -111,7 +111,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			}
 		
 			//sort sparse due to append-only
-			if( appendOnly )
+			if( appendOnly && !_isAccum )
 				outMBNew.sortSparseRows();
 			
 			//change sparsity if required after 

@@ -71,6 +71,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class ResultMergeLocalFile extends ResultMerge
 {
+	private static final long serialVersionUID = -6905893742840020489L;
+
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
 	public static final boolean ALLOW_COPY_CELLFILES = false;
 	
@@ -687,7 +689,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -709,7 +711,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && _isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -779,7 +781,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse and exam sparsity due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -801,7 +803,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}	
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -903,7 +905,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && _isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -925,7 +927,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && _isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 

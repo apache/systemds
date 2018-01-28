@@ -70,6 +70,46 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 	public void testParForAccumulatorLocalInitSparse() {
 		runParForAccumulatorResultMergeTest(TEST_NAME1, true, true, ExecType.CP);
 	}
+	
+	@Test
+	public void testParForAccumulatorRemoteEmptyDenseMR() {
+		runParForAccumulatorResultMergeTest(TEST_NAME2, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteEmptySparseMR() {
+		runParForAccumulatorResultMergeTest(TEST_NAME2, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteInitDenseMR() {
+		runParForAccumulatorResultMergeTest(TEST_NAME2, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteInitSparseMR() {
+		runParForAccumulatorResultMergeTest(TEST_NAME2, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteEmptyDenseSP() {
+		runParForAccumulatorResultMergeTest(TEST_NAME3, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteEmptySparseSP() {
+		runParForAccumulatorResultMergeTest(TEST_NAME3, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteInitDenseSP() {
+		runParForAccumulatorResultMergeTest(TEST_NAME3, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testParForAccumulatorRemoteInitSparseSP() {
+		runParForAccumulatorResultMergeTest(TEST_NAME3, true, true, ExecType.SPARK);
+	}
 
 	private void runParForAccumulatorResultMergeTest( String test, boolean init, boolean sparse, ExecType et )
 	{
@@ -96,16 +136,15 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", 
 				String.valueOf(rows), String.valueOf(cols), String.valueOf(init).toUpperCase(),
 				String.valueOf(sparse).toUpperCase(), output("R") };
-			
-			fullRScriptName = HOME + TEST_NAME + ".R";
+			fullRScriptName = HOME + TEST_NAME.substring(0, TEST_NAME.length()-1) + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 				String.valueOf(rows) + " " + String.valueOf(cols) + " " + String.valueOf(init).toUpperCase() 
 					+ " " + String.valueOf(sparse).toUpperCase() + " " + expectedDir();
-	
+			
 			//run tests
 			runTest(true, false, null, -1);
 			runRScript(true);
-		
+			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");

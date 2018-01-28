@@ -74,18 +74,17 @@ public class ResultMergeRemoteReducer
 		String compareFname = MRJobConfiguration.getResultMergeInfoCompareFilename(job);
 		
 		//determine compare required
-		boolean requiresCompare = false;
-		if( !compareFname.equals("null") )
-			requiresCompare = true;
+		boolean requiresCompare = !compareFname.equals("null");
+		boolean isAccum = MRJobConfiguration.getResultMergeInfoAccumulator(job);
 		
 		if( ii == InputInfo.TextCellInputInfo )
 			_reducer = new ResultMergeReducerTextCell(requiresCompare);
 		else if( ii == InputInfo.BinaryCellInputInfo )
 			_reducer = new ResultMergeReducerBinaryCell(requiresCompare);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_reducer = new ResultMergeReducerBinaryBlock(requiresCompare, job);
+			_reducer = new ResultMergeReducerBinaryBlock(requiresCompare, isAccum, job);
 		else
-			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
+			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString()+" "+isAccum);
 	}
 
 	@Override
@@ -266,12 +265,15 @@ public class ResultMergeRemoteReducer
 	
 	private static class ResultMergeReducerBinaryBlock extends ResultMerge implements ResultMergeReducer
 	{
+		private static final long serialVersionUID = 84399890805869855L;
+		
 		private boolean _requiresCompare;
 		private JobConf _job = null;
 		
-		public ResultMergeReducerBinaryBlock(boolean requiresCompare, JobConf job) {
+		public ResultMergeReducerBinaryBlock(boolean requiresCompare, boolean isAccum, JobConf job) {
 			_requiresCompare = requiresCompare;
 			_job = job;
+			_isAccum = isAccum;
 		}
 		
 		@Override
@@ -323,7 +325,7 @@ public class ResultMergeRemoteReducer
 				}
 				
 				//sort sparse due to append-only
-				if( appendOnly )
+				if( appendOnly && !_isAccum )
 					mbOut.sortSparseRows();
 				
 				//change sparsity if required after 

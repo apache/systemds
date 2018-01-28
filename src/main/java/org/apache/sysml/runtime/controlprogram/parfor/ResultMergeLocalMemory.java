@@ -42,6 +42,8 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class ResultMergeLocalMemory extends ResultMerge
 {
+	private static final long serialVersionUID = -3543612508601511701L;
+	
 	//internal comparison matrix
 	private DenseBlock _compare = null;
 	

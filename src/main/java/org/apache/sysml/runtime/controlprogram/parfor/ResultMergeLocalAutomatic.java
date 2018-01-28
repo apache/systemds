@@ -29,6 +29,8 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class ResultMergeLocalAutomatic extends ResultMerge
 {
+	private static final long serialVersionUID = 1600893100602101732L;
+	
 	private ResultMerge _rm = null;
 	
 	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {

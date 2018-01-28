@@ -43,12 +43,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Statistics;
 
-/**
- * MR job class for submitting parfor result merge MR jobs.
- * 
- */
 public class ResultMergeRemoteSpark extends ResultMerge
-{	
+{
+	private static final long serialVersionUID = -6924566953903424820L;
 	
 	private ExecutionContext _ec = null;
 	private int  _numMappers = -1;
@@ -162,23 +159,24 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			
 			//Step 2a: merge with compare
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
-			if( withCompare )
-			{
+			if( withCompare ) {
 				JavaPairRDD<MatrixIndexes, MatrixBlock> compareRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 						sec.getRDDHandleForMatrixObject(compare, InputInfo.BinaryBlockInputInfo);
-		    	
+				
 				//merge values which differ from compare values
-				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare();
+				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare(_isAccum);
 				out = rdd.groupByKey(numRed) //group all result blocks per key
-		    			.join(compareRdd)   //join compare block and result blocks 
-		    			.mapToPair(cfun);   //merge result blocks w/ compare
+					.join(compareRdd)        //join compare block and result blocks 
+					.mapToPair(cfun);        //merge result blocks w/ compare
 			}
 			//Step 2b: merge without compare
 			else {
 				//direct merge in any order (disjointness guaranteed)
-				out = RDDAggregateUtils.mergeByKey(rdd, false);
+				out = _isAccum ?
+					RDDAggregateUtils.sumByKeyStable(rdd, false) :
+					RDDAggregateUtils.mergeByKey(rdd, false);
 			}
-		    
+			
 			//Step 3: create output rdd handle w/ lineage
 			ret = new RDDObject(out);
 			for(int i=0; i<paths.length; i++)
@@ -188,7 +186,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		}
 		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
-		}	    
+		}
 		
 		//maintain statistics
 		Statistics.incrementNoOfCompiledSPInst();
@@ -203,9 +201,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	private static int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
 		//set the number of mappers and reducers 
 		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
-		int ret = (int)Math.min( numRed, reducerGroups );
-		
-		return ret; 	
+		return (int)Math.min( numRed, reducerGroups );
 	}
 	
 	@SuppressWarnings("unchecked")

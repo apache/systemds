@@ -36,6 +36,10 @@ public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairF
 {
 	private static final long serialVersionUID = -5970805069405942836L;
 	
+	public ResultMergeRemoteSparkWCompare(boolean accum) {
+		_isAccum = accum;
+	}
+	
 	@Override
 	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, MatrixBlock>> arg)
 		throws Exception 

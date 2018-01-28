@@ -58,7 +58,8 @@ import org.apache.sysml.utils.Statistics;
  * 
  */
 public class ResultMergeRemoteMR extends ResultMerge
-{	
+{
+	private static final long serialVersionUID = 575681838941682037L;
 	
 	public static final byte COMPARE_TAG = 'c';
 	public static final byte DATA_TAG = 'd';
@@ -185,11 +186,12 @@ public class ResultMergeRemoteMR extends ResultMerge
 			if( withCompare ) {
 				FileSystem fs = IOUtilFunctions.getFileSystem(pathNew, job);
 				pathCompare = new Path(fname).makeQualified(fs);
-				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), ii, 
+				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), _isAccum, ii, 
 					LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, brlen, bclen);
 			}
 			else
-				MRJobConfiguration.setResultMergeInfo(job, "null", ii, LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, bclen, bclen);
+				MRJobConfiguration.setResultMergeInfo(job, "null", _isAccum, ii,
+					LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE), rlen, clen, bclen, bclen);
 			
 			
 			//set mappers, reducers, combiners

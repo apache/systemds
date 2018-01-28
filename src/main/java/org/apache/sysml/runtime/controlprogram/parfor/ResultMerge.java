@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -37,8 +38,12 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
  */
-public abstract class ResultMerge 
+public abstract class ResultMerge implements Serializable
 {
+	//note: this class needs to be serializable to ensure that all attributes of
+	//ResultMergeRemoteSparkWCompare are included in the task closure
+	private static final long serialVersionUID = 2620430969346516677L;
+	
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
 	protected static final String NAME_SUFFIX = "_rm";
 	protected static final BinaryOperator PLUS = InstructionUtils.parseBinaryOperator("+");

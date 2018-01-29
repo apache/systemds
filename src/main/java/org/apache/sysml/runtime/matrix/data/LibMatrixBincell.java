@@ -1208,13 +1208,31 @@ public class LibMatrixBincell
 		final int rlen = m1ret.rlen;
 		final int clen = m1ret.clen;
 		
-		for(int r=0; r<rlen; r++)
-			for(int c=0; c<clen; c++) {
-				double thisvalue = m1ret.quickGetValue(r, c);
-				double thatvalue = m2.quickGetValue(r, c);
-				double resultvalue = op.fn.execute(thisvalue, thatvalue);
-				m1ret.quickSetValue(r, c, resultvalue);
+		if( m2.sparse && (op.fn instanceof Plus || op.fn instanceof Minus) ) {
+			if( m2.isEmptyBlock(false) )
+				return;
+			SparseBlock b = m2.sparseBlock;
+			for(int r=0; r<rlen; r++) {
+				int bpos = b.pos(r);
+				int blen = b.size(r);
+				int[] bix = b.indexes(r);
+				double[] bvals = b.values(r);
+				for(int k = bpos; k<bpos+blen; k++) {
+					double vold = m1ret.quickGetValue(r, bix[k]);
+					double vnew = op.fn.execute(vold, bvals[k]);
+					m1ret.quickSetValue(r, bix[k], vnew);
+				}
 			}
+		}
+		else {
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++) {
+					double thisvalue = m1ret.quickGetValue(r, c);
+					double thatvalue = m2.quickGetValue(r, c);
+					double resultvalue = op.fn.execute(thisvalue, thatvalue);
+					m1ret.quickSetValue(r, c, resultvalue);
+				}
+		}
 	}
 	
 	private static void unsafeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) throws DMLRuntimeException 

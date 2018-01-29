@@ -1734,7 +1734,8 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		else if( n.getNodeType()== NodeType.HOP) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( h instanceof LeftIndexingOp && ResultVar.contains(retVars, h.getInput().get(0).getName() ) )
+			if( h instanceof LeftIndexingOp && ResultVar.contains(retVars, h.getInput().get(0).getName() )
+				&& !retVars.stream().anyMatch(rvar -> rvar._isAccum) )
 				ret &= (h.getParent().size()==1 
 					&& h.getParent().get(0).getName().equals(h.getInput().get(0).getName()));
 		}

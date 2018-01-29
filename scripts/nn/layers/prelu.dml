@@ -20,41 +20,40 @@
 #-------------------------------------------------------------
 
 /*
- * Exponential Linear Units (ELUs) nonlinearity layer.
+ * Parametric Rectified Linear Unit (PReLU) nonlinearity layer.
  */
 
-forward = function(matrix[double] X, int alpha)
+forward = function(matrix[double] X, int a)
     return (matrix[double] out) {
   /*
-   * Computes the forward pass for a ELUs nonlinearity layer.
+   * Computes the forward pass for a PReLU nonlinearity layer.
    *
-   * Performs an element-wise evaluation of `f(input) = max(0, input) + min(0, alpha ∗ (exp(input) − 1))`.
+   * Performs an element-wise evaluation of `f(input) = max(0, input) + a * min(0, input)`.
    *
    * Inputs:
    *  - X: Inputs, of shape (any, any).
-   *  - alpha: Input, minimum value that the ELU can reach
-   *           Typical value 1
+   *  - a: Learnable Parameter
+   *       Typical value 1
    *
    * Outputs:
    *  - out: Outputs, of same shape as `X`.
    */
-  out = max(0, X) + min(0, alpha * (exp(X) - 1))
+  out = max(0, X) + a * min(0, X)
 }
 
-backward = function(matrix[double] dout, matrix[double] X, int alpha)
+backward = function(matrix[double] dout, matrix[double] X, int a)
     return (matrix[double] dX) {
   /*
-   * Computes the backward pass for a ELU nonlinearity layer.
+   * Computes the backward pass for a PReLU nonlinearity layer.
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
    *  - X: Previous input data matrix, of shape (any, any).
-   *  - alpha: Minimum value that the ELU can reach
-   *           Typical value 1
+   *  - a: Learnable Parameter
+   *       Typical value 1
    *
    * Outputs:
    *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
-   out = max(0, X) + min(0, alpha * (exp(X) - 1))
-   dX = ((X > 0) + (X < 0) * (alpha * out)) * dout
+   dX = ((X > 0) + (X < 0) * a) * dout
 }

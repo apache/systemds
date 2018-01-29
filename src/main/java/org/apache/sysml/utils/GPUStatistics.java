@@ -204,7 +204,7 @@ public class GPUStatistics {
 				+ cudaSparseConversionCount.longValue() + "/"
 				+ cudaToDevCount.longValue() + "/"
 				+ cudaFromDevCount.longValue() + "/"
-				+ cudaEvictionCount.longValue() + "/ ("
+				+ cudaEvictionCount.longValue() + "/("
 				+ cudaForcedClearLazyFreedMatCount.longValue() + "/"
 				+ cudaForcedClearUnpinnedMatCount.longValue() + ").\n");
 		sb.append("GPU conversion time  (sparseConv/sp2dense/dense2sp):\t"

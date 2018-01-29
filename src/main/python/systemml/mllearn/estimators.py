@@ -844,7 +844,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
             
-    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None, perform_one_hot_encoding=None):
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None):
         """
         Set input to Caffe2DML
         
@@ -856,6 +856,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         parallel_batches: number of parallel batches
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
+        parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         """
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
         if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
@@ -863,6 +864,13 @@ class Caffe2DML(BaseSystemMLClassifier):
         if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
         if output_activations is not None: self.estimator.setInput("$output_activations", str(output_activations))
         if perform_one_hot_encoding is not None: self.estimator.setInput("$perform_one_hot_encoding", str(perform_one_hot_encoding).lower())
+        if parfor_parameters is not None:
+            if isinstance(parfor_parameters, dict):
+                # Convert dictionary to comma-separated list
+                parfor_parameters = ''.join([ ', ' + str(k) + '=' + str(v) for k, v in parfor_parameters.items()]) if len(parfor_parameters) > 0 else ''
+                self.estimator.setInput("$parfor_parameters", parfor_parameters)
+            else:
+                raise TypeError("parfor_parameters should be a dictionary") 
         return self
     
     def summary(self):

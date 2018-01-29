@@ -57,6 +57,8 @@ trait BaseDMLGenerator {
   def asDMLString(str: String): String                                               = "\"" + str + "\""
   def assign(dmlScript: StringBuilder, lhsVar: String, rhsVar: String): Unit =
     dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("\n")
+  def assignPlusEq(dmlScript: StringBuilder, lhsVar: String, rhsVar: String): Unit =
+    dmlScript.append(lhsVar).append(" += ").append(rhsVar).append("\n")
   def sum(dmlScript: StringBuilder, variables: List[String]): StringBuilder = {
     if (variables.length > 1) dmlScript.append("(")
     dmlScript.append(variables(0))
@@ -104,12 +106,12 @@ trait BaseDMLGenerator {
     invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
   def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: String*): Unit =
     invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
-  def rightIndexing(dmlScript: StringBuilder, varName: String, rl: String, ru: String, cl: String, cu: String): StringBuilder = {
-    dmlScript.append(varName).append("[")
+  def rightIndexing(dmlScript: StringBuilder, lhsVar:String, rhsVar: String, rl: String, ru: String, cl: String=null, cu: String=null): StringBuilder = {
+    dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("[")
     if (rl != null && ru != null) dmlScript.append(rl).append(":").append(ru)
     dmlScript.append(",")
     if (cl != null && cu != null) dmlScript.append(cl).append(":").append(cu)
-    dmlScript.append("]")
+    dmlScript.append("]\n")
   }
   // Performs assignVar = ceil(lhsVar/rhsVar)
   def ceilDivide(dmlScript: StringBuilder, assignVar: String, lhsVar: String, rhsVar: String): Unit =
@@ -124,7 +126,12 @@ trait BaseDMLGenerator {
     ret.toString
   }
   def matrix(init: String, rows: String, cols: String): String = "matrix(" + init + ", rows=" + rows + ", cols=" + cols + ")"
+  def sum(m: String): String                                   = "sum(" + m + ")"
   def nrow(m: String): String                                  = "nrow(" + m + ")"
+  def ceil(m: String): String                                  = "ceil(" + m + ")"
+  def floor(m: String): String                                 = "floor(" + m + ")"
+  def stop(dmlScript: StringBuilder, m: String): StringBuilder = dmlScript.append("stop(" + m + ")\n")
+  def asInteger(m: String): String                             = "as.integer(" + m + ")"
   def ncol(m: String): String                                  = "ncol(" + m + ")"
   def customAssert(cond: Boolean, msg: String)                 = if (!cond) throw new DMLRuntimeException(msg)
   def multiply(v1: String, v2: String): String                 = v1 + "*" + v2
@@ -166,28 +173,25 @@ trait SourceDMLGenerator extends TabbedDMLGenerator {
 
 trait NextBatchGenerator extends TabbedDMLGenerator {
   def min(lhs: String, rhs: String): String = "min(" + lhs + ", " + rhs + ")"
-
-  def assignBatch(dmlScript: StringBuilder, Xb: String, X: String, yb: String, y: String, indexPrefix: String, N: String, i: String): StringBuilder = {
-    dmlScript.append(indexPrefix).append("beg = ((" + i + "-1) * " + Caffe2DML.batchSize + ") %% " + N + " + 1; ")
-    dmlScript.append(indexPrefix).append("end = min(beg + " + Caffe2DML.batchSize + " - 1, " + N + "); ")
+  // Creates a DML script for:
+  // index_prefix_beg = ((i-1) * batchSize) %% N + 1;
+  // index_prefix_end = min(index_prefix_beg + batchSize - 1, N);
+  // Xb = X[ index_prefix_beg: index_prefix_end, ]; yb = y[ index_prefix_beg: index_prefix_end, ]; 
+  def assignBatch(dmlScript: StringBuilder, Xb: String, X: String, yb: String, y: String, indexPrefix: String, N: String, i: String, batchSize:String): StringBuilder = {
+    dmlScript.append(indexPrefix).append("beg = ((" + i + "-1) * " + batchSize + ") %% " + N + " + 1; ")
+    dmlScript.append(indexPrefix).append("end = min(" + indexPrefix + "beg + " + batchSize + " - 1, " + N + "); ")
     dmlScript.append(Xb).append(" = ").append(X).append("[").append(indexPrefix).append("beg:").append(indexPrefix).append("end,]; ")
     if (yb != null && y != null)
       dmlScript.append(yb).append(" = ").append(y).append("[").append(indexPrefix).append("beg:").append(indexPrefix).append("end,]; ")
     dmlScript.append("\n")
   }
   def getTestBatch(tabDMLScript: StringBuilder): Unit =
-    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, null, null, "", Caffe2DML.numImages, "iter")
-
+    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, null, null, "", Caffe2DML.numImages, "iter", Caffe2DML.batchSize)
   def getTrainingBatch(tabDMLScript: StringBuilder): Unit =
-    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, "yb", Caffe2DML.y, "", Caffe2DML.numImages, "iter")
-  def getTrainingBatch(tabDMLScript: StringBuilder, X: String, y: String, numImages: String): Unit =
-    assignBatch(tabDMLScript, "Xb", X, "yb", y, "", numImages, "i")
-  def getTrainingMaxiBatch(tabDMLScript: StringBuilder): Unit =
-    assignBatch(tabDMLScript, "X_group_batch", Caffe2DML.X, "y_group_batch", Caffe2DML.y, "group_", Caffe2DML.numImages, "g")
+    assignBatch(tabDMLScript, "Xb", Caffe2DML.X, "yb", Caffe2DML.y, "", Caffe2DML.numImages, "iter", Caffe2DML.batchSize)
   def getValidationBatch(tabDMLScript: StringBuilder): Unit =
-    assignBatch(tabDMLScript, "Xb", Caffe2DML.XVal, "yb", Caffe2DML.yVal, "", Caffe2DML.numValidationImages, "iVal")
+    assignBatch(tabDMLScript, "Xb", Caffe2DML.XVal, "yb", Caffe2DML.yVal, "", Caffe2DML.numValidationImages, "iVal", Caffe2DML.batchSize)
 }
-
 
 trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
   // Also makes "code reading" possible for Caffe2DML :)
@@ -220,6 +224,13 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     numTabs -= 1
     tabDMLScript.append("}\n")
   }
+  def forBlock(iterVarName: String, startVal: String, endVal: String, step:String)(op: => Unit) {
+    tabDMLScript.append("for(" + iterVarName + " in seq(" + startVal + "," + endVal + "," + step + ")) {\n")
+    numTabs += 1
+    op
+    numTabs -= 1
+    tabDMLScript.append("}\n")
+  }
   def forBlock(iterVarName: String, startVal: String, endVal: String)(op: => Unit) {
     tabDMLScript.append("for(" + iterVarName + " in " + startVal + ":" + endVal + ") {\n")
     numTabs += 1
@@ -227,8 +238,11 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     numTabs -= 1
     tabDMLScript.append("}\n")
   }
-  def parForBlock(iterVarName: String, startVal: String, endVal: String)(op: => Unit) {
-    tabDMLScript.append("parfor(" + iterVarName + " in " + startVal + ":" + endVal + ") {\n")
+  def parForBlock(iterVarName: String, startVal: String, endVal: String, step:String, parforParameters:String)(op: => Unit) {
+    if(step.equals("1"))
+      tabDMLScript.append("parfor(" + iterVarName + " in " + startVal + ":" + endVal + parforParameters + ") {\n")
+    else
+      tabDMLScript.append("parfor(" + iterVarName + " in seq(" + startVal + "," + endVal + "," + step + ")" + parforParameters + ") {\n")
     numTabs += 1
     op
     numTabs -= 1

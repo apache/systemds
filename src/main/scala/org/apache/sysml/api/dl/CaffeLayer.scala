@@ -87,6 +87,7 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedDout
   }
   def dX(bottomLayerID: Int) = "dOut" + id + "_" + bottomLayerID
+  def getIgnoreVarName(varNameHint:String):String = "ignore" + varNameHint + "_" + id + "_" + Math.abs(Caffe2DML.rand.nextLong)
   // --------------------------------------------------------------------------------------
   // No need to override these methods in subclasses, instead classes that have weights and biases
   // should implement HasWeight and HasBias traits.
@@ -371,7 +372,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
       eps
     )
 
-  private def withSuffix(str: String): String = if (update_mean_var) str else str + "_ignore"
+  private def withSuffix(str: String): String = if (update_mean_var) str else getIgnoreVarName(str)
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
   override def biasShape(): Array[Int]        = Array(numChannels.toInt, 1)
   def cache_mean(): String                    = "cache_mean" + id
@@ -1016,7 +1017,7 @@ class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) 
    *  - Wout: Output width.
    */
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out, "ignoreHout_" + id, "ignoreWout_" + id), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    invokeForward(dmlScript, List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   /*
    * Computes the backward pass for a 2D spatial max pooling layer.
    * The input data has N examples, each represented as a 3D volume
@@ -1168,7 +1169,7 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
     if (isDepthWise)
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,
@@ -1185,7 +1186,7 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
       )
     else
       invokeForward(dmlScript,
-                    List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+                    List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
                     X,
                     weight,
                     bias,
@@ -1423,7 +1424,7 @@ class DeConvolution(val param: LayerParameter, val id: Int, val net: CaffeNetwor
     if (isDepthWise)
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,
@@ -1443,7 +1444,7 @@ class DeConvolution(val param: LayerParameter, val id: Int, val net: CaffeNetwor
     else
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,

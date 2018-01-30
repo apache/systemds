@@ -336,10 +336,15 @@ public class GPUContext {
 					
 					// Step 1:
 					LOG.debug("Eagerly deallocating rmvar-ed matrices to avoid memory allocation error due to potential fragmentation.");
+					long forcedEvictStartTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					clearFreeCUDASpaceMap(instructionName, -1);
+					if(DMLScript.STATISTICS) {
+						GPUStatistics.cudaForcedClearLazyFreedEvictTime.add(System.nanoTime()-forcedEvictStartTime);
+					}
 					try {
 						cudaMalloc(A, size);
 					} catch(jcuda.CudaException e1) {
+						forcedEvictStartTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
 						// Step 2:
 						GPUStatistics.cudaForcedClearUnpinnedMatCount.add(1);
 						LOG.warn("Eagerly deallocating unpinned matrices to avoid memory allocation error due to potential fragmentation. "
@@ -351,6 +356,9 @@ public class GPUContext {
 								}
 								toBeRemoved.clearData(true);
 							}
+						}
+						if(DMLScript.STATISTICS) {
+							GPUStatistics.cudaForcedClearUnpinnedEvictTime.add(System.nanoTime()-forcedEvictStartTime);
 						}
 						cudaMalloc(A, size);
 					}
@@ -555,6 +563,7 @@ public class GPUContext {
 	 * @throws DMLRuntimeException If no reusable memory blocks to free up or if not enough matrix blocks with zero locks on them.
 	 */
 	protected void evict(String instructionName, final long neededSize) throws DMLRuntimeException {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
 		}
@@ -565,8 +574,12 @@ public class GPUContext {
 
 		clearFreeCUDASpaceMap(instructionName,  neededSize);
 
-		if (neededSize <= getAvailableMemory())
+		if (neededSize <= getAvailableMemory()) {
+			if(DMLScript.STATISTICS) {
+				GPUStatistics.cudaEvictTime.add(System.nanoTime() - t0);
+			}
 			return;
+		}
 
 		if (allocatedGPUObjects.size() == 0) {
 			throw new DMLRuntimeException(
@@ -627,6 +640,9 @@ public class GPUContext {
 				toBeRemoved.copyFromDeviceToHost(instructionName, true);
 			}
 			toBeRemoved.clearData(true);
+		}
+		if(DMLScript.STATISTICS) {
+			GPUStatistics.cudaEvictTime.add(System.nanoTime() - t0);
 		}
 	}
 

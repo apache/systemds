@@ -67,8 +67,20 @@ public class IOUtilFunctions
 			ConfigurationManager.getCachedJobConf());
 	}
 	
+	public static FileSystem getFileSystem(Configuration conf) throws IOException {
+		try{
+			return FileSystem.get(conf);
+		} catch(NoClassDefFoundError err) {
+			throw new IOException(err.getMessage());
+		}
+	}
+	
 	public static FileSystem getFileSystem(Path fname, Configuration conf) throws IOException {
-		return FileSystem.get(fname.toUri(), conf);
+		try {
+			return FileSystem.get(fname.toUri(), conf);
+		} catch(NoClassDefFoundError err) {
+			throw new IOException(err.getMessage());
+		}
 	}
 	
 	public static boolean isSameFileScheme(Path path1, Path path2) {

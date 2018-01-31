@@ -95,6 +95,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -1096,15 +1097,14 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//account for remaining hdfs capacity
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+				FileSystem fs = IOUtilFunctions.getFileSystem(ConfigurationManager.getCachedJobConf());
 				long hdfsCapacityRemain = fs.getStatus().getRemaining();
 				long sizeInputs = 0; //sum of all input sizes (w/o replication)
-				for( String var : partitionedMatrices.keySet() )
-				{
+				for( String var : partitionedMatrices.keySet() ) {
 					MatrixObject mo = (MatrixObject)vars.get(var);
 					Path fname = new Path(mo.getFileName());
 					if( fs.exists( fname ) ) //non-existing (e.g., CP) -> small file
-						sizeInputs += fs.getContentSummary(fname).getLength();		
+						sizeInputs += fs.getContentSummary(fname).getLength();
 				}
 				replication = (int) Math.min(replication, Math.floor(0.9*hdfsCapacityRemain/sizeInputs));
 				

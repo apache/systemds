@@ -71,7 +71,9 @@ supportedLayers = {
 
 def _getInboundLayers(layer):
     in_names = []
-    for node in layer.inbound_nodes:  # get inbound nodes to current layer
+    # get inbound nodes to current layer (support newer as well as older APIs)
+    inbound_nodes = layer.inbound_nodes if hasattr(layer, 'inbound_nodes') else layer._inbound_nodes
+    for node in inbound_nodes:
         node_list = node.inbound_layers  # get layers pointing to this node
         in_names = in_names + node_list
     if any('flat' in s.name for s in in_names):  # For Caffe2DML to reroute any use of Flatten layers

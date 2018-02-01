@@ -551,6 +551,10 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	{
 		boolean ret = false;
 		
+		// TODO: Disable ternary aggregate rewrite on GPU backend.
+		if(DMLScript.USE_ACCELERATOR)
+			return false;
+		
 		//currently we support only sum over binary multiply but potentially 
 		//it can be generalized to any RC aggregate over two common binary operations
 		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && _op == AggOp.SUM &&

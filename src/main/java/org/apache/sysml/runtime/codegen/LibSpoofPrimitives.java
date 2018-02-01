@@ -560,7 +560,93 @@ public class LibSpoofPrimitives
 		//invariant to the ordering of inputs
 		return vectPlusWrite(b, a, bix, bi, ai, blen, len);
 	}
-	
+
+	//custom vector xor
+	/**
+	 * Computes c = xor(A,B)
+	 *
+	 * @param a dense input vector A
+	 * @param ai start position in A
+	 * @param bval scalar value
+	 * @param c resultant vector
+	 * @param ci index of c
+	 * @param len number of processed elements
+	 * @return resultant value
+	 */
+	public static void vectXorAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+	}
+
+	public static void vectXorAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] += ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+	}
+
+	public static void vectXorAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+	}
+
+	public static void vectXorAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+	}
+
+	//scalar vs. dense vector
+	public static double[] vectXorWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++)
+			c[j] = ( ( a[ai+j] != 0) != (bval != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//dense vector vs. scalar
+	public static double[] vectXorWrite(double bval, double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++)
+			c[j] = ( (bval != 0) != (a[ai + j] != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//dense vector vs. dense vector
+	public static double[] vectXorWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++)
+			c[j] = ( (a[ai + j] != 0) != (b[bi + j] != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//sparse vector vs scalar
+	public static double[] vectXorWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, 1);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//scalar vs. sparse vector
+	public static double[] vectXorWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, 1);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//sparse vector vs. dense vector
+	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, true, 1);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( (a[j] != 0) != (b[bi+aix[j]] != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	public static double[] vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		vectXorWrite(a, b, aix, ai, bi, alen, len);
+		return null;
+	}
+
+
 	//custom vector pow
 	
 	public static void vectPowAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {

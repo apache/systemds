@@ -644,7 +644,37 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	public void testVectorVectorGreaterEqualSparseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_GREATEREQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
-	
+
+	@Test
+	public void testVectorScalarXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarXorSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testScalarVectorXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
+	}
+
+	@Test
+	public void testScalarVectorXorSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorVectorXorSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{

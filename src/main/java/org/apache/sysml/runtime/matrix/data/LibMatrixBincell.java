@@ -1213,6 +1213,7 @@ public class LibMatrixBincell
 				return;
 			SparseBlock b = m2.sparseBlock;
 			for(int r=0; r<rlen; r++) {
+				if( b.isEmpty(r) ) continue;
 				int bpos = b.pos(r);
 				int blen = b.size(r);
 				int[] bix = b.indexes(r);

@@ -55,7 +55,6 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig
 {
-
 	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
 	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
@@ -104,7 +103,7 @@ public class DMLConfig
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;
 
-    private String _fileName = null;
+	private String _fileName = null;
 	private Element _xmlRoot = null;
 	private DocumentBuilder _documentBuilder = null;
 	private Document _document = null;
@@ -141,8 +140,7 @@ public class DMLConfig
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
 	}
 	
-	public DMLConfig()
-	{
+	public DMLConfig() {
 		
 	}
 
@@ -171,9 +169,19 @@ public class DMLConfig
 		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 	}
 	
-	public DMLConfig( Element root )
-	{
+	public DMLConfig( Element root ) {
 		_xmlRoot = root;
+	}
+	
+	public DMLConfig( DMLConfig dmlconf ) {
+		set(dmlconf);
+	}
+	
+	public void set(DMLConfig dmlconf) {
+		_fileName = dmlconf._fileName;
+		_xmlRoot = dmlconf._xmlRoot;
+		_documentBuilder = dmlconf._documentBuilder;
+		_document = dmlconf._document;
 	}
 
 	/**

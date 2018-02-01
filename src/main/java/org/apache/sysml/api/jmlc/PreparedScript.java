@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -37,6 +38,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -62,7 +64,7 @@ import org.apache.sysml.utils.Explain;
 /**
  * Representation of a prepared (precompiled) DML/PyDML script.
  */
-public class PreparedScript 
+public class PreparedScript implements ConfigurableAPI
 {
 	private static final Log LOG = LogFactory.getLog(PreparedScript.class.getName());
 	
@@ -120,6 +122,21 @@ public class PreparedScript
 		//on execute, which allows different threads creating/executing the script
 		_dmlconf = dmlconf;
 		_cconf = cconf;
+	}
+	
+	@Override
+	public void resetConfig() {
+		_dmlconf.set(new DMLConfig());
+	}
+
+	@Override
+	public void setConfigProperty(String propertyName, String propertyValue) {
+		try {
+			_dmlconf.setTextValue(propertyName, propertyValue);
+		} 
+		catch( DMLRuntimeException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**

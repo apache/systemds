@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -48,7 +49,8 @@ import org.apache.sysml.utils.MLContextProxy;
  * languages such as Scala, Java, and Python.
  *
  */
-public class MLContext {
+public class MLContext implements ConfigurableAPI
+{
 	/**
 	 * Logger for MLContext
 	 */
@@ -277,24 +279,12 @@ public class MLContext {
 		MLContextUtil.setCompilerConfig();
 	}
 
-	/**
-	 * Reset configuration settings to default settings.
-	 */
+	@Override
 	public void resetConfig() {
 		MLContextUtil.setDefaultConfig();
 	}
-	
-	
 
-	/**
-	 * Set configuration property, such as
-	 * {@code setConfigProperty("sysml.localtmpdir", "/tmp/systemml")}.
-	 *
-	 * @param propertyName
-	 *            property name
-	 * @param propertyValue
-	 *            property value
-	 */
+	@Override
 	public void setConfigProperty(String propertyName, String propertyValue) {
 		DMLConfig config = ConfigurationManager.getDMLConfig();
 		try {

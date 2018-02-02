@@ -176,6 +176,8 @@ eval = function(matrix[double] probs, matrix[double] y)
     loss = l2_loss::forward(probs, y);
 
     # compute accuracy
-    accuracy = mean((probs<0.5) == (y<0.5))
+    #accuracy = mean((probs<0.5) == (y<0.5))
+    sqr_mean = ( ( (probs<0.5) == (y<0.5) )^2 )/n
+    accuracy = (sqr_mean)^0.5
     
 }

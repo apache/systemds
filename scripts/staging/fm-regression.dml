@@ -55,9 +55,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
    *
    * Network:
    *
-   * X --> [model] --> out ----------------------> l2_loss::backward(sfy,out) --> dy
-   *                    \                           /
-   *                     sigmoid::forward(out) --> sfy
+   * X --> [model] --> out -----> l2_loss::backward(y,out) --> dout
    *
    *
    */

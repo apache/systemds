@@ -177,7 +177,7 @@ eval = function(matrix[double] probs, matrix[double] y)
 
     # compute accuracy
     #accuracy = mean((probs<0.5) == (y<0.5))
-    sqr_mean = ( ( (probs<0.5) == (y<0.5) )^2 )/n
+    sqr_mean = mean( ( (probs<0.5) == (y<0.5) )^2 )
     accuracy = (sqr_mean)^0.5
     
 }

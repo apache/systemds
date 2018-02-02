@@ -166,7 +166,7 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
 }
 
 eval = function(matrix[double] probs, matrix[double] y)
-    return (double loss) {
+    return (double loss, double accuracy) {
    /*
     * Computes loss and accuracy.
     */
@@ -176,5 +176,6 @@ eval = function(matrix[double] probs, matrix[double] y)
     loss = l2_loss::forward(probs, y);
 
     # compute accuracy
+    accuracy = mean((probs<0.5) == (y<0.5))
     
 }

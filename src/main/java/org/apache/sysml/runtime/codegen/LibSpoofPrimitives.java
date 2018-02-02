@@ -593,7 +593,7 @@ public class LibSpoofPrimitives
 			c[ci + aix[j]] += ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
 	}
 
-	//scalar vs. dense vector
+	//1. scalar vs. dense vector
 	public static double[] vectXorWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
@@ -601,7 +601,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	//dense vector vs. scalar
+	//2. dense vector vs. scalar
 	public static double[] vectXorWrite(double bval, double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
@@ -609,7 +609,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	//dense vector vs. dense vector
+	//3. dense vector vs. dense vector
 	public static double[] vectXorWrite(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
@@ -617,35 +617,41 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	//sparse vector vs scalar
+	//4. sparse vector vs scalar
 	public static double[] vectXorWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
-		double[] c = allocVector(len, true, 1);
+		double init = (bval != 0) ? 1 : 0;
+		double[] c = allocVector(len, true, init);
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
 		return c;
 	}
 
-	//scalar vs. sparse vector
+	//5. scalar vs. sparse vector
 	public static double[] vectXorWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
-		double[] c = allocVector(len, true, 1);
+		double init = (bval != 0) ? 1 : 0;
+		double[] c = allocVector(len, true, init);
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
 		return c;
 	}
 
-	//sparse vector vs. dense vector
+	//6. sparse vector vs. dense vector
 	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
-		double[] c = allocVector(len, true, 1);
-		for( int j = ai; j < ai+alen; j++ )
-			c[aix[j]] = ( (a[j] != 0) != (b[bi+aix[j]] != 0) ) ? 1 : 0;
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = (b[j] != 0) ? 1 : 0; //c[] = xor(0,b[]!=0)
+	//	c[] = [1, 1, 0, 1, 0]
+	//	for( int j = ai; j < ai+alen; j++ ) //overwrite, for a[]'s nnz values
+	//		c[aix[j]] = ( (a[j] != 0) != (b[bi+aix[j]] != 0) ) ? 1 : 0;
+		for( int j = 0; j < aix.length; j++ )
+			c[aix[j]] = ( b[aix[j]] != 0) ? 0 : 1;
+
 		return c;
 	}
-
-	public static double[] vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+    //6. sparse vector vs. dense vector
+	public static void vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
 		vectXorWrite(a, b, aix, ai, bi, alen, len);
-		return null;
 	}
-
 
 	//custom vector pow
 	
@@ -1948,7 +1954,7 @@ public class LibSpoofPrimitives
 	}
 	
 	protected static double[] allocVector(int len, boolean reset, double resetVal) {
-		VectorBuffer buff = memPool.get(); 
+		VectorBuffer buff = memPool.get();
 		
 		//find next matching vector in ring buffer or
 		//allocate new vector if required

@@ -645,34 +645,34 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorBinaryPrimitive(BinType.VECT_GREATEREQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
-	@Test
-	public void testVectorScalarXorDense() {
-		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
-	}
-
-	@Test
-	public void testVectorScalarXorSparse() {
-		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
-	}
-
-	@Test
+	@Test //1.
 	public void testScalarVectorXorDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
 	}
 
-	@Test
-	public void testScalarVectorXorSparse() {
+	@Test //2.
+	public void testVectorScalarXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test //3.
+	public void testVectorVectorDenseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test //4.
+	public void testVectorScalarSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test //5.
+	public void testScalarVectorSparse() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
 	}
 
-	@Test
-	public void testVectorVectorXorDense() {
-		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.SCALAR);
-	}
-
-	@Test
-	public void testVectorVectorXorSparse() {
-		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	@Test //6.
+	public void testVectorVectorSparseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
 	@SuppressWarnings("incomplete-switch")

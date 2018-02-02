@@ -42,12 +42,12 @@
 // we call "extension" APIs for setting number of threads of the given API.
 // For example: for OpenBLAS we use openblas_set_num_threads and  
 // for MKL we use mkl_set_num_threads. This avoids performance degradation due to overprovisioning.
-#ifdef USE_OPEN_BLAS
-#include <cblas.h>
-extern "C" void openblas_set_num_threads(int numThreads);
-#elif defined USE_INTEL_MKL
-#include <mkl.h>
-#include <mkl_service.h>
+#ifdef USE_INTEL_MKL
+  #include <mkl.h>
+  #include <mkl_service.h>
+#else
+  #include <cblas.h>
+  extern "C" void openblas_set_num_threads(int numThreads);
 #endif
 
 void setNumThreadsForBLAS(int numThreads);

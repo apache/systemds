@@ -304,6 +304,13 @@ public class UtilFunctions
 			((Long)obj).intValue() : ((Integer)obj).intValue();
 	}
 	
+	public static float[] toFloat(double[] data) {
+		float[] ret = new float[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = (float)data[i];
+		return ret;
+	}
+	
 	public static long getSeqLength(double from, double to, double incr) {
 		return getSeqLength(from, to, incr, true);
 	}

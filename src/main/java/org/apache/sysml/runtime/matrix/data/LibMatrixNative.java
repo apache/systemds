@@ -18,13 +18,27 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
-public class LibMatrixNative {
+public class LibMatrixNative
+{
+	/** ThreadLocal reuse of direct buffers for inputs/outputs (extended on demand).*/
+	private static ThreadLocal<FloatBuffer> inBuff = new ThreadLocal<FloatBuffer>();
+	private static ThreadLocal<FloatBuffer> biasBuff = new ThreadLocal<FloatBuffer>();
+	private static ThreadLocal<FloatBuffer> filterBuff = new ThreadLocal<FloatBuffer>();
+	private static ThreadLocal<FloatBuffer> outBuff = new ThreadLocal<FloatBuffer>();
 	
 	// We could encapsulate heuristics in this function
 	// For now, we only consider matrix-vector operation to be memory bound
@@ -121,12 +135,31 @@ public class LibMatrixNative {
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
+				boolean singlePrecision = ConfigurationManager.getDMLConfig()
+					.getTextValue(DMLConfig.FLOATING_POINT_PRECISION).equals("single");
 				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				int nnz = NativeHelper.conv2dBiasAddDense(input.getDenseBlockValues(), params.bias.getDenseBlockValues(),
-						filter.getDenseBlockValues(), outputBlock.getDenseBlockValues(),
-						params.N, params.C, params.H, params.W, 
-						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+				int nnz = -1;
+				if( singlePrecision ) {
+					//note: since we anyway have to convert from double to float, we use
+					//preallocated direct buffers (with thread-local reuse and resizing on demand)
+					//to ensure there are no additional copies created by the transfer over jni
+					FloatBuffer finput = toFloatBuffer(input.getDenseBlockValues(), inBuff, true);
+					FloatBuffer fbias = toFloatBuffer(params.bias.getDenseBlockValues(), biasBuff, true);
+					FloatBuffer ffilter = toFloatBuffer(filter.getDenseBlockValues(), filterBuff, true);
+					FloatBuffer foutput = toFloatBuffer(outputBlock.getDenseBlockValues(), outBuff, false);
+					nnz = NativeHelper.sconv2dBiasAddDense(finput, fbias, ffilter, foutput,
+						params.N, params.C, params.H, params.W, params.K, params.R, params.S,
+						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);
+					fromFloatBuffer(outBuff.get(), outputBlock.getDenseBlockValues());
+				}
+				else { //Double
+					nnz = NativeHelper.dconv2dBiasAddDense(input.getDenseBlockValues(), params.bias.getDenseBlockValues(),
+						filter.getDenseBlockValues(), outputBlock.getDenseBlockValues(),
+						params.N, params.C, params.H, params.W, params.K, params.R, params.S,
+						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads);	
+				}
 				if(nnz != -1) {
 					if(DMLScript.STATISTICS) {
 						Statistics.nativeConv2dTime += System.nanoTime() - start;
@@ -191,7 +224,7 @@ public class LibMatrixNative {
 	}
 	
 	/**
-	 * This method computes the backpropogation errors for previous layer of convolution operation
+	 * This method computes the backpropagation errors for previous layer of convolution operation
 	 * 
 	 * @param filter filter used in conv2d 
 	 * @param dout errors from next layer
@@ -225,5 +258,26 @@ public class LibMatrixNative {
 		}
 		// Fall back to Java when failures or sparse
 		LibMatrixDNN.conv2dBackwardData(filter, dout, outputBlock, params);
+	}
+	
+	private static FloatBuffer toFloatBuffer(double[] input, ThreadLocal<FloatBuffer> buff, boolean copy) {
+		//maintain thread-local buffer (resized on demand)
+		FloatBuffer ret = buff.get();
+		if( ret == null || ret.capacity() < input.length ) {
+			ret = ByteBuffer.allocateDirect(4*input.length)
+				.order(ByteOrder.nativeOrder()).asFloatBuffer();
+			buff.set(ret);
+		}
+		//copy to direct byte buffer
+		final FloatBuffer ret2 = ret;
+		if( copy ) {
+			IntStream.range(0, input.length).parallel()
+				.forEach(i -> ret2.put(i, (float)input[i]));
+		}
+		return ret2;
+	}
+	
+	private static void fromFloatBuffer(FloatBuffer buff, double[] output) {
+		Arrays.parallelSetAll(output, i -> (double)buff.get(i) );
 	}
 }

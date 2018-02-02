@@ -26,7 +26,7 @@
 # Imports
 source("nn/optim/adam.dml") as adam
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("staging/fm.dml") as fm
+source("nn/layers/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/log_loss.dml") as log_loss
@@ -99,15 +99,17 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
         out = fm::forward(X_batch, w0, W, V);
 
         # 4.Send the above result through log_loss::forward
-        sfy = sigmoid::forward(out);
+        #sfy = sigmoid::forward(out);
 
         # 5.compute gradients from a loss l2_loss::backward
-        dy = l2_loss::backward(sfy, out);
+        #dy = l2_loss::backward(sfy, out);
+        dout = l2_loss::backward(y_batch, out)# (predictions, targets)
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
         if (i %% 100 == 0) {
           # Compute training loss & accuracy
-          loss_data = cross_entropy_loss::forward(sfy, y_batch)
+          #loss_data = cross_entropy_loss::forward(sfy, y_batch)
+          loss_data  = l2_loss::forward(out, y_batch)
           loss_reg_w0 = l2_reg::forward(w0, lambda)
           loss_reg_W  = l2_reg::forward(W , lambda)
           loss_reg_V  = l2_reg::forward(V , lambda)
@@ -117,7 +119,8 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
 
           # Compute validation loss & accuracy
           probs_val = predict(X_val, w0, W, V)
-          loss_val  = cross_entropy_loss::forward(probs_val, y_val)
+          #loss_val  = cross_entropy_loss::forward(probs_val, y_val)
+          loss_val = l2_loss::forward(probs_val, y_val)
           accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_val))
 
           # Output results
@@ -126,7 +129,8 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
         }
 
         # 6.Send the above result through fm::backward
-        [dw0, dW, dV] = fm::backward(dy, X, w0, W, V);
+        #[dw0, dW, dV] = fm::backward(dy, X, w0, W, V);
+        [dw0, dW, dV] = fm::backward(dout, X_batch, w0, W, V);
 
         # 6.Call adam::update for all parameters
         w0 = adam::update(w0, dw0, lr, beta1, beta2, epsilon, t, mw0, vw0);
@@ -151,7 +155,7 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
    */
 
     # 1.initialize fm core
-    [w0, W, V] = fm::init(d, k);
+    #[w0, W, V] = fm::init(d, k);
 
     # 2.Send inputs through fm::forward
     out = fm::forward(X, w0, W, V);
@@ -168,5 +172,9 @@ eval = function(matrix[double] probs, matrix[double] y)
     */
 
     # just compute loss with log_loss::forward(probs, y)
-    loss = log_loss::forward(probs, y)
+    #loss = log_loss::forward(probs, y)
+    loss = l2_loss::forward(probs, y);
+
+    # compute accuracy
+    
 }

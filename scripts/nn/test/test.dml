@@ -40,6 +40,8 @@ source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/elu.dml") as elu
+
 
 batch_norm1d = function() {
   /*
@@ -1093,3 +1095,21 @@ softmax2d = function() {
   }
 }
 
+elu = function() {
+  /*
+   * Test for ELU function.
+   */
+  print("Testing ELU function.")
+
+  X = matrix("-0.9382  0.8621  0.8669  0.4967  0.2578 -1.2805  0.9599 -1.4115 -0.8733  0.4293", rows = 10, cols = 1)
+
+  out = elu::forward(X, 1)
+  out_ref = matrix("-0.609 0.862 0.867 0.497 0.258 -0.722 0.960 -0.756 -0.582 0.429", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(out_ref[i,j]), 1e-3, 1e-3)
+    }
+  }
+}

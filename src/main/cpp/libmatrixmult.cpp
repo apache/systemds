@@ -22,7 +22,10 @@
 #include <cstdlib>
 #include "omp.h"
 #include <cmath>
-#include <cblas.h>
+
+#ifdef USE_OPEN_BLAS
+	#include <cblas.h>
+#endif
 
 int SYSML_CURRENT_NUM_THREADS = -1;
 void setNumThreadsForBLAS(int numThreads) {

@@ -1101,10 +1101,12 @@ elu = function() {
    */
   print("Testing ELU function.")
 
-  X = matrix("-0.9382  0.8621  0.8669  0.4967  0.2578 -1.2805  0.9599 -1.4115 -0.8733  0.4293", rows = 10, cols = 1)
+  X = matrix("0.3923 -0.2236 -0.3195 -1.2050  1.0445 -0.6332  0.5731  0.5409 -0.3919 -1.0427", rows = 10, cols = 1)
 
   out = elu::forward(X, 1)
-  out_ref = matrix("-0.609 0.862 0.867 0.497 0.258 -0.722 0.960 -0.756 -0.582 0.429", rows = 10, cols = 1)
+  out_ref = matrix("0.3923 -0.2003 -0.2735 -0.7003  1.0445 -0.4691  0.5731  0.5409 -0.3242 -0.6475", rows = 10, cols = 1)
+
+
 
   for (i in 1:nrow(out)) {
     for(j in 1:ncol(out)) {
@@ -1112,4 +1114,15 @@ elu = function() {
                                              as.scalar(out_ref[i,j]), 1e-3, 1e-3)
     }
   }
+
+  print("ELU - Testing backward")
+  out = elu::backward(X, X, 1)
+  out_ref = matrix("0.3923 -0.1788 -0.2321 -0.3611  1.0445 -0.3362  0.5731  0.5409 -0.2648 -0.3676", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+      for(j in 1:ncol(out)) {
+        rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                               as.scalar(out_ref[i,j]), 1e-3, 1e-3)
+      }
+    }
 }

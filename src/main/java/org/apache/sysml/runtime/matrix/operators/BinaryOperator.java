@@ -39,12 +39,14 @@ import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.MinusNz;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.functionobjects.Xor;
@@ -58,6 +60,7 @@ public class BinaryOperator  extends Operator implements Serializable
 	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
 		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
+			|| p instanceof PlusMultiply || p instanceof MinusMultiply
 			|| p instanceof And || p instanceof Or || p instanceof Xor
 			|| p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor
 			|| p instanceof BitwShiftL || p instanceof BitwShiftR);

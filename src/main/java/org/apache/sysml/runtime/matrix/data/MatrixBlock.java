@@ -51,14 +51,17 @@ import org.apache.sysml.runtime.functionobjects.IfElse;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -2803,9 +2806,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//prepare result
 		ret.reset(m, n, false);
 		
-		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) )
-		{
-			//special case for shallow-copy if-else
+		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) ) {
+			//SPECIAL CASE for shallow-copy if-else
 			boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
 			MatrixBlock tmp = expr ? m2 : m3;
 			if( tmp.rlen==m && tmp.clen==n ) {
@@ -2821,6 +2823,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					ret.nonZeros = (long)m * n;
 				}
 			}
+		}
+		else if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
+			//SPECIAL CASE for sparse-dense combinations of common +* and -*
+			BinaryOperator bop = ((ValueFunctionWithConstant)op.fn)
+				.setOp2Constant(s2 ? d2 : d3);
+			LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
 		}
 		else {
 			ret.allocateDenseBlock();

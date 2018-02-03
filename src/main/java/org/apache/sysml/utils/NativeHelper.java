@@ -324,7 +324,12 @@ public class NativeHelper {
 	}
 
 	// TODO: Add pmm, wsloss, mmchain, etc.
-	public static native boolean matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	
+	//double-precision matrix multiply dense-dense
+	public static native boolean dmmdd(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	//single-precision matrix multiply dense-dense
+	public static native boolean smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	//transpose-self matrix multiply
 	private static native boolean tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
 
 	// ----------------------------------------------------------------------------------------------------------------

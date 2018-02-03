@@ -39,12 +39,11 @@
 //#endif
 
 // Since we call cblas_dgemm in openmp for loop,
-// we call "extension" APIs for setting number of threads of the given API.
-// For example: for OpenBLAS we use openblas_set_num_threads and  
-// for MKL we use mkl_set_num_threads. This avoids performance degradation due to overprovisioning.
+// we call "extension" APIs for setting the number of threads.
 #ifdef USE_INTEL_MKL
   #include <mkl.h>
   #include <mkl_service.h>
+  extern "C" void mkl_set_num_threads(int numThreads);
 #else
   #include <cblas.h>
   extern "C" void openblas_set_num_threads(int numThreads);

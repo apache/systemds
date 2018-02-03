@@ -25,6 +25,8 @@
 
 #ifdef USE_OPEN_BLAS
 	#include <cblas.h>
+#else
+  #include <mkl_service.h>  
 #endif
 
 int SYSML_CURRENT_NUM_THREADS = -1;

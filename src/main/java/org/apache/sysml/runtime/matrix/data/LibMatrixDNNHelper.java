@@ -68,7 +68,7 @@ public class LibMatrixDNNHelper
 			ret.sparse = false;
 			if(ret.getDenseBlock() == null)
 				ret.allocateDenseBlock();
-			NativeHelper.matrixMultDenseDense(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
+			NativeHelper.dmmdd(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
 				ret.getDenseBlockValues(), m1.rlen, m1.clen, m2.clen, 1);
 		}
 		

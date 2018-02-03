@@ -34,7 +34,10 @@ import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixNative
 {
-	/** ThreadLocal reuse of direct buffers for inputs/outputs (extended on demand).*/
+	// ThreadLocal reuse of direct buffers for inputs/outputs (extended on demand).
+	//   note: since we anyway have to convert from double to float, we use
+	//   preallocated direct buffers (with thread-local reuse and resizing on demand)
+	//   to ensure there are no additional copies created by the transfer over jni
 	private static ThreadLocal<FloatBuffer> inBuff = new ThreadLocal<FloatBuffer>();
 	private static ThreadLocal<FloatBuffer> biasBuff = new ThreadLocal<FloatBuffer>();
 	private static ThreadLocal<FloatBuffer> filterBuff = new ThreadLocal<FloatBuffer>();
@@ -65,32 +68,45 @@ public class LibMatrixNative
 		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
 		
 		// check inputs / outputs
-		if (m1.isEmptyBlock() || m2.isEmptyBlock()) {
+		if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)){
 			ret.setNonZeros(0);
 			if(examSparsity)
 				ret.examSparsity(); // turn empty dense into sparse
 			return;
 		}
-		if (NativeHelper.isNativeLibraryLoaded() && 
-				!isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		
+		if (NativeHelper.isNativeLibraryLoaded()
+			&& !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) 
+			&& !m1.isInSparseFormat() && !m2.isInSparseFormat()) 
+		{
 			ret.sparse = false;
 			ret.allocateDenseBlock();
 			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			if (NativeHelper.matrixMultDenseDense(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
-					ret.getDenseBlockValues(), m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k)) {
+			boolean rccode = false;
+			if( isSinglePrecision() ) {
+				FloatBuffer fin1 = toFloatBuffer(m1.getDenseBlockValues(), inBuff, true);
+				FloatBuffer fin2 = toFloatBuffer(m2.getDenseBlockValues(), filterBuff, true);
+				FloatBuffer fout = toFloatBuffer(ret.getDenseBlockValues(), outBuff, false);
+				rccode = NativeHelper.smmdd(fin1, fin2, fout, 
+					m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k);
+				fromFloatBuffer(outBuff.get(), ret.getDenseBlockValues());
+			}
+			else {
+				rccode = NativeHelper.dmmdd(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
+					ret.getDenseBlockValues(), m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k);
+			}
+			if (rccode) {
 				if(DMLScript.STATISTICS) {
 					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
 					Statistics.numNativeLibMatrixMultCalls.increment();
 				}
 				ret.recomputeNonZeros();
-				// post-processing (nnz maintained in parallel)
 				if(examSparsity)
 					ret.examSparsity();
 				return;
-			} else {
-				// Else fall back to Java
-				Statistics.incrementNativeFailuresCounter();
 			}
+			//else record failure and fallback to java
+			Statistics.incrementNativeFailuresCounter();
 		}
 		if (k == 1)
 			LibMatrixMult.matrixMult(m1, m2, ret, examSparsity);
@@ -135,14 +151,9 @@ public class LibMatrixNative
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
-				boolean singlePrecision = ConfigurationManager.getDMLConfig()
-					.getTextValue(DMLConfig.FLOATING_POINT_PRECISION).equals("single");
 				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				int nnz = -1;
-				if( singlePrecision ) {
-					//note: since we anyway have to convert from double to float, we use
-					//preallocated direct buffers (with thread-local reuse and resizing on demand)
-					//to ensure there are no additional copies created by the transfer over jni
+				if( isSinglePrecision() ) {
 					FloatBuffer finput = toFloatBuffer(input.getDenseBlockValues(), inBuff, true);
 					FloatBuffer fbias = toFloatBuffer(params.bias.getDenseBlockValues(), biasBuff, true);
 					FloatBuffer ffilter = toFloatBuffer(filter.getDenseBlockValues(), filterBuff, true);
@@ -258,6 +269,11 @@ public class LibMatrixNative
 		}
 		// Fall back to Java when failures or sparse
 		LibMatrixDNN.conv2dBackwardData(filter, dout, outputBlock, params);
+	}
+	
+	private static boolean isSinglePrecision() {
+		return ConfigurationManager.getDMLConfig()
+			.getTextValue(DMLConfig.FLOATING_POINT_PRECISION).equals("single");
 	}
 	
 	private static FloatBuffer toFloatBuffer(double[] input, ThreadLocal<FloatBuffer> buff, boolean copy) {

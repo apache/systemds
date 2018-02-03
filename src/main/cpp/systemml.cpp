@@ -75,20 +75,36 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
   maxThreads = (int) jmaxThreads;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_dmmdd(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
-    jint m1rlen, jint m1clen, jint m2clen, jint numThreads) {
+    jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
+{
   double* m1Ptr = GET_DOUBLE_ARRAY(env, m1, numThreads);
   double* m2Ptr = GET_DOUBLE_ARRAY(env, m2, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(m1Ptr == NULL || m2Ptr == NULL || retPtr == NULL)
-  	return (jboolean) false;
+    return (jboolean) false;
 
   dmatmult(m1Ptr, m2Ptr, retPtr, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
 
   RELEASE_INPUT_ARRAY(env, m1, m1Ptr, numThreads);
   RELEASE_INPUT_ARRAY(env, m2, m2Ptr, numThreads);
   RELEASE_ARRAY(env, ret, retPtr, numThreads); 
+  return (jboolean) true;
+}
+
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_smmdd(
+    JNIEnv* env, jclass cls, jobject m1, jobject m2, jobject ret,
+    jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
+{
+  float* m1Ptr = (float*) env->GetDirectBufferAddress(m1);
+  float* m2Ptr = (float*) env->GetDirectBufferAddress(m2);
+  float* retPtr = (float*) env->GetDirectBufferAddress(ret);
+  if(m1Ptr == NULL || m2Ptr == NULL || retPtr == NULL)
+    return (jboolean) false;
+
+  smatmult(m1Ptr, m2Ptr, retPtr, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
+
   return (jboolean) true;
 }
 

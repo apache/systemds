@@ -406,8 +406,8 @@ int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
   
   // Step 3: Destroy the description of the operation
   dnnDelete_F64(pConvolution);
+  return computeNNZ<double>(retPtr, N*KPQ);
 #else 
-  // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
@@ -418,8 +418,9 @@ int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
   // Allocate temporary data structures used in parallel for
   int numOpenMPThreads = MIN(numThreads, N);
   double* loweredMatArrays = new double[numIm2ColElem*numOpenMPThreads];
+  int nnz = 0;
   
-#pragma omp parallel for num_threads(numOpenMPThreads)
+#pragma omp parallel for reduction(+: nnz) num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
     double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
@@ -436,12 +437,13 @@ int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
     double* outputArr = retPtr + n*KPQ;
     if( addBias )
        biasAdd<double>(biasPtr, outputArr, K, PQ);
-  } // end omp parallel for
+    
+    // Step 4: thread-local nnz maintenance
+    nnz += computeNNZ<double>(retPtr + n*KPQ, KPQ);    
+  } 
   delete [] loweredMatArrays;
-  // ------------------------------------------------------------------------------------
+  return nnz;
 #endif
-  
-  return computeNNZ<double>(retPtr, N*KPQ);
 }
 
 int sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float* retPtr, 

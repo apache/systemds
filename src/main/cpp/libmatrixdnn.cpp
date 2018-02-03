@@ -480,6 +480,7 @@ int sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float
   
   // Step 3: Destroy the description of the operation
   dnnDelete_F32(pConvolution);
+  return computeNNZ<float>(retPtr, N*KPQ);
 #else 
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -515,7 +516,7 @@ int sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float
     nnz += computeNNZ<float>(retPtr + n*KPQ, KPQ);   
   }
   delete [] loweredMatArrays;
+  return nnz;
 #endif
   
-  return nnz;
 }

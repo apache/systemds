@@ -24,7 +24,21 @@
 # Modal selection for Gaussian Process Classification
 # ----------------------------------------------------
 
-gpc = function (matrix[double] X, matrix[double] y, matrix[double] theta, matrix[double] lh)
+source("model_selection/mode.dml") as mode
+
+n = 10;
+d = 5;
+
+X = 10 * rand(rows=n, cols=d);
+y = 0.2 * rand(rows=n, cols=1); # "0.2" is the standard deviation
+lh = matrix(0, rows=n, cols=1);
+K = rand(rows=3, cols=3, min=0.000000001, max=1);
+
+
+# likelihood, mean & covariance are the structure of theta(i.e, of hyperparameters)
+
+gpc = function (matrix[double] X, matrix[double] y, matrix[double] theta,
+      matrix[double] lh)
   return (matrix[double] Z, matrix[double] dZ) {
 
   /*
@@ -40,45 +54,49 @@ gpc = function (matrix[double] X, matrix[double] y, matrix[double] theta, matrix
    *
    */
 
-  # take
-  D = 1 / (1+exp(-f)); # operation over each element of f
-  ONES = matrix(1, rows=nrow(D), cols=ncol(D));
+# ------
 
   # 2. compute K
-  # K = ;
+  K = rand(rows=3, cols=3, min=0.000000001, max=1);
 
   # 3. f = mode( K, y, p(y|f) )
-  f = mode(K, y, lh);
+  [f, lmlh, a] = mode::mode(K, y, lh);
+
+  # take
+  D = 1 / (1+exp(-f)); # operation over each element of f
+  I = diag(matrix(1, rows=nrow(K), cols=1));
 
   # 4. W = - ∇∇log p(y|f)
-  W = D %*% (ONES-D); # W has to be a matrix
+  W = D %*% (1-D);
+  W_sq = W ^ 0.5;
 
   # 5. L = cholesky( I + W^0.5 K W^0.5 )
   L = cholesky( I + W^0.5 %*% K %*% W^0.5 ); # here I, is the identity matrix
 
+  llh = log(lh);
+
   # 6. Z = - 0.5 t(a) f + log p(y|f) - Σ log( diag (L) )
-  Z = - 0.5 * t(a) %*% f + llh - sum( log(diag(L) );
+  Z = - 0.5 * t(a) %*% f + llh - sum( log(diag(L)) );
 
   # 7. R = W^0.5 t(L) \ (L \ W^0.5)
-  #    R = W^0.5 (I + W^0.5 K W^0.5)^-1 W^0.5
-  R = W^0.5 %*% solve( t(L), solve(L, W^0.5) );
+  # R = W^0.5 (I + W^0.5 K W^0.5)^-1 W^0.5
+  R = W^0.5 %*% solve( t(L), solve(L, W_sq) );
 
-# --------------------------------------------------------
+# ------
 
   # 8. C = L \ (W^0.5 K)
   C = solve( L, W^0.5 %*% K );
 
-  # 9. S2 = - 0.5 diag( diag(K) - diag(t(C) C)) ∇∇∇log p(y|f)
-
-  S2 = - 0.5 * diag( diag(K) - diag(t(C) %*% C) )
-         %*%
-         ( D %*% (ONES - D) %*% (ONES - 2*D) );
+   # 9. S2 = - 0.5 diag( diag(K) - diag(t(C) C)) ∇∇∇log p(y|f)
+  S2 = - 0.5 * diag( diag(K) - diag(t(C) %*% C) ) %*% ( D %*% (1 - D) %*% (1 - 2*D) );
 
   # 10. loop starts now
-  for (j in 1:dim(theta)) { # this loop may not be required, in vector form.
+
+  for (j in 1:nrow(theta)) {
 
     # 11. C = ∂K / ∂θj  # compute derivative, matrix from X and θ
-    C = dK # derivate of covariance matrix wrt to j th hyperparameter
+    # C = dK_hypers # derivate of covariance matrix wrt to j th hyperparameter
+    C = K[10, j]; # TODO
 
     # 12.
     S1 = 0.5 * t(a) %*% C %*% a - 0.5 t(R %*% C)
@@ -94,5 +112,31 @@ gpc = function (matrix[double] X, matrix[double] y, matrix[double] theta, matrix
 
   }
 
+# ------
+
 }
 
+/*
+# hyperparameters
+#hypers = matrix(0, rows= D+2, cols=1)
+hypers = log(amp2)
+hypers = rbind(noise)
+hypers = rbind(ls)
+
+# Gradient of Covariance wrt to the hyperparameters
+# grad = matrix(0, rows=D+2, cols=1)
+
+# 1. amplitude - > log amplitude gradient
+grad_amp = 0.5 * trace(jacobian %*% (corr + 0.000001 * I)) * amp2
+grad = grad_amp
+
+# 2. Log noise gradient
+grad_noise = 0.5 * trace(jacobian %*% I) * noise
+grad = rbind(grad, grad_noise)
+
+# 3. Log length scale gradients
+for ( d in 1:D ) {
+  grad = rbind(grad, trace(jacobian) )
+}
+
+*/

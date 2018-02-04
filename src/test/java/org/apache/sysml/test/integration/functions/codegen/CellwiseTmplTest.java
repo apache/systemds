@@ -51,7 +51,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME13 = TEST_NAME+13; //min(X + 7 * Y) large
 	private static final String TEST_NAME14 = TEST_NAME+14; //-2 * X + t(Y); t(Y) is rowvector
 	private static final String TEST_NAME15 = TEST_NAME+15; //colMins(2*log(X))
-	private static final String TEST_NAME16 = TEST_NAME+16; //colSums(2*log(X)); 
+	private static final String TEST_NAME16 = TEST_NAME+16; //colSums(2*log(X));
+	private static final String TEST_NAME17 = TEST_NAME+17; //xor operation
 	
 	
 	private static final String TEST_DIR = "functions/codegen/";
@@ -65,7 +66,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=16; i++ ) {
+		for( int i=1; i<=17; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -287,6 +288,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite16_sp() {
 		testCodegenIntegration( TEST_NAME16, true, ExecType.SPARK );
 	}
+
+	@Test
+	public void testCodegenCellwiseRewrite17() {
+		testCodegenIntegration( TEST_NAME17, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise17() {
+		testCodegenIntegration( TEST_NAME17, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite17_sp() {
+		testCodegenIntegration( TEST_NAME17, true, ExecType.SPARK );
+	}
 	
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
@@ -352,6 +368,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
 			else if( testname.equals(TEST_NAME16) )
 				Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
+			else if( testname.equals(TEST_NAME17) )
+				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
 		}
 		finally {
 			rtplatform = platformOld;

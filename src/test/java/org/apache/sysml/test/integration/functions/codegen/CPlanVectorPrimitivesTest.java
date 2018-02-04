@@ -645,32 +645,32 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorBinaryPrimitive(BinType.VECT_GREATEREQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
-	@Test //1.
+	@Test
 	public void testScalarVectorXorDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
 	}
 
-	@Test //2.
+	@Test
 	public void testVectorScalarXorDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
 	}
 
-	@Test //3.
+	@Test
 	public void testVectorVectorDenseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
 	}
 
-	@Test //4.
+	@Test
 	public void testVectorScalarSparse() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
 	}
 
-	@Test //5.
+	@Test
 	public void testScalarVectorSparse() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
 	}
 
-	@Test //6.
+	@Test
 	public void testVectorVectorSparseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}

@@ -622,7 +622,7 @@ public class LibSpoofPrimitives
 		double init = (bval != 0) ? 1 : 0;
 		double[] c = allocVector(len, true, init);
 		for( int j = ai; j < ai+alen; j++ )
-			c[aix[j]] = ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+			c[aix[j]] = (a[j] != 0) ? 0 : 1;
 		return c;
 	}
 
@@ -631,10 +631,10 @@ public class LibSpoofPrimitives
 		double init = (bval != 0) ? 1 : 0;
 		double[] c = allocVector(len, true, init);
 		for( int j = ai; j < ai+alen; j++ )
-			c[aix[j]] = ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+			c[aix[j]] = (a[j] != 0) ? 0 : 1;
 		return c;
 	}
-
+/*
 	//6. sparse vector vs. dense vector
 	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
 		double[] c = allocVector(len, false);
@@ -648,13 +648,24 @@ public class LibSpoofPrimitives
 
 		return c;
 	}
-    //6. sparse vector vs. dense vector
+*/
+	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = (b[bi+j] != 0) ? 1 : 0;
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( ( a[j] != 0) != (c[aix[j]] != 0) )? 1 : 0;
+
+		return c;
+	}
+
+	//6. sparse vector vs. dense vector
 	public static void vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
 		vectXorWrite(a, b, aix, ai, bi, alen, len);
 	}
 
 	//custom vector pow
-	
+
 	public static void vectPowAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += Math.pow(a[j], bval);

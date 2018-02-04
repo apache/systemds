@@ -634,28 +634,14 @@ public class LibSpoofPrimitives
 			c[aix[j]] = (a[j] != 0) ? 0 : 1;
 		return c;
 	}
-/*
-	//6. sparse vector vs. dense vector
-	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++ )
-			c[j] = (b[j] != 0) ? 1 : 0; //c[] = xor(0,b[]!=0)
-	//	c[] = [1, 1, 0, 1, 0]
-	//	for( int j = ai; j < ai+alen; j++ ) //overwrite, for a[]'s nnz values
-	//		c[aix[j]] = ( (a[j] != 0) != (b[bi+aix[j]] != 0) ) ? 1 : 0;
-		for( int j = 0; j < aix.length; j++ )
-			c[aix[j]] = ( b[aix[j]] != 0) ? 0 : 1;
 
-		return c;
-	}
-*/
+	//6. sparse vector vs. dense vector
 	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++ )
 			c[j] = (b[bi+j] != 0) ? 1 : 0;
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = ( ( a[j] != 0) != (c[aix[j]] != 0) )? 1 : 0;
-
 		return c;
 	}
 

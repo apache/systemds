@@ -227,15 +227,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		// (X > 0) * dout
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
-		MatrixBlock outputBlock;
+		MatrixBlock outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(),
+			input.isInSparseFormat() || dout.isInSparseFormat() );
 		
-		if( !input.isEmpty() && !dout.isEmpty() ) {
-			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
-			outputBlock.allocateDenseBlock();
+		if( !input.isEmpty() && !dout.isEmpty() ) { //sparse-safe
+			outputBlock.allocateBlock();
 			LibMatrixDNN.reluBackward(input, dout, outputBlock, _numThreads);
 		}
-		else
-			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), true);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

@@ -113,18 +113,9 @@ public class ScriptExecutorUtils {
 			
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
-
-			if (!exceptionThrown) {
-				if (statisticsMaxHeavyHitters > 0)
-					System.out.println(Statistics.display(statisticsMaxHeavyHitters));
-				else
-					System.out.println(Statistics.display());
-			} else {
-				if (statisticsMaxHeavyHitters > 0)
-					System.err.println(Statistics.display(statisticsMaxHeavyHitters));
-				else
-					System.err.println(Statistics.display());
-			}
+			(exceptionThrown ? System.err : System.out)
+				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
+					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
 		}
 	}
 

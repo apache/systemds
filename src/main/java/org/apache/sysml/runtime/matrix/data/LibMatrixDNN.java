@@ -273,10 +273,10 @@ public class LibMatrixDNN {
 				input.getNumRows() + " != " + dout.getNumRows() + " || " + input.getNumColumns() + " != " + dout.getNumColumns());
 		}
 		
-		execute(LibMatrixDNNRelu.getReluBackwardWorkers(params), params);
+		long nnz = execute(LibMatrixDNNRelu.getReluBackwardWorkers(params), params);
 		
 		// post-processing: maintain nnz
-		outputBlock.recomputeNonZeros(); 
+		outputBlock.setNonZeros(nnz);
 		outputBlock.examSparsity();
 	}
 	

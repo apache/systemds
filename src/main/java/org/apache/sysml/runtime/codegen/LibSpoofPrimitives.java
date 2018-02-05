@@ -646,8 +646,8 @@ public class LibSpoofPrimitives
 	}
 
 	//6. sparse vector vs. dense vector
-	public static void vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
-		vectXorWrite(a, b, aix, ai, bi, alen, len);
+	public static double[] vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		return vectXorWrite(a, b, aix, ai, bi, alen, len);
 	}
 
 	//custom vector pow

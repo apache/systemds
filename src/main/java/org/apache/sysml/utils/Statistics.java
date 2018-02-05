@@ -89,6 +89,8 @@ public class Statistics
 	private static final LongAdder codegenEnumAllP = new LongAdder(); //count
 	private static final LongAdder codegenEnumEval = new LongAdder(); //count
 	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
+	private static final LongAdder codegenOpCacheHits = new LongAdder(); //count
+	private static final LongAdder codegenOpCacheTotal = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
 	
@@ -288,6 +290,14 @@ public class Statistics
 		codegenClassCompileTime.add(delta);
 	}
 	
+	public static void incrementCodegenOpCacheHits() {
+		codegenOpCacheHits.increment();
+	}
+	
+	public static void incrementCodegenOpCacheTotal() {
+		codegenOpCacheTotal.increment();
+	}
+	
 	public static void incrementCodegenPlanCacheHits() {
 		codegenPlanCacheHits.increment();
 	}
@@ -327,6 +337,14 @@ public class Statistics
 	
 	public static long getCodegenClassCompileTime() {
 		return codegenClassCompileTime.longValue();
+	}
+	
+	public static long getCodegenOpCacheHits() {
+		return codegenOpCacheHits.longValue();
+	}
+	
+	public static long getCodegenOpCacheTotal() {
+		return codegenOpCacheTotal.longValue();
 	}
 	
 	public static long getCodegenPlanCacheHits() {
@@ -418,6 +436,8 @@ public class Statistics
 		codegenEnumEvalP.reset();
 		codegenCompileTime.reset();
 		codegenClassCompileTime.reset();
+		codegenOpCacheHits.reset();
+		codegenOpCacheTotal.reset();
 		codegenPlanCacheHits.reset();
 		codegenPlanCacheTotal.reset();
 		
@@ -814,7 +834,8 @@ public class Statistics
 						getCodegenEnumAllP() + "/" + getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
-				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
+				sb.append("Codegen enum plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
+				sb.append("Codegen op plan cache hits:\t" + getCodegenOpCacheHits() + "/" + getCodegenOpCacheTotal() + ".\n");
 			}
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";

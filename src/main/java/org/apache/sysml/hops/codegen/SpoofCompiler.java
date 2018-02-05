@@ -421,14 +421,14 @@ public class SpoofCompiler
 						planCache.putPlan(tmp.getValue(), cla);
 				}
 				else if( DMLScript.STATISTICS ) {
-					Statistics.incrementCodegenPlanCacheHits();
+					Statistics.incrementCodegenOpCacheHits();
 				}
 				
 				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
 				if( DMLScript.STATISTICS )
-					Statistics.incrementCodegenPlanCacheTotal();
+					Statistics.incrementCodegenOpCacheTotal();
 			}
 			
 			//create modified hop dag (operator replacement and CSE)
@@ -438,7 +438,7 @@ public class SpoofCompiler
 				ret = constructModifiedHopDag(roots, cplans, clas);
 				
 				//run common subexpression elimination and other rewrites
-				ret = rewriteCSE.rewriteHopDAG(ret, new ProgramRewriteStatus());	
+				ret = rewriteCSE.rewriteHopDAG(ret, new ProgramRewriteStatus());
 				
 				//explain after modification
 				if( LOG.isTraceEnabled() ) {

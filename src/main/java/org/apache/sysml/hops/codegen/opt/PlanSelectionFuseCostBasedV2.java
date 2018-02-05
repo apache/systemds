@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -91,7 +92,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static final double READ_BANDWIDTH_MEM  = 32d*1024*1024*1024;  //32GB/s
 	private static final double READ_BANDWIDTH_BROADCAST = WRITE_BANDWIDTH_IO/4;
 	private static final double COMPUTE_BANDWIDTH  =   2d*1024*1024*1024   //1GFLOPs/core
-								* InfrastructureAnalyzer.getLocalParallelism();
+		* InfrastructureAnalyzer.getLocalParallelism();
 	
 	//sparsity estimate for unknown sparsity to prefer sparse-safe fusion plans
 	private static final double SPARSE_SAFE_SPARSITY_EST = 0.1;
@@ -100,11 +101,20 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	//remaining candidate plans of large partitions (w/ >= COST_MIN_EPS_NUM_POINTS) are
 	//only evaluated if the current costs are > (1+COST_MIN_EPS) * static (i.e., minimal) costs.
 	public static final double COST_MIN_EPS = 0.01; //1%
-	public static final double COST_MIN_EPS_NUM_POINTS = 20; //2^20 = 1M plans
+	public static final int COST_MIN_EPS_NUM_POINTS = 20; //2^20 = 1M plans
+	
+	//In order to avoid unnecessary repeated reoptimization we use a plan cache for
+	//mapping partition signatures (including input sizes) to optimal plans. However,
+	//since hop ids change during dynamic recompilation, we use an approximate signature
+	//that is cheap to compute and therefore only use this for large partitions.
+	private static final int PLAN_CACHE_NUM_POINTS = 10; //2^10 = 1024
+	private static final int PLAN_CACHE_SIZE = 1024;
+	private static final LinkedHashMap<PartitionSignature, boolean[]> _planCache = new LinkedHashMap<>();
 	
 	//optimizer configuration
 	public static boolean COST_PRUNING = true;
 	public static boolean STRUCTURAL_PRUNING = true;
+	public static boolean PLAN_CACHING = true;
 	private static final TemplateRow ROW_TPL = new TemplateRow();
 	
 	//cost vector id generator, whose ids are only used for memoization per call to getPlanCost;
@@ -229,6 +239,17 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		if( !evalRemain )
 			LOG.warn("Skip enum for |M|="+Mlen+", C="+bestC+", Cmin="+costs.getMinCosts());
 		
+		//probe plan cache for existing optimized plan
+		PartitionSignature pKey = null;
+		if( probePlanCache(matPoints) ) {
+			pKey = new PartitionSignature(part, matPoints.length, costs, C0, CN);
+			boolean[] plan = getPlan(pKey);
+			if( plan != null ) {
+				Statistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
+				return plan;
+			}
+		}
+		
 		//evaluate remaining plans, except already evaluated heuristics
 		for( long i=1; i<len-1 & evalRemain; i++ ) {
 			//construct assignment
@@ -299,6 +320,10 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
+		
+		//keep large plans 
+		if( probePlanCache(matPoints) )
+			putPlan(pKey, bestPlan);
 		
 		//copy best plan w/o fixed offset plan
 		return (bestPlan==null) ? new boolean[Mlen] :
@@ -1081,6 +1106,38 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(index)); 
 	}
 	
+	private static boolean probePlanCache(InterestingPoint[] matPoints) {
+		return matPoints.length >= PLAN_CACHE_NUM_POINTS;
+	}
+	
+	private static boolean[] getPlan(PartitionSignature pKey) {
+		boolean[] plan = null;
+		synchronized( _planCache ) {
+			plan = _planCache.get(pKey);
+		}
+		if( DMLScript.STATISTICS ) {
+			if( plan != null )
+				Statistics.incrementCodegenPlanCacheHits();
+			Statistics.incrementCodegenPlanCacheTotal();
+		}
+		return plan;
+	}
+	
+	private static void putPlan(PartitionSignature pKey, boolean[] plan) {
+		synchronized( _planCache ) {
+			//maintain size of plan cache (remove first)
+			if( _planCache.size() >= PLAN_CACHE_SIZE ) {
+				Iterator<Entry<PartitionSignature, boolean[]>> iter =
+					_planCache.entrySet().iterator();
+				iter.next();
+				iter.remove();
+			}
+			
+			//add last entry 
+			_planCache.put(pKey, plan);
+		}
+	}
+	
 	private class CostVector {
 		public final long ID;
 		public final double outSize; 
@@ -1186,6 +1243,44 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			return "["+Arrays.toString(_aggregates.keySet().toArray(new Long[0]))+": "
 				+"{"+Arrays.toString(_inputAggs.toArray(new Long[0]))+"}," 
 				+"{"+Arrays.toString(_fusedInputs.toArray(new Long[0]))+"}]"; 
+		}
+	}
+	
+	private class PartitionSignature {
+		private final int partNodes, inputNodes, rootNodes, matPoints;
+		private final double cCompute, cRead, cWrite, cPlan0, cPlanN;
+		
+		public PartitionSignature(PlanPartition part, int M, StaticCosts costs, double cP0, double cPN) {
+			partNodes = part.getPartition().size();
+			inputNodes = part.getInputs().size();
+			rootNodes = part.getRoots().size();
+			matPoints = M;
+			cCompute = costs._compute;
+			cRead = costs._read;
+			cWrite = costs._write;
+			cPlan0 = cP0;
+			cPlanN = cPN;
+		}
+		@Override
+		public int hashCode() {
+			return UtilFunctions.intHashCode(
+				Arrays.hashCode(new int[]{partNodes, inputNodes, rootNodes, matPoints}),
+				Arrays.hashCode(new double[]{cCompute, cRead, cWrite, cPlan0, cPlanN}));
+		}
+		@Override 
+		public boolean equals(Object o) {
+			if( !(o instanceof PartitionSignature) )
+				return false;
+			PartitionSignature that = (PartitionSignature) o;
+			return partNodes == that.partNodes
+				&& inputNodes == that.inputNodes
+				&& rootNodes == that.rootNodes
+				&& matPoints == that.matPoints
+				&& cCompute == that.cCompute
+				&& cRead == that.cRead
+				&& cWrite == that.cWrite
+				&& cPlan0 == that.cPlan0
+				&& cPlanN == that.cPlanN;
 		}
 	}
 }

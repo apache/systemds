@@ -75,7 +75,7 @@ public class LibMatrixDNNRelu
 			else if(m1.isInSparseFormat() && !m2.isInSparseFormat())
 				reluBackwardSparseDense(m1.getSparseBlock(), m2.getDenseBlock(), out.getSparseBlock(), _rl, _ru);
 			else //sparse-sparse
-				reluBackwardSparseDense(m1.getSparseBlock(), m2.getSparseBlock(), out.getSparseBlock(), _rl, _ru);
+				reluBackwardSparseSparse(m1.getSparseBlock(), m2.getSparseBlock(), out.getSparseBlock(), _rl, _ru);
 			
 			//thread-local nnz maintenance
 			return out.recomputeNonZeros(_rl, _ru-1);
@@ -118,7 +118,7 @@ public class LibMatrixDNNRelu
 		}
 	}
 	
-	private static void reluBackwardSparseDense(SparseBlock a, SparseBlock b, SparseBlock c, int rl, int ru) {
+	private static void reluBackwardSparseSparse(SparseBlock a, SparseBlock b, SparseBlock c, int rl, int ru) {
 		//b is the driver as it has likely less non-zeros
 		for(int i = rl; i < ru; i++) {
 			if( a.isEmpty(i) || b.isEmpty(i) ) continue;

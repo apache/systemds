@@ -52,6 +52,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)
@@ -385,8 +386,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 
 		//account for potential final dense-sparse transformation (worst-case sparse representation)
 		if( dim2 >= 2 ) //vectors always dense
-			ret += OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT);
-
+			ret += MatrixBlock.estimateSizeSparseInMemory(dim1, dim2,
+				MatrixBlock.SPARSITY_TURN_POINT - UtilFunctions.DOUBLE_EPS);
+		
 		return ret;
 	}
 	

@@ -45,8 +45,9 @@ public class LibMatrixDNNPooling {
 	 */
 	public static ArrayList<Callable<Long>> getMaxPoolingWorkers(ConvolutionParameters params) throws DMLRuntimeException {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
+		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		int taskSize = (int)(Math.ceil((double)params.N / k));
+		int taskSize = (int)(Math.ceil((double)params.N / k / 2));
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(params.input1.isInSparseFormat())
 				ret.add(new SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
@@ -66,8 +67,9 @@ public class LibMatrixDNNPooling {
 	 */
 	public static ArrayList<Callable<Long>> getMaxPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
+		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		int taskSize = (int)(Math.ceil((double)params.N / k));
+		int taskSize = (int)(Math.ceil((double)params.N / k / 2));
 		boolean sparse1 = params.input1.isInSparseFormat();
 		boolean sparse2 = params.input2.isInSparseFormat();
 		for(int i = 0; i*taskSize < params.N; i++) {

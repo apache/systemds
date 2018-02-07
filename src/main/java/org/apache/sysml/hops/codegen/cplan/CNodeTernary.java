@@ -27,7 +27,7 @@ public class CNodeTernary extends CNode
 {
 	public enum TernaryType {
 		PLUS_MULT, MINUS_MULT,
-		REPLACE, REPLACE_NAN,
+		REPLACE, REPLACE_NAN, IFELSE,
 		LOOKUP_RC1, LOOKUP_RVECT1;
 		
 		
@@ -52,7 +52,10 @@ public class CNodeTernary extends CNode
 				
 				case REPLACE_NAN:
 					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
-					
+				
+				case IFELSE:
+					return "    double %TMP% = (%IN1% != 0) ? %IN2% : %IN3%;\n";
+				
 				case LOOKUP_RC1:
 					return sparse ?
 						"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
@@ -124,15 +127,14 @@ public class CNodeTernary extends CNode
 	@Override
 	public String toString() {
 		switch(_type) {
-			case PLUS_MULT: return "t(+*)";
-			case MINUS_MULT: return "t(-*)";
-			case REPLACE: 
-			case REPLACE_NAN: return "t(rplc)";
-			case LOOKUP_RC1: return "u(ixrc1)";
+			case PLUS_MULT:     return "t(+*)";
+			case MINUS_MULT:    return "t(-*)";
+			case REPLACE:
+			case REPLACE_NAN:   return "t(rplc)";
+			case IFELSE:        return "t(ifelse)";
+			case LOOKUP_RC1:    return "u(ixrc1)";
 			case LOOKUP_RVECT1: return "u(ixrv1)";
-			
-			default:
-				return super.toString();	
+			default:            return super.toString();
 		}
 	}
 	
@@ -143,6 +145,7 @@ public class CNodeTernary extends CNode
 			case MINUS_MULT:
 			case REPLACE:
 			case REPLACE_NAN:
+			case IFELSE:
 			case LOOKUP_RC1:
 				_rows = 0;
 				_cols = 0;

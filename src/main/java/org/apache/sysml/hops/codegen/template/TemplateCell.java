@@ -34,6 +34,7 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -168,7 +169,7 @@ public class TemplateCell extends TemplateBase
 					&& HopRewriteUtils.isMatrixMultiply(hop) && i==0 ) //skip transpose
 				rConstructCplan(c.getInput().get(0), memo, tmp, inHops, compileLiterals);
 			else {
-				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
+				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);
 				tmp.put(c.getHopID(), cdata);
 				inHops.add(c);
 			}
@@ -208,6 +209,7 @@ public class TemplateCell extends TemplateBase
 			
 			//add lookups if required
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
 			cdata3 = TemplateUtils.wrapLookupIfNecessary(cdata3, hop.getInput().get(2));
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
@@ -299,11 +301,11 @@ public class TemplateCell extends TemplateBase
 		//prepare indicators for ternary operations
 		boolean isTernaryVectorScalarVector = false;
 		boolean isTernaryMatrixScalarMatrixDense = false;
+		boolean isTernaryIfElse = (HopRewriteUtils.isTernary(hop, OpOp3.IFELSE) && hop.getDataType().isMatrix());
 		if( hop instanceof TernaryOp && hop.getInput().size()==3 && hop.dimsKnown() 
-			&& HopRewriteUtils.checkInputDataTypes(hop, DataType.MATRIX, DataType.SCALAR, DataType.MATRIX)) {
+			&& HopRewriteUtils.checkInputDataTypes(hop, DataType.MATRIX, DataType.SCALAR, DataType.MATRIX) ) {
 			Hop left = hop.getInput().get(0);
 			Hop right = hop.getInput().get(2);
-			
 			isTernaryVectorScalarVector = TemplateUtils.isVector(left) && TemplateUtils.isVector(right);
 			isTernaryMatrixScalarMatrixDense = HopRewriteUtils.isEqualSize(left, right) 
 				&& !HopRewriteUtils.isSparse(left) && !HopRewriteUtils.isSparse(right);
@@ -312,8 +314,8 @@ public class TemplateCell extends TemplateBase
 		//check supported unary, binary, ternary operations
 		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop) && (hop instanceof UnaryOp 
 				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrix
-				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense
-				|| (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp()==ParamBuiltinOp.REPLACE));	
+				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense || isTernaryIfElse
+				|| (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp()==ParamBuiltinOp.REPLACE));
 	}
 	
 	protected boolean isSparseSafe(List<Hop> roots, Hop mainInput, List<CNode> outputs, List<AggOp> aggOps, boolean onlySum) {

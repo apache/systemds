@@ -53,6 +53,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME15 = TEST_NAME+15; //colMins(2*log(X))
 	private static final String TEST_NAME16 = TEST_NAME+16; //colSums(2*log(X));
 	private static final String TEST_NAME17 = TEST_NAME+17; //xor operation
+	private static final String TEST_NAME18 = TEST_NAME+18; //sum(ifelse(X,Y,Z))
 	
 	
 	private static final String TEST_DIR = "functions/codegen/";
@@ -66,7 +67,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=17; i++ ) {
+		for( int i=1; i<=18; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -302,6 +303,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwiseRewrite17_sp() {
 		testCodegenIntegration( TEST_NAME17, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite18() {
+		testCodegenIntegration( TEST_NAME18, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise18() {
+		testCodegenIntegration( TEST_NAME18, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite18_sp() {
+		testCodegenIntegration( TEST_NAME18, true, ExecType.SPARK );
 	}
 	
 	

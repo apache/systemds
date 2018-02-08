@@ -447,11 +447,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		
 		case XOR:
-		case BITWISE_AND:
-		case BITWISE_OR:
-		case BITWISE_XOR:
-		case BITWISE_SHIFTL:
-		case BITWISE_SHIFTR:
+		case BITWAND:
+		case BITWOR:
+		case BITWXOR:
+		case BITWSHIFTL:
+		case BITWSHIFTR:
 		case MIN:
 		case MAX:
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
@@ -1377,11 +1377,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case FLOOR:
 		case MEDIAN:
 		case XOR:
-		case BITWISE_AND:
-		case BITWISE_OR:
-		case BITWISE_XOR:
-		case BITWISE_SHIFTL:
-		case BITWISE_SHIFTR:
+		case BITWAND:
+		case BITWOR:
+		case BITWXOR:
+		case BITWSHIFTL:
+		case BITWSHIFTR:
 			return true;
 		default:
 			return false;
@@ -1778,15 +1778,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else if ( functionName.equals("xor") )
 			bifop = Expression.BuiltinFunctionOp.XOR;
 		else if ( functionName.equals("bitwAnd") )
-			bifop = Expression.BuiltinFunctionOp.BITWISE_AND;
+			bifop = Expression.BuiltinFunctionOp.BITWAND;
 		else if ( functionName.equals("bitwOr") )
-			bifop = Expression.BuiltinFunctionOp.BITWISE_OR;
+			bifop = Expression.BuiltinFunctionOp.BITWOR;
 		else if ( functionName.equals("bitwXor") )
-			bifop = Expression.BuiltinFunctionOp.BITWISE_XOR;
+			bifop = Expression.BuiltinFunctionOp.BITWXOR;
 		else if ( functionName.equals("bitwShiftL") )
-			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTL;
+			bifop = Expression.BuiltinFunctionOp.BITWSHIFTL;
 		else if ( functionName.equals("bitwShiftR") )
-			bifop = Expression.BuiltinFunctionOp.BITWISE_SHIFTR;
+			bifop = Expression.BuiltinFunctionOp.BITWSHIFTR;
 		else if ( functionName.equals("ifelse") )
 			bifop = Expression.BuiltinFunctionOp.IFELSE;
 		else

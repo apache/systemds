@@ -138,11 +138,11 @@ public abstract class Expression implements ParseInfo
 		TRANS,
 		VAR,
 		XOR,
-		BITWISE_AND,
-		BITWISE_OR,
-		BITWISE_XOR,
-		BITWISE_SHIFTL,
-		BITWISE_SHIFTR,
+		BITWAND,
+		BITWOR,
+		BITWXOR,
+		BITWSHIFTL,
+		BITWSHIFTR,
 	}
 
 	/**

@@ -237,6 +237,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param val     initialization value
 	 */
 	private void reset(int rl, int cl, boolean sp, long estnnz, double val) {
+		//check for valid dimensions
+		if( rl < 0 || cl < 0 )
+			throw new RuntimeException("Invalid block dimensions: "+rl+" "+cl);
+		
 		//reset basic meta data
 		rlen = rl;
 		clen = cl;

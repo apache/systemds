@@ -566,12 +566,11 @@ public class LibSpoofPrimitives
 	 * Computes c = xor(A,B)
 	 *
 	 * @param a dense input vector A
-	 * @param ai start position in A
 	 * @param bval scalar value
 	 * @param c resultant vector
+	 * @param ai start position in A
 	 * @param ci index of c
 	 * @param len number of processed elements
-	 * @return resultant value
 	 */
 	public static void vectXorAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)

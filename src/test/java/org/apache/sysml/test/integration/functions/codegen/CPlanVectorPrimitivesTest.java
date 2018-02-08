@@ -682,6 +682,20 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
 	}
 
+	@Test
+	public void testScalarVectorBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
+	}
+	@Test
+	public void testVectorVectorBitwAndDenseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test
+	public void testVectorVectorBitwAndSparseDense() {
+		testVectorBinaryPrimitive(BinType.BITWAND, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{

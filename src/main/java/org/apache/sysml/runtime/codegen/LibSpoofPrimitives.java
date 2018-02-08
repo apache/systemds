@@ -25,6 +25,7 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * This library contains all vector primitives that are used in 
@@ -1978,10 +1979,47 @@ public class LibSpoofPrimitives
 	public static double[] vectBitwandWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++ )
-			c[j] = ( (int)a[ai+j] & (int)bval );
+			c[j] = (double)( UtilFunctions.toInt(a[ai+j]) & UtilFunctions.toInt(bval) );
 		return c;
 	}
-	
+
+	//2. dense vector vs. scalar
+	public static double[] vectBitwandWrite(double bval, double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = ( UtilFunctions.toInt(bval) & UtilFunctions.toInt(a[ai+j]) );
+		return c;
+	}
+
+	//3. dense vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c= allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = (double)( UtilFunctions.toInt(a[ai+j]) & UtilFunctions.toInt(b[bi+j]));
+		return c;
+	}
+
+	//4. sparse vector vs. scalar
+//	public static double[] vectBitwandWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
+//		double init = (bval != 0) ? 1 : 0;
+//		double[] c = allocVector(len, true, init);
+//		for( int j = ai; j < ai+alen; j++ )
+//			c[aix[j]] = (a[j])
+//	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = (b[bi+j] != 0) ? 1 : 0;
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( UtilFunctions.toInt(a[j]) & UtilFunctions.toInt(b[bi + aix[j]]) );
+		return c;
+	}
+
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		return vectXorWrite(a, b, aix, ai, bi, alen, len);
+	}
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)
 	

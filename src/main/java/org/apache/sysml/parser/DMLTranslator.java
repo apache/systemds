@@ -2680,23 +2680,23 @@ public class DMLTranslator
 			break;
 		case BITWAND:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-					target.getValueType(), OpOp2.BW_AND, expr, expr2);
+					target.getValueType(), OpOp2.BITWAND, expr, expr2);
 			break;
 		case BITWOR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-					target.getValueType(), OpOp2.BW_OR, expr, expr2);
+					target.getValueType(), OpOp2.BITWOR, expr, expr2);
 			break;
 		case BITWXOR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-					target.getValueType(), OpOp2.BW_XOR, expr, expr2);
+					target.getValueType(), OpOp2.BITWXOR, expr, expr2);
 			break;
 		case BITWSHIFTL:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-					target.getValueType(), OpOp2.BW_SHIFTL, expr, expr2);
+					target.getValueType(), OpOp2.BITWSHIFTL, expr, expr2);
 			break;
 		case BITWSHIFTR:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-					target.getValueType(), OpOp2.BW_SHIFTR, expr, expr2);
+					target.getValueType(), OpOp2.BITWSHIFTR, expr, expr2);
 			break;
 
 		case ABS:

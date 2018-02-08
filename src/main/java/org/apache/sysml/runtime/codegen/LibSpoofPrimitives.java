@@ -1965,6 +1965,22 @@ public class LibSpoofPrimitives
 		//invariant to the ordering of inputs
 		return vectLessWrite(b, a, bix, bi, ai, blen, len);
 	}
+
+	//********************* Logical Bitwise Operators ********************//
+
+	/**
+	 * BitwiseAnd Operator
+	 *
+	 * @return
+	 */
+
+	//1. scalar vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = ( (int)a[ai+j] & (int)bval );
+		return c;
+	}
 	
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)

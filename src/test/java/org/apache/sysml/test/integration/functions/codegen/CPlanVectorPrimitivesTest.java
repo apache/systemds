@@ -675,6 +675,13 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
+	//***************** Logical Bitwise Operators ********************//
+
+	@Test
+	public void testVectorScalarBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{

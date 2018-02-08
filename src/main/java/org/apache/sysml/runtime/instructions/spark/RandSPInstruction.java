@@ -278,8 +278,9 @@ public class RandSPInstruction extends UnarySPInstruction {
 		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( lrows, lcols, rowsInBlock, 
 			colsInBlock, sparsity); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		long numBlocks = new MatrixCharacteristics(lrows, lcols, rowsInBlock, colsInBlock).getNumBlocks();
-		long numColBlocks = (long)Math.ceil((double)lcols/(double)colsInBlock);
+		MatrixCharacteristics tmp = new MatrixCharacteristics(lrows, lcols, rowsInBlock, colsInBlock);
+		long numBlocks = tmp.getNumBlocks();
+		long numColBlocks = tmp.getNumColBlocks();
 		
 		//a) in-memory seed rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
@@ -295,7 +296,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
 			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
-				
+			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
 		}
@@ -754,6 +755,5 @@ public class RandSPInstruction extends UnarySPInstruction {
 		return ( OptimizerUtils.isValidCPDimensions(lrows, lcols)
 				 && OptimizerUtils.isValidCPMatrixSize(lrows, lcols, sparsity) 
 				 && size < OptimizerUtils.getLocalMemBudget() );
-	}	
-
+	}
 }

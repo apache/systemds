@@ -241,7 +241,6 @@ public abstract class CostEstimator
 			}
 			
 			stats.put(varname, vs);
-			//System.out.println(varname+" "+vs);
 		}
 	}
 	
@@ -263,8 +262,6 @@ public abstract class CostEstimator
 				long nnz = Long.parseLong(parts[10]);
 				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
 				stats.put(varname, vs);
-				
-				//System.out.println(varname+" "+vs);
 			}
 			else if ( optype.equals("cpvar") ) {
 				String varname = parts[1];
@@ -307,10 +304,7 @@ public abstract class CostEstimator
 			FunctionCallCPInstruction finst = (FunctionCallCPInstruction) inst;
 			ArrayList<String> outVars = finst.getBoundOutputParamNames();
 			for( String varname : outVars )
-			{
 				stats.put(varname, _unknownStats);
-				//System.out.println(varname+" "+vs);
-			}
 		}
 	}
 

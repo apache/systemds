@@ -910,7 +910,7 @@ public class BinaryOp extends Hop
 			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
 				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
 			
-			if( ldim1 > 0 || ldim2 > 0 || lnnz >= 0 )
+			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
 				return new long[]{ldim1, ldim2, lnnz};
 		}
 		else if( op == OpOp2.RBIND ) {
@@ -923,12 +923,12 @@ public class BinaryOp extends Hop
 			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
 				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
 			
-			if( ldim1 > 0 || ldim2 > 0 || lnnz >= 0 )
+			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
 				return new long[]{ldim1, ldim2, lnnz};
 		}
 		else if ( op == OpOp2.SOLVE ) {
 			// Output is a (likely to be dense) vector of size number of columns in the first input
-			if ( mc[0].getCols() > 0 ) {
+			if ( mc[0].getCols() >= 0 ) {
 				ret = new long[]{ mc[0].getCols(), 1, mc[0].getCols()};
 			}
 		}
@@ -960,20 +960,20 @@ public class BinaryOp extends Hop
 				}
 				else //GENERAL CASE
 				{
-					ldim1 = (mc[0].getRows()>0) ? mc[0].getRows() : 
+					ldim1 = (mc[0].rowsKnown()) ? mc[0].getRows() : 
 					        (mc[1].getRows()>1) ? mc[1].getRows() : -1;
-					ldim2 = (mc[0].getCols()>0) ? mc[0].getCols() : 
+					ldim2 = (mc[0].colsKnown()) ? mc[0].getCols() : 
 						    (mc[1].getCols()>1) ? mc[1].getCols() : -1;
 				}
 				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
 				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
 			}
 			
-			if( ldim1>0 && ldim2>0 )
+			if( ldim1>=0 && ldim2>=0 )
 			{
 				if( OptimizerUtils.isBinaryOpConditionalSparseSafe(op) && input2 instanceof LiteralOp ) {
 					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsityConditionalSparseSafe(sp1, op,(LiteralOp)input2));
-					ret = new long[]{ldim1, ldim2, lnnz};	
+					ret = new long[]{ldim1, ldim2, lnnz};
 				}
 				else
 				{
@@ -1097,11 +1097,11 @@ public class BinaryOp extends Hop
 		Lop ret = null;
 		
 		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();		
+		long m1_dim2 = left.getDim2();
 		long m2_dim1 = right.getDim1();
 		long m2_dim2 = right.getDim2();
-		long m3_dim1 = cbind ? m1_dim1 : ((m1_dim1>0 && m2_dim1>0) ? (m1_dim1 + m2_dim1) : -1); //output rows
-		long m3_dim2 = cbind ? ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1): m1_dim2; //output cols
+		long m3_dim1 = cbind ? m1_dim1 : ((m1_dim1>=0 && m2_dim1>=0) ? (m1_dim1 + m2_dim1) : -1); //output rows
+		long m3_dim2 = cbind ? ((m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1): m1_dim2; //output cols
 		long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
 		long brlen = left.getRowsInBlock();
 		long bclen = left.getColsInBlock();
@@ -1241,15 +1241,15 @@ public class BinaryOp extends Hop
 		throws HopsException, LopsException
 	{
 		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();		
+		long m1_dim2 = left.getDim2();
 		long m2_dim1 = right1.getDim1();
 		long m2_dim2 = right1.getDim2();
 		long m3_dim1 = right2.getDim1();
-		long m3_dim2 = right2.getDim2();		
-		long m41_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
+		long m3_dim2 = right2.getDim2();
+		long m41_dim2 = (m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1; //output cols
 		long m41_nnz = (left.getNnz()>0 && right1.getNnz()>0) ? 
 				      (left.getNnz() + right1.getNnz()) : -1; //output nnz
-		long m42_dim2 = (m1_dim2>0 && m2_dim2>0 && m3_dim2>0) ? (m1_dim2 + m2_dim2 + m3_dim2) : -1; //output cols
+		long m42_dim2 = (m1_dim2>=0 && m2_dim2>=0 && m3_dim2>=0) ? (m1_dim2 + m2_dim2 + m3_dim2) : -1; //output cols
 		long m42_nnz = (left.getNnz()>0 && right1.getNnz()>0 && right2.getNnz()>0) ? 
 				      (left.getNnz() + right1.getNnz()+ right2.getNnz()) : -1; //output nnz
 		long brlen = left.getRowsInBlock();
@@ -1485,10 +1485,10 @@ public class BinaryOp extends Hop
 			//TODO quantile
 			if( op == OpOp2.CBIND )
 			{
-				setDim1( (input1.getDim1()>0) ? input1.getDim1() : input2.getDim1() );
+				setDim1( input1.rowsKnown() ? input1.getDim1() : input2.getDim1() );
 					
 				//ensure both columns are known, otherwise dangerous underestimation due to +(-1)
-				if( input1.getDim2()>0 && input2.getDim2()>0 )
+				if( input1.colsKnown() && input2.colsKnown() )
 					setDim2( input1.getDim2() + input2.getDim2() );
 				else
 					setDim2(-1);
@@ -1500,10 +1500,10 @@ public class BinaryOp extends Hop
 			}
 			else if( op == OpOp2.RBIND )
 			{
-				setDim2( (input1.getDim2()>0) ? input1.getDim2() : input2.getDim2() );
+				setDim2( colsKnown() ? input1.getDim2() : input2.getDim2() );
 					
 				//ensure both rows are known, otherwise dangerous underestimation due to +(-1)
-				if( input1.getDim1()>0 && input2.getDim1()>0 )
+				if( input1.rowsKnown() && input2.rowsKnown() )
 					setDim1( input1.getDim1() + input2.getDim1() );
 				else
 					setDim1(-1);
@@ -1546,10 +1546,10 @@ public class BinaryOp extends Hop
 					}
 					else //GENERAL CASE
 					{
-						ldim1 = (input1.getDim1()>0) ? input1.getDim1()
-								: ((input2.getDim1()>1)?input2.getDim1():-1);
-						ldim2 = (input1.getDim2()>0) ? input1.getDim2() 
-								: ((input2.getDim2()>1)?input2.getDim2():-1);
+						ldim1 = (input1.rowsKnown()) ? input1.getDim1()
+							: ((input2.getDim1()>1)?input2.getDim1():-1);
+						ldim2 = (input1.colsKnown()) ? input1.getDim2() 
+							: ((input2.getDim2()>1)?input2.getDim2():-1);
 						lnnz1 = input1.getNnz();
 					}
 				}

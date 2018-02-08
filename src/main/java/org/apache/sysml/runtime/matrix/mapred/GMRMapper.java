@@ -169,8 +169,6 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		
 		//assign the temporay vairables
 		try {
-		//	System.out.println(valueClass.getName());
-		//	System.out.println(MatrixCell.class.getName());
 			if(job.getMapOutputValueClass().equals(TaggedMatrixPackedCell.class))
 				taggedValueBuffer=TaggedMatrixValue.createObject(MatrixPackedCell.class);
 			else
@@ -232,15 +230,8 @@ implements Mapper<Writable, Writable, Writable, Writable>
 			boolean dimsUnknown = false;
 			for(int i=0; i<resultIndexes.length; i++) {
 				cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
-				
 				if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
 					dimsUnknown = true;
-					// Each counter is of the form: (group, name)
-					// where group = max_rowdim_resultindex; name = taskid
-					//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
-					//cachedReporter.getCounter(MRJobConfiguration.MAX_ROW_DIMENSION, Integer.toString(i)).increment(resultsMaxRowDims[i]);
-					//cachedReporter.getCounter(MRJobConfiguration.MAX_COL_DIMENSION, Integer.toString(i)).increment(resultsMaxColDims[i]);
-					//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
 				}
 			}
 			if ( dimsUnknown ) {

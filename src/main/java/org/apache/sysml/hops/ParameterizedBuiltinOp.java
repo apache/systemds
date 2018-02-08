@@ -318,7 +318,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 						long m2_dim1 = groups.getDim1();
 						long m2_dim2 = groups.getDim2();
 						long m3_dim1 = m1_dim1; 
-						long m3_dim2 = ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1);
+						long m3_dim2 = ((m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1);
 						long m3_nnz = (target.getNnz()>0 && groups.getNnz()>0) ? (target.getNnz() + groups.getNnz()) : -1; 
 						long brlen = target.getRowsInBlock();
 						long bclen = target.getColsInBlock();
@@ -602,7 +602,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Lop rmEmpty = null;
 				
 				//a) broadcast-based PMM (permutation matrix mult)
-				if( rmRows && rlen > 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
+				if( rmRows && rlen >= 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
 				{
 					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
 					if( needPart ){ //requires partitioning

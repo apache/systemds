@@ -477,9 +477,9 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
 				// #nnz in output is exactly the same as in input		
 				if( mc.dimsKnown() ) {
-					if( _dim1 > 0  )
+					if( _dim1 >= 0  )
 						ret = new long[]{ _dim1, mc.getRows()*mc.getCols()/_dim1, mc.getNonZeros()};
-					else if( _dim2 > 0 )	 
+					else if( _dim2 >= 0 ) 
 						ret = new long[]{ mc.getRows()*mc.getCols()/_dim2, _dim2, mc.getNonZeros()};
 				}
 				break;
@@ -608,9 +608,9 @@ public class ReorgOp extends Hop implements MultiThreadedHop
  				refreshColsParameterInformation(input3); //refresh cols
  				setNnz(input1.getNnz());
  				if( !dimsKnown() &&input1.dimsKnown() ) { //reshape allows to infer dims, if input and 1 dim known
-	 				if(_dim1 > 0) 
+	 				if(_dim1 >= 0) 
 						_dim2 = (input1._dim1*input1._dim2)/_dim1;
-					else if(_dim2 > 0)	
+					else if(_dim2 >= 0)
 						_dim1 = (input1._dim1*input1._dim2)/_dim2; 
  				}
 				break;

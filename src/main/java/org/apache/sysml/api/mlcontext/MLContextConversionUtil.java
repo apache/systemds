@@ -961,7 +961,7 @@ public class MLContextConversionUtil {
 			int cols = mb.getNumColumns();
 			List<String> list = new ArrayList<>();
 
-			if (mb.getNonZeros() > 0) {
+			if ( !mb.isEmptyBlock(false) ) {
 				if (mb.isInSparseFormat()) {
 					Iterator<IJV> iter = mb.getSparseBlockIterator();
 					int prevCellRow = -1;
@@ -1004,8 +1004,7 @@ public class MLContextConversionUtil {
 			matrixObject.release();
 			return list;
 		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to List<String> CSV format",
-					e);
+			throw new MLContextException("Cache exception while converting matrix object to List<String> CSV format", e);
 		}
 	}
 

@@ -746,7 +746,7 @@ public class TernaryOp extends Hop
 	{
 		double ret = 0;
 		if( _op == OpOp3.CTABLE ) {
-			if ( _dim1 > 0 && _dim2 > 0 ) {
+			if ( _dim1 >= 0 && _dim2 >= 0 ) {
 				// output dimensions are known, and hence a MatrixBlock is allocated
 				double sp = OptimizerUtils.getSparsity(_dim1, _dim2, Math.min(nnz, _dim1));
 				ret = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, sp );
@@ -812,7 +812,7 @@ public class TernaryOp extends Hop
 				break;
 			case IFELSE:
 				for(MatrixCharacteristics lmc : mc)
-					if( lmc.dimsKnown() && lmc.getRows() > 0 ) //known matrix
+					if( lmc.dimsKnown() && lmc.getRows() >= 0 ) //known matrix
 						return new long[]{lmc.getRows(), lmc.getCols(), -1};
 				break;
 			case PLUS_MULT:

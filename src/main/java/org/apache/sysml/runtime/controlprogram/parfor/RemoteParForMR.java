@@ -266,27 +266,24 @@ public class RemoteParForMR
 		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
-			try
-			{
-				while( reader.next(key, value) )
-				{
-					//System.out.println("key="+key.get()+", value="+value.toString());
+			try {
+				while( reader.next(key, value) ) {
 					if( !tmp.containsKey( key.get() ) )
-		        		tmp.put(key.get(), new LocalVariableMap ());	   
+						tmp.put(key.get(), new LocalVariableMap ());
 					Object[] dat = ProgramConverter.parseDataObject( value.toString() );
-		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
-		        	countAll++;
+					tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
+					countAll++;
 				}
-			}	
+			}
 			finally {
 				IOUtilFunctions.closeSilently(reader);
 			}
-		}		
+		}
 
 		LOG.debug("Num remote worker results (before deduplication): "+countAll);
 		LOG.debug("Num remote worker results: "+tmp.size());
 
 		//create return array
-		return tmp.values().toArray(new LocalVariableMap[0]);	
+		return tmp.values().toArray(new LocalVariableMap[0]);
 	}
 }

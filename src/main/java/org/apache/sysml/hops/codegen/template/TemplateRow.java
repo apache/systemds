@@ -95,7 +95,7 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
-			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() > 0
+			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() >= 0
 				&& HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop));
 	}
 

@@ -115,7 +115,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		if( schema.equals("*") ) {
 			//populate default schema
 			int clen = (int) getNumColumns();
-			if( clen > 0 ) //known number of cols
+			if( clen >= 0 ) //known number of cols
 				_schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 		}
 		else {

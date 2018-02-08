@@ -638,8 +638,9 @@ public class InterProceduralAnalysis
 						{
 							MatrixObject moOut = (MatrixObject)dat;
 							MatrixCharacteristics mc = moOut.getMatrixCharacteristics();
-							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
-							    < OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
+							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?
+								OptimizerUtils.getSparsity(mc):1.0) 
+								< OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
 							{
 								//update statistics if necessary
 								mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());

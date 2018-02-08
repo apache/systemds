@@ -592,25 +592,21 @@ public class LibMatrixDatagen
 	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) 
 		throws DMLRuntimeException
 	{
-		if( rows <= 0 || cols <= 0 || sp < 0 || sp > 1)
+		if( rows < 0 || cols < 0 || sp < 0 || sp > 1)
 			throw new DMLRuntimeException("Invalid matrix characteristics: "+rows+"x"+cols+", "+sp);
 	}
 	
 	// modified version of java.util.nextInt
-    private static long nextLong(Random r, long n) {
-        if (n <= 0)
-            throw new IllegalArgumentException("n must be positive");
-
-        //if ((n & -n) == n)  // i.e., n is a power of 2
-        //    return ((n * (long)r.nextLong()) >> 31);
-
-        long bits, val;
-        do {
-            bits = (r.nextLong() << 1) >>> 1;
-            val = bits % n;
-        } while (bits - val + (n-1) < 0L);
-        return val;
-    }
+	private static long nextLong(Random r, long n) {
+		if (n <= 0)
+			throw new IllegalArgumentException("n must be positive");
+		long bits, val;
+		do {
+			bits = (r.nextLong() << 1) >>> 1;
+			val = bits % n;
+		} while (bits - val + (n-1) < 0L);
+		return val;
+	}
 
 	private static class RandTask implements Callable<Long> 
 	{

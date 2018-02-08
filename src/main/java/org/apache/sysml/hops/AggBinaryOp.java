@@ -1418,14 +1418,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		boolean ret = true;
 		
 		//right side cached (no agg if left has just one column block)
-		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() > 0 //known num columns
+		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() >= 0 //known num columns
 	         && getInput().get(0).getDim2() <= getInput().get(0).getColsInBlock() ) 
         {
             ret = false;
         }
         
 		//left side cached (no agg if right has just one row block)
-        if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() > 0 //known num rows
+        if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
              && getInput().get(1).getDim1() <= getInput().get(1).getRowsInBlock() ) 
         {
        	    ret = false;

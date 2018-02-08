@@ -648,8 +648,8 @@ public class FrameRDDConverterUtils
 
 		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
-		{			
-			if( fb != null && fb.getNumRows()>0 )
+		{
+			if( fb != null && fb.getNumRows()>=0 )
 				ret.add(new Tuple2<>(ix, fb));
 		}
 	}
@@ -788,8 +788,8 @@ public class FrameRDDConverterUtils
 
 		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
-		{			
-			if( fb != null && fb.getNumRows()>0 )
+		{
+			if( fb != null && fb.getNumRows()>=0 )
 				ret.add(new Tuple2<>(ix, fb));
 		}
 	}

@@ -1163,7 +1163,6 @@ public class Recompiler
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
 		if(    hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
-			//&& hop.getDim1()>0 && hop.getDim2()>0  ) //matrix with known dims 
 		{
 			String varName = hop.getName();
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
@@ -1172,10 +1171,8 @@ public class Recompiler
 				if( hop.getDataType()==DataType.MATRIX )
 				{
 					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
-					MatrixCharacteristics mc = new MatrixCharacteristics( 
-												hop.getDim1(), hop.getDim2(), 
-												ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
-												hop.getNnz());
+					MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 
+						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);

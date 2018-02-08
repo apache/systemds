@@ -281,10 +281,10 @@ public class WriterBinaryBlock extends MatrixWriter
 		{
 			case ROW_BLOCK_WISE_N:
 			{
-				long numBlocks = ((rlen-1)/brlen)+1;
+				long numBlocks = Math.max(((rlen-1)/brlen)+1, 1);
 				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/clen/brlen);
 						
-				int count = 0;		
+				int count = 0;
 				for( int k = 0; k<numBlocks; k+=numPartBlocks )
 				{
 					// 1) create sequence file writer, with right replication factor 
@@ -331,10 +331,10 @@ public class WriterBinaryBlock extends MatrixWriter
 			}
 			case COLUMN_BLOCK_WISE_N:
 			{
-				long numBlocks = ((clen-1)/bclen)+1;
+				long numBlocks = Math.max(((clen-1)/bclen)+1, 1);
 				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/rlen/bclen);
 				
-				int count = 0;		
+				int count = 0;
 				for( int k = 0; k<numBlocks; k+=numPartBlocks )
 				{
 					// 1) create sequence file writer, with right replication factor 

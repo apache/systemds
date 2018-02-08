@@ -154,9 +154,9 @@ public class DataGenMR
 					
 					//seed generation
 					Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.getSeed());
-					for(long r = 0; r < rlens[i]; r += brlens[i]) {
+					for(long r = 0; r < Math.max(rlens[i],1); r += brlens[i]) {
 						long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
-						for(long c = 0; c < clens[i]; c += bclens[i]) {
+						for(long c = 0; c < Math.max(clens[i],1); c += bclens[i]) {
 							long curBlockColSize = Math.min(bclens[i], (clens[i] - c));
 							sb.append((r / brlens[i]) + 1);
 							sb.append(',');

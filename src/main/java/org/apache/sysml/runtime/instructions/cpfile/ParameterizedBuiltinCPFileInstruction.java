@@ -178,15 +178,11 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				else if( ii == InputInfo.BinaryBlockInputInfo )
 					diagBlocks = createBinaryBlockStagingFile( fnameOld, stagingDir );
 				
-				//System.out.println("Executed phase 1 in "+time.stop());
-				
 				//Phase 2: scan empty rows/cols
 				if( diagBlocks )
 					ret = createKeyMappingDiag(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
 				else
 					ret = createKeyMapping(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
-				
-				//System.out.println("Executed phase 2 in "+time.stop());
 				
 				//Phase 3: create output files
 				MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
@@ -202,11 +198,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					else
 						createBlockResultFile( fnameNew, stagingDir, mc.getRows(), mc.getCols(), ret, mc.getNonZeros(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii );
 				}
-				
-				//System.out.println("Executed phase 3 in "+time.stop());
 			}
-			catch( IOException ioe )
-			{
+			catch( IOException ioe ) {
 				throw new DMLRuntimeException( ioe );
 			}
 			

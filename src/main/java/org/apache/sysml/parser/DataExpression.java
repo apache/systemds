@@ -1123,22 +1123,18 @@ public class DataExpression extends DataIdentifier
 			///////////////////////////////////////////////////////////////////
 			Expression rowsExpr = getVarParam(RAND_ROWS);
 			if (rowsExpr instanceof IntIdentifier) {
-				if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
-					rowsLong = ((IntIdentifier)rowsExpr).getValue();
-				}
-				else {
+				if( ((IntIdentifier)rowsExpr).getValue() < 0 ) {
 					raiseValidateError("In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue(), conditional);
+						"(integer) value >= 0 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue(), conditional);
 				}
+				rowsLong = ((IntIdentifier)rowsExpr).getValue();
 			}
 			else if (rowsExpr instanceof DoubleIdentifier) {
-				if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
-					rowsLong = UtilFunctions.toLong(Math.floor(((DoubleIdentifier)rowsExpr).getValue()));
+				if ( ((DoubleIdentifier)rowsExpr).getValue() < 0 ) {
+				raiseValidateError("In rand statement, can only assign rows a long " +
+							"(integer) value >= 0 -- attempted to assign value: " + rowsExpr.toString(), conditional);
 				}
-				else {
-					raiseValidateError("In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString(), conditional);
-				}		
+				rowsLong = UtilFunctions.toLong(Math.floor(((DoubleIdentifier)rowsExpr).getValue()));
 			}
 			else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
 				
@@ -1149,11 +1145,10 @@ public class DataExpression extends DataIdentifier
 					// handle int constant
 					ConstIdentifier constValue = currConstVars.get(identifierName);
 					if (constValue instanceof IntIdentifier){
-						
 						// check rows is >= 1 --- throw exception
-						if (((IntIdentifier)constValue).getValue() < 1){
+						if( ((IntIdentifier)constValue).getValue() < 0 ){
 							raiseValidateError("In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+									"(integer) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update row expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
@@ -1163,22 +1158,20 @@ public class DataExpression extends DataIdentifier
 					}
 					// handle double constant 
 					else if (constValue instanceof DoubleIdentifier){
-						
-						if (((DoubleIdentifier)constValue).getValue() < 1.0){
+						if (((DoubleIdentifier)constValue).getValue() < 0){
 							raiseValidateError("In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+									"(double) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update row expr with new IntIdentifier (rounded down)
 						long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						rowsExpr = new IntIdentifier(roundedValue, this);
 						addVarParam(RAND_ROWS, rowsExpr);
 						rowsLong = roundedValue; 
-						
 					}
 					else {
 						// exception -- rows must be integer or double constant
 						raiseValidateError("In rand statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+								"(integer) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 					}
 				}
 				else {
@@ -1190,30 +1183,25 @@ public class DataExpression extends DataIdentifier
 				// handle general expression
 				rowsExpr.validateExpression(ids, currConstVars, conditional);
 			}
-				
-	
+			
 			///////////////////////////////////////////////////////////////////
 			// HANDLE COLUMNS
 			///////////////////////////////////////////////////////////////////
 			
 			Expression colsExpr = getVarParam(RAND_COLS);
 			if (colsExpr instanceof IntIdentifier) {
-				if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
-					colsLong = ((IntIdentifier)colsExpr).getValue();
-				}
-				else {
+				if  (((IntIdentifier)colsExpr).getValue() < 0 ) {
 					raiseValidateError("In rand statement, can only assign cols a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
+							"(integer) value >= 0 -- attempted to assign value: " + colsExpr.toString(), conditional);
 				}
+				colsLong = ((IntIdentifier)colsExpr).getValue();
 			}
 			else if (colsExpr instanceof DoubleIdentifier) {
-				if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
-					colsLong = Double.valueOf((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+				if  (((DoubleIdentifier)colsExpr).getValue() < 0 ) {
+					raiseValidateError("In rand statement, can only assign cols a long " +
+							"(integer) value >= 0 -- attempted to assign value: " + colsExpr.toString(), conditional);
 				}
-				else {
-					raiseValidateError("In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
-				}		
+				colsLong = Double.valueOf((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 			}
 			else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
 				
@@ -1224,44 +1212,39 @@ public class DataExpression extends DataIdentifier
 					// handle int constant
 					ConstIdentifier constValue = currConstVars.get(identifierName);
 					if (constValue instanceof IntIdentifier){
-						
-						// check cols is >= 1 --- throw exception
-						if (((IntIdentifier)constValue).getValue() < 1){
+						if (((IntIdentifier)constValue).getValue() < 0 ){
 							raiseValidateError("In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+								"(integer) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update col expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						colsExpr = new IntIdentifier(roundedValue, this);
 						addVarParam(RAND_COLS, colsExpr);
-						colsLong = roundedValue; 
+						colsLong = roundedValue;
 					}
 					// handle double constant 
 					else if (constValue instanceof DoubleIdentifier){
-						
-						if (((DoubleIdentifier)constValue).getValue() < 1){
+						if (((DoubleIdentifier)constValue).getValue() < 0){
 							raiseValidateError("In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+								"(double) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update col expr with new IntIdentifier (rounded down)
 						long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						colsExpr = new IntIdentifier(roundedValue, this);
 						addVarParam(RAND_COLS, colsExpr);
 						colsLong = roundedValue; 
-						
 					}
 					else {
 						// exception -- rows must be integer or double constant
 						raiseValidateError("In rand statement, can only assign cols a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+							"(integer) value >= 0 -- attempted to assign value: " + constValue.toString(), conditional);
 					}
 				}
 				else {
 					// handle general expression
 					colsExpr.validateExpression(ids, currConstVars, conditional);
 				}
-					
-			}	
+			}
 			else {
 				// handle general expression
 				colsExpr.validateExpression(ids, currConstVars, conditional);
@@ -1307,8 +1290,7 @@ public class DataExpression extends DataIdentifier
 					// handle general expression
 					minExpr.validateExpression(ids, currConstVars, conditional);
 				}
-					
-			}	
+			}
 			else {
 				// handle general expression
 				minExpr.validateExpression(ids, currConstVars, conditional);
@@ -1325,25 +1307,21 @@ public class DataExpression extends DataIdentifier
 				
 				// check if the DataIdentifier variable is a ConstIdentifier
 				String identifierName = ((DataIdentifier)maxExpr).getName();
-				if (currConstVars.containsKey(identifierName)){
-					
+				if (currConstVars.containsKey(identifierName)) {
 					// handle int constant
 					ConstIdentifier constValue = currConstVars.get(identifierName);
-					if (constValue instanceof IntIdentifier){
-						
+					if (constValue instanceof IntIdentifier) {
 						// update min expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						maxExpr = new DoubleIdentifier(roundedValue, this);
 						addVarParam(RAND_MAX, maxExpr);
 					}
 					// handle double constant 
-					else if (constValue instanceof DoubleIdentifier){
-		
+					else if (constValue instanceof DoubleIdentifier) {
 						// update col expr with new IntIdentifier (rounded down)
 						double roundedValue = ((DoubleIdentifier)constValue).getValue();
 						maxExpr = new DoubleIdentifier(roundedValue, this);
 						addVarParam(RAND_MAX, maxExpr);
-						
 					}
 					else {
 						// exception -- rows must be integer or double constant
@@ -1354,8 +1332,8 @@ public class DataExpression extends DataIdentifier
 				else {
 					// handle general expression
 					maxExpr.validateExpression(ids, currConstVars, conditional);
-				}		
-			}	
+				}
+			}
 			else {
 				// handle general expression
 				maxExpr.validateExpression(ids, currConstVars, conditional);
@@ -1376,8 +1354,6 @@ public class DataExpression extends DataIdentifier
 				((IndexedIdentifier) getOutput()).setOriginalDimensions(targetAsSeen.getDim1(), targetAsSeen.getDim2());
 				//((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());
 			}
-			//getOutput().computeDataType();
-
 			if (getOutput() instanceof IndexedIdentifier){
 				LOG.warn(this.printWarningLocation() + "Output for Rand Statement may have incorrect size information");
 			}

@@ -884,19 +884,24 @@ public abstract class Hop implements ParseInfo
 	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR 
 			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& _dim1 > 0 && _dim2 > 0) );
+				&& _dim1 >= 0 && _dim2 >= 0) );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)));
+		return rowsKnown() && colsKnown()
+			&& (_dataType.isScalar() || ((includeNnz) ? _nnz>=0 : true));
 	}
 
 	public boolean dimsKnownAny() {
-		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& (_dim1 > 0 || _dim2 > 0)) );
+		return rowsKnown() || colsKnown();
+	}
+	
+	public boolean rowsKnown() {
+		return _dataType.isScalar() || _dim1 >= 0;
+	}
+	
+	public boolean colsKnown() {
+		return _dataType.isScalar() || _dim2 >= 0;
 	}
 	
 	public static void resetVisitStatus( ArrayList<Hop> hops ) {
@@ -920,7 +925,7 @@ public abstract class Hop implements ParseInfo
 		if( !isVisited() )
 			return;
 		for( Hop h : getInput() )
-			h.resetVisitStatus();		
+			h.resetVisitStatus();
 		setVisited(false);
 	}
 	
@@ -1742,16 +1747,14 @@ public abstract class Hop implements ParseInfo
 		
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW )
-			{
+			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW ) {
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.getRows()>0 )
+				if( mc.rowsKnown() )
 					ret = mc.getRows();
 			}
-			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL )
-			{
+			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL ) {
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.getCols()>0 )
+				if( mc.colsKnown() )
 					ret = mc.getCols();
 			}
 		}

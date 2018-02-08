@@ -120,10 +120,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 				}
 				
 				ArrayList<Integer> outputIndexes = outputIndexesMapping.get(in.output);
-				for(int i: outputIndexes)
-				{
+				for(int i: outputIndexes) {
 					collectOutput_N_Increase_Counter(outIndex, outCell, i, report);
-				//	System.out.println("final output: "+outIndex+" -- "+outCell);
 				}
 			}
 		}

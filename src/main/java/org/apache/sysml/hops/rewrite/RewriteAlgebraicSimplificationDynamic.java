@@ -998,8 +998,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( left instanceof ReorgOp && ((ReorgOp)left).getOp()==ReOrgOp.DIAG //left diag
 				&& HopRewriteUtils.isDimsKnown(left) && left.getDim2()>1 ) //diagV2M
 			{
-				//System.out.println("diag mm rewrite: dim2(right)="+right.getDim2());
-				
 				if( right.getDim2()==1 ) //right column vector
 				{
 					//create binary operation over input and right
@@ -2558,7 +2556,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//even if the intermediate is otherwise not required, e.g., when part of a fused operator)
 		if( hi instanceof UnaryOp ) 
 		{
-			if( ((UnaryOp)hi).getOp()==OpOp1.NROW && hi.getInput().get(0).getDim1()>0 ) {
+			if( ((UnaryOp)hi).getOp()==OpOp1.NROW && hi.getInput().get(0).rowsKnown() ) {
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim1());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);
@@ -2566,7 +2564,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					+ hnew.getName()+" (line "+hi.getBeginLine()+").");
 				hi = hnew;
 			}
-			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).getDim2()>0 ) {
+			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).colsKnown() ) {
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim2());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);

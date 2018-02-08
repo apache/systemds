@@ -271,7 +271,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// Compute intermediate memory budget that can be passed to GPU operators 
 		// for better CuDNN operator selection at runtime
 		double intermediateMemEstimate = computeIntermediateMemEstimate(-1, -1, -1 );
-		if(et == ExecType.GPU && _dim1 > 0 && _dim2 > 0) {
+		if(et == ExecType.GPU && _dim1 >= 0 && _dim2 >= 0) {
 			// This enables us to compile more efficient matrix-matrix CuDNN operation instead of 
 			// row-by-row invocation of multiple vector-matrix CuDNN operations.
 			// This is possible as the operations on GPU are single-threaded
@@ -512,7 +512,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
 			ret[2] = -1;
-			return (ret[0]>0 && ret[1]>0) ? ret : null;
+			return (ret[0]>=0 && ret[1]>=0) ? ret : null;
 		}
 		
 		refreshSizeInformation();

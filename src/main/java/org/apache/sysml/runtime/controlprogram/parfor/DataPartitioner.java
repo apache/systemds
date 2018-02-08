@@ -104,7 +104,7 @@ public abstract class DataPartitioner
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		long nonZeros = mc.getNonZeros();
-		double sparsity = (nonZeros>=0 && rows>0 && cols>0)?
+		double sparsity = mc.dimsKnown(true) ?
 				((double)nonZeros)/(rows*cols) : 1.0;
 		
 		if( !force ) //try to optimize, if format not forced

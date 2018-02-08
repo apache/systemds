@@ -321,10 +321,10 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
-		Hop cols = (input.getDim2()>0) ? new LiteralOp(input.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
+		Hop rows = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop cols = input.colsKnown() ? new LiteralOp(input.getDim2()) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -407,10 +407,10 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (rowInput.getDim1()>0) ? new LiteralOp(rowInput.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
-		Hop cols = (colInput.getDim2()>0) ? new LiteralOp(colInput.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
+		Hop rows = rowInput.rowsKnown() ? new LiteralOp(rowInput.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
+		Hop cols = colInput.colsKnown() ? new LiteralOp(colInput.getDim2()) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -420,7 +420,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
@@ -440,10 +440,10 @@ public class HopRewriteUtils
 		long nrow = tRowInput ? rowInput.getDim2() : rowInput.getDim1();
 		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
-		Hop rows = (nrow>0) ? new LiteralOp(nrow) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
-		Hop cols = (ncol>0) ? new LiteralOp(ncol) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
+		Hop rows = (nrow>=0) ? new LiteralOp(nrow) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
+		Hop cols = (ncol>=0) ? new LiteralOp(ncol) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -677,12 +677,12 @@ public class HopRewriteUtils
 	{
 		Hop ret = null;
 		if( row ){
-			ret = (hop.getDim1()>0) ? new LiteralOp(hop.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
+			ret = hop.rowsKnown() ? new LiteralOp(hop.getDim1()) : 
+				new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
 		}
 		else{
-			ret = (hop.getDim2()>0) ? new LiteralOp(hop.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
+			ret = hop.colsKnown() ? new LiteralOp(hop.getDim2()) :
+				new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
 		}
 		
 		return ret;
@@ -698,8 +698,8 @@ public class HopRewriteUtils
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) 
 		throws HopsException
 	{		
-		Hop to = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<>();
 		if( asc ) {
@@ -784,20 +784,18 @@ public class HopRewriteUtils
 	///////////////////////////////////
 	// hop size information
 	
-	public static boolean isDimsKnown( Hop hop )
-	{
-		return ( hop.getDim1()>0 && hop.getDim2()>0 );
+	public static boolean isDimsKnown( Hop hop ) {
+		return hop.dimsKnown();
 	}
 	
-	public static boolean isEmpty( Hop hop )
-	{
+	public static boolean isEmpty( Hop hop ) {
 		return ( hop.getNnz()==0 );
 	}
 	
 	public static boolean isEqualSize( Hop hop1, Hop hop2 ) {
 		return (hop1.dimsKnown() && hop2.dimsKnown()
-				&& hop1.getDim1() == hop2.getDim1()
-				&& hop1.getDim2() == hop2.getDim2());
+			&& hop1.getDim1() == hop2.getDim1()
+			&& hop1.getDim2() == hop2.getDim2());
 	}
 	
 	public static boolean isEqualSize( Hop hop1, Hop... hops ) {
@@ -830,8 +828,8 @@ public class HopRewriteUtils
 		}
 		
 		//check row- or column-wise single block constraint 
-		return cols ? (hop.getDim2()>0 && hop.getDim2()<=hop.getColsInBlock())
-				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
+		return cols ? (hop.colsKnown() && hop.getDim2()<=hop.getColsInBlock()) :
+			(hop.rowsKnown() && hop.getDim1()<=hop.getRowsInBlock());
 	}
 	
 	public static boolean isOuterProductLikeMM( Hop hop ) {
@@ -1365,6 +1363,6 @@ public class HopRewriteUtils
 	
 	public static boolean hasValidInputDims(Hop hop, boolean dim1) {
 		return hop.getInput().stream().allMatch(
-			h -> (dim1?h.getDim1()>0:h.getDim2()>0));
+			h -> dim1 ? h.rowsKnown() : h.colsKnown());
 	}
 }

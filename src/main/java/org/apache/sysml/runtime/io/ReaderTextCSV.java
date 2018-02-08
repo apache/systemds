@@ -56,7 +56,7 @@ public class ReaderTextCSV extends MatrixReader
 	{
 		//allocate output matrix block
 		MatrixBlock ret = null;
-		if( rlen>0 && clen>0 ) //otherwise allocated on read
+		if( rlen>=0 && clen>=0 ) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
 		//prepare file access

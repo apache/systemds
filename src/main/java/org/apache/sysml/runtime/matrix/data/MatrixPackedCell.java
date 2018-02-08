@@ -93,8 +93,8 @@ public class MatrixPackedCell extends MatrixCell
 			buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.value, newWithCor.getExtraByPostition(0));
 			value=buffer._sum;
 			extras[0]=buffer._correction;
-		//	System.out.println("--- "+buffer);
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
 		{
 			checkAndAllocateSpace(2);
 			KahanObject buffer=new KahanObject(value, extras[0]);

@@ -77,6 +77,7 @@ import org.junit.runners.Suite;
 	ValueTypeAutoCastingTest.class,
 	ValueTypeCastingTest.class,
 	ValueTypeMatrixScalarBuiltinTest.class,
+	ZeroRowsColsMatrixTest.class,
 })
 
 

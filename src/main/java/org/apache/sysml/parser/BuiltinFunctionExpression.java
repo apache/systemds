@@ -584,20 +584,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				long m2clen = getExpr(i).getOutput().getDim2();
 				
 				if( getOpCode() == BuiltinFunctionOp.CBIND ) {
-					if (m1rlen > 0 && m2rlen > 0 && m1rlen!=m2rlen) {
+					if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
 						raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
 							m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
-					appendDim1 = (m2rlen>0) ? m2rlen : appendDim1;
-					appendDim2 = (appendDim2>0 && m2clen>0) ? appendDim2 + m2clen : -1;
+					appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
+					appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
 				}
 				else if( getOpCode() == BuiltinFunctionOp.RBIND ) {
-					if (m1clen > 0 && m2clen > 0 && m1clen!=m2clen) {
+					if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
 						raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
 							m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
-					appendDim1 = (appendDim1>0 && m2rlen>0)? appendDim1 + m2rlen : -1;
-					appendDim2 = (m2clen>0) ? m2clen : appendDim2;
+					appendDim1 = (appendDim1>=0 && m2rlen>=0)? appendDim1 + m2rlen : -1;
+					appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
 				}
 			}
 			output.setDimensions(appendDim1, appendDim2);

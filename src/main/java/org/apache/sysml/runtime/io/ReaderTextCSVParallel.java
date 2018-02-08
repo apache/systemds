@@ -106,7 +106,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		ret.examSparsity();
 
 		// sanity check for parallel row count (since determined internally)
-		if (rlen > 0 && rlen != ret.getNumRows())
+		if (rlen >= 0 && rlen != ret.getNumRows())
 			throw new DMLRuntimeException("Read matrix inconsistent with given meta data: "
 					+ "expected nrow="+ rlen + ", real nrow=" + ret.getNumRows());
 

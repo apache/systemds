@@ -3882,11 +3882,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				
 				for(; r<=Math.min(range.rowEnd, sparseBlock.numRows()-1); r++)
 					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
-				//System.out.println("in: \n"+this);
-				//System.out.println("outlist: \n"+outlist);
 			}
-		}else
-		{
+		}
+		else {
 			if(denseBlock!=null)
 			{
 				double[] a = getDenseBlockValues();
@@ -5525,21 +5523,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static boolean isThreadSafe(boolean sparse) {
 		return !sparse || DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR; //only MCSR thread-safe	
 	} 
-	
-	public void print()
-	{
-		System.out.println("sparse = "+sparse);
-		if(!sparse)
-			System.out.println("nonzeros = "+nonZeros);
-		for(int i=0; i<rlen; i++)
-		{
-			for(int j=0; j<clen; j++)
-			{
-				System.out.print(quickGetValue(i, j)+"\t");
-			}
-			System.out.println();
-		}
-	}
 	
 	@Override
 	public int compareTo(Object arg0) {

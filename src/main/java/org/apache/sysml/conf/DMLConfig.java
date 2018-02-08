@@ -359,17 +359,14 @@ public class DMLConfig
 		throws DMLRuntimeException
 	{
 		DMLConfig ret = null;
-		try
-		{
-			//System.out.println(content);
+		try {
 			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document domTree = null;
 			domTree = builder.parse( new ByteArrayInputStream(content.getBytes("utf-8")) );
 			Element root = domTree.getDocumentElement();
 			ret = new DMLConfig( root );
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to parse DML config.", ex);
 		}
 		

@@ -734,16 +734,16 @@ public class OptimizerUtils
 
 		//estimate size of bottom boundary blocks 
 		long lrlen = rlen % brlen;
-		if( ncblks > 0 && lrlen > 0 )
+		if( ncblks > 0 && lrlen >= 0 )
 			ret += ncblks * estimateSizeExactSparsity(lrlen, bclen, sp);
 		
 		//estimate size of right boundary blocks
 		long lclen = clen % bclen;
-		if( nrblks > 0 && lclen > 0 )
+		if( nrblks > 0 && lclen >= 0 )
 			ret += nrblks * estimateSizeExactSparsity(brlen, lclen, sp);
 		
 		//estimate size of bottom right boundary block
-		if( lrlen > 0 && lclen > 0  )
+		if( lrlen >= 0 && lclen >= 0  )
 			ret += estimateSizeExactSparsity(lrlen, lclen, sp);
 		
 		return ret;
@@ -1129,12 +1129,9 @@ public class OptimizerUtils
 		return getSparsity(mc.getRows(), mc.getCols(), mc.getNonZeros());
 	}
 	
-	public static double getSparsity( long dim1, long dim2, long nnz )
-	{
-		if( dim1<=0 || dim2<=0 || nnz<0 )
-			return 1.0;
-		else
-			return Math.min(((double)nnz)/dim1/dim2, 1.0);
+	public static double getSparsity( long dim1, long dim2, long nnz ) {
+		return ( dim1<=0 || dim2<=0 || nnz<0 ) ? 1.0 :
+			Math.min(((double)nnz)/dim1/dim2, 1.0);
 	}
 	
 	public static String toMB(double inB) {
@@ -1284,9 +1281,9 @@ public class OptimizerUtils
 		Hop input = uroot.getInput().get(0);
 		
 		if(uroot.getOp() == Hop.OpOp1.NROW)
-			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
+			ret = input.rowsKnown() ? input.getDim1() : Double.MAX_VALUE;
 		else if( uroot.getOp() == Hop.OpOp1.NCOL )
-			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
+			ret = input.colsKnown() ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo);
@@ -1323,9 +1320,9 @@ public class OptimizerUtils
 		Hop input = uroot.getInput().get(0);
 		
 		if(uroot.getOp() == Hop.OpOp1.NROW)
-			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
+			ret = input.rowsKnown() ? input.getDim1() : Double.MAX_VALUE;
 		else if( uroot.getOp() == Hop.OpOp1.NCOL )
-			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
+			ret = input.colsKnown() ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo, vars);

@@ -20,9 +20,6 @@
 package org.apache.sysml.runtime.util;
 
 import java.util.Arrays;
-import java.util.Random;
-
-import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -442,30 +439,5 @@ public class SortUtils
         double x = array[a], y = array[b], z = array[c];
         return x < y ? (y < z ? b : (x < z ? c : a)) : (y > z ? b : (x > z ? c
                 : a));
-    }
-    
-
-    public static void main(String[] args)
-    {
-    	int n = 10000000;
-    	int[] indexes = new int[n];
-    	double[] values = new double[n];
-    	Random rand = new Random();
-    	for( int i=0; i<n; i++ )
-    	{
-    		indexes[i] = rand.nextInt();
-    		values[i] = rand.nextDouble();
-    	}
-    	
-    	System.out.println("Running quicksort test ...");
-    	Timing time = new Timing();
-    	
-    	time.start();   	
-    	SortUtils.sortByIndex(0, indexes.length, indexes, values);    	
-    	System.out.println("quicksort n="+n+" in "+time.stop()+"ms.");
-    	
-    	time.start();   	
-    	boolean flag = SortUtils.isSorted(0, indexes.length, indexes);
-    	System.out.println("check sorted n="+n+" in "+time.stop()+"ms, "+flag+".");
     }
 }

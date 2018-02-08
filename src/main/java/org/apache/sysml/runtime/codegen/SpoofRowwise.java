@@ -74,7 +74,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		public boolean isConstDim2(long dim2) {
 			return (this == NO_AGG_CONST || this == COL_AGG_CONST)
-				|| (dim2>0 && isRowTypeB1());
+				|| (dim2>=0 && isRowTypeB1());
 		}
 	}
 	

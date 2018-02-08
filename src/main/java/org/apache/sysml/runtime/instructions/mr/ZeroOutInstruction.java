@@ -88,7 +88,6 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 				if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
 				{
 					cachedValues.add(output, in);
-					//System.out.println("just write down: "+in);
 					return;
 				}
 				

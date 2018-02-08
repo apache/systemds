@@ -87,15 +87,10 @@ public class MapReduceTool
 	}
 
 	public static int getUniqueTaskId(JobConf job) {
-		//TODO: investigate ID pattern, required for parallel jobs
-		/*String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID); 
-		return IDHandler.extractIntID(nodePrefix);*/
-		
 		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		int j = nodePrefix.lastIndexOf("_");
 		int i=nodePrefix.lastIndexOf("_", j-1);
 		nodePrefix = nodePrefix.substring(i+1, j);
-		// System.out.println("nodePrefix = " + nodePrefix) ;
 		return Integer.valueOf(nodePrefix);
 	}
 

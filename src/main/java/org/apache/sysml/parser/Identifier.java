@@ -251,6 +251,6 @@ public abstract class Identifier extends Expression
 	}
 	
 	public boolean dimsKnown(){
-		return ( _dim1 > 0 && _dim2 > 0);
+		return ( _dim1 >= 0 && _dim2 >= 0);
 	}
 }

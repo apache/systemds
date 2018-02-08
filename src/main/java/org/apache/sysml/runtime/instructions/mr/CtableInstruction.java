@@ -99,7 +99,7 @@ public class CtableInstruction extends MRInstruction {
 	}
 	
 	public boolean knownOutputDims() {
-		return (_outputDim1 >0 && _outputDim2>0);
+		return (_outputDim1 >=0 && _outputDim2>=0);
 	}
 
 	public static CtableInstruction parseInstruction ( String str ) 

@@ -1352,7 +1352,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			
 			//scale row function 'out' with col dimensionality	
 			long colDim = _vsParent.getVariable(idat._name).getDim2();
-			if( colDim > 0 ) {
+			if( colDim >= 0 ) {
 				out.scale( colDim );
 			}
 			else {

@@ -81,18 +81,15 @@ public class MatrixCharacteristics implements Serializable
 	
 	}
 	
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc)
-	{
+	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc) {
 		set(nr, nc, bnr, bnc);
 	}
 
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz)
-	{
+	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz) {
 		set(nr, nc, bnr, bnc, nnz);
 	}
 	
-	public MatrixCharacteristics(MatrixCharacteristics that)
-	{
+	public MatrixCharacteristics(MatrixCharacteristics that) {
 		set(that.numRows, that.numColumns, that.numRowsPerBlock, that.numColumnsPerBlock, that.nonZero);
 	}
 
@@ -148,11 +145,13 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public long getNumRowBlocks() {
-		return (long) Math.ceil((double)getRows() / getRowsPerBlock());
+		//number of row blocks w/ awareness of zero rows
+		return Math.max((long) Math.ceil((double)getRows() / getRowsPerBlock()), 1);
 	}
 	
 	public long getNumColBlocks() {
-		return (long) Math.ceil((double)getCols() / getColsPerBlock());
+		//number of column blocks w/ awareness of zero columns
+		return Math.max((long) Math.ceil((double)getCols() / getColsPerBlock()), 1);
 	}
 	
 	@Override
@@ -184,29 +183,28 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public boolean dimsKnown() {
-		return ( numRows > 0 && numColumns > 0 );
+		return ( numRows >= 0 && numColumns >= 0 );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( numRows > 0 && numColumns > 0 && (!includeNnz || nonZero>=0));
+		return ( numRows >= 0 && numColumns >= 0 && (!includeNnz || nonZero >= 0));
 	}
 	
 	public boolean rowsKnown() {
-		return ( numRows > 0 );
+		return ( numRows >= 0 );
 	}
 
 	public boolean colsKnown() {
-		return ( numColumns > 0 );
+		return ( numColumns >= 0 );
 	}
 	
 	public boolean nnzKnown() {
 		return ( nonZero >= 0 );
 	}
 	
-	public boolean mightHaveEmptyBlocks() 
-	{
-		long singleBlk =  Math.min(numRows, numRowsPerBlock) 
-				        * Math.min(numColumns, numColumnsPerBlock);
+	public boolean mightHaveEmptyBlocks() {
+		long singleBlk = Math.max(Math.min(numRows, numRowsPerBlock),1) 
+				* Math.max(Math.min(numColumns, numColumnsPerBlock),1);
 		return !nnzKnown() || (nonZero < numRows*numColumns - singleBlk);
 	}
 	

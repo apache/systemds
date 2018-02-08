@@ -56,45 +56,33 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 			OutputCollector<MatrixIndexes, MatrixValue> out, Reporter report)
 			throws IOException {
 		long start=System.currentTimeMillis();
-	//	System.out.println("~~~~~ group: "+triple);
 		commonSetup(report);
 		
 		//output previous results if needed
 		if(prevIndexes.getFirstIndex()!=triple.getFirstIndex() 
 				|| prevIndexes.getSecondIndex()!=triple.getSecondIndex())
 		{
-		//	System.out.println("cacheValues before processReducerInstructions: \n"+cachedValues);
 			//perform mixed operations
 			processReducerInstructions();
-			
-	//		System.out.println("cacheValues before output: \n"+cachedValues);
 			//output results
 			outputResultsFromCachedValues(report);
 			cachedValues.reset();
 		}else
 		{
 			//clear the buffer
-			for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
-			{
-//				System.out.println("cacheValues before remore: \n"+cachedValues);
+			for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions) {
 				cachedValues.remove(aggBinInstruction.input1);
-		//		System.out.println("cacheValues after remore: "+aggBinInstruction.input1+"\n"+cachedValues);
 				cachedValues.remove(aggBinInstruction.input2);
-		//		System.out.println("cacheValues after remore: "+aggBinInstruction.input2+"\n"+cachedValues);
 			}
 		}
 		
 		//perform aggregation first
 		aggIndexes.setIndexes(triple.getFirstIndex(), triple.getSecondIndex());
 		processAggregateInstructions(aggIndexes, values);
-		
-	//	System.out.println("cacheValues after aggregation: \n"+cachedValues);
-		
+
 		//perform aggbinary for this group
 		for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
 			processAggBinaryPerGroup(aggIndexes, aggBinInstruction);
-		
-	//	System.out.println("cacheValues after aggbinary: \n"+cachedValues);
 
 		prevIndexes.setIndexes(triple);
 		

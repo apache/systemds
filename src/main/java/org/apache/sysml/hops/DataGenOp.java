@@ -161,9 +161,9 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		
 		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-			if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
+			if( cur.getKey().equals(DataExpression.RAND_ROWS) && rowsKnown() )
 				inputLops.put(cur.getKey(), new LiteralOp(_dim1).constructLops());
-			else if( cur.getKey().equals(DataExpression.RAND_COLS) && _dim2>0 )
+			else if( cur.getKey().equals(DataExpression.RAND_COLS) && colsKnown() )
 				inputLops.put(cur.getKey(), new LiteralOp(_dim2).constructLops());
 			else
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
@@ -243,7 +243,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
 			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
 			long nnz = _sparsity >= 0 ? (long)(_sparsity * dim1 * dim2) : -1;
-			if( dim1>0 && dim2>0 )
+			if( dim1>=0 && dim2>=0 )
 				return new long[]{ dim1, dim2, nnz };
 		}
 		else if ( _op == DataGenMethod.SEQ )

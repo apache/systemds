@@ -439,6 +439,8 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
   // This is useful because we do not support multi-input cbind and rbind in DML.
   def _getMultiFn(fn: String): String = {
     if (_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+    if(_childLayers.length < 2)
+        throw new DMLRuntimeException("Incorrect usage of Concat layer. Expected atleast 2 bottom layers, but found " + _childLayers.length)
     var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
     for (i <- 2 until _childLayers.size) {
       tmp = fn + "(" + tmp + ", " + _childLayers(i).out + ")"
@@ -492,20 +494,20 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
       else " = " + dOutVar + "[," + indexString + " ]; "
 
     // concat_start_index = concat_end_index + 1
-    // concat_end_index = concat_start_index + $$ - 1
+    // concat_end_index = concat_start_index + ## - 1
     val initializeIndexString = "concat_start_index" + outSuffix + " = concat_end_index" + outSuffix + " + 1; concat_end_index" + outSuffix +
-    " = concat_start_index" + outSuffix + " + $$ - 1; "
+    " = concat_start_index" + outSuffix + " + ## - 1; "
     if (param.getConcatParam.getAxis == 0) {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", nrow(l.out)))
+          .append(initializeIndexString.replaceAll("##", nrow(l.out)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })
     } else {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
+          .append(initializeIndexString.replaceAll("##", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })

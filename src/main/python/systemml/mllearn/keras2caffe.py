@@ -76,10 +76,8 @@ def _getInboundLayers(layer):
     for node in inbound_nodes:
         node_list = node.inbound_layers  # get layers pointing to this node
         in_names = in_names + node_list
-    if any('flat' in s.name for s in in_names):  # For Caffe2DML to reroute any use of Flatten layers
-        return _getInboundLayers([s for s in in_names if 'flat' in s.name][0])
-    return in_names
-
+    # For Caffe2DML to reroute any use of Flatten layers
+    return list(chain.from_iterable( [ _getInboundLayers(l) if isinstance(l, keras.layers.Flatten) else [ l ] for l in in_names ] ))
 
 def _getCompensatedAxis(layer):
     compensated_axis = layer.axis

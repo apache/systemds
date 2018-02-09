@@ -63,7 +63,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 			for( int i=0; i<sampleSize; i++ )
 				select.quickSetValue(_sampleRows[i], 0, 1);
 			_data = _data.removeEmptyOperations(new MatrixBlock(), 
-					!CompressedMatrixBlock.TRANSPOSE_INPUT, select);
+					!CompressedMatrixBlock.TRANSPOSE_INPUT, true, select);
 		}
 		
 		//establish estimator-local cache for numeric solve

@@ -53,35 +53,35 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" })); 
 	}
 	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyNoRewritesCP() {
-//		runEmptyMatrixTest(TEST_NAME1, false, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyRewritesCP() {
-//		runEmptyMatrixTest(TEST_NAME1, true, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyNoRewritesMR() {
-//		runEmptyMatrixTest(TEST_NAME1, false, ExecType.MR);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyRewritesMR() {
-//		runEmptyMatrixTest(TEST_NAME1, true, ExecType.MR);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyNoRewritesSP() {
-//		runEmptyMatrixTest(TEST_NAME1, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixRemoveEmptyRewritesSP() {
-//		runEmptyMatrixTest(TEST_NAME1, true, ExecType.SPARK);
-//	}
+	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesCP() {
+		runEmptyMatrixTest(TEST_NAME1, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesCP() {
+		runEmptyMatrixTest(TEST_NAME1, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesMR() {
+		runEmptyMatrixTest(TEST_NAME1, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesMR() {
+		runEmptyMatrixTest(TEST_NAME1, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesSP() {
+		runEmptyMatrixTest(TEST_NAME1, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesSP() {
+		runEmptyMatrixTest(TEST_NAME1, true, ExecType.SPARK);
+	}
 	
 	@Test
 	public void testEmptyMatrixCbindNoRewritesCP() {
@@ -196,7 +196,7 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", String.valueOf(dim), output("R")};
+			programArgs = new String[]{"-explain","recompile_runtime","-args", String.valueOf(dim), output("R")};
 			
 			fullRScriptName = HOME + TEST_NAME +".R";
 			rCmd = getRCmd(String.valueOf(dim), expectedDir());

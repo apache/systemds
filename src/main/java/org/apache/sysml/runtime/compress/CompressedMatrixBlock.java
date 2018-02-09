@@ -2165,19 +2165,19 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, MatrixBlock select) 
+	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) 
 			throws DMLRuntimeException {
 		printDecompressWarning("removeEmptyOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		return tmp.removeEmptyOperations(ret, rows, select);
+		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select);
 	}
 
 	@Override
-	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows)
+	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn)
 			throws DMLRuntimeException {
 		printDecompressWarning("removeEmptyOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		return tmp.removeEmptyOperations(ret, rows);
+		return tmp.removeEmptyOperations(ret, rows, emptyReturn);
 	}
 
 	@Override

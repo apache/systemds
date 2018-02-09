@@ -4873,17 +4873,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
-	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, MatrixBlock select )
+	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select )
 		throws DMLRuntimeException 
 	{	
 		MatrixBlock result = checkType(ret);
-		return LibMatrixReorg.rmempty(this, result, rows, select);
+		return LibMatrixReorg.rmempty(this, result, rows, emptyReturn, select);
 	}
 
-	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows)
+	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, boolean emptyReturn)
 		throws DMLRuntimeException 
 	{
-		return removeEmptyOperations(ret, rows, null);
+		return removeEmptyOperations(ret, rows, emptyReturn, null);
 	}
 
 	public MatrixBlock rexpandOperations( MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k )

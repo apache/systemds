@@ -512,28 +512,30 @@ public class LibMatrixReorg
 	 * @param in input matrix
 	 * @param ret output matrix
 	 * @param rows ?
+	 * @param emptyReturn return row/column of zeros for empty input
 	 * @param select ?
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, MatrixBlock select) 
+	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) 
 		throws DMLRuntimeException
 	{
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
 		if( in.isEmptyBlock(false) && select == null  ) {
+			int n = emptyReturn ? 1 : 0;
 			if( rows )
-				ret.reset(1, in.clen, in.sparse);
+				ret.reset(n, in.clen, in.sparse);
 			else //cols
-				ret.reset(in.rlen, 1, in.sparse);
+				ret.reset(in.rlen, n, in.sparse);
 			return ret;
 		}
 		
 		if( rows )
-			return removeEmptyRows(in, ret, select);
+			return removeEmptyRows(in, ret, select, emptyReturn);
 		else //cols
-			return removeEmptyColumns(in, ret, select);
+			return removeEmptyColumns(in, ret, select, emptyReturn);
 	}
 
 	/**
@@ -1704,7 +1706,7 @@ public class LibMatrixReorg
 			new MatrixIndexes(ci, cj);
 	}
 
-	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
+	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
 		throws DMLRuntimeException 
 	{
 		final int m = in.rlen;
@@ -1769,7 +1771,7 @@ public class LibMatrixReorg
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
-		rlen2 = Math.max(rlen2, 1); //ensure valid output
+		rlen2 = Math.max(rlen2, emptyReturn ? 1 : 0); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen2, n, in.nonZeros);
 		ret.reset(rlen2, n, sp);
 		if( in.isEmptyBlock(false) )
@@ -1825,7 +1827,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
+	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
 		throws DMLRuntimeException 
 	{
 		final int m = in.rlen;
@@ -1872,7 +1874,7 @@ public class LibMatrixReorg
 		//Step 3: reset result and copy columns
 		//dense stays dense if correct input representation (but robust for any input), 
 		// sparse might be dense/sparse
-		clen2 = Math.max(clen2, 1); //ensure valid output
+		clen2 = Math.max(clen2, emptyReturn ? 1 : 0); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(m, clen2, in.nonZeros);
 		ret.reset(m, clen2, sp);
 		if( in.isEmptyBlock(false) )

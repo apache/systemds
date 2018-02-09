@@ -24,6 +24,6 @@ args <- commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-R = matrix(7, as.integer(args[1]), 7);
+R = matrix(7, as.integer(args[1]), 3);
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 

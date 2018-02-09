@@ -77,15 +77,14 @@ public class WriterBinaryBlock extends MatrixWriter
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
 		SequenceFile.Writer writer = null;
 		try {
 			writer = new SequenceFile.Writer(fs, job, path,
-					                        MatrixIndexes.class, MatrixBlock.class);
-			
+				MatrixIndexes.class, MatrixBlock.class);
 			MatrixIndexes index = new MatrixIndexes(1, 1);
-			MatrixBlock block = new MatrixBlock((int)Math.min(rlen, brlen),
-												(int)Math.min(clen, bclen), true);
+			MatrixBlock block = new MatrixBlock(
+				(int)Math.max(Math.min(rlen, brlen),1),
+				(int)Math.max(Math.min(clen, bclen),1), true);
 			writer.append(index, block);
 		}
 		finally {

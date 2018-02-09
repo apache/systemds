@@ -726,7 +726,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			inMap.put("offset", loffset);
 			inMap.put("maxdim", lmaxdim);
 			inMap.put("margin", inputlops.get("margin"));
-		
+			inMap.put("empty.return", inputlops.get("empty.return"));
+			
 			if ( !FORCE_DIST_RM_EMPTY && isRemoveEmptyBcSP())
 				_bRmEmptyBC = true;
 			

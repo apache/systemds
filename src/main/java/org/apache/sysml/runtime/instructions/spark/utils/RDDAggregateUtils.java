@@ -564,7 +564,7 @@ public class RDDAggregateUtils
 		private MatrixBlock _corr = null;
 		
 		public AggregateSingleBlockFunction( AggregateOperator op ) {
-			_op = op;	
+			_op = op;
 		}
 		
 		@Override
@@ -572,11 +572,11 @@ public class RDDAggregateUtils
 			throws Exception 
 		{
 			//prepare combiner block
-			if( arg0.getNumRows() <= 0 || arg0.getNumColumns() <= 0) {
+			if( arg0.getNumRows() == 0 && arg0.getNumColumns() == 0) {
 				arg0.copy(arg1);
 				return arg0;
 			}
-			else if( arg1.getNumRows() <= 0 || arg1.getNumColumns() <= 0 ) {
+			else if( arg1.getNumRows() == 0 && arg1.getNumColumns() == 0 ) {
 				return arg0;
 			}
 			

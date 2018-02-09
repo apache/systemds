@@ -302,7 +302,7 @@ public class LibSpoofPrimitives
 	}
 	
 	public static double vectMin(double[] a, int ai, int len) { 
-		double val = Double.MAX_VALUE;
+		double val = Double.POSITIVE_INFINITY;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.min(a[i], val);
 		return val; 
@@ -314,7 +314,7 @@ public class LibSpoofPrimitives
 	}
 	
 	public static double vectMax(double[] a, int ai, int len) { 
-		double val = -Double.MAX_VALUE;
+		double val = Double.NEGATIVE_INFINITY;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.max(a[i], val);
 		return val; 

@@ -1331,13 +1331,13 @@ public class LibMatrixAgg
 			}
 			case CUM_MIN:
 			case CUM_MAX: {
-				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				double init = (optype==AggType.CUM_MAX) ? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				d_ucummxx(in.getDenseBlockValues(), null, out.getDenseBlockValues(), n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN: 
 			case MAX: { //MAX/MIN
-				double init = Double.MAX_VALUE * ((optype==AggType.MAX)?-1:1);
+				double init = (optype==AggType.MAX) ? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
 					d_uamxx(a, c, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
@@ -1347,13 +1347,13 @@ public class LibMatrixAgg
 				break;
 			}
 			case MAX_INDEX: {
-				double init = -Double.MAX_VALUE;
+				double init = Double.NEGATIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
 					d_uarimxx(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX: {
-				double init = Double.MAX_VALUE;
+				double init = Double.POSITIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMIN
 					d_uarimin(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
@@ -1435,13 +1435,13 @@ public class LibMatrixAgg
 			}
 			case CUM_MIN:
 			case CUM_MAX: {
-				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				double init = (optype==AggType.CUM_MAX) ? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				s_ucummxx(a, null, out.getDenseBlockValues(), n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN:
 			case MAX: { //MAX/MIN
-				double init = Double.MAX_VALUE * ((optype==AggType.MAX)?-1:1);
+				double init = (optype==AggType.MAX) ? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
 					s_uamxx(a, c, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
@@ -1451,13 +1451,13 @@ public class LibMatrixAgg
 				break;
 			}
 			case MAX_INDEX: {
-				double init = -Double.MAX_VALUE;
+				double init = Double.NEGATIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
 					s_uarimxx(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX: {
-				double init = Double.MAX_VALUE;
+				double init = Double.POSITIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
 					s_uarimin(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
@@ -1516,7 +1516,7 @@ public class LibMatrixAgg
 			}
 			case CUM_MIN:
 			case CUM_MAX: {
-				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				double init = (optype==AggType.CUM_MAX)? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				d_ucummxx(a, agg, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
@@ -1548,7 +1548,7 @@ public class LibMatrixAgg
 			}
 			case CUM_MIN:
 			case CUM_MAX: {
-				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				double init = (optype==AggType.CUM_MAX) ? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				s_ucummxx(a, agg, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
@@ -1560,7 +1560,25 @@ public class LibMatrixAgg
 	private static MatrixBlock aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) 
 		throws DMLRuntimeException
 	{
-		//do nothing for pseudo sparse-safe operations
+		//handle all full aggregates over matrices with zero rows or columns
+		if( ixFn instanceof ReduceAll && (in.getNumRows() == 0 || in.getNumColumns() == 0) ) {
+			double val = Double.NaN;
+			switch( optype ) {
+				case KAHAN_SUM:
+				case KAHAN_SUM_SQ: val = 0; break;
+				case MIN:          val = Double.POSITIVE_INFINITY; break;
+				case MAX:          val = Double.NEGATIVE_INFINITY; break;
+				case MEAN:
+				case VAR:
+				case MIN_INDEX:
+				case MAX_INDEX:
+				default:           val = Double.NaN; break;
+			}
+			out.quickSetValue(0, 0, val);
+			return out;
+		}
+		
+		//handle pseudo sparse-safe operations over empty inputs 
 		if(optype==AggType.KAHAN_SUM || optype==AggType.KAHAN_SUM_SQ
 				|| optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD
 				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD

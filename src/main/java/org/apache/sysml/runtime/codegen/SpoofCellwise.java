@@ -487,7 +487,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	{
 		double[] lc = c.valuesAt(0); //single block
 		
-		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		long lnnz = 0;
 		if( a == null && !sparseSafe ) { //empty
@@ -559,7 +559,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	{
 		double[] lc = c.valuesAt(0); //single block
 		
-		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		Arrays.fill(lc, initialVal);
 		
@@ -622,7 +622,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	{
 		//safe aggregation for min/max w/ handling of zero entries
 		//note: sparse safe with zero value as min/max handled outside
-		double ret = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE; 
+		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		
 		if( a == null && !sparseSafe ) {
@@ -764,7 +764,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		
 		//note: sequential scan algorithm for both sparse-safe and -unsafe 
@@ -852,7 +852,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		double[] c = out.getDenseBlockValues();
 		Arrays.fill(c, initialVal);
@@ -929,7 +929,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		double ret = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ret = (sparseSafe && sblock.size() < (long)m*n) ? 0 : ret;
 		ValueFunction vfun = getAggFunction();
 		
@@ -1019,7 +1019,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE);
+		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
 		ValueFunction vfun = getAggFunction();
 		long lnnz = 0;
 		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
@@ -1056,7 +1056,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
 		throws DMLRuntimeException
 	{
-		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE);
+		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
 		ValueFunction vfun = getAggFunction();
 		long lnnz = 0;
 		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
@@ -1112,7 +1112,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	{
 		//safe aggregation for min/max w/ handling of zero entries
 		//note: sparse safe with zero value as min/max handled outside
-		double ret = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
+		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		
 		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);

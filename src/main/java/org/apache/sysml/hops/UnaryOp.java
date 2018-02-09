@@ -529,14 +529,13 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		}
 	}
 
-	private double getCumulativeInitValue()
-	{
+	private double getCumulativeInitValue() {
 		switch( _op ) {
-			case CUMSUM: 	return 0;
-			case CUMPROD: 	return 1;
-			case CUMMIN: 	return Double.MAX_VALUE;
-			case CUMMAX: 	return -Double.MAX_VALUE;
-			default: 		return Double.NaN;
+			case CUMSUM:  return 0;
+			case CUMPROD: return 1;
+			case CUMMIN:  return Double.POSITIVE_INFINITY;
+			case CUMMAX:  return Double.NEGATIVE_INFINITY;
+			default:      return Double.NaN;
 		}
 	}
 	

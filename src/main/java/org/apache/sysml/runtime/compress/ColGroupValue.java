@@ -266,7 +266,8 @@ public abstract class ColGroupValue extends ColGroup
 	protected void computeMxx(MatrixBlock result, Builtin builtin, boolean zeros) 
 	{
 		//init and 0-value handling
-		double val = Double.MAX_VALUE * ((builtin.getBuiltinCode()==BuiltinCode.MAX)?-1:1);
+		double val = (builtin.getBuiltinCode()==BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		if( zeros )
 			val = builtin.execute2(val, 0);
 		
@@ -296,10 +297,11 @@ public abstract class ColGroupValue extends ColGroup
 		
 		//init and 0-value handling
 		double[] vals = new double[numCols];
-		Arrays.fill(vals, Double.MAX_VALUE * ((builtin.getBuiltinCode()==BuiltinCode.MAX)?-1:1));
+		Arrays.fill(vals, (builtin.getBuiltinCode()==BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
 		if( zeros ) {
 			for( int j = 0; j < numCols; j++ )
-				vals[j] = builtin.execute2(vals[j], 0);		
+				vals[j] = builtin.execute2(vals[j], 0);
 		}
 		
 		//iterate over all values only

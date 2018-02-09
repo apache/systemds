@@ -224,8 +224,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		switch( aggop ) {
 			case SUM:
 			case SUM_SQ: return 0; 
-			case MIN:    return Double.MAX_VALUE;
-			case MAX:    return -Double.MAX_VALUE;
+			case MIN:    return Double.POSITIVE_INFINITY;
+			case MAX:    return Double.NEGATIVE_INFINITY;
 		}
 		return 0;
 	}

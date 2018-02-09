@@ -21,11 +21,12 @@
 
 
 X = matrix(0, $1, 0);
-print(min(X))
-R = rbind(
-  as.matrix(sum(X)==0),
-  as.matrix(min(X)==(1.0/0.0)),
-  as.matrix(max(X)==(-1.0/0.0))
-);
+# nary rbind not applicable because not supported in MR
+R = rbind(rbind(rbind(rbind(
+  as.matrix(sum(X)==0),           # 0
+  as.matrix(min(X)==(1.0/0.0))),  # INF
+  as.matrix(max(X)==(-1.0/0.0))), # -INF
+  as.matrix(mean(X)!=mean(X))),   # NaN
+  as.matrix(sd(X)!=sd(X)));       # NaN
 
 write(R, $2);

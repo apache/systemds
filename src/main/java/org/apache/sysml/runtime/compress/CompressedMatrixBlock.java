@@ -1185,7 +1185,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//special handling init value for rowmins/rowmax
 		if( op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin ) {
-			double val = Double.MAX_VALUE * ((((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX)?-1:1);
+			double val = (((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX) ?
+				Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 			ret.getDenseBlock().set(val);
 		}
 		

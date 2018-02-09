@@ -239,12 +239,11 @@ public abstract class ColGroupOffset extends ColGroupValue
 			LinearAlgebraUtils.vectMultiplyAdd(b[i], _values, c, off, 0, numVals);
 	}
 
-	protected final double mxxValues(int bitmapIx, Builtin builtin)
-	{
+	protected final double mxxValues(int bitmapIx, Builtin builtin) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		
-		double val = Double.MAX_VALUE * ((builtin.getBuiltinCode()==BuiltinCode.MAX)?-1:1);
+		double val = (builtin.getBuiltinCode()==BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		for( int i = 0; i < numCols; i++ )
 			val = builtin.execute2(val, _values[valOff+i]);
 		

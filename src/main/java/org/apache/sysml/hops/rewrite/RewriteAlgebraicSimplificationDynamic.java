@@ -767,27 +767,25 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			AggUnaryOp uhi = (AggUnaryOp)hi;
 			Hop input = uhi.getInput().get(0);
 			
-			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_EMPTY_AGGREGATE) ){		
+			//check for valid empty aggregates, except for matrices with zero rows/cols
+			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_EMPTY_AGGREGATE) 
+				&& HopRewriteUtils.isEmpty(input)
+				&& input.getDim1()>=1 && input.getDim2() >= 1 )
+			{
+				Hop hnew = null;
+				if( uhi.getDirection() == Direction.RowCol ) 
+					hnew = new LiteralOp(0.0);
+				else if( uhi.getDirection() == Direction.Col ) 
+					hnew = HopRewriteUtils.createDataGenOp(uhi, input, 0); //nrow(uhi)=1
+				else //if( uhi.getDirection() == Direction.Row ) 
+					hnew = HopRewriteUtils.createDataGenOp(input, uhi, 0); //ncol(uhi)=1
 				
-				if( HopRewriteUtils.isEmpty(input) )
-				{
-					Hop hnew = null;
-					if( uhi.getDirection() == Direction.RowCol ) 
-						hnew = new LiteralOp(0.0);
-					else if( uhi.getDirection() == Direction.Col ) 
-						hnew = HopRewriteUtils.createDataGenOp(uhi, input, 0); //nrow(uhi)=1
-					else //if( uhi.getDirection() == Direction.Row ) 
-						hnew = HopRewriteUtils.createDataGenOp(input, uhi, 0); //ncol(uhi)=1
-					
-					//add new child to parent input
-					HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
-					hi = hnew;
-					
-					LOG.debug("Applied simplifyEmptyAggregate");
-				}
-			}			
+				//add new child to parent input
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+				hi = hnew;
+				LOG.debug("Applied simplifyEmptyAggregate");
+			}
 		}
-		
 		return hi;
 	}
 	

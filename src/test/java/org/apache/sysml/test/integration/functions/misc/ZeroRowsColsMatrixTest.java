@@ -143,35 +143,35 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 		runEmptyMatrixTest(TEST_NAME3, true, ExecType.SPARK);
 	}
 	
-//	@Test
-//	public void testEmptyMatrixAggregatesNoRewritesCP() {
-//		runEmptyMatrixTest(TEST_NAME4, false, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixAggregatesRewritesCP() {
-//		runEmptyMatrixTest(TEST_NAME4, true, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixAggregatesNoRewritesMR() {
-//		runEmptyMatrixTest(TEST_NAME4, false, ExecType.MR);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixAggregatesRewritesMR() {
-//		runEmptyMatrixTest(TEST_NAME4, true, ExecType.MR);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixAggregatesNoRewritesSP() {
-//		runEmptyMatrixTest(TEST_NAME4, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testEmptyMatrixAggregatesRewritesSP() {
-//		runEmptyMatrixTest(TEST_NAME4, true, ExecType.SPARK);
-//	}
+	@Test
+	public void testEmptyMatrixAggregatesNoRewritesCP() {
+		runEmptyMatrixTest(TEST_NAME4, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixAggregatesRewritesCP() {
+		runEmptyMatrixTest(TEST_NAME4, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixAggregatesNoRewritesMR() {
+		runEmptyMatrixTest(TEST_NAME4, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixAggregatesRewritesMR() {
+		runEmptyMatrixTest(TEST_NAME4, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixAggregatesNoRewritesSP() {
+		runEmptyMatrixTest(TEST_NAME4, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEmptyMatrixAggregatesRewritesSP() {
+		runEmptyMatrixTest(TEST_NAME4, true, ExecType.SPARK);
+	}
 	
 	private void runEmptyMatrixTest( String testname, boolean rewrites, ExecType et )
 	{

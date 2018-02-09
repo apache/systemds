@@ -798,7 +798,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return -1;
 		
 		//NOTE: usually this method is only applied on dense vectors and hence not really tuned yet.
-		double min = Double.MAX_VALUE;
+		double min = Double.POSITIVE_INFINITY;
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ ){
 				double val = quickGetValue(i, j);
@@ -819,7 +819,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException
 	{
 		//construct operator
-		AggregateOperator aop = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+		AggregateOperator aop = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
 		
 		//execute operation
@@ -839,7 +839,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException
 	{
 		//construct operator
-		AggregateOperator aop = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+		AggregateOperator aop = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
 		
 		//execute operation

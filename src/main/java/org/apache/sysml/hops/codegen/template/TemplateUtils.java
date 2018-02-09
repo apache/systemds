@@ -317,7 +317,9 @@ public class TemplateUtils
 				&& !TemplateUtils.isUnary(output, 
 					UnaryType.EXP, UnaryType.LOG, UnaryType.ROW_COUNTNNZS)) 
 			|| (output instanceof CNodeBinary
-				&& !TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD))) 
+				&& !TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD))
+			|| output instanceof CNodeTernary 
+				&& ((CNodeTernary)output).getType() == TernaryType.IFELSE)
 			&& hasOnlyDataNodeOrLookupInputs(output);
 	}
 	

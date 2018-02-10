@@ -95,22 +95,18 @@ public class LibMatrixMult
 	 * @param m1 first matrix
 	 * @param m2 second matrix
 	 * @param ret result matrix
-	 * @param maintainNnz if false, nnzs are not recomputed and evaluated
+	 * @param fixedRet if true, output representation is fixed and nnzs not recomputed
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean maintainNnz) 
-			throws DMLRuntimeException
-	{	
-		matrixMult(m1, m2, ret, 0, m1.rlen, maintainNnz);
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean fixedRet) throws DMLRuntimeException {
+		matrixMult(m1, m2, ret, 0, m1.rlen, fixedRet);
 	}
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
-			throws DMLRuntimeException
-	{
-		matrixMult(m1, m2, ret, rl, ru, true);
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) throws DMLRuntimeException {
+		matrixMult(m1, m2, ret, rl, ru, false);
 	}
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean maintainNnz) 
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean fixedRet) 
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
@@ -122,14 +118,16 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing: output allocation
-		boolean ultraSparse = isUltraSparseMatrixMult(m1, m2);
+		boolean ultraSparse = (fixedRet && ret.sparse)
+			|| (!fixedRet && isUltraSparseMatrixMult(m1, m2));
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = ultraSparse;
 		ret.allocateBlock();
 		
 		//prepare row-upper for special cases of vector-matrix
-		boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
+		boolean pm2 = !ultraSparse &&
+			checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
 		int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
 		int cu = m2.clen;
 		
@@ -146,7 +144,7 @@ public class LibMatrixMult
 			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
 		
 		//post-processing: nnz/representation
-		if( maintainNnz ) {
+		if( !fixedRet ) {
 			if( !ret.sparse )
 				ret.recomputeNonZeros();
 			ret.examSparsity();
@@ -200,8 +198,8 @@ public class LibMatrixMult
 		}
 		
 		//prepare row-upper for special cases of vector-matrix / matrix-matrix
-		boolean pm2r = checkParMatrixMultRightInputRows(m1, m2, k);
-		boolean pm2c = checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
+		boolean pm2r = !ultraSparse && checkParMatrixMultRightInputRows(m1, m2, k);
+		boolean pm2c = !ultraSparse && checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
 		int num = pm2r ? m2.rlen : pm2c ? m2.clen : m1.rlen; 
 		
 		//core multi-threaded matrix mult computation
@@ -1642,25 +1640,20 @@ public class LibMatrixMult
 		{
 			SparseBlock b = m2.sparseBlock;
 			
-			for(int k = 0; k < cd; k++ ) 
-			{
-				if( !b.isEmpty(k) ) 
-				{
-					int bpos = b.pos(k);
-					int blen = b.size(k);
-					int[] bixs = b.indexes(k);
-					double[] bvals = b.values(k);
-					for( int j=bpos; j<bpos+blen; j++ )
-					{
-						double bval = bvals[j];
-						int bix = bixs[j];
-						for( int i=rl; i<ru; i++ )
-						{
-							double cvald = bval*m1.quickGetValue(i, k);
-							if( cvald != 0 ){
-								double cval = ret.quickGetValue(i, bix);
-								ret.quickSetValue(i, bix, cval+cvald);
-							}
+			for(int k = 0; k < cd; k++ ) {
+				if( b.isEmpty(k) ) continue; 
+				int bpos = b.pos(k);
+				int blen = b.size(k);
+				int[] bixs = b.indexes(k);
+				double[] bvals = b.values(k);
+				for( int j=bpos; j<bpos+blen; j++ ) {
+					double bval = bvals[j];
+					int bix = bixs[j];
+					for( int i=rl; i<ru; i++ ) {
+						double cvald = bval*m1.quickGetValue(i, k);
+						if( cvald != 0 ){
+							double cval = ret.quickGetValue(i, bix);
+							ret.quickSetValue(i, bix, cval+cvald);
 						}
 					}
 				}

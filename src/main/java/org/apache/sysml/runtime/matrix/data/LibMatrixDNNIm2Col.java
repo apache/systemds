@@ -54,7 +54,7 @@ public class LibMatrixDNNIm2Col {
 				//preallocate sparse-rows (larger than average sparsity to account for skew)
 				int estnnz = (int)Math.ceil(4*input.getSparsity()*out.clen);
 				for(int r = 0; r < out.rlen; r++)
-					out.getSparseBlock().allocate(r, Math.min(estnnz, out.clen));
+					out.getSparseBlock().allocate(r, Math.max(Math.min(estnnz, out.clen),16));
 				return new SparseSparseIm2colWorkerAllChan(input, out, params, trans);
 			}
 		}
@@ -145,16 +145,15 @@ public class LibMatrixDNNIm2Col {
 	 */
 	private static class SparseSparseIm2colWorkerAllChan implements Im2colWorker {
 		private final MatrixBlock input, output;
-		private final int S, R, P, Q, W, HW, RS;
+		private final int S, R, P, Q, H, W, RS;
 		private final int stride_h, stride_w, pad_h, pad_w;
 		private final boolean trans;
 		private final boolean simple;
 		public SparseSparseIm2colWorkerAllChan(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
 			this.input = input;
 			this.output = im2ColOutBlock;
-			this.HW = params.H * params.W;
 			this.RS = params.R * params.S;
-			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
+			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
@@ -175,20 +174,19 @@ public class LibMatrixDNNIm2Col {
 			double[] avals = sblock.values(n);
 			
 			// Iterate over the sparse block
+			CellIndex3 ix = new CellIndex3();
 			for(int j=apos; j<apos+alen; j++) {
 				// Note: the input is of shape [N, CHW]
 				int chw = aix[j];
 				
 				// Get individual zero-based c,h,w indexes from zero-based 'chw'
-				int cInput = chw / HW;
-				int hInput = (chw - cInput*HW)/W;
-				int wInput = chw % W; 
+				ix = LibMatrixDNNHelper.computeTensorIndexes(chw, H, W, ix);
 				
 				if( simple )
-					appendInputValueToIm2colOutputSimple(output, cInput, hInput, wInput, 
+					appendInputValueToIm2colOutputSimple(output, ix.ix1, ix.ix2, ix.ix3, 
 						avals[j], R, S, RS, P, trans);
 				else
-					appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
+					appendInputValueToIm2colOutput(output, ix.ix1, ix.ix2, ix.ix3, avals[j], 
 						R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
 			}
 			

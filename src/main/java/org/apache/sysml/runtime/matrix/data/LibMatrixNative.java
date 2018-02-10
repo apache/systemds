@@ -109,7 +109,7 @@ public class LibMatrixNative
 			Statistics.incrementNativeFailuresCounter();
 		}
 		if (k == 1)
-			LibMatrixMult.matrixMult(m1, m2, ret, examSparsity);
+			LibMatrixMult.matrixMult(m1, m2, ret, !examSparsity);
 		else
 			LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}

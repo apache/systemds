@@ -95,7 +95,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 		mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 		if( mcIn.getRows()*mcIn.getCols() != mcOut.getRows()*mcOut.getCols() ) {
 			throw new DMLRuntimeException("Incompatible matrix characteristics for reshape: "
-		                +mcIn.getRows()+"x"+mcIn.getCols()+" vs "+mcOut.getRows()+"x"+mcOut.getCols());
+				+ mcIn.getRows()+"x"+mcIn.getCols()+" vs "+mcOut.getRows()+"x"+mcOut.getCols());
 		}
 		
 		//execute reshape instruction

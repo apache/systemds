@@ -1495,11 +1495,10 @@ public class LibMatrixReorg
 		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
 		
 		if( rowwise ) {
-			for( long i=row_offset; i<Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock()); i++ )
-			{
+			long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1;
+			for( long i=row_offset; i<Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock()); i++ ) {
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1, mcIn, mcOut, rowwise);
-
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, max_col_offset, mcIn, mcOut, rowwise);
 				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
 					throw new RuntimeException("Invalid computed first index: "+first.toString());
 				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
@@ -1510,10 +1509,12 @@ public class LibMatrixReorg
 				
 				//add blocks in between first and last
 				if( !first.equals(last) ) {
+					boolean fill = first.getRowIndex()==last.getRowIndex()
+						&& first.getColumnIndex() > last.getColumnIndex();
 					for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
-						long k2_start = ((k1==first.getRowIndex()) ? first.getColumnIndex()+1 : 1);
-						long k2_end = ((k1==last.getRowIndex() && first.getRowIndex()!=last.getRowIndex()) ?
-							last.getColumnIndex()-1 : mcOut.getNumColBlocks());
+						long k2_start = (k1==first.getRowIndex() ? first.getColumnIndex()+1 : 1);
+						long k2_end = (k1==last.getRowIndex() && !fill) ?
+							last.getColumnIndex()-1 : mcOut.getNumColBlocks();
 						for( long k2=k2_start; k2<=k2_end; k2++ )
 							ret.add(new MatrixIndexes(k1,k2));
 					}
@@ -1522,11 +1523,10 @@ public class LibMatrixReorg
 			}
 		}
 		else{ //colwise
-			for( long j=col_offset; j<Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock()); j++ )
-			{
+			long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1;
+			for( long j=col_offset; j<Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock()); j++ ) {
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1, j, mcIn, mcOut, rowwise);
-
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, j, mcIn, mcOut, rowwise);
 				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
 					throw new RuntimeException("Invalid computed first index: "+first.toString());
 				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
@@ -1537,9 +1537,11 @@ public class LibMatrixReorg
 				
 				//add blocks in between first and last
 				if( !first.equals(last) ) {
+					boolean fill = first.getColumnIndex()==last.getColumnIndex()
+							&& first.getRowIndex() > last.getRowIndex();
 					for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
 						long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
-						long k2_end = ((k1==last.getColumnIndex() && first.getRowIndex()!=last.getRowIndex()) ? 
+						long k2_end = ((k1==last.getColumnIndex() && !fill) ? 
 							last.getRowIndex()-1 : mcOut.getNumRowBlocks());
 						for( long k2=k2_start; k2<=k2_end; k2++ )
 							ret.add(new MatrixIndexes(k1,k2));
@@ -1548,7 +1550,6 @@ public class LibMatrixReorg
 				}
 			}
 		}
-		
 		return ret;
 	}
 
@@ -1593,7 +1594,7 @@ public class LibMatrixReorg
 			HashMap<MatrixIndexes,MatrixBlock> rix,
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
 		throws DMLRuntimeException
-    {
+	{
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1626,8 +1627,8 @@ public class LibMatrixReorg
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
-		}				
-    }
+		}
+	}
 
 	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix, 
@@ -1691,7 +1692,7 @@ public class LibMatrixReorg
 		long bci = ci/mcOut.getRowsPerBlock() + 1;
 		long bcj = cj/mcOut.getColsPerBlock() + 1; 
 		return (ixout != null) ? ixout.setIndexes(bci, bcj) :
-			new MatrixIndexes(bci, bcj);	
+			new MatrixIndexes(bci, bcj);
 	}
 
 	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,

@@ -282,6 +282,11 @@ public class SparseBlockCOO extends SparseBlock
 	}
 
 	@Override
+	public boolean checkValidity(int rlen, int clen, boolean strict) {
+		return true;
+	}
+
+	@Override
 	public boolean set(int r, int c, double v) {
 		int pos = pos(r);
 		int len = size(r);

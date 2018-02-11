@@ -245,9 +245,19 @@ public abstract class SparseBlock implements Serializable
 	 * @param r  row index starting at 0
 	 * @return true if row does not contain non-zero values
 	 */
-	public abstract boolean isEmpty(int r); 
-	
-	
+	public abstract boolean isEmpty(int r);
+
+	/**
+	 * Validate the correctness of the internal data structures of different
+	 * sparse block implementations.
+	 *
+	 * @param rlen length of rows
+	 * @param clen lenght of cols
+	 * @param strict
+	 * @return
+	 */
+	public abstract boolean checkValidity(int rlen, int clen, boolean strict);
+
 	////////////////////////
 	//obtain indexes/values/positions
 	

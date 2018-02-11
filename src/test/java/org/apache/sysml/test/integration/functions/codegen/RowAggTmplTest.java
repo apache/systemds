@@ -75,6 +75,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME36 = TEST_NAME+"36"; //xor operation
 	private static final String TEST_NAME37 = TEST_NAME+"37"; //sprop(X/rowSums)
 	private static final String TEST_NAME38 = TEST_NAME+"38"; //sigmoid(X/rowSums)
+	private static final String TEST_NAME39 = TEST_NAME+"39"; //BitwAnd operation
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -86,7 +87,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=38; i++)
+		for(int i=1; i<=39; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -659,7 +660,22 @@ public class RowAggTmplTest extends AutomatedTestBase
 	public void testCodegenRowAgg38SP() {
 		testCodegenIntegration( TEST_NAME38, false, ExecType.SPARK );
 	}
-	
+
+	@Test
+	public void testCodegenRowAggRewrite39CP() {
+		testCodegenIntegration( TEST_NAME39, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg39CP() {
+		testCodegenIntegration( TEST_NAME39, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg39SP() {
+		testCodegenIntegration( TEST_NAME39, false, ExecType.SPARK );
+	}
+
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

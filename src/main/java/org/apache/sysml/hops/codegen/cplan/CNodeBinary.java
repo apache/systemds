@@ -42,15 +42,16 @@ public class CNodeBinary extends CNode
 		VECT_EQUAL_SCALAR, VECT_NOTEQUAL_SCALAR, VECT_LESS_SCALAR, 
 		VECT_LESSEQUAL_SCALAR, VECT_GREATER_SCALAR, VECT_GREATEREQUAL_SCALAR,
 		VECT_CBIND,
-		VECT_XOR_SCALAR,
+		VECT_XOR_SCALAR, VECT_BITWAND_SCALAR,
 		//vector-vector operations
 		VECT_MULT, VECT_DIV, VECT_MINUS, VECT_PLUS, VECT_MIN, VECT_MAX, VECT_EQUAL, 
 		VECT_NOTEQUAL, VECT_LESS, VECT_LESSEQUAL, VECT_GREATER, VECT_GREATEREQUAL,
-		VECT_XOR,
+		VECT_XOR, VECT_BITWAND,
 		//scalar-scalar operations
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
 		MIN, MAX, AND, OR, XOR, LOG, LOG_NZ, POW,
+		BITWAND,
 		MINUS1_MULT, MINUS_NZ;
 
 		public static boolean contains(String value) {
@@ -116,6 +117,7 @@ public class CNodeBinary extends CNode
 				case VECT_PLUS_SCALAR:
 				case VECT_POW_SCALAR:
 				case VECT_XOR_SCALAR:
+				case VECT_BITWAND_SCALAR:
 				case VECT_MIN_SCALAR:
 				case VECT_MAX_SCALAR:
 				case VECT_EQUAL_SCALAR:
@@ -147,6 +149,7 @@ public class CNodeBinary extends CNode
 				case VECT_MINUS:
 				case VECT_PLUS:
 				case VECT_XOR:
+				case VECT_BITWAND:
 				case VECT_MIN:
 				case VECT_MAX:
 				case VECT_EQUAL:
@@ -206,7 +209,9 @@ public class CNodeBinary extends CNode
 					return "    double %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
 				case XOR:
 					return "    double %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
-					
+				case BITWAND:
+					return "    double %TMP% = ( ((int)%IN1% & (int)%IN2%) );\n";
+
 				default: 
 					throw new RuntimeException("Invalid binary type: "+this.toString());
 			}
@@ -225,7 +230,7 @@ public class CNodeBinary extends CNode
 				|| this == VECT_LESS_SCALAR || this == VECT_LESSEQUAL_SCALAR
 				|| this == VECT_GREATER_SCALAR || this == VECT_GREATEREQUAL_SCALAR
 				|| this == VECT_CBIND
-				|| this == VECT_XOR_SCALAR;
+				|| this == VECT_XOR_SCALAR || this == VECT_BITWAND_SCALAR;
 		}
 		public boolean isVectorVectorPrimitive() {
 			return this == VECT_DIV || this == VECT_MULT 
@@ -234,7 +239,7 @@ public class CNodeBinary extends CNode
 				|| this == VECT_EQUAL || this == VECT_NOTEQUAL
 				|| this == VECT_LESS || this == VECT_LESSEQUAL
 				|| this == VECT_GREATER || this == VECT_GREATEREQUAL
-				|| this == VECT_XOR;
+				|| this == VECT_XOR || this == VECT_BITWAND;
 		}
 		public boolean isVectorMatrixPrimitive() {
 			return this == VECT_MATRIXMULT
@@ -400,6 +405,7 @@ public class CNodeBinary extends CNode
 			case OR:                       return "b(|)";
 			case AND:                      return "b(&)";
 			case XOR:                      return "b(xor)";
+			case BITWAND:                  return "b(bitwAnd)";
 			case MINUS1_MULT:              return "b(1-*)";
 			case MINUS_NZ:                 return "b(-nz)";
 			default: return "b("+_type.name().toLowerCase()+")";
@@ -449,6 +455,7 @@ public class CNodeBinary extends CNode
 			case VECT_MINUS_SCALAR:
 			case VECT_PLUS_SCALAR:
 			case VECT_XOR_SCALAR:
+			case VECT_BITWAND_SCALAR:
 			case VECT_POW_SCALAR:
 			case VECT_MIN_SCALAR:
 			case VECT_MAX_SCALAR:
@@ -464,6 +471,7 @@ public class CNodeBinary extends CNode
 			case VECT_MINUS:
 			case VECT_PLUS:
 			case VECT_XOR:
+			case VECT_BITWAND:
 			case VECT_MIN:
 			case VECT_MAX:
 			case VECT_EQUAL: 
@@ -508,6 +516,7 @@ public class CNodeBinary extends CNode
 			case AND: 
 			case OR:
 			case XOR:
+			case BITWAND:
 			case LOG: 
 			case LOG_NZ:
 			case POW: 

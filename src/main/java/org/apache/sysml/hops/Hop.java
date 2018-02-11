@@ -1075,7 +1075,7 @@ public abstract class Hop implements ParseInfo
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT, //1-X*Y
-		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //bitwise operations
+		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
 	}
 
 	// Operations that require 3 operands
@@ -1217,11 +1217,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
 		HopsOpOp2LopsB.put(OpOp2.LOG, Binary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsB.put(OpOp2.BW_AND, Binary.OperationTypes.BW_AND);
-		HopsOpOp2LopsB.put(OpOp2.BW_OR, Binary.OperationTypes.BW_OR);
-		HopsOpOp2LopsB.put(OpOp2.BW_XOR, Binary.OperationTypes.BW_XOR);
-		HopsOpOp2LopsB.put(OpOp2.BW_SHIFTL, Binary.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsB.put(OpOp2.BW_SHIFTR, Binary.OperationTypes.BW_SHIFTR);
+		HopsOpOp2LopsB.put(OpOp2.BITWAND, Binary.OperationTypes.BW_AND);
+		HopsOpOp2LopsB.put(OpOp2.BITWOR, Binary.OperationTypes.BW_OR);
+		HopsOpOp2LopsB.put(OpOp2.BITWXOR, Binary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTL, Binary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTR, Binary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
@@ -1247,11 +1247,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
-		HopsOpOp2LopsBS.put(OpOp2.BW_AND, BinaryScalar.OperationTypes.BW_AND);
-		HopsOpOp2LopsBS.put(OpOp2.BW_OR, BinaryScalar.OperationTypes.BW_OR);
-		HopsOpOp2LopsBS.put(OpOp2.BW_XOR, BinaryScalar.OperationTypes.BW_XOR);
-		HopsOpOp2LopsBS.put(OpOp2.BW_SHIFTL, BinaryScalar.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsBS.put(OpOp2.BW_SHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWAND, BinaryScalar.OperationTypes.BW_AND);
+		HopsOpOp2LopsBS.put(OpOp2.BITWOR, BinaryScalar.OperationTypes.BW_OR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWXOR, BinaryScalar.OperationTypes.BW_XOR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTL, BinaryScalar.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
@@ -1279,11 +1279,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysml.lops.Unary.OperationTypes.POW);
 		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT_NZ);
 		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
-		HopsOpOp2LopsU.put(OpOp2.BW_AND, Unary.OperationTypes.BW_AND);
-		HopsOpOp2LopsU.put(OpOp2.BW_OR, Unary.OperationTypes.BW_OR);
-		HopsOpOp2LopsU.put(OpOp2.BW_XOR, Unary.OperationTypes.BW_XOR);
-		HopsOpOp2LopsU.put(OpOp2.BW_SHIFTL, Unary.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsU.put(OpOp2.BW_SHIFTR, Unary.OperationTypes.BW_SHIFTR);
+		HopsOpOp2LopsU.put(OpOp2.BITWAND, Unary.OperationTypes.BW_AND);
+		HopsOpOp2LopsU.put(OpOp2.BITWOR, Unary.OperationTypes.BW_OR);
+		HopsOpOp2LopsU.put(OpOp2.BITWXOR, Unary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTL, Unary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTR, Unary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1463,11 +1463,11 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
 		HopsOpOp2String.put(OpOp2.XOR, "xor");
-		HopsOpOp2String.put(OpOp2.BW_AND, "bitwAnd");
-		HopsOpOp2String.put(OpOp2.BW_OR,  "bitwOr");
-		HopsOpOp2String.put(OpOp2.BW_XOR, "bitwXor");
-		HopsOpOp2String.put(OpOp2.BW_SHIFTL, "bitwShiftL");
-		HopsOpOp2String.put(OpOp2.BW_SHIFTR, "bitwShiftR");
+		HopsOpOp2String.put(OpOp2.BITWAND, "bitwAnd");
+		HopsOpOp2String.put(OpOp2.BITWOR,  "bitwOr");
+		HopsOpOp2String.put(OpOp2.BITWXOR, "bitwXor");
+		HopsOpOp2String.put(OpOp2.BITWSHIFTL, "bitwShiftL");
+		HopsOpOp2String.put(OpOp2.BITWSHIFTR, "bitwShiftR");
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
@@ -1559,11 +1559,11 @@ public abstract class Hop implements ParseInfo
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;
-		else if("bitwAnd".equals(op) ) return OpOp2.BW_AND;
-		else if("bitwOr".equals(op) ) return OpOp2.BW_OR;
-		else if("bitwXor".equals(op) ) return OpOp2.BW_XOR;
-		else if("bitwShiftL".equals(op) ) return OpOp2.BW_SHIFTL;
-		else if("bitwShiftR".equals(op) ) return OpOp2.BW_SHIFTR;
+		else if("bitwAnd".equals(op) ) return OpOp2.BITWAND;
+		else if("bitwOr".equals(op) ) return OpOp2.BITWOR;
+		else if("bitwXor".equals(op) ) return OpOp2.BITWXOR;
+		else if("bitwShiftL".equals(op) ) return OpOp2.BITWSHIFTL;
+		else if("bitwShiftR".equals(op) ) return OpOp2.BITWSHIFTR;
 		
 		return null;
 	}

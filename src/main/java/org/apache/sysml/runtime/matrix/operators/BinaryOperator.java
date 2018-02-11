@@ -91,11 +91,11 @@ public class BinaryOperator  extends Operator implements Serializable
 		else if( fn instanceof And )			return OpOp2.AND;
 		else if( fn instanceof Or )				return OpOp2.OR;
 		else if( fn instanceof Xor )			return OpOp2.XOR;
-		else if( fn instanceof BitwAnd )		return OpOp2.BW_AND;
-		else if( fn instanceof BitwOr )			return OpOp2.BW_OR;
-		else if( fn instanceof BitwXor )		return OpOp2.BW_XOR;
-		else if( fn instanceof BitwShiftL )		return OpOp2.BW_SHIFTL;
-		else if( fn instanceof BitwShiftR )		return OpOp2.BW_SHIFTR;
+		else if( fn instanceof BitwAnd )		return OpOp2.BITWAND;
+		else if( fn instanceof BitwOr )			return OpOp2.BITWOR;
+		else if( fn instanceof BitwXor )		return OpOp2.BITWXOR;
+		else if( fn instanceof BitwShiftL )		return OpOp2.BITWSHIFTL;
+		else if( fn instanceof BitwShiftR )		return OpOp2.BITWSHIFTR;
 		else if( fn instanceof Power )			return OpOp2.POW;
 		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {

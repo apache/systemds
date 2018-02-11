@@ -238,6 +238,11 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
+	public boolean checkValidity(int rlen, int clen, boolean strict) {
+		return true;
+	}
+
+	@Override
 	public boolean set(int r, int c, double v) {
 		if( !isAllocated(r) )
 			_rows[r] = new SparseRowScalar();

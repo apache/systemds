@@ -239,7 +239,7 @@ public class CNodeBinary extends CNode
 				|| this == VECT_EQUAL || this == VECT_NOTEQUAL
 				|| this == VECT_LESS || this == VECT_LESSEQUAL
 				|| this == VECT_GREATER || this == VECT_GREATEREQUAL
-				|| this == VECT_XOR || this == VECT_BITWAND_SCALAR;
+				|| this == VECT_XOR || this == VECT_BITWAND;
 		}
 		public boolean isVectorMatrixPrimitive() {
 			return this == VECT_MATRIXMULT

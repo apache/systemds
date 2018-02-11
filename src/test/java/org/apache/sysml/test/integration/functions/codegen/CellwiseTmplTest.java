@@ -55,6 +55,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME17 = TEST_NAME+17; //xor operation
 	private static final String TEST_NAME18 = TEST_NAME+18; //sum(ifelse(X,Y,Z))
 	private static final String TEST_NAME19 = TEST_NAME+19; //sum(ifelse(true,Y,Z))+sum(ifelse(false,Y,Z))
+	private static final String TEST_NAME20 = TEST_NAME+20; //bitwAnd() operation
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -67,7 +68,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=19; i++ ) {
+		for( int i=1; i<=20; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -334,7 +335,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite19_sp() {
 		testCodegenIntegration( TEST_NAME19, true, ExecType.SPARK );
 	}
-	
+
+	@Test
+	public void testCodegenCellwiseRewrite20() {
+		testCodegenIntegration( TEST_NAME20, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise20() {
+		testCodegenIntegration( TEST_NAME20, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite20_sp() {
+		testCodegenIntegration( TEST_NAME20, true, ExecType.SPARK );
+	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{

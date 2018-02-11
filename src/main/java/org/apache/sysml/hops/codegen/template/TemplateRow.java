@@ -53,6 +53,7 @@ import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
@@ -62,7 +63,7 @@ public class TemplateRow extends TemplateBase
 	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
 			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
 			OpOp1.SIN, OpOp1.COS, OpOp1.TAN, OpOp1.ASIN, OpOp1.ACOS, OpOp1.ATAN, OpOp1.SINH, OpOp1.COSH, OpOp1.TANH,
-			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX};
+			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX, OpOp1.SPROP, OpOp1.SIGMOID};
 	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
 			OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX, OpOp2.XOR,
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
@@ -218,8 +219,10 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, 
 			inHops2.get("X"), inHops2.get("B1")));
-		if( tpl.getRowType().isConstDim2(hop.getDim2()) )
-			tpl.setConstDim2(hop.getDim2());
+		long n2 = tpl.getRowType()==RowType.COL_AGG_B1 ?
+			hop.getDim1() : hop.getDim2();
+		if( tpl.getRowType().isConstDim2(n2) )
+			tpl.setConstDim2(n2);
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.determineMinVectorIntermediates(output));
 		tpl.getOutput().resetVisitStatus();
@@ -269,7 +272,7 @@ public class TemplateRow extends TemplateBase
 				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
 					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1),
 							((CNodeBinary)cdata1).getType().getVectorAddPrimitive());
-				else	
+				else
 					out = cdata1;
 			}
 			else if( ((AggUnaryOp)hop).getDirection() == Direction.RowCol && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {

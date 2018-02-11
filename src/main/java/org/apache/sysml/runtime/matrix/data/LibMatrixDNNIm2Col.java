@@ -20,231 +20,160 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.Arrays;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**
  * This class contains the different implementation of im2col operation
  */
-public class LibMatrixDNNIm2Col {
-	private static final Log LOG = LogFactory.getLog(LibMatrixDNNIm2Col.class.getName());
-	static interface Im2colWorker {
-		public void execute(int n);
-		public static Im2colWorker getWorker(MatrixBlock input, MatrixBlock out, ConvolutionParameters params, boolean trans) {
-			if(!input.isInSparseFormat()) {
-				boolean stride1Pad0 = params.stride_h == 1 && params.stride_w == 1 
-						&& params.pad_h == 0 && params.pad_w == 0;
-				// Note: Only dense im2col operators require the im2ColOutBlock to be allocated in the dense format.
-				out.reset(out.rlen, out.clen, false);
-				out.allocateDenseBlock();
-				if( LOG.isTraceEnabled() ) 
-					LOG.trace("Using DenseIm2colWorkerAllChannels operator to perform im2col (stride1pad0="+stride1Pad0+").");
-				if( stride1Pad0 && !trans )
-					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlockValues(), out.getDenseBlockValues(), params);
-				else
-					return new DenseIm2colWorkerAllChannels(input.getDenseBlockValues(), out.getDenseBlockValues(), params, trans);
-			}
-			else {
-				if(LOG.isTraceEnabled()) 
-					LOG.trace("Using SparseIm2colWorker operator to perform im2col.");
-				out.reset(out.rlen, out.clen, true);
-				out.allocateSparseRowsBlock();
-				//preallocate sparse-rows (larger than average sparsity to account for skew)
-				int estnnz = (int)Math.ceil(4*input.getSparsity()*out.clen);
-				for(int r = 0; r < out.rlen; r++)
-					out.getSparseBlock().allocate(r, Math.min(estnnz, out.clen));
-				return new SparseSparseIm2colWorkerAllChan(input, out, params, trans);
+public class LibMatrixDNNIm2Col 
+{
+	public static void im2col(MatrixBlock in, MatrixBlock out, int r, ConvolutionParameters params, boolean trans) {
+		im2col(in, out, r, params.C, params.R, params.S, params.H, params.W, params.P, params.Q,
+			params.stride_h, params.stride_w, params.pad_h, params.pad_w, trans);
+	}
+	
+	public static void im2col(MatrixBlock in, MatrixBlock out, int r, int C, int R, int S, int H, int W, int P, int Q,
+			int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
+		boolean stride1Pad0 = stride_h == 1 
+			&& stride_w == 1 && pad_h == 0 && pad_w == 0;
+		
+		//dense and sparse operation dispatch
+		if( !in.sparse && stride1Pad0 && !trans )
+			im2colDenseStride1Pad0(in.getDenseBlockValues(),
+				out.getDenseBlockValues(), r, C, R, S, H, W, P, Q);
+		else if( !in.sparse )
+			im2colDense(in.getDenseBlockValues(), out.getDenseBlockValues(),
+				r, C, R, S, H, W, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
+		else
+			im2colSparse(in, out, r, C, R, S, H, W, P, Q,
+				stride_h, stride_w, pad_h, pad_w, trans);
+	}
+	
+	public static void im2colDenseStride1Pad0(double[] in, double[] out, int r, int C, int R, int S, int H, int W, int P, int Q) {
+		int nOffset = r * C * H * W;
+		int CRS = C * R * S;
+		for (int c = 0; c < CRS; ++c) {
+			int wOffset = c % S;
+			int hOffset = (c / S) % R;
+			int cInput = c / R / S;
+			for (int h = 0; h < P; ++h) {
+				int hPadded = h + hOffset;
+				int outOffset = (c * P + h) * Q;
+				int inputOffset = nOffset + (cInput * H + hPadded) * W;
+				System.arraycopy(in, inputOffset + wOffset, out, outOffset, Q);
+				int w = Q - 1;
+				int wPadded = w + wOffset;
+				boolean assign = (hPadded < H && wPadded < W);
+				out[outOffset + w] = assign ? in[inputOffset + wPadded] : 0;
 			}
 		}
 	}
 	
-	/**
-	 * Special case operator for performing dense im2col when stride = [1, 1] and pad = [0, 0] by using System.arraycopy
-	 */
-	private static class DenseIm2colWorkerStride1Pad0AllChannels implements Im2colWorker {
-		private final double [] inputArray, outputArray; 
-		private final int CRS, S, R, P, Q, CHW, H, W;
-		public DenseIm2colWorkerStride1Pad0AllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params) {
-			this.inputArray = inputArray;
-			this.outputArray = outputArray;
-			this.CRS = params.C * params.R * params.S;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
-			this.CHW = params.C*params.H*params.W;
-		}
-		
-		@Override
-		public void execute(int n) {
-			int nOffset = n * CHW;
-			for (int c = 0; c < CRS; ++c) {
-				int wOffset = c % S;
-				int hOffset = (c / S) % R;
-				int cInput = c / R / S;
-				for (int h = 0; h < P; ++h) {
-					int hPadded = h + hOffset;
-					int outOffset = (c * P + h) * Q;
-					int inputOffset = nOffset + (cInput * H + hPadded) * W;
-					System.arraycopy(inputArray, inputOffset + wOffset, outputArray, outOffset, Q);
-					int w = Q - 1;
-					int wPadded = w + wOffset;
-					boolean assign = (hPadded < H && wPadded < W);
-					outputArray[outOffset + w] = assign ? inputArray[inputOffset + wPadded] : 0;
+	public static void im2colDense(double[] in, double[] out, int r, int C, int R, int S, int H, int W, int P, int Q,
+			int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
+		Arrays.fill(out, 0); //reset for selective copy
+		int CHW = C * H * W;
+		int CRS = C * R * S;
+		int nOffset = r * CHW;
+		for (int c = 0; c < CRS; ++c) {
+			int wOffset = c % S;
+			int hOffset = (c / S) % R;
+			int cInput = c / R / S;
+			for (int h = 0; h < P; ++h) {
+				int outOffset = trans ? c+(h*Q*CRS) : (c*P+h)*Q;
+				int hPadded = h * stride_h - pad_h + hOffset;
+				int inputOffset = nOffset + (cInput * H + hPadded) * W;
+				if (hPadded < 0 || hPadded >= H ) continue;
+				for (int w = 0; w < Q; ++w) {
+					int wPadded = w * stride_w - pad_w + wOffset;
+					if( wPadded >= 0 && wPadded < W )
+						out[outOffset + (trans?w*CRS:w)] 
+							= in[inputOffset + wPadded];
 				}
 			}
 		}
 	}
 	
-	/**
-	 * Performing dense im2col (general case)
-	 */
-	private static class DenseIm2colWorkerAllChannels implements Im2colWorker {
-		private final double[] inputArray, outputArray; 
-		private final int CRS, S, R, P, Q, CHW, H, W; 
-		private final int stride_h, stride_w, pad_h, pad_w;
-		private final boolean trans;
-		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params, boolean trans) {
-			this.inputArray = inputArray;
-			this.outputArray = outputArray;
-			this.CRS = params.C * params.R * params.S;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
-			this.CHW = params.C*params.H*params.W;
-			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
-			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
-			this.trans = trans;
+	public static void im2colSparse(MatrixBlock in, MatrixBlock out, int r, int C, int R, int S, int H, int W, int P, int Q,
+			int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
+		out.reset();
+		SparseBlock sblock = in.sparseBlock;
+		if( sblock.isEmpty(r) )
+			return;
+		int apos = sblock.pos(r);
+		int alen = sblock.size(r);
+		int[] aix = sblock.indexes(r);
+		double[] avals = sblock.values(r);
+		boolean simple = (stride_h==1 && stride_w==1
+			&& pad_h==0 && pad_w==0 && W == S && Q == 1);
+		int RS = R * S;
+		
+		// Iterate over the sparse block
+		CellIndex3 ix = new CellIndex3();
+		for(int j=apos; j<apos+alen; j++) {
+			// Note: the input is of shape [N, CHW]
+			int chw = aix[j];
+			
+			// Get individual zero-based c,h,w indexes from zero-based 'chw'
+			ix = LibMatrixDNNHelper.computeTensorIndexes(chw, H, W, ix);
+			
+			if( simple )
+				appendInputValueToIm2colOutputSimple(out, ix.ix1, ix.ix2, ix.ix3, 
+					avals[j], R, S, RS, P, trans);
+			else
+				appendInputValueToIm2colOutput(out, ix.ix1, ix.ix2, ix.ix3, avals[j], 
+					R, S, RS, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
 		}
 		
-		@Override
-		public void execute(int n) {
-			//reset for selective copy
-			Arrays.fill(outputArray, 0);
-			
-			int nOffset = n * CHW;
-			for (int c = 0; c < CRS; ++c) {
-				int wOffset = c % S;
-				int hOffset = (c / S) % R;
-				int cInput = c / R / S;
-				for (int h = 0; h < P; ++h) {
-					int outOffset = trans ? c+(h*Q*CRS) : (c*P+h)*Q;
-					int hPadded = h * stride_h - pad_h + hOffset;
-					int inputOffset = nOffset + (cInput * H + hPadded) * W;
-					if (hPadded < 0 || hPadded >= H ) continue;
-					for (int w = 0; w < Q; ++w) {
-						int wPadded = w * stride_w - pad_w + wOffset;
-						if( wPadded >= 0 && wPadded < W )
-							outputArray[outOffset + (trans?w*CRS:w)] 
-								= inputArray[inputOffset + wPadded];
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Performing sparse im2col for all channels for a given row n of the input matrix.
-	 */
-	private static class SparseSparseIm2colWorkerAllChan implements Im2colWorker {
-		private final MatrixBlock input, output;
-		private final int S, R, P, Q, W, HW, RS;
-		private final int stride_h, stride_w, pad_h, pad_w;
-		private final boolean trans;
-		private final boolean simple;
-		public SparseSparseIm2colWorkerAllChan(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
-			this.input = input;
-			this.output = im2ColOutBlock;
-			this.HW = params.H * params.W;
-			this.RS = params.R * params.S;
-			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
-			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
-			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
-			this.trans = trans;
-			this.simple = params.isStride1Pad0() && W == S && Q == 1;
-			if(!input.isInSparseFormat()) 
-				throw new RuntimeException("Incorrect operator selection. Expected dense input for SparseIm2colWorkerAllChannels");
-		}
-		
-		@Override
-		public void execute(int n) {
-			output.reset();
-			SparseBlock sblock = input.sparseBlock;
-			if( sblock.isEmpty(n) )
-				return;
-			int apos = sblock.pos(n);
-			int alen = sblock.size(n);
-			int[] aix = sblock.indexes(n);
-			double[] avals = sblock.values(n);
-			
-			// Iterate over the sparse block
-			for(int j=apos; j<apos+alen; j++) {
-				// Note: the input is of shape [N, CHW]
-				int chw = aix[j];
-				
-				// Get individual zero-based c,h,w indexes from zero-based 'chw'
-				int cInput = chw / HW;
-				int hInput = (chw - cInput*HW)/W;
-				int wInput = chw % W; 
-				
-				if( simple )
-					appendInputValueToIm2colOutputSimple(output, cInput, hInput, wInput, 
-						avals[j], R, S, RS, P, trans);
-				else
-					appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
-						R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
-			}
-			
-			output.sortSparseRows();
-		}
+		out.sortSparseRows();
 	}
 	
 	/**
 	 * Appends the value corresponding to the given [, cInput, hInput, wInput] to the appropriate im2col location of the output
 	 * 
 	 * @param output output matrix block
-	 * @param cInput input channel index (zero-based)
-	 * @param hInput input height index (zero-based)
-	 * @param wInput input width index (zero-based)
+	 * @param c input channel index (zero-based)
+	 * @param h input height index (zero-based)
+	 * @param w input width index (zero-based)
 	 * @param value input value
 	 * @param R filter height
 	 * @param S filter width
+	 * @param RS R*S
 	 * @param P output height
 	 * @param Q output width
 	 * @param stride_h stride height
 	 * @param stride_w stride width
 	 * @param pad_h pad height
 	 * @param pad_w pad width
+	 * @param trans transposed output
 	 */
-	private static void appendInputValueToIm2colOutput(MatrixBlock output, int cInput, int hInput, int wInput, double value, 
-			int R, int S, int P, int Q, int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
-		int RS = R*S;
+	private static void appendInputValueToIm2colOutput(MatrixBlock output, int c, int h, int w, double value, 
+		int R, int S, int RS, int P, int Q, int stride_h, int stride_w, int pad_h, int pad_w, boolean trans)
+	{
 		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
-		
 		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
 		// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
 		// Therefore,  r <= hInput + pad_h 
 		// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
 		// Therefore,  hInput + pad_h - P*stride_h < r
 		// Math.max(0, hInput + pad_h - P*stride_h + 1) <= r <= Math.min(R-1, hInput + pad_h)
-		int rMin = Math.max(0, hInput + pad_h - P*stride_h + 1);
-		int rMax = Math.min(R-1, hInput + pad_h);
-		int sMin = Math.max(0, wInput + pad_w - Q*stride_w + 1);
-		int sMax = Math.min(S-1, wInput + pad_w);
+		int rMin = Math.max(0, h + pad_h - P*stride_h + 1);
+		int rMax = Math.min(R-1, h + pad_h);
+		int sMin = Math.max(0, w + pad_w - Q*stride_w + 1);
+		int sMax = Math.min(S-1, w + pad_w);
 		// Constraint 3: (hInput - r + pad_h) % stride_h == 0
-		while((hInput - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
-		while((wInput - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;
+		rMin += Math.min((h-rMin+pad_h) % stride_h, rMax-rMin+1);
+		sMin += Math.min((w-sMin+pad_w) % stride_w, sMax-sMin+1);
 		
-		for(int r = rMin; r <= rMax; r += stride_h) {
+		for( int r=rMin, ix=c*RS+rMin*S; r<=rMax; r+=stride_h, ix+=stride_h*S ) {
 			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
 			// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
-			final int p = (hInput - r + pad_h)  / stride_h;
-			final int pQ = p*Q;
-			final int outRowIndex = cInput*RS + r*S;
-			for(int s = sMin; s <= sMax; s += stride_w) {
-				int q = (wInput - s + pad_w)  / stride_w;
-				// chw -> [crs, pq]
-				if( trans )
-					output.appendValue(pQ + q, outRowIndex + s, value);
-				else
-					output.appendValue(outRowIndex + s, pQ + q, value);
+			final int pQ = (h - r + pad_h) / stride_h * Q;
+			for(int s=sMin, ws=w-sMin+pad_w; s<=sMax; s+=stride_w, ws-=stride_w) {
+				int q = ws / stride_w; // chw -> [crs, pq]
+				output.appendValue(trans ? pQ+q : ix+s,
+					trans ? ix+s : pQ+q, value);
 			}
 		}
 	}
@@ -264,7 +193,7 @@ public class LibMatrixDNNIm2Col {
 	// Therefore, it is provided as utility function rather than an operator (like im2col or rotate180)
 	
 	//Converts input: PQ X CRS matrix and writes to 1 X CHW
-	static void doCol2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void col2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
 		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input dimensions");
 		}
@@ -278,7 +207,7 @@ public class LibMatrixDNNIm2Col {
 		
 		if(!input.isInSparseFormat()) {
 			double [] inputArray = input.getDenseBlockValues();
-			doCol2IMDenseInput(0, outputN, inputArray, outputArray, params);
+			col2IMDenseInput(0, outputN, inputArray, outputArray, params);
 		}
 		else {
 			if(!input.isEmptyBlock()) {
@@ -313,7 +242,7 @@ public class LibMatrixDNNIm2Col {
 	
 	// Converts input: PQ X CRS matrix and writes to 1 X CHW if inputN == 0
 	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
-	private static void doCol2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void col2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
 		final int outputNOffset = outputN*params.C*params.H*params.W;
 		final int HW = params.H*params.W;
 		final int inputNPQ = inputN*params.P*params.Q;
@@ -347,5 +276,14 @@ public class LibMatrixDNNIm2Col {
 				}
 			}
 		}
+	}
+	
+	public static void preallocateSparseOutput(MatrixBlock in, MatrixBlock out) {
+		if( !in.sparse )
+			return;
+		//preallocate sparse-rows (larger than average sparsity to account for skew)
+		int estnnz = (int)Math.ceil(4*in.getSparsity()*out.clen);
+		for(int r = 0; r < out.rlen; r++)
+			out.getSparseBlock().allocate(r, Math.max(Math.min(estnnz, out.clen),16));
 	}
 }

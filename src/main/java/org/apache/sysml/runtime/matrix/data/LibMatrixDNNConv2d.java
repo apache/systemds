@@ -25,7 +25,6 @@ import java.util.concurrent.Callable;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2Col.Im2colWorker;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
@@ -52,7 +51,7 @@ public class LibMatrixDNNConv2d
 		
 		MatrixBlock in1 = params.input1;
 		boolean isEmptyDenseInput = !in1.isInSparseFormat() && in1.denseBlock == null;
-		boolean isTransPref = in1.sparse && !params.input2.sparse && 
+		boolean isTransPref = in1.sparse && !params.input2.sparse && !params.output.sparse &&
 			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
 		boolean applyNative = isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && isTransPref);
@@ -171,18 +170,17 @@ public class LibMatrixDNNConv2d
 		@Override
 		public Long call() throws Exception {
 			final int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
-			MatrixBlock outIm2col = new MatrixBlock(CRS, PQ, false);
-			MatrixBlock outMM = new MatrixBlock(K, PQ, false);
-			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, outIm2col, _params, false);
+			MatrixBlock outIm2col = new MatrixBlock(CRS, PQ, _params.input1.sparse).allocateBlock();
+			LibMatrixDNNIm2Col.preallocateSparseOutput(_params.input1, outIm2col);
+			MatrixBlock outMM = new MatrixBlock(K, PQ, _params.output.sparse);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
-				// im2col(input) => _im2ColOutBlock
 				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-				im2ColWorker.execute(n);
+				LibMatrixDNNIm2Col.im2col(_params.input1, outIm2col, n, _params, false);
 				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				// filter %*% _im2ColOutBlock => matMultOutBlock
-				outMM.reset(outMM.rlen, outMM.clen, false);
+				outMM.reset(outMM.rlen, outMM.clen, _params.output.sparse);
 				LibMatrixDNNHelper.singleThreadedMatMult(_params.input2, outIm2col, outMM, false, true, _params);
 				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
@@ -191,8 +189,8 @@ public class LibMatrixDNNConv2d
 					time2 += t3 - t2;
 				}
 				
-				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-				partialCopy1(outMM, _params.output.getDenseBlockValues(), n*K*PQ, K, PQ);
+				// Copy the outMM of shape [K x PQ] to a row in params.output 
+				partialCopy1(outMM, _params.output, n, K, PQ);
 				
 				// Add bias to current row if necessary, always dense
 				if(_params.bias != null)
@@ -209,27 +207,43 @@ public class LibMatrixDNNConv2d
 			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 		
-		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-		private static void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
+		// Copy the matrix src of shape [K X PQ] to the r-th row in params.output 
+		private static void partialCopy1(MatrixBlock src, MatrixBlock dest, int r, int K, int PQ) {
 			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
-			// This is not required in Native implementation
 			if( src.isEmptyBlock() )
 				return;
-			if(src.isInSparseFormat()) {
-				SparseBlock sblock = src.sparseBlock;
+			if( src.sparse ) { //* <- SPARSE
+				SparseBlock srcBlock = src.sparseBlock;
+				SparseBlock sdestBlock = dest.sparseBlock;
+				double[] ddestBlock = dest.getDenseBlockValues();
+				
 				for(int k = 0; k < src.getNumRows(); k++) {
-					if( sblock.isEmpty(k) ) continue;
-					int apos = sblock.pos(k);
-					int alen = sblock.size(k);
-					int[] aix = sblock.indexes(k);
-					double[] avals = sblock.values(k);
-					int desPosK = destPos + k*PQ;
-					for(int j = apos; j < apos+alen; j++)
-						dest[desPosK+aix[j]] = avals[j];
+					if( srcBlock.isEmpty(k) ) continue;
+					int apos = srcBlock.pos(k);
+					int alen = srcBlock.size(k);
+					int[] aix = srcBlock.indexes(k);
+					double[] avals = srcBlock.values(k);
+					if( dest.sparse ) {
+						sdestBlock.setIndexRange(r,
+							0, K*PQ, avals, aix, apos, alen);
+					}
+					else {
+						int desPosK = r + k*PQ;
+						for(int j = apos; j < apos+alen; j++)
+							ddestBlock[desPosK+aix[j]] = avals[j];
+					}
 				}
 			}
-			else 
-				System.arraycopy(src.getDenseBlockValues(), 0, dest, destPos, K * PQ);
+			else { //* <- DENSE
+				if( dest.sparse ) {
+					dest.getSparseBlock().setIndexRange(r, 0, K*PQ,
+						src.getDenseBlockValues(), 0, K*PQ);
+				}
+				else {
+					System.arraycopy(src.getDenseBlockValues(), 0,
+						dest.getDenseBlockValues(), r*K*PQ, K*PQ);
+				}
+			}
 		}
 	}
 	
@@ -250,13 +264,12 @@ public class LibMatrixDNNConv2d
 		@Override
 		public Long call() throws Exception {
 			final int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
-			MatrixBlock outIm2col = new MatrixBlock(PQ, CRS, false);
+			MatrixBlock outIm2col = new MatrixBlock(PQ, CRS, _params.input1.sparse).allocateBlock();
+			LibMatrixDNNIm2Col.preallocateSparseOutput(_params.input1, outIm2col);
 			MatrixBlock outMM = new MatrixBlock(PQ, K, false);
-			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, outIm2col, _params, true);
 			
 			for(int n = _rl; n < _ru; n++)  {
-				// im2col(input) => _im2ColOutBlock
-				im2ColWorker.execute(n);
+				LibMatrixDNNIm2Col.im2col(_params.input1, outIm2col, n, _params, true);
 				
 				// t(_im2ColOutBlock) %*% t(filter) => t(matMultOutBlock)
 				outMM.reset(outMM.rlen, outMM.clen, false);
@@ -411,7 +424,7 @@ public class LibMatrixDNNConv2d
 				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, filter, outMM, !outRotate.sparse, false, _params);
 				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				// col2im(temp) => output[n,] 
-				LibMatrixDNNIm2Col.doCol2imOverSingleImage(n, outMM, _params);
+				LibMatrixDNNIm2Col.col2imOverSingleImage(n, outMM, _params);
 				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				if(DMLScript.FINEGRAINED_STATISTICS) {
@@ -488,12 +501,12 @@ public class LibMatrixDNNConv2d
 		public Long call() throws Exception {
 			int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
 			MatrixBlock dout = _params.input2;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
+			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, _params.input1.sparse).allocateBlock();
+			LibMatrixDNNIm2Col.preallocateSparseOutput(_params.input1, im2ColOutBlock);
 			MatrixBlock outRotate = new MatrixBlock(PQ, K, dout.sparse);
 			MatrixBlock outMM = new MatrixBlock(CRS, K, false);
 			outRotate.allocateBlock();
 			
-			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, false);
 			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, outRotate, _params, true, false);
 			double [] partRet = new double[CRS*_params.K];
 			long time1 = 0; long time2 = 0;
@@ -503,7 +516,7 @@ public class LibMatrixDNNConv2d
 				
 				// im2col(input) => _im2ColOutBlock
 				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-				im2ColWorker.execute(n);
+				LibMatrixDNNIm2Col.im2col(_params.input1, im2ColOutBlock, n, _params, false);
 				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				outMM.reset(CRS, K, false);
@@ -540,11 +553,10 @@ public class LibMatrixDNNConv2d
 		public Long call() throws Exception {
 			int PQ = _params.P*_params.Q, K = _params.K, CRS = _params.C*_params.R*_params.S;
 			MatrixBlock dout = _params.input2;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(PQ, CRS, false).allocateBlock();
+			MatrixBlock im2ColOutBlock = new MatrixBlock(PQ, CRS, _params.input1.sparse).allocateBlock();
+			LibMatrixDNNIm2Col.preallocateSparseOutput(_params.input1, im2ColOutBlock);
 			MatrixBlock outRotate = new MatrixBlock(K, PQ, dout.sparse).allocateBlock();
 			MatrixBlock outMM = new MatrixBlock(K, CRS, false).allocateBlock();
-			
-			Im2colWorker im2ColWorker = Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);
 			Rotate180Worker rotate180Worker = Rotate180Worker.getWorker( dout, outRotate, _params, true, true);
 			double [] partRet = new double[CRS*_params.K];
 			long time1 = 0; long time2 = 0;
@@ -554,7 +566,7 @@ public class LibMatrixDNNConv2d
 				
 				// im2col(input) => _im2ColOutBlock
 				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-				im2ColWorker.execute(n);
+				LibMatrixDNNIm2Col.im2col(_params.input1, im2ColOutBlock, n, _params, true);
 				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				
 				outMM.reset(K, CRS, false);

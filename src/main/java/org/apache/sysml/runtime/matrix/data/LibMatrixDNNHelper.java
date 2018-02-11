@@ -62,7 +62,7 @@ public class LibMatrixDNNHelper
 		if( !params.enableNative || m1.sparse || m2.sparse ) {
 			prepNonZerosForMatrixMult(m1, recomputeNNZM1);
 			prepNonZerosForMatrixMult(m2, recomputeNNZM2);
-			LibMatrixMult.matrixMult(m1, m2, ret, false);
+			LibMatrixMult.matrixMult(m1, m2, ret, true);
 		}
 		else {
 			ret.sparse = false;

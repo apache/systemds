@@ -128,7 +128,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	protected boolean _sharedDDC1Dict = false;
 	
 	public CompressedMatrixBlock() {
-		super(-1, -1, true);
+		super(0, 0, true);
 	}
 	
 	/**

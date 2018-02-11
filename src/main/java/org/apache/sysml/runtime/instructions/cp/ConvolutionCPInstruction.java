@@ -440,7 +440,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
 			else {
-				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
+				boolean sparse = matBlock.isUltraSparse(false) && params.bias == null
+					&& matBlock.getInMemorySize() < MatrixBlock.estimateSizeDenseInMemory(N, K*P*Q);
+				outputBlock = new MatrixBlock(N, K*P*Q, sparse).allocateBlock();
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else

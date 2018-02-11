@@ -477,8 +477,10 @@ public class SpoofSPInstruction extends SPInstruction {
 			
 			//cleanup and final result preparations
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
-			if( aggIncr )
+			if( aggIncr ) {
+				blkOut.examSparsity(); //deferred format change
 				ret.add(new Tuple2<>(new MatrixIndexes(1,1), blkOut));
+			}
 			
 			return ret.iterator();
 		}

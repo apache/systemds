@@ -197,14 +197,13 @@ public class OperationsOnMatrixValues
 			
 			//set initial values according to operator
 			if(op.initialValue==0) {
-				valueOut.reset(outRow, outCol, sparseHint);
-				correction.reset(corRow, corCol, false);
+				valueOut.reset(Math.max(outRow,0), Math.max(outCol,0), sparseHint);
+				correction.reset(Math.max(corRow,0), Math.max(corCol,0), false);
 			}
 			else {
-				valueOut.reset(outRow, outCol, op.initialValue);
-				correction.reset(corRow, corCol, op.initialValue);
+				valueOut.reset(Math.max(outRow, 0), Math.max(outCol,0), op.initialValue);
+				correction.reset(Math.max(corRow,0), Math.max(corCol,0), op.initialValue);
 			}
-			
 		}
 		else
 		{

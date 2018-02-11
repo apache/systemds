@@ -210,7 +210,7 @@ public class CNodeBinary extends CNode
 				case XOR:
 					return "    double %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
 				case BITWAND:
-					return "    double %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n";
+					return "    double %TMP% = LibSpoofPrimitives.bwAnd(%IN1%, %IN2%);\n";
 
 				default: 
 					throw new RuntimeException("Invalid binary type: "+this.toString());

@@ -63,7 +63,7 @@ public class TemplateRow extends TemplateBase
 	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
 			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
 			OpOp1.SIN, OpOp1.COS, OpOp1.TAN, OpOp1.ASIN, OpOp1.ACOS, OpOp1.ATAN, OpOp1.SINH, OpOp1.COSH, OpOp1.TANH,
-			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX};
+			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX, OpOp1.SPROP, OpOp1.SIGMOID};
 	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
 			OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX, OpOp2.XOR,
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
@@ -272,7 +272,7 @@ public class TemplateRow extends TemplateBase
 				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
 					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1),
 							((CNodeBinary)cdata1).getType().getVectorAddPrimitive());
-				else	
+				else
 					out = cdata1;
 			}
 			else if( ((AggUnaryOp)hop).getDirection() == Direction.RowCol && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {

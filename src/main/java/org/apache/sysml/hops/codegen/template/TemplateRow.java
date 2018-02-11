@@ -53,6 +53,7 @@ import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
@@ -218,8 +219,10 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, 
 			inHops2.get("X"), inHops2.get("B1")));
-		if( tpl.getRowType().isConstDim2(hop.getDim2()) )
-			tpl.setConstDim2(hop.getDim2());
+		long n2 = tpl.getRowType()==RowType.COL_AGG_B1 ?
+			hop.getDim1() : hop.getDim2();
+		if( tpl.getRowType().isConstDim2(n2) )
+			tpl.setConstDim2(n2);
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.determineMinVectorIntermediates(output));
 		tpl.getOutput().resetVisitStatus();

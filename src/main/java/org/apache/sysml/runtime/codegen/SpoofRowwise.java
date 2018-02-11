@@ -169,7 +169,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 			out = LibMatrixReorg.transpose(out, new MatrixBlock(
 				out.getNumColumns(), out.getNumRows(), false));
 		}
-		out.examSparsity();
+		if( !aggIncr )
+			out.examSparsity();
 		return out;
 	}
 	
@@ -289,8 +290,12 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, DenseBlock c, int n, int rl, int ru) {
-		if( a == null )
+		//forward empty block to sparse
+		if( a == null ) {
+			executeSparse(null, b, scalars, c, n, rl, ru);
 			return;
+		}
+		
 		SideInput[] lb = createSparseSideInputs(b, true);
 		for( int i=rl; i<ru; i++ ) {
 			genexec(a.values(i), a.pos(i), lb, scalars,
@@ -314,8 +319,12 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, DenseBlock c, int n, int rl, int ru) {
-		if( a.isEmptyBlock(false) )
+		//forward empty block to sparse
+		if( a.isEmptyBlock(false) ) {
+			executeSparse(null, b, scalars, c, n, rl, ru);
 			return;
+		}
+		
 		SideInput[] lb = createSparseSideInputs(b, true);
 		Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
 		for( int i=rl; iter.hasNext(); i++ ) {

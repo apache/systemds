@@ -656,23 +656,55 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testVectorVectorDenseDense() {
+	public void testVectorVectorXorDenseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
 	}
 
 	@Test
-	public void testVectorScalarSparse() {
+	public void testVectorScalarXorSparse() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
 	}
 
 	@Test
-	public void testScalarVectorSparse() {
+	public void testScalarVectorXorSparse() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
 	}
 
 	@Test
-	public void testVectorVectorSparseDense() {
+	public void testVectorVectorXorSparseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
+	}
+
+	//***************** Logical Bitwise Operators ********************//
+
+	@Test //1.
+	public void testVectorScalarBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
+	}
+
+	@Test //2.
+	public void testScalarVectorBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
+	}
+
+	@Test //3.
+	public void testVectorVectorBitwAndDenseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test //4.
+	public void testVectorScalarBitwAndSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test //5.
+	public void testScalarVectorBitwAndSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test //6.
+	public void testVectorVectorBitwAndSparseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
 	@SuppressWarnings("incomplete-switch")

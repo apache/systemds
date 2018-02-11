@@ -245,9 +245,8 @@ public abstract class SparseBlock implements Serializable
 	 * @param r  row index starting at 0
 	 * @return true if row does not contain non-zero values
 	 */
-	public abstract boolean isEmpty(int r); 
-	
-	
+	public abstract boolean isEmpty(int r);
+
 	////////////////////////
 	//obtain indexes/values/positions
 	

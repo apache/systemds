@@ -51,6 +51,13 @@ public class SparseBlockCSR extends SparseBlock
 	private int[] _indexes = null;   //column index array (size: >=nnz)
 	private double[] _values = null; //value array (size: >=nnz)
 	private int _size = 0;           //actual number of nnz
+
+	//matrix meta data
+	protected int rlen       = -1;
+	protected int clen       = -1;
+	protected boolean sparse = true;
+	protected long nonZeros  = 0;
+
 	
 	public SparseBlockCSR(int rlen) {
 		this(rlen, INIT_CAPACITY);
@@ -69,7 +76,7 @@ public class SparseBlockCSR extends SparseBlock
 		_values = values;
 		_size = nnz;
 	}
-	
+
 	/**
 	 * Copy constructor sparse block abstraction. 
 	 * 
@@ -342,7 +349,7 @@ public class SparseBlockCSR extends SparseBlock
 	public boolean isAllocated(int r) {
 		return true;
 	}
-	
+
 	@Override 
 	public void reset() {
 		if( _size > 0 ) {

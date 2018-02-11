@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.codegen;
 import java.util.Arrays;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.runtime.functionobjects.BitwAnd;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
@@ -37,6 +38,7 @@ public class LibSpoofPrimitives
 {
 	private static IntegerDivide intDiv = IntegerDivide.getFnObject();
 	private static Modulus mod = Modulus.getFnObject();
+	private static BitwAnd bwAnd = BitwAnd.getBitwAndFnObject();
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
@@ -627,11 +629,7 @@ public class LibSpoofPrimitives
 
 	//5. scalar vs. sparse vector
 	public static double[] vectXorWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
-		double init = (bval != 0) ? 1 : 0;
-		double[] c = allocVector(len, true, init);
-		for( int j = ai; j < ai+alen; j++ )
-			c[aix[j]] = (a[j] != 0) ? 0 : 1;
-		return c;
+		return vectXorWrite(a, bval, aix, ai, alen, len);
 	}
 
 	//6. sparse vector vs. dense vector
@@ -1965,7 +1963,57 @@ public class LibSpoofPrimitives
 		//invariant to the ordering of inputs
 		return vectLessWrite(b, a, bix, bi, ai, blen, len);
 	}
+
+	//bitwise and
 	
+	//1. dense vector vs. scalar
+	public static double[] vectBitwandWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = bwAnd(a[ai+j], bval);
+		return c;
+	}
+
+	//2. scalar vs. dense vector
+	public static double[] vectBitwandWrite(double bval, double[] a, int ai, int len) {
+		return vectBitwandWrite(a, bval, ai, len);
+	}
+
+	//3. dense vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c= allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = bwAnd(a[ai+j], b[bi+j]);
+		return c;
+	}
+
+	//4. sparse vector vs. scalar.
+	public static double[] vectBitwandWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		int bval1 = (int)bval;
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = bwAnd(a[j], bval1);
+		return c;
+	}
+
+	//5. scalar vs. sparse vector
+	public static double[] vectBitwandWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
+		return vectBitwandWrite(a, bval, aix, ai, alen, len);
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = bwAnd(a[j], b[bi+aix[j]]);
+		return c;
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		return vectBitwandWrite(a, b, aix, ai, bi, alen, len);
+	}
+
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)
 	
@@ -1975,6 +2023,10 @@ public class LibSpoofPrimitives
 	
 	public static double mod(double in1, double in2) {
 		return mod.execute(in1, in2);
+	}
+	
+	public static double bwAnd(double in1, double in2) {
+		return bwAnd.execute(in1, in2);
 	}
 	
 	public static boolean isFlipOuter(int len1, int len2) {

@@ -140,6 +140,26 @@ public class PreparedScript implements ConfigurableAPI
 	}
 	
 	/**
+	 * Get the dml configuration object associated with
+	 * the prepared script instance.
+	 * 
+	 * @return dml configuration
+	 */
+	public DMLConfig getDMLConfig() {
+		return _dmlconf;
+	}
+	
+	/**
+	 * Get the compiler configuration object associated with
+	 * the prepared script instance.
+	 * 
+	 * @return compiler configuration
+	 */
+	public CompilerConfig getCompilerConfig() {
+		return _cconf;
+	}
+	
+	/**
 	 * Binds a scalar boolean to a registered input variable.
 	 * 
 	 * @param varname input variable name

@@ -147,8 +147,12 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			memo.setDistinct(e.getKey(), e.getValue());
 		
 		//maintain statistics
-		if( DMLScript.STATISTICS )
+		if( DMLScript.STATISTICS ) {
+			if( sumMatPoints >= 63 )
+				LOG.warn("Long overflow on maintaining codegen statistics "
+					+ "for a DAG with "+sumMatPoints+" interesting points.");
 			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
+		}
 	}
 	
 	private void selectPlans(CPlanMemoTable memo, PlanPartition part) 
@@ -1033,6 +1037,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		else if( current instanceof TernaryOp ) {
 			switch( ((TernaryOp)current).getOp() ) {
+				case IFELSE:
 				case PLUS_MULT: 
 				case MINUS_MULT: costs = 2; break;
 				case CTABLE:     costs = 3; break;

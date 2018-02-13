@@ -708,57 +708,57 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//init sparse rows if necessary
 		allocateSparseRowsBlock(false);
 		
-		if( that.sparse ) //SPARSE <- SPARSE
+		//append individual rows
+		int m2 = that.rlen;
+		for(int i=0; i<m2; i++)
+			appendRowToSparse(sparseBlock, that, i, rowoffset, coloffset, deep);
+	}
+	
+	public void appendRowToSparse( SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep ) {
+		if( src.sparse ) //SPARSE <- SPARSE
 		{
-			SparseBlock a = that.sparseBlock;
-			SparseBlock c = sparseBlock;
-			for( int i=0; i<that.rlen; i++ )
-			{
-				if( a.isEmpty(i) ) continue;
-				int aix = rowoffset+i;
-				
-				//single block append (avoid re-allocations)
-				if( !c.isAllocated(aix) && coloffset==0 ) { 
-					//note: the deep copy flag is only relevant for MCSR due to
-					//shallow references of b.get(i); other block formats do not
-					//require a redundant copy because b.get(i) created a new row.
-					boolean ldeep = (deep && a instanceof SparseBlockMCSR);
-					c.set(aix, a.get(i), ldeep);
-				}
-				else { //general case
-					int pos = a.pos(i);
-					int len = a.size(i);
-					int[] ix = a.indexes(i);
-					double[] val = a.values(i);
-					if( estimatedNNzsPerRow > 0 )
-						c.allocate(aix, Math.max(estimatedNNzsPerRow, c.size(aix)+len), clen);
-					else
-						c.allocate(aix, c.size(aix)+len);
-					for( int j=pos; j<pos+len; j++ )
-						c.append(aix, coloffset+ix[j], val[j]);
-				}
+			SparseBlock a = src.sparseBlock;
+			if( a.isEmpty(i) ) return;
+			int aix = rowoffset+i;
+			
+			//single block append (avoid re-allocations)
+			if( !dest.isAllocated(aix) && coloffset==0 ) { 
+				//note: the deep copy flag is only relevant for MCSR due to
+				//shallow references of b.get(i); other block formats do not
+				//require a redundant copy because b.get(i) created a new row.
+				boolean ldeep = (deep && a instanceof SparseBlockMCSR);
+				dest.set(aix, a.get(i), ldeep);
+			}
+			else { //general case
+				int pos = a.pos(i);
+				int len = a.size(i);
+				int[] ix = a.indexes(i);
+				double[] val = a.values(i);
+				if( estimatedNNzsPerRow > 0 )
+					dest.allocate(aix, Math.max(estimatedNNzsPerRow, dest.size(aix)+len), clen);
+				else
+					dest.allocate(aix, dest.size(aix)+len);
+				for( int j=pos; j<pos+len; j++ )
+					dest.append(aix, coloffset+ix[j], val[j]);
 			}
 		}
 		else //SPARSE <- DENSE
 		{
-			DenseBlock a = that.getDenseBlock();
-			SparseBlock c = getSparseBlock();
-			final int m2 = that.rlen;
-			final int n2 = that.clen;
-			for( int i=0; i<m2; i++ ) {
-				double[] avals = a.values(i);
-				int aix = a.pos(i);
-				int cix = rowoffset + i;
-				for( int j=0; j<n2; j++ ) {
-					double bval = avals[aix+j];
-					if( bval != 0 ) {
-						c.allocate(cix, estimatedNNzsPerRow, clen);
-						c.append(cix, coloffset+j, bval);
-					}
+			DenseBlock a = src.getDenseBlock();
+			final int n2 = src.clen;
+			double[] avals = a.values(i);
+			int aix = a.pos(i);
+			int cix = rowoffset + i;
+			for( int j=0; j<n2; j++ ) {
+				double bval = avals[aix+j];
+				if( bval != 0 ) {
+					dest.allocate(cix, estimatedNNzsPerRow, clen);
+					dest.append(cix, coloffset+j, bval);
 				}
 			}
 		}
 	}
+	
 	
 	/**
 	 * Sorts all existing sparse rows by column indexes.

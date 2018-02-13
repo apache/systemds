@@ -682,7 +682,6 @@ public class DataExpression extends DataIdentifier
 				
 					// process 2nd line of MatrixMarket format -- must have size information
 				
-				
 					String secondLine = headerLines[1];
 					String[] sizeInfo = secondLine.trim().split("\\s+");
 					if (sizeInfo.length != 3){
@@ -690,39 +689,37 @@ public class DataExpression extends DataIdentifier
 								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
 					}
 				
-					long rowsCount = -1, colsCount = -1, nnzCount = -1;
 					try {
-						rowsCount = Long.parseLong(sizeInfo[0]);
-						if (rowsCount < 1)
+						long rowsCount = Long.parseLong(sizeInfo[0]);
+						if (rowsCount < 0)
 							throw new Exception("invalid rows count");
 						addVarParam(READROWPARAM, new IntIdentifier(rowsCount, this));
 					} catch (Exception e) {
-						raiseValidateError(
-								"In MatrixMarket file " + getVarParam(IO_FILENAME) + " invalid row count " + sizeInfo[0]
-										+ " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-								conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME) + " invalid row count " 
+							+ sizeInfo[0] + " (must be long value >= 0). Sizing info line from file: " + headerLines[1],
+							conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 
 					try {
-						colsCount = Long.parseLong(sizeInfo[1]);
-						if (colsCount < 1)
+						long colsCount = Long.parseLong(sizeInfo[1]);
+						if (colsCount < 0)
 							throw new Exception("invalid cols count");
 						addVarParam(READCOLPARAM, new IntIdentifier(colsCount, this));
 					} catch (Exception e) {
 						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME) + " invalid column count "
-								+ sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: "
+								+ sizeInfo[1] + " (must be long value >= 0). Sizing info line from file: "
 								+ headerLines[1], conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 
 					try {
-						nnzCount = Long.parseLong(sizeInfo[2]);
-						if (nnzCount < 1)
+						long nnzCount = Long.parseLong(sizeInfo[2]);
+						if (nnzCount < 0)
 							throw new Exception("invalid nnz count");
 						addVarParam("nnz", new IntIdentifier(nnzCount, this));
 					} catch (Exception e) {
 						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME)
 								+ " invalid number non-zeros " + sizeInfo[2]
-								+ " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
+								+ " (must be long value >= 0). Sizing info line from file: " + headerLines[1],
 								conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 				}
@@ -857,17 +854,17 @@ public class DataExpression extends DataIdentifier
 				if ( !isCSV && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
-						raiseValidateError("Missing or incomplete dimension information in read statement: " 
-								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);				
+						raiseValidateError("Missing or incomplete dimension information in read statement: "
+								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				
 				if (getVarParam(READROWPARAM) instanceof ConstIdentifier 
-					&& getVarParam(READCOLPARAM) instanceof ConstIdentifier)  
+					&& getVarParam(READCOLPARAM) instanceof ConstIdentifier)
 				{
 					// these are strings that are long values
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
-					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());					
-					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && ConfigurationManager
+					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());
+					if ( !isCSV && (dim1 < 0 || dim2 < 0) && ConfigurationManager
 							.getCompilerConfig().getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) ) {
 						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
@@ -877,7 +874,7 @@ public class DataExpression extends DataIdentifier
 						getOutput().setDimensions(dim1, dim2);
 					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
 						raiseValidateError("Partial dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					}	
+					}
 				}
 				
 				// initialize block dimensions to UNKNOWN 

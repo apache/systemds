@@ -189,6 +189,11 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{
+			if( mc.getRows() == 0 || mc.getCols() == 0 ) {
+				throw new IOException("Write of matrices with zero rows or columns"
+					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
+			}
+			
 			LongAccumulator aNnz = null;
 			
 			//piggyback nnz computation on actual write

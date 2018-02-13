@@ -66,7 +66,7 @@ public class WriterTextCell extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( FSDataOutputStream writer = fs.create(path) ){
-			writer.writeBytes("1 1 0");
+			writer.writeBytes(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 		
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
@@ -126,15 +126,13 @@ public class WriterTextCell extends MatrixWriter
 							br.write( sb.toString() ); //same as append
 							sb.setLength(0); 
 						}
-						
 					}
 				}
 			}
 	
 			//handle empty result
-			if ( src.isEmptyBlock(false) && rl==0 ) {
-				br.write("1 1 0\n");
-			}
+			if ( src.isEmptyBlock(false) && rl==0 )
+				br.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 	}
 }

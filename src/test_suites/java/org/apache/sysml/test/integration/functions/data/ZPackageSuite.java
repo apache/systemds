@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
 	SequenceTest.class,
 	VariableTest.class,
 	WriteMMTest.class,
+	WriteReadZeroDimsTest.class,
 	WriteTest.class,
 })
 

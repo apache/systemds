@@ -205,7 +205,8 @@ public class MatrixCharacteristics implements Serializable
 	public boolean mightHaveEmptyBlocks() {
 		long singleBlk = Math.max(Math.min(numRows, numRowsPerBlock),1) 
 				* Math.max(Math.min(numColumns, numColumnsPerBlock),1);
-		return !nnzKnown() || (nonZero < numRows*numColumns - singleBlk);
+		return !nnzKnown() || numRows==0 || numColumns==0
+			|| (nonZero < numRows*numColumns - singleBlk);
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 

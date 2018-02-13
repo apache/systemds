@@ -849,10 +849,10 @@ public class ResultMergeLocalFile extends ResultMerge
 								}
 						}
 					}
-				}	
+				}
 			
 			if( !written )
-				out.write("1 1 0\n");
+				out.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 	}
 

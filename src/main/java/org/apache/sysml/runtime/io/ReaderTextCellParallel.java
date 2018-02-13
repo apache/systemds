@@ -83,7 +83,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
@@ -214,10 +214,12 @@ public class ReaderTextCellParallel extends MatrixReader
 						st.reset( value.toString() ); //reinit tokenizer
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
-						double lvalue = st.nextDoubleForParallel();
-						synchronized( _dest ){ //sparse requires lock
-							_dest.appendValue(row, col, lvalue);
-							lnnz++;
+						if(row != -1 || col != -1) {
+							double lvalue = st.nextDoubleForParallel();
+							synchronized( _dest ){ //sparse requires lock
+								_dest.appendValue(row, col, lvalue);
+								lnnz++;
+							}
 						}
 					}
 				}
@@ -230,6 +232,7 @@ public class ReaderTextCellParallel extends MatrixReader
 						st.reset( value.toString() ); //reinit tokenizer
 						row = st.nextInt() - 1;
 						col = st.nextInt() - 1;
+						if(row == -1 || col == -1) continue;
 						double lvalue = st.nextDoubleForParallel();
 						
 						buff.addCell(row, col, lvalue);
@@ -254,6 +257,7 @@ public class ReaderTextCellParallel extends MatrixReader
 						st.reset( value.toString() ); //reinit tokenizer
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
+						if(row == -1 || col == -1) continue;
 						double lvalue = st.nextDoubleForParallel();
 						a.set( row, col, lvalue );
 						lnnz += (lvalue!=0) ? 1 : 0;

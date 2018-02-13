@@ -535,6 +535,7 @@ public class RDDConverterUtils
 				st.reset( strVal );
 				long row = st.nextLong();
 				long col = st.nextLong();
+				if( row == 0 || col == 0 ) continue;
 				double val = st.nextDouble();
 				
 				//flush buffer if necessary

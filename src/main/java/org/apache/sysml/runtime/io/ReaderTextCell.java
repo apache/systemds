@@ -128,6 +128,7 @@ public class ReaderTextCell extends MatrixReader
 							st.reset( value.toString() ); //reinit tokenizer
 							row = st.nextInt() - 1;
 							col = st.nextInt() - 1;
+							if(row == -1 || col == -1) continue;
 							double lvalue = st.nextDouble();
 							dest.appendValue(row, col, lvalue);
 						}
@@ -141,6 +142,7 @@ public class ReaderTextCell extends MatrixReader
 							st.reset( value.toString() ); //reinit tokenizer
 							row = st.nextInt()-1;
 							col = st.nextInt()-1;
+							if(row == -1 || col == -1) continue;
 							double lvalue = st.nextDouble();
 							a.set( row, col, lvalue );
 						}
@@ -174,7 +176,7 @@ public class ReaderTextCell extends MatrixReader
 	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 			throws IOException
 	{
-		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	
+		BufferedReader br = new BufferedReader(new InputStreamReader( is ));
 		
 		boolean sparse = dest.isInSparseFormat();
 		String value = null;
@@ -214,6 +216,7 @@ public class ReaderTextCell extends MatrixReader
 					st.reset( value ); //reinit tokenizer
 					row = st.nextInt()-1;
 					col = st.nextInt()-1;
+					if(row == -1 || col == -1) continue;
 					double lvalue = st.nextDouble();
 					dest.appendValue(row, col, lvalue);
 				}
@@ -227,6 +230,7 @@ public class ReaderTextCell extends MatrixReader
 					st.reset( value ); //reinit tokenizer
 					row = st.nextInt()-1;
 					col = st.nextInt()-1;
+					if(row == -1 || col == -1) continue;
 					double lvalue = st.nextDouble();
 					a.set( row, col, lvalue );
 				}

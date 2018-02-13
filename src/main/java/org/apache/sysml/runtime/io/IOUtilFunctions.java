@@ -55,6 +55,9 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
+	//for empty text lines we use 0-0 despite for 1-based indexing in order
+	//to allow matrices with zero rows and columns (consistent with R)
+	public static final String EMPTY_TEXT_LINE = "0 0 0\n";
 	private static final char CSV_QUOTE_CHAR = '"';
 	
 	public static FileSystem getFileSystem(String fname) throws IOException {

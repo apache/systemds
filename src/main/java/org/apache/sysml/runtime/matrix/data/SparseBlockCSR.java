@@ -857,16 +857,15 @@ public class SparseBlockCSR extends SparseBlock
 		}
 
 		//2. correct array lengths
+		int nnz = _size;
 		long esize = estimateMemory(rlen, clen, MatrixBlock.SPARSITY_TURN_POINT);
-		if(_size < esize) {
-			return false;
+		if(_size < esize && _ptr.length > rlen+1 && _values.length  >= nnz && _indexes.length >= nnz ) {
+			throw new RuntimeException("Incorrect array lengths.");
 		}
 
 		//3. non-decreasing row pointers
-		int prevRowPointer = 0;
-		for( int i=0; i<rlen; i++ ) {
-			int apos = _ptr[i];
-			if(prevRowPointer > apos)
+		for( int i=1; i<rlen; i++ ) {
+			if(_ptr[i-1] > _ptr[i])
 				throw new RuntimeException("Row pointers are decreasing.");
 		}
 
@@ -885,15 +884,19 @@ public class SparseBlockCSR extends SparseBlock
 		}
 
 		//5. non-existing zero values
-
-
+		for( int i=0; i<_values.length; i++ ) {
+			if( _values[i] != 0 ) {
+				throw new RuntimeException("The values array should not contain zeros.");
+			}
+		}
+		
 		//6. a capacity that is no larger than nnz times resize factor.
-		int capacity = _values.length; int nnz = _size;
-		if(capacity > nnz*RESIZE_FACTOR1) {
-			throw new RuntimeException("capacity is larget than the nnz times a resize factor.");
+		int capacity = _values.length;
+		if(capacity > nnz*RESIZE_FACTOR1 ) {
+			throw new RuntimeException("capacity is larger than the nnz times a resize factor.");
 		}
 
-		return false;
+		return true;
 	}
 
 	///////////////////////////

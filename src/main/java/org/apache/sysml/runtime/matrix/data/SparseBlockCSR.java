@@ -848,7 +848,54 @@ public class SparseBlockCSR extends SparseBlock
 		
 		return sb.toString();
 	}
-	
+
+//	@Override
+	public boolean checkValidity(int rlen, int clen, boolean strict) {
+		//1. correct meta data
+		if( rlen < 0 || clen < 0 ) {
+			throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
+		}
+
+		//2. correct array lengths
+		long esize = estimateMemory(rlen, clen, MatrixBlock.SPARSITY_TURN_POINT);
+		if(_size < esize) {
+			return false;
+		}
+
+		//3. non-decreasing row pointers
+		int prevRowPointer = 0;
+		for( int i=0; i<rlen; i++ ) {
+			int apos = _ptr[i];
+			if(prevRowPointer > apos)
+				throw new RuntimeException("Row pointers are decreasing.");
+		}
+
+		//4. sorted column indexes per row
+		for( int i=0; i<rlen; i++ ) {
+			int apos = _ptr[i];
+			int alen = _size;
+			int[] aix = _indexes;
+			double[] avals = _values;
+			for( int k=apos+1; k<apos+alen; k++)
+				if( aix[k-1] > aix[k] )
+					throw new RuntimeException("Wrong sparse row ordering: "+k+" "+aix[k-1]+" "+aix[k]);
+			for( int k=apos; k<apos+alen; k++ )
+				if( avals[k] == 0 )
+					throw new RuntimeException("Wrong sparse row: zero at "+k);
+		}
+
+		//5. non-existing zero values
+
+
+		//6. a capacity that is no larger than nnz times resize factor.
+		int capacity = _values.length; int nnz = _size;
+		if(capacity > nnz*RESIZE_FACTOR1) {
+			throw new RuntimeException("capacity is larget than the nnz times a resize factor.");
+		}
+
+		return false;
+	}
+
 	///////////////////////////
 	// private helper methods
 	

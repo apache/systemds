@@ -63,12 +63,15 @@ public class CNodeBinary extends CNode
 		
 		public boolean isCommutative() {
 			boolean ssComm = (this==EQUAL || this==NOTEQUAL 
-				|| this==PLUS || this==MULT || this==MIN || this==MAX);
+				|| this==PLUS || this==MULT || this==MIN || this==MAX
+				|| this==OR || this==AND || this==XOR || this==BITWAND);
 			boolean vsComm = (this==VECT_EQUAL_SCALAR || this==VECT_NOTEQUAL_SCALAR 
 					|| this==VECT_PLUS_SCALAR || this==VECT_MULT_SCALAR 
-					|| this==VECT_MIN_SCALAR || this==VECT_MAX_SCALAR);
+					|| this==VECT_MIN_SCALAR || this==VECT_MAX_SCALAR
+					|| this==VECT_XOR_SCALAR || this==VECT_BITWAND_SCALAR );
 			boolean vvComm = (this==VECT_EQUAL || this==VECT_NOTEQUAL 
-					|| this==VECT_PLUS || this==VECT_MULT || this==VECT_MIN || this==VECT_MAX);
+					|| this==VECT_PLUS || this==VECT_MULT || this==VECT_MIN || this==VECT_MAX
+					|| this==VECT_XOR || this==BinType.VECT_BITWAND);
 			return ssComm || vsComm || vvComm;
 		}
 		

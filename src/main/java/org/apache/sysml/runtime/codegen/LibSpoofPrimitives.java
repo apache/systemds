@@ -580,8 +580,7 @@ public class LibSpoofPrimitives
 	}
 
 	public static void vectXorAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+		vectXorAdd(a, bval, c, ai, ci, len);
 	}
 
 	public static void vectXorAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
@@ -590,8 +589,7 @@ public class LibSpoofPrimitives
 	}
 
 	public static void vectXorAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
-		for( int j = ai; j < ai+alen; j++ )
-			c[ci + aix[j]] += ( (bval != 0) != (a[j] != 0) ) ? 1 : 0;
+		vectXorAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
 
 	//1. scalar vs. dense vector
@@ -604,10 +602,7 @@ public class LibSpoofPrimitives
 
 	//2. dense vector vs. scalar
 	public static double[] vectXorWrite(double bval, double[] a, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++)
-			c[j] = ( (bval != 0) != (a[ai + j] != 0) ) ? 1 : 0;
-		return c;
+		return vectXorWrite(a, bval, ai, len);
 	}
 
 	//3. dense vector vs. dense vector

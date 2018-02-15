@@ -1082,10 +1082,13 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		if( sparseSafe && b.length==0 && !a.hasUncompressedColGroup() ) {
 			//note: all remaining groups are guaranteed ColGroupValue
 			boolean entireGrp = (rl==0 && ru==a.getNumRows());
+			int maxNumVals = a.getColGroups().stream().mapToInt(
+				g -> ((ColGroupValue)g).getNumValues()).max().orElse(0);
+			int[] counts = new int[maxNumVals];
 			for( ColGroup grp : a.getColGroups() ) {
 				ColGroupValue grpv = (ColGroupValue) grp;
-				int[] counts = entireGrp ? 
-					grpv.getCounts() : grpv.getCounts(rl, ru);
+				counts = entireGrp ? grpv.getCounts(counts) :
+					grpv.getCounts(rl, ru, counts);
 				for(int k=0; k<grpv.getNumValues(); k++) {
 					kbuff2.set(0, 0);
 					double in = grpv.sumValues(k, kplus, kbuff2);

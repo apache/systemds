@@ -193,14 +193,14 @@ public class ColGroupDDC2 extends ColGroupDDC
 	}
 	
 	@Override 
-	public int[] getCounts() {
-		return getCounts(0, getNumRows());
+	public int[] getCounts(int[] counts) {
+		return getCounts(0, getNumRows(), counts);
 	}
 	
 	@Override 
-	public int[] getCounts(int rl, int ru) {
+	public int[] getCounts(int rl, int ru, int[] counts) {
 		final int numVals = getNumValues();
-		int[] counts = new int[numVals];
+		Arrays.fill(counts, 0, numVals, 0);
 		for( int i=rl; i<ru; i++ )
 			counts[_data[i]] ++;
 		return counts;

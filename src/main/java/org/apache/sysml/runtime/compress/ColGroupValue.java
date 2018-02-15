@@ -149,9 +149,19 @@ public abstract class ColGroupValue extends ColGroup
 		return ret;
 	}
 	
-	public abstract int[] getCounts();
+	public final int[] getCounts() {
+		int[] tmp = new int[getNumValues()];
+		return getCounts(tmp);
+	}
 	
-	public abstract int[] getCounts(int rl, int ru);
+	public abstract int[] getCounts(int[] out);
+	
+	public final int[] getCounts(int rl, int ru) {
+		int[] tmp = new int[getNumValues()];
+		return getCounts(rl, ru, tmp);
+	}
+	
+	public abstract int[] getCounts(int rl, int ru, int[] out);
 	
 	public int[] getCounts(boolean inclZeros) {
 		int[] counts = getCounts();

@@ -46,6 +46,8 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -363,6 +365,11 @@ public class ProgramBlock implements ParseInfo
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
+//						if(sparse1) {
+//							int rlen = mb.getNumRows();
+//							int clen = mb.getNumColumns();
+//							long nnz = mb.getNonZeros();
+//						}
 					}
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();

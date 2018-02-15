@@ -51,13 +51,6 @@ public class SparseBlockCSR extends SparseBlock
 	private int[] _indexes = null;   //column index array (size: >=nnz)
 	private double[] _values = null; //value array (size: >=nnz)
 	private int _size = 0;           //actual number of nnz
-
-	//matrix meta data
-	protected int rlen       = -1;
-	protected int clen       = -1;
-	protected boolean sparse = true;
-	protected long nonZeros  = 0;
-
 	
 	public SparseBlockCSR(int rlen) {
 		this(rlen, INIT_CAPACITY);

@@ -655,15 +655,16 @@ public class LibSpoofPrimitives
 	}
 
 	public static void vectPowAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
-		if( bval == 0 ) //handle 0^0=1
+		if( bval == 0 ) //handle 0^0=1 & a^0=1
 			for( int j=0; j<len; j++ )
 				c[ci + j] += 1;
-		for( int j = ai; j < ai+alen; j++ )
-			c[ci + aix[j]] += Math.pow(a[j], bval) - 1;
+		else //handle 0^b=0 & a^b
+			for( int j = ai; j < ai+alen; j++ )
+				c[ci + aix[j]] += Math.pow(a[j], bval);
 	}
 	
 	public static void vectPowAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
-		for( int j=0; j<len; j++ )
+		for( int j=0; j<len; j++ ) //handle 0^0=1 & b^0=1
 			c[ci + j] += 1;
 		for( int j = ai; j < ai+alen; j++ )
 			c[ci + aix[j]] += Math.pow(bval, a[j]) - 1;

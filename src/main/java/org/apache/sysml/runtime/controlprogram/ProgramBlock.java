@@ -57,10 +57,12 @@ public class ProgramBlock implements ParseInfo
 	public static final String PRED_VAR = "__pred";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
-	private static final boolean CHECK_MATRIX_SPARSITY = false;
+	private static final boolean CHECK_MATRIX_SPARSITY = true;
 
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
+
+	protected SparseBlock sparseBlock = null;
 
 	//additional attributes for recompile
 	protected StatementBlock _sb = null;
@@ -348,7 +350,7 @@ public class ProgramBlock implements ParseInfo
 			}
 	}
 	
-	private static void checkSparsity( Instruction lastInst, LocalVariableMap vars )
+	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{
 		for( String varname : vars.keySet() )
@@ -365,11 +367,13 @@ public class ProgramBlock implements ParseInfo
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
-//						if(sparse1) {
-//							int rlen = mb.getNumRows();
-//							int clen = mb.getNumColumns();
-//							long nnz = mb.getNonZeros();
-//						}
+						if(sparse1) {
+							int rlen = mb.getNumRows();
+							int clen = mb.getNumColumns();
+							long nnz = mb.getNonZeros();
+							sparseBlock.checkValidity(rlen, clen, nnz, true);
+						}
+
 					}
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();

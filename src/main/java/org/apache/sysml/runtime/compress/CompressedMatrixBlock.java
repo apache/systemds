@@ -269,7 +269,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		CompressedSizeInfo[] sizeInfos = (k > 1) ?
 				computeCompressedSizeInfos(bitmapSizeEstimator, numCols, k) : 
 				computeCompressedSizeInfos(bitmapSizeEstimator, numCols);
-		long nnzUC = 0;		
+		long nnzUC = 0;
 		for (int col = 0; col < numCols; col++)  {
 			double uncompSize = getUncompressedSize(numRows, 1, 
 				OptimizerUtils.getSparsity(numRows, 1, sizeInfos[col].getEstNnz()));
@@ -298,6 +298,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					nnzUC -= sizeInfos[col].getEstNnz();
 				}
 			}
+		}
+		
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("C: "+Arrays.toString(colsC.toArray(new Integer[0])));
+			LOG.trace("-- compression ratios: "+Arrays.toString(
+				colsC.stream().map(c -> compRatios.get(c)).toArray()));
+			LOG.trace("UC: "+Arrays.toString(colsUC.toArray(new Integer[0])));
+			LOG.trace("-- compression ratios: "+Arrays.toString(
+				colsUC.stream().map(c -> compRatios.get(c)).toArray()));
 		}
 		
 		if( LOG.isDebugEnabled() ) {

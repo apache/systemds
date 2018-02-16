@@ -414,7 +414,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	
 	private static double getSafeMemEst(Hop hop) {
 		return !hop.dimsKnown() ? getSize(hop) * 8
-			: hop.getMemEstimate();
+			: hop.getOutputMemEstimate();
 	}
 	
 	private static long getSize(Hop hop) {

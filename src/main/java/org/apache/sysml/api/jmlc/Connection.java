@@ -103,8 +103,52 @@ public class Connection implements Closeable
 	 * Connection constructor, the starting point for any other JMLC API calls.
 	 * 
 	 */
-	public Connection()
-	{
+	public Connection() {
+		 //with default dml configuration
+		this(new DMLConfig());
+	}
+	
+	/**
+	 * Connection constructor, the starting point for any other JMLC API calls.
+	 * This variant allows to enable a set of boolean compiler configurations.
+	 * 
+	 * @param cconfigs one or many boolean compiler configurations to enable.
+	 */
+	public Connection(CompilerConfig.ConfigType... cconfigs) {
+		//basic constructor, which also constructs the compiler config
+		this(new DMLConfig()); //with default dml configuration
+		
+		//set optional compiler configurations in current config
+		for( ConfigType configType : cconfigs )
+			_cconf.set(configType, true);
+		setLocalConfigs();
+	}
+	
+	/**
+	 * Connection constructor, the starting point for any other JMLC API calls.
+	 * This variant allows to pass a global dml configuration and enable a set
+	 * of boolean compiler configurations.
+	 * 
+	 * @param dmlconfig a dml configuration.
+	 * @param cconfigs one or many boolean compiler configurations to enable.
+	 */
+	public Connection(DMLConfig dmlconfig, CompilerConfig.ConfigType... cconfigs) {
+		//basic constructor, which also constructs the compiler config
+		this(dmlconfig); 
+		
+		//set optional compiler configurations in current config
+		for( ConfigType configType : cconfigs )
+			_cconf.set(configType, true);
+		setLocalConfigs();
+	}
+	
+	/**
+	 * Connection constructor, the starting point for any other JMLC API calls.
+	 * This variant allows to pass a global dml configuration.
+	 * 
+	 * @param dmlconfig a dml configuration.
+	 */
+	public Connection(DMLConfig dmlconfig) {
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		
 		//setup basic parameters for embedded execution
@@ -129,25 +173,9 @@ public class Connection implements Closeable
 		//disable caching globally 
 		CacheableData.disableCaching();
 		
-		//create default configuration
-		_dmlconf = new DMLConfig();
+		//assign the given configuration
+		_dmlconf = dmlconfig;
 		
-		setLocalConfigs();
-	}
-	
-	/**
-	 * Connection constructor, the starting point for any other JMLC API calls.
-	 * This variant allows to enable a set of boolean compiler configurations.
-	 * 
-	 * @param configs one or many boolean compiler configurations to enable.
-	 */
-	public Connection(CompilerConfig.ConfigType... configs) {
-		//basic constructor, which also constructs the compiler config
-		this();
-		
-		//set optional compiler configurations in current config
-		for( ConfigType configType : configs )
-			_cconf.set(configType, true);
 		setLocalConfigs();
 	}
 	

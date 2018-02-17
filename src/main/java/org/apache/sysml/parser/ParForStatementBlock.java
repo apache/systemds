@@ -1956,9 +1956,12 @@ public class ParForStatementBlock extends ForStatementBlock
 			boolean ret = ( _b.length == f2._b.length );
 			for( int i=0; i<_b.length && ret; i++ ) {
 				ret &= (_b[i] == f2._b[i] );
-				ret &= (_vars[i].equals(f2._vars[i])
-					||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW))
-					||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
+				//note robustness for null var names 
+				String var1 = String.valueOf(_vars[i]);
+				String var2 = String.valueOf(f2._vars[i]);
+				ret &= (var1.equals(var2)
+					||(var1.startsWith(INTERAL_FN_INDEX_ROW) && var2.startsWith(INTERAL_FN_INDEX_ROW))
+					||(var1.startsWith(INTERAL_FN_INDEX_COL) && var2.startsWith(INTERAL_FN_INDEX_COL)));
 			}
 			return ret;
 		}

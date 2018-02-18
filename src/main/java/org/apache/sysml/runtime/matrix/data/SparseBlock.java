@@ -247,6 +247,20 @@ public abstract class SparseBlock implements Serializable
 	 */
 	public abstract boolean isEmpty(int r);
 
+	/**
+	 * Validate the correctness of the internal data structures of the different
+	 * sparse block implementations.
+	 *
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param nnz number of non zeroes
+	 * @param strict enforce optional properties
+	 * @return true if the sparse block is a valid one, wrt the corresponding format
+	 *         such as COO, CSR, MCSR.
+	 */
+
+	public abstract boolean checkValidity(int rlen, int clen, long nnz, boolean strict);
+
 	////////////////////////
 	//obtain indexes/values/positions
 	

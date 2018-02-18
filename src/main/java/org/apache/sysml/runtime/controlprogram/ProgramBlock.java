@@ -46,6 +46,8 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -55,7 +57,7 @@ public class ProgramBlock implements ParseInfo
 	public static final String PRED_VAR = "__pred";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
-	private static final boolean CHECK_MATRIX_SPARSITY = false;
+	private static final boolean CHECK_MATRIX_SPARSITY = true;
 
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
@@ -363,7 +365,15 @@ public class ProgramBlock implements ParseInfo
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
+
 					}
+					if(mb.isInSparseFormat()) {
+						int rlen = mb.getNumRows();
+						int clen = mb.getNumColumns();
+						long nnz = mb.getNonZeros();
+						mb.getSparseBlock().checkValidity(rlen, clen, nnz, true);
+					}
+
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();
 					mo.release();

@@ -348,7 +348,7 @@ public class ProgramBlock implements ParseInfo
 			}
 	}
 	
-	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )
+	private static void checkSparsity( Instruction lastInst, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{
 		for( String varname : vars.keySet() )

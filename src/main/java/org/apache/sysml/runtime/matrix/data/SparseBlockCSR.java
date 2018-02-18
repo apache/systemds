@@ -885,7 +885,7 @@ public class SparseBlockCSR extends SparseBlock
 			throw new RuntimeException("Capacity is larger than the nnz times a resize factor. Current size: "+capacity+
 					", while Expected size:"+nnz*RESIZE_FACTOR1);
 		}
-		
+
 		return true;
 	}
 

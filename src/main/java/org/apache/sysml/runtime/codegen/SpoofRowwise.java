@@ -163,14 +163,15 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//post-processing
 		if( allocTmp &&_reqVectMem > 0 )
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
-		out.recomputeNonZeros();
 		if( flipOut ) {
 			fixTransposeDimensions(out);
 			out = LibMatrixReorg.transpose(out, new MatrixBlock(
 				out.getNumColumns(), out.getNumRows(), false));
 		}
-		if( !aggIncr )
+		if( !aggIncr ) {
+			out.recomputeNonZeros();
 			out.examSparsity();
+		}
 		return out;
 	}
 	
@@ -207,7 +208,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		ExecutorService pool = Executors.newFixedThreadPool( k );
 		ArrayList<Integer> blklens = (a instanceof CompressedMatrixBlock) ?
 			LibMatrixMult.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
-			LibMatrixMult.getBalancedBlockSizesDefault(m, k, false);
+			LibMatrixMult.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
 		
 		try
 		{
@@ -287,6 +288,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		int rlen = out.getNumRows();
 		out.setNumRows(out.getNumColumns());
 		out.setNumColumns(rlen);
+		out.setNonZeros(out.getNumRows()*out.getNumColumns());
 	}
 	
 	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, DenseBlock c, int n, int rl, int ru) {

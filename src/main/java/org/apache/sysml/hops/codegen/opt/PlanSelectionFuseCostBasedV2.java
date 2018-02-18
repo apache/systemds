@@ -227,7 +227,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//bestC is monotonically non-increasing and serves as the upper bound
 		final int Mlen = matPoints.length-off;
 		final long len = UtilFunctions.pow(2, Mlen);
-		long numEvalPlans = 0, numEvalPartPlans = 0;
+		long numEvalPlans = 2, numEvalPartPlans = 0;
 		
 		//evaluate heuristics fuse-all and fuse-no-redundancy to quickly obtain a good lower bound
 		final boolean[] plan0 = createAssignment(Mlen, off, 0); // fuse-all

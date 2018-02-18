@@ -254,8 +254,8 @@ public abstract class SparseBlock implements Serializable
 	 * @param rlen number of rows
 	 * @param clen number of columns
 	 * @param nnz number of non zeroes
-	 * @param strict
-	 * @return true if the spasity block is a valid one, wrt the corresponding format
+	 * @param strict enforce optional properties
+	 * @return true if the sparse block is a valid one, wrt the corresponding format
 	 *         such as COO, CSR, MCSR.
 	 */
 

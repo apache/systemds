@@ -62,9 +62,6 @@ public class ProgramBlock implements ParseInfo
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
 
-	protected SparseBlock sparseBlock = null;
-	protected SparseBlockCSR sparseBlockCSR = null;
-
 	//additional attributes for recompile
 	protected StatementBlock _sb = null;
 	protected long _tid = 0; //by default _t0
@@ -370,12 +367,11 @@ public class ProgramBlock implements ParseInfo
 						mb.examSparsity();
 
 					}
-					if(sparse1) {
+					if(mb.isInSparseFormat()) {
 						int rlen = mb.getNumRows();
 						int clen = mb.getNumColumns();
 						long nnz = mb.getNonZeros();
-						sparseBlock = mb.getSparseBlock();
-						sparseBlock.checkValidity(rlen, clen, nnz, true);
+						mb.getSparseBlock().checkValidity(rlen, clen, nnz, true);
 					}
 
 					boolean sparse2 = mb.isInSparseFormat();

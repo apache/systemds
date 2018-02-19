@@ -160,7 +160,7 @@ public class Recompiler
 		//need for synchronization as we do temp changes in shared hops/lops
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
-			newInst = recompile(sb, hops, vars, status, inplace, replaceLit, true, false, null, tid);
+			newInst = recompile(sb, hops, vars, status, inplace, replaceLit, true, false, false, null, tid);
 		}
 		
 		// replace thread ids in new instructions
@@ -172,7 +172,8 @@ public class Recompiler
 			newInst = JMLCUtils.cleanupRuntimeInstructions(newInst, vars.getRegisteredOutputs());
 		
 		// explain recompiled hops / instructions
-		logExplainDAG(sb, hops, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainDAG(sb, hops, newInst);
 	
 		return newInst;
 	}
@@ -186,7 +187,7 @@ public class Recompiler
 		//need for synchronization as we do temp changes in shared hops/lops
 		synchronized( hop ) {
 			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				vars, status, inplace, replaceLit, true, false, null, tid);
+				vars, status, inplace, replaceLit, true, false, true, null, tid);
 		}
 		
 		// replace thread ids in new instructions
@@ -194,7 +195,8 @@ public class Recompiler
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled instructions
-		logExplainPred(hop, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainPred(hop, newInst);
 		
 		return newInst;
 	}
@@ -208,7 +210,7 @@ public class Recompiler
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
 			//always in place, no stats update/rewrites, but forced exec type
-			newInst = recompile(sb, hops, null, null, true, false, false, true, et, tid);
+			newInst = recompile(sb, hops, null, null, true, false, false, true, false, et, tid);
 		}
 		
 		// replace thread ids in new instructions
@@ -216,7 +218,8 @@ public class Recompiler
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled hops / instructions
-		logExplainDAG(sb, hops, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainDAG(sb, hops, newInst);
 		
 		return newInst;
 	}
@@ -230,7 +233,7 @@ public class Recompiler
 		synchronized( hop ) {
 			//always in place, no stats update/rewrites, but forced exec type
 			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				null, null, true, false, false, true, et, tid);
+				null, null, true, false, false, true, true, et, tid);
 		}
 
 		// replace thread ids in new instructions
@@ -238,7 +241,8 @@ public class Recompiler
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled hops / instructions
-		logExplainPred(hop, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainPred(hop, newInst);
 		
 		return newInst;
 	}
@@ -252,11 +256,12 @@ public class Recompiler
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
 			//always in place, no stats update/rewrites
-			newInst = recompile(sb, hops, null, null, true, false, false, false, null, 0);
+			newInst = recompile(sb, hops, null, null, true, false, false, false, false, null, 0);
 		}
 		
 		// explain recompiled hops / instructions
-		logExplainDAG(sb, hops, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainDAG(sb, hops, newInst);
 		
 		return newInst;
 	}
@@ -270,11 +275,12 @@ public class Recompiler
 		synchronized( hop ) {
 			//always in place, no stats update/rewrites
 			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				null, null, true, false, false, false, null, 0);
+				null, null, true, false, false, false, true, null, 0);
 		}
 		
 		// explain recompiled instructions
-		logExplainPred(hop, newInst);
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainPred(hop, newInst);
 		
 		return newInst;
 	}
@@ -291,6 +297,7 @@ public class Recompiler
 	 * @param replaceLit replace literals (only applicable on deep copy)
 	 * @param updateStats update statistics, rewrites, and memory estimates
 	 * @param forceEt force a given execution type, null for reset
+	 * @param pred recompile for predicate DAG
 	 * @param et given execution type
 	 * @param tid thread id, 0 for main or before worker creation
 	 * @return modified list of instructions
@@ -298,8 +305,8 @@ public class Recompiler
 	 * @throws LopsException if lop compile error
 	 * @throws DMLRuntimeException if runtime error on literal replacement
 	 */
-	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars,
-		RecompileStatus status, boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, ExecType et, long tid ) 
+	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status,
+		boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, boolean pred, ExecType et, long tid ) 
 			throws HopsException, LopsException, DMLRuntimeException
 	{
 		// prepare hops dag for recompile
@@ -378,7 +385,19 @@ public class Recompiler
 		}
 		
 		// generate runtime instructions (incl piggybacking)
-		return dag.getJobs(sb, ConfigurationManager.getDMLConfig());
+		ArrayList<Instruction> newInst = dag
+			.getJobs(sb, ConfigurationManager.getDMLConfig());
+		
+		// explain recompiled (and potentially deep copied) DAG, but
+		// defer the explain of instructions after additional modifications
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ) {
+			if( pred )
+				logExplainPred(hops.get(0), newInst);
+			else
+				logExplainDAG(sb, hops, newInst);
+		}
+		
+		return newInst;
 	}
 	
 	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst)

@@ -363,7 +363,13 @@ public class ProgramBlock implements ParseInfo
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
+
 					}
+					if( mb.isInSparseFormat() && mb.isAllocated() ) {
+						mb.getSparseBlock().checkValidity(mb.getNumRows(),
+							mb.getNumColumns(), mb.getNonZeros(), true);
+					}
+
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();
 					mo.release();

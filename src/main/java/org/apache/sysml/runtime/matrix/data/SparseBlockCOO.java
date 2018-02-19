@@ -191,7 +191,13 @@ public class SparseBlockCOO extends SparseBlock
 	public boolean isAllocated(int r) {
 		return true;
 	}
-	
+
+	@Override
+	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
+		//empty implementation
+		return true;
+	}
+
 	@Override 
 	public void reset() {
 		_size = 0;

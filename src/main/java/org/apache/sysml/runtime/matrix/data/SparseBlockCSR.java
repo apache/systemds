@@ -841,7 +841,58 @@ public class SparseBlockCSR extends SparseBlock
 		
 		return sb.toString();
 	}
-	
+
+	@Override
+	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
+		//1. correct meta data
+		if( rlen < 0 || clen < 0 ) {
+			throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
+		}
+
+		//2. correct array lengths
+		if(_size != nnz && _ptr.length < rlen+1 && _values.length < nnz && _indexes.length < nnz ) {
+			throw new RuntimeException("Incorrect array lengths.");
+		}
+
+		//3. non-decreasing row pointers
+		for( int i=1; i<rlen; i++ ) {
+			if(_ptr[i-1] > _ptr[i] && strict)
+				throw new RuntimeException("Row pointers are decreasing at row: "+i
+					+ ", with pointers "+_ptr[i-1]+" > "+_ptr[i]);
+		}
+
+		//4. sorted column indexes per row
+		for( int i=0; i<rlen; i++ ) {
+			int apos = pos(i);
+			int alen = size(i);
+			for( int k=apos+1; k<apos+alen; k++)
+				if( _indexes[k-1] >= _indexes[k] )
+					throw new RuntimeException("Wrong sparse row ordering: "
+						+ k + " "+_indexes[k-1]+" "+_indexes[k]);
+			for( int k=apos; k<apos+alen; k++ )
+				if( _values[k] == 0 )
+					throw new RuntimeException("Wrong sparse row: zero at "
+						+ k + " at col index " + _indexes[k]);
+		}
+
+		//5. non-existing zero values
+		for( int i=0; i<_size; i++ ) {
+			if( _values[i] == 0 ) {
+				throw new RuntimeException("The values array should not contain zeros."
+					+ " The " + i + "th value is "+_values[i]);
+			}
+		}
+
+		//6. a capacity that is no larger than nnz times resize factor.
+		int capacity = _values.length;
+		if(capacity > nnz*RESIZE_FACTOR1 ) {
+			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
+				+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
+		}
+
+		return true;
+	}
+
 	///////////////////////////
 	// private helper methods
 	

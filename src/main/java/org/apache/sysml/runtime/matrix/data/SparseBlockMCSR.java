@@ -157,7 +157,13 @@ public class SparseBlockMCSR extends SparseBlock
 	public boolean isAllocated(int r) {
 		return (_rows[r] != null);
 	}
-	
+
+	@Override
+	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
+		// empty implementation
+		return true;
+	}
+
 	@Override 
 	public void reset() {
 		for( SparseRow row : _rows )

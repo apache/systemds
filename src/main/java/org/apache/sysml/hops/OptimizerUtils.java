@@ -826,6 +826,11 @@ public class OptimizerUtils
 				|| (rl-1)/brlen == (ru-1)/brlen && (cl-1)%bclen == 0 
 				|| (rl-1)%brlen == 0 && (cl-1)/bclen == (cu-1)/bclen);
 	}
+	
+	public static boolean isValidCPDimensions( MatrixCharacteristics mc ) {
+		return isValidCPDimensions(mc.getRows(), mc.getCols());
+	}
+	
 	/**
 	 * Returns false if dimensions known to be invalid; other true
 	 * 

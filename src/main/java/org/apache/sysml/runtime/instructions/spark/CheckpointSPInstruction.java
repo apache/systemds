@@ -130,19 +130,26 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//convert mcsr into memory-efficient csr if potentially sparse
 			if( input1.getDataType()==DataType.MATRIX 
 				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn)
-				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) 
-			{				
+				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) {
 				out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)out)
 					.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));
 			}
 			
 			//actual checkpoint into given storage level
 			out = out.persist( _level );
+			
+			//trigger nnz computation for datasets that are forced to spark by their dimensions
+			//(larger than MAX_INT) to handle ultra-sparse data sets during recompilation because
+			//otherwise these their nnz would never be evaluated due to lazy evaluation in spark
+			if( input1.isMatrix() && mcIn.dimsKnown() 
+				&& !mcIn.dimsKnown(true) && !OptimizerUtils.isValidCPDimensions(mcIn) ) {
+				mcIn.setNonZeros(SparkUtils.getNonZeros((JavaPairRDD<MatrixIndexes,MatrixBlock>)out));
+			}
 		}
 		else {
 			out = in; //pass-through
 		}
-			
+		
 		// Step 3: In-place update of input matrix/frame rdd handle and set as output
 		// -------
 		// We use this in-place approach for two reasons. First, it is correct because our checkpoint 

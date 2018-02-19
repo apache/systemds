@@ -232,6 +232,10 @@ public class SparkUtils
 		
 		return ret;
 	}
+	
+	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
+		return input.values().map(b -> b.getNonZeros()).reduce((a,b)->a+b);
+	}
 
 	private static class AnalyzeCellMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, MatrixCharacteristics> 
 	{

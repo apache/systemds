@@ -164,7 +164,7 @@ public abstract class PackageFunction implements Serializable
 	 * Method that will be executed to perform this function. The default
 	 * implementation simply forwards this call to execute.
 	 * 
-	 * @param execution context with access to the program
+	 * @param ec execution context with access to the program
 	 *    e.g., for access to other dml-bodied or external functions.
 	 */
 	public void execute(ExecutionContext ec) {

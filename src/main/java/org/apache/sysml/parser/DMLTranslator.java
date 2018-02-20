@@ -308,6 +308,12 @@ public class DMLTranslator
 		SpoofCompiler.generateCode(rtprog);
 	}
 	
+	public void codgenHopsDAG(ProgramBlock pb)
+		throws HopsException, DMLRuntimeException, LopsException, IOException 
+	{
+		SpoofCompiler.generateCodeFromProgramBlock(pb);
+	}
+	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 		// for each namespace, handle function program blocks handle function 
 		for( String namespaceKey : dmlp.getNamespaces().keySet() )

@@ -172,7 +172,8 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofCell") || heavyHittersContainsSubString("sp_spoofCell"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") || heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
 			rtplatform = platformOld;

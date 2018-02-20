@@ -74,7 +74,7 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 		fun.setFunctionInputs(getInputObjects(inputs, ec.getVariables()));
 		
 		//executes function
-		fun.execute();
+		fun.execute(ec);
 		
 		// get and verify the outputs
 		verifyAndAttachOutputs(ec, fun, outputs);

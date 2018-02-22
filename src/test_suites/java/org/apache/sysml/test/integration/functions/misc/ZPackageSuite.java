@@ -73,6 +73,7 @@ import org.junit.runners.Suite;
 	ScalarMatrixUnaryBinaryTermTest.class,
 	ScalarToMatrixInLoopTest.class,
 	SetWorkingDirTest.class,
+	SizePropagationRBindTest.class,
 	ToStringTest.class,
 	ValueTypeAutoCastingTest.class,
 	ValueTypeCastingTest.class,

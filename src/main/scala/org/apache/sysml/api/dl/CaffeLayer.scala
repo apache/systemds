@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.util.ConvolutionUtils
 import caffe.Caffe.EltwiseParameter.EltwiseOp
 import org.apache.sysml.runtime.DMLRuntimeException;
 import java.util.ArrayList
+import caffe.Caffe.PoolingParameter.PoolMethod
 
 trait CaffeLayer extends BaseDMLGenerator {
   // -------------------------------------------------
@@ -713,6 +714,54 @@ class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   // -------------------------------------------------
 }
 
+class Upsample(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  // -------------------------------------------------
+  override def sourceFileName                 = "upsample2d"
+  override def init(dmlScript: StringBuilder) = {}
+  /*
+   * Computes the forward pass for a Upsampling layer.
+   *
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - size_h: upsampling factor for rows.
+   *  - size_w: upsampling factor for columns.
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = 
+    invokeForward(dmlScript, List[String](out), X, num_channels, Hin, Win, size_h, size_w)
+  /*
+   * Computes the backward pass for a Upsampling layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream.
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - size_h: upsampling factor for rows.
+   *  - size_w: upsampling factor for columns.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = 
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, num_channels, Hin, Win, size_h, size_w)
+  override def weightShape(): Array[Int]                             = null
+  override def biasShape(): Array[Int]                               = null
+  def size_h(): String = param.getUpsampleParam.getSizeH.toString
+  def size_w(): String = param.getUpsampleParam.getSizeW.toString
+  def num_channels():String = bottomLayerOutputShape._1
+  def Hin():String = bottomLayerOutputShape._2
+  def Win():String = bottomLayerOutputShape._3
+  override def outputShape = (num_channels, int_mult(size_h, bottomLayerOutputShape._2), int_mult(size_w, bottomLayerOutputShape._3))
+  // -------------------------------------------------
+}
+
 class Softmax(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
   override def sourceFileName                 = "softmax"
@@ -989,7 +1038,7 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
 
 class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
-  override def sourceFileName                 = "max_pool2d_builtin"
+  override def sourceFileName                 = if(param.getPoolingParam.getPool == PoolMethod.AVE) "avg_pool2d_builtin" else "max_pool2d_builtin"; 
   override def init(dmlScript: StringBuilder) = {}
   /*
    * Computes the forward pass for a 2D spatial max pooling layer.

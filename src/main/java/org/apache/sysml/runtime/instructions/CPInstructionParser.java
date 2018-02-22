@@ -232,6 +232,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "relu_maxpooling_backward"      , CPType.Convolution);
 		String2CPInstructionType.put( "maxpooling"      , CPType.Convolution);
 		String2CPInstructionType.put( "maxpooling_backward"      , CPType.Convolution);
+		String2CPInstructionType.put( "avgpooling"      , CPType.Convolution);
+		String2CPInstructionType.put( "avgpooling_backward"      , CPType.Convolution);
 		String2CPInstructionType.put( "conv2d"      , CPType.Convolution);
 		String2CPInstructionType.put( "conv2d_bias_add"      , CPType.Convolution);
 		String2CPInstructionType.put( "conv2d_backward_filter"      , CPType.Convolution);

@@ -216,10 +216,12 @@ public class CNodeUnary extends CNode
 		String varj = _inputs.get(0).getVarname();
 		
 		//replace sparse and dense inputs
+		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
-		tmp = tmp.replace("%IN1%", varj.startsWith("b") && !_type.isScalarLookup()
-			&& TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".values(rix)" : varj );
+		tmp = tmp.replace("%IN1%", 
+			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
+			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 

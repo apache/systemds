@@ -107,6 +107,15 @@ public class CPlanMemoTable
 				&& p.isValid() && !types.contains(p.type));
 	}
 	
+	public boolean hasOnlyExactMatches(long hopID, TemplateType type1, TemplateType type2) {
+		List<MemoTableEntry> l1 = get(hopID, type1);
+		List<MemoTableEntry> l2 = get(hopID, type2);
+		boolean ret = l1.size() == l2.size();
+		for( MemoTableEntry me : l1 )
+			ret &= l2.stream().anyMatch(p -> p.equalPlanRefs(me));
+		return ret;
+	}
+	
 	public int countEntries(long hopID) {
 		return get(hopID).size();
 	}

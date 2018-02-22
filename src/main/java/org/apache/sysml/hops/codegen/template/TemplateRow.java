@@ -82,6 +82,8 @@ public class TemplateRow extends TemplateBase
 	public boolean open(Hop hop) {
 		return (hop instanceof BinaryOp && hop.dimsKnown() && isValidBinaryOperation(hop)
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
+			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp)
+				&& TemplateCell.isValidOperation(hop) && hop.getDim1() > 1)
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
@@ -95,7 +97,7 @@ public class TemplateRow extends TemplateBase
 				&& hop.getParent().get(0) instanceof AggBinaryOp && hop.getParent().get(0).dimsKnown()
 				&& hop.getParent().get(0).getInput().indexOf(hop) == 0
 				&& isFuseSkinnyMatrixMult(hop.getParent().get(0)))
-			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
+			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() >= 0
@@ -337,7 +339,7 @@ public class TemplateRow extends TemplateBase
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			
 			// if one input is a matrix then we need to do vector by scalar operations
-			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 
+			if(hop.getInput().get(0).getDim1() >= 1 && hop.getInput().get(0).getDim2() > 1 
 				|| (!hop.dimsKnown() && cdata1.getDataType()==DataType.MATRIX ) ) 
 			{
 				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
@@ -381,8 +383,8 @@ public class TemplateRow extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			
 			// if one input is a matrix then we need to do vector by scalar operations
-			if( (hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1)
-				|| (hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1)
+			if( (hop.getInput().get(0).getDim1() >= 1 && hop.getInput().get(0).getDim2() > 1)
+				|| (hop.getInput().get(1).getDim1() >= 1 && hop.getInput().get(1).getDim2() > 1)
 				|| (!(hop.dimsKnown() && hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown())
 					&& (hop.getDim2() != 1) //not a known vector output
 					&& (cdata1.getDataType().isMatrix() || cdata2.getDataType().isMatrix())))

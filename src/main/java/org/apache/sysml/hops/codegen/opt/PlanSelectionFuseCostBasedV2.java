@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -46,6 +47,8 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.OpOpN;
+import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -635,37 +638,71 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 	}
 	
-	private static HashSet<Long> getRowAggOpsWithRowRef(CPlanMemoTable memo, PlanPartition part) {
-		HashSet<Long> refAggs = new HashSet<>();
-		for( Long hopID : part.getPartition() ) {
-			if( !memo.contains(hopID, TemplateType.ROW) ) continue;
-			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
-			for(int i=0; i<3; i++)
-				if( me.isPlanRef(i) && memo.contains(me.input(i), TemplateType.ROW) 
-					&& isRowAggOp(memo.getHopRefs().get(me.input(i))))
-					refAggs.add(me.input(i));
+	private static HashSet<Long> collectIrreplaceableRowOps(CPlanMemoTable memo, PlanPartition part) {
+		//get row entries that are (a) reachable from rowwise ops (top down) other than
+		//operator root nodes, or dependent upon row-wise ops (bottom up)
+		HashSet<Long> blacklist = new HashSet<>();
+		HashSet<Pair<Long, Integer>> visited = new HashSet<>();
+		for( Long hopID : part.getRoots() ) {
+			rCollectDependentRowOps(memo.getHopRefs().get(hopID),
+				memo, part, blacklist, visited, null, false);
 		}
-		return refAggs;
+		return blacklist;
 	}
 	
-	private static boolean rIsRowTemplateWithoutAggOrVects(CPlanMemoTable memo, Hop current, HashSet<Long> visited, boolean inclRoot) {
-		if( visited.contains(current.getHopID()) )
-			return true;
+	private static void rCollectDependentRowOps(Hop hop, CPlanMemoTable memo, PlanPartition part,
+		HashSet<Long> blacklist, HashSet<Pair<Long, Integer>> visited, TemplateType type, boolean foundRowOp) 
+	{
+		//avoid redundant evaluation of processed and non-partition nodes
+		Pair<Long, Integer> key = Pair.of(hop.getHopID(),
+			(foundRowOp?Short.MAX_VALUE:0) + ((type!=null)?type.ordinal()+1:0));
+		if( visited.contains(key) || !part.getPartition().contains(hop.getHopID()) ) {
+			return;
+		}
 		
-		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.ROW);
-		boolean ret = !inclRoot || !isRowAggOp(current);
-		for(int i=0; i<3 && ret; i++)
-			if( me!=null && me.isPlanRef(i) )
-				ret &= rIsRowTemplateWithoutAggOrVects(memo, 
-					current.getInput().get(i), visited, true);
+		//process node itself (top-down)
+		MemoTableEntry me = (type == null) ? memo.getBest(hop.getHopID()) :
+			memo.getBest(hop.getHopID(), type);
+		boolean inRow = (me != null && me.type == TemplateType.ROW && type == TemplateType.ROW);
+		boolean diffPlans = part.getMatPointsExt().length > 0 //guard against plan differences
+			&& memo.contains(hop.getHopID(), TemplateType.ROW)
+			&& !memo.hasOnlyExactMatches(hop.getHopID(), TemplateType.ROW, TemplateType.CELL);
+		if( inRow && foundRowOp )
+			blacklist.add(hop.getHopID());
+		if( isRowAggOp(hop, inRow) || diffPlans ) { 
+			blacklist.add(hop.getHopID());
+			foundRowOp = true;
+		}
 		
-		visited.add(current.getHopID());
-		return ret;
+		//process children recursively
+		for( int i=0; i<hop.getInput().size(); i++ ) {
+			boolean lfoundRowOp = foundRowOp && me != null 
+				&& (me.isPlanRef(i) || isImplicitlyFused(hop, i, me.type));
+			rCollectDependentRowOps(hop.getInput().get(i), memo,
+				part, blacklist, visited, me!=null?me.type:null, lfoundRowOp);
+		}
+		
+		//process node itself (bottom-up)
+		if( !blacklist.contains(hop.getHopID()) ) {
+			for( int i=0; i<hop.getInput().size(); i++ )
+				if( me != null && me.type == TemplateType.ROW
+					&& (me.isPlanRef(i) || isImplicitlyFused(hop, i, me.type))
+					&& blacklist.contains(hop.getInput().get(i).getHopID()) ) {
+					blacklist.add(hop.getHopID());
+				}
+		}
+		
+		visited.add(key);
 	}
 	
-	private static boolean isRowAggOp(Hop hop){
-		return (hop instanceof AggUnaryOp || hop instanceof AggBinaryOp
-			|| HopRewriteUtils.isBinary(hop, OpOp2.CBIND));
+	private static boolean isRowAggOp(Hop hop, boolean inRow) {
+		return HopRewriteUtils.isBinary(hop, OpOp2.CBIND)
+			|| HopRewriteUtils.isNary(hop, OpOpN.CBIND)
+			|| (hop instanceof AggBinaryOp && (inRow || !hop.dimsKnown()
+				|| (hop.getDim1()!=1 && hop.getDim2()!=1)))
+			|| (HopRewriteUtils.isReorg(hop, ReOrgOp.TRANSPOSE) 
+				&& (hop.getDim1()!=1 && hop.getDim2()!=1))
+			|| (hop instanceof AggUnaryOp && inRow);
 	}
 	
 	private static boolean isValidRow2CellOp(Hop hop) {
@@ -704,16 +741,19 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//prune row aggregates with pure cellwise operations
-		HashSet<Long> refAggs = getRowAggOpsWithRowRef(memo, part);
+		//(we determine a blacklist of all operators in a partition that either
+		//depend upon row aggregates or on which row aggregates depend)
+		HashSet<Long> blacklist = collectIrreplaceableRowOps(memo, part);
 		for( Long hopID : part.getPartition() ) {
+			if( blacklist.contains(hopID) ) continue;
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
-			if( me != null && me.type == TemplateType.ROW && memo.contains(hopID, me, TemplateType.CELL)
-				&& rIsRowTemplateWithoutAggOrVects(memo, memo.getHopRefs().get(hopID), new HashSet<Long>(), refAggs.contains(hopID)) ) {
-				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
-				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(blacklist));
+			if( me != null && me.type == TemplateType.ROW
+				&& memo.hasOnlyExactMatches(hopID, TemplateType.ROW, TemplateType.CELL) ) {
+				List<MemoTableEntry> rmList = memo.get(hopID, TemplateType.ROW); 
+				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(rmList));
 				if( LOG.isTraceEnabled() ) {
 					LOG.trace("Removed row memo table entries w/o aggregation: "
-						+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
+						+ Arrays.toString(rmList.toArray(new MemoTableEntry[0])));
 				}
 			}
 		}

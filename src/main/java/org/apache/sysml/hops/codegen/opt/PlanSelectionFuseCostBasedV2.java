@@ -902,7 +902,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		//computation without double counting materialized results or compute
 		//costs of complex operation DAGs within a single fused operator
 		if( !visited.add(new VisitMarkCost(currentHopId, 
-			(costsCurrent==null || currentType==TemplateType.MAGG)?0:costsCurrent.ID)) )
+			(costsCurrent==null || currentType==TemplateType.MAGG)?-1:costsCurrent.ID)) )
 			return 0; //already existing 
 		
 		//open template if necessary, including memoization

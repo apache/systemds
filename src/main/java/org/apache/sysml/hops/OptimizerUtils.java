@@ -1038,6 +1038,7 @@ public class OptimizerUtils
 				||(op==OpOp2.EQUAL    && val!=0)
 				||(op==OpOp2.MINUS    && val==0)
 				||(op==OpOp2.PLUS     && val==0)
+				||(op==OpOp2.POW      && val!=0)
 				||(op==OpOp2.MAX      && val<=0)
 				||(op==OpOp2.MIN      && val>=0));
 	}

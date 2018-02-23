@@ -257,8 +257,10 @@ public class TemplateUtils
 	
 	public static boolean rIsSparseSafeOnly(CNode node, BinType...types) {
 		if( !(isBinary(node, types) || node instanceof CNodeData 
-			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isScalarLookup())
-			|| (node instanceof CNodeUnary && ((CNodeUnary)node).getType().isSparseSafeScalar())) )
+			|| (node instanceof CNodeUnary && ((((CNodeUnary)node).getType().isScalarLookup())
+				|| ((CNodeUnary)node).getType().isSparseSafeScalar()
+				|| ((CNodeUnary)node).getType()==UnaryType.POW2
+				|| ((CNodeUnary)node).getType()==UnaryType.MULT2)) ))
 			return false;
 		boolean ret = true;
 		for( CNode c : node.getInput() )

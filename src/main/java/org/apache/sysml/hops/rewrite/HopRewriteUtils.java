@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -309,13 +310,8 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop getLargestInput(Hop hop) {
-		Hop max = null; long maxSize = -1;
-		for(Hop in : hop.getInput())
-			if(in.getLength() > maxSize) {
-				max = in;
-				maxSize = in.getLength();
-			}
-		return max;
+		return hop.getInput().stream()
+			.max(Comparator.comparing(h -> h.getLength())).orElse(null);
 	}
 	
 	public static Hop createDataGenOp( Hop input, double value ) 

@@ -176,8 +176,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				getComputeCosts(memo.getHopRefs().get(hopID), computeCosts);
 			
 			//prepare pruning helpers and prune memo table w/ determined mat points
-			StaticCosts costs = new StaticCosts(computeCosts, sumComputeCost(computeCosts), 
-				getReadCost(part, memo), getWriteCost(part.getRoots(), memo));
+			StaticCosts costs = new StaticCosts(computeCosts, sumComputeCost(computeCosts),
+				getReadCost(part, memo), getWriteCost(part.getRoots(), memo), minOuterSparsity(part, memo));
 			ReachabilityGraph rgraph = STRUCTURAL_PRUNING ? new ReachabilityGraph(part, memo) : null;
 			if( STRUCTURAL_PRUNING ) {
 				part.setMatPointsExt(rgraph.getSortedSearchSpace());
@@ -287,8 +287,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 			//skip plans with branch and bound pruning (cost)
 			else if( COST_PRUNING ) {
-				double lbC = Math.max(costs._read, costs._compute) + costs._write
-					+ getMaterializationCost(part, matPoints, memo, plan);
+				double lbC = getLowerBoundCosts(part, matPoints, memo, costs, plan);
 				if( lbC >= bestC ) {
 					long skip = getNumSkipPlans(plan);
 					if( LOG.isTraceEnabled() )
@@ -354,6 +353,18 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		return UtilFunctions.pow(2, plan.length-pos-1);
 	}
 	
+	private static double getLowerBoundCosts(PlanPartition part, InterestingPoint[] M, CPlanMemoTable memo, StaticCosts costs, boolean[] plan) {
+		//compute the lower bound from static and plan-dependent costs
+		double lb = Math.max(costs._read, costs._compute) + costs._write
+			+ getMaterializationCost(part, M, memo, plan);
+		
+		//if the partition contains outer templates, we need to correct the lower bound
+		if( part.hasOuter() )
+			lb *= costs._minSparsity;
+		
+		return lb;
+	}
+	
 	private static double getMaterializationCost(PlanPartition part, InterestingPoint[] M, CPlanMemoTable memo, boolean[] plan) {
 		double costs = 0;
 		//currently active materialization points
@@ -401,6 +412,13 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static double sumComputeCost(HashMap<Long, Double> computeCosts) {
 		return computeCosts.values().stream()
 			.mapToDouble(d -> d/COMPUTE_BANDWIDTH).sum();
+	}
+	
+	private static double minOuterSparsity(PlanPartition part, CPlanMemoTable memo) {
+		return !part.hasOuter() ? 1.0 : part.getPartition().stream()
+			.map(k -> HopRewriteUtils.getLargestInput(memo.getHopRefs().get(k)))
+			.mapToDouble(h -> h.dimsKnown(true) ? h.getSparsity() : SPARSE_SAFE_SPARSITY_EST)
+			.min().orElse(SPARSE_SAFE_SPARSITY_EST);
 	}
 	
 	private static double sumTmpInputOutputSize(CPlanMemoTable memo, CostVector vect) {
@@ -1234,11 +1252,13 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		public final double _compute;
 		public final double _read;
 		public final double _write;
-		public StaticCosts(HashMap<Long,Double> allComputeCosts, double computeCost, double readCost, double writeCost) {
+		public final double _minSparsity;
+		public StaticCosts(HashMap<Long,Double> allComputeCosts, double computeCost, double readCost, double writeCost, double minSparsity) {
 			_computeCosts = allComputeCosts;
 			_compute = computeCost;
 			_read = readCost;
 			_write = writeCost;
+			_minSparsity = minSparsity;
 		}
 		public double getMinCosts() {
 			return Math.max(_read, _compute) + _write;

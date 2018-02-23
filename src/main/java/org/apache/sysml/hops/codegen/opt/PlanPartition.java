@@ -42,14 +42,17 @@ public class PlanPartition
 	//interesting operator dependencies
 	private InterestingPoint[] _matPointsExt;
 	
+	//indicator if the partitions contains outer templates
+	private final boolean _hasOuter;
 	
-	public PlanPartition(HashSet<Long> P, HashSet<Long> R, HashSet<Long> I, HashSet<Long> Pnpc, ArrayList<Long> M, InterestingPoint[] Mext) {
+	public PlanPartition(HashSet<Long> P, HashSet<Long> R, HashSet<Long> I, HashSet<Long> Pnpc, ArrayList<Long> M, InterestingPoint[] Mext, boolean hasOuter) {
 		_nodes = P;
 		_roots = R;
 		_inputs = I;
 		_nodesNpc = Pnpc;
 		_matPoints = M;
 		_matPointsExt = Mext;
+		_hasOuter = hasOuter;
 	}
 	
 	public HashSet<Long> getPartition() {
@@ -78,5 +81,9 @@ public class PlanPartition
 
 	public void setMatPointsExt(InterestingPoint[] points) {
 		_matPointsExt = points;
+	}
+	
+	public boolean hasOuter() {
+		return _hasOuter;
 	}
 }

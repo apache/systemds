@@ -111,7 +111,7 @@ public class DMLScript
 	}
 	
 	/**
-	 * Eviction policies for {@link GPUContext#evict(long)}.
+	 * Eviction policies for eviction of GPU objects.
 	 */
 	public enum EvictionPolicy {
 		LRU, 				// Evict the least recently used GPUObject. 

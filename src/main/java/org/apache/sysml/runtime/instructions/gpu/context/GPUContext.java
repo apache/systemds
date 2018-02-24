@@ -182,7 +182,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * Convenience method for {@link #allocate(String, long)}.
 	 *
 	 * @param size size of data (in bytes) to allocate
 	 * @return jcuda pointer
@@ -193,7 +193,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * Invokes memory manager's malloc method
 	 *
 	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
 	 * @param size            size of data (in bytes) to allocate

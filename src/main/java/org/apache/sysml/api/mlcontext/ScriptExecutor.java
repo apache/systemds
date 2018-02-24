@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.DMLOptions;
+import org.apache.sysml.api.DMLScript.EvictionPolicy;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
@@ -263,7 +264,15 @@ public class ScriptExecutor {
 		
 		// set the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = config.getTextValue(DMLConfig.AVAILABLE_GPUS);
+		
+		String evictionPolicy = config.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
+		try {
+			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
+		} catch(IllegalArgumentException e) {
+            throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+        }
 	}
+	
 
 	/**
 	 * Reset the global flags (for example: statistics, gpu, etc)

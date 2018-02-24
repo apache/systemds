@@ -93,6 +93,9 @@
     <!-- the floating point precision. supported values are double, single -->
     <sysml.floating.point.precision>double</sysml.floating.point.precision>
     
+    <!-- the eviction policy for the GPU bufferpool. supported values are lru, mru, lfu, min_evict -->
+    <sysml.gpu.eviction.policy>lru</sysml.gpu.eviction.policy>
+    
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
 </root>

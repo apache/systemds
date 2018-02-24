@@ -120,7 +120,6 @@ public class GPUObject {
 				long rows = me.mat.getNumRows();
 				long cols = me.mat.getNumColumns();
 				long size = rows * cols * LibMatrixCUDA.sizeOfDataType;
-				me.gpuContext.ensureFreeSpace((int) size);
 				that.jcudaDenseMatrixPtr = allocate(size);
 				cudaMemcpy(that.jcudaDenseMatrixPtr, me.jcudaDenseMatrixPtr, size, cudaMemcpyDeviceToDevice);
 			}
@@ -205,7 +204,6 @@ public class GPUObject {
 		Pointer nnzPerRowPtr = null;
 		Pointer nnzTotalDevHostPtr = null;
 
-		gCtx.ensureFreeSpace(getIntSizeOf(rows + 1));
 		nnzPerRowPtr = gCtx.allocate(getIntSizeOf(rows));
 		nnzTotalDevHostPtr = gCtx.allocate(getIntSizeOf(1));
 
@@ -270,7 +268,6 @@ public class GPUObject {
 			cudaFreeHelper(getJcudaDenseMatrixPtr());
 			jcudaDenseMatrixPtr = null;
 		}
-		getGPUContext().recordBlockUsage(this);
 	}
 
 	/**
@@ -289,7 +286,6 @@ public class GPUObject {
 			getJcudaSparseMatrixPtr().deallocate();
 			jcudaSparseMatrixPtr = null;
 		}
-		getGPUContext().recordBlockUsage(this);
 	}
 
 	/**
@@ -456,15 +452,6 @@ public class GPUObject {
 		return eitherAllocated;
 	}
 
-	public boolean isInputAllocated() {
-		boolean eitherAllocated = (getJcudaDenseMatrixPtr() != null || getJcudaSparseMatrixPtr() != null);
-		boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockRecorded(this);
-		if (eitherAllocated && !isAllocatedOnThisGPUContext) {
-			LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
-		}
-		return eitherAllocated && isAllocatedOnThisGPUContext;
-	}
-
 	/**
 	 * Allocates a sparse and empty {@link GPUObject}
 	 * This is the result of operations that are both non zero matrices.
@@ -543,7 +530,6 @@ public class GPUObject {
 				int cols = toIntExact(mat.getNumColumns());
 				Pointer nnzPerRowPtr = null;
 				Pointer nnzTotalDevHostPtr = null;
-				gCtx.ensureFreeSpace(getIntSizeOf(rows + 1));
 				nnzPerRowPtr = gCtx.allocate(getIntSizeOf(rows));
 				nnzTotalDevHostPtr = gCtx.allocate(getIntSizeOf(1));
 				LibMatrixCUDA.cudaSupportFunctions.cusparsennz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, rows, cols, matDescr, getJcudaDenseMatrixPtr(), rows,
@@ -696,18 +682,21 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
 	private void updateReleaseLocks() throws DMLRuntimeException {
-		GPUContext.EvictionPolicy evictionPolicy = getGPUContext().evictionPolicy;
+		DMLScript.EvictionPolicy evictionPolicy = DMLScript.GPU_EVICTION_POLICY;
 		switch (evictionPolicy) {
-		case LRU:
-			timestamp.set(System.nanoTime());
-			break;
-		case LFU:
-			timestamp.addAndGet(1);
-			break;
-		case MIN_EVICT: /* Do Nothing */
-			break;
-		default:
-			throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
+			case LRU:
+				timestamp.set(System.nanoTime());
+				break;
+			case LFU:
+				timestamp.addAndGet(1);
+				break;
+			case MIN_EVICT: /* Do Nothing */
+				break;
+			case MRU:
+				timestamp.set(-System.nanoTime());
+				break;
+			default:
+				throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
 		}
 	}
 
@@ -782,7 +771,6 @@ public class GPUObject {
 		jcudaDenseMatrixPtr = null;
 		jcudaSparseMatrixPtr = null;
 		resetReadWriteLock();
-		getGPUContext().removeRecordedUsage(this);
 	}
 
 	protected long getSizeOnDevice() throws DMLRuntimeException {
@@ -1008,7 +996,6 @@ public class GPUObject {
 	 */
 	public void clearData(boolean eager) throws DMLRuntimeException {
 		deallocateMemoryOnDevice(eager);
-		getGPUContext().removeRecordedUsage(this);
 	}
 
 	/**

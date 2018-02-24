@@ -116,14 +116,20 @@ public class GPUMemoryManager {
 		}
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Step 1: First try reusing exact match in freeCUDASpaceMap to avoid holes in the GPU memory
-		Pointer A = getCachedMemory(opcode, size);
+		Pointer A = getRmvarPointer(opcode, size);
 		
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		if(A == null && size <= getAvailableMemory()) {
 			A = cudaMallocWarnIfFails(new Pointer(), size);
+			if(LOG.isTraceEnabled()) {
+				if(A == null)
+					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + size);
+				else
+					LOG.trace("Allocated a new pointer in the GPU memory:" + size);
+			}
 		}
 		
-		// Step 3: Try reusing non-exact match entry of freeCUDASpaceMap
+		// Step 3: Try reusing non-exact match entry of rmvarGPUPointers
 		if(A == null) { 
 			// Find minimum key that is greater than size
 			long key = Long.MAX_VALUE;
@@ -131,10 +137,16 @@ public class GPUMemoryManager {
 				key = k > size ? Math.min(key, k) : key;
 			}
 			if(key != Long.MAX_VALUE) {
-				A = getCachedMemory(opcode, key);
+				A = getRmvarPointer(opcode, key);
 				// To avoid potential for holes in the GPU memory
 				guardedCudaFree(A);
 				A = cudaMallocWarnIfFails(new Pointer(), size);
+				if(LOG.isTraceEnabled()) {
+					if(A == null)
+						LOG.trace("Couldnot reuse non-exact match of rmvarGPUPointers:" + size);
+					else
+						LOG.trace("Reuses a non-exact match from rmvarGPUPointers:" + size);
+				}
 			}
 		}
 		
@@ -147,6 +159,12 @@ public class GPUMemoryManager {
 			}
 			if(size <= getAvailableMemory()) {
 				A = cudaMallocWarnIfFails(new Pointer(), size);
+				if(LOG.isTraceEnabled()) {
+					if(A == null)
+						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eager free:" + size);
+					else
+						LOG.trace("Allocated a new pointer in the GPU memory after eager free:" + size);
+				}
 			}
 		}
 		
@@ -174,6 +192,12 @@ public class GPUMemoryManager {
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
 			if(size <= getAvailableMemory()) {
 				A = cudaMallocWarnIfFails(new Pointer(), size);
+				if(LOG.isTraceEnabled()) {
+					if(A == null)
+						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eviction:" + size);
+					else
+						LOG.trace("Allocated a new pointer in the GPU memory after eviction:" + size);
+				}
 			}
 		}
 		
@@ -275,8 +299,10 @@ public class GPUMemoryManager {
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	
-	private Pointer getCachedMemory(String opcode, long size) {
+	private Pointer getRmvarPointer(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
+			if(LOG.isTraceEnabled())
+				LOG.trace("Getting rmvar-ed pointers for size:" + size);
 			long t0 = opcode != null && DMLScript.FINEGRAINED_STATISTICS ?  System.nanoTime() : 0;
 			Pointer A = rmvarGPUPointers.get(size).remove(0);
 			if (rmvarGPUPointers.get(size).isEmpty())

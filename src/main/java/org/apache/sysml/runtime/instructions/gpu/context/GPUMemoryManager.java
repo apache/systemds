@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.logging.Log;
@@ -54,7 +56,7 @@ public class GPUMemoryManager {
 	/**
 	 * Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU
 	 */
-	private HashMap<Long, ArrayList<Pointer>> rmvarGPUPointers = new HashMap<Long, ArrayList<Pointer>>();
+	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<Long, Set<Pointer>>();
 	
 	/**
 	 * list of allocated {@link GPUObject} instances allocated on {@link GPUContext#deviceNum} GPU
@@ -152,7 +154,7 @@ public class GPUMemoryManager {
 		
 		// Step 4: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
 		if(A == null) {
-			for(ArrayList<Pointer> ptrs : rmvarGPUPointers.values()) {
+			for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
 				for(Pointer toFree : ptrs) {
 					guardedCudaFree(toFree);
 				}
@@ -212,16 +214,19 @@ public class GPUMemoryManager {
 		return A;
 	}
 	
+	/**
+	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
+	 * 
+	 * @param toFree pointer to call cudaFree method on
+	 */
 	private void guardedCudaFree(Pointer toFree) {
-		guardedCudaFree(toFree, true);
-	}
-	
-	private void guardedCudaFree(Pointer toFree, boolean removeFromAllocatedGPUPointers) {
 		if (toFree != new Pointer()) {
 			if(allocatedGPUPointers.containsKey(toFree)) {
+				Long size = allocatedGPUPointers.remove(toFree);
+				if(rmvarGPUPointers.containsKey(size) && rmvarGPUPointers.get(size).contains(toFree)) {
+					remove(rmvarGPUPointers, size, toFree);
+				}
 				cudaFree(toFree);
-				if(removeFromAllocatedGPUPointers)
-					allocatedGPUPointers.remove(toFree);
 			}
 			else {
 				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
@@ -251,9 +256,9 @@ public class GPUMemoryManager {
 			if (!allocatedGPUPointers.containsKey(toFree))
 				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
 			long size = allocatedGPUPointers.get(toFree);
-			ArrayList<Pointer> freeList = rmvarGPUPointers.get(size);
+			Set<Pointer> freeList = rmvarGPUPointers.get(size);
 			if (freeList == null) {
-				freeList = new ArrayList<Pointer>();
+				freeList = new HashSet<Pointer>();
 				rmvarGPUPointers.put(size, freeList);
 			}
 			if (freeList.contains(toFree))
@@ -267,17 +272,74 @@ public class GPUMemoryManager {
 	 * 
 	 * @throws DMLRuntimeException if error
 	 */
-	public synchronized void clearMemory() throws DMLRuntimeException {
-		clearTemporaryMemory();
-		while (!allocatedGPUObjects.isEmpty()) {
-			GPUObject o = allocatedGPUObjects.get(0);
-			if (o.isDirty()) {
-				LOG.warn("Attempted to free GPU Memory when a block[" + o + "] is still on GPU memory, copying it back to host.");
-				o.acquireHostRead(null);
+	public void clearMemory() throws DMLRuntimeException {
+		// First deallocate all the GPU objects
+		for(GPUObject gpuObj : allocatedGPUObjects) {
+			if(gpuObj.isDirty()) {
+				LOG.debug("Attempted to free GPU Memory when a block[" + gpuObj + "] is still on GPU memory, copying it back to host.");
+				gpuObj.acquireHostRead(null);
 			}
-			o.clearData(true);
+			gpuObj.clearData(true);
 		}
 		allocatedGPUObjects.clear();
+		
+		// Then clean up remaining allocated GPU pointers 
+		Set<Pointer> remainingPtr = new HashSet<>(allocatedGPUPointers.keySet());
+		for(Pointer toFree : remainingPtr) {
+			guardedCudaFree(toFree); // cleans up allocatedGPUPointers and rmvarGPUPointers as well
+		}
+	}
+	
+	/**
+	 * Get all pointers withing allocatedGPUObjects such that GPUObject is in dirty state
+	 * 
+	 * @return set of pointers
+	 */
+	private HashSet<Pointer> getDirtyPointers() {
+		HashSet<Pointer> nonTemporaryPointers = new HashSet<Pointer>();
+		for (GPUObject o : allocatedGPUObjects) {
+			if (o.isDirty()) {
+				if (o.isSparse()) {
+					CSRPointer p = o.getSparseMatrixCudaPointer();
+					if (p == null)
+						throw new RuntimeException("CSRPointer is null in clearTemporaryMemory");
+					if (p.rowPtr != null) {
+						nonTemporaryPointers.add(p.rowPtr);
+					}
+					if (p.colInd != null) {
+						nonTemporaryPointers.add(p.colInd);
+					}
+					if (p.val != null) {
+						nonTemporaryPointers.add(p.val);
+					}
+
+				} else {
+					Pointer p = o.getJcudaDenseMatrixPtr();
+					if (p == null)
+						throw new RuntimeException("Pointer is null in clearTemporaryMemory");
+					nonTemporaryPointers.add(p);
+				}
+			}
+		}
+		
+		return nonTemporaryPointers;
+	}
+	
+	/**
+	 * Performs a non-in operation
+	 * 
+	 * @param superset superset of pointer
+	 * @param subset subset of pointer
+	 * @return pointers such that: superset - subset
+	 */
+	private Set<Pointer> nonIn(Set<Pointer> superset, Set<Pointer> subset) {
+		Set<Pointer> ret = new HashSet<Pointer>();
+		for(Pointer superPtr : superset) {
+			if(!subset.contains(superPtr)) {
+				ret.add(superPtr);
+			}
+		}
+		return ret;
 	}
 	
 	/**
@@ -285,45 +347,21 @@ public class GPUMemoryManager {
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
-		HashMap<Pointer, Long> tmpAllocatedGPUPointers = new HashMap<>();
-		for (GPUObject o : allocatedGPUObjects) {
-			if (o.isDirty()) {
-				if (o.isSparse()) {
-					CSRPointer p = o.getSparseMatrixCudaPointer();
-					if (p == null)
-						throw new RuntimeException("CSRPointer is null in clearTemporaryMemory");
-					if (p.rowPtr != null && allocatedGPUPointers.containsKey(p.rowPtr)) {
-						tmpAllocatedGPUPointers.put(p.rowPtr, allocatedGPUPointers.get(p.rowPtr));
-					}
-					if (p.colInd != null && allocatedGPUPointers.containsKey(p.colInd)) {
-						tmpAllocatedGPUPointers.put(p.colInd, allocatedGPUPointers.get(p.colInd));
-					}
-					if (p.val != null && allocatedGPUPointers.containsKey(p.val)) {
-						tmpAllocatedGPUPointers.put(p.val, allocatedGPUPointers.get(p.val));
-					}
-
-				} else {
-					Pointer p = o.getJcudaDenseMatrixPtr();
-					if (p == null)
-						throw new RuntimeException("Pointer is null in clearTemporaryMemory");
-					tmpAllocatedGPUPointers.put(p, allocatedGPUPointers.get(p));
-				}
-			}
+		Set<Pointer> temporaryPointers = nonIn(allocatedGPUPointers.keySet(), getDirtyPointers());
+		for(Pointer tmpPtr : temporaryPointers) {
+			guardedCudaFree(tmpPtr);
 		}
-
-		// garbage collect all temporarily allocated spaces
-		for (ArrayList<Pointer> l : rmvarGPUPointers.values()) {
-			for (Pointer p : l) {
-				guardedCudaFree(p);
-			}
-		}
-		allocatedGPUPointers.clear();
-		rmvarGPUPointers.clear();
-
-		// Restore only those entries for which there are still blocks on the GPU
-		allocatedGPUPointers.putAll(tmpAllocatedGPUPointers);
 	}
 	
+	/**
+	 * Convenient method to add misc timers
+	 * 
+	 * @param opcode opcode
+	 * @param globalGPUTimer member of GPUStatistics
+	 * @param globalGPUCounter member of GPUStatistics
+	 * @param instructionLevelTimer member of GPUInstruction
+	 * @param startTime start time
+	 */
 	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
 		if(DMLScript.STATISTICS) {
 			long totalTime = System.nanoTime() - startTime;
@@ -334,19 +372,31 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Convenient method to add misc timers
+	 * 
+	 * @param opcode opcode
+	 * @param instructionLevelTimer member of GPUInstruction
+	 * @param startTime start time
+	 */
 	private void addMiscTime(String opcode, String instructionLevelTimer, long startTime) {
 		if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	
+	/**
+	 * Get any pointer of the given size from rmvar-ed pointers (applicable if eager cudaFree is set to false)
+	 * 
+	 * @param opcode opcode
+	 * @param size size in bytes
+	 * @return pointer
+	 */
 	private Pointer getRmvarPointer(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
 			if(LOG.isTraceEnabled())
 				LOG.trace("Getting rmvar-ed pointers for size:" + size);
 			long t0 = opcode != null && DMLScript.FINEGRAINED_STATISTICS ?  System.nanoTime() : 0;
-			Pointer A = rmvarGPUPointers.get(size).remove(0);
-			if (rmvarGPUPointers.get(size).isEmpty())
-				rmvarGPUPointers.remove(size);
+			Pointer A = remove(rmvarGPUPointers, size); // remove from rmvarGPUPointers as you are not calling cudaFree
 			addMiscTime(opcode, GPUInstruction.MISC_TIMER_REUSE, t0);
 			return A;
 		}
@@ -355,9 +405,35 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Remove any pointer in the given hashmap
+	 * 
+	 * @param hm hashmap of size, pointers
+	 * @param size size in bytes
+	 * @return the pointer that was removed
+	 */
+	private Pointer remove(HashMap<Long, Set<Pointer>> hm, long size) {
+		Pointer A = hm.get(size).iterator().next();
+		remove(hm, size, A);
+		return A;
+	}
 	
 	/**
-	 * Print debug information
+	 * Remove a specific pointer in the given hashmap
+	 * 
+	 * @param hm hashmap of size, pointers
+	 * @param size size in bytes
+	 * @param ptr pointer to be removed
+	 */
+	private void remove(HashMap<Long, Set<Pointer>> hm, long size, Pointer ptr) {
+		hm.get(size).remove(ptr);
+		if (hm.get(size).isEmpty())
+			hm.remove(size);
+	}
+	
+	
+	/**
+	 * Print debugging information
 	 */
 	public String toString() {
 		long sizeOfLockedGPUObjects = 0; long numLockedGPUObjects = 0;
@@ -397,6 +473,9 @@ public class GPUMemoryManager {
 		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 	
+	/**
+	 * Class that governs the eviction policy
+	 */
 	public static class GPUComparator implements Comparator<GPUObject> {
 		private long neededSize;
 		public GPUComparator(long neededSize) {

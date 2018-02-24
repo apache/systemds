@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.logging.Log;
@@ -57,7 +54,7 @@ public class GPUMemoryManager {
 	/**
 	 * Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU
 	 */
-	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<Long, Set<Pointer>>();
+	private HashMap<Long, ArrayList<Pointer>> rmvarGPUPointers = new HashMap<Long, ArrayList<Pointer>>();
 	
 	/**
 	 * list of allocated {@link GPUObject} instances allocated on {@link GPUContext#deviceNum} GPU
@@ -143,7 +140,7 @@ public class GPUMemoryManager {
 		
 		// Step 4: Eagerly free-up freeCUDASpaceMap and check if memory is available on GPU
 		if(A == null) {
-			for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
+			for(ArrayList<Pointer> ptrs : rmvarGPUPointers.values()) {
 				for(Pointer toFree : ptrs) {
 					guardedCudaFree(toFree);
 				}
@@ -225,9 +222,9 @@ public class GPUMemoryManager {
 			if (!allocatedGPUPointers.containsKey(toFree))
 				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
 			long size = allocatedGPUPointers.get(toFree);
-			Set<Pointer> freeList = rmvarGPUPointers.get(size);
+			ArrayList<Pointer> freeList = rmvarGPUPointers.get(size);
 			if (freeList == null) {
-				freeList = new HashSet<>();
+				freeList = new ArrayList<Pointer>();
 				rmvarGPUPointers.put(size, freeList);
 			}
 			if (freeList.contains(toFree))
@@ -281,11 +278,8 @@ public class GPUMemoryManager {
 	private Pointer getCachedMemory(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
 			long t0 = opcode != null && DMLScript.FINEGRAINED_STATISTICS ?  System.nanoTime() : 0;
-			Set<Pointer> freeList = rmvarGPUPointers.get(size);
-			Iterator<Pointer> it = freeList.iterator(); // at this point, freeList should have at least one element
-			Pointer A = it.next();
-			it.remove();
-			if (freeList.isEmpty())
+			Pointer A = rmvarGPUPointers.get(size).remove(0);
+			if (rmvarGPUPointers.get(size).isEmpty())
 				rmvarGPUPointers.remove(size);
 			addMiscTime(opcode, GPUInstruction.MISC_TIMER_REUSE, t0);
 			return A;

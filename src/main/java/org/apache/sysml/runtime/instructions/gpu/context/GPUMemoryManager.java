@@ -76,8 +76,12 @@ public class GPUMemoryManager {
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
-		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on "
-				+ gpuCtx);
+		if(free[0] < 0.7*total[0]) {
+			LOG.warn("Potential under-utilization: GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + gpuCtx 
+					+ ". This can happen if there are other processes running on the GPU at the same time.");
+		}
+		else
+			LOG.info("GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + gpuCtx);
 		if (GPUContextPool.initialGPUMemBudget() > OptimizerUtils.getLocalMemBudget()) {
 			LOG.warn("Potential under-utilization: GPU memory (" + GPUContextPool.initialGPUMemBudget()
 					+ ") > driver memory budget (" + OptimizerUtils.getLocalMemBudget() + "). "
@@ -154,10 +158,12 @@ public class GPUMemoryManager {
 		
 		// Step 4: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
 		if(A == null) {
+			Set<Pointer> toFree = new HashSet<Pointer>();
 			for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
-				for(Pointer toFree : ptrs) {
-					guardedCudaFree(toFree);
-				}
+				toFree.addAll(ptrs);
+			}
+			for(Pointer ptr : toFree) {
+				guardedCudaFree(ptr);
 			}
 			if(size <= getAvailableMemory()) {
 				A = cudaMallocWarnIfFails(new Pointer(), size);

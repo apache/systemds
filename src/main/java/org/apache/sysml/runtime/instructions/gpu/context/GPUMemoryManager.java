@@ -224,7 +224,7 @@ public class GPUMemoryManager {
 					allocatedGPUPointers.remove(toFree);
 			}
 			else {
-				throw new RuntimeException("Attempting to free an unaccounted pointer.");
+				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
 			}
 		}
 	}
@@ -285,7 +285,7 @@ public class GPUMemoryManager {
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
-		HashMap<Pointer, Long> tmpallocatedGPUPointers = new HashMap<>();
+		HashMap<Pointer, Long> tmpAllocatedGPUPointers = new HashMap<>();
 		for (GPUObject o : allocatedGPUObjects) {
 			if (o.isDirty()) {
 				if (o.isSparse()) {
@@ -293,20 +293,20 @@ public class GPUMemoryManager {
 					if (p == null)
 						throw new RuntimeException("CSRPointer is null in clearTemporaryMemory");
 					if (p.rowPtr != null && allocatedGPUPointers.containsKey(p.rowPtr)) {
-						tmpallocatedGPUPointers.put(p.rowPtr, allocatedGPUPointers.get(p.rowPtr));
+						tmpAllocatedGPUPointers.put(p.rowPtr, allocatedGPUPointers.get(p.rowPtr));
 					}
 					if (p.colInd != null && allocatedGPUPointers.containsKey(p.colInd)) {
-						tmpallocatedGPUPointers.put(p.colInd, allocatedGPUPointers.get(p.colInd));
+						tmpAllocatedGPUPointers.put(p.colInd, allocatedGPUPointers.get(p.colInd));
 					}
 					if (p.val != null && allocatedGPUPointers.containsKey(p.val)) {
-						tmpallocatedGPUPointers.put(p.val, allocatedGPUPointers.get(p.val));
+						tmpAllocatedGPUPointers.put(p.val, allocatedGPUPointers.get(p.val));
 					}
 
 				} else {
 					Pointer p = o.getJcudaDenseMatrixPtr();
 					if (p == null)
 						throw new RuntimeException("Pointer is null in clearTemporaryMemory");
-					tmpallocatedGPUPointers.put(p, allocatedGPUPointers.get(p));
+					tmpAllocatedGPUPointers.put(p, allocatedGPUPointers.get(p));
 				}
 			}
 		}
@@ -321,7 +321,7 @@ public class GPUMemoryManager {
 		rmvarGPUPointers.clear();
 
 		// Restore only those entries for which there are still blocks on the GPU
-		allocatedGPUPointers.putAll(tmpallocatedGPUPointers);
+		allocatedGPUPointers.putAll(tmpAllocatedGPUPointers);
 	}
 	
 	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {

@@ -445,6 +445,10 @@ public class GPUContext {
 	public void clearMemory() throws DMLRuntimeException {
 		memoryManager.clearMemory();
 	}
+	
+	public void clearTemporaryMemory() throws DMLRuntimeException {
+		memoryManager.clearTemporaryMemory();
+	}
 
 	@Override
 	public String toString() {

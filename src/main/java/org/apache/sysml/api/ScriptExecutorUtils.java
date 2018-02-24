@@ -106,7 +106,7 @@ public class ScriptExecutorUtils {
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
 				for(GPUContext gCtx : ec.getGPUContexts()) {
-					gCtx.clearMemory();
+					gCtx.clearTemporaryMemory();
 				}
 				GPUContextPool.freeAllGPUContexts();
 			}

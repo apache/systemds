@@ -218,9 +218,14 @@ public class GPUMemoryManager {
 	
 	private void guardedCudaFree(Pointer toFree, boolean removeFromAllocatedGPUPointers) {
 		if (toFree != new Pointer()) {
-			cudaFree(toFree);
-			if(removeFromAllocatedGPUPointers)
-				allocatedGPUPointers.remove(toFree);
+			if(allocatedGPUPointers.containsKey(toFree)) {
+				cudaFree(toFree);
+				if(removeFromAllocatedGPUPointers)
+					allocatedGPUPointers.remove(toFree);
+			}
+			else {
+				throw new RuntimeException("Attempting to free an unaccounted pointer.");
+			}
 		}
 	}
 	

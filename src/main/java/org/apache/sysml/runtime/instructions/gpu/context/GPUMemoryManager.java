@@ -86,6 +86,13 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Invoke cudaMalloc
+	 * 
+	 * @param A pointer
+	 * @param size size in bytes
+	 * @return allocated pointer
+	 */
 	private Pointer cudaMallocWarnIfFails(Pointer A, long size) {
 		try {
 			cudaMalloc(A, size);
@@ -98,6 +105,14 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Allocate pointer of the given size in bytes.
+	 * 
+	 * @param opcode instruction name
+	 * @param size size in bytes
+	 * @return allocated pointer
+	 * @throws DMLRuntimeException if error
+	 */
 	public Pointer malloc(String opcode, long size) throws DMLRuntimeException {
 		if(size < 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + size);
@@ -166,22 +181,8 @@ public class GPUMemoryManager {
 		}
 		
 		if(A == null) {
-			long numUnlockedGPUObjects = allocatedGPUObjects.stream().filter(gpuObj -> !gpuObj.isLocked()).count();
-			long sizeOfLockedGPUObjects = 0; long numLockedGPUObjects = 0;
-			for(GPUObject gpuObj : allocatedGPUObjects) {
-				if(gpuObj.isLocked()) {
-					numLockedGPUObjects++;
-					sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
-				}
-			}
-			long totalMemoryAllocated = 0;
-			for(Long numBytes : allocatedGPUPointers.values()) {
-				totalMemoryAllocated += numBytes;
-			}
 			throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + size + "). "
-					+ "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
-					+ "Size of locked GPU objects in bytes:" + sizeOfLockedGPUObjects + ". "
-					+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated);
+					+ toString());
 		}
 		
 		t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -191,11 +192,25 @@ public class GPUMemoryManager {
 	}
 	
 	private void guardedCudaFree(Pointer toFree) {
+		guardedCudaFree(toFree, true);
+	}
+	
+	private void guardedCudaFree(Pointer toFree, boolean removeFromAllocatedGPUPointers) {
 		if (toFree != new Pointer()) {
 			cudaFree(toFree);
+			if(removeFromAllocatedGPUPointers)
+				allocatedGPUPointers.remove(toFree);
 		}
 	}
 	
+	/**
+	 * Deallocate the pointer
+	 * 
+	 * @param opcode instruction name
+	 * @param toFree pointer to free
+	 * @param eager whether to deallocate eagerly
+	 * @throws DMLRuntimeException if error
+	 */
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) { // trying to free a null pointer
@@ -204,7 +219,6 @@ public class GPUMemoryManager {
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
-			allocatedGPUPointers.remove(toFree);
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
@@ -222,6 +236,11 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Clear the allocated GPU objects
+	 * 
+	 * @throws DMLRuntimeException if error
+	 */
 	public synchronized void clearMemory() throws DMLRuntimeException {
 		rmvarGPUPointers.clear();
 		long numLockedGPUObjects = 0;
@@ -239,7 +258,7 @@ public class GPUMemoryManager {
 		}
 		allocatedGPUObjects.clear();
 		for(Pointer ptr : allocatedGPUPointers.keySet()) {
-			guardedCudaFree(ptr);
+			guardedCudaFree(ptr, false);
 		}
 		allocatedGPUPointers.clear();
 	}
@@ -281,30 +300,29 @@ public class GPUMemoryManager {
 	 * Print debug information
 	 */
 	public String toString() {
-//		long totalFreeCUDASpace = 0;
-//		for (Entry<Long, Set<Pointer>> kv : freeCUDASpaceMap.entrySet()) {
-//			totalFreeCUDASpace += kv.getKey() * kv.getValue().size();
-//		}
-//		long readLockedAllocatedMemory = 0;
-//		long writeLockedAllocatedMemory = 0;
-//		long unlockedAllocatedMemory = 0;
-//		for (GPUObject gpuObj : allocatedGPUObjects) {
-//			if (gpuObj.readLocks.longValue() > 0)
-//				readLockedAllocatedMemory += gpuObj.getSizeOnDevice();
-//			else if (gpuObj.writeLock)
-//				writeLockedAllocatedMemory += gpuObj.getSizeOnDevice();
-//			else
-//				unlockedAllocatedMemory += gpuObj.getSizeOnDevice();
-//		}
-//		long free[] = { 0 };
-//		long total[] = { 0 };
-//		cudaMemGetInfo(free, total);
-//		long gpuFreeMemory = (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
-//		return "Total memory: " + total[0] + ", Free memory: " + free[0] + " (with util factor: "
-//				+ gpuFreeMemory + "), " + "Lazy unfreed memory: " + totalFreeCUDASpace
-//				+ ", Locked allocated memory (read/write): " + readLockedAllocatedMemory + "/"
-//				+ writeLockedAllocatedMemory + ", " + " Unlocked allocated memory: " + unlockedAllocatedMemory;
-		return "Not Implemented";
+		long sizeOfLockedGPUObjects = 0; long numLockedGPUObjects = 0;
+		long sizeOfUnlockedGPUObjects = 0; long numUnlockedGPUObjects = 0;
+		for(GPUObject gpuObj : allocatedGPUObjects) {
+			try {
+				if(gpuObj.isLocked()) {
+					numLockedGPUObjects++;
+					sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
+				}
+				else {
+					numUnlockedGPUObjects++;
+					sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
+				}
+			} catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		long totalMemoryAllocated = 0;
+		for(Long numBytes : allocatedGPUPointers.values()) {
+			totalMemoryAllocated += numBytes;
+		}
+		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
+				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
+				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated;
 	}
 	
 	/**

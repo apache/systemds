@@ -121,7 +121,7 @@ public class GPUMemoryManager {
 			if(key != Long.MAX_VALUE) {
 				A = getCachedMemory(opcode, key);
 				// To avoid potential for holes in the GPU memory
-				cudaFree(A);
+				guardedCudaFree(A);
 				A = cudaMallocWarnIfFails(new Pointer(), size);
 			}
 		}
@@ -130,7 +130,7 @@ public class GPUMemoryManager {
 		if(A == null) {
 			for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
 				for(Pointer toFree : ptrs) {
-					cudaFree(toFree);
+					guardedCudaFree(toFree);
 				}
 			}
 			if(size <= getAvailableMemory()) {
@@ -190,6 +190,12 @@ public class GPUMemoryManager {
 		return A;
 	}
 	
+	private void guardedCudaFree(Pointer toFree) {
+		if (toFree != new Pointer()) {
+			cudaFree(toFree);
+		}
+	}
+	
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) { // trying to free a null pointer
@@ -197,7 +203,7 @@ public class GPUMemoryManager {
 		}
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			cudaFree(toFree);
+			guardedCudaFree(toFree);
 			allocatedGPUPointers.remove(toFree);
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
@@ -233,7 +239,7 @@ public class GPUMemoryManager {
 		}
 		allocatedGPUObjects.clear();
 		for(Pointer ptr : allocatedGPUPointers.keySet()) {
-			cudaFree(ptr);
+			guardedCudaFree(ptr);
 		}
 		allocatedGPUPointers.clear();
 	}

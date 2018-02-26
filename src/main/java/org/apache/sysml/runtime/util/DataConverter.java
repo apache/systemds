@@ -786,7 +786,7 @@ public class DataConverter
 			//cache-friendly sparse/dense row slicing 
 			if( !mb.isEmptyBlock(false) ) {
 				for( int i=0; i<rows; i++ )
-					mb.sliceOperations(i, i, 0, cols-1, ret[i]);
+					mb.slice(i, i, 0, cols-1, ret[i]);
 			}
 		}
 		

@@ -941,7 +941,7 @@ public class FrameRDDConverterUtils
 				MatrixIndexes ixout = new MatrixIndexes(rix, 1);
 				MatrixBlock out = new MatrixBlock(ru-i+1, (int)_clen, sparse);
 				out.copy(0, out.getNumRows()-1, (int)cl, (int)cu, 
-					mb.sliceOperations(i, ru, 0, mb.getNumColumns()-1, mbreuse), true);
+					mb.slice(i, ru, 0, mb.getNumColumns()-1, mbreuse), true);
 				out.examSparsity();
 				ret.add(new Tuple2<>(ixout,out));
 			}
@@ -1026,7 +1026,7 @@ public class FrameRDDConverterUtils
 					long cpos = UtilFunctions.computeCellIndex(cix, bclen, 0);
 					int lclen = UtilFunctions.computeBlockSize(clen, cix, bclen);
 					MatrixBlock matrix = new MatrixBlock(lrlen, lclen, false);
-					FrameBlock frame = blk.sliceOperations(fix, fix2, 
+					FrameBlock frame = blk.slice(fix, fix2, 
 							(int)cpos-1, (int)cpos+lclen-2, new FrameBlock());
 					MatrixBlock mframe = DataConverter.convertToMatrixBlock(frame);
 					ret.add(new Tuple2<>(new MatrixIndexes(rix, cix), 

@@ -299,7 +299,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 				}
 				else {
 					double[] tmp = DataConverter.convertToDoubleVector(
-							mb.sliceOperations(i, i, j, j+colsVector-1, new MatrixBlock()), false);
+							mb.slice(i, i, j, j+colsVector-1, new MatrixBlock()), false);
 					row[j2+off] = new DenseVector(tmp);
 					j += colsVector-1;
 				}

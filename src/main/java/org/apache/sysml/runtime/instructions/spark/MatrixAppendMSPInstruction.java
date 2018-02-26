@@ -234,7 +234,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 					int rowix = _cbind ? (int)ix.getRowIndex() : 1;
 					int colix = _cbind ? 1 : (int)ix.getColumnIndex();
 					MatrixBlock in2 = _pm.getBlock(rowix, colix);
-					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock(), _cbind);
+					MatrixBlock out = in1.append(in2, new MatrixBlock(), _cbind);
 					return new Tuple2<>(ix, out);
 				}
 			}

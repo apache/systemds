@@ -41,7 +41,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixBlock outBlock = null;
 		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
 			boolean cbind = "cbind".equals(getOpcode());
-			outBlock = in1.appendOperations(in2, new MatrixBlock(), cbind);
+			outBlock = in1.append(in2, new MatrixBlock(), cbind);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode: "+getOpcode());

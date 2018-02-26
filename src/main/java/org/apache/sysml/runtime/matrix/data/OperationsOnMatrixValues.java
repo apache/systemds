@@ -59,7 +59,7 @@ public class OperationsOnMatrixValues
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor,  boolean cbind, boolean m2IsLast, int nextNCol) 
 	throws DMLRuntimeException
 	{
-		valueIn1.appendOperations(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
+		valueIn1.append(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
 	}
 	
 	public static void performZeroOut(MatrixIndexes indexesIn, MatrixValue valueIn, 
@@ -344,7 +344,7 @@ public class OperationsOnMatrixValues
 			}
 		
 		//execute actual slice operation
-		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
+		in.getValue().slice(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
 	}
 
 	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) 
@@ -387,7 +387,7 @@ public class OperationsOnMatrixValues
 				int rhs_lcl = UtilFunctions.computeCellInBlock(rhs_cl, bclen);
 				int rhs_lcu = UtilFunctions.computeCellInBlock(rhs_cu, bclen);
 				
-				MatrixBlock slicedRHSBlk = mb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
+				MatrixBlock slicedRHSBlk = mb.slice(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
 				
 				int lbrlen = UtilFunctions.computeBlockSize(rlen, leftRowIndex, brlen);
 				int lbclen = UtilFunctions.computeBlockSize(clen, leftColIndex, bclen);
@@ -420,7 +420,7 @@ public class OperationsOnMatrixValues
 				int row_offset = blockRow*brlen;
 
 				//copy submatrix to block
-				MatrixBlock tmp = out.sliceOperations( row_offset, row_offset+maxRow-1, 
+				MatrixBlock tmp = out.slice( row_offset, row_offset+maxRow-1, 
 						             0, out.getNumColumns()-1, new MatrixBlock() );
 				
 				//append block to result cache
@@ -498,7 +498,7 @@ public class OperationsOnMatrixValues
 		}
 		
 		//execute actual slice operation
-		block.sliceOperations(outlist, tmpRange, rowCut);
+		block.slice(outlist, tmpRange, rowCut);
 	}
 
 	public static void performShift(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlenLeft, int clenLeft/*, int bclen*/, long rlen, long clen, ArrayList<Pair<Long,FrameBlock>> outlist) 
@@ -538,7 +538,7 @@ public class OperationsOnMatrixValues
 			int rhs_lcl = (int)rhs_cl-1;
 			int rhs_lcu = (int)rhs_cu-1;
 																				
-			FrameBlock slicedRHSBlk = fb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new FrameBlock());
+			FrameBlock slicedRHSBlk = fb.slice(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new FrameBlock());
 			
 			int lbclen = clenLeft;
 			

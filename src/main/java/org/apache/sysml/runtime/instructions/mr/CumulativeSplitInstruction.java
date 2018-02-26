@@ -97,7 +97,7 @@ public class CumulativeSplitInstruction extends UnaryInstruction {
 					IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 					MatrixBlock tmpBlk = (MatrixBlock) out.getValue();
 					tmpBlk.reset(1,blk.getNumColumns());
-					blk.sliceOperations(i, i, 0, blk.getNumColumns()-1, tmpBlk);	
+					blk.slice(i, i, 0, blk.getNumColumns()-1, tmpBlk);	
 					out.getIndexes().setIndexes(rixOffset+i+2, inix.getColumnIndex());
 				}
 		}

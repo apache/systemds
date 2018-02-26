@@ -966,14 +966,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock appendOperations(MatrixBlock that, MatrixBlock ret) 
+	public MatrixBlock append(MatrixBlock that, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{
 		//call uncompressed matrix append if necessary
 		if( !isCompressed() ) {
 			if( that instanceof CompressedMatrixBlock )
 				that = ((CompressedMatrixBlock) that).decompress();
-			return super.appendOperations(that, ret, true);
+			return super.append(that, ret, true);
 		}
 		
 		final int m = rlen;
@@ -1154,7 +1154,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			MatrixBlock tmpOut = new MatrixBlock(right?rl:1, right?1:cl, false).allocateBlock();
 			if( right ) { //MM right
 				for(int i=0; i<that.getNumRows(); i++) { //on transpose
-					tmpIn = that.sliceOperations(i, i, 0, that.getNumColumns()-1, tmpIn);
+					tmpIn = that.slice(i, i, 0, that.getNumColumns()-1, tmpIn);
 					MatrixBlock tmpIn2 = LibMatrixReorg.transpose(tmpIn, //meta data op
 						new MatrixBlock(tmpIn.getNumColumns(), tmpIn.getNumRows(), false));
 					tmpOut.reset(tmpOut.getNumRows(), tmpOut.getNumColumns());
@@ -1167,7 +1167,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			}
 			else { // MM left
 				for(int i=0; i<that.getNumRows(); i++) {
-					tmpIn = that.sliceOperations(i, i, 0, that.getNumColumns()-1, tmpIn);
+					tmpIn = that.slice(i, i, 0, that.getNumColumns()-1, tmpIn);
 					if( op.getNumThreads()>1 )
 						leftMultByVectorTranspose(_colGroups, tmpIn, tmpOut, false, op.getNumThreads());
 					else
@@ -2006,25 +2006,25 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock appendOperations(MatrixBlock that, MatrixBlock ret, boolean cbind) 
+	public MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind) 
 		throws DMLRuntimeException {
 		if( cbind ) //use supported operation
-			return appendOperations(that, ret);			
-		printDecompressWarning("appendOperations-rbind", that);
+			return append(that, ret);			
+		printDecompressWarning("append-rbind", that);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
-		return left.appendOperations(right, ret, cbind);
+		return left.append(right, ret, cbind);
 	}
 	
 	@Override
-	public void appendOperations(MatrixValue v2,
+	public void append(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
 			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 			throws DMLRuntimeException {
-		printDecompressWarning("appendOperations", (MatrixBlock)v2);
+		printDecompressWarning("append", (MatrixBlock)v2);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(v2);
-		left.appendOperations(right, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
+		left.append(right, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
 	}
 
 	@Override
@@ -2060,21 +2060,21 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock ret) 
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) 
 			throws DMLRuntimeException {
-		printDecompressWarning("sliceOperations");
+		printDecompressWarning("slice");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		return tmp.sliceOperations(rl, ru, cl, cu, ret);
+		return tmp.slice(rl, ru, cl, cu, ret);
 	}
 
 	@Override
-	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, 
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, 
 			int rowCut, int colCut, int normalBlockRowFactor,
 			int normalBlockColFactor, int boundaryRlen, int boundaryClen) {
-		printDecompressWarning("sliceOperations");
+		printDecompressWarning("slice");
 		try {
 			MatrixBlock tmp = isCompressed() ? decompress() : this;
-			tmp.sliceOperations(outlist, range, rowCut, colCut, normalBlockRowFactor,
+			tmp.slice(outlist, range, rowCut, colCut, normalBlockRowFactor,
 					normalBlockColFactor, boundaryRlen, boundaryClen);
 		}
 		catch(DMLRuntimeException ex) {

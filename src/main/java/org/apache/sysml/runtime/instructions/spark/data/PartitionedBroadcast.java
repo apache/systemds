@@ -93,14 +93,14 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		return _pbc[pix].value().getBlock(rowIndex, colIndex);
 	}
 	
-	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
+	public T slice(long rl, long ru, long cl, long cu, T block) 
 			throws DMLRuntimeException 
 	{
 		T ret = null;
 		
 		for( Broadcast<PartitionedBlock<T>> bc : _pbc ) {
 			PartitionedBlock<T> pm = bc.value();
-			T tmp = pm.sliceOperations(rl, ru, cl, cu, block);
+			T tmp = pm.slice(rl, ru, cl, cu, block);
 			if( ret != null )
 				ret.merge(tmp, false);
 			else

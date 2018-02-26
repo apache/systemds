@@ -63,7 +63,7 @@ public class AppendRInstruction extends AppendInstruction {
 		MatrixBlock mbLeft = (MatrixBlock)left.getValue();
 		MatrixBlock mbRight = (MatrixBlock)right.getValue();
 		
-		MatrixBlock ret = mbLeft.appendOperations(mbRight, new MatrixBlock(), _cbind);
+		MatrixBlock ret = mbLeft.append(mbRight, new MatrixBlock(), _cbind);
 		
 		//put result into cache
 		cachedValues.add(output, new IndexedMatrixValue(left.getIndexes(), ret));

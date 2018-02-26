@@ -848,10 +848,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 
-	public FrameBlock sliceOperations(IndexRange ixrange, FrameBlock ret) 
+	public FrameBlock slice(IndexRange ixrange, FrameBlock ret) 
 		throws DMLRuntimeException
 	{
-		return sliceOperations(
+		return slice(
 				(int)ixrange.rowStart, (int)ixrange.rowEnd,
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
@@ -868,7 +868,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return frame block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock retCache) 
+	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) 
 		throws DMLRuntimeException
 	{
 		FrameBlock ret = (FrameBlock)retCache;
@@ -923,7 +923,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	
-	public void sliceOperations(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut)
+	public void slice(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut)
 	{
 		FrameBlock top=null, bottom=null;
 		Iterator<Pair<Long,FrameBlock>> p=outlist.iterator();
@@ -968,7 +968,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return frame block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public FrameBlock appendOperations( FrameBlock that, FrameBlock ret, boolean cbind )
+	public FrameBlock append( FrameBlock that, FrameBlock ret, boolean cbind )
 		throws DMLRuntimeException
 	{
 		if( cbind ) //COLUMN APPEND

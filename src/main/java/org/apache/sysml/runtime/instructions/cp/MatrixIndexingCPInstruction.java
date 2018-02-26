@@ -67,7 +67,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				//execute right indexing operation (with shallow row copies for range
 				//of entire sparse rows, which is safe due to copy on update)
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-				resultBlock = matBlock.sliceOperations((int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				resultBlock = matBlock.slice((int)ixrange.rowStart, (int)ixrange.rowEnd, 
 					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
 				
 				//unpin rhs input

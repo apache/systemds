@@ -148,14 +148,14 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 	throws DMLRuntimeException;
 	
-	public abstract void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
+	public abstract void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen)
 	throws DMLRuntimeException;
 
 	public abstract MatrixValue replaceOperations( MatrixValue result, double pattern, double replacement )
 			throws DMLRuntimeException;
 
-	public abstract void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+	public abstract void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 			throws DMLRuntimeException ;
 }

@@ -1054,7 +1054,7 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 				input = TestUtils.round(input);
 			}
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(input);
-			mb = mb.appendOperations(MatrixBlock.seqOperations(0.1, rows-0.1, 1), new MatrixBlock()); //uc group
+			mb = mb.append(MatrixBlock.seqOperations(0.1, rows-0.1, 1), new MatrixBlock()); //uc group
 			
 			//prepare unary aggregate operator
 			AggregateUnaryOperator auop = null;

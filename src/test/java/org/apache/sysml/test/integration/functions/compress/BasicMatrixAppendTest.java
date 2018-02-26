@@ -165,10 +165,10 @@ public class BasicMatrixAppendTest extends AutomatedTestBase
 				cmb.compress();
 			
 			//matrix-vector uncompressed
-			MatrixBlock ret1 = (MatrixBlock)mb.appendOperations(vector, new MatrixBlock());
+			MatrixBlock ret1 = (MatrixBlock)mb.append(vector, new MatrixBlock());
 			
 			//matrix-vector compressed
-			MatrixBlock ret2 = cmb.appendOperations(vector, new MatrixBlock());
+			MatrixBlock ret2 = cmb.append(vector, new MatrixBlock());
 			if( compress )
 				ret2 = ((CompressedMatrixBlock)ret2).decompress();
 			

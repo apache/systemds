@@ -121,7 +121,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 				int colix = 1;
 				
 				FrameBlock in2 = _pm.getBlock(rowix, colix);
-				FrameBlock out = in1.appendOperations(in2, new FrameBlock(), true); //cbind
+				FrameBlock out = in1.append(in2, new FrameBlock(), true); //cbind
 				return new Tuple2<>(ix, out);
 			}			
 		}

@@ -103,10 +103,10 @@ public class FrameIndexingTest extends AutomatedTestBase
 			{
 				//matrix indexing
 				MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
-				mbC = mbA.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
+				mbC = mbA.slice(rl, ru, cl, cu, new MatrixBlock());
 				
 				//frame indexing
-				frame3 = frame1.sliceOperations(rl, ru, cl, cu, new FrameBlock());
+				frame3 = frame1.slice(rl, ru, cl, cu, new FrameBlock());
 			}
 			else if( itype == IXType.LIX ) 
 			{

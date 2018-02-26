@@ -3385,15 +3385,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
-	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret ) throws DMLRuntimeException {
-		return appendOperations(that, ret, true); //default cbind
+	public MatrixBlock append( MatrixBlock that, MatrixBlock ret ) throws DMLRuntimeException {
+		return append(that, ret, true); //default cbind
 	}
 
-	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret, boolean cbind ) throws DMLRuntimeException {
-		return appendOperations(new MatrixBlock[]{that}, ret, cbind);
+	public MatrixBlock append( MatrixBlock that, MatrixBlock ret, boolean cbind ) throws DMLRuntimeException {
+		return append(new MatrixBlock[]{that}, ret, cbind);
 	}
 	
-	public MatrixBlock appendOperations( MatrixBlock[] that, MatrixBlock ret, boolean cbind )
+	public MatrixBlock append( MatrixBlock[] that, MatrixBlock ret, boolean cbind )
 		throws DMLRuntimeException 
 	{
 		MatrixBlock result = checkType( ret );
@@ -3687,15 +3687,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	
 
-	public MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
-		return sliceOperations(
+	public MatrixBlock slice(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
+		return slice(
 			(int)ixrange.rowStart, (int)ixrange.rowEnd, 
 			(int)ixrange.colStart, (int)ixrange.colEnd, true, ret);
 	}
 	
 	@Override
-	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock ret) throws DMLRuntimeException {
-		return sliceOperations(rl, ru, cl, cu, true, ret);
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) throws DMLRuntimeException {
+		return slice(rl, ru, cl, cu, true, ret);
 	}
 	
 	/**
@@ -3711,7 +3711,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return matrix block output matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) 
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) 
 		throws DMLRuntimeException 
 	{	
 		// check the validity of bounds
@@ -3832,7 +3832,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	@Override
-	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
 	{
 		MatrixBlock topleft=null, topright=null, bottomleft=null, bottomright=null;
@@ -3944,7 +3944,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	//This the append operations for MR side
 	//nextNCol is the number columns for the block right of block v2
-	public void appendOperations(MatrixValue v2,
+	public void append(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
 			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 			throws DMLRuntimeException 
@@ -3965,7 +3965,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if( cbind && clen + m2.clen < blockColFactor
 				|| !cbind && rlen + m2.rlen < blockRowFactor )
 			{
-				appendOperations(m2, (MatrixBlock) outlist.get(0).getValue(), cbind);
+				append(m2, (MatrixBlock) outlist.get(0).getValue(), cbind);
 			}
 			//two output blocks (via slice and append)
 			else
@@ -3974,15 +3974,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
 				int lrlen1 = cbind ? rlen-1 : blockRowFactor-rlen-1;
 				int lclen1 = cbind ? blockColFactor-clen-1 : clen-1;
-				MatrixBlock tmp1 = m2.sliceOperations(0, lrlen1, 0, lclen1, new MatrixBlock());
-				appendOperations(tmp1, ret1, cbind);
+				MatrixBlock tmp1 = m2.slice(0, lrlen1, 0, lclen1, new MatrixBlock());
+				append(tmp1, ret1, cbind);
 	
 				//prepare output block 2
 				MatrixBlock ret2 = (MatrixBlock) outlist.get(1).getValue();
 				if( cbind )
-					m2.sliceOperations(0, rlen-1, lclen1+1, m2.clen-1, ret2);
+					m2.slice(0, rlen-1, lclen1+1, m2.clen-1, ret2);
 				else
-					m2.sliceOperations(lrlen1+1, m2.rlen-1, 0, clen-1, ret2);
+					m2.slice(lrlen1+1, m2.rlen-1, 0, clen-1, ret2);
 			}
 		}
 	}

@@ -76,7 +76,7 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
 		{
-			return arg0._1().appendOperations(arg0._2(), new MatrixBlock(), _cbind);
+			return arg0._1().append(arg0._2(), new MatrixBlock(), _cbind);
 		}
 	}
 }

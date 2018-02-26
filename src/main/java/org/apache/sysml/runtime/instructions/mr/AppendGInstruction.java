@@ -135,7 +135,7 @@ public class AppendGInstruction extends AppendInstruction {
 						ix1.setIndexes( tmpix.getRowIndex(), cix1);
 						tmpvalNew.reset( tmpval.getNumRows(), cols1 );
 						tmpvalNew.copy(0, tmpval.getNumRows()-1, (int)((_offset+1)%blen)-1, cols1-1, 
-								       tmpval.sliceOperations(0, tmpval.getNumRows()-1, 0, 
+								       tmpval.slice(0, tmpval.getNumRows()-1, 0, 
 								    		                     (int)(cols1-((_offset)%blen)-1), new MatrixBlock()), true);
 						data1.getIndexes().setIndexes(ix1);
 						
@@ -150,7 +150,7 @@ public class AppendGInstruction extends AppendInstruction {
 							ix2.setIndexes( tmpix.getRowIndex(), cix2);
 							tmpvalNew2.reset( tmpval.getNumRows(), cols2 );
 							tmpvalNew2.copy(0, tmpval.getNumRows()-1, 0, cols2-1, 
-									       tmpval.sliceOperations(0, tmpval.getNumRows()-1, (int)(cols1-((_offset)%blen)), 
+									       tmpval.slice(0, tmpval.getNumRows()-1, (int)(cols1-((_offset)%blen)), 
 									    		                     tmpval.getNumColumns()-1, new MatrixBlock()), true);
 							data2.getIndexes().setIndexes(ix2);
 						}	
@@ -163,7 +163,7 @@ public class AppendGInstruction extends AppendInstruction {
 						ix1.setIndexes( rix1, tmpix.getColumnIndex());
 						tmpvalNew.reset( rows1, tmpval.getNumColumns() );
 						tmpvalNew.copy((int)((_offset+1)%blen)-1, rows1-1, 0, tmpval.getNumColumns()-1,  
-								       tmpval.sliceOperations(0,(int)(rows1-((_offset)%blen)-1), 
+								       tmpval.slice(0,(int)(rows1-((_offset)%blen)-1), 
 								    		   0, tmpval.getNumColumns()-1, new MatrixBlock()), true);
 						data1.getIndexes().setIndexes(ix1);
 						
@@ -178,7 +178,7 @@ public class AppendGInstruction extends AppendInstruction {
 							ix2.setIndexes(rix2, tmpix.getColumnIndex());
 							tmpvalNew2.reset( rows2, tmpval.getNumColumns() );
 							tmpvalNew2.copy(0, rows2-1, 0, tmpval.getNumColumns()-1,  
-									       tmpval.sliceOperations((int)(rows1-((_offset)%blen)), tmpval.getNumRows()-1, 
+									       tmpval.slice((int)(rows1-((_offset)%blen)), tmpval.getNumRows()-1, 
 									    		   0, tmpval.getNumColumns()-1, new MatrixBlock()), true);
 							data2.getIndexes().setIndexes(ix2);
 						}	

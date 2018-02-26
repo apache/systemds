@@ -335,7 +335,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		public MatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			return arg0.sliceOperations(0, arg0.getNumRows()-1, _col, _col, new MatrixBlock());
+			return arg0.slice(0, arg0.getNumRows()-1, _col, _col, new MatrixBlock());
 		}
 	}
 	
@@ -361,7 +361,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			for(int i=0; i<_cols.length; i++)
 				if( UtilFunctions.isInBlockRange(ix, _brlen, _bclen, new IndexRange(1, Long.MAX_VALUE, _cols[i], _cols[i])) ) {
 					int index = UtilFunctions.computeCellInBlock(_cols[i], _bclen);
-					out.leftIndexingOperations(in.sliceOperations(0, in.getNumRows()-1, index, index, new MatrixBlock()),
+					out.leftIndexingOperations(in.slice(0, in.getNumRows()-1, index, index, new MatrixBlock()),
 						0, in.getNumRows()-1, i, i, out, UpdateType.INPLACE);
 				}
 			return new Tuple2<>(new MatrixIndexes(ix.getRowIndex(), 1), out);

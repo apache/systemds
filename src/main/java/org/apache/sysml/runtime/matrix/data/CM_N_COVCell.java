@@ -271,7 +271,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist,
+	public void slice(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
 			throws DMLRuntimeException {
@@ -293,7 +293,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 	throws DMLRuntimeException   {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");

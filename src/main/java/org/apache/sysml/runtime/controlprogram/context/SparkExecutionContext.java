@@ -707,7 +707,7 @@ public class SparkExecutionContext extends ExecutionContext
 					int col_offset = blockCol*bclen;
 
 					//copy submatrix to block
-					src.sliceOperations( row_offset, row_offset+maxRow-1,
+					src.slice( row_offset, row_offset+maxRow-1,
 							             col_offset, col_offset+maxCol-1, block );
 
 					//append block to sequence file
@@ -741,7 +741,7 @@ public class SparkExecutionContext extends ExecutionContext
 			FrameBlock block = new FrameBlock(src.getSchema());
 
 			//copy sub frame to block, incl meta data on first
-			src.sliceOperations( roffset, roffset+maxRow-1, 0, src.getNumColumns()-1, block );
+			src.slice( roffset, roffset+maxRow-1, 0, src.getNumColumns()-1, block );
 			if( roffset == 0 )
 				block.setColumnMetadata(src.getColumnMetadata());
 

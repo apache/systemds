@@ -326,12 +326,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{
 					int rix = (int)((pred.rowStart-1)%brlen);
-					mb = mb.sliceOperations(rix, rix, (int)(pred.colStart-1), (int)(pred.colEnd-1), new MatrixBlock());
+					mb = mb.slice(rix, rix, (int)(pred.colStart-1), (int)(pred.colEnd-1), new MatrixBlock());
 				}
 				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 				{
 					int cix = (int)((pred.colStart-1)%bclen);
-					mb = mb.sliceOperations((int)(pred.rowStart-1), (int)(pred.rowEnd-1), cix, cix, new MatrixBlock());
+					mb = mb.slice((int)(pred.rowStart-1), (int)(pred.rowEnd-1), cix, cix, new MatrixBlock());
 				}
 			}
 			

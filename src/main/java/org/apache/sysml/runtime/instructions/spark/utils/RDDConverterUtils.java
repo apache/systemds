@@ -463,7 +463,7 @@ public class RDDConverterUtils
 		{
 			ArrayList<LabeledPoint> ret = new ArrayList<>();
 			for( int i=0; i<arg0.getNumRows(); i++ ) {
-				MatrixBlock tmp = arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
+				MatrixBlock tmp = arg0.slice(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
 				ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), createVector(tmp)));
 			}
 			
@@ -969,7 +969,7 @@ public class RDDConverterUtils
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock blk = arg0._2();
 			for( int i=0; i<blk.getNumRows(); i++ ) {
-				MatrixBlock tmpBlk = blk.sliceOperations(i, i, 0, blk.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmpBlk = blk.slice(i, i, 0, blk.getNumColumns()-1, new MatrixBlock());
 				long rix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
 				ret.add(new Tuple2<>(rix, new Tuple2<>(ix.getColumnIndex(),tmpBlk)));
 			}

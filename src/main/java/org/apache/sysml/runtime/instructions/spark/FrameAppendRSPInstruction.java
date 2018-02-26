@@ -92,7 +92,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 			FrameBlock left = arg0._1();
 			FrameBlock right = arg0._2();
 			
-			return left.appendOperations(right, new FrameBlock(), _cbind);
+			return left.append(right, new FrameBlock(), _cbind);
 		}
 	}
 

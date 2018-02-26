@@ -52,7 +52,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 		{
 			//execute right indexing operation
 			FrameBlock in = ec.getFrameInput(input1.getName());
-			FrameBlock out = in.sliceOperations(ixrange, new FrameBlock());	
+			FrameBlock out = in.slice(ixrange, new FrameBlock());	
 				
 			//unpin rhs input
 			ec.releaseFrameInput(input1.getName());

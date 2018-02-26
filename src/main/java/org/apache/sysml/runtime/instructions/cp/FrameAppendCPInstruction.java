@@ -50,7 +50,7 @@ public final class FrameAppendCPInstruction extends AppendCPInstruction {
 		} 
 			
 		//execute append operations (append both inputs to initially empty output)
-		FrameBlock ret = fin1.appendOperations(fin2, new FrameBlock(), _type==AppendType.CBIND);
+		FrameBlock ret = fin1.append(fin2, new FrameBlock(), _type==AppendType.CBIND);
 		
 		//set output and release inputs 
 		ec.setFrameOutput(output.getName(), ret);

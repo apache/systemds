@@ -274,7 +274,7 @@ public class LibMatrixReorg
 			//slice first block
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
 			MatrixBlock outblk1 = new MatrixBlock(blklen1, inblk.getNumColumns(), inblk.isInSparseFormat());
-			MatrixBlock tmp1 = tmpblk.sliceOperations(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+			MatrixBlock tmp1 = tmpblk.slice(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
 			outblk1.leftIndexingOperations(tmp1, ipos1, ipos1+tmp1.getNumRows()-1,
 				0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
 			out.add(new IndexedMatrixValue(outix1, outblk1));
@@ -283,7 +283,7 @@ public class LibMatrixReorg
 			if( blkix1 != blkix2 ) {
 				MatrixIndexes outix2 = new MatrixIndexes(blkix2, inix.getColumnIndex());
 				MatrixBlock outblk2 = new MatrixBlock(blklen2, inblk.getNumColumns(), inblk.isInSparseFormat());
-				MatrixBlock tmp2 = tmpblk.sliceOperations(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmp2 = tmpblk.slice(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
 				outblk2.leftIndexingOperations(tmp2, 0, tmp2.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk2, UpdateType.INPLACE_PINNED);
 				out.add(new IndexedMatrixValue(outix2, outblk2));
 			}
@@ -578,7 +578,7 @@ public class LibMatrixReorg
 				if( rix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+					MatrixBlock src = (MatrixBlock) linData.slice(
 							  i, i, 0, (int)(clen-1), new MatrixBlock());
 					long brix = (rix-1)/brlen+1;
 					long lbrix = (rix-1)%brlen;
@@ -606,7 +606,7 @@ public class LibMatrixReorg
 				if( cix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+					MatrixBlock src = (MatrixBlock) linData.slice(
 							  0, (int)(rlen-1), i, i, new MatrixBlock());
 					long bcix = (cix-1)/bclen+1;
 					long lbcix = (cix-1)%bclen;
@@ -700,7 +700,7 @@ public class LibMatrixReorg
 		if( rows ) //expanded vertically
 		{
 			for( int rl=0; rl<tmp.getNumRows(); rl+=brlen ) {
-				MatrixBlock mb = tmp.sliceOperations(
+				MatrixBlock mb = tmp.slice(
 						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1), 
 						0, tmp.getNumColumns()-1, new MatrixBlock());
 				outList.add(new IndexedMatrixValue(
@@ -710,7 +710,7 @@ public class LibMatrixReorg
 		else //expanded horizontally
 		{
 			for( int cl=0; cl<tmp.getNumColumns(); cl+=bclen ) {
-				MatrixBlock mb = tmp.sliceOperations(
+				MatrixBlock mb = tmp.slice(
 						0, tmp.getNumRows()-1,
 						cl, (int)(Math.min(cl+bclen, tmp.getNumColumns())-1), new MatrixBlock());
 				outList.add(new IndexedMatrixValue(

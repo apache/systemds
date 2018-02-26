@@ -729,7 +729,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 						in.getSparseBlock().pos(i), in.getSparseBlock().size(i), n));
 				
 				//execute comparison operation
-				MatrixBlock in2 = in.sliceOperations(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in2 = in.slice(i, i, 0, n-1, new MatrixBlock());
 				Double ret2 = -1d;
 				switch( aggtype ) {
 					case ROW_SUMS: ret2 = in2.sum(); break;
@@ -770,7 +770,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				String opcode = utype.name().split("_")[1].toLowerCase();
 				UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 				double[] ret2 = DataConverter.convertToDoubleVector(((MatrixBlock)in
-					.sliceOperations(i, i, 0, n-1, new MatrixBlock())
+					.slice(i, i, 0, n-1, new MatrixBlock())
 					.unaryOperations(uop, new MatrixBlock())), false);
 				
 				//compare results
@@ -828,8 +828,8 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				
 				//execute comparison operation
 				String opcode = Hop.getBinaryOpCode(OpOp2.valueOf(bintype.name().split("_")[1]));
-				MatrixBlock in1 = inA.sliceOperations(i, i, 0, n-1, new MatrixBlock());
-				MatrixBlock in2 = inB.sliceOperations(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in1 = inA.slice(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in2 = inB.slice(i, i, 0, n-1, new MatrixBlock());
 				double[] ret2 = null;
 				if( type1 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, true);

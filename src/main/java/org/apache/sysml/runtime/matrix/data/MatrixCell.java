@@ -372,7 +372,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist,
+	public void slice(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
 			throws DMLRuntimeException {
@@ -401,7 +401,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) 
 	throws DMLRuntimeException  {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);

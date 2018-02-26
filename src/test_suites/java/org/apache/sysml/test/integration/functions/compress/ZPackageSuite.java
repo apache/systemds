@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
 	CompressedLinregCG.class,
 	CompressedSerializationTest.class,
 	LargeCompressionTest.class,
+	LargeMatrixMatrixMultTest.class,
 	LargeMatrixVectorMultTest.class,
 	LargeParMatrixVectorMultTest.class,
 	LargeParUnaryAggregateTest.class,

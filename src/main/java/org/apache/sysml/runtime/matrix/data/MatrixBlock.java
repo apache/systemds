@@ -483,6 +483,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (rlen == 1 || clen == 1);
 	}
 	
+	public long getLength() {
+		return (long)rlen * clen;
+	}
+	
 	@Override
 	public boolean isEmpty() {
 		return isEmptyBlock(false);

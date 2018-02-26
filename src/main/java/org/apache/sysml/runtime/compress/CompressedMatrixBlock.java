@@ -1095,25 +1095,25 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 	
 	@Override
-	public MatrixBlock aggregateBinaryOperations(MatrixBlock mv1, MatrixBlock mv2, MatrixBlock ret, AggregateBinaryOperator op)
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op)
 			throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
-			return super.aggregateBinaryOperations(mv1, mv2, ret, op);
+			return super.aggregateBinaryOperations(m1, m2, ret, op);
 		}
 	
 		//multi-threaded mm of single uncompressed colgroup
 		if( isSingleUncompressedGroup() ){
 			MatrixBlock tmp = ((ColGroupUncompressed)_colGroups.get(0)).getData();
-			return tmp.aggregateBinaryOperations(this==mv1?tmp:mv1, this==mv2?tmp:mv2, ret, op);
+			return tmp.aggregateBinaryOperations(this==m1?tmp:m1, this==m2?tmp:m2, ret, op);
 		}
 		
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 		
 		//setup meta data (dimensions, sparsity)
-		int rl = mv1.getNumRows();
-		int cl = mv2.getNumColumns();
+		int rl = m1.getNumRows();
+		int cl = m2.getNumColumns();
 		
 		//create output matrix block
 		if( ret==null )
@@ -1122,25 +1122,59 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			ret.reset(rl, cl, false, rl*cl);
 		
 		//compute matrix mult
-		if( mv1.getNumRows()>1 && mv2.getNumColumns()==1 ) { //MV right
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock)mv1;
-			MatrixBlock mb = (MatrixBlock) mv2;
+		if( m1.getNumRows()>1 && m2.getNumColumns()==1 ) { //MV right
+			CompressedMatrixBlock cmb = (CompressedMatrixBlock)m1;
 			if( op.getNumThreads()>1 )
-				cmb.rightMultByVector(mb, ret, op.getNumThreads());
+				cmb.rightMultByVector(m2, ret, op.getNumThreads());
 			else
-				cmb.rightMultByVector(mb, ret);
+				cmb.rightMultByVector(m2, ret);
 		}
-		else if( mv1.getNumRows()==1 && mv2.getNumColumns()>1 ) { //MV left
-			MatrixBlock mb = (MatrixBlock) mv1;
+		else if( m1.getNumRows()==1 && m2.getNumColumns()>1 ) { //MV left
 			if( op.getNumThreads()>1 )
-				leftMultByVectorTranspose(_colGroups, mb, ret, false, op.getNumThreads());
+				leftMultByVectorTranspose(_colGroups, m1, ret, false, op.getNumThreads());
 			else
-				leftMultByVectorTranspose(_colGroups, mb, ret, false, true);
+				leftMultByVectorTranspose(_colGroups, m1, ret, false, true);
 		}
-		else {
-			//NOTE: we could decompress and invoke super.aggregateBinary but for now
-			//we want to have an eager fail if this happens
-			throw new DMLRuntimeException("Unsupported matrix-matrix multiplication over compressed matrix block.");
+		else { //MM
+			//prepare the other input (including decompression if necessary)
+			boolean right = (m1 == this);
+			MatrixBlock that = right ? m2 : m1;
+			if( that instanceof CompressedMatrixBlock ) {
+				that = ((CompressedMatrixBlock)that).isCompressed() ?
+					((CompressedMatrixBlock)that).decompress() : that;
+			}
+			
+			//transpose for sequential repeated column access 
+			if( right ) {
+				that = LibMatrixReorg.transpose(that, new MatrixBlock(that.getNumColumns(),
+					that.getNumRows(), that.isInSparseFormat()), op.getNumThreads());
+			}
+			
+			MatrixBlock tmpIn = new MatrixBlock(1, that.getNumColumns(), false).allocateBlock();
+			MatrixBlock tmpOut = new MatrixBlock(right?rl:1, right?1:cl, false).allocateBlock();
+			if( right ) { //MM right
+				for(int i=0; i<that.getNumRows(); i++) { //on transpose
+					tmpIn = that.sliceOperations(i, i, 0, that.getNumColumns()-1, tmpIn);
+					MatrixBlock tmpIn2 = LibMatrixReorg.transpose(tmpIn, //meta data op
+						new MatrixBlock(tmpIn.getNumColumns(), tmpIn.getNumRows(), false));
+					tmpOut.reset(tmpOut.getNumRows(), tmpOut.getNumColumns());
+					if( op.getNumThreads()>1 )
+						rightMultByVector(tmpIn2, tmpOut, op.getNumThreads());
+					else
+						rightMultByVector(tmpIn2, tmpOut);
+					ret.leftIndexingOperations(tmpOut, 0, ret.getNumRows()-1, i, i, ret, UpdateType.INPLACE);
+				}
+			}
+			else { // MM left
+				for(int i=0; i<that.getNumRows(); i++) {
+					tmpIn = that.sliceOperations(i, i, 0, that.getNumColumns()-1, tmpIn);
+					if( op.getNumThreads()>1 )
+						leftMultByVectorTranspose(_colGroups, tmpIn, tmpOut, false, op.getNumThreads());
+					else
+						leftMultByVectorTranspose(_colGroups, tmpIn, tmpOut, false, true);
+					ret.leftIndexingOperations(tmpOut, i, i, 0, ret.getNumColumns()-1, ret, UpdateType.INPLACE);
+				}
+			}
 		}
 		
 		if( LOG.isDebugEnabled() )

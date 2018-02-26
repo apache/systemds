@@ -86,6 +86,8 @@ public class TemplateRow extends TemplateBase
 				&& TemplateCell.isValidOperation(hop) && hop.getDim1() > 1)
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && LibMatrixMult.isSkinnyRightHandSide(
@@ -110,6 +112,8 @@ public class TemplateRow extends TemplateBase
 			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop)) 
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 				&& TemplateCell.isValidOperation(hop))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
@@ -133,6 +137,8 @@ public class TemplateRow extends TemplateBase
 				&& hop.getDim1() > 1 && input.getDim1()>1)
 			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isBinary(hop, OpOp2.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.RBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| (hop instanceof AggBinaryOp
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 			 	&& (input.getDim2()==1 || (input==hop.getInput().get(1) 
@@ -377,6 +383,24 @@ public class TemplateRow extends TemplateBase
 			if( cdata1 instanceof CNodeData && !inHops2.containsKey("X") )
 				inHops2.put("X", hop.getInput().get(0));
 		}
+		else if(HopRewriteUtils.isBinary(hop, OpOp2.RBIND))
+		{
+			//special case for rbind with zeros
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			CNode cdata2 = null;
+			if( HopRewriteUtils.isDataGenOpWithConstantValue(hop.getInput().get(1)) ) {
+				cdata2 = TemplateUtils.createCNodeData(HopRewriteUtils
+					.getDataGenOpConstantValue(hop.getInput().get(1)), true);
+				inHops.remove(hop.getInput().get(1)); //rm 0-matrix
+			}
+			else {
+				cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
+			}
+			out = new CNodeBinary(cdata1, cdata2, BinType.VECT_RBIND);
+			if( cdata1 instanceof CNodeData && !inHops2.containsKey("X") )
+				inHops2.put("X", hop.getInput().get(0));
+		}
 		else if(hop instanceof BinaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
@@ -452,6 +476,19 @@ public class TemplateRow extends TemplateBase
 					inHops2.put("X", c);
 			}
 			out = new CNodeNary(inputs, NaryType.VECT_CBIND);
+		}
+		else if(HopRewriteUtils.isNary(hop, OpOpN.RBIND))
+		{
+			CNode[] inputs = new CNode[hop.getInput().size()];
+			for( int i=0; i<hop.getInput().size(); i++ ) {
+				Hop c = hop.getInput().get(i);
+				CNode cdata = tmp.get(c.getHopID());
+				if( TemplateUtils.isColVector(cdata) || TemplateUtils.isRowVector(cdata) )
+					cdata = TemplateUtils.wrapLookupIfNecessary(cdata, c);
+				inputs[i] = cdata;
+				if( i==0 && cdata instanceof CNodeData && !inHops2.containsKey("X") )
+					inHops2.put("X", c);
+			}
 		}
 		else if( hop instanceof ParameterizedBuiltinOp )
 		{

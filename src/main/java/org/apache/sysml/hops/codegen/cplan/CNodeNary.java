@@ -28,7 +28,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class CNodeNary extends CNode
 {
 	public enum NaryType {
-		VECT_CBIND;
+		VECT_CBIND,
+		VECT_RBIND;
 		public static boolean contains(String value) {
 			for( NaryType bt : values() )
 				if( bt.name().equals(value) )
@@ -56,12 +57,33 @@ public class CNodeNary extends CNode
 						off += input._cols;
 					}
 					return sb.toString();
+
+				case VECT_RBIND:
+					StringBuilder sb1 = new StringBuilder();
+					sb1.append("    double[] %TMP% = LibSpoofPrimitives.allocVector(\"+len+\", true); //nary rbind\\n");
+					for( int i=0, off=0; i<inputs.size(); i++ ) {
+						CNode input = inputs.get(i);
+						boolean sparseInput = sparseGen && input instanceof CNodeData
+								&& input.getVarname().startsWith("a");
+						String varj = input.getVarname();
+						String pos = (input instanceof CNodeData && input.getDataType().isMatrix()) ?
+								(!varj.startsWith("b")) ? varj+"i" : TemplateUtils.isMatrix(input) ?
+								varj + ".pos(cix)" : "0" : "0";
+						sb1.append( sparseInput ?
+								"    LibSpoofPrimitives.vectWrite("+varj+"vals, %TMP%, "
+										+varj+"ix, "+pos+", "+off+", "+input._rows+");\n" :
+								"    LibSpoofPrimitives.vectWrite("+(varj.startsWith("b")?varj+".values(cix)":varj)
+									+", %TMP%, "+pos+", "+off+", "+input._rows+");\n");
+						off += input._rows;
+					}
+					return sb1.toString();
+
 				default:
 					throw new RuntimeException("Invalid nary type: "+this.toString());
 			}
 		}
 		public boolean isVectorPrimitive() {
-			return this == VECT_CBIND;
+			return this == VECT_CBIND || this == VECT_RBIND;
 		}
 	}
 	
@@ -106,6 +128,7 @@ public class CNodeNary extends CNode
 	public String toString() {
 		switch(_type) {
 			case VECT_CBIND: return "n(cbind)";
+			case VECT_RBIND: return "n(rbind)";
 			default:
 				return "m("+_type.name().toLowerCase()+")";
 		}
@@ -117,6 +140,14 @@ public class CNodeNary extends CNode
 			case VECT_CBIND:
 				_rows = _inputs.get(0)._rows;
 				_cols = 0;
+				for(CNode in : _inputs)
+					_cols += in._cols;
+				_dataType = DataType.MATRIX;
+				break;
+
+			case VECT_RBIND:
+				_rows = 0;
+				_cols = _inputs.get(0)._cols;
 				for(CNode in : _inputs)
 					_cols += in._cols;
 				_dataType = DataType.MATRIX;

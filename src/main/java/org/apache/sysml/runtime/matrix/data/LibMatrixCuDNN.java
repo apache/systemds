@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
@@ -618,13 +619,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpooling(GPUContext gCtx, String instName, MatrixObject image,
+	public static void pooling(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) throws DMLRuntimeException {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
@@ -634,12 +636,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer y = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			if(overhead <= intermediateMemoryBudget) {
 				Pointer x = getDensePointerForCuDNN(gCtx, image, instName);
-				cudnnMaxpooling(gCtx, instName, x, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				cudnnPoolingHelper(gCtx, instName, x, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
 			}
 			else {
 				LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 				for(int n = 0; n < N; n++) {
-					cudnnMaxpooling(gCtx, instName, imgFetcher.getNthRow(n), y.withByteOffset(n*CPQ*sizeOfDataType), 1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+					cudnnPoolingHelper(gCtx, instName, imgFetcher.getNthRow(n), y.withByteOffset(n*CPQ*sizeOfDataType), 1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
 				}
 				imgFetcher.close();
 			}
@@ -649,17 +651,17 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 
-	private static void cudnnMaxpooling(GPUContext gCtx, String instName, Pointer x,
+	private static void cudnnPoolingHelper(GPUContext gCtx, String instName, Pointer x,
 			Pointer y, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : performMaxpooling" + ", GPUContext=" + gCtx);
+			LOG.trace("GPU : perform pooling" + ", GPUContext=" + gCtx);
 		}
 
 		try(LibMatrixCuDNNPoolingDescriptors desc = 
-				LibMatrixCuDNNPoolingDescriptors.cudnnMaxpoolingDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
-						pad_h, pad_w, stride_h, stride_w, P, Q)) {
+				LibMatrixCuDNNPoolingDescriptors.cudnnPoolingDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
+						pad_h, pad_w, stride_h, stride_w, P, Q, poolingType)) {
 			long t1=0,t2=0;
 			if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
@@ -673,7 +675,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("Error in conv2d in GPUContext " + gCtx.toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 	}
-
+	
 	/**
 	 * Performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
@@ -696,13 +698,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpoolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
+	public static void poolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) throws DMLRuntimeException {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
@@ -717,7 +720,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				Pointer x = getDensePointerForCuDNN(gCtx, image, instName);
 				Pointer dy = getDensePointerForCuDNN(gCtx, dout, instName);
 				Pointer y = isMaxPoolOutputProvided ? getDensePointerForCuDNN(gCtx, maxpoolOutput, instName) : null;
-				cudnnMaxpoolingBackward(gCtx, instName, x, dy, y, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				cudnnPoolingBackwardHelper(gCtx, instName, x, dy, y, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
 			}
 			else {
 				LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
@@ -727,9 +730,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					Pointer x = imgFetcher.getNthRow(n);
 					Pointer dy = doutFetcher.getNthRow(n);
 					Pointer y = isMaxPoolOutputProvided ? maxPoolOutFetcher.getNthRow(n) : null;
-					cudnnMaxpoolingBackward(gCtx, instName, x, dy, y, 
+					cudnnPoolingBackwardHelper(gCtx, instName, x, dy, y, 
 							dx.withByteOffset(n*CHW*sizeOfDataType), 
-							1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+							1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
 				}
 				// Deallocate temporary array to hold one element of input
 				imgFetcher.close();
@@ -743,11 +746,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 	
-	private static void cudnnMaxpoolingBackward(GPUContext gCtx, String instName, 
+	private static void cudnnPoolingBackwardHelper(GPUContext gCtx, String instName, 
 			Pointer x, Pointer dy, Pointer y, Pointer dx, 
 			int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : maxpoolingBackward" + ", GPUContext=" + gCtx);
 		}
@@ -755,8 +758,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		boolean isMaxPoolOutputProvided = (y != null);
 
 		try(LibMatrixCuDNNPoolingDescriptors desc = 
-				LibMatrixCuDNNPoolingDescriptors.cudnnMaxpoolingBackwardDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
-						pad_h, pad_w, stride_h, stride_w, P, Q)) {
+				LibMatrixCuDNNPoolingDescriptors.cudnnPoolingBackwardDescriptors(gCtx, instName, N, C, H, W, K, R, S, 
+						pad_h, pad_w, stride_h, stride_w, P, Q, poolingType)) {
 			long t1=0, t2=0, t3=0;
 			int status;
 			if(!isMaxPoolOutputProvided) {

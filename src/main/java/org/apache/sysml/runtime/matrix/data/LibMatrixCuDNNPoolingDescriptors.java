@@ -26,10 +26,12 @@ import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
+import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
@@ -80,19 +82,20 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType	type of pooling
 	 * @return decriptor wrapper
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static LibMatrixCuDNNPoolingDescriptors cudnnMaxpoolingBackwardDescriptors(GPUContext gCtx, 
+	public static LibMatrixCuDNNPoolingDescriptors cudnnPoolingBackwardDescriptors(GPUContext gCtx, 
 			String instName, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) throws DMLRuntimeException {
 		LibMatrixCuDNNPoolingDescriptors ret = new LibMatrixCuDNNPoolingDescriptors();
 		ret.xDesc = allocateTensorDescriptor(N, C, H, W);
 		ret.yDesc = allocateTensorDescriptor(N, C, P, Q);
 		ret.dxDesc = allocateTensorDescriptor(N, C, H, W);
 		ret.dyDesc = allocateTensorDescriptor(N, C, P, Q);
-		ret.poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
+		ret.poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w, poolingType);
 		return ret;
 	}
 	
@@ -114,17 +117,18 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType 	type of pooling
 	 * @return decriptor wrapper
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static LibMatrixCuDNNPoolingDescriptors cudnnMaxpoolingDescriptors(GPUContext gCtx, 
+	public static LibMatrixCuDNNPoolingDescriptors cudnnPoolingDescriptors(GPUContext gCtx, 
 			String instName, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) throws DMLRuntimeException {
 		LibMatrixCuDNNPoolingDescriptors ret = new LibMatrixCuDNNPoolingDescriptors();
 		ret.xDesc = allocateTensorDescriptor(N, C, H, W);
 		ret.yDesc = allocateTensorDescriptor(N, C, P, Q);
-		ret.poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
+		ret.poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w, poolingType);
 		return ret;
 	}
 
@@ -152,12 +156,14 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param pad_w		horizontal padding
 	 * @param stride_h	pooling vertical stride
 	 * @param stride_w	pooling horizontal stride
+	 * @param poolingType type of pooling
 	 * @return cudnn pooling descriptor
 	 */
-	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w) {
+	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, PoolingType poolingType) {
 		cudnnPoolingDescriptor poolingDesc = new cudnnPoolingDescriptor();
 		cudnnCreatePoolingDescriptor(poolingDesc);
-		cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN, R, S, pad_h, pad_w, stride_h, stride_w);
+		int CUDNN_POOLING = (poolingType == PoolingType.MAX) ? CUDNN_POOLING_MAX : CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+		cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING, CUDNN_PROPAGATE_NAN, R, S, pad_h, pad_w, stride_h, stride_w);
 		return poolingDesc;
 	}
 }

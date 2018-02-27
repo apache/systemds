@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.GPUStatistics;
@@ -131,7 +132,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[16]));
 		}
-		else if( opcode.equalsIgnoreCase("maxpooling_backward") ) {
+		else if( opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("avgpooling_backward") ) {
 			boolean withMaxPoolOut = false;
 			if(parts.length == 18) {
 				withMaxPoolOut = true;
@@ -191,7 +192,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[17]));
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling")) {
+		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("avgpooling")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -382,7 +383,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			LibMatrixCuDNN.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("avgpooling")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
@@ -390,12 +391,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + C*H*W);
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * P * Q);
-			
-			if(instOpcode.equalsIgnoreCase("maxpooling"))
-				LibMatrixCuDNN.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
+			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling") ? PoolingType.MAX : PoolingType.AVG;
+			LibMatrixCuDNN.pooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("avgpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
 			MatrixObject maxPoolOutput = _input3 != null ? getMatrixInputForGPUInstruction(ec, _input3.getName()) : null;
@@ -406,9 +406,9 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + K*P*Q);
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
-			
-			LibMatrixCuDNN.maxpoolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
+			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling_backward") ? PoolingType.MAX : PoolingType.AVG;
+			LibMatrixCuDNN.poolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);
@@ -416,12 +416,15 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		
+		boolean isPool = instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("avgpooling");
+		boolean isPoolBackward = instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("avgpooling_backward");
 
-		if ( !instOpcode.equalsIgnoreCase("maxpooling") )
+		if ( !isPool )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 
 		if (instOpcode.equalsIgnoreCase("conv2d_bias_add") || 
-			(instOpcode.equalsIgnoreCase("maxpooling_backward") && _input3 != null))
+			(isPoolBackward && _input3 != null))
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());

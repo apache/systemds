@@ -1110,7 +1110,7 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public enum ConvOp {
-		MAX_POOLING, MAX_POOLING_BACKWARD,
+		MAX_POOLING, MAX_POOLING_BACKWARD, AVG_POOLING, AVG_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
 		BIAS_ADD, BIAS_MULTIPLY
 	}
@@ -1177,6 +1177,8 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops = new HashMap<>();
 		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
 		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
+		HopsConv2Lops.put(ConvOp.AVG_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING);
+		HopsConv2Lops.put(ConvOp.AVG_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING_BACKWARD);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
 		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
 		HopsConv2Lops.put(ConvOp.BIAS_MULTIPLY, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_MULTIPLY);

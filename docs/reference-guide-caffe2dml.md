@@ -97,7 +97,7 @@ Invokes [nn/layers/max_pool2d_builtin.dml](https://github.com/apache/systemml/bl
 - kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
 
 **Optional Parameters:**
-- pool (default MAX): the pooling method. Currently, we only support MAX, not AVE, or STOCHASTIC.
+- pool (default MAX): the pooling method. Currently, we only support MAX and AVE, not STOCHASTIC.
 - pad (or pad_h and pad_w) (default 0): specifies the number of pixels to (implicitly) add to each side of the input
 - stride (or stride_h and stride_w) (default 1): specifies the intervals at which to apply the filters to the input
 
@@ -115,6 +115,30 @@ layer {
   }
 }
 ```
+
+
+### Upsampling Layer
+
+Invokes [nn/layers/upsample2d.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/upsample2d.dml) layer.
+ 
+**Required Parameters:**
+
+- size_h and size_w: specifies the upsampling factor for rows and columns.
+
+**Sample Usage:**
+```
+layer {
+  name: "upsample1"
+  type: "Upsample"
+  bottom: "pool1"
+  top: "upsample1"
+  upsample_param  {
+    size_h = 2
+    size_w = 2
+  }
+}
+```
+
 
 ### Deconvolution Layer
 

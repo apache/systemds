@@ -64,6 +64,9 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 public class LibMatrixDNN {
 	
 	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNN.class.getName());
+	public static enum PoolingType {
+		MAX, AVG
+	}
 	
 	//library configurations and external contracts
 	// ------------------------------------------------------------------------------------------------
@@ -189,7 +192,7 @@ public class LibMatrixDNN {
 		outputBlock.examSparsity();
 	}
 	
-	public static void maxpooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void pooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params, PoolingType poolType) throws DMLRuntimeException {
 		params.input1 = input;
 		params.output = output;
 		
@@ -202,7 +205,7 @@ public class LibMatrixDNN {
 		if( !params.isStride1Pad0() || input.sparse )
 			fillIndexesArray(params);
 		
-		long nnz = execute(LibMatrixDNNPooling.getMaxPoolingWorkers(params), params);
+		long nnz = execute(LibMatrixDNNPooling.getPoolingWorkers(params, poolType), params);
 		
 		// post-processing: maintain nnz
 		output.setNonZeros(nnz);
@@ -211,45 +214,51 @@ public class LibMatrixDNN {
 	
 
 	/**
-	 * This method computes the backpropogation errors for previous layer of maxpooling operation
+	 * This method computes the backpropogation errors for previous layer of pooling operation
 	 * 
 	 * @param input input matrix
 	 * @param dout dout matrix
 	 * @param outputBlock output matrix
 	 * @param params convolution parameters
 	 * @param performReluBackward perform ReLU backward
+	 * @param poolType type of pooling
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
-			ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+	public static void poolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
+			ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
-		if(input.getNumColumns() != params.C*params.H*params.W || input.getNumRows() != params.N) {
+		
+		if(poolType == PoolingType.MAX && (input.getNumColumns() != params.C*params.H*params.W || input.getNumRows() != params.N)) {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 
 		if(dout.getNumColumns() != params.C*params.P*params.Q || dout.getNumRows() != params.N) {
-			throw new DMLRuntimeException("Incorrect dout dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
+			throw new DMLRuntimeException("Incorrect dout dimensions in pooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
 		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(input.isInSparseFormat() || dout.isInSparseFormat())
+			boolean isSparse = (poolType == PoolingType.MAX) ? (input.isInSparseFormat() || dout.isInSparseFormat()) : dout.isInSparseFormat();
+			if(isSparse)
 				maxPoolBwdSparseCount.addAndGet(1);
 			else
 				maxPoolBwdDenseCount.addAndGet(1);
 		}
 		
 		if (params.output.isInSparseFormat())
-			throw new DMLRuntimeException("Sparse maxpooling_backward is not supported");
+			throw new DMLRuntimeException("Sparse pooling_backward is not supported");
 
-		if( !(params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) )
-			fillIndexesArray(params); //not needed for sparse-dense
-		
-		long nnz = execute(LibMatrixDNNPooling.getMaxPoolingBackwardWorkers(params, performReluBackward), params);
-		
+		if(poolType == PoolingType.AVG) {
+			fillIndexesArray(params); 
+		}
+		else {
+			if( !(params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) )
+				fillIndexesArray(params); //not needed for sparse-dense	 
+		}
+		long nnz = execute(LibMatrixDNNPooling.getPoolingBackwardWorkers(params, performReluBackward, poolType), params);
 		//post-processing: maintain nnz 
-		outputBlock.setNonZeros(nnz); 
+		outputBlock.setNonZeros(nnz);
 		outputBlock.examSparsity();
 	}
 	

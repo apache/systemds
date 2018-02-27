@@ -326,15 +326,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression = orderConvolutionParams(paramExpression, 2);
 			}
-			else if(_opcode == BuiltinFunctionOp.MAX_POOL || 
-					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD) {
+			else if(_opcode == BuiltinFunctionOp.MAX_POOL || _opcode == BuiltinFunctionOp.AVG_POOL ||  
+					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
 				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression.add(new ParameterExpression("filter_shape1", new IntIdentifier(1, this)));
 				paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, this)));
 				paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", 3);
-				if(_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD)
+				if(_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD)
 					paramExpression = orderConvolutionParams(paramExpression, 2);
 				else
 					paramExpression = orderConvolutionParams(paramExpression, 1);
@@ -1160,6 +1160,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MAX_POOL:
 		case AVG_POOL:
 		case MAX_POOL_BACKWARD:
+		case AVG_POOL_BACKWARD:
 		{
 			// At DML level:
 			// output = conv2d(input, filter, input_shape=[1, 3, 2, 2], filter_shape=[1, 3, 2, 2], 
@@ -1183,7 +1184,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.DOUBLE);
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			
-			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD) {
+			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD || this.getOpCode() == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
 				output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
 			}
 			else {
@@ -1757,6 +1758,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.MAX_POOL_BACKWARD;
 		else if (functionName.equals("avg_pool"))
 			 bifop = Expression.BuiltinFunctionOp.AVG_POOL;
+		else if (functionName.equals("avg_pool_backward"))
+			 bifop = Expression.BuiltinFunctionOp.AVG_POOL_BACKWARD;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else if (functionName.equals("ceil") || functionName.equals("ceiling"))

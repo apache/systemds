@@ -405,6 +405,9 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  
+  // Nike:
+  optional UpsampleParameter upsample_param = 147;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1171,6 +1174,12 @@ message TileParameter {
 // Message that stores parameters used by ThresholdLayer
 message ThresholdParameter {
   optional float threshold = 1 [default = 0]; // Strictly positive values
+}
+
+// Nike:
+message UpsampleParameter {
+  optional uint32 size_h = 6; // upsampling factors for rows
+  optional uint32 size_w = 7; // upsampling factors for columns
 }
 
 message WindowDataParameter {

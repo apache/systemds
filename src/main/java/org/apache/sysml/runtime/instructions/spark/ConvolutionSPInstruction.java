@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -356,7 +357,16 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, false).allocateBlock();
 					if(instOpcode.equalsIgnoreCase("maxpooling"))
 						outputBlock.getDenseBlock().set(-Double.MAX_VALUE);
-					LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
+					LibMatrixDNN.pooling(matBlock, outputBlock, params, PoolingType.MAX);
+				}
+			}
+			else if(instOpcode.equalsIgnoreCase("avgpooling") || instOpcode.equalsIgnoreCase("relu_avgpooling")) {
+				if(matBlock.isEmptyBlock()) {
+					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, true);
+				}
+				else {
+					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, false).allocateBlock();
+					LibMatrixDNN.pooling(matBlock, outputBlock, params, PoolingType.AVG);
 				}
 			}
 			else {

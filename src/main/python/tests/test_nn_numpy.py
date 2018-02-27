@@ -38,7 +38,7 @@ import unittest
 
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM, UpSampling2D, SimpleRNN
 from keras import backend as K
 from keras.models import Model
 from systemml.mllearn import Keras2DML
@@ -54,15 +54,29 @@ tmp_dir = 'tmp_dir'
 
 spark = SparkSession.builder.getOrCreate()
 
-def are_predictions_all_close(keras_model):
+def are_predictions_all_close(keras_model, rtol=1e-05, atol=1e-08):
     sysml_model = Keras2DML(spark, keras_model, input_shape=input_shape, weights=tmp_dir)
     keras_preds = keras_model.predict(keras_tensor).flatten()
     sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
     #print(str(keras_preds))
     #print(str(sysml_preds))
-    return np.allclose(keras_preds, sysml_preds)
+    return np.allclose(keras_preds, sysml_preds, rtol=rtol, atol=atol)
 
 class TestNNLibrary(unittest.TestCase):
+    def test_1layer_upsample_predictions1(self):
+        keras_model = Sequential()
+        keras_model.add(UpSampling2D(size=(2, 2), input_shape=input_shape))
+        keras_model.add(Flatten())
+        keras_model.add(Dense(10, activation='softmax'))
+        self.failUnless(are_predictions_all_close(keras_model, atol=1e-06))
+
+    def test_1layer_upsample_predictions2(self):
+        keras_model = Sequential()
+        keras_model.add(UpSampling2D(size=(2, 3), input_shape=input_shape))
+        keras_model.add(Flatten())
+        keras_model.add(Dense(10, activation='softmax'))
+        self.failUnless(are_predictions_all_close(keras_model, atol=1e-06))
+        
     def test_1layer_cnn_predictions(self):
         keras_model = Sequential()
         keras_model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, padding='valid'))

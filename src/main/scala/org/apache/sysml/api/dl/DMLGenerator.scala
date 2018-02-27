@@ -49,6 +49,8 @@ trait BaseDMLGenerator {
     try { (v1.toDouble + v2.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "+" + v2 + ")" }
   def int_mult(v1: String, v2: String, v3: String): String =
     try { (v1.toDouble * v2.toDouble * v3.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "*" + v2 + "*" + v3 + ")" }
+  def int_mult(v1: String, v2: String): String =
+    try { (v1.toDouble * v2.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "*" + v2 + ")" }
   def isNumber(x: String): Boolean                                                   = x forall Character.isDigit
   def transpose(x: String): String                                                   = "t(" + x + ")"
   def write(varName: String, fileName: String, format: String): String               = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"

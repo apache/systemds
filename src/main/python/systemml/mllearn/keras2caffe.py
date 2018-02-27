@@ -23,7 +23,7 @@
 
 
 import numpy as np
-import os
+import os, math
 from itertools import chain, imap
 from ..converters import *
 from ..classloader import *
@@ -60,6 +60,7 @@ supportedLayers = {
     keras.layers.Concatenate: 'Concat',
     keras.layers.Conv2DTranspose: 'Deconvolution',
     keras.layers.Conv2D: 'Convolution',
+    keras.layers.UpSampling2D: 'Upsample',
     keras.layers.MaxPooling2D: 'Pooling',
     keras.layers.AveragePooling2D: 'Pooling',
 	keras.layers.SimpleRNN: 'RNN',
@@ -163,6 +164,8 @@ def getConvParam(layer):
 	config = layer.get_config()
 	return {'num_output':layer.filters,'bias_term':str(config['use_bias']).lower(),'kernel_h':layer.kernel_size[0], 'kernel_w':layer.kernel_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
+def getUpSamplingParam(layer):
+	return { 'size_h':layer.size[0], 'size_w':layer.size[1] }
 
 def getPoolingParam(layer, pool='MAX'):
 	stride = (1, 1) if layer.strides is None else layer.strides
@@ -192,12 +195,14 @@ layerParamMapping = {
         {'concat_param': {'axis': _getCompensatedAxis(l)}},
     keras.layers.Conv2DTranspose: lambda l: \
         {'convolution_param': getConvParam(l)},
+    keras.layers.UpSampling2D: lambda l: \
+        {'upsample_param': getUpSamplingParam(l)},
     keras.layers.Conv2D: lambda l: \
         {'convolution_param': getConvParam(l)},
     keras.layers.MaxPooling2D: lambda l: \
         {'pooling_param': getPoolingParam(l, 'MAX')},
     keras.layers.AveragePooling2D: lambda l: \
-        {'pooling_param': getPoolingParam(l, 'MAX')},
+        {'pooling_param': getPoolingParam(l, 'AVE')},
     keras.layers.SimpleRNN: lambda l: \
         {'recurrent_param': getRecurrentParam(l)},
     keras.layers.LSTM: lambda l: \

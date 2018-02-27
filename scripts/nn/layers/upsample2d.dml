@@ -32,7 +32,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int size_h, int si
    *
    *
    * Inputs:
-   *  - X: Inputs, of shape (any, any).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -40,7 +40,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int size_h, int si
    *  - size_w: upsampling factor for columns.
    *
    * Outputs:
-   *  - out: Outputs, of shape [size_h*Hin, size_w*Win].
+   *  - out: Outputs, of shape (N, C*Hout*Wout), where Hout = Hin*size_h, and Wout = Win * size_w.
    */
   N = nrow(X)
   Hout = size_h*Hin

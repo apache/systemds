@@ -186,7 +186,19 @@ class BaseSystemMLEstimator(Estimator):
         self.X = None
         self.y = None
         return self
-        
+
+    def fit_file(self, X_file, y_file):
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
+        try:
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.model = self.estimator.fit(X_file, y_file)
+            else:
+                self.model = self.estimator.fit(X_file, y_file)
+        except Py4JError:
+            traceback.print_exc()
+        return self
+                
     # Returns a model after calling fit(df) on Estimator object on JVM
     def _fit(self, X):
         """
@@ -207,12 +219,14 @@ class BaseSystemMLEstimator(Estimator):
 
         Parameters
         ----------
-        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
-        y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix, Spark DataFrame, file path
+        y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix, file path
         """
         if y is None:
             return self._fit(X)
-        elif y is not None and isinstance(X, SUPPORTED_TYPES) and isinstance(y, SUPPORTED_TYPES):
+        elif isinstance(X, str) and isinstance(y, str):
+            return self.fit_file(X, y)
+        elif isinstance(X, SUPPORTED_TYPES) and isinstance(y, SUPPORTED_TYPES):
             # Donot encode if y is a numpy matrix => useful for segmentation
             skipEncodingY = len(y.shape) == 2 and y.shape[0] != 1 and y.shape[1] != 1
             y = y if skipEncodingY else self.encode(y)
@@ -307,6 +321,8 @@ class BaseSystemMLEstimator(Estimator):
         except AttributeError:
             pass
         try:
+            if isinstance(X, str):
+                return self.model.transform_probability(X)
             jX = self._convertPythonXToJavaObject(X)
             if default_jvm_stdout:
                 with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
@@ -323,7 +339,7 @@ class BaseSystemMLEstimator(Estimator):
 
         Parameters
         ----------
-        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
+        X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame or file path
         """
         global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
@@ -332,6 +348,8 @@ class BaseSystemMLEstimator(Estimator):
         except AttributeError:
             pass
         try:
+            if isinstance(X, str):
+                return self.model.transform(X)
             jX = self._convertPythonXToJavaObject(X)
             if default_jvm_stdout:
                 with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):

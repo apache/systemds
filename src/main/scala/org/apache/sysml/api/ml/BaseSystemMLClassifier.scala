@@ -111,6 +111,11 @@ trait HasRegParam extends Params {
 }
 
 trait BaseSystemMLEstimatorOrModel {
+  def dmlRead(X:String, fileX:String):String = {
+    val format = if(fileX.endsWith(".csv")) ", format=\"csv\"" else ""
+	return X + " = read(\"" + fileX + "\"" + format + "); "
+  }
+  def dmlWrite(X:String):String = "write("+ X + ", \"output.mtx\", format=\"binary\"); "
   var enableGPU: Boolean                                                                          = false
   var forceGPU: Boolean                                                                           = false
   var explain: Boolean                                                                            = false
@@ -215,6 +220,16 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
 }
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
+  def baseFit(X_file: String, y_file: String, sc: SparkContext): MLResults = {
+	val isSingleNode = false
+	val ml           = new MLContext(sc)
+	updateML(ml)
+	val readScript      = dml(dmlRead("X", X_file) + dmlRead("y", y_file)).out("X", "y")
+	val res = ml.execute(readScript)
+	val ret             = getTrainingScript(isSingleNode)
+	val script          = ret._1.in(ret._2, res.getMatrix("X")).in(ret._3, res.getMatrix("y"))
+	ml.execute(script)
+  }
   def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
     val isSingleNode = true
     val ml           = new MLContext(sc)
@@ -242,7 +257,32 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
 
+  def baseTransform(X_file: String, sc: SparkContext, probVar: String): String = baseTransform(X_file, sc, probVar, -1, 1, 1)
   def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock = baseTransform(X, sc, probVar, -1, 1, 1)
+ 
+  def baseTransform(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = {
+    val Prob = baseTransformHelper(X, sc, probVar, C, H, W)
+    val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W); " + dmlWrite("Prediction"))
+      .in("Prob", Prob)
+      .in("C", C)
+      .in("H", H)
+      .in("W", W)
+    val ml           = new MLContext(sc)
+    updateML(ml)
+    ml.execute(script1)
+    return "output.mtx"
+  }
+
+  def baseTransformHelper(X_file: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): Matrix = {
+    val isSingleNode = true
+    val ml           = new MLContext(sc)
+    updateML(ml)
+    val readScript      = dml(dmlRead("X", X_file)).out("X")
+	val res = ml.execute(readScript)
+    val script = getPredictionScript(isSingleNode)
+    val modelPredict = ml.execute(script._1.in(script._2, res.getMatrix("X")))
+    return modelPredict.getMatrix(probVar)
+  }
 
   def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock = {
     val Prob = baseTransformHelper(X, sc, probVar, C, H, W)
@@ -282,9 +322,18 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
   def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock =
     baseTransformProbability(X, sc, probVar, -1, 1, 1)
 
+  def baseTransformProbability(X: String, sc: SparkContext, probVar: String): String =
+    baseTransformProbability(X, sc, probVar, -1, 1, 1)
+    
   def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock =
     return baseTransformHelper(X, sc, probVar, C, H, W).toMatrixBlock
 
+  def baseTransformProbability(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = {
+	val Prob =  baseTransformHelper(X, sc, probVar, C, H, W)
+    (new MLContext(sc)).execute(dml(dmlWrite("Prob")).in("Prob", Prob))
+    "output.mtx"
+  }
+    	    		
   def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, probVar: String, outputProb: Boolean = true): DataFrame =
     baseTransform(df, sc, probVar, outputProb, -1, 1, 1)
 

@@ -206,6 +206,10 @@ class Caffe2DML(val sc: SparkContext,
     val that = new Caffe2DML(sc, solverParam, solver, net, lrPolicy, numChannels, height, width)
     copyValues(that, extra)
   }
+  def fit(X_file: String, y_file: String): Caffe2DMLModel = {
+    mloutput = baseFit(X_file, y_file, sc)
+    new Caffe2DMLModel(this)
+  }
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): Caffe2DMLModel = {
     mloutput = baseFit(X_mb, y_mb, sc)
@@ -822,6 +826,15 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
   def baseEstimator(): BaseSystemMLEstimator = estimator
 
   // Prediction
+  def transform(X_file: String): String =
+    if (estimator.isClassification) {
+      Caffe2DML.LOG.debug("Prediction assuming classification")
+      baseTransform(X_file, sc, "Prob")
+    } else {
+      Caffe2DML.LOG.debug("Prediction assuming segmentation")
+      val outShape = estimator.getOutputShapeOfLastLayer
+      baseTransform(X_file, sc, "Prob", outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
+    }
   def transform(X: MatrixBlock): MatrixBlock =
     if (estimator.isClassification) {
       Caffe2DML.LOG.debug("Prediction assuming classification")
@@ -830,6 +843,15 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
       Caffe2DML.LOG.debug("Prediction assuming segmentation")
       val outShape = estimator.getOutputShapeOfLastLayer
       baseTransform(X, sc, "Prob", outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
+    }
+  def transform_probability(X_file: String): String =
+    if (estimator.isClassification) {
+      Caffe2DML.LOG.debug("Prediction of probability assuming classification")
+      baseTransformProbability(X_file, sc, "Prob")
+    } else {
+      Caffe2DML.LOG.debug("Prediction of probability assuming segmentation")
+      val outShape = estimator.getOutputShapeOfLastLayer
+      baseTransformProbability(X_file, sc, "Prob", outShape._1.toInt, outShape._2.toInt, outShape._3.toInt)
     }
   def transform_probability(X: MatrixBlock): MatrixBlock =
     if (estimator.isClassification) {

@@ -44,6 +44,11 @@ class NaiveBayes(override val uid: String, val sc: SparkContext) extends Estimat
   }
   def setLaplace(value: Double) = set(laplace, value)
 
+  def fit(X_file: String, y_file: String): NaiveBayesModel = {
+    mloutput = baseFit(X_file, y_file, sc)
+    new NaiveBayesModel(this)
+  }
+  
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): NaiveBayesModel = {
     mloutput = baseFit(X_mb, y_mb, sc)
@@ -108,7 +113,9 @@ class NaiveBayesModel(override val uid: String)(estimator: NaiveBayes, val sc: S
 
   def baseEstimator(): BaseSystemMLEstimator               = estimator
   def transform(X: MatrixBlock): MatrixBlock               = baseTransform(X, sc, "probs")
+  def transform(X: String): String                         = baseTransform(X, sc, "probs")
   def transform_probability(X: MatrixBlock): MatrixBlock   = baseTransformProbability(X, sc, "probs")
+  def transform_probability(X: String): String             = baseTransformProbability(X, sc, "probs")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "probs")
 
 }

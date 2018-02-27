@@ -35,6 +35,17 @@ import org.apache.sysml.api.mlcontext.ScriptFactory._
 
 trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
 
+  def baseFit(X_file: String, y_file: String, sc: SparkContext): MLResults = {
+    val isSingleNode = false
+    val ml           = new MLContext(sc)
+    updateML(ml)
+    val readScript      = dml(dmlRead("X", X_file) + dmlRead("y", y_file)).out("X", "y")
+	  val res = ml.execute(readScript)
+    val ret    = getTrainingScript(isSingleNode)
+    val script = ret._1.in(ret._2, res.getMatrix("X")).in(ret._3, res.getMatrix("y"))
+    ml.execute(script)
+  }
+  
   def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
     val isSingleNode = true
     val ml           = new MLContext(sc)
@@ -61,6 +72,18 @@ trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
 
 trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
 
+  def baseTransform(X_file: String, sc: SparkContext, predictionVar: String): String = {
+    val isSingleNode = false
+    val ml           = new MLContext(sc)
+    updateML(ml)
+    val readScript      = dml(dmlRead("X", X_file)).out("X")
+	  val res = ml.execute(readScript)
+    val script       = getPredictionScript(isSingleNode)
+    val modelPredict = ml.execute(script._1.in(script._2, res.getMatrix("X")))
+    val writeScript  = dml(dmlWrite("X")).in("X", modelPredict.getMatrix(predictionVar))
+	  ml.execute(writeScript)
+    return "output.mtx"
+  }
   def baseTransform(X: MatrixBlock, sc: SparkContext, predictionVar: String): MatrixBlock = {
     val isSingleNode = true
     val ml           = new MLContext(sc)

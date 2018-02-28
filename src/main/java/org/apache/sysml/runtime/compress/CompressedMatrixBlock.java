@@ -844,11 +844,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			grp.readFields(in);
 			
 			//use shared DDC1 dictionary if applicable
-			if( _sharedDDC1Dict && grp.getNumCols()==1 ) {
+			if( _sharedDDC1Dict && grp.getNumCols()==1
+				&& grp instanceof ColGroupDDC1 ) {
 				if( sharedDict == null )
-					sharedDict = ((ColGroupDDC1)grp).getValues();
+					sharedDict = ((ColGroupValue)grp).getValues();
 				else
-					((ColGroupDDC1)grp).setValues(sharedDict);
+					((ColGroupValue)grp).setValues(sharedDict);
 			}
 			
 			_colGroups.add(grp);
@@ -906,7 +907,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{
-		write(os);	
+		write(os);
 	}
 	
 	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {

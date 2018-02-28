@@ -72,6 +72,18 @@ public class GPUMemoryManager {
 	 */
 	private HashMap<Pointer, Long> allocatedGPUPointers = new HashMap<>();
 	
+	/**
+	 * Get size of allocated GPU Pointer
+	 * @param ptr pointer to get size of
+	 * @return either the size or -1 if no such pointer exists
+	 */
+	public long getSizeAllocatedGPUPointer(Pointer ptr) {
+		if(allocatedGPUPointers.containsKey(ptr)) {
+			return allocatedGPUPointers.get(ptr);
+		}
+		return -1;
+	}
+	
 	public GPUMemoryManager(GPUContext gpuCtx) {
 		long free[] = { 0 };
 		long total[] = { 0 };

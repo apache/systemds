@@ -926,7 +926,8 @@ public class GPUObject {
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
-				getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
+						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
+			
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();

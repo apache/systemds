@@ -85,6 +85,10 @@ public class GPUContext {
 	private JCudaKernels kernels;
 	
 	private GPUMemoryManager memoryManager;
+	
+	public GPUMemoryManager getMemoryManager() {
+		return memoryManager;
+	}
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;

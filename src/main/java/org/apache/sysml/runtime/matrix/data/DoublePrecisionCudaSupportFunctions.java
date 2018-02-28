@@ -22,6 +22,8 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -40,6 +42,8 @@ import jcuda.jcusparse.cusparseMatDescr;
 
 public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions {
 
+	private static final Log LOG = LogFactory.getLog(DoublePrecisionCudaSupportFunctions.class.getName());
+	
 	@Override
 	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k,
 			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA,
@@ -161,6 +165,13 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		if(src == null)
+			throw new DMLRuntimeException("The source pointer in deviceToHost is null");
+		if(dest == null)
+			throw new DMLRuntimeException("The destination array in deviceToHost is null");
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("deviceToHost: src of size " + gCtx.getMemoryManager().getSizeAllocatedGPUPointer(src) + " (in bytes) -> dest of size " + (dest.length*Double.BYTES)  + " (in bytes).");
+		}
 		cudaMemcpy(Pointer.to(dest), src, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);

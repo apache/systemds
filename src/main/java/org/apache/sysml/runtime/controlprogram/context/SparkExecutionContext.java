@@ -568,7 +568,7 @@ public class SparkExecutionContext extends ExecutionContext
 					pmb.clearBlocks();
 			}
 			
-			bret = new PartitionedBroadcast<>(ret);
+			bret = new PartitionedBroadcast<>(ret, mo.getMatrixCharacteristics());
 			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<>(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
 			mo.setBroadcastHandle(bchandle);
@@ -638,7 +638,7 @@ public class SparkExecutionContext extends ExecutionContext
 					pmb.clearBlocks();
 			}
 
-			bret = new PartitionedBroadcast<>(ret);
+			bret = new PartitionedBroadcast<>(ret, fo.getMatrixCharacteristics());
 			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<>(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
 			fo.setBroadcastHandle(bchandle);

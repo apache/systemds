@@ -339,6 +339,7 @@ public class GPUMemoryManager {
 	private HashSet<Pointer> getDirtyPointers() {
 		HashSet<Pointer> nonTemporaryPointers = new HashSet<Pointer>();
 		for (GPUObject o : allocatedGPUObjects) {
+			if(o.isDirty()) {
 				if (o.isSparse()) {
 					CSRPointer p = o.getSparseMatrixCudaPointer();
 					if (p == null)

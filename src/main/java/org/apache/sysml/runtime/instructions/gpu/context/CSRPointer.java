@@ -298,7 +298,6 @@ public class CSRPointer {
 			// with no memory allocated on the GPU.
 			return r;
 		}
-		gCtx.ensureFreeSpace(getDataTypeSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
 		// increment the cudaCount by 1 for the allocation of all 3 arrays
 		r.val = gCtx.allocate(null, getDataTypeSizeOf(nnz2));
 		r.rowPtr = gCtx.allocate(null, getIntSizeOf(rows + 1));
@@ -430,8 +429,6 @@ public class CSRPointer {
 		CSRPointer that = new CSRPointer(me.getGPUContext());
 
 		that.allocateMatDescrPointer();
-		long totalSize = estimateSize(me.nnz, rows);
-		that.gpuContext.ensureFreeSpace(totalSize);
 
 		that.nnz = me.nnz;
 		that.val = allocate(that.nnz * LibMatrixCUDA.sizeOfDataType);

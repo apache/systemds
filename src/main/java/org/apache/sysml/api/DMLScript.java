@@ -108,6 +108,19 @@ public class DMLScript
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark
 		SPARK			// execute matrix operations in Spark
 	}
+	
+	/**
+	 * Eviction policies for eviction of GPU objects.
+	 */
+	public enum EvictionPolicy {
+		LRU, 				// Evict the least recently used GPUObject. 
+		LFU, 				// Evict the least frequently used GPUObject. 
+		MIN_EVICT,
+		MRU, 				// http://www.vldb.org/conf/1985/P127.PDF
+		// TODO:
+		// ARC, // https://dbs.uni-leipzig.de/file/ARC.pdf
+		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
+	}
 
 	/**
 	 * Set of DMLOptions that can be set through the command line
@@ -164,6 +177,7 @@ public class DMLScript
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double"; 							// data type to use internally
+	public static EvictionPolicy	GPU_EVICTION_POLICY = EvictionPolicy.LRU;						// currently employed GPU eviction policy
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
@@ -675,6 +689,13 @@ public class DMLScript
 
 		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
+		
+		String evictionPolicy = dmlconf.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
+		try {
+			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
+		} catch(IllegalArgumentException e) {
+            throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+        }
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){

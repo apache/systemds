@@ -408,7 +408,7 @@ public class ScriptExecutor {
 		restoreInputsInSymbolTable();
 		resetGlobalFlags();
 	}
-
+	
 	/**
 	 * Restore the input variables in the symbol table after script execution.
 	 */

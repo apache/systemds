@@ -299,7 +299,9 @@ public class GPUContext {
 	 * @return a new {@link GPUObject} instance
 	 */
 	public GPUObject createGPUObject(MatrixObject mo) {
-		return new GPUObject(this, mo);
+		GPUObject ret = new GPUObject(this, mo);
+		getMemoryManager().addGPUObject(ret);
+		return ret;
 	}
 
 	/**

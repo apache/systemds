@@ -73,6 +73,27 @@ public class GPUMemoryManager {
 	private HashMap<Pointer, Long> allocatedGPUPointers = new HashMap<>();
 	
 	/**
+	 * Adds the GPU object to the memory manager
+	 * 
+	 * @param gpuObj the handle to the GPU object
+	 */
+	public void addGPUObject(GPUObject gpuObj) {
+		allocatedGPUObjects.add(gpuObj);
+	}
+	
+	/**
+	 * Removes the GPU object from the memory manager
+	 * 
+	 * @param gpuObj the handle to the GPU object
+	 */
+	public void removeGPUObject(GPUObject gpuObj) {
+		if(LOG.isDebugEnabled())
+			LOG.debug("Removing the GPU object: " + gpuObj);
+		allocatedGPUObjects.removeIf(a -> a.equals(gpuObj));
+	}
+	
+	
+	/**
 	 * Get size of allocated GPU Pointer
 	 * @param ptr pointer to get size of
 	 * @return either the size or -1 if no such pointer exists
@@ -244,6 +265,8 @@ public class GPUMemoryManager {
 				if(rmvarGPUPointers.containsKey(size) && rmvarGPUPointers.get(size).contains(toFree)) {
 					remove(rmvarGPUPointers, size, toFree);
 				}
+				if(LOG.isDebugEnabled())
+					LOG.debug("Free-ing up the pointer: " + toFree);
 				cudaFree(toFree);
 			}
 			else {
@@ -316,7 +339,6 @@ public class GPUMemoryManager {
 	private HashSet<Pointer> getDirtyPointers() {
 		HashSet<Pointer> nonTemporaryPointers = new HashSet<Pointer>();
 		for (GPUObject o : allocatedGPUObjects) {
-			if (o.isDirty()) {
 				if (o.isSparse()) {
 					CSRPointer p = o.getSparseMatrixCudaPointer();
 					if (p == null)
@@ -361,7 +383,7 @@ public class GPUMemoryManager {
 	}
 	
 	/**
-	 * Clears up the memory used to optimize cudaMalloc/cudaFree calls.
+	 * Clears up the memory used by non-dirty pointers.
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.

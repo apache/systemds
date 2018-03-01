@@ -282,6 +282,9 @@ public class GPUObject {
 		}
 		this.jcudaDenseMatrixPtr = densePtr;
 		this.isSparse = false;
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("Setting dense pointer of size " + getGPUContext().getMemoryManager().getSizeAllocatedGPUPointer(densePtr));
+		}
 		if (getJcudaSparseMatrixPtr() != null) {
 			getJcudaSparseMatrixPtr().deallocate();
 			jcudaSparseMatrixPtr = null;
@@ -720,7 +723,8 @@ public class GPUObject {
 	public void releaseOutput() throws DMLRuntimeException {
 		releaseWriteLock();
 		updateReleaseLocks();
-		dirty = true;
+		if(!isDirty())
+			throw new CacheException("Attempting to release an output that was not acquired via acquireDeviceModify");
 		if (!isAllocated())
 			throw new CacheException("Attempting to release an output before allocating it");
 	}
@@ -997,6 +1001,7 @@ public class GPUObject {
 	 */
 	public void clearData(boolean eager) throws DMLRuntimeException {
 		deallocateMemoryOnDevice(eager);
+		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
 	/**
@@ -1034,6 +1039,10 @@ public class GPUObject {
 		sb.append(", writeLock=").append(writeLock);
 		sb.append(", sparse? ").append(isSparse);
 		sb.append(", dims=[").append(mat.getNumRows()).append(",").append(mat.getNumColumns()).append("]");
+		if(jcudaDenseMatrixPtr != null)
+			sb.append(", densePtr=").append(jcudaDenseMatrixPtr);
+		if(jcudaSparseMatrixPtr != null)
+			sb.append(", sparsePtr=").append(jcudaSparseMatrixPtr);
 		sb.append('}');
 		return sb.toString();
 	}

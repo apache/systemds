@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
@@ -324,8 +325,9 @@ public abstract class GPUTests extends AutomatedTestBase {
 		MLContext cpuMLC = new MLContext(spark);
 		List<Object> outputs = new ArrayList<>();
 		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+		MLResults res = cpuMLC.execute(script);
 		for (String outStr : outStrs) {
-			Object output = cpuMLC.execute(script).get(outStr);
+			Object output = res.get(outStr);
 			outputs.add(output);
 		}
 		cpuMLC.close();
@@ -355,8 +357,9 @@ public abstract class GPUTests extends AutomatedTestBase {
 			gpuMLC.setStatistics(true);
 			List<Object> outputs = new ArrayList<>();
 			Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+			MLResults res = gpuMLC.execute(script);
 			for (String outStr : outStrs) {
-				Object output = gpuMLC.execute(script).get(outStr);
+				Object output = res.get(outStr);
 				outputs.add(output);
 			}
 			gpuMLC.close();

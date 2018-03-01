@@ -723,8 +723,10 @@ public class GPUObject {
 	public void releaseOutput() throws DMLRuntimeException {
 		releaseWriteLock();
 		updateReleaseLocks();
-		if(!isDirty())
-			throw new CacheException("Attempting to release an output that was not acquired via acquireDeviceModify");
+		// Currently, there is no convenient way to acquireDeviceModify independently of dense/sparse format. 
+		// Hence, allowing resetting releaseOutput again. 
+		// Ideally, we would want to throw CacheException("Attempting to release an output that was not acquired via acquireDeviceModify") if !isDirty()
+		dirty = true;
 		if (!isAllocated())
 			throw new CacheException("Attempting to release an output before allocating it");
 	}

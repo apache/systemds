@@ -251,26 +251,28 @@ public class ScriptExecutor {
 		oldGPU = DMLScript.USE_ACCELERATOR;
 		DMLScript.USE_ACCELERATOR = gpu;
 		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
-		
+
 		// set the global compiler configuration
 		try {
 			OptimizerUtils.resetStaticCompilerFlags();
 			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(
-				ConfigurationManager.getCompilerConfig(), config);
+					ConfigurationManager.getCompilerConfig(), config);
 			ConfigurationManager.setGlobalConfig(cconf);
-		} catch(DMLRuntimeException ex) {
+		} 
+		catch(DMLRuntimeException ex) {
 			throw new RuntimeException(ex);
 		}
-		
+
 		// set the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = config.getTextValue(DMLConfig.AVAILABLE_GPUS);
-		
+
 		String evictionPolicy = config.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
 		try {
 			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
-		} catch(IllegalArgumentException e) {
-            throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
-        }
+		} 
+		catch(IllegalArgumentException e) {
+			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+		}
 	}
 	
 

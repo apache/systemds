@@ -45,10 +45,15 @@ import jcuda.Pointer;
 
 /**
  * - All cudaFree and cudaMalloc in SystemML should go through this class to avoid OOM or incorrect results.
- * - This class 
+ * - This class can be refactored in future to accept a chunk of memory ahead of time rather than while execution. This will only thow memory-related errors during startup.  
  */
 public class GPUMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMemoryManager.class.getName());
+	
+	// If the available free size is less than this factor, GPUMemoryManager will warn users of multiple programs grabbing onto GPU memory.
+	// This often happens if user tries to use both TF and SystemML, and TF grabs onto 90% of the memory ahead of time.
+	private static final double WARN_UTILIZATION_FACTOR = 0.7;
+	
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig()
 			.getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
@@ -109,12 +114,13 @@ public class GPUMemoryManager {
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
-		if(free[0] < 0.7*total[0]) {
+		if(free[0] < WARN_UTILIZATION_FACTOR*total[0]) {
 			LOG.warn("Potential under-utilization: GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + gpuCtx 
 					+ ". This can happen if there are other processes running on the GPU at the same time.");
 		}
-		else
+		else {
 			LOG.info("GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + gpuCtx);
+		}
 		if (GPUContextPool.initialGPUMemBudget() > OptimizerUtils.getLocalMemBudget()) {
 			LOG.warn("Potential under-utilization: GPU memory (" + GPUContextPool.initialGPUMemBudget()
 					+ ") > driver memory budget (" + OptimizerUtils.getLocalMemBudget() + "). "
@@ -168,6 +174,9 @@ public class GPUMemoryManager {
 			}
 		}
 		
+		// Reusing one rmvar-ed pointer (Step 3) is preferred to reusing multiple pointers as the latter may not be contiguously allocated.
+		// (Step 4 or using any other policy that doesnot take memory into account).
+		
 		// Step 3: Try reusing non-exact match entry of rmvarGPUPointers
 		if(A == null) { 
 			// Find minimum key that is greater than size
@@ -188,6 +197,12 @@ public class GPUMemoryManager {
 				}
 			}
 		}
+		
+		// Step 3.b: An optimization missing so as not to over-engineer malloc:
+		// Try to find minimal number of contiguously allocated pointer.
+		
+		// Evictions of matrix blocks are expensive (as they might lead them to be written to disk in case of smaller CPU budget) 
+		// than doing cuda free/malloc/memset. So, rmvar-ing every blocks (step 4) is preferred to eviction (step 5).
 		
 		// Step 4: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
 		if(A == null) {

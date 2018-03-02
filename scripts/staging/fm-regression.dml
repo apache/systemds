@@ -100,7 +100,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
 
         # 5.compute gradients from a loss l2_loss::backward
         #dy = l2_loss::backward(sfy, out);
-        dout = l2_loss::backward(y_batch, out)# (predictions, targets)
+        dout = l2_loss::backward(out, y_batch)# (predictions, targets)
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
         if (i %% 100 == 0) {
@@ -151,13 +151,10 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
    *  - out : target vector, y.
    */
 
-    # 1.initialize fm core
-    #[w0, W, V] = fm::init(d, k);
-
-    # 2.Send inputs through fm::forward
+    # 1.Send inputs through fm::forward
     out = fm::forward(X, w0, W, V);
 
-    # 3.Send the above result through log_loss::forward
+    # 2.Send the above result through log_loss::forward
     # loss = log_loss::forward(out);
 
 }

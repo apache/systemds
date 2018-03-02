@@ -29,16 +29,12 @@ source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
-source("nn/layers/log_loss.dml") as log_loss
-source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/l2_loss.dml") as log_loss
 
-n = 50 # num examples
-d = 500 # num features
-k = 2 # factorization dimensionality
 X = rand(rows=n, cols=d);
 y = rand(rows=n, cols=1);
-X_val = rand(rows=n, cols=d)
-y_val = rand(rows=n, cols=1)
+#X_val = rand(rows=n, cols=d)
+#y_val = rand(rows=n, cols=1)
 
 train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val)
     return (matrix[double] w0, matrix[double] W, matrix[double] V) {
@@ -60,6 +56,9 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
    *
    */
 
+    n = nrow(X) # num examples
+    d = ncol(X) # num features
+    k = 2 # factorization dimensionality, only (=2) possible
 
     # 1.initialize fm core
     [w0, W, V] = fm::init(d, k);
@@ -112,14 +111,14 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
           loss_reg_W  = l2_reg::forward(W , lambda)
           loss_reg_V  = l2_reg::forward(V , lambda)
           loss = loss_data + loss_reg_w0 + loss_reg_W + loss_reg_V
-          accuracy = mean(rowIndexMax(sfy) == rowIndexMax(y_batch))
+          accuracy = ( mean( (sfy - y_batch)^2 ) )^ 0.5
 
 
           # Compute validation loss & accuracy
           probs_val = predict(X_val, w0, W, V)
           #loss_val  = cross_entropy_loss::forward(probs_val, y_val)
           loss_val = l2_loss::forward(probs_val, y_val)
-          accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_val))
+          accuracy_val = ( mean( (probs_val - y_val)^2 ) )^0.5
 
           # Output results
           print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
@@ -170,12 +169,10 @@ eval = function(matrix[double] probs, matrix[double] y)
     */
 
     # just compute loss with log_loss::forward(probs, y)
-    #loss = log_loss::forward(probs, y)
     loss = l2_loss::forward(probs, y);
 
     # compute accuracy
-    #accuracy = mean((probs<0.5) == (y<0.5))
-    sqr_mean = mean( ( (probs<0.5) == (y<0.5) )^2 )
+    sqr_mean = mean( (probs - y)^2 )
     accuracy = (sqr_mean)^0.5
     
 }

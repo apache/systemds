@@ -840,8 +840,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					grp = new ColGroupDDC2(); break;
 			}
 			
-			//deserialize and add column group
-			grp.readFields(in);
+			//deserialize and add column group (flag for shared dictionary passed
+			//and numCols evaluated in DDC1 because numCols not available yet
+			grp.readFields(in, sharedDict!=null);
 			
 			//use shared DDC1 dictionary if applicable
 			if( _sharedDDC1Dict && grp.getNumCols()==1
@@ -875,9 +876,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		out.writeBoolean(_sharedDDC1Dict);
 		out.writeInt(_colGroups.size());
 		
+		boolean skipDict = false;
 		for( ColGroup grp : _colGroups ) {
+			boolean shared = (grp instanceof ColGroupDDC1
+				&& _sharedDDC1Dict && grp.getNumCols()==1);
 			out.writeByte( grp.getCompType().ordinal() );
-			grp.write(out); //delegate serialization
+			grp.write(out, skipDict & shared); //delegate serialization
+			skipDict |= shared;
 		}
 	}
 	

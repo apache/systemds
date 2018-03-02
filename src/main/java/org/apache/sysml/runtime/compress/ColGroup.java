@@ -190,6 +190,17 @@ public abstract class ColGroup implements Serializable
 		throws IOException;
 	
 	/**
+	 * Serializes column group to data output.
+	 * 
+	 * @param out data output
+	 * @param skipDict skip shared dictionary
+	 * @throws IOException if IOException occurs
+	 */
+	public void write(DataOutput out, boolean skipDict) throws IOException {
+		write(out); //skipDict ignored by default
+	}
+	
+	/**
 	 * Deserializes column group from data input.
 	 * 
 	 * @param in data input
@@ -197,7 +208,17 @@ public abstract class ColGroup implements Serializable
 	 */
 	public abstract void readFields(DataInput in) 
 		throws IOException;
-		
+	
+	/**
+	 * Deserializes column group from data input.
+	 * 
+	 * @param in data input
+	 * @param skipDict skip shared dictionary
+	 * @throws IOException if IOException occurs
+	 */
+	public void readFields(DataInput in, boolean skipDict) throws IOException {
+		readFields(in); //skipDict ignored by default
+	}
 	
 	/**
 	 * Returns the exact serialized size of column group.

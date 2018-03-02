@@ -118,6 +118,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	public void write(DataOutput out) throws IOException {
+		write(out, false);
+	}
+	
+	@Override
+	public void write(DataOutput out, boolean skipDict) throws IOException {
 		int numCols = getNumCols();
 		int numVals = getNumValues();
 		out.writeInt(_numRows);
@@ -129,9 +134,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 			out.writeInt( _colIndexes[i] );
 		
 		//write distinct values
-		for( int i=0; i<_values.length; i++ )
-			out.writeDouble(_values[i]);
-
+		if( !skipDict ) {
+			for( int i=0; i<_values.length; i++ )
+				out.writeDouble(_values[i]);
+		}
+		
 		//write data
 		for( int i=0; i<_numRows; i++ )
 			out.writeByte(_data[i]);
@@ -139,6 +146,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		readFields(in, false);
+	}
+	
+	@Override
+	public void readFields(DataInput in, boolean skipDict) throws IOException {
 		_numRows = in.readInt();
 		int numCols = in.readInt();
 		int numVals = in.readInt();
@@ -149,9 +161,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 			_colIndexes[i] = in.readInt();
 		
 		//read distinct values
-		_values = new double[numVals*numCols];
-		for( int i=0; i<numVals*numCols; i++ )
-			_values[i] = in.readDouble();
+		if( !skipDict || numCols!=1 ) {
+			_values = new double[numVals*numCols];
+			for( int i=0; i<numVals*numCols; i++ )
+				_values[i] = in.readDouble();
+		}
 		
 		//read data
 		_data = new byte[_numRows];

@@ -3627,10 +3627,11 @@ public class Dag<N extends Lop>
 	private ArrayList<Lop> doTopologicalSortTwoLevelOrder(ArrayList<Lop> v) {
 		//partition nodes into leaf/inner nodes and dag root nodes,
 		//+ sort leaf/inner nodes by ID to force depth-first scheduling
-		//+ sort root nodes by line numbers to force ordering of prints 
+		//+ append root nodes in order of their original definition 
+		//  (which also preserves the original order of prints)
 		Lop[] nodearray = Stream.concat(
 			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
-			v.stream().filter(l -> l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getBeginLine())))
+			v.stream().filter(l -> l.getOutputs().isEmpty()))
 			.toArray(Lop[]::new);
 		
 		return createIDMapping(nodearray);

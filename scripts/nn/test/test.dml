@@ -853,9 +853,9 @@ compare_tanh_builtin_forward_with_old = function() {
 
 compare_tanh_builtin_backward_with_old = function() {
   /*
-   * Test for the `tanh` forward function.
+   * Test for the `tanh` backward function.
    */
-  print("Testing the tanh forward function.")
+  print("Testing the tanh backward function.")
 
   # Generate data
   N = 2  # num examples

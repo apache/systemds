@@ -55,7 +55,7 @@ public class ProgramBlock implements ParseInfo
 	public static final String PRED_VAR = "__pred";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
-	private static final boolean CHECK_MATRIX_SPARSITY = false;
+	private static final boolean CHECK_MATRIX_SPARSITY = true;
 
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;

@@ -1,15 +1,18 @@
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.api.mlcontext.MLContextConversionUtil;
-import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
-import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.DataConverter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Eval built-in function instruction
@@ -17,47 +20,64 @@ import java.util.ArrayList;
  */
 public class EvalBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
-    public EvalBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
-        super(op, opcode, istr, output, inputs);
-    }
+	public EvalBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
+		super(op, opcode, istr, output, inputs);
+	}
 
-    @Override
-    public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-        //1. inside the new instruction, get the correspond function statement block
-        FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, inputs[0].getName());
-        //2. inject the inputs variables into local variable map
-        LocalVariableMap lvm = ec.getVariables();
-        ArrayList<DataIdentifier> inputParams = fpb.getInputParams();
-        if (inputParams.size() != inputs.length - 1) {
-            throw new DMLRuntimeException(String.format("processInstruction():: function [%s] should provide %d arguments but only %d arguments provided", inputs[0].getName(), fpb.getInputParams().size(), inputs.length - 1));
-        }
-        for (int i = 0; i < inputParams.size(); i++) {
-            CPOperand arg = inputs[i + 1];
-            DataIdentifier di = inputParams.get(i);
-            Data d;
-            if (di.getDataType().isScalar()) {
-                d = ec.getScalarInput(arg.getName(), arg.getValueType(), true);
-            } else if (di.getDataType().isMatrix()) {
-                d = ec.getMatrixObject(arg.getName());
-            } else if (di.getDataType().isFrame()) {
-                d = ec.getFrameObject(arg.getName());
-            } else {
-                throw new DMLRuntimeException(String.format("processInstruction():: unknown argument %s", arg.getName()));
-            }
-            lvm.put(di.getName(), d);
-        }
-        fpb.execute(ec);
-        //3. get the single func output and convert it to a matrix object
-        String funcOutputName = fpb.getOutputParams().get(0).getName();
-        Data outputData = ec.getVariable(funcOutputName);
-        MatrixObject mo;
-        if (outputData.getDataType().isScalar()) {
-            ScalarObject so = (ScalarObject) outputData;
-            //convert scalar to matrix
-            mo = MLContextConversionUtil.doubleMatrixToMatrixObject(output.getName(), new double[][]{{so.getDoubleValue()}});
-        } else {
-            mo = (MatrixObject) outputData;
-        }
-        ec.getVariables().put(output.getName(), mo);
-    }
+	@Override
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		//1. get the namespace and func
+		CPOperand func = inputs[0];
+		String funcName = func.getName();
+		String namespace = null;
+		if (func.getName().contains("::")) {
+			String[] split = func.getName().split("::");
+			namespace = split[0];
+			String funcSignature = split[1];
+			if (funcSignature.matches("(.+)([(].*[)])")) {
+				// get funcName from a function call identifier
+				Pattern pattern = Pattern.compile("(.+)([(].*[)])");
+				Matcher matcher = pattern.matcher(func.getName());
+				if (matcher.matches()) {
+					funcName = matcher.group(0);
+				}
+			} else {
+				funcName = funcSignature;
+			}
+		}
+		// bound the inputs to avoiding being deleted after the function call
+		CPOperand[] boundInputs = Arrays.asList(inputs).subList(1, inputs.length).toArray(new CPOperand[]{});
+		ArrayList<String> boundOutputNames = new ArrayList<>();
+		boundOutputNames.add(output.getName());
+		ArrayList<String> boundInputNames = new ArrayList<>();
+		for (CPOperand input : boundInputs) {
+			boundInputNames.add(input.getName());
+		}
+
+		//2. copy the created output matrix
+		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
+
+		//3. call the function
+		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(namespace, funcName, boundInputs, boundInputNames, boundOutputNames, "eval func");
+		fcpi.processInstruction(ec);
+
+		//4. convert the result to matrix
+		Data newOutput = ec.getVariable(output);
+		if (newOutput instanceof MatrixObject) {
+			return;
+		}
+		MatrixBlock mb = null;
+		if (newOutput instanceof ScalarObject) {
+			//convert scalar to matrix
+			mb = new MatrixBlock(1, 1, false);
+			mb.setValue(0, 0, ((ScalarObject) newOutput).getDoubleValue());
+		} else if (newOutput instanceof FrameObject) {
+			//convert frame to matrix
+			mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
+			ec.cleanupCacheableData((FrameObject) newOutput);
+		}
+		outputMO.acquireModify(mb);
+		outputMO.release();
+		ec.setVariable(output.getName(), outputMO);
+	}
 }

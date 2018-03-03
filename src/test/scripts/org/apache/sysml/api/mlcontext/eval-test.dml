@@ -36,23 +36,20 @@ f3 = function (matrix[double] M1, matrix[double] M2) return (matrix[double] res)
     res = M1 %*% M2
 }
 
+# without input arguments
+f4 = function () return (double res) {
+    res = 1 + 1
+}
+
 # some variables
 X = matrix("1 2 3 4", rows=2, cols=2)
 y = 10
 
-# create a result matrix
-R = matrix(1, rows=2, cols=1)
+R1 = eval(f1, X, y)
+R2 = eval(f2, X, y)
+R3 = eval(f3, X, X)
 
-R[1, 1] = eval(f1, X, y)
-R[2, 1] = eval(f2, X, y)
-
-print(toString(R))
-
-M3 = eval(f3, X, X)
-print(toString(M3))
-
-
-# a function frame
-#F = read("func.csv", data_type="frame", rows=2, cols=1, format="csv")
-#parfor(i in 1:nrow(F))
-#    R[i, ] = eval(F[i,1], X, y);
+print(toString(R1))
+print(toString(R2))
+print(toString(R3))
+print(toString(eval(f4)))

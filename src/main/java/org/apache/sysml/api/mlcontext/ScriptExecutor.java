@@ -255,10 +255,6 @@ public class ScriptExecutor {
 		try {
 
 			OptimizerUtils.resetStaticCompilerFlags();
-
-			//Workaround: for eval func to avoid cleaning the unused UDF
-			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
-
 			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(
 				ConfigurationManager.getCompilerConfig(), config);
 			ConfigurationManager.setGlobalConfig(cconf);

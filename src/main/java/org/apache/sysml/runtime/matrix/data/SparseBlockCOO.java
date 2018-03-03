@@ -204,7 +204,13 @@ public class SparseBlockCOO extends SparseBlock
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 
-		//3. sorted values wrt to col indexes wrt to a given row index
+		//3.1. sort order of row indices
+		for( int i=1; i<=nnz; i++ ) {
+			if(_rindexes[i] < _rindexes[i-1])
+				throw new RuntimeException("Wrong sorted order of row indices");
+		}
+
+		//3.2. sorted values wrt to col indexes wrt to a given row index
 		for( int i=0; i<rlen; i++ ) {
 			int apos = pos(i);
 			int alen = size(i);
@@ -216,8 +222,6 @@ public class SparseBlockCOO extends SparseBlock
 				if(_values[k] == 0)
 					throw new RuntimeException("Wrong sparse row: zero at "
 							+ k + " at col index " + _cindexes[k]);
-			if(_rindexes[i+1] < _rindexes[i])
-				throw new RuntimeException("Wrong sorted order of row indices");
 		}
 
 		//4. non-existing zero values

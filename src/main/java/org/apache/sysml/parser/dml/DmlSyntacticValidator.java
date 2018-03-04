@@ -118,7 +118,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		super(errorListener, argVals, sourceNamespace, prepFunctions);
 	}
-	
+
 	@Override public String namespaceResolutionOp() { return "::"; }
 	@Override public String trueStringLiteral() { return "TRUE"; }
 	@Override public String falseStringLiteral() { return "FALSE"; }
@@ -490,9 +490,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-		
+
 		castAsScalarDeprecationCheck(functionName, ctx);
-		
+
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
@@ -502,6 +502,19 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	private void castAsScalarDeprecationCheck(String functionName, ParserRuleContext ctx) {
 		if ("castAsScalar".equalsIgnoreCase(functionName)) {
 			raiseWarning("castAsScalar() has been deprecated. Please use as.scalar().", ctx.start);
+		}
+	}
+
+	private void convertNamespace(ArrayList<ParameterExpression> params) {
+		for (ParameterExpression p : params) {
+			if (p.getExpr() instanceof DataIdentifier && ((DataIdentifier) p.getExpr()).getName() != null
+					&& ((DataIdentifier) p.getExpr()).getName().contains(namespaceResolutionOp())) {
+				DataIdentifier di = (DataIdentifier) p.getExpr();
+				String[] names = getQualifiedNames(di.getName());
+				if(names != null) {
+					di.setName(names[0] + namespaceResolutionOp() + names[1]);
+				}
+			}
 		}
 	}
 
@@ -517,7 +530,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String functionName = names[1];
 
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-
+		//convert the namespace for the function identifier arguments
+		convertNamespace(paramExpression);
 		castAsScalarDeprecationCheck(functionName, ctx);
 
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);
@@ -715,7 +729,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			
+
 			//check and assign data type
 			checkValidDataType(dataType, paramCtx.start);
 			if( dataType.equalsIgnoreCase("matrix") )

@@ -1727,17 +1727,21 @@ public class LibMatrixReorg
 			int lrlen = 0;
 			for( int i=0; i<m; i++ )
 				lrlen += sblock.isEmpty(i) ? 0 : 1;
-			int[] rptr = new int[lrlen+1];
-			for( int i=0, j=0, pos=0; i<m; i++ )
-				if( !sblock.isEmpty(i) ) {
-					pos += sblock.size(i);
-					rptr[++j] = pos;
-				}
-			ret.reset(lrlen, in.clen, true);
-			ret.sparseBlock = new SparseBlockCSR(rptr,
-				sblock.indexes(), sblock.values(), (int)in.nonZeros);
-			ret.nonZeros = in.nonZeros;
-			return ret;
+			//check for sparse output representation, otherwise
+			//fall back to default pass to allocate in dense format
+			if( MatrixBlock.evalSparseFormatInMemory(lrlen, n, in.nonZeros) ) {
+				int[] rptr = new int[lrlen+1];
+				for( int i=0, j=0, pos=0; i<m; i++ )
+					if( !sblock.isEmpty(i) ) {
+						pos += sblock.size(i);
+						rptr[++j] = pos;
+					}
+				ret.reset(lrlen, in.clen, true);
+				ret.sparseBlock = new SparseBlockCSR(rptr,
+					sblock.indexes(), sblock.values(), (int)in.nonZeros);
+				ret.nonZeros = in.nonZeros;
+				return ret;
+			}
 		}
 		
 		//Step 1: scan block and determine non-empty rows

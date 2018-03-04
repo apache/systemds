@@ -2449,7 +2449,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//estimate dense output for all sparse-unsafe operations, except DIV (because it commonly behaves like
 		//sparse-safe but is not due to 0/0->NaN, this is consistent with the current hop sparsity estimate)
 		//see also, special sparse-safe case for DIV in LibMatrixBincell 
-		if( !op.sparseSafe && !(op.fn instanceof Divide) ) {
+		if( !op.sparseSafe && !(op.fn instanceof Divide && m2.getSparsity()==1.0) ) {
 			est.sparse = false;
 			return est;
 		}
@@ -2465,16 +2465,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		long estnnz = 0;
 		if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR )
 		{
-			//for outer vector operations the sparsity estimate is exactly known
-			estnnz = nz1 * nz2; 
+			estnnz = OptimizerUtils.getOuterNonZeros(
+				m, n, nz1, nz2, op.getBinaryOperatorOpOp2());
 		}
 		else //DEFAULT CASE
-		{		
+		{
 			if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 				nz2 = nz2 * n;
 			else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
 				nz2 = nz2 * m;
-		
+			
 			//compute output sparsity consistent w/ the hop compiler
 			double sp1 = OptimizerUtils.getSparsity(m, n, nz1);
 			double sp2 = OptimizerUtils.getSparsity(m, n, nz2);
@@ -4879,9 +4879,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select )
 		throws DMLRuntimeException 
-	{	
-		MatrixBlock result = checkType(ret);
-		return LibMatrixReorg.rmempty(this, result, rows, emptyReturn, select);
+	{
+		return LibMatrixReorg.rmempty(this, ret, rows, emptyReturn, select);
 	}
 
 	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, boolean emptyReturn)

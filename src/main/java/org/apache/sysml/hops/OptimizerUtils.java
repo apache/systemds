@@ -98,6 +98,8 @@ public class OptimizerUtils
 	public static final long MAX_NNZ_CP_SPARSE = (MatrixBlock.DEFAULT_SPARSEBLOCK == 
 			SparseBlock.Type.MCSR) ? Long.MAX_VALUE : Integer.MAX_VALUE;
 
+	public static final long SAFE_REP_CHANGE_THRES = 8 * 1024 *1024; //8MB
+	
 	/**
 	 * Enables common subexpression elimination in dags. There is however, a potential tradeoff
 	 * between computation redundancy and data transfer between MR jobs. Since, we do not reason
@@ -1066,11 +1068,10 @@ public class OptimizerUtils
 			//NOTE: for matrix-scalar operations this estimate is too conservative, because 
 			//Math.min(1, sp1 + sp2) will always give a sparsity 1 if we pass sp2=1 for scalars.
 			//In order to do better (with guarantees), we need to take the actual values into account  
-			switch(op) 
-			{
+			switch(op) {
 				case PLUS:
 				case MINUS:
-				case LESS: 
+				case LESS:
 				case GREATER:
 				case NOTEQUAL:
 				case MIN:
@@ -1081,47 +1082,43 @@ public class OptimizerUtils
 				case AND:
 					ret = Math.min(sp1, sp2); break;
 				case DIV:
+					ret = Math.min(1, sp1 + (1-sp2)); break;
 				case MODULUS:
 				case POW:
 				case MINUS_NZ:
-				case LOG_NZ:	
-					ret = sp1; break; 
+				case LOG_NZ:
+					ret = sp1; break;
 				//case EQUAL: //doesnt work on worstcase estimates, but on 
-				//	ret = 1-Math.abs(sp1-sp2); break;	
-	
+				//	ret = 1-Math.abs(sp1-sp2); break;
 				default:
 					ret = 1.0;
 			}
 		}
 		else
 		{
-			switch(op) {			
+			switch(op) {
 				case PLUS:
 				case MINUS:
 					// result[i,j] != 0 iff A[i,j] !=0 || B[i,j] != 0
 					// worst case estimate = sp1+sp2
-					ret = (1 - (1-sp1)*(1-sp2)); 
+					ret = (1 - (1-sp1)*(1-sp2));
 					break;
-					
 				case MULT:
 					// result[i,j] != 0 iff A[i,j] !=0 && B[i,j] != 0
 					// worst case estimate = min(sp1,sp2)
-					ret = sp1 * sp2;  
+					ret = sp1 * sp2;
 					break;
-					
 				case DIV:
 					ret = 1.0; // worst case estimate
 					break;
-					
-				case LESS: 
+				case LESS:
 				case LESSEQUAL:
 				case GREATER:
 				case GREATEREQUAL:
-				case EQUAL: 
+				case EQUAL:
 				case NOTEQUAL:
 					ret = 1.0; // purely data-dependent operations, and hence worse-case estimate
 					break;
-					
 				//MIN, MAX, AND, OR, LOG, POW
 				default:
 					ret = 1.0;
@@ -1129,6 +1126,28 @@ public class OptimizerUtils
 		}
 		
 		return ret; 
+	}
+	
+	public static long getOuterNonZeros(long n1, long n2, long nnz1, long nnz2, OpOp2 op) {
+		if( nnz1 < 0 || nnz2 < 0 )
+			return n1 * n2;
+		switch(op) {
+			case PLUS:
+			case MINUS:
+			case LESS:
+			case GREATER:
+			case NOTEQUAL:
+			case MIN:
+			case MAX:
+			case OR:
+				return n1 * n2
+					- (n1-nnz1) * (n2-nnz2);
+			case MULT:
+			case AND:
+				return nnz1 * nnz2;
+			default:
+				return n1 * n2;
+		}
 	}
 	
 	public static double getSparsity( MatrixCharacteristics mc ) {

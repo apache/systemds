@@ -228,6 +228,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				UtilFunctions.computeCellInBlock(ixrange.rowEnd, mcIn.getRowsPerBlock()), 
 				UtilFunctions.computeCellInBlock(ixrange.colStart, mcIn.getColsPerBlock()), 
 				UtilFunctions.computeCellInBlock(ixrange.colEnd, mcIn.getColsPerBlock()), new MatrixBlock());
+		mbout.examSparsity();
 		return mbout;
 	}
 	

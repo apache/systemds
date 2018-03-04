@@ -485,6 +485,10 @@ public class LibMatrixAgg
 			AggregateOperator aggop = (AggregateOperator) op;
 			groupedAggregateKahanPlus(groups, target, weights, result, numGroups, aggop, 0, target.clen);
 		}
+		
+		//postprocessing sparse/dense formats
+		//(nnz already maintained via append)
+		result.examSparsity();
 	}
 
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 

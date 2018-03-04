@@ -1022,10 +1022,13 @@ public class LibMatrixBincell
 			int n = m1.clen;
 			
 			//init dense result with unsafe 0-value
-			dc.set(op.executeScalar(0));
+			double val0 = op.executeScalar(0);
+			boolean lsparseSafe = (val0 == 0);
+			if( !lsparseSafe )
+				dc.set(val0);
 			
 			//compute non-zero input values
-			long nnz = m * n;
+			long nnz = lsparseSafe ? 0 : m * n;
 			for(int bi=0; bi<dc.numBlocks(); bi++) {
 				int blen = dc.blockSize(bi);
 				double[] c = dc.valuesAt(bi);
@@ -1038,7 +1041,8 @@ public class LibMatrixBincell
 					for(int j=apos; j<apos+alen; j++) {
 						double val = op.executeScalar(avals[j]);
 						c[ cix+aix[j] ] = val;
-						nnz -= (val==0) ? 1 : 0;
+						nnz += lsparseSafe ? (val!=0 ? 1 : 0) :
+							(val==0 ? -1 : 0);
 					}
 				}
 			}

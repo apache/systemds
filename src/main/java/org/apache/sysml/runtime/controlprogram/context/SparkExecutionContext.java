@@ -814,6 +814,7 @@ public class SparkExecutionContext extends ExecutionContext
 				out = list.get(0)._2();
 			else //empty (e.g., after ops w/ outputEmpty=false)
 				out = new MatrixBlock(rlen, clen, true);
+			out.examSparsity();
 		}
 		else //MULTIPLE BLOCKS
 		{

@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.matrix.operators;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.And;
+import org.apache.sysml.runtime.functionobjects.BitwShiftL;
+import org.apache.sysml.runtime.functionobjects.BitwShiftR;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.Equals;
@@ -85,6 +87,7 @@ public abstract class ScalarOperator extends Operator
 	protected static boolean isSparseSafeStatic(ValueFunction fn) {
 		return ( fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power2 || fn instanceof And || fn instanceof MinusNz
-			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ);
+			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ)
+			|| fn instanceof BitwShiftL || fn instanceof BitwShiftR;
 	}
 }

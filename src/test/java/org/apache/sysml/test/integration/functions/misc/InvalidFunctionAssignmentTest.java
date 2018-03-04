@@ -25,18 +25,15 @@ import org.apache.sysml.api.DMLException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
-/**
- *   
- */
 public class InvalidFunctionAssignmentTest extends AutomatedTestBase
-{	
+{
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "InvalidFunctionAssignmentTest1";
 	private final static String TEST_NAME2 = "InvalidFunctionAssignmentTest2";
 	private final static String TEST_NAME3 = "InvalidFunctionAssignmentTest3";
 	private final static String TEST_NAME4 = "InvalidFunctionAssignmentTest4";
 	private final static String TEST_CLASS_DIR = TEST_DIR + InvalidFunctionAssignmentTest.class.getSimpleName() + "/";
-    
+	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
@@ -46,39 +43,33 @@ public class InvalidFunctionAssignmentTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testValidFunctionAssignmentInlined() { 
-		runTest( TEST_NAME1, false ); 
+	public void testValidFunctionAssignmentInlined() {
+		runTest( TEST_NAME1, false );
 	}
 	
 	@Test
-    public void testInvalidFunctionAssignmentInlined() { 
-        runTest( TEST_NAME2, true ); 
-    }
-	
-	@Test
-	public void testValidFunctionAssignment() { 
-		runTest( TEST_NAME3, false ); 
+	public void testInvalidFunctionAssignmentInlined() {
+		//MB: we now support UDFs in expressions and hence it's valid
+		runTest( TEST_NAME2, false );
 	}
 	
 	@Test
-    public void testInvalidFunctionAssignment() { 
-        runTest( TEST_NAME4, true ); 
-    }
+	public void testValidFunctionAssignment() {
+		runTest( TEST_NAME3, false );
+	}
 	
-	/**
-	 * 
-	 * @param testName
-	 */
-	private void runTest( String testName, boolean exceptionExpected ) 
-	{
+	@Test
+	public void testInvalidFunctionAssignment() {
+		//MB: we now support UDFs in expressions and hence it's valid
+		runTest( TEST_NAME4, false );
+	}
+	
+	private void runTest( String testName, boolean exceptionExpected ) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
-		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{};
-		
-		//run tests
-        runTest(true, exceptionExpected, DMLException.class, -1);
+		runTest(true, exceptionExpected, DMLException.class, -1);
 	}
 }

@@ -34,40 +34,39 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
  * BuiltinMultipleCPInstruction is ScalarBuiltinMultipleCPInstruction. The
  * ScalarBuiltinMultipleCPInstruction class is responsible for printf-style
  * Java-based string formatting.
- *
  */
-public abstract class BuiltinNaryCPInstruction extends CPInstruction 
-{
-	protected final CPOperand output;
-	protected final CPOperand[] inputs;
+public abstract class BuiltinNaryCPInstruction extends CPInstruction {
+    protected final CPOperand output;
+    protected final CPOperand[] inputs;
 
-	public BuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
-		super(CPType.BuiltinNary, op, opcode, istr);
-		this.output = output;
-		this.inputs = inputs;
-	}
+    public BuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
+        super(CPType.BuiltinNary, op, opcode, istr);
+        this.output = output;
+        this.inputs = inputs;
+    }
 
-	public static BuiltinNaryCPInstruction parseInstruction(String str) throws DMLRuntimeException {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-		CPOperand outputOperand = new CPOperand(parts[parts.length - 1]);
-		CPOperand[] inputOperands = null;
-		if (parts.length > 2) {
-			inputOperands = new CPOperand[parts.length - 2];
-			for (int i = 1; i < parts.length-1; i++)
-				inputOperands[i-1] = new CPOperand(parts[i]);
-		}
-		
-		if( Nary.OperationType.PRINTF.name().equalsIgnoreCase(opcode) ) {
-			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func), 
-				opcode, str, outputOperand, inputOperands);
-		}
-		else if( opcode.equals("cbind") || opcode.equals("rbind") ) {
-			return new MatrixBuiltinNaryCPInstruction(null, 
-					opcode, str, outputOperand, inputOperands);
-		}
-		
-		throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");
-	}
+    public static BuiltinNaryCPInstruction parseInstruction(String str) throws DMLRuntimeException {
+        String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+        String opcode = parts[0];
+        CPOperand outputOperand = new CPOperand(parts[parts.length - 1]);
+        CPOperand[] inputOperands = null;
+        if (parts.length > 2) {
+            inputOperands = new CPOperand[parts.length - 2];
+            for (int i = 1; i < parts.length - 1; i++)
+                inputOperands[i - 1] = new CPOperand(parts[i]);
+        }
+
+        if (Nary.OperationType.PRINTF.name().equalsIgnoreCase(opcode)) {
+            ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+            return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func),
+                    opcode, str, outputOperand, inputOperands);
+        } else if (opcode.equals("cbind") || opcode.equals("rbind")) {
+            return new MatrixBuiltinNaryCPInstruction(null,
+                    opcode, str, outputOperand, inputOperands);
+        } else if (Nary.OperationType.EVAL.name().equalsIgnoreCase(opcode)) {
+            return new EvalBuiltinNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
+        }
+
+        throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");
+    }
 }

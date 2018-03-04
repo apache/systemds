@@ -253,6 +253,7 @@ public class ScriptExecutor {
 		
 		// set the global compiler configuration
 		try {
+
 			OptimizerUtils.resetStaticCompilerFlags();
 			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(
 				ConfigurationManager.getCompilerConfig(), config);

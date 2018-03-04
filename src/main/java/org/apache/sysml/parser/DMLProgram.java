@@ -131,6 +131,22 @@ public class DMLProgram
 		_blocks = StatementBlock.mergeStatementBlocks(_blocks);
 	}
 	
+	public void hoistFunctionCallsFromExpressions() {
+		try {
+			//handle statement blocks of all functions
+			for( FunctionStatementBlock fsb : getFunctionStatementBlocks() )
+				StatementBlock.rHoistFunctionCallsFromExpressions(fsb);
+			//handle statement blocks of main program
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
+			for( StatementBlock sb : _blocks )
+				tmp.addAll(StatementBlock.rHoistFunctionCallsFromExpressions(sb));
+			_blocks = tmp;
+		}
+		catch(LanguageException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+	
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();

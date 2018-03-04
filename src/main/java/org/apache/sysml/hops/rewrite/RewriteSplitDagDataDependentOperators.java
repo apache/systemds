@@ -67,7 +67,8 @@ import org.apache.sysml.runtime.matrix.data.Pair;
  */
 public class RewriteSplitDagDataDependentOperators extends StatementBlockRewriteRule
 {
-	private static String _varnamePredix = "_sbcvar";
+	private static final String SB_CUT_PREFIX = "_sbcvar";
+	private static final String FUN_CUT_PREFIX = "_funvar";
 	private static IDSequence _seq = new IDSequence();
 	
 	@Override
@@ -151,7 +152,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					}
 					else //create transient write to artificial variables
 					{
-						varname = _varnamePredix + _seq.getNextID();
+						varname = createCutVarName(false);
 						
 						//create new transient read
 						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
@@ -350,7 +351,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		//step 3: create additional cuts
 		for( Pair<Hop,Hop> p : candSet ) 
 		{
-			String varname = _varnamePredix + _seq.getNextID();
+			String varname = createCutVarName(false);
 			
 			Hop hop = p.getKey();
 			Hop c = p.getValue();
@@ -473,5 +474,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
 			ProgramRewriteStatus sate) throws HopsException {
 		return sbs;
+	}
+	
+	public static String createCutVarName(boolean fun) {
+		return fun ?
+			FUN_CUT_PREFIX + _seq.getNextID() :
+			SB_CUT_PREFIX + _seq.getNextID();
+		
 	}
 }

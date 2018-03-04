@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
 	ConditionalValidateTest.class,
 	DataTypeCastingTest.class,
 	DataTypeChangeTest.class,
+	FunctionInExpressionTest.class,
 	FunctionInliningTest.class,
 	FunctionNamespaceTest.class,
 	FunctionReturnTest.class,

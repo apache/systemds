@@ -43,18 +43,20 @@ public class AssignmentStatement extends Statement
 		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource, this);
 		return retVal;
 	}
-
-	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
+	
+	public AssignmentStatement(DataIdentifier di, Expression exp) {
 		_targetList = new ArrayList<>();
 		_targetList.add(di);
 		_source = exp;
+	}
+	
+	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
+		this(di, exp);
 		setParseInfo(parseInfo);
 	}
 
 	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) throws LanguageException {
-		_targetList = new ArrayList<>();
-		_targetList.add(di);
-		_source = exp;
+		this(di, exp);
 		setCtxValues(ctx);
 	}
 

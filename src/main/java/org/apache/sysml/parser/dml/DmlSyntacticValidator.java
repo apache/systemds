@@ -534,11 +534,14 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		Action f = new Action() {
 			@Override public void execute(Expression e) { info.expr = e; }
 		};
+		
+		// handle built-in functions
 		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
 		if (validBIF)
 			return;
-
-		notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
+		
+		// handle user-defined functions
+		info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
 	}
 
 

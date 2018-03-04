@@ -679,16 +679,20 @@ public abstract class CommonSyntacticValidator {
 				return;
 		}
 
-		// If builtin functions weren't found...
+		// handle user-defined functions
+		setAssignmentStatement(ctx, info, target,
+			createFunctionCall(ctx, namespace, functionName, paramExpression));
+	}
+	
+	protected FunctionCallIdentifier createFunctionCall(ParserRuleContext ctx,
+		String namespace, String functionName, ArrayList<ParameterExpression> paramExpression) {
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		functCall.setFunctionName(functionName);
-		// Override default namespace for imported non-built-in function
-		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0
+			&& DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
 		functCall.setFunctionNamespace(inferNamespace);
-
 		functCall.setCtxValuesAndFilename(ctx, currentFile);
-
-		setAssignmentStatement(ctx, info, target, functCall);
+		return functCall;
 	}
 
 	/**

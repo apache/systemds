@@ -1149,11 +1149,14 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		Action f = new Action() {
 			@Override public void execute(Expression e) { info.expr = e; }
 		};
+		
+		//handle builtin functions
 		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
 		if (validBIF)
 			return;
 
-		notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
+		// handle user-defined functions
+		info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
 	}
 
 	@Override

@@ -245,7 +245,10 @@ public class PyDMLParserWrapper extends ParserWrapper
 			dmlPgm.addStatementBlock(getStatementBlock(current));
 		}
 
+		//post-processing
+		dmlPgm.hoistFunctionCallsFromExpressions();
 		dmlPgm.mergeStatementBlocks();
+		
 		return dmlPgm;
 	}
 }

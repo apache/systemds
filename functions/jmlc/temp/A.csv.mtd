@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 3,
+    "cols": 2,
+    "nnz": 6,
+    "format": "csv",
+    "header": false,
+    "sep": ",",
+    "author": "Vikalpa",
+    "created": "2018-03-05 00:51:02 IST"
+}

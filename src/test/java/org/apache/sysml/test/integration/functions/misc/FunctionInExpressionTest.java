@@ -32,7 +32,9 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "FunInExpression1"; 
 	private final static String TEST_NAME2 = "FunInExpression2"; 
 	private final static String TEST_NAME3 = "FunInExpression3"; 
-	private final static String TEST_NAME4 = "FunInExpression4"; 
+	private final static String TEST_NAME4 = "FunInExpression4";
+	private final static String TEST_NAME5 = "FunInExpression5";
+	private final static String TEST_NAME6 = "FunInExpression6";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionInExpressionTest.class.getSimpleName() + "/";
@@ -44,6 +46,8 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
 	}
 
 	@Test
@@ -65,6 +69,16 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	public void testFunInExpression4() {
 		runFunInExpressionTest( TEST_NAME4 );
 	}
+
+	@Test
+	public void testFunInExpression5() {
+		runFunInExpressionTest( TEST_NAME5 );
+	}
+
+	@Test
+	public void testFunInExpression6() {
+		runFunInExpressionTest( TEST_NAME6 );
+	}
 	
 	private void runFunInExpressionTest( String testName )
 	{
@@ -83,6 +97,6 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		
 		//compare results
 		double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
+		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
 	}
 }

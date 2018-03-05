@@ -412,31 +412,43 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		if (current instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : fstmt.getBody())
-				rHoistFunctionCallsFromExpressions(sb);
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			fstmt.setBody(tmp);
 		}
 		else if (current instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) current;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
 			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : wstmt.getBody())
-				rHoistFunctionCallsFromExpressions(sb);
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			wstmt.setBody(tmp);
 		}
 		else if (current instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) current;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
 			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : istmt.getIfBody())
-				rHoistFunctionCallsFromExpressions(sb);
-			for (StatementBlock sb : istmt.getElseBody())
-				rHoistFunctionCallsFromExpressions(sb);
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			istmt.setIfBody(tmp);
+			if( istmt.getElseBody() != null && !istmt.getElseBody().isEmpty() ) {
+				ArrayList<StatementBlock> tmp2 = new ArrayList<>();
+				for (StatementBlock sb : istmt.getElseBody())
+					tmp2.addAll(rHoistFunctionCallsFromExpressions(sb));
+				istmt.setElseBody(tmp2);
+			}
 		}
 		else if (current instanceof ForStatementBlock) { //incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) current;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
 			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : fstmt.getBody())
-				rHoistFunctionCallsFromExpressions(sb);
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			fstmt.setBody(tmp);
 		}
 		else { //generic (last-level)
 			ArrayList<Statement> tmp = new ArrayList<>();

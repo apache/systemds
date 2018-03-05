@@ -90,15 +90,12 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
     input = cbind(X_t, out_prev)  # shape (N, D+M)
     ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-    tmp = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
-    ifog[,1:3*M] = tmp
-    tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
-    ifog[,3*M+1:4*M] = tmp
+    ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+    ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
     # c_t = f*prev_c + i*g
     c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
     # out_t = o*tanh(c)
-    tmp = tanh::forward(c)
-    out_t = ifog[,2*M+1:3*M] * tmp  # shape (N, M)
+    out_t = ifog[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
 
     # store
     if (return_sequences) {
@@ -202,10 +199,8 @@ backward = function(matrix[double] dout, matrix[double] dc,
     o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
     g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
 
-    tmp = tanh::backward(dout_t, ct)
-    dct = dct + o*tmp  # shape (N, M)
-    tmp = tanh::forward(ct)
-    do = tmp * dout_t  # output gate, shape (N, M)
+    dct = dct + o*tanh::backward(dout_t, ct)  # shape (N, M)
+    do = tanh::forward(ct) * dout_t  # output gate, shape (N, M)
     df = c_prev * dct  # forget gate, shape (N, M)
     dc_prev = f * dct  # shape (N, M)
     di = g * dct  # input gate, shape (N, M)

@@ -182,7 +182,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "printf" , CPType.BuiltinNary);
 		String2CPInstructionType.put( "cbind" , CPType.BuiltinNary);
 		String2CPInstructionType.put( "rbind" , CPType.BuiltinNary);
-		
+		String2CPInstructionType.put( "eval" , CPType.BuiltinNary);
+
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "invcdf"	 	, CPType.ParameterizedBuiltin);

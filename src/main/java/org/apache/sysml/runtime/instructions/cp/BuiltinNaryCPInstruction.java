@@ -34,10 +34,8 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
  * BuiltinMultipleCPInstruction is ScalarBuiltinMultipleCPInstruction. The
  * ScalarBuiltinMultipleCPInstruction class is responsible for printf-style
  * Java-based string formatting.
- *
  */
-public abstract class BuiltinNaryCPInstruction extends CPInstruction 
-{
+public abstract class BuiltinNaryCPInstruction extends CPInstruction {
 	protected final CPOperand output;
 	protected final CPOperand[] inputs;
 
@@ -54,20 +52,21 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		CPOperand[] inputOperands = null;
 		if (parts.length > 2) {
 			inputOperands = new CPOperand[parts.length - 2];
-			for (int i = 1; i < parts.length-1; i++)
-				inputOperands[i-1] = new CPOperand(parts[i]);
+			for (int i = 1; i < parts.length - 1; i++)
+				inputOperands[i - 1] = new CPOperand(parts[i]);
 		}
-		
-		if( Nary.OperationType.PRINTF.name().equalsIgnoreCase(opcode) ) {
+
+		if (Nary.OperationType.PRINTF.name().equalsIgnoreCase(opcode)) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func), 
-				opcode, str, outputOperand, inputOperands);
-		}
-		else if( opcode.equals("cbind") || opcode.equals("rbind") ) {
-			return new MatrixBuiltinNaryCPInstruction(null, 
+			return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func),
 					opcode, str, outputOperand, inputOperands);
+		} else if (opcode.equals("cbind") || opcode.equals("rbind")) {
+			return new MatrixBuiltinNaryCPInstruction(null,
+					opcode, str, outputOperand, inputOperands);
+		} else if (Nary.OperationType.EVAL.name().equalsIgnoreCase(opcode)) {
+			return new EvalBuiltinNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}
-		
+
 		throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");
 	}
 }

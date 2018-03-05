@@ -45,7 +45,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private final ArrayList<String> _boundInputNames;
 	private final ArrayList<String> _boundOutputNames;
 
-	private FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs, 
+	public FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs,
 		ArrayList<String> boundInputNames, ArrayList<String> boundOutputNames, String istr) {
 		super(CPType.External, null, functName, istr);
 		_functionName = functName;

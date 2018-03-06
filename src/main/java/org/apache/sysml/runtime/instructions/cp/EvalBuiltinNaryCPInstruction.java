@@ -1,5 +1,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -29,23 +30,13 @@ public class EvalBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		CPOperand func = inputs[0];
 		String funcName = func.getName();
 		String namespace = null;
-		if (func.getName().contains("::")) {
-			String[] split = func.getName().split("::");
-			namespace = split[0];
-			String funcSignature = split[1];
-			if (funcSignature.matches("(.+)([(].*[)])")) {
-				// get funcName from a function call identifier
-				Pattern pattern = Pattern.compile("(.+)([(].*[)])");
-				Matcher matcher = pattern.matcher(func.getName());
-				if (matcher.matches()) {
-					funcName = matcher.group(0);
-				}
-			} else {
-				funcName = funcSignature;
-			}
+		String[] splits = DMLProgram.splitFunctionKey(funcName);
+		if (splits.length == 2) {
+			namespace = splits[0];
+			funcName = splits[1];
 		}
 		// bound the inputs to avoiding being deleted after the function call
-		CPOperand[] boundInputs = Arrays.asList(inputs).subList(1, inputs.length).toArray(new CPOperand[]{});
+		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
 		ArrayList<String> boundOutputNames = new ArrayList<>();
 		boundOutputNames.add(output.getName());
 		ArrayList<String> boundInputNames = new ArrayList<>();
@@ -68,8 +59,7 @@ public class EvalBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixBlock mb = null;
 		if (newOutput instanceof ScalarObject) {
 			//convert scalar to matrix
-			mb = new MatrixBlock(1, 1, false);
-			mb.setValue(0, 0, ((ScalarObject) newOutput).getDoubleValue());
+			mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
 		} else if (newOutput instanceof FrameObject) {
 			//convert frame to matrix
 			mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());

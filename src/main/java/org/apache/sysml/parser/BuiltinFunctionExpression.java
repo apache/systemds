@@ -382,7 +382,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		switch (this.getOpCode()) {
 		case EVAL:
 			if (_args.length == 0) {
-				raiseValidateError("Function eval should provide at least one arguments.", false);
+				raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
+			}
+			// convert the alias of namespace to the path of namespace
+			String funcName = ((StringIdentifier) _args[0]).getValue();
+			String[] splits = DMLProgram.splitFunctionKey(funcName);
+			if (splits.length == 2) {
+				String ns = splits[0];
+				ConstIdentifier nsPath = constVars.get(ns);
+				if (nsPath == null) {
+					raiseValidateError(String.format("Namespace $s doesn't exist.", ns), false);
+				}
+				_args[0] = new StringIdentifier(DMLProgram.constructFunctionKey(((StringIdentifier)nsPath).getValue(), splits[1]), this);
 			}
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
@@ -1803,9 +1814,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.IFELSE;
 		else if (functionName.equals("eval")) {
 			bifop = Expression.BuiltinFunctionOp.EVAL;
-			//Need to cast the first param "name of the referenced func" into a string identifier
-			DataIdentifier func = (DataIdentifier) paramExprsPassed.get(0).getExpr();
-			paramExprsPassed.get(0).setExpr(new StringIdentifier(func.toString(), func));
 		}
 		else
 			return null;

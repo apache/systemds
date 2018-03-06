@@ -1272,10 +1272,6 @@ public class DMLTranslator
 					if (!(target instanceof IndexedIdentifier)) {
 						//process right hand side and accumulation
 						Hop ae = processExpression(source, target, ids);
-						// if it is eval built-in func, add hop to output
-						if (ae instanceof NaryOp && ((NaryOp) ae).getOp().equals(OpOpN.EVAL)) {
-							output.add(ae);
-						}
 						if( ((AssignmentStatement)current).isAccumulator() ) {
 							DataIdentifier accum = liveIn.getVariable(target.getName());
 							if( accum == null )

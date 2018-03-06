@@ -759,7 +759,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			}
 			// no work to perform for PathStatement or ImportStatement
 			else if (current instanceof PathStatement){}
-			else if (current instanceof ImportStatement){}
+			else if (current instanceof ImportStatement){
+				// the namespace's alias is the macro
+				// inject the namespace's alias into the constVars
+				ImportStatement is = (ImportStatement) current;
+				currConstVars.put(is.getNamespace(), new StringIdentifier(is.getCompletePath(), this));
+			}
 			else {
 				raiseValidateError("cannot process statement of type " + current.getClass().getSimpleName(), conditional);
 			}

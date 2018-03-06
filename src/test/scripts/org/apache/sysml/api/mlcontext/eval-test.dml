@@ -41,11 +41,11 @@ f3 = function (matrix[double] M1, matrix[double] M2) return (matrix[double] res)
 X = matrix("1 2 3 4", rows=2, cols=2)
 y = 10
 
-R1 = eval(f1, X, y)
-R2 = eval(f2, X, y)
-R3 = eval(f3, X, X)
+R1 = eval("f1", X, y)
+R2 = eval("f2", X, y)
+R3 = eval("f3", X, X)
 
 print(toString(R1))
 print(toString(R2))
 print(toString(R3))
-print(toString(eval(ns1::f4)))
+print(toString(eval("ns1::f4")))

@@ -507,19 +507,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 	}
 
-	private void convertNamespace(ArrayList<ParameterExpression> params) {
-		for (ParameterExpression p : params) {
-			if (p.getExpr() instanceof DataIdentifier && ((DataIdentifier) p.getExpr()).getName() != null
-					&& ((DataIdentifier) p.getExpr()).getName().contains(namespaceResolutionOp())) {
-				DataIdentifier di = (DataIdentifier) p.getExpr();
-				String[] names = getQualifiedNames(di.getName());
-				if(names != null) {
-					di.setName(names[0] + namespaceResolutionOp() + names[1]);
-				}
-			}
-		}
-	}
-
 	@Override
 	public void exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext ctx) {
 		// Double verification: verify passed function name is a (non-parameterized) built-in function.
@@ -532,8 +519,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String functionName = names[1];
 
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-		//convert the namespace for the function identifier arguments
-		convertNamespace(paramExpression);
 		castAsScalarDeprecationCheck(functionName, ctx);
 
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);

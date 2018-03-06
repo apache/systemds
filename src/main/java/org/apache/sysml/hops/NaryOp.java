@@ -159,7 +159,6 @@ public class NaryOp extends Hop {
 		setRequiresRecompileIfNecessary();
 		
 		//ensure cp exec type for single-node operations
-		//TODO eval function only supports CP execution type
 		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL)
 			_etype = ExecType.CP;
 		

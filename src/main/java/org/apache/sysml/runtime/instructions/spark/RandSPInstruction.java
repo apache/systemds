@@ -703,6 +703,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 				.createRandomMatrixGenerator(_pdf, lrlen, lclen,
 					lrlen, lclen,_sparsity, _min, _max, _pdfParams);
 			blk.randOperationsInPlace(rgen, null, seed);
+			blk.examSparsity();
 			return new Tuple2<>(kv._1, blk);
 		}
 	}

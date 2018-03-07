@@ -3671,9 +3671,9 @@ public class LibMatrixMult
 			int bimin = Math.min(bi+blocksizeIJ, n);
 			for( int i=bi, rix=bi*n; i<bimin; i++, rix+=n ) {
 				LibMatrixReorg.transposeRow(c, c, rix+bi, bi*n+i, n, bimin-bi);
+				nnz += (c[rix+i] != 0) ? 1 : 0; //for diagonal element
 				for( int j=rix+i+1; j<rix+bimin; j++ )
 					nnz += (c[j] != 0) ? 2 : 0;
-				nnz++; //for diagonal element
 			}
 		}
 		

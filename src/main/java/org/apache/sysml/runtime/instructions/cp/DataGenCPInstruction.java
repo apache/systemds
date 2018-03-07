@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
@@ -249,6 +250,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			soresBlock = MatrixBlock.sampleOperations(range, (int)lrows, replace, seed);
 		}
+		
+		//guarded sparse block representation change
+		if( soresBlock.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
+			soresBlock.examSparsity();
 		
 		//release created output
 		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());

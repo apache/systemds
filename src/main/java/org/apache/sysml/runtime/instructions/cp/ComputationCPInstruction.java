@@ -58,15 +58,16 @@ public abstract class ComputationCPInstruction extends CPInstruction {
 	}
 
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out ) {
-		if( (DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
-			&& !CacheableData.isCachingActive())
-			|| out.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES) //8MB
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+			&& !CacheableData.isCachingActive() )
 			return true;
 		double memIn1 = (in1 != null) ? in1.getInMemorySize() : 0;
 		double memIn2 = (in2 != null) ? in2.getInMemorySize() : 0;
 		double memReq = out.isInSparseFormat() ? 
 			MatrixBlock.estimateSizeDenseInMemory(out.getNumRows(), out.getNumColumns()) :
 			MatrixBlock.estimateSizeSparseInMemory(out.getNumRows(), out.getNumColumns(), out.getSparsity());
-		return ( memReq < memIn1 + memIn2 );
+		//guarded if mem requirements smaller than input sizes
+		return ( memReq < memIn1 + memIn2
+			+ OptimizerUtils.SAFE_REP_CHANGE_THRES ); //8MB
 	}
 }

@@ -22,6 +22,7 @@ package org.apache.sysml.udf;
 import java.io.IOException;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -222,14 +223,17 @@ public class Matrix extends FunctionParameter
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen, nnz);
 		MetaDataFormat mfmd = new MetaDataFormat(mc, oinfo, iinfo);
-		try 
-		{
+		try {
+			//check for correct sparse/dense representation
+			if( mb.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
+				mb.examSparsity();
+			
+			//construct output matrix object
 			_mo = new MatrixObject(Expression.ValueType.DOUBLE, _filePath, mfmd);
 			_mo.acquireModify( mb );
 			_mo.release();
 		} 
-		catch(Exception e) 
-		{
+		catch(Exception e) {
 			throw new IOException(e);
 		} 
 	}

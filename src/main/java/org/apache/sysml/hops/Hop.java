@@ -219,9 +219,7 @@ public abstract class Hop implements ParseInfo
 	{
 		if( _etype == ExecType.CP || _etype == ExecType.GPU ) {
 			//check dimensions of output and all inputs (INTEGER)
-			boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
-			for( Hop in : getInput() )
-				invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+			boolean invalid = !hasValidCPDimsAndSize();
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
@@ -231,6 +229,13 @@ public abstract class Hop implements ParseInfo
 					_etype = ExecType.SPARK;
 			}
 		}
+	}
+	
+	public boolean hasValidCPDimsAndSize() {
+		boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
+		for( Hop in : getInput() )
+			invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+		return !invalid;
 	}
 
 	public boolean hasMatrixInputWithDifferentBlocksizes()

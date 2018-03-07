@@ -907,7 +907,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
 			if(    h.getForcedExecType()!=LopProperties.ExecType.MR  //e.g., -exec=hadoop
-				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK) 
+				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK 
+				&& h.hasValidCPDimsAndSize() ) //integer dims
 			{
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
 				if( mem <= memBudget )

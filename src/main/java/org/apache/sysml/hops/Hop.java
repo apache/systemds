@@ -347,8 +347,8 @@ public abstract class Hop implements ParseInfo
 			//conditional checkpoint based on memory estimate in order to 
 			//(1) avoid unnecessary persist and unpersist calls, and 
 			//(2) avoid unnecessary creation of spark context (incl executors)
-			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate)
+			if( (OptimizerUtils.isHybridExecutionMode() && hasValidCPDimsAndSize()
+				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate))
 				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;

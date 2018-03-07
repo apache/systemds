@@ -108,8 +108,9 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//(trigger coalesce if intended number of partitions exceeded by 20%
 			//and not hash partitioned to avoid losing the existing partitioner)
 			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
-			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions() 
-					&& !SparkUtils.isHashPartitioned(in) );
+			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions()
+				&& !SparkUtils.isHashPartitioned(in) && in.getNumPartitions()
+				> SparkExecutionContext.getDefaultParallelism(true));
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {

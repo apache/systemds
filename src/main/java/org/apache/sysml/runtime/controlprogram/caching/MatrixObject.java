@@ -472,7 +472,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			int clen = (int)mc.getCols();
 			int brlen = (int)mc.getRowsPerBlock();
 			int bclen = (int)mc.getColsPerBlock();
-			long nnz = mc.getNonZeros();
+			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
 			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
@@ -492,11 +492,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			else if( ii == InputInfo.BinaryCellInputInfo ) {
 				//collect matrix block from binary block RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);		
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);
 			}
 			else {
 				//collect matrix block from binary cell RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);	
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);
 			}
 		}
 		catch(DMLRuntimeException ex) {

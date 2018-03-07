@@ -472,7 +472,7 @@ public class OptimizerUtils
 				mc.getCols(),
 				mc.getRowsPerBlock(),
 				mc.getColsPerBlock(),
-				mc.getNonZeros(), memPinned);
+				mc.getNonZerosBound(), memPinned);
 	}
 	
 	public static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz, long memPinned )

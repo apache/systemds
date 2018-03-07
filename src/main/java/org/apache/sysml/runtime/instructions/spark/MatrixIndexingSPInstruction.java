@@ -99,6 +99,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			mcOut.setNonZerosBound(Math.min(mcOut.getLength(), mcIn.getNonZerosBound()));
 			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation (partitioning-preserving if possible)

@@ -76,6 +76,7 @@ public class MatrixCharacteristics implements Serializable
 	private int numRowsPerBlock = 1;
 	private int numColumnsPerBlock = 1;
 	private long nonZero = -1;
+	private boolean ubNnz = false;
 	
 	public MatrixCharacteristics() {
 	
@@ -106,6 +107,7 @@ public class MatrixCharacteristics implements Serializable
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
 		nonZero = nnz;
+		ubNnz = false;
 	}
 	
 	public void set(MatrixCharacteristics that) {
@@ -114,6 +116,7 @@ public class MatrixCharacteristics implements Serializable
 		numRowsPerBlock = that.numRowsPerBlock;
 		numColumnsPerBlock = that.numColumnsPerBlock;
 		nonZero = that.nonZero;
+		ubNnz = that.ubNnz;
 	}
 	
 	public long getRows(){
@@ -122,6 +125,10 @@ public class MatrixCharacteristics implements Serializable
 
 	public long getCols(){
 		return numColumns;
+	}
+	
+	public long getLength() {
+		return numRows * numColumns;
 	}
 	
 	public int getRowsPerBlock() {
@@ -156,7 +163,7 @@ public class MatrixCharacteristics implements Serializable
 	
 	@Override
 	public String toString() {
-		return "["+numRows+" x "+numColumns+", nnz="+nonZero
+		return "["+numRows+" x "+numColumns+", nnz="+nonZero+" ("+ubNnz+")"
 		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}
 	
@@ -175,10 +182,20 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public void setNonZeros(long nnz) {
+		ubNnz = false;
 		nonZero = nnz;
 	}
 	
 	public long getNonZeros() {
+		return !ubNnz ? nonZero : -1;
+	}
+	
+	public void setNonZerosBound(long nnz) {
+		ubNnz = true;
+		nonZero = nnz;
+	}
+	
+	public long getNonZerosBound() {
 		return nonZero;
 	}
 	
@@ -187,7 +204,8 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( numRows >= 0 && numColumns >= 0 && (!includeNnz || nonZero >= 0));
+		return ( numRows >= 0 && numColumns >= 0
+			&& (!includeNnz || nnzKnown()));
 	}
 	
 	public boolean rowsKnown() {
@@ -199,7 +217,7 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public boolean nnzKnown() {
-		return ( nonZero >= 0 );
+		return ( !ubNnz && nonZero >= 0 );
 	}
 	
 	public boolean mightHaveEmptyBlocks() {

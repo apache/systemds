@@ -55,6 +55,5 @@ backward = function(matrix[double] dout, matrix[double] X, int alpha)
    * Outputs:
    *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
-   out = max(0, X) + min(0, alpha * (exp(X) - 1))
-   dX = ((X > 0) + min(0, alpha + out)) * dout
+   dX = ((X > 0) + (X < 0) * (alpha * exp(X))) * dout
 }

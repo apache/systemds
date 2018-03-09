@@ -2469,7 +2469,7 @@ elu = function() {
    N = 3 # num examples
    M = 10 # num neurons
 
-   X = rand(rows=N, cols=M)
+   X = rand(rows=N, cols=M, min=-5, max=5)
    y = rand(rows=N, cols=M)
 
    out = elu::forward(X, 1)
@@ -2477,7 +2477,7 @@ elu = function() {
    dX = elu::backward(dout, X, 1)
 
    # Grad check
-   h = 1e-6
+   h = 1e-5
    print(" - Grad checking X.")
    for (i in 1:nrow(X)) {
      for (j in 1:ncol(X)) {

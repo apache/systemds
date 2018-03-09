@@ -34,6 +34,8 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -83,20 +85,27 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable(input2.getName());
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		
 		if( _aggtype == SparkAggType.SINGLE_BLOCK ) {
 			//prune empty blocks of ultra-sparse matrices
 			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 			in2 = in2.filter(new FilterNonEmptyBlocksFunction());
 		}
 		
+		//compute preferred join degree of parallelism
+		int numPreferred = getPreferredParJoin(mc1, mc2, in1.getNumPartitions(), in2.getNumPartitions());
+		int numPartJoin = Math.min(getMaxParJoin(mc1, mc2), numPreferred);
+		
 		//process core cpmm matrix multiply 
 		JavaPairRDD<Long, IndexedMatrixValue> tmp1 = in1.mapToPair(new CpmmIndexFunction(true));
 		JavaPairRDD<Long, IndexedMatrixValue> tmp2 = in2.mapToPair(new CpmmIndexFunction(false));
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = tmp1
-			.join(tmp2)                              // join over common dimension
-			.mapToPair(new CpmmMultiplyFunction());  // compute block multiplications
+			.join(tmp2, numPartJoin)                // join over common dimension
+			.mapToPair(new CpmmMultiplyFunction()); // compute block multiplications
 		
 		//process cpmm aggregation and handle outputs
 		if( _aggtype == SparkAggType.SINGLE_BLOCK ) {
@@ -119,6 +128,22 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			//update output statistics if not inferred
 			updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		}
+	}
+	
+	private static int getPreferredParJoin(MatrixCharacteristics mc1, MatrixCharacteristics mc2, int numPar1, int numPar2) {
+		int defPar = SparkExecutionContext.getDefaultParallelism(true);
+		int maxParIn = Math.max(numPar1, numPar2);
+		int maxSizeIn = SparkUtils.getNumPreferredPartitions(mc1) +
+			SparkUtils.getNumPreferredPartitions(mc2);
+		int tmp = (mc1.dimsKnown(true) && mc2.dimsKnown(true)) ? 
+			Math.max(maxSizeIn, maxParIn) : maxParIn;
+		return (tmp > defPar/2) ? Math.max(tmp, defPar) : tmp;
+	}
+	
+	private static int getMaxParJoin(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
+		return mc1.colsKnown() ? (int)mc1.getNumColBlocks() :
+			mc2.rowsKnown() ? (int)mc2.getNumRowBlocks() :
+			Integer.MAX_VALUE;
 	}
 
 	private static class CpmmIndexFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, IndexedMatrixValue>

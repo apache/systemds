@@ -38,20 +38,29 @@ public class AlgorithmPNMF extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_PNMF";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmPNMF.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
-	
+	private final static String TEST_CONF_DEFAULT = "SystemML-config-codegen.xml";
+	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
+	private final static String TEST_CONF_FUSE_ALL = "SystemML-config-codegen-fuse-all.xml";
+	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
+	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemML-config-codegen-fuse-no-redundancy.xml";
+	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
+			TEST_CONF_FUSE_NO_REDUNDANCY);
+
+	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
+
 	private final static double eps = 1e-5;
 	
 	private final static int rows = 1468;
 	private final static int cols = 1207;
 	private final static int rank = 20;
-		
+	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
+	
+	private TestType currentTestType = TestType.DEFAULT;
 	
 	@Override
 	public void setUp() {
@@ -61,12 +70,32 @@ public class AlgorithmPNMF extends AutomatedTestBase
 
 	@Test
 	public void testPNMFDenseCP() {
-		runPNMFTest(TEST_NAME1, false, false, ExecType.CP);
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testPNMFSparseCP() {
-		runPNMFTest(TEST_NAME1, false, true, ExecType.CP);
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
+	}
+
+	@Test
+	public void testPNMFDenseCPFuseAll() {
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPNMFSparseCPFuseAll() {
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPNMFDenseCPFuseNoRedundancy() {
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testPNMFSparseCPFuseNoRedundancy() {
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 	
 	//TODO requires proper handling of blocksize constraints
@@ -80,7 +109,7 @@ public class AlgorithmPNMF extends AutomatedTestBase
 	//	runPNMFTest(TEST_NAME1, false, true, ExecType.SPARK);
 	//}
 
-	private void runPNMFTest( String testname, boolean rewrites, boolean sparse, ExecType instType)
+	private void runPNMFTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -89,7 +118,7 @@ public class AlgorithmPNMF extends AutomatedTestBase
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
-	
+		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -146,7 +175,16 @@ public class AlgorithmPNMF extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
-		return TEST_CONF_FILE;
+		String message = "This test case overrides default configuration with ";
+		if(currentTestType == TestType.FUSE_ALL){
+			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
+			return TEST_CONF_FILE_FUSE_ALL;
+		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
+			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
+			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
+		} else {
+			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
+			return TEST_CONF_FILE_DEFAULT;
+		}
 	}
 }

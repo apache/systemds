@@ -89,6 +89,14 @@ import scala.collection.Seq;
 public class MLContextTest extends MLContextTestBase {
 
 	@Test
+	public void testCreateDMLScriptBasedOnFileAndExecuteEvalTest() {
+		System.out.println("MLContextTest - create DML script based on file and execute");
+		setExpectedStdOut("10");
+		Script script = dmlFromFile(baseDirectory + File.separator + "eval-test.dml");
+		ml.execute(script);
+	}
+
+	@Test
 	public void testCreateDMLScriptBasedOnStringAndExecute() {
 		System.out.println("MLContextTest - create DML script based on string and execute");
 		String testString = "Create DML script based on string and execute";

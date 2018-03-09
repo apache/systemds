@@ -51,7 +51,7 @@ public class Builtin extends ValueFunction
 	
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX,
-		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID }
+		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, EVAL }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -81,6 +81,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
 		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
 		String2BuiltinCode.put( "printf"  , BuiltinCode.PRINTF);
+		String2BuiltinCode.put( "eval"  , BuiltinCode.EVAL);
 		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
 		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
 		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);

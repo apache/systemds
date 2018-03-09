@@ -38,9 +38,17 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_MLogreg";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMLogreg.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
-	
+	private final static String TEST_CONF_DEFAULT = "SystemML-config-codegen.xml";
+	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
+	private final static String TEST_CONF_FUSE_ALL = "SystemML-config-codegen-fuse-all.xml";
+	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
+	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemML-config-codegen-fuse-no-redundancy.xml";
+	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
+			TEST_CONF_FUSE_NO_REDUNDANCY);
+
+	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
+	private static TestType currentTestType = TestType.DEFAULT;
+
 	private final static double eps = 1e-5;
 	
 	private final static int rows = 2468;
@@ -60,165 +68,485 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 
 	@Test
 	public void testMlogregBin0DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0DenseCP() {
-		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0SparseCP() {
-		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0DenseCP() {
-		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0SparseCP() {
-		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 
 	@Test
 	public void testMlogregBin0DenseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0SparseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0DenseSP() {
-		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin0SparseSP() {
-		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0DenseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0SparseRewritesSP() {
-		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0DenseSP() {
-		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul0SparseSP() {
-		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.SPARK);
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin1DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 1, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 1, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin1SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 1, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 1, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin1DenseCP() {
-		runMlogregTest(TEST_NAME1, 2, 1, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 1, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin1SparseCP() {
-		runMlogregTest(TEST_NAME1, 2, 1, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 1, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul1DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 1, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 1, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul1SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 1, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 1, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul1DenseCP() {
-		runMlogregTest(TEST_NAME1, 5, 1, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 1, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul1SparseCP() {
-		runMlogregTest(TEST_NAME1, 5, 1, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 1, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 
 	@Test
 	public void testMlogregBin2DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 2, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 2, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin2SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 2, 2, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 2, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin2DenseCP() {
-		runMlogregTest(TEST_NAME1, 2, 2, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 2, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregBin2SparseCP() {
-		runMlogregTest(TEST_NAME1, 2, 2, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 2, 2, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul2DenseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 2, true, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 2, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul2SparseRewritesCP() {
-		runMlogregTest(TEST_NAME1, 5, 2, true, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 2, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul2DenseCP() {
-		runMlogregTest(TEST_NAME1, 5, 2, false, false, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 2, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMlogregMul2SparseCP() {
-		runMlogregTest(TEST_NAME1, 5, 2, false, true, ExecType.CP);
+		runMlogregTest(TEST_NAME1, 5, 2, false, true, ExecType.CP, TestType.DEFAULT);
+	}
+
+	@Test
+	public void testMlogregBin0DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0DenseRewritesSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0SparseRewritesSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0DenseSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0SparseSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0DenseRewritesSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0SparseRewritesSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0DenseSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul0SparseSPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin1DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin1SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin1DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin1SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul1DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul1SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul1DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul1SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin2DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin2SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin2DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin2SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul2DenseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul2SparseRewritesCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul2DenseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregMul2SparseCPFuseAll() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMlogregBin0DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0DenseRewritesSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0SparseRewritesSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0DenseSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin0SparseSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 0, false, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0DenseRewritesSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0SparseRewritesSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0DenseSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul0SparseSPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 0, false, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin1DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin1SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin1DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin1SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul1DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul1SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul1DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul1SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin2DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin2SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 2, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin2DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregBin2SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 2, 2, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul2DenseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul2SparseRewritesCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 2, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul2DenseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testMlogregMul2SparseCPFuseNoRedundancy() {
+		runMlogregTest(TEST_NAME1, 5, 2, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 	
-	private void runMlogregTest( String testname, int classes, int intercept, boolean rewrites, boolean sparse, ExecType instType)
+	private void runMlogregTest( String testname, int classes, int intercept, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -227,7 +555,7 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
-	
+		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -280,7 +608,16 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
-		return TEST_CONF_FILE;
+		String message = "This test case overrides default configuration with ";
+		if(currentTestType == TestType.FUSE_ALL){
+			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
+			return TEST_CONF_FILE_FUSE_ALL;
+		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
+			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
+			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
+		} else {
+			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
+			return TEST_CONF_FILE_DEFAULT;
+		}
 	}
 }

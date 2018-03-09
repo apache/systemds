@@ -31,9 +31,17 @@ import org.apache.sysml.test.integration.applications.MDABivariateStatsTest;
 public class AlgorithmMDABivar extends MDABivariateStatsTest 
 {
 	private final static String LOCAL_TEST_DIR = "functions/codegenalg/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF);
-	
+	private final static String TEST_CONF_DEFAULT = "SystemML-config-codegen.xml";
+	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF_DEFAULT);
+	private final static String TEST_CONF_FUSE_ALL = "SystemML-config-codegen-fuse-all.xml";
+	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF_FUSE_ALL);
+	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemML-config-codegen-fuse-no-redundancy.xml";
+	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + LOCAL_TEST_DIR,
+			TEST_CONF_FUSE_NO_REDUNDANCY);
+
+	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
+	private static TestType currentTestType = TestType.DEFAULT;
+
 	public AlgorithmMDABivar(int n, int m, int li, int lml) {
 		super(n, m, li, lml);
 		TEST_CLASS_DIR = TEST_DIR + AlgorithmMDABivar.class.getSimpleName() + "/";
@@ -41,12 +49,36 @@ public class AlgorithmMDABivar extends MDABivariateStatsTest
 
 	@Test
 	public void testMDABivariateStatsDml() {
-		testMDABivariateStats(ScriptType.DML);
+		testMDABivariateStats(ScriptType.DML,TestType.DEFAULT);
+	}
+
+	@Test
+	public void testMDABivariateStatsDmlFuseAll() {
+		testMDABivariateStats(ScriptType.DML,TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testMDABivariateStatsDmlFuseNoRedundancy() {
+		testMDABivariateStats(ScriptType.DML,TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	private void testMDABivariateStats(ScriptType scriptType, TestType testType) {
+		currentTestType = testType;
+		testMDABivariateStats(scriptType);
 	}
 	
 	@Override
 	protected File getConfigTemplateFile() {
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
-		return TEST_CONF_FILE;
+		String message = "This test case overrides default configuration with ";
+		if(currentTestType == TestType.FUSE_ALL){
+			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
+			return TEST_CONF_FILE_FUSE_ALL;
+		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
+			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
+			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
+		} else {
+			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
+			return TEST_CONF_FILE_DEFAULT;
+		}
 	}
 }

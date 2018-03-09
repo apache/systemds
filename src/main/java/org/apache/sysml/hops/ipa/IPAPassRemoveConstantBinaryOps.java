@@ -52,7 +52,7 @@ import org.apache.sysml.parser.Expression.DataType;
 public class IPAPassRemoveConstantBinaryOps extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.REMOVE_CONSTANT_BINARY_OPS;
 	}
 	

@@ -46,7 +46,7 @@ import org.apache.sysml.parser.StatementBlock;
 public class IPAPassInlineFunctions extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.INLINING_MAX_NUM_OPS > 0;
 	}
 	

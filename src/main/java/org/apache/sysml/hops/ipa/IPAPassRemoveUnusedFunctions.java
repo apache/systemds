@@ -38,8 +38,9 @@ import org.apache.sysml.parser.LanguageException;
 public class IPAPassRemoveUnusedFunctions extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
-		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS;
+	public boolean isApplicable(FunctionCallGraph fgraph) {
+		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS
+			&& !fgraph.containsEvalCall();
 	}
 	
 	@Override

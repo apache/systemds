@@ -35,7 +35,7 @@ import org.apache.sysml.parser.LanguageException;
 public class IPAPassApplyStaticHopRewrites extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.APPLY_STATIC_REWRITES;
 	}
 	

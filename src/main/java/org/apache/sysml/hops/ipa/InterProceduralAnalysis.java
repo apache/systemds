@@ -84,12 +84,12 @@ public class InterProceduralAnalysis
 {
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
-    
+
 	//internal configuration parameters
 	protected static final boolean INTRA_PROCEDURAL_ANALYSIS      = true; //propagate statistics across statement blocks (main/functions)	
 	protected static final boolean PROPAGATE_KNOWN_UDF_STATISTICS = true; //propagate statistics for known external functions 
 	protected static final boolean ALLOW_MULTIPLE_FUNCTION_CALLS  = true; //propagate consistent statistics from multiple calls 
-	protected static final boolean REMOVE_UNUSED_FUNCTIONS        = false; //remove unused functions (inlined or never called)
+	protected static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //remove unused functions (inlined or never called)
 	protected static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
 	protected static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
 	protected static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
@@ -166,7 +166,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException in case of compilation errors
 	 */
 	public void analyzeProgram(int repetitions) 
-		throws HopsException	
+		throws HopsException
 	{
 		//sanity check for valid number of repetitions
 		if( repetitions <= 0 )
@@ -201,7 +201,7 @@ public class InterProceduralAnalysis
 			
 			//step 2: apply additional IPA passes
 			for( IPAPass pass : _passes )
-				if( pass.isApplicable() )
+				if( pass.isApplicable(_fgraph) )
 					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
 			
 			//early abort without functions or on reached fixpoint
@@ -217,7 +217,7 @@ public class InterProceduralAnalysis
 		//cleanup pass: remove unused functions
 		FunctionCallGraph graph2 = new FunctionCallGraph(_prog);
 		IPAPass rmFuns = new IPAPassRemoveUnusedFunctions();
-		if( rmFuns.isApplicable() )
+		if( rmFuns.isApplicable(graph2) )
 			rmFuns.rewriteProgram(_prog, graph2, null);
 	}
 	

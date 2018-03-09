@@ -50,7 +50,7 @@ import org.apache.sysml.parser.WhileStatementBlock;
 public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.REMOVE_UNNECESSARY_CHECKPOINTS 
 			&& OptimizerUtils.isSparkExecutionMode();
 	}

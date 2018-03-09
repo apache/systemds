@@ -160,7 +160,42 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
-		// empty implementation
+
+		//1. Correct meta data
+		if( rlen < 0 || clen < 0 )
+			throw new RuntimeException("Invalid block dimensions: ("+rlen+", "+clen+")");
+
+		//2. Correct array lengths
+		if( size() < nnz )
+			throw new RuntimeException("Incorrect array lengths.");
+
+		//3. Sorted column indices per row
+		for( int i=0; i<rlen; i++ ) {
+			int apos = pos(i);
+			int alen = size(i);
+			for (int k = apos + 1; k < apos + alen; k++) {
+				if (indexes(i)[k - 1] >= indexes(i)[k])
+					throw new RuntimeException("Wrong sparse row ordering, at row: " + k + "with "
+							+ indexes(i)[k - 1] + ">=" + indexes(i)[k]);
+				if (values(i)[k] == 0)
+					throw new RuntimeException("The values are expected to be non zeros but at row: "
+						+i+"at value is "+values(i)[k]);
+			}
+
+		}
+
+		//4. Non-existing zero values
+	//	for( int i=1; i<rlen; i++ )
+	//		for( int k=rlen; k<size()-1; k++ ) //account for zeros in first rlen+1 values
+	//			if(values(i)[k] == 0)
+	//				throw new RuntimeException("The values array should not contain zeros");
+
+		//5. A capacity that is no larger than nnz times resize factor
+		for( int i=1; i<rlen; i++ )
+			if( _rows[i] != null && values(i).length > nnz*RESIZE_FACTOR1 )
+				throw new RuntimeException("The capacity is larger than nnz times a resize factor(=2). Actual length = "+
+					values(i).length+", should not exceed "+nnz*RESIZE_FACTOR1);
+
 		return true;
 	}
 

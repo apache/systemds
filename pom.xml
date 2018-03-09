@@ -1501,7 +1501,7 @@
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
-			<version>3.0.0</version>
+			<version>3.0.8</version>
 			<scope>provided</scope>
 		</dependency>
 

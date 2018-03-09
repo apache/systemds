@@ -66,6 +66,9 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		else if( opcode.equals("cbind") || opcode.equals("rbind") ) {
 			return new MatrixBuiltinNaryCPInstruction(null, 
 					opcode, str, outputOperand, inputOperands);
+		} 
+		else if (Nary.OperationType.EVAL.name().equalsIgnoreCase(opcode)) {
+			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}
 		
 		throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");

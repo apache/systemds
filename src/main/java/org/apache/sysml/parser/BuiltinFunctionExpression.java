@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -379,6 +380,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		this.setOutput(output);
 		
 		switch (this.getOpCode()) {
+		case EVAL:
+			if (_args.length == 0)
+				raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
+			checkValueTypeParam(_args[0], ValueType.STRING);
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setBlockDimensions(ConfigurationManager.getBlocksize(),
+				ConfigurationManager.getBlocksize());
+			break;
 		case COLSUM:
 		case COLMAX:
 		case COLMIN:
@@ -1792,6 +1802,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.BITWSHIFTR;
 		else if ( functionName.equals("ifelse") )
 			bifop = Expression.BuiltinFunctionOp.IFELSE;
+		else if (functionName.equals("eval")) {
+			bifop = Expression.BuiltinFunctionOp.EVAL;
+		}
 		else
 			return null;
 		

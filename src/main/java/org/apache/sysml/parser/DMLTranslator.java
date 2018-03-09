@@ -2381,6 +2381,10 @@ public class DMLTranslator
 		// Construct the hop based on the type of Builtin function
 		switch (source.getOpCode()) {
 
+		case EVAL:
+			currBuiltinOp = new NaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOpN.EVAL, processAllExpressions(source.getAllExpr(), hops));
+			break;
+
 		case COLSUM:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.SUM,
 					Direction.Col, expr);

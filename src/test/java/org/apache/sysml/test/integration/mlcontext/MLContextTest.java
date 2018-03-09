@@ -75,6 +75,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -89,11 +90,19 @@ import scala.collection.Seq;
 public class MLContextTest extends MLContextTestBase {
 
 	@Test
-	public void testCreateDMLScriptBasedOnFileAndExecuteEvalTest() {
-		System.out.println("MLContextTest - create DML script based on file and execute");
+	public void testBasicExecuteEvalTest() {
+		System.out.println("MLContextTest - basic eval test");
 		setExpectedStdOut("10");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval-test.dml");
 		ml.execute(script);
+	}
+	
+	@Test
+	public void testRewriteExecuteEvalTest() {
+		System.out.println("MLContextTest - eval rewrite test");
+		Script script = dmlFromFile(baseDirectory + File.separator + "eval2-test.dml");
+		ml.execute(script);
+		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
 
 	@Test

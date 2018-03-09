@@ -32,13 +32,13 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
-import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DataIdentifier;
@@ -242,11 +242,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		
 		//collect data dependent operations (to be extended as necessary)
 		//#1 removeEmpty
-		if(    hop instanceof ParameterizedBuiltinOp 
+		if( hop instanceof ParameterizedBuiltinOp 
 			&& ((ParameterizedBuiltinOp) hop).getOp()==ParamBuiltinOp.RMEMPTY 
 			&& !noSplitRequired
 			&& !(hop.getParent().size()==1 && hop.getParent().get(0) instanceof TernaryOp 
-			     && ((TernaryOp)hop.getParent().get(0)).isMatrixIgnoreZeroRewriteApplicable()))
+				&& ((TernaryOp)hop.getParent().get(0)).isMatrixIgnoreZeroRewriteApplicable()))
 		{
 			ParameterizedBuiltinOp pbhop = (ParameterizedBuiltinOp)hop;
 			cand.add(pbhop);
@@ -268,23 +268,22 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				//configure rmEmpty to directly output selection vector
 				//(only applied if dynamic recompilation enabled)
 				
-				if( ConfigurationManager.isDynamicRecompilation() )	
+				if( ConfigurationManager.isDynamicRecompilation() )
 					pbhop.setOutputPermutationMatrix(true);
 				for( Hop p : hop.getParent() )
-					((AggBinaryOp)p).setHasLeftPMInput(true);		
+					((AggBinaryOp)p).setHasLeftPMInput(true);
 			}
 		}
 		
 		//#2 ctable with unknown dims
-	    if(    hop instanceof TernaryOp 
-			&& ((TernaryOp) hop).getOp()==OpOp3.CTABLE 
+		if( HopRewriteUtils.isTernary(hop, OpOp3.CTABLE) 
 			&& hop.getInput().size() < 4 //dims not provided
 			&& !noSplitRequired )
 		{
 			cand.add(hop);
 			investigateChilds = false;
 			
-			//keep interesting consumer information, flag hops accordingly 
+			//keep interesting consumer information, flag hops accordingly
 			boolean onlyPMM = true;
 			for( Hop p : hop.getParent() ) {
 				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
@@ -293,29 +292,31 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			if( onlyPMM && HopRewriteUtils.isBasic1NSequence(hop.getInput().get(0)) )
 				hop.setOutputEmptyBlocks(false);
 		}
-	    
-	    //#3 orderby childs computed in same DAG
-	    if(   hop instanceof ReorgOp 
-	       && ((ReorgOp)hop).getOp()==ReOrgOp.SORT )
-	    {
-	    	//params 'decreasing' / 'indexreturn'
-	    	for( int i=2; i<=3; i++ ) {
-	    		Hop c = hop.getInput().get(i);
-	    		if( !(c instanceof LiteralOp || c instanceof DataOp) ){
-		    		cand.add(c);
-		    		c.setVisited();
-		    		investigateChilds = false;	
-		    	}
-
-	    	}	    	
-	    }
+		
+		//#3 orderby childs computed in same DAG
+		if( HopRewriteUtils.isReorg(hop, ReOrgOp.SORT) ){
+			//params 'decreasing' / 'indexreturn'
+			for( int i=2; i<=3; i++ ) {
+				Hop c = hop.getInput().get(i);
+				if( !(c instanceof LiteralOp || c instanceof DataOp) ){
+					cand.add(c);
+					c.setVisited();
+					investigateChilds = false;
+				}
+			}
+		}
+		
+		//#4 second-order eval function
+		if( HopRewriteUtils.isNary(hop, OpOpN.EVAL) && !noSplitRequired ) {
+			cand.add(hop);
+			investigateChilds = false;
+		}
 		
 		//process children (if not already found a special operators;
-	    //otherwise, processed by recursive rule application)
-		if( investigateChilds )
-		    if( hop.getInput()!=null )
-				for( Hop c : hop.getInput() )
-					rCollectDataDependentOperators(c, cand);
+		//otherwise, processed by recursive rule application)
+		if( investigateChilds && hop.getInput()!=null )
+			for( Hop c : hop.getInput() )
+				rCollectDataDependentOperators(c, cand);
 		
 		hop.setVisited();
 	}

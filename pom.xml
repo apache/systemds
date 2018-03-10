@@ -62,7 +62,7 @@
 
 	<properties>
 		<hadoop.version>2.6.0</hadoop.version>
-		<antlr.version>4.5.3</antlr.version>
+		<antlr.version>4.7.1</antlr.version>
 		<spark.version>2.1.0</spark.version>
 		<scala.version>2.11.8</scala.version>
 		<scala.binary.version>2.11</scala.binary.version>
@@ -444,6 +444,7 @@
 						<include>**/integration/functions/data/*Suite.java</include>
 						<include>**/integration/functions/gdfo/*Suite.java</include>
 						<include>**/integration/functions/sparse/*Suite.java</include>
+						<include>**/integration/functions/codegenalg/*Suite.java</include>
 						<include>**/integration/functions/**/*Test*.java</include>
 						<include>**/integration/mlcontext/*Suite.java</include>
 						<include>**/integration/mlcontext/algorithms/*Suite.java</include>

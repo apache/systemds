@@ -860,6 +860,7 @@
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
+								<exclude>**/*.interp</exclude>
 								<!-- Generated python files -->
 								<exclude>src/main/python/systemml.egg-info/**</exclude>
 								<!-- Sphinx reStructuredText files -->

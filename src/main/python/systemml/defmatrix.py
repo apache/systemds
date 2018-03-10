@@ -309,7 +309,7 @@ def solve(A, b):
     """
     return binaryMatrixFunction(A, b, 'solve')
 
-def eval(outputs, execute=True):
+def eval(outputs, execute=True, explain=True, stats=True):
     """
     Executes the unevaluated DML script and computes the matrices specified by outputs.
 
@@ -325,6 +325,10 @@ def eval(outputs, execute=True):
     if not execute:
         reset_output_flag(outputs)
         return matrix.script.scriptString
+    if explain:
+        return ' '.join(-explain);
+    if stats:
+        return ' '.join(-stats);
     results = matrix.ml.execute(matrix.script)
     for m in outputs:
         m.eval_data = results._java_results.get(m.ID)

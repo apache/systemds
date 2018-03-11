@@ -690,6 +690,10 @@ public class SpoofCompiler
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
+			//remove invalid plans with null inputs 
+			if( Arrays.stream(inHops).anyMatch(h -> (h==null)) )
+				continue;
+			
 			//perform simplifications and cse rewrites
 			tpl = rewriter.simplifyCPlan(tpl);
 			tpl = cse.eliminateCommonSubexpressions(tpl);
@@ -697,7 +701,7 @@ public class SpoofCompiler
 			//update input hops (order-preserving)
 			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
 			inHops = Arrays.stream(inHops)
-				.filter(p -> inputHopIDs.contains(p.getHopID()))
+				.filter(p -> p != null && inputHopIDs.contains(p.getHopID()))
 				.toArray(Hop[]::new);
 			cplans2.put(e.getKey(), new Pair<>(inHops, tpl));
 			

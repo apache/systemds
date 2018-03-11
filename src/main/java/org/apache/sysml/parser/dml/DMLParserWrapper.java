@@ -71,6 +71,7 @@ import org.apache.sysml.parser.dml.DmlParser.StatementContext;
  * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
  *
  */
+@SuppressWarnings("deprecation")
 public class DMLParserWrapper extends ParserWrapper
 {
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());

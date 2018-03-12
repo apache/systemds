@@ -54,7 +54,6 @@ import org.apache.sysml.parser.pydml.PydmlParser.StatementContext;
  * Note: ExpressionInfo and StatementInfo are simply wrapper objects and are reused in both DML and PyDML parsers.
  *
  */
-@SuppressWarnings("deprecation")
 public class PyDMLParserWrapper extends ParserWrapper
 {
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());

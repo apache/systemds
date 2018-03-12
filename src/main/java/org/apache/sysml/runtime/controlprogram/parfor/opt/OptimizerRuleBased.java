@@ -893,8 +893,11 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//rule-based decision based on number of outer iterations or maximum number of
 		//inner iterations (w/ appropriately scaled minimum data size threshold); 
+		boolean isCtxCreated = OptimizerUtils.isSparkExecutionMode()
+				&& SparkExecutionContext.isSparkContextCreated();
 		return (_N >= PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB)
-			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB/10);
+			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE
+				&& M > PROB_SIZE_THRESHOLD_MB/(isCtxCreated?10:1));
 	}
 
 	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 

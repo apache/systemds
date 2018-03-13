@@ -1851,18 +1851,15 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			Hop V = hi.getInput().get(1).getInput().get(1);
 			
 			//for this basic pattern, we're more conservative and only apply wdivmm if
-			//the factors are not known to be sparse
-			if( !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V) ) {
-				if( !HopRewriteUtils.isTransposeOperation(V) )
-					V = HopRewriteUtils.createTranspose(V);
-				else 
-					V = V.getInput().get(0);
-				
+			//W is sparse and U/V unknown or dense; or if U/V are dense
+			if( (HopRewriteUtils.isSparse(W) && !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V))
+				|| (HopRewriteUtils.isDense(U) && HopRewriteUtils.isDense(V)) ) {
+				V = !HopRewriteUtils.isTransposeOperation(V) ?
+					HopRewriteUtils.createTranspose(V) : V.getInput().get(0);
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-						  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
+					OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
 				hnew.setOutputBlocksizes(W.getRowsInBlock(), W.getColsInBlock());
 				hnew.refreshSizeInformation();
-				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");
 			}

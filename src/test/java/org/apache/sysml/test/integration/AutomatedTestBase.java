@@ -504,14 +504,12 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR)
-	{
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
 
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, int nnz, boolean bIncludeR)
-	{
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, long nnz, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}

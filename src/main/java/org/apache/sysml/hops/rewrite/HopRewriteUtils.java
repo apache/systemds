@@ -840,9 +840,14 @@ public class HopRewriteUtils
 		return (Hop.getOpOp2ForOuterVectorOperation(opcode) == op);
 	}
 	
-	public static boolean isSparse( Hop hop ) {
+	public static boolean isSparse(Hop hop) {
 		return hop.dimsKnown(true) //dims and nnz known
 			&& MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
+	}
+	
+	public static boolean isDense(Hop hop) {
+		return hop.dimsKnown(true) //dims and nnz known
+			&& !MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
 	}
 	
 	public static boolean isSparse( Hop hop, double threshold ) {

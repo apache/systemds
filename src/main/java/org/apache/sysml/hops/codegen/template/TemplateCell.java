@@ -33,6 +33,7 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -40,6 +41,7 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -59,6 +61,9 @@ public class TemplateCell extends TemplateBase
 {	
 	private static final AggOp[] SUPPORTED_AGG = 
 			new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX};
+
+	private static final OpOp1[] SUPPORTED_UNARY =
+			SpoofCompiler.ALLOW_ONLY_SAFE_CAND ? new OpOp1[]{OpOp1.LOG} : null;
 	
 	public TemplateCell() {
 		super(TemplateType.CELL);
@@ -103,6 +108,7 @@ public class TemplateCell extends TemplateBase
 	public CloseType close(Hop hop) {
 		//need to close cell tpl after aggregation, see fuse for exact properties
 		if( HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_AGG)
+			|| HopRewriteUtils.isUnary(hop, SUPPORTED_UNARY)
 			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1) )
 			return CloseType.CLOSED_VALID;
 		else if( hop instanceof AggUnaryOp || hop instanceof AggBinaryOp )

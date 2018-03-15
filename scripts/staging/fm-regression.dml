@@ -75,7 +75,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
     # Optimize
     print("Starting optimization")
     batch_size = 10
-    epochs = 10; N = 1000
+    epochs = 100; N = 1000
     iters = ceil(N / batch_size)
 
     for (e in 1:epochs) {
@@ -160,7 +160,8 @@ eval = function(matrix[double] probs, matrix[double] y)
 }
 
 # can the following be deleted, before committing?
-X = matrix(0, rows=1000, cols=d); n = 1000; d = 9; k=2;
+n = 1000; d = 9; k=2;
+X = matrix(0, rows=1000, cols=d);
 y = matrix(0, rows=n, cols=1);
 X_val = rand(rows=100, cols=d);
 y_val = rand(rows=100, cols=1);

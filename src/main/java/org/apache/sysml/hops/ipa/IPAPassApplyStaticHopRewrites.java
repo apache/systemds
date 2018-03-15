@@ -49,7 +49,7 @@ public class IPAPassApplyStaticHopRewrites extends IPAPass
 			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
 			
 			//rewrite program hop dags and statement blocks
-			rewriter.rewriteProgramHopDAGs(prog);
+			rewriter.rewriteProgramHopDAGs(prog, true); //rewrite and split
 		} 
 		catch (LanguageException ex) {
 			throw new HopsException(ex);

@@ -49,6 +49,11 @@ import org.apache.sysml.parser.Expression.DataType;
 public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 		throws HopsException 
 	{

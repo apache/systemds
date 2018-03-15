@@ -46,6 +46,11 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{

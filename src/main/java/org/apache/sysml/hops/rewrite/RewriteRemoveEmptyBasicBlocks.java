@@ -33,6 +33,11 @@ import org.apache.sysml.parser.StatementBlock;
 public class RewriteRemoveEmptyBasicBlocks extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{

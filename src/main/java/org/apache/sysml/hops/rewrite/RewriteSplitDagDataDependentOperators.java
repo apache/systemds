@@ -73,6 +73,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	private static IDSequence _seq = new IDSequence();
 	
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{

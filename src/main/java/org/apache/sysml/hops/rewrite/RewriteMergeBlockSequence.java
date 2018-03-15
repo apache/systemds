@@ -45,6 +45,11 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		new RewriteCommonSubexpressionElimination(true));
 	
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, 
 			ProgramRewriteStatus state) throws HopsException {
 		return Arrays.asList(sb);

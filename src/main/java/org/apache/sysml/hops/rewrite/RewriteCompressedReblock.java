@@ -63,6 +63,11 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	private static final String TMP_PREFIX = "__cmtx";
 	
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate)
 		throws HopsException 
 	{

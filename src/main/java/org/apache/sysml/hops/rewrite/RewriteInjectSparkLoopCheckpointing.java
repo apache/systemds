@@ -54,6 +54,11 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 	}
 	
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 		throws HopsException 
 	{

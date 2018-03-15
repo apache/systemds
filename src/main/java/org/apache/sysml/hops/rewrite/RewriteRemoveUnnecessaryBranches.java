@@ -38,6 +38,11 @@ import org.apache.sysml.parser.StatementBlock;
 public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{

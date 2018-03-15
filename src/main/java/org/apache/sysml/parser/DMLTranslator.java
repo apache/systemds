@@ -263,7 +263,9 @@ public class DMLTranslator
 	{
 		//apply hop rewrites (static rewrites)
 		ProgramRewriter rewriter = new ProgramRewriter(true, false);
-		rewriter.rewriteProgramHopDAGs(dmlp);
+		rewriter.rewriteProgramHopDAGs(dmlp, false); //rewrite and merge
+		resetHopsDAGVisitStatus(dmlp);
+		rewriter.rewriteProgramHopDAGs(dmlp, true); //rewrite and split
 		resetHopsDAGVisitStatus(dmlp);
 		
 		//propagate size information from main into functions (but conservatively)

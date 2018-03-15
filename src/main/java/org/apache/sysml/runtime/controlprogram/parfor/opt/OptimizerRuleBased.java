@@ -1913,7 +1913,7 @@ public class OptimizerRuleBased extends Optimizer
 			ProgramRewriter rewriter = new ProgramRewriter(rewrite);
 			ProgramRewriteStatus state = new ProgramRewriteStatus();
 			rewriter.rRewriteStatementBlockHopDAGs( pfsb, state );
-			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
+			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state, true));
 			
 			//recompile if additional checkpoints introduced
 			if( state.getInjectedCheckpoints() ) {

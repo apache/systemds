@@ -984,7 +984,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				tmpCosts *= driver.dimsKnown(true) ? driver.getSparsity() : SPARSE_SAFE_SPARSITY_EST;
 			//write correction for known evictions in CP
 			else if( memInputs <= OptimizerUtils.getLocalMemBudget()
-				&& sumTmpInputOutputSize(memo, costVect)*8 > LazyWriteBuffer.getWriteBufferSize() )
+				&& sumTmpInputOutputSize(memo, costVect)*8 > LazyWriteBuffer.getWriteBufferLimit() )
 				tmpCosts += costVect.outSize * 8 / WRITE_BANDWIDTH_IO;
 			costs += tmpCosts;
 			if( LOG.isTraceEnabled() ) {

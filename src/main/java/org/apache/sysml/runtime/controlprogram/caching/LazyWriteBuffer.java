@@ -60,8 +60,7 @@ public class LazyWriteBuffer
 		throws IOException
 	{
 		//obtain basic meta data of cache block
-		long lSize = cb.isShallowSerialize() ?
-			cb.getInMemorySize() : cb.getExactSerializedSize();
+		long lSize = getCacheBlockSize(cb);
 		boolean requiresWrite = (lSize > _limit        //global buffer limit
 			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
 		int numEvicted = 0;
@@ -196,9 +195,25 @@ public class LazyWriteBuffer
 			PageCache.clear();
 	}
 
+	public static long getWriteBufferLimit() {
+		//return constant limit because InfrastructureAnalyzer.getLocalMaxMemory() is
+		//dynamically adjusted in a parfor context, which wouldn't reflect the actual size
+		return _limit;
+	}
+	
 	public static long getWriteBufferSize() {
-		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		return (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
+		synchronized( _mQueue ) {
+			return _size; }
+	}
+	
+	public static long getWriteBufferFree() {
+		synchronized( _mQueue ) {
+			return _limit - _size; }
+	}
+	
+	public static long getCacheBlockSize(CacheBlock cb) {
+		return cb.isShallowSerialize() ?
+			cb.getInMemorySize() : cb.getExactSerializedSize();
 	}
 	
 	/**

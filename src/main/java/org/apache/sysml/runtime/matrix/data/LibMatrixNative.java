@@ -24,6 +24,8 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -34,6 +36,8 @@ import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixNative
 {
+	private static final Log LOG = LogFactory.getLog(LibMatrixNative.class.getName());
+	
 	// ThreadLocal reuse of direct buffers for inputs/outputs (extended on demand).
 	//   note: since we anyway have to convert from double to float, we use
 	//   preallocated direct buffers (with thread-local reuse and resizing on demand)
@@ -128,31 +132,17 @@ public class LibMatrixNative
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			int nnz = 0;
 			if(params.bias == null) {
-				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				int nnz = NativeHelper.conv2dDense(input.getDenseBlockValues(), filter.getDenseBlockValues(),
+				nnz = NativeHelper.conv2dDense(input.getDenseBlockValues(), filter.getDenseBlockValues(),
 						outputBlock.getDenseBlockValues(), params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);
-				if(nnz != -1) {
-					if(DMLScript.STATISTICS) {
-						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeConv2dCalls.increment();
-					}
-					// post-processing: maintain nnz
-					outputBlock.setNonZeros(nnz);
-					return;
-				}
-				else {
-					// Fall back to Java when failures
-					Statistics.incrementNativeFailuresCounter();
-				}
 			}
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
-				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				int nnz = -1;
 				if( isSinglePrecision() ) {
 					FloatBuffer finput = toFloatBuffer(input.getDenseBlockValues(), inBuff, true);
 					FloatBuffer fbias = toFloatBuffer(params.bias.getDenseBlockValues(), biasBuff, true);
@@ -162,7 +152,8 @@ public class LibMatrixNative
 						params.N, params.C, params.H, params.W, params.K, params.R, params.S,
 						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);
-					fromFloatBuffer(outBuff.get(), outputBlock.getDenseBlockValues());
+					if( nnz != -1 )
+						fromFloatBuffer(outBuff.get(), outputBlock.getDenseBlockValues());
 				}
 				else { //Double
 					nnz = NativeHelper.dconv2dBiasAddDense(input.getDenseBlockValues(), params.bias.getDenseBlockValues(),
@@ -171,19 +162,22 @@ public class LibMatrixNative
 						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);	
 				}
-				if(nnz != -1) {
-					if(DMLScript.STATISTICS) {
-						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeConv2dCalls.increment();
-					}
-					// post-processing: maintain nnz
-					outputBlock.setNonZeros(nnz);
-					return;
+			}
+			//post processing and error handling
+			if(nnz != -1) {
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeConv2dTime += System.nanoTime() - start;
+					Statistics.numNativeConv2dCalls.increment();
 				}
-				else {
-					// Fall back to Java when failures
-					Statistics.incrementNativeFailuresCounter();
-				}
+				outputBlock.setNonZeros(nnz);
+				return;
+			}
+			else {
+				// Fall back to Java in case of failures, reset output to ensure correctness
+				LOG.warn("Native conv2d call returned with error - falling back to java operator.");
+				if( !(isSinglePrecision() && params.bias!=null) )
+					outputBlock.reset();
+				Statistics.incrementNativeFailuresCounter();
 			}
 		}
 		

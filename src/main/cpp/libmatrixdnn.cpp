@@ -143,10 +143,11 @@ template<class FP> void im2col(FP* inputArray, FP* outputArray, int N, int C, in
 // Returns true if error
 bool MKL_DNN_ERROR(dnnError_t code) {
   if(code == E_SUCCESS) return false;
-  else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "ERROR: Incorrect input parameter\n";
-  else if(code == E_MEMORY_ERROR) std::cerr << "ERROR: Memory error\n";
-  else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "ERROR: Unsupported dimensions\n";
-  else if(code == E_UNIMPLEMENTED) std::cerr << "ERROR: Unimplemented operation\n";
+  else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "MKL ERROR: Incorrect input parameter.\n";
+  else if(code == E_MEMORY_ERROR) std::cerr << "MKL ERROR: Memory error.\n";
+  else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "MKL ERROR: Unsupported dimensions.\n";
+  else if(code == E_UNIMPLEMENTED) std::cerr << "MKL ERROR: Unimplemented operation.\n";
+  else std::cerr << "MKL ERROR: Unhandled error code = " << code << ".\n";
   return true;
 } 
 #endif

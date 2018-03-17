@@ -122,10 +122,16 @@ public class LibMatrixAgg
 	 */
 	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 		throws DMLRuntimeException
-	{	
+	{
 		//Timing time = new Timing(true);
-		//boolean saggVal = aggVal.isInSparseFormat(), saggCorr = aggCorr.isInSparseFormat(); 
-		//long naggVal = aggVal.getNonZeros(), naggCorr = aggCorr.getNonZeros();
+		//boolean saggVal = aggVal.sparse, saggCorr = aggCorr.sparse;
+		//long naggVal = aggVal.nonZeros, naggCorr = aggCorr.nonZeros;
+		
+		//ensure MCSR instead of CSR for update in-place
+		if( aggVal.sparse && aggVal.isAllocated() && aggVal.getSparseBlock() instanceof SparseBlockCSR )
+			aggVal.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggVal.getSparseBlock(), true);
+		if( aggCorr.sparse && aggCorr.isAllocated() && aggCorr.getSparseBlock() instanceof SparseBlockCSR )
+			aggCorr.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggCorr.getSparseBlock(), true);
 		
 		//core aggregation
 		if(!in.sparse && !aggVal.sparse && !aggCorr.sparse)
@@ -137,10 +143,8 @@ public class LibMatrixAgg
 		else //if( !in.sparse ) //any aggVal, aggCorr
 			aggregateBinaryMatrixDenseGeneric(in, aggVal, aggCorr);
 		
-		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.getNonZeros()+","+in.sparse+"), " +
-		//		          "("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
-		//		          "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+"), ("+aggCorr.getNonZeros()+","+aggCorr.isInSparseFormat()+") " +
-		//		          "in "+time.stop()+"ms.");
+		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.nonZeros+","+in.sparse+"), ("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
+		//	"("+aggVal.nonZeros+","+aggVal.sparse+"), ("+aggCorr.nonZeros+","+aggCorr.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -1011,7 +1015,6 @@ public class LibMatrixAgg
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
-		
 		final int len = Math.min(a.length, in.rlen*in.clen);
 		
 		int nnzC = 0;
@@ -1113,14 +1116,16 @@ public class LibMatrixAgg
 			}
 		}
 		
-		//note: nnz of aggVal/aggCorr maintained internally 
-		aggVal.examSparsity();
-		aggCorr.examSparsity(); 
+		//note: nnz of aggVal/aggCorr maintained internally
+		if( aggVal.sparse )
+			aggVal.examSparsity(false);
+		if( aggCorr.sparse )
+			aggCorr.examSparsity(false);
 	}
 
 	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 		throws DMLRuntimeException
-	{	
+	{
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
@@ -1144,8 +1149,10 @@ public class LibMatrixAgg
 			}
 		
 		//note: nnz of aggVal/aggCorr maintained internally 
-		aggVal.examSparsity();
-		aggCorr.examSparsity();
+		if( aggVal.sparse )
+			aggVal.examSparsity(false);
+		if( aggCorr.sparse )
+			aggCorr.examSparsity(false);
 	}
 
 	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) 

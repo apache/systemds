@@ -1003,16 +1003,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatOnDisk(lrlen, lclen, nonZeros);
 	}
 	
+	public void examSparsity() throws DMLRuntimeException {
+		examSparsity(true);
+	}
+	
 	/**
 	 * Evaluates if this matrix block should be in sparse format in
 	 * memory. Depending on the current representation, the state of the
 	 * matrix block is changed to the right representation if necessary. 
 	 * Note that this consumes for the time of execution memory for both 
-	 * representations.  
+	 * representations.
 	 * 
+	 * @param allowCSR allow CSR format on dense to sparse conversion
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void examSparsity() 
+	public void examSparsity(boolean allowCSR)
 		throws DMLRuntimeException
 	{
 		//determine target representation
@@ -1027,7 +1032,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( sparse && !sparseDst)
 			sparseToDense();
 		else if( !sparse && sparseDst )
-			denseToSparse();
+			denseToSparse(allowCSR);
 	}
 	
 	/**
@@ -1081,7 +1086,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// basic block handling functions
 	
-	private void denseToSparse()
+	private void denseToSparse() {
+		denseToSparse(true);
+	}
+	
+	private void denseToSparse(boolean allowCSR)
 	{
 		DenseBlock a = getDenseBlock();
 		
@@ -1093,7 +1102,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int m = rlen;
 		final int n = clen;
 		
-		if( nonZeros <= Integer.MAX_VALUE ) {
+		if( allowCSR && nonZeros <= Integer.MAX_VALUE ) {
 			//allocate target in memory-efficient CSR format
 			int lnnz = (int) nonZeros;
 			int[] rptr = new int[m+1];

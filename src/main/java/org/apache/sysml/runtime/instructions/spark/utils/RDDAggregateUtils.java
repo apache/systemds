@@ -480,29 +480,21 @@ public class RDDAggregateUtils
 		}	
 	}
 
-	private static class ExtractMatrixBlock implements Function<CorrMatrixBlock, MatrixBlock> 
-	{
+	private static class ExtractMatrixBlock implements Function<CorrMatrixBlock, MatrixBlock> {
 		private static final long serialVersionUID = 5242158678070843495L;
-
 		@Override
-		public MatrixBlock call(CorrMatrixBlock arg0) 
-			throws Exception 
-		{
+		public MatrixBlock call(CorrMatrixBlock arg0) throws Exception {
+			arg0.getValue().examSparsity();
 			return arg0.getValue();
-		}	
+		}
 	}
 
-	private static class ExtractDoubleCell implements Function<KahanObject, Double> 
-	{
+	private static class ExtractDoubleCell implements Function<KahanObject, Double> {
 		private static final long serialVersionUID = -2873241816558275742L;
-
 		@Override
-		public Double call(KahanObject arg0) 
-			throws Exception 
-		{
-			//return sum and drop correction
+		public Double call(KahanObject arg0) throws Exception {
 			return arg0._sum;
-		}	
+		}
 	}
 
 	/**

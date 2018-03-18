@@ -143,7 +143,11 @@ public class LibMatrixNative
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
-				if( isSinglePrecision() ) {
+				//NOTE: We temporarily disable MKL FP32 conv2d_bias_add due to incorrect results on
+				//newer processors with AVX2 and AVX-512 instruction set (library bug or alignment issue)
+				//Experiments have shown that falling back to the MKL FP64 primitives is generally faster
+				//than falling back to the custom openmp FP32 implementation.
+				if( isSinglePrecision() && !NativeHelper.getCurrentBLAS().equalsIgnoreCase("mkl") ) {
 					FloatBuffer finput = toFloatBuffer(input.getDenseBlockValues(), inBuff, true);
 					FloatBuffer fbias = toFloatBuffer(params.bias.getDenseBlockValues(), biasBuff, true);
 					FloatBuffer ffilter = toFloatBuffer(filter.getDenseBlockValues(), filterBuff, true);

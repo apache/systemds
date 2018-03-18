@@ -167,7 +167,7 @@ if (GI_1_1 == 0 & SI_1_1 == 0) {
 } else if (SI_1_1 == 0) {
 	Is = cbind (TE, GI);
 } else {
-	Is = cbind (TE, cbind (GI, SI));
+	Is = cbind (TE, GI, SI);
 }
 X = X %*% table (Is, seq (1, 2 + n_group_cols + n_stratum_cols), ncol (X), 2 + n_group_cols + n_stratum_cols);	
 
@@ -201,7 +201,7 @@ if (n_group_cols > 0) {
 		Gi = matrix (1, rows = num_records, cols = 1);
 	}
 	if (n_stratum_cols > 0) {
-		X = cbind (cbind (X[,1:2],Gi), X[,(3 + g):ncol (X)]);
+		X = cbind (X[,1:2], Gi, X[,(3 + g):ncol (X)]);
 	} else { # no strata
 		X = cbind (X[,1:2],Gi);
 	}
@@ -244,7 +244,7 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 	X = cbind (X, matrix (1, rows = num_records, cols = 2));
 	SB = matrix (1, rows = 1, cols = 1);	
 } else if (n_group_cols == 0) {	
-	X = cbind (X[,1:2], cbind (matrix (1, rows = num_records, cols = 1), X[,3]));
+	X = cbind (X[,1:2], matrix (1, rows = num_records, cols = 1), X[,3]);
 } else if (n_stratum_cols == 0) {
 	X = cbind (X, matrix (1, rows = num_records, cols = 1));
 	SB = matrix (1, rows = 1, cols = 1);
@@ -586,7 +586,7 @@ M = replace (target = M, pattern = "Infinity", replacement = "NaN");
 
 # pull out non-empty rows from TEST
 if (n_group_cols > 0 & n_stratum_cols > 0) {
-	M = cbind (cbind (G_cols, S_cols), M);
+	M = cbind (G_cols, S_cols, M);
 	if (test_type != "none") {
 		TEST = cbind (G_cols_original, TEST);
 	}

@@ -66,6 +66,7 @@ statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     // AssignmentStatement
     | targetList=dataIdentifier op=('<-'|'=') 'ifdef' '(' commandLineParam=dataIdentifier ','  source=expression ')' ';'*   # IfdefAssignmentStatement
     | targetList=dataIdentifier op=('<-'|'=') source=expression ';'*   # AssignmentStatement
+    | targetList=dataIdentifier op='+=' source=expression ';'*   # AccumulatorAssignmentStatement
     // ------------------------------------------
     // We don't support block statement
     // | '{' body+=expression ';'* ( body+=expression ';'* )*  '}' # BlockStatement
@@ -181,7 +182,7 @@ strictParameterizedKeyValueString : paramName=ID '=' paramVal=STRING ;
 ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
     // Special ID cases:
    // | 'matrix' // --> This is a special case which causes lot of headache
-   | 'as.scalar' | 'as.matrix' | 'as.frame' | 'as.double' | 'as.integer' | 'as.logical' | 'index.return' | 'lower.tail'
+   | 'as.scalar' | 'as.matrix' | 'as.frame' | 'as.double' | 'as.integer' | 'as.logical' | 'index.return' | 'empty.return' | 'lower.tail'
 ;
 // Unfortunately, we have datatype name clashing with builtin function name: matrix :(
 // Therefore, ugly work around for checking datatype

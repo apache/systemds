@@ -25,3 +25,5 @@
 ./test_conv2d_bwd_data.sh
 ./test_conv2d.sh
 ./test_maxpool.sh
+./test_maxpool_bwd.sh
+./test_softmax.sh

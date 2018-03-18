@@ -118,11 +118,8 @@ for (i in 1 : num_centroids)
     # Update min_distances to preserve the loop invariant:
     distances = X_samples_sq_norms + samples_vs_runs_map %*% rowSums (centroids ^ 2)
               - 2 * rowSums (X_samples * (samples_vs_runs_map %*% centroids));
-    if (i == 1) {
-        min_distances = is_row_in_samples * distances;
-    } else {
-        min_distances = min (min_distances, distances);
-}   }
+    min_distances = ifelse(i==1, is_row_in_samples*distances, min(min_distances,distances));
+}
 
 # STEP 2: PERFORM K-MEANS ITERATIONS FOR ALL RUNS:
 

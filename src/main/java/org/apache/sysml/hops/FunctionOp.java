@@ -188,22 +188,16 @@ public class FunctionOp extends Hop
 		else {
 			if ( getFunctionName().equalsIgnoreCase("qr") ) {
 				// matrix of size same as the input
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0); 
-				//System.out.println("QRInter " + interOutput/1024/1024);
-				return interOutput;
+				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0); 
 			}
 			else if ( getFunctionName().equalsIgnoreCase("lu")) {
 				// 1D vector 
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
-				//System.out.println("LUInter " + interOutput/1024/1024);
-				return interOutput;
+				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
 			else if ( getFunctionName().equalsIgnoreCase("eigen")) {
 				// One matrix of size original input and three 1D vectors (used to represent tridiagonal matrix)
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
+				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
-				//System.out.println("EigenInter " + interOutput/1024/1024);
-				return interOutput;
 			}
 			else if ( getFunctionName().equalsIgnoreCase("svd")) {
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);

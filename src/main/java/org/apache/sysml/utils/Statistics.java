@@ -25,10 +25,10 @@ import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.api.DMLScript;
@@ -47,13 +47,20 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
  * This class captures all statistics.
  */
 public class Statistics 
-{	
+{
+	private static class InstStats {
+		private final LongAdder time = new LongAdder();
+		private final LongAdder count = new LongAdder();
+	}
+	
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
-	
 	private static long execStartTime = 0;
 	private static long execEndTime = 0;
-
+	
+	//heavy hitter counts and times 
+	private static final ConcurrentHashMap<String,InstStats>_instStats = new ConcurrentHashMap<>();
+	
 	// number of compiled/executed MR jobs
 	private static final LongAdder numExecutedMRJobs = new LongAdder();
 	private static final LongAdder numCompiledMRJobs = new LongAdder();
@@ -82,6 +89,8 @@ public class Statistics
 	private static final LongAdder codegenEnumAllP = new LongAdder(); //count
 	private static final LongAdder codegenEnumEval = new LongAdder(); //count
 	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
+	private static final LongAdder codegenOpCacheHits = new LongAdder(); //count
+	private static final LongAdder codegenOpCacheTotal = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
 	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
 	
@@ -103,10 +112,6 @@ public class Statistics
 	private static long parforOptCount = 0; //count
 	private static long parforInitTime = 0; //in milli sec
 	private static long parforMergeTime = 0; //in milli sec
-	
-	//heavy hitter counts and times 
-	private static HashMap<String,Long> _cpInstTime = new HashMap<>();
-	private static HashMap<String,Long> _cpInstCounts = new HashMap<>();
 
 	private static final LongAdder lTotalUIPVar = new LongAdder();
 	private static final LongAdder lTotalLix = new LongAdder();
@@ -285,6 +290,14 @@ public class Statistics
 		codegenClassCompileTime.add(delta);
 	}
 	
+	public static void incrementCodegenOpCacheHits() {
+		codegenOpCacheHits.increment();
+	}
+	
+	public static void incrementCodegenOpCacheTotal() {
+		codegenOpCacheTotal.increment();
+	}
+	
 	public static void incrementCodegenPlanCacheHits() {
 		codegenPlanCacheHits.increment();
 	}
@@ -324,6 +337,14 @@ public class Statistics
 	
 	public static long getCodegenClassCompileTime() {
 		return codegenClassCompileTime.longValue();
+	}
+	
+	public static long getCodegenOpCacheHits() {
+		return codegenOpCacheHits.longValue();
+	}
+	
+	public static long getCodegenOpCacheTotal() {
+		return codegenOpCacheTotal.longValue();
 	}
 	
 	public static long getCodegenPlanCacheHits() {
@@ -415,6 +436,8 @@ public class Statistics
 		codegenEnumEvalP.reset();
 		codegenCompileTime.reset();
 		codegenClassCompileTime.reset();
+		codegenOpCacheHits.reset();
+		codegenOpCacheTotal.reset();
 		codegenPlanCacheHits.reset();
 		codegenPlanCacheTotal.reset();
 		
@@ -463,8 +486,7 @@ public class Statistics
 	}
 
 	public static void resetCPHeavyHitters(){
-		_cpInstTime.clear();
-		_cpInstCounts.clear();
+		_instStats.clear();
 	}
 
 	public static void setSparkCtxCreateTime(long ns) {
@@ -527,25 +549,30 @@ public class Statistics
 
 	/**
 	 * "Maintains" or adds time to per instruction/op timers, also increments associated count
-	 * @param instructionName name of the instruction/op
+	 * @param instName name of the instruction/op
 	 * @param timeNanos time in nano seconds
 	 */
-	public synchronized static void maintainCPHeavyHitters( String instructionName, long timeNanos )
-	{
-		Long oldVal = _cpInstTime.getOrDefault(instructionName, 0L);
-		_cpInstTime.put(instructionName, oldVal + timeNanos);
-
-		Long oldCnt = _cpInstCounts.getOrDefault(instructionName, 0L);
-		_cpInstCounts.put(instructionName, oldCnt + 1);
+	public static void maintainCPHeavyHitters( String instName, long timeNanos ) {
+		//maintain instruction entry (w/ robustness for concurrent updates)
+		InstStats tmp = _instStats.get(instName);
+		if( tmp == null ) {
+			InstStats tmp0 = new InstStats();
+			InstStats tmp1 = _instStats.putIfAbsent(instName, tmp0);
+			tmp = (tmp1 != null) ? tmp1 : tmp0;
+		}
+		
+		//thread-local maintenance of instruction stats
+		tmp.time.add(timeNanos);
+		tmp.count.increment();
 	}
 
-
 	public static Set<String> getCPHeavyHitterOpCodes() {
-		return _cpInstTime.keySet();
+		return _instStats.keySet();
 	}
 	
 	public static long getCPHeavyHitterCount(String opcode) {
-		return _cpInstCounts.get(opcode);
+		InstStats tmp = _instStats.get(opcode);
+		return (tmp != null) ? tmp.count.longValue() : 0;
 	}
 
 	/**
@@ -558,16 +585,17 @@ public class Statistics
 	 * @return string representing the heavy hitter instructions in tabular
 	 *         format
 	 */
+	@SuppressWarnings("unchecked")
 	public static String getHeavyHitters(int num) {
-		int len = _cpInstTime.size();
+		int len = _instStats.size();
 		if (num <= 0 || len <= 0)
 			return "-";
 
 		// get top k via sort
-		Entry<String, Long>[] tmp = _cpInstTime.entrySet().toArray(new Entry[len]);
-		Arrays.sort(tmp, new Comparator<Entry<String, Long>>() {
-			public int compare(Entry<String, Long> e1, Entry<String, Long> e2) {
-				return e1.getValue().compareTo(e2.getValue());
+		Entry<String, InstStats>[] tmp = _instStats.entrySet().toArray(new Entry[len]);
+		Arrays.sort(tmp, new Comparator<Entry<String, InstStats>>() {
+			public int compare(Entry<String, InstStats> e1, Entry<String, InstStats> e2) {
+				return Long.compare(e1.getValue().time.longValue(), e2.getValue().time.longValue());
 			}
 		});
 
@@ -584,9 +612,9 @@ public class Statistics
 		int maxCountLen = countCol.length();
 		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
 		for (int i = 0; i < numHittersToDisplay; i++) {
-			Entry<String, Long> hh = tmp[len - 1 - i];
+			Entry<String, InstStats> hh = tmp[len - 1 - i];
 			String instruction = hh.getKey();
-			Long timeNs = hh.getValue();
+			long timeNs = hh.getValue().time.longValue();
 			double timeS = (double) timeNs / 1000000000.0;
 
 			maxInstLen = Math.max(maxInstLen, instruction.length());
@@ -594,13 +622,13 @@ public class Statistics
 			String timeSString = sFormat.format(timeS);
 			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
 
-			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
+			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
 		}
 		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
-		if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
+		if (DMLScript.FINEGRAINED_STATISTICS) {
 			sb.append("  ");
 			sb.append(gpuCol);
 		}
@@ -609,23 +637,23 @@ public class Statistics
 			String instruction = tmp[len - 1 - i].getKey();
 			String [] wrappedInstruction = wrap(instruction, maxInstLen);
 
-			Long timeNs = tmp[len - 1 - i].getValue();
+			long timeNs = tmp[len - 1 - i].getValue().time.longValue();
 			double timeS = (double) timeNs / 1000000000.0;
 			String timeSString = sFormat.format(timeS);
 
-			Long count = _cpInstCounts.get(instruction);
+			long count = tmp[len - 1 - i].getValue().count.longValue();
 			int numLines = wrappedInstruction.length;
 			String [] miscTimers = null;
 			
-			if (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) {
+			if (DMLScript.FINEGRAINED_STATISTICS) {
 				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
 				numLines = Math.max(numLines, miscTimers.length);
 			}
 			
-			String miscFormatString = (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			String miscFormatString = (DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
 			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
 				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
-				String miscTimerStr = ( (GPUStatistics.DISPLAY_STATISTICS || DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
+				String miscTimerStr = ( (DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
 				if(wrapIter == 0) {
 					// Display instruction count
 					sb.append(String.format(
@@ -773,8 +801,8 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
-			if(NativeHelper.blasType != null) {
-				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
+			if(NativeHelper.CURRENT_NATIVE_BLAS_STATE == NativeHelper.NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE) {
+				String blas = NativeHelper.getCurrentBLAS(); 
 				sb.append("Native " + blas + " calls (dense mult/conv/bwdF/bwdD):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + 
 						numNativeConv2dCalls.longValue() + "/" + numNativeConv2dBwdFilterCalls.longValue()
 						+ "/" + numNativeConv2dBwdDataCalls.longValue() + ".\n");
@@ -806,7 +834,8 @@ public class Statistics
 						getCodegenEnumAllP() + "/" + getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
 				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
 						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
-				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
+				sb.append("Codegen enum plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
+				sb.append("Codegen op plan cache hits:\t" + getCodegenOpCacheHits() + "/" + getCodegenOpCacheTotal() + ".\n");
 			}
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";

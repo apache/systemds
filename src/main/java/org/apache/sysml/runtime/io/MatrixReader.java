@@ -81,6 +81,8 @@ public abstract class MatrixReader
 		
 		//determine target representation (sparse/dense)
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
+		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
+		long numBlocks = (long)Math.ceil((double)rlen / brlen);
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, estnnz);
@@ -91,11 +93,15 @@ public abstract class MatrixReader
 			SparseBlock sblock = ret.getSparseBlock();
 			//create synchronization points for MCSR (start row per block row)
 			if( sblock instanceof SparseBlockMCSR && clen > bclen      //multiple col blocks 
-				&& clen > 0 && bclen > 0 && rlen > 0 && brlen > 0 ) {  //all dims known
+				&& clen >= 0 && bclen > 0 && rlen >= 0 && brlen > 0 ) {  //all dims known
 				//note: allocate w/ min 2 nnz to ensure allocated row object because
 				//adaptive change from scalar to row could cause synchronization issues
-				for( int i=0; i<rlen; i+=brlen )
-					sblock.allocate(i, Math.max((int)(estnnz/rlen),2), (int)clen);
+				if( numThreads <= numBlocks )
+					for( int i=0; i<rlen; i+=brlen )
+						sblock.allocate(i, Math.max((int)(estnnz/rlen),2), (int)clen);
+				else //allocate all rows to avoid contention
+					for( int i=0; i<rlen; i++ )
+						sblock.allocate(i, Math.max((int)(estnnz/rlen),2), (int)clen);
 			}
 		}
 		

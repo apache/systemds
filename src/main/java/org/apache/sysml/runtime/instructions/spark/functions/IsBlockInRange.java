@@ -30,7 +30,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class IsBlockInRange implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 {
-	
 	private static final long serialVersionUID = 5849687296021280540L;
 	
 	private long _rl; long _ru; long _cl; long _cu;

@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.matrix;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
@@ -60,6 +61,12 @@ public class WriteCSVMR
 	{
 		JobConf job = new JobConf(WriteCSVMR.class);
 		job.setJobName("WriteCSV-MR");
+		
+		//check for valid output dimensions
+		for( int i=0; i<rlens.length; i++ )
+			if( rlens[i] == 0 || clens[i] == 0 )
+				throw new IOException("Write of matrices with zero"
+					+ " rows or columns not supported ("+rlens[i]+"x"+clens[i]+").");
 		
 		byte[] realIndexes=new byte[inputs.length];
 		for(byte b=0; b<realIndexes.length; b++)

@@ -76,6 +76,11 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
       .out("beta_out")
     (script, "X", "y")
   }
+  
+  def fit(X_file: String, y_file: String): LinearRegressionModel = {
+    mloutput = baseFit(X_file, y_file, sc)
+    new LinearRegressionModel(this)
+  }
 
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = {
     mloutput = baseFit(X_mb, y_mb, sc)
@@ -102,6 +107,7 @@ class LinearRegressionModel(override val uid: String)(estimator: LinearRegressio
   }
 
   def transform_probability(X: MatrixBlock): MatrixBlock = throw new DMLRuntimeException("Unsupported method")
+  def transform_probability(X_file: String): String      = throw new DMLRuntimeException("Unsupported method")
 
   def baseEstimator(): BaseSystemMLEstimator = estimator
 
@@ -115,7 +121,6 @@ class LinearRegressionModel(override val uid: String)(estimator: LinearRegressio
   def modelVariables(): List[String] = List[String]("beta_out")
 
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "means")
-
   def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "means")
-
+  def transform(X_file: String): String     = baseTransform(X_file, sc, "means")
 }

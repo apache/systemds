@@ -66,7 +66,7 @@ public class WriterTextCell extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( FSDataOutputStream writer = fs.create(path) ){
-			writer.writeBytes("1 1 0");
+			writer.writeBytes(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 		
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
@@ -91,7 +91,7 @@ public class WriterTextCell extends MatrixWriter
 			StringBuilder sb = new StringBuilder();
 			
 			if( sparse ) //SPARSE
-			{			   
+			{
 				Iterator<IJV> iter = src.getSparseBlockIterator(rl, ru);
 				while( iter.hasNext() )
 				{
@@ -111,7 +111,7 @@ public class WriterTextCell extends MatrixWriter
 			{
 				for( int i=rl; i<ru; i++ )
 				{
-					String rowIndex = Integer.toString(i+1);					
+					String rowIndex = Integer.toString(i+1);
 					for( int j=0; j<clen; j++ )
 					{
 						double lvalue = src.getValueDenseUnsafe(i, j);
@@ -126,15 +126,13 @@ public class WriterTextCell extends MatrixWriter
 							br.write( sb.toString() ); //same as append
 							sb.setLength(0); 
 						}
-						
 					}
 				}
 			}
 	
 			//handle empty result
-			if ( src.isEmptyBlock(false) && rl==0 ) {
-				br.write("1 1 0\n");
-			}
+			if ( src.isEmptyBlock(false) && rl==0 )
+				br.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 	}
 }

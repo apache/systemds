@@ -29,15 +29,13 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 
-	private CPOperand _opRows = null;
-	private CPOperand _opCols = null;
-	private CPOperand _opByRow = null;
+	private final CPOperand _opRows;
+	private final CPOperand _opCols;
+	private final CPOperand _opByRow;
 
 	private MatrixReshapeCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 			CPOperand out, String opcode, String istr) {
-		super(op, in1, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.MatrixReshape;
-
+		super(CPType.MatrixReshape, op, in1, out, opcode, istr);
 		_opRows = in2;
 		_opCols = in3;
 		_opByRow = in4;

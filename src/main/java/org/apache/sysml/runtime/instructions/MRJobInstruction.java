@@ -40,10 +40,9 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -128,7 +127,7 @@ public class MRJobInstruction extends Instruction
 
 	public MRJobInstruction(JobType type)
 	{
-		setType(Instruction.INSTRUCTION_TYPE.MAPREDUCE_JOB);
+		setType(Instruction.IType.MAPREDUCE_JOB);
 		jobType = type;	
 		instOpcode = "MR-Job_"+getJobType();
 	}
@@ -895,10 +894,10 @@ public class MRJobInstruction extends Instruction
 			clens[i] = mc.getCols();
 			brlens[i] = mc.getRowsPerBlock();
 			bclens[i] = mc.getColsPerBlock();
-			if ( inputMatrices[i].getMetaData() instanceof MatrixFormatMetaData ) {
-				inputInfos[i] = ((MatrixFormatMetaData) inputMatrices[i].getMetaData()).getInputInfo();
+			if ( inputMatrices[i].getMetaData() instanceof MetaDataFormat ) {
+				inputInfos[i] = ((MetaDataFormat) inputMatrices[i].getMetaData()).getInputInfo();
 			}
-			else if (inputMatrices[i].getMetaData() instanceof NumItemsByEachReducerMetaData ) {
+			else if (inputMatrices[i].getMetaData() instanceof MetaDataNumItemsByEachReducer ) {
 				inputInfos[i] = InputInfo.InputInfoForSortOutput;
 				inputInfos[i].metadata = inputMatrices[i].getMetaData();
 			}
@@ -923,7 +922,7 @@ public class MRJobInstruction extends Instruction
 		// Populate information
 		for(int i=0; i < outputVars.length; i++) {
 			outputs[i] = outputMatrices[i].getFileName();
-			MatrixFormatMetaData md = (MatrixFormatMetaData) outputMatrices[i].getMetaData();
+			MetaDataFormat md = (MetaDataFormat) outputMatrices[i].getMetaData();
 			outputInfos[i] = md.getOutputInfo();
 		}
 	}
@@ -1294,7 +1293,7 @@ public class MRJobInstruction extends Instruction
 			/* Populate returned stats into symbol table of matrices */
 			for ( int index=0; index < jb.getMetaData().length; index++) {
 				String varname = getOutputVars()[index];
-				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
+				MatrixCharacteristics mc = jb.getMetaData(index).getMatrixCharacteristics();
 				ec.getVariable(varname).updateMatrixCharacteristics(mc);
 			}
 		}

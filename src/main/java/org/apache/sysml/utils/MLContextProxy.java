@@ -19,13 +19,10 @@
 
 package org.apache.sysml.utils;
 
-import java.util.ArrayList;
-
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextException;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.runtime.instructions.Instruction;
 
 /**
  * The purpose of this proxy is to shield systemml internals from direct access to MLContext
@@ -46,12 +43,7 @@ public class MLContextProxy
 	public static boolean isActive() {
 		return _active;
 	}
-
-	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp)
-	{
-		return MLContext.getActiveMLContext().getInternalProxy().performCleanupAfterRecompilation(tmp);
-	}
-
+	
 	public static void setAppropriateVarsForRead(Expression source, String targetname)
 		throws LanguageException
 	{
@@ -69,5 +61,4 @@ public class MLContextProxy
 		throw new MLContextException("No MLContext object is currently active. Have you created one? "
 				+ "Hint: in Scala, 'val ml = new MLContext(sc)'", true);
 	}
-
 }

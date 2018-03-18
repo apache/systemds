@@ -1359,10 +1359,10 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			
 			//check statistics for right operator in cp and spark
 			if( instType == ExecType.CP ) {
-				Assert.assertTrue("Missing opcode sp_uaggouerchain", Statistics.getCPHeavyHitterOpCodes().contains(UAggOuterChain.OPCODE));
+				Assert.assertTrue("Missing opcode sp_uaggouterchain", Statistics.getCPHeavyHitterOpCodes().contains(UAggOuterChain.OPCODE));
 			}
 			else if( instType == ExecType.SPARK ) {
-				Assert.assertTrue("Missing opcode sp_uaggouerchain",
+				Assert.assertTrue("Missing opcode sp_uaggouterchain",
 						Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+UAggOuterChain.OPCODE));
 			}
 		}

@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -50,10 +51,8 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	private boolean _outputEmptyBlocks = true;
 
 	private AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr) {
-		super(op, in1, in2, out);
-		mrtype = MRINSTRUCTION_TYPE.AggregateBinary;
+		super(MRType.AggregateBinary, op, in1, in2, out);
 		instString = istr;
-
 		_opcode = opcode;
 	}
 
@@ -160,14 +159,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 
 			//process instruction
 			OperationsOnMatrixValues.performAggregateBinary(
-					    in1.getIndexes(), in1.getValue(), 
-						in2.getIndexes(), in2.getValue(), 
-						out.getIndexes(), out.getValue(), 
-						((AggregateBinaryOperator)optr));
+				in1.getIndexes(), (MatrixBlock) in1.getValue(),
+				in2.getIndexes(), (MatrixBlock) in2.getValue(),
+				out.getIndexes(), (MatrixBlock) out.getValue(),
+				((AggregateBinaryOperator)optr));
 			
 			//put the output value in the cache
 			if(out==tempValue)
-				cachedValues.add(output, out);				
+				cachedValues.add(output, out);
 		}
 	}
 	
@@ -194,13 +193,12 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 			long in2_cols = dcInput.getNumCols();
 			long  in2_colBlocks = (long)Math.ceil(((double)in2_cols)/dcInput.getNumColsPerBlock());
 			
-			for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
-			{	
+			for(int bidx=1; bidx <= in2_colBlocks; bidx++) {
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
 				IndexedMatrixValue in2Block = dcInput.getDataBlock((int)in1.getIndexes().getColumnIndex(), bidx);
-							
+				
 				MatrixValue in2BlockValue = in2Block.getValue(); 
 				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
 				
@@ -208,10 +206,9 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
-				OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-							in2BlockIndex, in2BlockValue, out.getIndexes(), out.getValue(), 
-							((AggregateBinaryOperator)optr));	
-				
+				OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), (MatrixBlock)in1.getValue(), 
+					in2BlockIndex, (MatrixBlock) in2BlockValue, out.getIndexes(), (MatrixBlock)out.getValue(), 
+					((AggregateBinaryOperator)optr));
 				removeOutput &= ( !_outputEmptyBlocks && out.getValue().isEmpty() );
 			}
 		}
@@ -228,7 +225,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				
 				// Setup input2 block
 				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, (int)in2.getIndexes().getRowIndex());
-							
+				
 				MatrixValue in1BlockValue = in1Block.getValue(); 
 				MatrixIndexes in1BlockIndex = in1Block.getIndexes();
 				
@@ -236,14 +233,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
-				OperationsOnMatrixValues.performAggregateBinary(in1BlockIndex, in1BlockValue, 
-						in2.getIndexes(), in2.getValue(),
-						out.getIndexes(), out.getValue(), 
-							((AggregateBinaryOperator)optr));
-			
+				OperationsOnMatrixValues.performAggregateBinary(
+					in1BlockIndex, (MatrixBlock)in1BlockValue,
+					in2.getIndexes(), (MatrixBlock)in2.getValue(),
+					out.getIndexes(), (MatrixBlock)out.getValue(),
+					((AggregateBinaryOperator)optr));
 				removeOutput &= ( !_outputEmptyBlocks && out.getValue().isEmpty() );
 			}
-		}		
+		}
 		
 		//empty block output filter (enabled by compiler consumer operation is in CP)
 		if( removeOutput )

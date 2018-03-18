@@ -25,7 +25,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Options to Use OpenBLAS or Intel MKL
 option(USE_OPEN_BLAS "Whether to use OpenBLAS (Defaults to compiling with Intel MKL, if both set, MKL has priority)" OFF)
-option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel MKL)" ON)
+option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel MKL)" OFF)
 
 # Build a shared libraray
 add_library(systemml SHARED libmatrixdnn.cpp  libmatrixmult.cpp  systemml.cpp)

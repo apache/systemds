@@ -74,9 +74,9 @@ public class GroupedAggMRMapper extends MapperBase
 					{
 						try 
 						{
-							MatrixBlock group = block.sliceOperations(0, block.getNumRows()-1, 
+							MatrixBlock group = block.slice(0, block.getNumRows()-1, 
 									block.getNumColumns()-1, block.getNumColumns()-1, new MatrixBlock());
-							MatrixBlock target = block.sliceOperations(0, block.getNumRows()-1, 
+							MatrixBlock target = block.slice(0, block.getNumRows()-1, 
 									0, block.getNumColumns()-2, new MatrixBlock());
 								
 							MatrixBlock tmp = group.groupedAggOperations(target, null, new MatrixBlock(), ins.getNGroups(), ins.getOperator());

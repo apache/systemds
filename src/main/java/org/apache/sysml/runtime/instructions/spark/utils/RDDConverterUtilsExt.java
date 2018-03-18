@@ -231,7 +231,7 @@ public class RDDConverterUtilsExt
 			throw new DMLRuntimeException("MatrixBlock of size " + limit + " cannot be converted to dense numpy array");
 		ret = new byte[(int) (limit * times)];
 
-		double [] denseBlock = mb.getDenseBlock();
+		double [] denseBlock = mb.getDenseBlockValues();
 		if(mb.isEmptyBlock()) {
 			for(int i=0;i < limit;i++){
 		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(0);

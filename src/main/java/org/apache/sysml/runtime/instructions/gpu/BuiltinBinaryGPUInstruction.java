@@ -64,14 +64,20 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 
     // Determine appropriate Function Object based on opcode
     ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+    
+    boolean isMatrixMatrix = in1.getDataType() == Expression.DataType.MATRIX && in2.getDataType() == Expression.DataType.MATRIX;
+    boolean isMatrixScalar = (in1.getDataType() == Expression.DataType.MATRIX && in2.getDataType() == Expression.DataType.SCALAR) || 
+    							(in1.getDataType() == Expression.DataType.SCALAR && in2.getDataType() == Expression.DataType.MATRIX);
 
-    // Only for "solve"
     if ( in1.getDataType() == Expression.DataType.SCALAR && in2.getDataType() == Expression.DataType.SCALAR )
       throw new DMLRuntimeException("GPU : Unsupported GPU builtin operations on 2 scalars");
-    else if ( in1.getDataType() == Expression.DataType.MATRIX && in2.getDataType() == Expression.DataType.MATRIX )
+    else if ( isMatrixMatrix && opcode.equals("solve") )
       return new MatrixMatrixBuiltinGPUInstruction(new BinaryOperator(func), in1, in2, out, opcode, str, 2);
+    else if ( isMatrixScalar && (opcode.equals("min") || opcode.equals("max")) )
+        return new ScalarMatrixBuiltinGPUInstruction(new BinaryOperator(func), in1, in2, out, opcode, str, 2);
+
     else
-      throw new DMLRuntimeException("GPU : Unsupported GPU builtin operations on a matrix and a scalar");
+      throw new DMLRuntimeException("GPU : Unsupported GPU builtin operations on a matrix and a scalar:" + opcode);
 
 
   }

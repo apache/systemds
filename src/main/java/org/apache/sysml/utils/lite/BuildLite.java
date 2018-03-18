@@ -92,6 +92,14 @@ public class BuildLite {
 		additionalResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
 
 		additionalResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
+		additionalResources.add("org/apache/hadoop/util/GenericOptionsParser.class");
+		additionalResources.add("org/apache/hadoop/security/token/Token.class");
+		additionalResources.add("org/apache/hadoop/security/token/TokenIdentifier.class");
+		additionalResources.add("org/apache/hadoop/security/Groups$CachedGroups.class");
+		additionalResources.add("org/apache/commons/cli/OptionValidator.class");
+		additionalResources.add("org/apache/commons/cli/Util.class");
+		additionalResources.add("common-version-info.properties");
+
 	}
 
 	/**
@@ -103,8 +111,18 @@ public class BuildLite {
 		SortedSet<String> hadoopCommonResources = new TreeSet<>();
 		hadoopCommonResources.add("META-INF/services/org.apache.hadoop.fs.FileSystem");
 		hadoopCommonResources.add("org/apache/hadoop/util/ShutdownHookManager$2.class");
-		hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");
-		additionalJarToFileMappingsForDependencySets.put("hadoop-common", hadoopCommonResources);
+		hadoopCommonResources.add("org/apache/hadoop/log/metrics/EventCounter.class");		
+        hadoopCommonResources.add("org/apache/hadoop/util/GenericOptionsParser.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/token/Token.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/token/TokenIdentifier.class");
+        hadoopCommonResources.add("org/apache/hadoop/security/Groups$CachedGroups.class");
+        hadoopCommonResources.add("common-version-info.properties");
+        additionalJarToFileMappingsForDependencySets.put("hadoop-common", hadoopCommonResources);
+        
+        SortedSet<String> commonsCliResources = new TreeSet<String>();
+        commonsCliResources.add("org/apache/commons/cli/OptionValidator.class");
+        commonsCliResources.add("org/apache/commons/cli/Util.class");
+        additionalJarToFileMappingsForDependencySets.put("commons-cli", commonsCliResources);
 	}
 
 	/**

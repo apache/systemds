@@ -20,12 +20,10 @@
 package org.apache.sysml.test.integration.functions.frame;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -87,14 +85,13 @@ public class FrameConverterTest extends AutomatedTestBase
 	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(200, ValueType.INT);
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(200, ValueType.BOOLEAN);
 	
-	private static final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(CollectionUtils.union(
-					CollectionUtils.union(schemaMixedLargeListStr, schemaMixedLargeListDble),
-					CollectionUtils.union(schemaMixedLargeListInt, schemaMixedLargeListBool)));
+	private static final List<ValueType> schemaMixedLargeList = UtilFunctions.asList(
+		schemaMixedLargeListStr, schemaMixedLargeListDble, schemaMixedLargeListInt, schemaMixedLargeListBool);
 	private static final ValueType[] schemaMixedLarge = schemaMixedLargeList.toArray(new ValueType[0]);
 	
-	private static final List<ValueType> schemaMixedLargeListDFrame = new ArrayList<ValueType>(CollectionUtils.union(
-					CollectionUtils.union(schemaMixedLargeListStr.subList(0, 100), schemaMixedLargeListDble.subList(0, 100)),
-					CollectionUtils.union(schemaMixedLargeListInt.subList(0, 100), schemaMixedLargeListBool.subList(0, 100))));
+	private static final List<ValueType> schemaMixedLargeListDFrame = UtilFunctions.asList(
+		schemaMixedLargeListStr.subList(0, 100), schemaMixedLargeListDble.subList(0, 100),
+		schemaMixedLargeListInt.subList(0, 100), schemaMixedLargeListBool.subList(0, 100));
 	private static final ValueType[] schemaMixedLargeDFrame = schemaMixedLargeListDFrame.toArray(new ValueType[0]);
 	//NOTE: moderate number of columns to workaround https://issues.apache.org/jira/browse/SPARK-16845
 	

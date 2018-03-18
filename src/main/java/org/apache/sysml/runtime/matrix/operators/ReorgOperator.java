@@ -28,8 +28,8 @@ public class ReorgOperator  extends Operator implements Serializable
 {
 	private static final long serialVersionUID = -5322516429026298404L;
 
-	public IndexFunction fn;
-	private int k; //num threads
+	public final IndexFunction fn;
+	private final int k; //num threads
 	
 	public ReorgOperator(IndexFunction p) {
 		//default degree of parallelism is 1 
@@ -38,12 +38,16 @@ public class ReorgOperator  extends Operator implements Serializable
 	}
 		
 	public ReorgOperator(IndexFunction p, int numThreads) {
+		super(true);
 		fn = p;
-		sparseSafe = true;
 		k = numThreads;
 	}
 
 	public int getNumThreads() {
 		return k;
+	}
+
+	public ReorgOperator setFn(IndexFunction fn) {
+		return new ReorgOperator(fn, k);
 	}
 }

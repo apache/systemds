@@ -160,6 +160,7 @@ public class MRJobConfiguration
 	//result merge info
 	private static final String RESULTMERGE_INPUT_INFO_CONFIG="resultmerge.input.inputinfo";
 	private static final String RESULTMERGE_COMPARE_FILENAME_CONFIG="resultmerge.compare.filename";
+	private static final String RESULTMERGE_ACCUMULATOR_CONFIG="resultmerge.accumulator";
 	private static final String RESULTMERGE_STAGING_DIR_CONFIG="resultmerge.staging.dir";
 	private static final String RESULTMERGE_MATRIX_NUM_ROW_CONFIG="resultmerge.matrix.num.row";
 	private static final String RESULTMERGE_MATRIX_NUM_COLUMN_CONFIG="resultmerge.matrix.num.column";
@@ -632,10 +633,11 @@ public class MRJobConfiguration
 		return job.getBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, false);
 	}
 	
-	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen )
+	public static void setResultMergeInfo( JobConf job, String fnameNew, boolean accum, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException
 	{
 		job.set(RESULTMERGE_COMPARE_FILENAME_CONFIG, fnameNew);
+		job.set(RESULTMERGE_ACCUMULATOR_CONFIG, String.valueOf(accum));
 		job.set(RESULTMERGE_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
 		job.set(RESULTMERGE_STAGING_DIR_CONFIG, stagingDir);
 		job.set(RESULTMERGE_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
@@ -644,9 +646,12 @@ public class MRJobConfiguration
 		job.set(RESULTMERGE_BLOCK_NUM_COLUMN_CONFIG, String.valueOf(bclen));
 	}
 	
-	public static String getResultMergeInfoCompareFilename( JobConf job )
-	{
+	public static String getResultMergeInfoCompareFilename( JobConf job ) {
 		return job.get(RESULTMERGE_COMPARE_FILENAME_CONFIG);
+	}
+	
+	public static boolean getResultMergeInfoAccumulator( JobConf job ) {
+		return Boolean.parseBoolean(job.get(RESULTMERGE_ACCUMULATOR_CONFIG));
 	}
 	
 	public static InputInfo getResultMergeInputInfo( JobConf job )

@@ -29,6 +29,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -47,6 +50,7 @@ import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -353,7 +357,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected Collection<String> _variablesECache = null;
 	
 	// program block meta data
-	protected final ArrayList<String> _resultVars;
+	protected final ArrayList<ResultVar> _resultVars;
 	protected final IDSequence _resultVarsIDSeq;
 	protected final IDSequence _dpVarsIDSeq;
 	protected final boolean _hasFunctions;
@@ -366,7 +370,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected HashMap<Long,ArrayList<ProgramBlock>> _pbcache = null;
 	protected long[] _pwIDs = null;
 	
-	public ParForProgramBlock(Program prog, String iterPredVar, HashMap<String,String> params, ArrayList<String> resultVars)
+	public ParForProgramBlock(Program prog, String iterPredVar, HashMap<String,String> params, ArrayList<ResultVar> resultVars)
 		throws DMLRuntimeException 
 	{
 		this( -1, prog, iterPredVar, params, resultVars);
@@ -383,7 +387,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param resultVars list of result variable names
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public ParForProgramBlock(int ID, Program prog, String iterPredVar, HashMap<String,String> params, ArrayList<String> resultVars) 
+	public ParForProgramBlock(int ID, Program prog, String iterPredVar, HashMap<String,String> params, ArrayList<ResultVar> resultVars) 
 	{
 		super(prog, iterPredVar);
 
@@ -455,7 +459,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			UtilFunctions.unquote(tmp).toUpperCase();
 	}
 
-	public ArrayList<String> getResultVariables() {
+	public ArrayList<ResultVar> getResultVariables() {
 		return _resultVars;
 	}
 	
@@ -616,7 +620,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 		
 		// initialize iter var to form value
-		IntObject iterVar = new IntObject(_iterPredVar, from.getLongValue() );
+		IntObject iterVar = new IntObject(from.getLongValue());
 		
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
@@ -633,7 +637,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//preserve shared input/result variables of cleanup
 		ArrayList<String> varList = ec.getVarList();
-		HashMap<String, Boolean> varState = ec.pinVariables(varList);
+		boolean[] varState = ec.pinVariables(varList);
 		
 		try 
 		{
@@ -674,7 +678,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		cleanupSharedVariables(ec, varState);
 		
 		//set iteration var to TO value (+ increment) for FOR equivalence
-		iterVar = new IntObject(_iterPredVar, to.getLongValue()); //consistent with for
+		iterVar = new IntObject(to.getLongValue()); //consistent with for
 		ec.setVariable(_iterPredVar, iterVar);
 		
 		//ensure that subsequent program blocks never see partitioned data (invalid plans!)
@@ -750,17 +754,16 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		try
 		{
-			// Step 1) init parallel workers, task queue and threads
+			// Step 1) create task queue and init workers in parallel
+			// (including preparation of update-in-place variables)
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			for( int i=0; i<_numThreads; i++ ) {
-				//create parallel workers as (lazy) deep copies
-				//including preparation of update-in-place variables
+			IntStream.range(0, _numThreads).parallel().forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
-				threads[i].setPriority(Thread.MAX_PRIORITY); 
-			}
+				threads[i].setPriority(Thread.MAX_PRIORITY);
+			});
 			
 			// start threads (from now on waiting for tasks)
 			for( Thread thread : threads )
@@ -809,7 +812,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
 			for( int i=0; i<_numThreads; i++ ) {
 				localVariables[i] = workers[i].getVariables();
-				localVariables[i].removeAllNotIn(new HashSet<>(_resultVars));
+				localVariables[i].removeAllNotIn(_resultVars.stream()
+					.map(v -> v._name).collect(Collectors.toSet()));
 				numExecutedTasks += workers[i].getExecutedTasks();
 				numExecutedIterations += workers[i].getExecutedIterations();
 			}
@@ -982,7 +986,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PartitionFormat.COLUMN_WISE)
 			|| (inputMatrix.getSparsity()<0.001 && inputDPF==PartitionFormat.ROW_WISE)) ?
 			OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
+		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program, resultFile, 
 			inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP );
 		
 		if( _monitor )
@@ -1107,7 +1111,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 4) submit MR job (wait for finished work)
 		//TODO runtime support for binary cell partitioning 
 		OutputInfo inputOI = OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program,
+		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program,
 			clsMap, resultFile, inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
 		
 		if( _monitor ) 
@@ -1142,8 +1146,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( sb == null )
 				throw new DMLRuntimeException("ParFor statement block required for reasoning about data partitioning.");
 			
-			ArrayList<String> vars = sb.getReadOnlyParentVars();
-			for( String var : vars )
+			for( String var : sb.getReadOnlyParentVars() )
 			{
 				Data dat = ec.getVariable(var);
 				//skip non-existing input matrices (which are due to unknown sizes marked for
@@ -1239,7 +1242,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( MatrixObject tmp : in ) {
 			//check for empty inputs (no iterations executed)
 			if( tmp != null && tmp != out )
-				ec.cleanupMatrixObject(tmp);
+				ec.cleanupCacheableData(tmp);
 		}
 	}
 	
@@ -1273,10 +1276,10 @@ public class ParForProgramBlock extends ForProgramBlock
 				{
 					case SCALAR:
 						switch( valuetype ) {
-							case BOOLEAN: dataObj = new BooleanObject(var,false); break;
-							case INT:     dataObj = new IntObject(var,-1);        break;
-							case DOUBLE:  dataObj = new DoubleObject(var,-1d);    break;
-							case STRING:  dataObj = new StringObject(var,"-1");   break;
+							case BOOLEAN: dataObj = new BooleanObject(false); break;
+							case INT:     dataObj = new IntObject(-1);        break;
+							case DOUBLE:  dataObj = new DoubleObject(-1d);    break;
+							case STRING:  dataObj = new StringObject("-1");   break;
 							default:
 								throw new DMLRuntimeException("Value type not supported: "+valuetype);
 						}
@@ -1301,7 +1304,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws CacheException 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		HashSet<String> blacklist = new HashSet<>(Arrays.asList(blacklistNames));
+		Set<String> blacklist = UtilFunctions.asSet(blacklistNames);
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
@@ -1329,7 +1332,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private void cleanupSharedVariables( ExecutionContext ec, HashMap<String,Boolean> varState ) 
+	private void cleanupSharedVariables( ExecutionContext ec, boolean[] varState ) 
 		throws DMLRuntimeException 
 	{
 		//TODO needs as precondition a systematic treatment of persistent read information.
@@ -1346,10 +1349,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param ec execution context
 	 * @param index the index of the worker
 	 * @return local parworker
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec, int index)
-		throws DMLRuntimeException
 	{
 		LocalParWorker pw = null; 
 		
@@ -1393,7 +1394,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			pw.setFunctionNames(fnNames);
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+			throw new RuntimeException(ex);
 		}
 		
 		return pw;
@@ -1491,7 +1492,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		return dp;
 	}
 
-	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname, ExecutionContext ec ) 
+	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname, boolean accum, ExecutionContext ec ) 
 		throws DMLRuntimeException 
 	{
 		ResultMerge rm = null;
@@ -1520,21 +1521,22 @@ public class ParForProgramBlock extends ForProgramBlock
 		switch( prm )
 		{
 			case LOCAL_MEM:
-				rm = new ResultMergeLocalMemory( out, in, fname );
+				rm = new ResultMergeLocalMemory( out, in, fname, accum );
 				break;
 			case LOCAL_FILE:
-				rm = new ResultMergeLocalFile( out, in, fname );
+				rm = new ResultMergeLocalFile( out, in, fname, accum );
 				break;
 			case LOCAL_AUTOMATIC:
-				rm = new ResultMergeLocalAutomatic( out, in, fname );
+				rm = new ResultMergeLocalAutomatic( out, in, fname, accum );
 				break;
 			case REMOTE_MR:
-				rm = new ResultMergeRemoteMR( out, in, fname, 
+				rm = new ResultMergeRemoteMR( out, in, fname, accum, 
 					_ID, numMap, numRed, WRITE_REPLICATION_FACTOR,
 					MAX_RETRYS_ON_ERROR, ALLOW_REUSE_MR_JVMS );
 				break;
 			case REMOTE_SPARK:
-				rm = new ResultMergeRemoteSpark( out, in, fname, ec, numMap, numRed );
+				rm = new ResultMergeRemoteSpark( out, in,
+					fname, accum, ec, numMap, numRed );
 				break;
 				
 			default:
@@ -1659,10 +1661,11 @@ public class ParForProgramBlock extends ForProgramBlock
 			try
 			{
 				//enqueue all result vars as tasks
-				LocalTaskQueue<String> q = new LocalTaskQueue<>();
-				for( String var : _resultVars ) //foreach non-local write
-					if( ec.getVariable(var) instanceof MatrixObject ) //robustness scalars
+				LocalTaskQueue<ResultVar> q = new LocalTaskQueue<>();
+				for( ResultVar var : _resultVars ) { //foreach non-local write
+					if( ec.getVariable(var._name) instanceof MatrixObject ) //robustness scalars
 						q.enqueueTask(var);
+				}
 				q.closeInput();
 				
 				//run result merge workers
@@ -1685,17 +1688,17 @@ public class ParForProgramBlock extends ForProgramBlock
 		else
 		{
 			//execute result merge sequentially for all result vars
-			for( String var : _resultVars ) //foreach non-local write
+			for( ResultVar var : _resultVars ) //foreach non-local write
 			{
-				Data dat = ec.getVariable(var);
+				Data dat = ec.getVariable(var._name);
 				if( dat instanceof MatrixObject ) //robustness scalars
 				{
 					MatrixObject out = (MatrixObject) dat;
 					MatrixObject[] in = new MatrixObject[ results.length ];
 					for( int i=0; i< results.length; i++ )
-						in[i] = (MatrixObject) results[i].get( var );
+						in[i] = (MatrixObject) results[i].get( var._name );
 					String fname = constructResultMergeFileName();
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, ec);
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, ec);
 					MatrixObject outNew = null;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );
@@ -1703,15 +1706,15 @@ public class ParForProgramBlock extends ForProgramBlock
 						outNew = rm.executeSerialMerge();
 					
 					//cleanup existing var
-					Data exdata = ec.removeVariable(var);
+					Data exdata = ec.removeVariable(var._name);
 					if( exdata != null && exdata != outNew && exdata instanceof MatrixObject )
-						ec.cleanupMatrixObject((MatrixObject)exdata);
+						ec.cleanupCacheableData((MatrixObject)exdata);
 					
 					//cleanup of intermediate result variables
 					cleanWorkerResultVariables( ec, out, in );
 					
 					//set merged result variable
-					ec.setVariable(var, outNew);
+					ec.setVariable(var._name, outNew);
 				}
 			}
 		}
@@ -1909,12 +1912,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private class ResultMergeWorker extends Thread
 	{
-		private LocalTaskQueue<String> _q = null;
+		private LocalTaskQueue<ResultVar> _q = null;
 		private LocalVariableMap[] _refVars = null;
 		private ExecutionContext _ec = null;
 		private boolean _success = false;
 		
-		public ResultMergeWorker( LocalTaskQueue<String> q, LocalVariableMap[] results, ExecutionContext ec )
+		public ResultMergeWorker( LocalTaskQueue<ResultVar> q, LocalVariableMap[] results, ExecutionContext ec )
 		{
 			_q = q;
 			_refVars = results;
@@ -1932,21 +1935,21 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				while( true ) 
 				{
-					String varname = _q.dequeueTask();
-					if( varname == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
+					ResultVar var = _q.dequeueTask();
+					if( var == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
 						break;
 				
 					MatrixObject out = null;
 					synchronized( _ec.getVariables() ){
-						out = _ec.getMatrixObject(varname);
+						out = _ec.getMatrixObject(var._name);
 					}
 					
 					MatrixObject[] in = new MatrixObject[ _refVars.length ];
 					for( int i=0; i< _refVars.length; i++ )
-						in[i] = (MatrixObject) _refVars[i].get( varname ); 
+						in[i] = (MatrixObject) _refVars[i].get( var._name ); 
 					String fname = constructResultMergeFileName();
 				
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, _ec);
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, _ec);
 					MatrixObject outNew = null;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );
@@ -1954,7 +1957,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						outNew = rm.executeSerialMerge();
 					
 					synchronized( _ec.getVariables() ){
-						_ec.getVariables().put( varname, outNew);
+						_ec.getVariables().put( var._name, outNew);
 					}
 		
 					//cleanup of intermediate result variables

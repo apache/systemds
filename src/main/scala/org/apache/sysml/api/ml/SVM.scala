@@ -69,6 +69,11 @@ class SVM(override val uid: String, val sc: SparkContext, val isMultiClass: Bool
       .out("w")
     (script, "X", "Y")
   }
+  
+  def fit(X_file: String, y_file: String): SVMModel = {
+    mloutput = baseFit(X_file, y_file, sc)
+    new SVMModel(this, isMultiClass)
+  }
 
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
@@ -105,6 +110,7 @@ class SVMModel(override val uid: String)(estimator: SVM, val sc: SparkContext, v
     val script = dml(ScriptsUtils.getDMLScript(if (isMultiClass) SVMModel.predictionScriptPathMulticlass else SVMModel.predictionScriptPathBinary))
       .in("$X", " ")
       .in("$model", " ")
+      .in("$scoring_only", "TRUE")
       .out("scores")
 
     val w    = estimator.mloutput.getMatrix("w")
@@ -120,5 +126,7 @@ class SVMModel(override val uid: String)(estimator: SVM, val sc: SparkContext, v
 
   def transform(X: MatrixBlock): MatrixBlock               = baseTransform(X, sc, "scores")
   def transform_probability(X: MatrixBlock): MatrixBlock   = baseTransformProbability(X, sc, "scores")
+  def transform(X: String): String                         = baseTransform(X, sc, "scores")
+  def transform_probability(X: String): String             = baseTransformProbability(X, sc, "scores")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "scores")
 }

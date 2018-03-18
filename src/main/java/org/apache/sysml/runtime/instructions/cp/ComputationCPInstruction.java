@@ -19,26 +19,30 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class ComputationCPInstruction extends CPInstruction {
 
-	public CPOperand output;
-	public CPOperand input1, input2, input3;
+	public final CPOperand output;
+	public final CPOperand input1, input2, input3;
 
-	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, opcode, istr);
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = null;
 		output = out;
 	}
 
-	protected ComputationCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(op, opcode, istr);
+		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
@@ -54,11 +58,16 @@ public abstract class ComputationCPInstruction extends CPInstruction {
 	}
 
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out ) {
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+			&& !CacheableData.isCachingActive() )
+			return true;
 		double memIn1 = (in1 != null) ? in1.getInMemorySize() : 0;
 		double memIn2 = (in2 != null) ? in2.getInMemorySize() : 0;
 		double memReq = out.isInSparseFormat() ? 
 			MatrixBlock.estimateSizeDenseInMemory(out.getNumRows(), out.getNumColumns()) :
 			MatrixBlock.estimateSizeSparseInMemory(out.getNumRows(), out.getNumColumns(), out.getSparsity());
-		return ( memReq < memIn1 + memIn2 );
+		//guarded if mem requirements smaller than input sizes
+		return ( memReq < memIn1 + memIn2
+			+ OptimizerUtils.SAFE_REP_CHANGE_THRES ); //8MB
 	}
 }

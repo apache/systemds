@@ -29,42 +29,42 @@ import org.apache.sysml.utils.Statistics;
 
 public abstract class SPInstruction extends Instruction {
 
-	public enum SPINSTRUCTION_TYPE { 
+	public enum SPType { 
 		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions  
-		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
-		Builtin, BuiltinUnary, BuiltinBinary, MultiReturnBuiltin, Checkpoint, Compression, Cast,
+		MatrixIndexing, Reorg, Binary, Ternary,
+		AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
+		Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, Cast,
 		CentralMoment, Covariance, QSort, QPick, 
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
-		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
-		Write, SpoofFused, INVALID, 
-		Convolution
+		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
+		Write, SpoofFused, Convolution
 	}
 
-	protected SPINSTRUCTION_TYPE _sptype;
-	protected Operator _optr;
-	protected boolean _requiresLabelUpdate = false;
+	protected final SPType _sptype;
+	protected final Operator _optr;
+	protected final boolean _requiresLabelUpdate;
 
-	protected SPInstruction(String opcode, String istr) {
-		type = INSTRUCTION_TYPE.SPARK;
+	protected SPInstruction(SPType type, String opcode, String istr) {
+		this(type, null, opcode, istr);
+	}
+
+	protected SPInstruction(SPType type, Operator op, String opcode, String istr) {
+		_sptype = type;
+		_optr = op;
+		super.type = IType.SPARK;
 		instString = istr;
-		instOpcode = opcode;
 
-		// update requirement for repeated usage
+		// prepare opcode and update requirement for repeated usage
+		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 
-	protected SPInstruction(Operator op, String opcode, String istr) {
-		this(opcode, istr);
-		_optr = op;
-	}
-
-	public SPINSTRUCTION_TYPE getSPInstructionType() {
+	public SPType getSPInstructionType() {
 		return _sptype;
 	}
 	
 	@Override
-	public boolean requiresLabelUpdate()
-	{
+	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
 	}
 
@@ -87,7 +87,7 @@ public abstract class SPInstruction extends Instruction {
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = SPInstructionParser.parseSingleInstruction(updInst);
 		}
-				
+		
 		return tmp;
 	}
 
@@ -105,5 +105,4 @@ public abstract class SPInstruction extends Instruction {
 		//default post-process behavior
 		super.postprocessInstruction(ec);
 	}
-	
 }

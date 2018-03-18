@@ -37,6 +37,14 @@ public abstract class StatementBlockRewriteRule
 	protected static final Log LOG = LogFactory.getLog(StatementBlockRewriteRule.class.getName());
 	
 	/**
+	 * Indicates if the rewrite potentially splits dags, which is used
+	 * for phase ordering of rewrites.
+	 * 
+	 * @return true if dag splits are possible.
+	 */
+	public abstract boolean createsSplitDag();
+	
+	/**
 	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
 	 * within the individual rewrites. If a rewrite does not apply to individual blocks, it 
 	 * should simply return the input block.

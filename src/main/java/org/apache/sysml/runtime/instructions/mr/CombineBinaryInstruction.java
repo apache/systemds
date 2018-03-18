@@ -33,9 +33,8 @@ public class CombineBinaryInstruction extends BinaryMRInstructionBase {
 	private boolean secondInputIsWeight = true;
 
 	private CombineBinaryInstruction(Operator op, boolean isWeight, byte in1, byte in2, byte out, String istr) {
-		super(op, in1, in2, out);
+		super(MRType.CombineBinary, op, in1, in2, out);
 		secondInputIsWeight = isWeight;
-		mrtype = MRINSTRUCTION_TYPE.CombineBinary;
 		instString = istr;
 	}
 

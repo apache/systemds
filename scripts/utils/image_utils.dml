@@ -32,7 +32,7 @@ crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) 
 	temp_mask = matrix(1, rows=Hout, cols=Wout)
 	mask[start_h:end_h, start_w:end_w] = temp_mask
 	mask = matrix(mask, rows=1, cols=Hin*Win)
-	mask = cbind(cbind(mask, mask), mask)
+	mask = cbind(mask, mask, mask)
 	out = removeEmpty(target=(input+1), margin="cols", select=mask) - 1
 }
 

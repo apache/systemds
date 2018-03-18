@@ -186,10 +186,10 @@ while (i < max_iteration & norm_r2 > norm_r2_target)
         q = scale_X * q + shift_X %*% q [m_ext, ];
     }
 
-	q = q + lambda * p;
+	q += lambda * p;
 	a = norm_r2 / sum (p * q);
-	beta_unscaled = beta_unscaled + a * p;
-	r = r + a * q;
+	beta_unscaled += a * p;
+	r += a * q;
 	old_norm_r2 = norm_r2;
 	norm_r2 = sum (r ^ 2);
 	p = -r + (norm_r2 / old_norm_r2) * p;
@@ -224,13 +224,8 @@ ss_res = sum (y_residual ^ 2);
 ss_avg_res = ss_res - n * avg_res ^ 2;
 
 R2 = 1 - ss_res / ss_avg_tot;
-if (n > m_ext) {
-    dispersion  = ss_res / (n - m_ext);
-    adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
-} else {
-    dispersion  = 0.0 / 0.0;
-    adjusted_R2 = 0.0 / 0.0;
-}
+dispersion = ifelse(n > m_ext, ss_res / (n - m_ext), 0.0/0.0);
+adjusted_R2 = ifelse(n > m_ext, 1 - dispersion / (ss_avg_tot / (n - 1)), 0.0/0.0);
 
 R2_nobias = 1 - ss_avg_res / ss_avg_tot;
 deg_freedom = n - m - 1;
@@ -244,11 +239,7 @@ if (deg_freedom > 0) {
 }
 
 R2_vs_0 = 1 - ss_res / ss_tot;
-if (n > m) {
-    adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
-} else {
-    adjusted_R2_vs_0 = 0.0 / 0.0;
-}
+adjusted_R2_vs_0 = ifelse(n > m, 1 - (ss_res / (n - m)) / (ss_tot / n), 0.0/0.0);
 
 str = "AVG_TOT_Y," + avg_tot;                                    #  Average of the response value Y
 str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y

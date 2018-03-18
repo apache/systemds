@@ -24,9 +24,12 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
@@ -79,9 +82,17 @@ public abstract class GPUTests extends AutomatedTestBase {
 		else if(FLOATING_POINT_PRECISION.equals("single"))  return SINGLE_PRECISION_THRESHOLD;
 		else throw new RuntimeException("Unsupported precision:" + FLOATING_POINT_PRECISION);
 	}
-
+	
+	// force junit to run only 1 GPU test at a time to avoid cascading failures.
+	Lock sequential = new ReentrantLock();
+	@Override
+	public void setUp() {
+	    sequential.lock();
+	    
+	}
 	@After
 	public void tearDown() {
+		sequential.unlock();
 		clearGPUMemory();
 		super.tearDown();
 	}
@@ -242,6 +253,16 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 */
 	private void assertEqualMatrices(Matrix expected, Matrix actual) {
 		try {
+			// Faster way to compare two matrices
+			MLContext cpuMLC = new MLContext(spark);
+			String scriptStr = "num_mismatch = sum((abs(X - Y) / X) > " + getTHRESHOLD() + ");";
+			Script script = ScriptFactory.dmlFromString(scriptStr).in("X", expected).in("Y", actual).out("num_mismatch");
+			long num_mismatch = cpuMLC.execute(script).getLong("num_mismatch");
+			cpuMLC.close();
+			if(num_mismatch == 0)
+				return;
+			
+			// If error, print the actual incorrect values
 			MatrixBlock expectedMB = expected.toMatrixObject().acquireRead();
 			MatrixBlock actualMB = actual.toMatrixObject().acquireRead();
 
@@ -304,8 +325,9 @@ public abstract class GPUTests extends AutomatedTestBase {
 		MLContext cpuMLC = new MLContext(spark);
 		List<Object> outputs = new ArrayList<>();
 		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+		MLResults res = cpuMLC.execute(script);
 		for (String outStr : outStrs) {
-			Object output = cpuMLC.execute(script).get(outStr);
+			Object output = res.get(outStr);
 			outputs.add(output);
 		}
 		cpuMLC.close();
@@ -323,19 +345,26 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 */
 	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
 			List<String> outStrs) {
-		MLContext gpuMLC = new MLContext(spark);
-		gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
-		gpuMLC.setGPU(true);
-		gpuMLC.setForceGPU(true);
-		gpuMLC.setStatistics(true);
-		List<Object> outputs = new ArrayList<>();
-		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
-		for (String outStr : outStrs) {
-			Object output = gpuMLC.execute(script).get(outStr);
-			outputs.add(output);
+		// Ensure that only one instance of ml.execute runs at a time to avoid incorrect memory estimates
+		// and other side effects.
+		synchronized(GPUTests.class) {
+			MLContext gpuMLC = new MLContext(spark);
+			gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
+			if(IGNORE_CLEAR_MEMORY_BUG)
+				gpuMLC.setConfigProperty("sysml.gpu.eager.cudaFree", "true");
+			gpuMLC.setGPU(true);
+			gpuMLC.setForceGPU(true);
+			gpuMLC.setStatistics(true);
+			List<Object> outputs = new ArrayList<>();
+			Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+			MLResults res = gpuMLC.execute(script);
+			for (String outStr : outStrs) {
+				Object output = res.get(outStr);
+				outputs.add(output);
+			}
+			gpuMLC.close();
+			return outputs;
 		}
-		gpuMLC.close();
-		return outputs;
 	}
 
 	/**

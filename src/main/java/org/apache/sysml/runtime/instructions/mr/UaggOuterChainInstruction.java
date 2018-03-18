@@ -57,27 +57,23 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 
 	private UaggOuterChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
 			byte in1, byte in2, byte out, String istr) {
-		super(null, in1, in2, out, istr);
-
+		super(MRType.UaggOuterChain, null, in1, in2, out, istr);
 		_uaggOp = uaggop;
 		_aggOp = aggop;
 		_bOp = bop;
-
 		_tmpVal1 = new MatrixBlock();
 		_tmpVal2 = new MatrixBlock();
-
-		mrtype = MRINSTRUCTION_TYPE.UaggOuterChain;
 		instString = istr;
 	}
 
 	public static UaggOuterChainInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
-	{		
+	{
 		//check number of fields (2/3 inputs, output, type)
 		InstructionUtils.checkNumFields ( str, 5 );
 		
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionParts( str );		
+		String[] parts = InstructionUtils.getInstructionParts( str );
 		
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[1]);
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[2]);
@@ -165,8 +161,8 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 						Arrays.sort(_bv);
 					}
 				}
-		
-				LibMatrixOuterAgg.resetOutputMatix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _uaggOp);
+				
+				LibMatrixOuterAgg.resetOutputMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _uaggOp);
 				LibMatrixOuterAgg.aggregateMatrix((MatrixBlock)in1Val, (MatrixBlock)outVal, _bv, _bvi, _bOp, _uaggOp);
 			}
 			else //default case 

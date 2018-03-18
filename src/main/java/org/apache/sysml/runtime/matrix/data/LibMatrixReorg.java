@@ -71,8 +71,8 @@ public class LibMatrixReorg
 	//allow reuse of temporary blocks for certain operations
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
-	//use csr instead of mcsr sparse block for rexpand columns
-	public static final boolean REXPAND_COLS_IN_CSR = true;
+	//use csr instead of mcsr sparse block for rexpand columns / diag v2m
+	public static final boolean SPARSE_OUTPUTS_IN_CSR = true;
 	
 	private enum ReorgType {
 		TRANSPOSE,
@@ -101,22 +101,20 @@ public class LibMatrixReorg
 	{
 		ReorgType type = getReorgType(op);
 		
-		switch( type )
-		{
-			case TRANSPOSE: 
+		switch( type ) {
+			case TRANSPOSE:
 				if( op.getNumThreads() > 1 )
 					return transpose(in, out, op.getNumThreads());
 				else
 					return transpose(in, out);
-			case REV: 
+			case REV:
 				return rev(in, out);
-			case DIAG:      
-				return diag(in, out); 
-			case SORT:      
+			case DIAG:
+				return diag(in, out);
+			case SORT:
 				SortIndex ix = (SortIndex) op.fn;
-				return sort(in, out, ix.getCol(), ix.getDecreasing(), ix.getIndexReturn());
-			
-			default:        
+				return sort(in, out, ix.getCols(), ix.getDecreasing(), ix.getIndexReturn());
+			default:
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
 		}
 	}
@@ -136,7 +134,7 @@ public class LibMatrixReorg
 		//we don't need to create a copy, given our copy on write semantics.
 		//however, note that with update in-place this would be an invalid optimization
 		if( SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1)  ) {
-			out.denseBlock = in.denseBlock;
+			out.denseBlock = DenseBlockFactory.createDenseBlock(in.getDenseBlockValues(), in.clen, in.rlen);
 			return out;
 		}
 		
@@ -207,14 +205,14 @@ public class LibMatrixReorg
 			blklen += (blklen%8 != 0)?8-blklen%8:0;
 			for( int i=0; i<k & i*blklen<len; i++ )
 				tasks.add(new TransposeTask(in, out, row, i*blklen, Math.min((i+1)*blklen, len), cnt));
-			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
 			for( Future<Object> task : taskret )
 				task.get();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
-		}	
+		}
 		
 		//System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
@@ -276,22 +274,23 @@ public class LibMatrixReorg
 			//slice first block
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
 			MatrixBlock outblk1 = new MatrixBlock(blklen1, inblk.getNumColumns(), inblk.isInSparseFormat());
-			MatrixBlock tmp1 = tmpblk.sliceOperations(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
-			outblk1.leftIndexingOperations(tmp1, ipos1, outblk1.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
+			MatrixBlock tmp1 = tmpblk.slice(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+			outblk1.leftIndexingOperations(tmp1, ipos1, ipos1+tmp1.getNumRows()-1,
+				0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
 			out.add(new IndexedMatrixValue(outix1, outblk1));
 			
 			//slice second block (if necessary)
 			if( blkix1 != blkix2 ) {
 				MatrixIndexes outix2 = new MatrixIndexes(blkix2, inix.getColumnIndex());
 				MatrixBlock outblk2 = new MatrixBlock(blklen2, inblk.getNumColumns(), inblk.isInSparseFormat());
-				MatrixBlock tmp2 = tmpblk.sliceOperations(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmp2 = tmpblk.slice(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
 				outblk2.leftIndexingOperations(tmp2, 0, tmp2.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk2, UpdateType.INPLACE_PINNED);
-				out.add(new IndexedMatrixValue(outix2, outblk2));		
+				out.add(new IndexedMatrixValue(outix2, outblk2));
 			}
 		}
 	}
 
-	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) 
+	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out )
 		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
@@ -317,7 +316,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int by, boolean desc, boolean ixret) 
+	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int[] by, boolean desc, boolean ixret) 
 		throws DMLRuntimeException
 	{
 		//meta data gathering and preparation
@@ -328,8 +327,9 @@ public class LibMatrixReorg
 		out.nonZeros = ixret ? rlen : in.nonZeros;
 		
 		//step 1: error handling
-		if( by <= 0 || clen < by )
-			throw new DMLRuntimeException("Sort configuration issue: non-existing orderby column: "+by+" ("+rlen+"x"+clen+" input).");
+		if( !isValidSortByList(by, clen) )
+			throw new DMLRuntimeException("Sort configuration issue: invalid orderby columns: "
+				+ Arrays.toString(by)+" ("+rlen+"x"+clen+" input).");
 		
 		//step 2: empty block / special case handling
 		if( !ixret ) //SORT DATA
@@ -339,8 +339,8 @@ public class LibMatrixReorg
 			
 			if( !sparse && clen == 1 ) { //DENSE COLUMN VECTOR
 				//in-place quicksort, unstable (no indexes needed)
-				out.copy( in ); //dense
-				Arrays.sort(out.denseBlock);
+				out.copy( in ); //dense (always single block)
+				Arrays.sort(out.getDenseBlockValues());
 				if( desc )
 					sortReverseDense(out);
 				return out;
@@ -349,9 +349,10 @@ public class LibMatrixReorg
 		else //SORT INDEX
 		{
 			if( in.isEmptyBlock(false) ) { //EMPTY INPUT BLOCK
-				out.allocateDenseBlock(false);
-				for( int i=0; i<rlen; i++ ) //seq(1,n)
-					out.setValueDenseUnsafe(i, 0, i+1);
+				out.allocateDenseBlock(false); //single block
+				double[] c = out.getDenseBlockValues();
+				for( int i=0; i<rlen; i++ )
+					c[i] = i+1; //seq(1,n)
 				return out;
 			}
 		}
@@ -363,12 +364,16 @@ public class LibMatrixReorg
 		double[] values = new double[rlen];
 		for( int i=0; i<rlen; i++ ) {
 			vix[i] = i;
-			values[i] = in.quickGetValue(i, by-1);
+			values[i] = in.quickGetValue(i, by[0]-1);
 		}
 		
 		//sort index vector on extracted data (unstable)
 		SortUtils.sortByValue(0, rlen, values, vix);
-
+		
+		//sort by secondary columns if required (in-place)
+		if( by.length > 1 )
+			sortBySecondary(0, rlen, values, vix, in, by, 1);
+		
 		//flip order if descending requested (note that this needs to happen
 		//before we ensure stable outputs, hence we also flip values)
 		if(desc) {
@@ -377,46 +382,32 @@ public class LibMatrixReorg
 		}
 		
 		//final pass to ensure stable output
-		for( int i=0; i<rlen-1; i++ ) {
-			double tmp = values[i];
-			//determine run of equal values
-			int len = 0;
-			while( i+len+1<rlen && tmp==values[i+len+1] )
-				len++;
-			//unstable sort of run indexes (equal value guaranteed)
-			if( len>0 ) {
-				Arrays.sort(vix, i, i+len+1);
-				i += len; //skip processed run
-			}
-		}
+		sortIndexesStable(0, rlen, values, vix, in, by, 1);
 
 		//step 4: create output matrix (guaranteed non-empty, see step 2)
-		if( !ixret )
-		{
+		if( !ixret ) {
 			//copy input data in sorted order into result
-			if( !sparse ) //DENSE
-			{
+			if( !sparse ) { //DENSE
 				out.allocateDenseBlock(false);
-				for( int i=0; i<rlen; i++ ) {
-					System.arraycopy(in.denseBlock, vix[i]*clen, out.denseBlock, i*clen, clen);
-				}
+				DenseBlock a = in.getDenseBlock();
+				DenseBlock c = out.getDenseBlock();
+				for( int i=0; i<rlen; i++ )
+					System.arraycopy(a.values(vix[i]), a.pos(vix[i]), c.values(i), c.pos(i), clen);
 			}
-			else //SPARSE
-			{
+			else { //SPARSE
 				out.allocateSparseRowsBlock(false);
 				for( int i=0; i<rlen; i++ )
-					if( !in.sparseBlock.isEmpty(vix[i]) ) {
+					if( !in.sparseBlock.isEmpty(vix[i]) )
 						out.sparseBlock.set(i, in.sparseBlock.get(vix[i]),
 							!SHALLOW_COPY_REORG); //row remains unchanged
-					}
 			}
 		}
-		else
-		{
+		else {
 			//copy sorted index vector into result
 			out.allocateDenseBlock(false);
+			DenseBlock c = out.getDenseBlock();
 			for( int i=0; i<rlen; i++ )
-				out.setValueDenseUnsafe(i, 0, vix[i]+1);
+				c.set(i, 0, vix[i]+1);
 		}
 		
 		return out;
@@ -424,6 +415,11 @@ public class LibMatrixReorg
 	
 	/**
 	 * CP reshape operation (single input, single output matrix) 
+	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both
+	 * the read and write order, with row-wise being the default, while
+	 * R uses always a column-wise read, rowwise specifying the write
+	 * order and column-wise being the default. 
 	 * 
 	 * @param in input matrix
 	 * @param out output matrix
@@ -445,21 +441,25 @@ public class LibMatrixReorg
 		
 		//check for same dimensions
 		if( rlen==rows && clen == cols ) {
-			out.copy(in); //incl dims, nnz
+			//copy incl dims, nnz
+			if( SHALLOW_COPY_REORG )
+				out.copyShallow(in);
+			else
+				out.copy(in);
 			return out;
 		}
 	
 		//determine output representation
-	    out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
+		out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
 		
 		//set output dimensions
 		out.rlen = rows;
 		out.clen = cols;
 		out.nonZeros = in.nonZeros;
 		
-		//core reshape (sparse or dense)	
+		//core reshape (sparse or dense)
 		if(!in.sparse && !out.sparse)
-			reshapeDense(in, out, rows, cols, rowwise);		
+			reshapeDense(in, out, rows, cols, rowwise);
 		else if(in.sparse && out.sparse)
 			reshapeSparse(in, out, rows, cols, rowwise);
 		else if(in.sparse)
@@ -484,7 +484,7 @@ public class LibMatrixReorg
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, MatrixCharacteristics mcIn, 
-			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise ) 	
+			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise )
 		throws DMLRuntimeException
 	{
 		//prepare inputs
@@ -502,11 +502,13 @@ public class LibMatrixReorg
 			reshapeSparse(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 		else //dense
 			reshapeDense(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
-
+		
 		//prepare output
 		out = new ArrayList<>();
-		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
+		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() ) {
+			e.getValue().examSparsity(); //ensure correct format
 			out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
+		}
 		
 		return out;
 	}
@@ -517,28 +519,30 @@ public class LibMatrixReorg
 	 * @param in input matrix
 	 * @param ret output matrix
 	 * @param rows ?
+	 * @param emptyReturn return row/column of zeros for empty input
 	 * @param select ?
 	 * @return matrix block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, MatrixBlock select) 
+	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) 
 		throws DMLRuntimeException
 	{
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
 		if( in.isEmptyBlock(false) && select == null  ) {
+			int n = emptyReturn ? 1 : 0;
 			if( rows )
-				ret.reset(1, in.clen, in.sparse);
+				ret.reset(n, in.clen, in.sparse);
 			else //cols
-				ret.reset(in.rlen, 1, in.sparse);	
+				ret.reset(in.rlen, n, in.sparse);
 			return ret;
 		}
 		
 		if( rows )
-			return removeEmptyRows(in, ret, select);
+			return removeEmptyRows(in, ret, select, emptyReturn);
 		else //cols
-			return removeEmptyColumns(in, ret, select);
+			return removeEmptyColumns(in, ret, select, emptyReturn);
 	}
 
 	/**
@@ -581,7 +585,7 @@ public class LibMatrixReorg
 				if( rix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+					MatrixBlock src = (MatrixBlock) linData.slice(
 							  i, i, 0, (int)(clen-1), new MatrixBlock());
 					long brix = (rix-1)/brlen+1;
 					long lbrix = (rix-1)%brlen;
@@ -609,7 +613,7 @@ public class LibMatrixReorg
 				if( cix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+					MatrixBlock src = (MatrixBlock) linData.slice(
 							  0, (int)(rlen-1), i, i, new MatrixBlock());
 					long bcix = (cix-1)/bclen+1;
 					long lbcix = (cix-1)%bclen;
@@ -703,7 +707,7 @@ public class LibMatrixReorg
 		if( rows ) //expanded vertically
 		{
 			for( int rl=0; rl<tmp.getNumRows(); rl+=brlen ) {
-				MatrixBlock mb = tmp.sliceOperations(
+				MatrixBlock mb = tmp.slice(
 						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1), 
 						0, tmp.getNumColumns()-1, new MatrixBlock());
 				outList.add(new IndexedMatrixValue(
@@ -713,7 +717,7 @@ public class LibMatrixReorg
 		else //expanded horizontally
 		{
 			for( int cl=0; cl<tmp.getNumColumns(); cl+=bclen ) {
-				MatrixBlock mb = tmp.sliceOperations(
+				MatrixBlock mb = tmp.slice(
 						0, tmp.getNumRows()-1,
 						cl, (int)(Math.min(cl+bclen, tmp.getNumColumns())-1), new MatrixBlock());
 				outList.add(new IndexedMatrixValue(
@@ -750,35 +754,54 @@ public class LibMatrixReorg
 		final int n = in.clen;
 		final int n2 = out.clen;
 		
-		double[] a = in.getDenseBlock();
-		double[] c = out.getDenseBlock();
+		DenseBlock a = in.getDenseBlock();
+		DenseBlock c = out.getDenseBlock();
 		
 		if( m==1 || n==1 ) //VECTOR TRANSPOSE
 		{
-			//plain memcopy, in case shallow dense copy no applied 
+			//plain memcopy, in case shallow dense copy no applied
+			//input/output guaranteed single block
 			int ix = rl+cl; int len = ru+cu-ix-1;
-			System.arraycopy(a, ix, c, ix, len);
+			System.arraycopy(a.valuesAt(0), ix, c.valuesAt(0), ix, len);
 		}
 		else //MATRIX TRANSPOSE
 		{
 			//blocking according to typical L2 cache sizes 
 			final int blocksizeI = 128;
-			final int blocksizeJ = 128; 
+			final int blocksizeJ = 128;
 			
 			//blocked execution
-			for( int bi = rl; bi<ru; bi+=blocksizeI )
-				for( int bj = cl; bj<cu; bj+=blocksizeJ )
-				{
+			if( a.numBlocks()==1 && c.numBlocks()==1 ) { //<16GB
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
+				for( int bi = rl; bi<ru; bi+=blocksizeI ) {
 					int bimin = Math.min(bi+blocksizeI, ru);
-					int bjmin = Math.min(bj+blocksizeJ, cu);
-					//core transpose operation
-					for( int i=bi; i<bimin; i++ )
-					{
-						int aix = i * n + bj;
-						int cix = bj * n2 + i;
-						transposeRow(a, c, aix, cix, n2, bjmin-bj);
+					for( int bj = cl; bj<cu; bj+=blocksizeJ ) {
+						int bjmin = Math.min(bj+blocksizeJ, cu);
+						//core transpose operation
+						for( int i=bi; i<bimin; i++ ) {
+							int aix = i * n + bj;
+							int cix = bj * n2 + i;
+							transposeRow(avals, cvals, aix, cix, n2, bjmin-bj);
+						}
 					}
 				}
+			}
+			else { //general case > 16GB (multiple blocks)
+				for( int bi = rl; bi<ru; bi+=blocksizeI ) {
+					int bimin = Math.min(bi+blocksizeI, ru);
+					for( int bj = cl; bj<cu; bj+=blocksizeJ ) {
+						int bjmin = Math.min(bj+blocksizeJ, cu);
+						//core transpose operation
+						for( int i=bi; i<bimin; i++ ) {
+							double[] avals = a.values(i);
+							int aix = a.pos(i);
+							for( int j=bj; j<bjmin; j++ )
+								c.set(j, i, avals[ aix+j ]);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -792,34 +815,36 @@ public class LibMatrixReorg
 		final int n2 = out.clen;
 		final int ennz2 = (int) (in.nonZeros/m2); 
 		
-		double[] a = in.getDenseBlock();
+		DenseBlock a = in.getDenseBlock();
 		SparseBlock c = out.getSparseBlock();
 		
 		if( out.rlen == 1 ) //VECTOR-VECTOR
-		{	
+		{
 			c.allocate(0, (int)in.nonZeros); 
-			c.setIndexRange(0, 0, m, a, 0, m);
+			c.setIndexRange(0, 0, m, a.valuesAt(0), 0, m);
 		}
 		else //general case: MATRIX-MATRIX
 		{
 			//blocking according to typical L2 cache sizes 
 			final int blocksizeI = 128;
-			final int blocksizeJ = 128; 
+			final int blocksizeJ = 128;
 			
 			//blocked execution
-			for( int bi = 0; bi<m; bi+=blocksizeI )
-				for( int bj = 0; bj<n; bj+=blocksizeJ )
-				{
-					int bimin = Math.min(bi+blocksizeI, m);
+			for( int bi = 0; bi<m; bi+=blocksizeI ) {
+				int bimin = Math.min(bi+blocksizeI, m);
+				for( int bj = 0; bj<n; bj+=blocksizeJ ) {
 					int bjmin = Math.min(bj+blocksizeJ, n);
 					//core transpose operation
-					for( int i=bi; i<bimin; i++ )				
-						for( int j=bj, aix=i*n+bj; j<bjmin; j++, aix++ )
-						{
+					for( int i=bi; i<bimin; i++ ) {
+						double[] avals = a.values(i);
+						int aix = a.pos(i);
+						for( int j=bj; j<bjmin; j++ ) {
 							c.allocate(j, ennz2, n2); 
-							c.append(j, i, a[aix]);
+							c.append(j, i, avals[aix+j]);
 						}
+					}
 				}
+			}
 		}
 	}
 
@@ -843,12 +868,13 @@ public class LibMatrixReorg
 					c.allocate(i, cnt[i]);
 		}
 		
-		//blocking according to typical L2 cache sizes 
-		final int blocksizeI = 128;
-		final int blocksizeJ = 128;
+		//blocking according to typical L2 cache sizes w/ awareness of sparsity
+		final long xsp = (long)in.rlen*in.clen/in.nonZeros;
+		final int blocksizeI = Math.max(128, (int) (8*xsp));
+		final int blocksizeJ = Math.max(128, (int) (8*xsp));
 	
 		//temporary array for block boundaries (for preventing binary search) 
-		int[] ix = new int[blocksizeI];
+		int[] ix = new int[Math.min(blocksizeI, ru-rl)];
 		
 		//blocked execution
 		for( int bi=rl; bi<ru; bi+=blocksizeI )
@@ -857,27 +883,25 @@ public class LibMatrixReorg
 			//find column starting positions
 			int bimin = Math.min(bi+blocksizeI, ru);
 			if( cl > 0 ) {
-				for( int i=bi; i<bimin; i++ )
-					if( !a.isEmpty(i) ) {
-						int j = a.posFIndexGTE(i, cl);
-						ix[i-bi] = (j>=0) ? j : a.size(i);
-					}
+				for( int i=bi; i<bimin; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int j = a.posFIndexGTE(i, cl);
+					ix[i-bi] = (j>=0) ? j : a.size(i);
+				}
 			}
 			
 			for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
 				int bjmin = Math.min(bj+blocksizeJ, cu);
-
 				//core block transpose operation
 				for( int i=bi; i<bimin; i++ ) {
 					if( a.isEmpty(i) ) continue;
-					
 					int apos = a.pos(i);
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
 					double[] avals = a.values(i);
 					int j = ix[i-bi] + apos; //last block boundary
 					for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
-						c.allocate(aix[j], ennz2,n2);
+						c.allocate(aix[j], ennz2, n2);
 						c.append(aix[j], i, avals[j]);
 					}
 					ix[i-bi] = j - apos; //keep block boundary
@@ -891,10 +915,9 @@ public class LibMatrixReorg
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int n2 = out.clen;
 		
 		SparseBlock a = in.getSparseBlock();
-		double[] c = out.getDenseBlock();
+		DenseBlock c = out.getDenseBlock();
 		
 		if( m==1 ) //ROW VECTOR TRANSPOSE
 		{
@@ -902,8 +925,9 @@ public class LibMatrixReorg
 			int alen = a.size(0); //always pos 0
 			int[] aix = a.indexes(0);
 			double[] avals = a.values(0);
+			double[] cvals = c.valuesAt(0);
 			for( int j=0; j<alen; j++ )
-				c[ aix[j] ] = avals[j];
+				cvals[aix[j]] = avals[j];
 		}
 		else //MATRIX TRANSPOSE
 		{
@@ -915,44 +939,35 @@ public class LibMatrixReorg
 			int[] ix = new int[blocksizeI];
 			
 			//blocked execution
-			for( int bi = rl; bi<ru; bi+=blocksizeI )
-			{
+			for( int bi = rl; bi<ru; bi+=blocksizeI ) {
 				Arrays.fill(ix, 0);
-				for( int bj = 0; bj<n; bj+=blocksizeJ )
-				{
-					int bimin = Math.min(bi+blocksizeI, ru);
+				int bimin = Math.min(bi+blocksizeI, ru);
+				for( int bj = 0; bj<n; bj+=blocksizeJ ) {
 					int bjmin = Math.min(bj+blocksizeJ, n);
-	
 					//core transpose operation
-					for( int i=bi, iix=0; i<bimin; i++, iix++ )
-					{
-						if( !a.isEmpty(i) ) {
-							int apos = a.pos(i);
-							int alen = a.size(i);
-							int[] aix = a.indexes(i);
-							double[] avals = a.values(i);
-							int j = ix[iix]; //last block boundary
-							for( ; j<alen && aix[apos+j]<bjmin; j++ )
-								c[ aix[apos+j]*n2+i ] = avals[ apos+j ];
-							ix[iix] = j; //keep block boundary
-						}
+					for( int i=bi, iix=0; i<bimin; i++, iix++ ) {
+						if( a.isEmpty(i) ) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						int j = ix[iix]; //last block boundary
+						for( ; j<alen && aix[apos+j]<bjmin; j++ )
+							c.set(aix[apos+j], i, avals[apos+j]);
+						ix[iix] = j; //keep block boundary
 					}
 				}
 			}
 		}
 	}
 
-	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
-	{
+	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len ) {
 		final int bn = len%8;
-		
 		//compute rest (not aligned to 8-blocks)
 		for( int j=0; j<bn; j++, aix++, cix+=n2 )
 			c[ cix ] = a[ aix+0 ];
-		
 		//unrolled 8-blocks
-		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 )
-		{
+		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 ) {
 			c[ cix + 0*n2 ] = a[ aix+0 ];
 			c[ cix + 1*n2 ] = a[ aix+1 ];
 			c[ cix + 2*n2 ] = a[ aix+2 ];
@@ -987,33 +1002,35 @@ public class LibMatrixReorg
 		return cnt;
 	}
 
-	private static void reverseDense(MatrixBlock in, MatrixBlock out) 
+	private static void reverseDense(MatrixBlock in, MatrixBlock out)
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int len = m * n;
 		
 		//set basic meta data and allocate output
 		out.sparse = false;
 		out.nonZeros = in.nonZeros;
 		out.allocateDenseBlock(false);
 		
-		double[] a = in.getDenseBlock();
-		double[] c = out.getDenseBlock();
-		
 		//copy all rows into target positions
 		if( n == 1 ) { //column vector
+			double[] a = in.getDenseBlockValues();
+			double[] c = out.getDenseBlockValues();
 			for( int i=0; i<m; i++ )
 				c[m-1-i] = a[i];
 		}
 		else { //general matrix case
-			for( int i=0, aix=0; i<m; i++, aix+=n )
-				System.arraycopy(a, aix, c, len-aix-n, n);
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = out.getDenseBlock();
+			for( int i=0; i<m; i++ ) {
+				final int ri = m - 1 - i;
+				System.arraycopy(a.values(i), a.pos(i), c.values(ri), c.pos(ri), n);
+			}
 		}
 	}
 
-	private static void reverseSparse(MatrixBlock in, MatrixBlock out) 
+	private static void reverseSparse(MatrixBlock in, MatrixBlock out)
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
@@ -1024,19 +1041,16 @@ public class LibMatrixReorg
 		
 		out.allocateSparseRowsBlock(false);
 		
+		//copy all rows into target positions
 		SparseBlock a = in.getSparseBlock();
 		SparseBlock c = out.getSparseBlock();
-		
-		//copy all rows into target positions
-		for( int i=0; i<m; i++ ) {
-			if( !a.isEmpty(i) ) {
-				c.set(m-1-i, a.get(i), true);	
-			}
-		}
+		for( int i=0; i<m; i++ )
+			if( !a.isEmpty(i) )
+				c.set(m-1-i, a.get(i), true);
 	}
 	
 	/**
-	 * Generic implementation diagV2M (non-performance critical)
+	 * Generic implementation diagV2M
 	 * (in most-likely DENSE, out most likely SPARSE)
 	 * 
 	 * @param in input matrix
@@ -1044,15 +1058,47 @@ public class LibMatrixReorg
 	 */
 	private static void diagV2M( MatrixBlock in, MatrixBlock out )
 	{
-		int rlen = in.rlen;
+		final int rlen = in.rlen;
 		
 		//CASE column vector
-		for( int i=0; i<rlen; i++ )
-		{
-			double val = in.quickGetValue(i, 0);
-			if( val != 0 )
-				out.appendValue(i, i, val);
+		if( out.sparse  ) { //SPARSE
+			if( SPARSE_OUTPUTS_IN_CSR ) {
+				int[] rptr = new int[in.rlen+1];
+				int[] cix = new int[(int)in.nonZeros];
+				double[] vals = new double[(int)in.nonZeros];
+				for( int i=0, pos=0; i<rlen; i++ ) {
+					double val = in.quickGetValue(i, 0);
+					if( val != 0 ) {
+						cix[pos] = i;
+						vals[pos] = val;
+						pos++;
+					}
+					rptr[i+1]=pos;
+				}
+				out.sparseBlock = new SparseBlockCSR(
+					rptr, cix, vals, (int)in.nonZeros);
+			}
+			else {
+				out.allocateBlock();
+				SparseBlock sblock = out.sparseBlock;
+				for(int i=0; i<rlen; i++) {
+					double val = in.quickGetValue(i, 0);
+					if( val != 0 ) {
+						sblock.allocate(i, 1);
+						sblock.append(i, i, val);
+					}
+				}
+			}
 		}
+		else { //DENSE
+			for( int i=0; i<rlen; i++ ) {
+				double val = in.quickGetValue(i, 0);
+				if( val != 0 )
+					out.appendValue(i, i, val);
+			}
+		}
+		
+		out.setNonZeros(in.nonZeros);
 	}
 	
 	/**
@@ -1066,14 +1112,17 @@ public class LibMatrixReorg
 	 */
 	private static void diagM2V( MatrixBlock in, MatrixBlock out )
 	{
+		DenseBlock c = out.allocateBlock().getDenseBlock();
 		int rlen = in.rlen;
-		
-		for( int i=0; i<rlen; i++ )
-		{
+		int nnz = 0;
+		for( int i=0; i<rlen; i++ ) {
 			double val = in.quickGetValue(i, i);
-			if( val != 0 )
-				out.quickSetValue(i, 0, val);
+			if( val != 0 ) {
+				c.set(i, 0, val);
+				nnz++;
+			}
 		}
+		out.setNonZeros(nnz);
 	}
 
 	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
@@ -1087,11 +1136,11 @@ public class LibMatrixReorg
 			return;
 		
 		//shallow dense by-row reshape (w/o result allocation)
-		if( SHALLOW_COPY_REORG && rowwise ) {
+		if( SHALLOW_COPY_REORG && rowwise && in.denseBlock.numBlocks()==1 ) {
 			//since the physical representation of dense matrices is always the same,
 			//we don't need to create a copy, given our copy on write semantics.
 			//however, note that with update in-place this would be an invalid optimization
-			out.denseBlock = in.denseBlock;
+			out.denseBlock = DenseBlockFactory.createDenseBlock(in.getDenseBlockValues(), rows, cols);
 			return;
 		}
 		
@@ -1099,42 +1148,45 @@ public class LibMatrixReorg
 		out.allocateDenseBlock(false);
 		
 		//dense reshape
-		double[] a = in.denseBlock;
-		double[] c = out.denseBlock;
+		DenseBlock a = in.getDenseBlock();
+		DenseBlock c = out.getDenseBlock();
 		
-		if( rowwise )
-		{
+		if( rowwise ) {
 			//VECTOR-MATRIX, MATRIX-VECTOR, GENERAL CASE
 			//pure copy of rowwise internal representation
-			System.arraycopy(a, 0, c, 0, c.length);
-		}	
-		else //colwise
-		{
-			if( rlen==1 || clen==1 ) //VECTOR->MATRIX
-			{
+			c.set(a);
+		}
+		else { //colwise
+			if( rlen==1 || clen==1 ) { //VECTOR->MATRIX
 				//note: cache-friendly on a but not on c
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
 				for( int j=0, aix=0; j<cols; j++ )
 					for( int i=0, cix=0; i<rows; i++, cix+=cols )
-						c[ cix + j ] = a[ aix++ ];
+						cvals[ cix + j ] = avals[ aix++ ];
 			}
-			else if( rows==1 || cols==1 ) //MATRIX->VECTOR	
+			else if( rows==1 || cols==1 ) //MATRIX->VECTOR
 			{
 				//note: cache-friendly on c but not on a
+				double[] avals = a.valuesAt(0);
+				double[] cvals = c.valuesAt(0);
 				for( int j=0, cix=0; j<clen; j++ )
 					for( int i=0, aix=0; i<rlen; i++, aix+=clen )
-						c[ cix++ ] = a[ aix + j ];
+						cvals[ cix++ ] = avals[ aix + j ];
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on c but not an a
-				for( int i=0, cix=0; i<rows; i++ )
-					for( int j=0, aix2=i; j<cols; j++, aix2+=rows )
-					{
+				for( int i=0; i<rows; i++ ) {
+					double[] cvals = c.values(i);
+					int cix = c.pos(i);
+					for( int j=0, aix2=i; j<cols; j++, aix2+=rows ) {
 						int ai = aix2%rlen;
 						int aj = aix2/rlen;
-						c[ cix++ ] = a[ ai*clen+aj ];				
-					}			
-				//index conversion c[i,j]<- a[k,l]: 
+						cvals[cix+j] = a.get(ai,aj);
+					}
+				}
+				//index conversion c[i,j]<- a[k,l]:
 				// k = (rows*j+i)%rlen
 				// l = (rows*j+i)/rlen
 			}
@@ -1168,17 +1220,37 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on a and c; append-only
 				c.allocate(0, estnnz, cols);
-				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
-				{
-					if( !a.isEmpty(i) ) {
+				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ )
+						c.append(0, cix+aix[j], avals[j]);
+				}
+			}
+			else if( cols%clen==0 //SPECIAL CSR N:1 MATRIX->MATRIX
+				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
+				&& a instanceof SparseBlockCSR ) { //int nnz
+				int[] aix = ((SparseBlockCSR)a).indexes();
+				int n = cols/clen, pos = 0;
+				int[] rptr = new int[rows+1];
+				int[] indexes = new int[(int)a.size()];
+				rptr[0] = 0;
+				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
+					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
+						if(a.isEmpty(i)) continue;
 						int apos = a.pos(i);
 						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
 						for( int j=apos; j<apos+alen; j++ )
-							c.append(0, cix+aix[j], avals[j]);
+							indexes[pos++] = cix+aix[j];
 					}
+					rptr[ci+1] = pos;
 				}
+				//create CSR block with shallow copy of values
+				out.sparseBlock = new SparseBlockCSR(rptr, indexes,
+					((SparseBlockCSR)a).values(), pos);
 			}
 			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
 				int n = cols/clen;
@@ -1193,10 +1265,8 @@ public class LibMatrixReorg
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
 						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ ) {
-							int cj = (int)((cix+aix[j])%cols);
-							c.append(ci, cj, avals[j]);
-						}
+						for( int j=apos; j<apos+alen; j++ )
+							c.append(ci, cix+aix[j], avals[j]);
 					}
 				}
 			}
@@ -1205,22 +1275,19 @@ public class LibMatrixReorg
 				//note: cache-friendly on a but not c; append-only
 				//long cix because total cells in sparse can be larger than int
 				long cix = 0;
-				
-				for( int i=0; i<rlen; i++ ) 
-				{
+				for( int i=0; i<rlen; i++ ) {
 					if( !a.isEmpty(i) ){
 						int apos = a.pos(i);
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ )
-						{
+						double[] avals = a.values(i);
+						for( int j=apos; j<apos+alen; j++ ) {
 							int ci = (int)((cix+aix[j])/cols);
 							int cj = (int)((cix+aix[j])%cols);
 							c.allocate(ci, estnnz, cols);
 							c.append(ci, cj, avals[j]);
 						}
-					}	
+					}
 					
 					cix += clen;
 				}
@@ -1239,35 +1306,31 @@ public class LibMatrixReorg
 					int alen = a.size(0); //always pos 0
 					int[] aix = a.indexes(0);
 					double[] avals = a.values(0);
-					for( int j=0; j<alen; j++ ) 
-					{
+					for( int j=0; j<alen; j++ ) {
 						int ci = aix[j]%rows;
-						int cj = aix[j]/rows;       
+						int cj = aix[j]/rows;
 						c.allocate(ci, estnnz, cols);
 						c.append(ci, cj, avals[j]);
 					}
-				}								
+				}
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on a but not c; append&sort, in-place w/o shifts
-				for( int i=0; i<rlen; i++ ) 
-				{
-					if( !a.isEmpty(i) ){
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ )
-						{
-							//long tmpix because total cells in sparse can be larger than int
-							long tmpix = (long)aix[j]*rlen+i;
-							int ci = (int)(tmpix%rows);
-							int cj = (int)(tmpix/rows); 
-							c.allocate(ci, estnnz, cols);
-							c.append(ci, cj, avals[j]);
-						}
-					}	
+				for( int i=0; i<rlen; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						//long tmpix because total cells in sparse can be larger than int
+						long tmpix = (long)aix[j]*rlen+i;
+						int ci = (int)(tmpix%rows);
+						int cj = (int)(tmpix/rows); 
+						c.allocate(ci, estnnz, cols);
+						c.append(ci, cj, avals[j]);
+					}
 				}
 				out.sortSparseRows();
 			}
@@ -1288,26 +1351,30 @@ public class LibMatrixReorg
 		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
-		double[] a = in.denseBlock;
+		DenseBlock a = in.getDenseBlock();
 		SparseBlock c = out.sparseBlock;
 		
-		if( rowwise )
-		{
+		if( rowwise ) {
 			//NOTES on special cases
 			// * vector-matrix, matrix-vector not really different from general
 			
 			//GENERAL CASE: MATRIX->MATRIX
 			//note: cache-friendly on a and c; append-only
-			for( int i=0, aix=0; i<rows; i++ ) 
-				for( int j=0; j<cols; j++ )
-				{
-					double val = a[aix++];
+			for( int i=0; i<rlen; i++ ) {
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				for( int j=0; j<clen; j++ ) {
+					double val = avals[aix+j];
 					if( val != 0 ) {
-						c.allocate(i, estnnz, cols);
-						c.append(i, j, val);
+						long cix = (long) i*clen+j;
+						int ci = (int)(cix / cols);
+						int cj = (int)(cix % cols);
+						c.allocate(ci, estnnz, cols);
+						c.append(ci, cj, val);
 					}
 				}
-		}	
+			}
+		}
 		else //colwise
 		{
 			//NOTES on special cases
@@ -1316,10 +1383,10 @@ public class LibMatrixReorg
 			if( rlen==1 ) //VECTOR->MATRIX
 			{
 				//note: cache-friendly on a but not c; append-only
+				double[] avals = a.valuesAt(0);
 				for( int j=0, aix=0; j<cols; j++ )
-					for( int i=0; i<rows; i++ ) 
-					{
-						double val = a[aix++];
+					for( int i=0; i<rows; i++ ) {
+						double val = avals[aix++];
 						if( val != 0 ) {
 							c.allocate(i, estnnz, cols);
 							c.append(i, j, val);
@@ -1330,16 +1397,15 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on c but not a; append-only
 				for( int i=0; i<rows; i++ )
-					for( int j=0, aix2=i; j<cols; j++, aix2+=rows )
-					{
+					for( int j=0, aix2=i; j<cols; j++, aix2+=rows ) {
 						int ai = aix2%rlen;
 						int aj = aix2/rlen;
-						double val = a[ ai*clen+aj ];
+						double val = a.get(ai, aj);
 						if( val != 0 ) {
 							c.allocate(i, estnnz, cols);
 							c.append(i, j, val);
 						}
-					}			
+					}
 			}
 		}
 	}
@@ -1359,7 +1425,7 @@ public class LibMatrixReorg
 		
 		//sparse/dense reshape
 		SparseBlock a = in.sparseBlock;
-		double[] c = out.denseBlock;
+		DenseBlock c = out.getDenseBlock();
 		
 		if( rowwise )
 		{
@@ -1368,18 +1434,20 @@ public class LibMatrixReorg
 			
 			//GENERAL CASE: MATRIX->MATRIX
 			//note: cache-friendly on a and c
-			for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
-			{
+			for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
 				if( !a.isEmpty(i) ) {
 					int apos = a.pos(i);
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);	
-					for( int j=apos; j<apos+alen; j++ )
-						c[cix+aix[j]] = avals[j];
-				}	
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						int ci = (cix+aix[j]) / cols;
+						int cj = (cix+aix[j]) % cols;
+						c.set(ci, cj, avals[j]);
+					}
+				}
 			}
-		}	
+		}
 		else //colwise
 		{
 			//NOTES on special cases
@@ -1388,35 +1456,34 @@ public class LibMatrixReorg
 			if( rlen==1 ) //VECTOR->MATRIX
 			{
 				//note: cache-friendly on a but not c
-				if( !a.isEmpty(0) ){
+				double[] cvals = c.valuesAt(0);
+				if( !a.isEmpty(0) ) {
 					int apos = a.pos(0);
 					int alen = a.size(0);
 					int[] aix = a.indexes(0);
-					double[] avals = a.values(0);	
+					double[] avals = a.values(0);
 					for( int j=apos; j<apos+alen; j++ ) {
 						int ci = aix[j]%rows;
-						int cj = aix[j]/rows;       
-						c[ci*cols+cj] = avals[j];
+						int cj = aix[j]/rows;
+						cvals[ci*cols+cj] = avals[j];
 					}
-				}								
+				}
 			}
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on a but not c
-				for( int i=0; i<rlen; i++ ) 
-				{
-					if( !a.isEmpty(i) ){
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);	
-						for( int j=apos; j<apos+alen; j++ ) {
-							int tmpix = aix[j]*rlen+i;
-							int ci = tmpix%rows;
-							int cj = tmpix/rows;   
-							c[ci*cols+cj] = avals[j];
-						}
-					}	
+				for( int i=0; i<rlen; i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						int tmpix = aix[j]*rlen+i;
+						int ci = tmpix%rows;
+						int cj = tmpix/rows;
+						c.set(ci, cj, avals[j]);
+					}
 				}
 			}
 		}
@@ -1433,63 +1500,83 @@ public class LibMatrixReorg
 		
 		long row_offset = (ixin.getRowIndex()-1)*mcOut.getRowsPerBlock();
 		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
+		long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1;
+		long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1;
 		
 		if( rowwise ) {
-			for( long i=row_offset; i<Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock()); i++ )
-			{
+			if( mcIn.getCols() == 1 ) {
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, 0, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, 0, mcIn, mcOut, rowwise);
+				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
+			
+			}
+			for( long i=row_offset; i<max_row_offset+1; i++ ) {
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1, mcIn, mcOut, rowwise);
-
-				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed first index: "+first.toString());
-				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed last index: "+last.toString());
-				
-				//add first row block
-				ret.add(first);
-				
-				//add blocks in between first and last
-				if( !first.equals(last) ) {
-					for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
-						long k2_start = ((k1==first.getRowIndex()) ? first.getColumnIndex()+1 : 1);
-						long k2_end = ((k1==last.getRowIndex() && first.getRowIndex()!=last.getRowIndex()) ?
-							last.getColumnIndex()-1 : mcOut.getNumColBlocks());
-						for( long k2=k2_start; k2<=k2_end; k2++ )
-							ret.add(new MatrixIndexes(k1,k2));
-					}
-					ret.add(last);
-				}
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, max_col_offset, mcIn, mcOut, rowwise);
+				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
 			}
 		}
 		else{ //colwise
-			for( long j=col_offset; j<Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock()); j++ )
-			{
-				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1, j, mcIn, mcOut, rowwise);
-
-				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed first index: "+first.toString());
-				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed last index: "+last.toString());
-				
-				//add first row block
-				ret.add(first);
-				
-				//add blocks in between first and last
-				if( !first.equals(last) ) {
-					for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
-						long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
-						long k2_end = ((k1==last.getColumnIndex() && first.getRowIndex()!=last.getRowIndex()) ? 
-							last.getRowIndex()-1 : mcOut.getNumRowBlocks());
-						for( long k2=k2_start; k2<=k2_end; k2++ )
-							ret.add(new MatrixIndexes(k1,k2));
-					}
-					ret.add(last);
+			if( mcIn.getRows() == 1 ) {
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), 0, col_offset, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), 0, max_col_offset, mcIn, mcOut, rowwise);
+				createColwiseIndexes(first, last, mcOut.getNumRowBlocks(), ret);
+			}
+			else {
+				for( long j=col_offset; j<max_col_offset+1; j++ ) {
+					MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
+					MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, j, mcIn, mcOut, rowwise);
+					createColwiseIndexes(first, last, mcOut.getNumRowBlocks(), ret);
 				}
 			}
 		}
-		
 		return ret;
+	}
+	
+	private static void createRowwiseIndexes(MatrixIndexes first, MatrixIndexes last, long ncblks, HashSet<MatrixIndexes> ret) {
+		if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed first index: "+first.toString());
+		if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed last index: "+last.toString());
+		
+		//add first row block
+		ret.add(first);
+		
+		//add blocks in between first and last
+		if( !first.equals(last) ) {
+			boolean fill = first.getRowIndex()==last.getRowIndex()
+				&& first.getColumnIndex() > last.getColumnIndex();
+			for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
+				long k2_start = (k1==first.getRowIndex() ? first.getColumnIndex()+1 : 1);
+				long k2_end = (k1==last.getRowIndex() && !fill) ? last.getColumnIndex()-1 : ncblks;
+				for( long k2=k2_start; k2<=k2_end; k2++ )
+					ret.add(new MatrixIndexes(k1,k2));
+			}
+			ret.add(last);
+		}
+	}
+	
+	private static void createColwiseIndexes(MatrixIndexes first, MatrixIndexes last, long nrblks, HashSet<MatrixIndexes> ret) {
+		if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed first index: "+first.toString());
+		if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed last index: "+last.toString());
+		
+		//add first row block
+		ret.add(first);
+		
+		//add blocks in between first and last
+		if( !first.equals(last) ) {
+			boolean fill = first.getColumnIndex()==last.getColumnIndex()
+					&& first.getRowIndex() > last.getRowIndex();
+			for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
+				long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
+				long k2_end = ((k1==last.getColumnIndex() && !fill) ? last.getRowIndex()-1 : nrblks);
+				for( long k2=k2_start; k2<=k2_end; k2++ )
+					ret.add(new MatrixIndexes(k2,k1));
+			}
+			ret.add(last);
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -1533,13 +1620,13 @@ public class LibMatrixReorg
 			HashMap<MatrixIndexes,MatrixBlock> rix,
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
 		throws DMLRuntimeException
-    {
+	{
 		if( in.isEmptyBlock(false) )
 			return;
 		
 		int rlen = in.rlen;
 		int clen = in.clen;
-		double[] a = in.denseBlock;
+		double[] a = in.getDenseBlockValues();
 		
 		//append all values to right blocks
 		MatrixIndexes ixtmp = new MatrixIndexes();
@@ -1562,18 +1649,18 @@ public class LibMatrixReorg
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise ) {
+		if( !rowwise && mcIn.getRows() > 1 ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
-		}				
-    }
+		}
+	}
 
 	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix, 
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
 		throws DMLRuntimeException
-    {
+	{
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1604,12 +1691,12 @@ public class LibMatrixReorg
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise ) {
+		if( !rowwise && mcIn.getRows() > 1 ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
-		}				
-    }
+		}
+	}
 	
 	/**
 	 * Assumes internal (0-begin) indices ai, aj as input; computes external block indexes (1-begin) 
@@ -1631,7 +1718,7 @@ public class LibMatrixReorg
 		long bci = ci/mcOut.getRowsPerBlock() + 1;
 		long bcj = cj/mcOut.getColsPerBlock() + 1; 
 		return (ixout != null) ? ixout.setIndexes(bci, bcj) :
-			new MatrixIndexes(bci, bcj);	
+			new MatrixIndexes(bci, bcj);
 	}
 
 	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
@@ -1646,39 +1733,68 @@ public class LibMatrixReorg
 			new MatrixIndexes(ci, cj);
 	}
 
-	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
+	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
 		throws DMLRuntimeException 
-	{	
+	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		boolean[] flags = null; 
+		boolean[] flags = null;
 		int rlen2 = 0; 
 		
+		//Step 0: special case handling
+		if( SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
+			&& in.sparse && !in.isEmptyBlock(false)
+			&& select==null && in.sparseBlock instanceof SparseBlockCSR
+			&& in.nonZeros < Integer.MAX_VALUE )
+		{
+			//create the output in csr format with a shallow copy of arrays for column 
+			//indexes and values (heuristic: shallow copy better than copy to dense)
+			SparseBlockCSR sblock = (SparseBlockCSR) in.sparseBlock;
+			int lrlen = 0;
+			for( int i=0; i<m; i++ )
+				lrlen += sblock.isEmpty(i) ? 0 : 1;
+			//check for sparse output representation, otherwise
+			//fall back to default pass to allocate in dense format
+			if( MatrixBlock.evalSparseFormatInMemory(lrlen, n, in.nonZeros) ) {
+				int[] rptr = new int[lrlen+1];
+				for( int i=0, j=0, pos=0; i<m; i++ )
+					if( !sblock.isEmpty(i) ) {
+						pos += sblock.size(i);
+						rptr[++j] = pos;
+					}
+				ret.reset(lrlen, in.clen, true);
+				ret.sparseBlock = new SparseBlockCSR(rptr,
+					sblock.indexes(), sblock.values(), (int)in.nonZeros);
+				ret.nonZeros = in.nonZeros;
+				return ret;
+			}
+		}
+		
+		//Step 1: scan block and determine non-empty rows
 		if(select == null) 
 		{
 			flags = new boolean[ m ]; //false
-			//Step 1: scan block and determine non-empty rows
-			
-			if( in.sparse ) //SPARSE 
-			{
+			if( in.sparse ) { //SPARSE 
 				SparseBlock a = in.sparseBlock;
 				for ( int i=0; i < m; i++ )
 					rlen2 += (flags[i] = !a.isEmpty(i)) ? 1 : 0;
 			}
-			else //DENSE
-			{
-				double[] a = in.denseBlock;
-				for(int i=0, aix=0; i<m; i++, aix+=n)
+			else { //DENSE
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
 					for(int j=0; j<n; j++)
-						if( a[aix+j] != 0 ) {
+						if( avals[aix+j] != 0 ) {
 							flags[i] = true;
 							rlen2++;
 							//early abort for current row
 							break; 
 						}
+				}
 			}
 		} 
-		else {			
+		else {
 			flags = DataConverter.convertToBooleanVector(select);
 			rlen2 = (int)select.getNonZeros();
 		}
@@ -1686,7 +1802,7 @@ public class LibMatrixReorg
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
-		rlen2 = Math.max(rlen2, 1); //ensure valid output
+		rlen2 = Math.max(rlen2, emptyReturn ? 1 : 0); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen2, n, in.nonZeros);
 		ret.reset(rlen2, n, sp);
 		if( in.isEmptyBlock(false) )
@@ -1711,36 +1827,38 @@ public class LibMatrixReorg
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{
 			ret.allocateDenseBlock();
-			double[] a = in.denseBlock;
-			double[] c = ret.denseBlock;
-			
-			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = ret.getDenseBlock();
+			for( int i=0, ci=0; i<m; i++ )
 				if( flags[i] ) {
-					System.arraycopy(a, aix, c, cix, n);
-					cix += n; //target index
+					System.arraycopy(a.values(i),
+						a.pos(i), c.values(ci), c.pos(ci), n);
+					ci++; //target row index
 				}
 		}
 		else //SPARSE <- DENSE
 		{
 			ret.allocateSparseRowsBlock();
-			double[] a = in.denseBlock;
-			
-			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+			DenseBlock a = in.getDenseBlock();
+			for( int i=0, ci=0; i<m; i++ )
 				if( flags[i] ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
 					for( int j=0; j<n; j++ )
-						ret.appendValue(cix, j, a[aix+j]);
-					cix++;
+						ret.appendValue(ci, j, avals[aix+j]);
+					ci++;
 				}
 		}
 		
 		//check sparsity
-		ret.nonZeros = in.nonZeros;
+		ret.nonZeros = (select==null) ?
+			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
-
+		
 		return ret;
 	}
 
-	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
+	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
 		throws DMLRuntimeException 
 	{
 		final int m = in.rlen;
@@ -1753,10 +1871,8 @@ public class LibMatrixReorg
 		if (select == null) 
 		{
 			flags = new boolean[ n ]; //false
-			if( in.sparse ) //SPARSE 
-			{
+			if( in.sparse ) { //SPARSE 
 				SparseBlock a = in.sparseBlock;
-				
 				for( int i=0; i<m; i++ ) 
 					if ( !a.isEmpty(i) ) {
 						int apos = a.pos(i);
@@ -1766,20 +1882,19 @@ public class LibMatrixReorg
 							flags[ aix[j] ] = true;
 					}
 			}
-			else //DENSE
-			{
-				double[] a = in.denseBlock;
-				
-				for(int i=0, aix=0; i<m; i++)
-					for(int j=0; j<n; j++, aix++)
-						if( a[aix] != 0 )
-							flags[j] = true; 	
+			else { //DENSE
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
+					for( int j=0; j<n; j++ )
+						flags[j] |= (avals[aix+j] != 0);
+				}
 			}
 		} 
-		else {			
+		else {
 			flags = DataConverter.convertToBooleanVector(select);
 		}
-
 		
 		//Step 2: determine number of columns
 		int clen2 = 0;
@@ -1790,7 +1905,7 @@ public class LibMatrixReorg
 		//Step 3: reset result and copy columns
 		//dense stays dense if correct input representation (but robust for any input), 
 		// sparse might be dense/sparse
-		clen2 = Math.max(clen2, 1); //ensure valid output
+		clen2 = Math.max(clen2, emptyReturn ? 1 : 0); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(m, clen2, in.nonZeros);
 		ret.reset(m, clen2, sp);
 		if( in.isEmptyBlock(false) )
@@ -1818,7 +1933,6 @@ public class LibMatrixReorg
 			{
 				//note: output dense or sparse
 				SparseBlock a = in.sparseBlock;
-				
 				for( int i=0; i<m; i++ )
 					if ( !a.isEmpty(i) ) {
 						int apos = a.pos(i);
@@ -1830,31 +1944,38 @@ public class LibMatrixReorg
 								ret.appendValue(i, cix[aix[j]], avals[j]);
 					}
 			}
-			else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
-			{
+			else if( !in.sparse && !ret.sparse ) { //DENSE <- DENSE
 				ret.allocateDenseBlock();
-				double[] a = in.denseBlock;
-				double[] c = ret.denseBlock;
-				
-				for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
-					for(int j=0; j<n; j++, aix++)
+				DenseBlock a = in.getDenseBlock();
+				DenseBlock c = ret.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					double[] cvals = c.values(i);
+					int aix = a.pos(i);
+					int lcix = c.pos(i);
+					for( int j=0; j<n; j++ )
 						if( flags[j] )
-							 c[ lcix+cix[j] ] = a[aix];	
+							 cvals[ lcix+cix[j] ] = avals[aix+j];
+				}
 			}
-			else //SPARSE <- DENSE
-			{
+			else { //SPARSE <- DENSE
 				ret.allocateSparseRowsBlock();
-				double[] a = in.denseBlock;
-				
-				for(int i=0, aix=0; i<m; i++)
-					for(int j=0; j<n; j++, aix++)
-						if( flags[j] && a[aix]!=0 )
-							 ret.appendValue(i, cix[j], a[aix]);
+				DenseBlock a = in.getDenseBlock();
+				for( int i=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
+					for( int j=0; j<n; j++ ) {
+						double aval = avals[aix+j];
+						if( flags[j] && aval!=0 )
+							 ret.appendValue(i, cix[j], aval);
+					}
+				}
 			}
 		}
 		
 		//check sparsity
-		ret.nonZeros = in.nonZeros;
+		ret.nonZeros = (select==null) ?
+			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		return ret;
@@ -1877,7 +1998,7 @@ public class LibMatrixReorg
 		double[] tmp = new double[Math.min(blksize,clen)];
 		
 		//expand input vertically  (input vector likely dense 
-		//but generic implementation for general case)		
+		//but generic implementation for general case)
 		for( int i=0; i<clen; i+=blksize )
 		{
 			//create sorted block indexes (append buffer)
@@ -1925,7 +2046,7 @@ public class LibMatrixReorg
 		//execute rexpand columns
 		long rnnz = 0; //real nnz (due to cutoff max)
 		if( k <= 1 || in.getNumRows() <= PAR_NUMCELL_THRESHOLD
-			|| (sp && REXPAND_COLS_IN_CSR) ) {
+			|| (sp && SPARSE_OUTPUTS_IN_CSR) ) {
 			rnnz = rexpandColumns(in, ret, max, cast, ignore, 0, rlen);
 		}
 		else {
@@ -1958,13 +2079,15 @@ public class LibMatrixReorg
 		//initialize auxiliary data structures 
 		int lnnz = 0;
 		int[] cix = null;
-		if( ret.sparse && REXPAND_COLS_IN_CSR ) {
+		if( ret.sparse && SPARSE_OUTPUTS_IN_CSR ) {
 			cix = new int[in.rlen];
 			Arrays.fill(cix, -1);
 		}
 		
 		//expand input horizontally (input vector likely dense 
 		//but generic implementation for general case)
+		DenseBlock cd = ret.getDenseBlock();
+		SparseBlock cs = ret.getSparseBlock();
 		for( int i=rl; i<ru; i++ )
 		{
 			//get value and cast if necessary (table)
@@ -1982,12 +2105,12 @@ public class LibMatrixReorg
 				if( cix != null ) {
 					cix[i] = (int)(val-1);
 				}
-				else if( ret.isInSparseFormat() ) {
-					ret.sparseBlock.allocate(i, 1);
-					ret.sparseBlock.append(i, (int)(val-1), 1);
+				else if( ret.sparse ) {
+					cs.allocate(i, 1);
+					cs.append(i, (int)(val-1), 1);
 				}
 				else
-					ret.setValueDenseUnsafe(i, (int)(val-1), 1);
+					cd.set(i, (int)(val-1), 1);
 				lnnz ++;
 			}
 		}
@@ -2011,7 +2134,7 @@ public class LibMatrixReorg
 				tmp[i] = in.quickGetValue(ixin+i, 0);
 		}
 		else { //DENSE
-			System.arraycopy(in.denseBlock, ixin, tmp, 0, len);
+			System.arraycopy(in.getDenseBlockValues(), ixin, tmp, 0, len);
 		}
 		
 		//init index array
@@ -2027,11 +2150,9 @@ public class LibMatrixReorg
 	 * 
 	 * @param m1 matrix
 	 */
-	private static void sortReverseDense( MatrixBlock m1 )
-	{
+	private static void sortReverseDense( MatrixBlock m1 ) {
 		int rlen = m1.rlen;
-		double[] a = m1.denseBlock;
-		
+		double[] a = m1.getDenseBlockValues();
 		for( int i=0; i<rlen/2; i++ ) {
 			double tmp = a[i];
 			a[i] = a[rlen - i -1];
@@ -2039,10 +2160,8 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void sortReverseDense( int[] a )
-	{
+	private static void sortReverseDense( int[] a ) {
 		int rlen = a.length;
-		
 		for( int i=0; i<rlen/2; i++ ) {
 			int tmp = a[i];
 			a[i] = a[rlen - i -1];
@@ -2050,15 +2169,70 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void sortReverseDense( double[] a )
-	{
+	private static void sortReverseDense( double[] a ) {
 		int rlen = a.length;
-		
 		for( int i=0; i<rlen/2; i++ ) {
 			double tmp = a[i];
 			a[i] = a[rlen - i -1];
 			a[rlen - i - 1] = tmp;
 		}
+	}
+	
+	private static void sortBySecondary(int rl, int ru, double[] values, int[] vix, MatrixBlock in, int[] by, int off) {
+		//find runs of equal values in current offset and index range
+		//replace value by next column, sort, and recurse until single value
+		for( int i=rl; i<ru-1; i++ ) {
+			double tmp = values[i];
+			//determine run of equal values
+			int len = 0;
+			while( i+len+1<ru && tmp==values[i+len+1] )
+				len++;
+			//temp value replacement and recursive sort
+			if( len > 0 ) {
+				double old = values[i];
+				//extract values of next column
+				for(int j=i; j<i+len+1; j++)
+					values[j] = in.quickGetValue(vix[j], by[off]-1);
+				//sort values, incl recursive decent
+				SortUtils.sortByValue(i, i+len+1, values, vix);
+				if( off+1 < by.length )
+					sortBySecondary(i, i+len+1, values, vix, in, by, off+1);
+				//reset values of previous level
+				Arrays.fill(values, i, i+len+1, old);
+				i += len; //skip processed run
+			}
+		}
+	}
+	
+	private static void sortIndexesStable(int rl, int ru, double[] values, int[] vix, MatrixBlock in, int[] by, int off) {
+		for( int i=rl; i<ru-1; i++ ) {
+			double tmp = values[i];
+			//determine run of equal values
+			int len = 0;
+			while( i+len+1<ru && tmp==values[i+len+1] )
+				len++;
+			//temp value replacement and recursive decent
+			if( len > 0 ) {
+				if( off < by.length ) {
+					//extract values of next column
+					for(int j=i; j<i+len+1; j++)
+						values[j] = in.quickGetValue(vix[j], by[off]-1);
+					sortIndexesStable(i, i+len+1, values, vix, in, by, off+1);
+				}
+				else //unstable sort of run indexes (equal value guaranteed)
+					Arrays.sort(vix, i, i+len+1);
+				i += len; //skip processed run
+			}
+		}
+	}
+	
+	private static boolean isValidSortByList(int[] by, int clen) {
+		if( by == null || by.length==0 || by.length>clen )
+			return false;
+		for(int i=0; i<by.length; i++)
+			if( by[i] <= 0 || clen < by[i])
+				return false;
+		return true;
 	}
 
 	@SuppressWarnings("unused")

@@ -55,7 +55,6 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig
 {
-
 	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
 	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
@@ -76,6 +75,7 @@ public class DMLConfig
 	public static final String CP_PARALLEL_IO       = "sysml.cp.parallel.io";
 	public static final String COMPRESSED_LINALG    = "sysml.compressed.linalg"; //auto, true, false
 	public static final String NATIVE_BLAS          = "sysml.native.blas";
+	public static final String NATIVE_BLAS_DIR      = "sysml.native.blas.directory";
 	public static final String CODEGEN              = "sysml.codegen.enabled"; //boolean
 	public static final String CODEGEN_COMPILER     = "sysml.codegen.compiler"; //see SpoofCompiler.CompilerType
 	public static final String CODEGEN_OPTIMIZER    = "sysml.codegen.optimizer"; //see SpoofCompiler.PlanSelector
@@ -84,11 +84,10 @@ public class DMLConfig
 	
 	public static final String EXTRA_FINEGRAINED_STATS = "sysml.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN   = "sysml.stats.maxWrapLength"; //int
-	public static final String EXTRA_GPU_STATS      = "sysml.stats.extraGPU"; //boolean
-	public static final String EXTRA_DNN_STATS      = "sysml.stats.extraDNN"; //boolean
 	public static final String AVAILABLE_GPUS       = "sysml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 	public static final String SYNCHRONIZE_GPU      = "sysml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
 	public static final String EAGER_CUDA_FREE		= "sysml.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
+	public static final String GPU_EVICTION_POLICY	= "sysml.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
@@ -105,7 +104,7 @@ public class DMLConfig
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;
 
-    private String _fileName = null;
+	private String _fileName = null;
 	private Element _xmlRoot = null;
 	private DocumentBuilder _documentBuilder = null;
 	private Document _document = null;
@@ -132,19 +131,18 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
+		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
-		_defaultVals.put(EXTRA_GPU_STATS,        "false" );
-		_defaultVals.put(EXTRA_DNN_STATS,        "false" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
+		_defaultVals.put(GPU_EVICTION_POLICY,    "lru");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "true" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
 	}
 	
-	public DMLConfig()
-	{
+	public DMLConfig() {
 		
 	}
 
@@ -173,9 +171,19 @@ public class DMLConfig
 		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 	}
 	
-	public DMLConfig( Element root )
-	{
+	public DMLConfig( Element root ) {
 		_xmlRoot = root;
+	}
+	
+	public DMLConfig( DMLConfig dmlconf ) {
+		set(dmlconf);
+	}
+	
+	public void set(DMLConfig dmlconf) {
+		_fileName = dmlconf._fileName;
+		_xmlRoot = dmlconf._xmlRoot;
+		_documentBuilder = dmlconf._documentBuilder;
+		_document = dmlconf._document;
 	}
 
 	/**
@@ -353,17 +361,14 @@ public class DMLConfig
 		throws DMLRuntimeException
 	{
 		DMLConfig ret = null;
-		try
-		{
-			//System.out.println(content);
+		try {
 			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document domTree = null;
 			domTree = builder.parse( new ByteArrayInputStream(content.getBytes("utf-8")) );
 			Element root = domTree.getDocumentElement();
 			ret = new DMLConfig( root );
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to parse DML config.", ex);
 		}
 		
@@ -419,11 +424,11 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS,
+				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-				EXTRA_GPU_STATS, EXTRA_DNN_STATS, EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
-				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION
+				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
+				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

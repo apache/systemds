@@ -34,8 +34,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase {
 	private long _lenM = -1; // clen/rlen
 
 	private ReplicateInstruction(byte in, byte out, boolean repCols, long lenM, String istr) {
-		super(null, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Reorg;
+		super(MRType.Reorg, null, in, out);
 		instString = istr;
 
 		_repCols = repCols;

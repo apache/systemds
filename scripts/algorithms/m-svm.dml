@@ -148,8 +148,8 @@ parfor(iter_class in 1:num_classes){
     }
     
     #update weights
-    w_class = w_class + step_sz*s
-    Xw = Xw + step_sz*Xd
+    w_class += step_sz * s
+    Xw += step_sz * Xd
  
     out = 1 - Y_local * Xw
     sv = (out > 0)

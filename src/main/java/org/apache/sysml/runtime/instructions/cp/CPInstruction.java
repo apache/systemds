@@ -29,18 +29,17 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class CPInstruction extends Instruction 
 {
-	public enum CPINSTRUCTION_TYPE { INVALID, 
-		AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, 
-		Ternary, Quaternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, 
-		BuiltinMultiple, MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, 
-		Builtin, Reorg, RelationalBinary, Variable, External, Append, Rand, QSort, QPick, 
+	public enum CPType {
+		AggregateUnary, AggregateBinary, AggregateTernary,
+		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable, 
+		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
+		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, MatrixReshape, Partition, Compression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Convolution }
 	
-	protected CPINSTRUCTION_TYPE _cptype;
-	protected Operator _optr;
-	
-	protected boolean _requiresLabelUpdate = false;
+	protected final CPType _cptype;
+	protected final Operator _optr;
+	protected final boolean _requiresLabelUpdate;
 	
 	// Generic miscellaneous timers that are applicable to all CP (and few SP) instructions 
 	public final static String MISC_TIMER_GET_SPARSE_MB =          		"aqrs";	// time spent in bringing input sparse matrix block
@@ -59,8 +58,14 @@ public abstract class CPInstruction extends Instruction
 	public final static String MISC_TIMER_CSR_LIX_COPY =				"csrlix";// time spent in CSR-specific method to address performance issues due to repeated re-shifting on update-in-place.
 	public final static String MISC_TIMER_LIX_COPY =					"lixcp";// time spent in range copy
 
-	protected CPInstruction(String opcode, String istr) {
-		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
+	protected CPInstruction(CPType type, String opcode, String istr) {
+		this(type, null, opcode, istr);
+	}
+
+	protected CPInstruction(CPType type, Operator op, String opcode, String istr) {
+		_cptype = type;
+		_optr = op;
+		super.type = IType.CONTROL_PROGRAM;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
@@ -68,18 +73,12 @@ public abstract class CPInstruction extends Instruction
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 
-	protected CPInstruction(Operator op, String opcode, String istr) {
-		this(opcode, istr);
-		_optr = op;
-	}
-
-	public CPINSTRUCTION_TYPE getCPInstructionType() {
+	public CPType getCPInstructionType() {
 		return _cptype;
 	}
 	
 	@Override
-	public boolean requiresLabelUpdate()
-	{
+	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
 	}
 

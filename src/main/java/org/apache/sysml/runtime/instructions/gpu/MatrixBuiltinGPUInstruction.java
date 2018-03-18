@@ -44,8 +44,6 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
 		switch(opcode) {
-			case "sel+":
-				LibMatrixCuDNN.relu(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "exp":
 				LibMatrixCUDA.exp(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sqrt":
@@ -80,6 +78,10 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.atan(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "sign":
 				LibMatrixCUDA.sign(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "sigmoid":
+				LibMatrixCUDA.sigmoid(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "softmax":
+				LibMatrixCuDNN.softmax(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			default:
 				throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
 		}

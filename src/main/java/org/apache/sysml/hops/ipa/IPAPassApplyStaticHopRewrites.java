@@ -35,7 +35,7 @@ import org.apache.sysml.parser.LanguageException;
 public class IPAPassApplyStaticHopRewrites extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.APPLY_STATIC_REWRITES;
 	}
 	
@@ -49,7 +49,7 @@ public class IPAPassApplyStaticHopRewrites extends IPAPass
 			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
 			
 			//rewrite program hop dags and statement blocks
-			rewriter.rewriteProgramHopDAGs(prog);
+			rewriter.rewriteProgramHopDAGs(prog, true); //rewrite and split
 		} 
 		catch (LanguageException ex) {
 			throw new HopsException(ex);

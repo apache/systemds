@@ -46,7 +46,10 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysml.runtime.codegen.SpoofOperator.SideInputSparseCell;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.utils.Statistics;
 import org.codehaus.janino.SimpleCompiler;
@@ -65,7 +68,7 @@ public class CodegenUtils
 	private static String _workingDir = null;
 	
 	public static Class<?> compileClass(String name, String src) 
-			throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
@@ -93,6 +96,18 @@ public class CodegenUtils
 	
 	public static Class<?> getClass(String name) throws DMLRuntimeException {
 		return getClass(name, null);
+	}
+	
+	public synchronized static Class<?> getClassSync(String name, byte[] classBytes)
+		throws DMLRuntimeException 
+	{
+		//In order to avoid anomalies of concurrently compiling and loading the same
+		//class with the same name multiple times in spark executors, this indirection
+		//synchronizes the class compilation. This synchronization leads to the first
+		//thread compiling the common class and all other threads simply reusing the
+		//cached class instance, which also ensures that the same class is not loaded
+		//multiple times which causes unnecessary JIT compilation overhead.
+		return getClass(name, classBytes);
 	}
 	
 	public static Class<?> getClass(String name, byte[] classBytes) 
@@ -150,6 +165,13 @@ public class CodegenUtils
 		}
 		
 		return ret;
+	}
+	
+	public static SideInput createSideInput(MatrixBlock in) {
+		SideInput ret = (in.isInSparseFormat() || !in.isAllocated()) ?
+			new SideInput(null, in, in.getNumColumns()) :
+			new SideInput(in.getDenseBlock(), null, in.getNumColumns());
+		return (ret.mdat != null) ? new SideInputSparseCell(ret) : ret;
 	}
 	
 	////////////////////////////

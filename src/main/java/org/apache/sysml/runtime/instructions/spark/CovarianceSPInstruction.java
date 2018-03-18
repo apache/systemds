@@ -41,14 +41,12 @@ import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
 public class CovarianceSPInstruction extends BinarySPInstruction {
 
-	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in, in2, out, opcode, istr);
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.Covariance, op, in, in2, out, opcode, istr);
 	}
 
-	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
-		super(op, in, in2, out, opcode, istr);
+	private CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(SPType.Covariance, op, in, in2, out, opcode, istr);
 	}
 
 	public static CovarianceSPInstruction parseInstruction(String str)
@@ -112,8 +110,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 
 		//create scalar output (no lineage information required)
 		double val = cmobj.getRequiredResult(_optr);
-		DoubleObject ret = new DoubleObject(output.getName(), val);
-		ec.setScalarOutput(output.getName(), ret);
+		ec.setScalarOutput(output.getName(), new DoubleObject(val));
 	}
 
 	private static class RDDCOVFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object>

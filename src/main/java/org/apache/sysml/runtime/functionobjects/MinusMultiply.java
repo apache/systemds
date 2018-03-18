@@ -21,27 +21,42 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-public class MinusMultiply extends ValueFunctionWithConstant implements Serializable
+import org.apache.sysml.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+
+public class MinusMultiply extends TernaryValueFunction implements ValueFunctionWithConstant, Serializable
 {
 	private static final long serialVersionUID = 2801982061205871665L;
 	
+	private static MinusMultiply singleObj = null;
+
+	private final double _cnt;
+	
 	private MinusMultiply() {
-		// nothing to do here
+		_cnt = 1;
+	}
+	
+	private MinusMultiply(double cnt) {
+		_cnt = cnt;
 	}
 
-	public static MinusMultiply getMinusMultiplyFnObject() {
-		//create new object as the constant is modified and hence 
-		//cannot be shared across multiple threads (e.g., in parfor)
-		return new MinusMultiply();
+	public static MinusMultiply getFnObject() {
+		if ( singleObj == null )
+			singleObj = new MinusMultiply();
+		return singleObj;
+	}
+	
+	@Override
+	public double execute(double in1, double in2, double in3) {
+		return in1 - in2 * in3;
+	}
+	
+	public BinaryOperator setOp2Constant(double cnt) {
+		return new BinaryOperator(new MinusMultiply(cnt));
 	}
 	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 - _constant * in2;	
-	}
-	
-	@Override
-	public double execute(long in1, long in2) {
-		return in1 - _constant * in2;	
+		return in1 - _cnt * in2;
 	}
 }

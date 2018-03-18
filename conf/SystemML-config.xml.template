@@ -75,15 +75,12 @@
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
    <sysml.native.blas>none</sysml.native.blas>
 
-   <!-- prints finegrained statistics information -->
+   <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
+   <sysml.native.blas.directory>none</sysml.native.blas.directory>
+   
+   <!-- prints finegrained statistics information (includes extra GPU information and extra statistics information for Deep Neural Networks done in CP mode) -->
    <sysml.stats.finegrained>false</sysml.stats.finegrained>
    
-   <!-- prints extra statistics information for GPU -->
-   <sysml.stats.extraGPU>false</sysml.stats.extraGPU>
-
-   <!-- prints extra statistics information for Deep Neural Networks done in CP mode -->
-   <sysml.stats.extraDNN>false</sysml.stats.extraDNN>
-
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
     <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
     
@@ -95,6 +92,9 @@
    
     <!-- the floating point precision. supported values are double, single -->
     <sysml.floating.point.precision>double</sysml.floating.point.precision>
+    
+    <!-- the eviction policy for the GPU bufferpool. supported values are lru, mru, lfu, min_evict -->
+    <sysml.gpu.eviction.policy>lru</sysml.gpu.eviction.policy>
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>

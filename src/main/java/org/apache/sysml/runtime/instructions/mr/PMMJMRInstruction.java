@@ -40,13 +40,10 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 
 	private PMMJMRInstruction(Operator op, byte in1, byte in2, byte out, long nrow, CacheType ctype,
 			boolean outputEmpty, String istr) {
-		super(op, in1, in2, out);
+		super(MRType.PMMJ, op, in1, in2, out);
 		instString = istr;
-
 		_rlen = nrow;
 		_outputEmptyBlocks = outputEmpty;
-
-		// NOTE: cache type only used by distributed cache input
 	}
 
 	public long getNumRows() {

@@ -29,38 +29,35 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class MRInstruction extends Instruction {
 
-	public enum MRINSTRUCTION_TYPE {
-		INVALID, Append, Aggregate, ArithmeticBinary, ArithmeticBinary2, AggregateBinary, AggregateUnary, Rand,
+	public enum MRType {
+		Append, Aggregate, Binary, Ternary, AggregateBinary, AggregateUnary, Rand,
 		Seq, CSVReblock, CSVWrite, Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTernary,
-		PickByCount, Partition, Ternary, Quaternary, CM_N_COV, MapGroupedAggregate, GroupedAggregate, RightIndex,
+		PickByCount, Partition, Ctable, Quaternary, CM_N_COV, MapGroupedAggregate, GroupedAggregate, RightIndex,
 		ZeroOut, MMTSJ, PMMJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain, CumsumAggregate, CumsumSplit,
 		CumsumOffset, BinUaggChain, UaggOuterChain, RemoveEmpty
 	}
 
-	protected MRINSTRUCTION_TYPE mrtype;
-	protected Operator optr;
+	protected final MRType mrtype;
+	protected final Operator optr;
 	public byte output;
 
-	protected MRInstruction(Operator op, byte out) {
-		type = INSTRUCTION_TYPE.MAPREDUCE;
+	protected MRInstruction(MRType type, Operator op, byte out) {
+		super.type = IType.MAPREDUCE;
 		optr = op;
 		output = out;
-		mrtype = MRINSTRUCTION_TYPE.INVALID;
+		mrtype = type;
 	}
 
 	public Operator getOperator() {
 		return optr;
 	}
 	
-	public MRINSTRUCTION_TYPE getMRInstructionType() 
-	{
+	public MRType getMRInstructionType() {
 		return mrtype;
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		//do nothing (not applicable for MR instructions)
 	}
 

@@ -274,7 +274,7 @@ public class CSVReblockMR
 		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, 
 				replication, smallestFiles);
 		for(int i=0; i<rlens.length; i++)
-			if( (rlens[i]>0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>0 && clens[i]!=ret1.clens[i]) )
+			if( (rlens[i]>=0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>=0 && clens[i]!=ret1.clens[i]) )
 				throw new RuntimeException("Dimension doesn't mach for input matrix "+i+", expected ("+rlens[i]+", "+clens[i]+") but real ("+ret1.rlens[i]+", "+ret1.clens[i]+")");
 		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
 				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile, smallestFiles);
@@ -451,12 +451,9 @@ public class CSVReblockMR
 		MapReduceTool.deleteFileIfExistOnHDFS(counterFile, job);
 		
 		/* Process different counters */
-		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
-			// number of non-zeros
 			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
-			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		}
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}

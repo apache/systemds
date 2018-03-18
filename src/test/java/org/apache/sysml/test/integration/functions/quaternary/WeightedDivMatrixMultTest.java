@@ -626,12 +626,12 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			int rank = sparse ? rank2 : rank1;
 			
 			//generate actual dataset 
-			double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
-			writeInputMatrixWithMTD("W", W, true);
-			double[][] U = getRandomMatrix(rows, rank, 0, 1, 1.0, 713); 
-			writeInputMatrixWithMTD("U", U, true);
-			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 812); 
-			writeInputMatrixWithMTD("V", V, true);
+			double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
+			writeInputMatrixWithMTD("W", W, TestUtils.computeNNZ(W), true);
+			double[][] U = getRandomMatrix(rows, rank, 0, 1, 1.0, 713);
+			writeInputMatrixWithMTD("U", U, TestUtils.computeNNZ(U), true);
+			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 812);
+			writeInputMatrixWithMTD("V", V, TestUtils.computeNNZ(V), true);
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
@@ -652,12 +652,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 				Assert.assertTrue("Missing opcode sp_wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			QuaternaryOp.FORCE_REPLICATION = forceOld;
 		}
-	}	
+	}
 }

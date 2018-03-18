@@ -23,7 +23,6 @@ package org.apache.sysml.runtime.compress;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -128,7 +127,7 @@ public class ColGroupUncompressed extends ColGroup
 	 *            compressed columns to subsume. Must contain at least one
 	 *            element.
 	 */
-	public ColGroupUncompressed(ArrayList<ColGroup> groupsToDecompress) 
+	public ColGroupUncompressed(List<ColGroup> groupsToDecompress) 
 	{
 		super(mergeColIndices(groupsToDecompress),
 				groupsToDecompress.get(0)._numRows);
@@ -186,7 +185,7 @@ public class ColGroupUncompressed extends ColGroup
 	 *            UncompressedColGroup
 	 * @return a merged set of column indices across all those groups
 	 */
-	private static int[] mergeColIndices(ArrayList<ColGroup> groupsToDecompress) 
+	private static int[] mergeColIndices(List<ColGroup> groupsToDecompress) 
 	{
 		// Pass 1: Determine number of columns
 		int sz = 0;
@@ -279,7 +278,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
 		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlock();
+		double[] b = shortVector.getDenseBlockValues();
 		for (int colIx = 0; colIx < clen; colIx++)
 			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
 		shortVector.recomputeNonZeros();
@@ -296,7 +295,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
 		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlock();
+		double[] b = shortVector.getDenseBlockValues();
 		for (int colIx = 0; colIx < clen; colIx++)
 			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
 		shortVector.recomputeNonZeros();
@@ -314,7 +313,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		// copying partialResult to the proper indices of the result
 		if( !pret.isEmptyBlock(false) ) {
-			double[] rsltArr = result.getDenseBlock();
+			double[] rsltArr = result.getDenseBlockValues();
 			for (int colIx = 0; colIx < _colIndexes.length; colIx++)
 				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
 			result.recomputeNonZeros();
@@ -329,7 +328,7 @@ public class ColGroupUncompressed extends ColGroup
 		
 		// copying partialResult to the proper indices of the result
 		if( !pret.isEmptyBlock(false) ) {
-			double[] rsltArr = result.getDenseBlock();
+			double[] rsltArr = result.getDenseBlockValues();
 			for (int colIx = 0; colIx < _colIndexes.length; colIx++)
 				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
 			result.recomputeNonZeros();
@@ -357,15 +356,17 @@ public class ColGroupUncompressed extends ColGroup
 		
 		//shift result into correct column indexes
 		if( op.indexFn instanceof ReduceRow ) {
-			//clear corrections
-			for( int i=0; i<_colIndexes.length; i++ )
-				if( op.aggOp.correctionExists )
-					ret.quickSetValue(0, i+_colIndexes.length, 0);
-			//shift partial results
+			//shift partial results, incl corrections
 			for( int i=_colIndexes.length-1; i>=0; i-- ) {
 				double val = ret.quickGetValue(0, i);
 				ret.quickSetValue(0, i, 0);
 				ret.quickSetValue(0, _colIndexes[i], val);
+				if( op.aggOp.correctionExists )
+					for(int j=1; j<ret.getNumRows(); j++) {
+						double corr = ret.quickGetValue(j, i);
+						ret.quickSetValue(j, i, 0);
+						ret.quickSetValue(j, _colIndexes[i], corr);
+					}
 			}
 		}
 	}
@@ -490,7 +491,7 @@ public class ColGroupUncompressed extends ColGroup
 				}
 				else {
 					final int clen = getNumCols();
-					double[] a = _data.getDenseBlock();
+					double[] a = _data.getDenseBlockValues();
 					for(int j=0, aix=rowIx*clen; j<clen; j++)
 						buff[_colIndexes[j]] = a[aix+j];
 				}

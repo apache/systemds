@@ -212,7 +212,6 @@ public enum JobType
 		else if (id == 0) {
 			// for ANY, return the bit vector with x number of 1's, 
 			//   where x = number of actual job types (i.e., excluding INVALID,ANY)
-			//System.out.println("ANY --> " + JobType.values().length + ", " + (Math.pow(2, JobType.values().length-2)-1) + ", " + (Math.pow(2,13-2)-1));
 			return (int) Math.pow(2, maxJobID)-1;
 		}
 		else 

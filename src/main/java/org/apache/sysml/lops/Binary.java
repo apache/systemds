@@ -35,8 +35,9 @@ public class Binary extends Lop
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MINUS1_MULTIPLY, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
-		AND, OR, 
-		MAX, MIN, POW, SOLVE, NOTSUPPORTED
+		AND, OR, XOR,
+		MAX, MIN, POW, SOLVE, NOTSUPPORTED,
+		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //Bitwise operations
 	}
 
 	private OperationTypes operation;
@@ -151,13 +152,26 @@ public class Binary extends Lop
 		case NOT_EQUALS:
 			return "!=";
 		
-			/* Boolean */
+		/* Boolean */
 		case AND:
 			return "&&";
 		case OR:
 			return "||";
-		
-		
+
+		/* Binary Builtin Function */
+		case XOR:
+			return "xor";
+		case BW_AND:
+			return "bitwAnd";
+		case BW_OR:
+			return "bitwOr";
+		case BW_XOR:
+			return "bitwXor";
+		case BW_SHIFTL:
+			return "bitwShiftL";
+		case BW_SHIFTR:
+			return "bitwShiftR";
+
 		/* Builtin Functions */
 		case MIN:
 			return "min";

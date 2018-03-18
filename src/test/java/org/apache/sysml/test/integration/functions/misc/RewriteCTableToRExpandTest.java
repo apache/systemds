@@ -22,6 +22,7 @@ package org.apache.sysml.test.integration.functions.misc;
 import org.junit.Test;
 
 import org.junit.Assert;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -33,6 +34,8 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 	private static final String TEST_NAME2 = "RewriteCTableToRExpandRightPos"; 
 	private static final String TEST_NAME3 = "RewriteCTableToRExpandLeftNeg"; 
 	private static final String TEST_NAME4 = "RewriteCTableToRExpandRightNeg"; 
+	private static final String TEST_NAME5 = "RewriteCTableToRExpandLeftUnknownPos";
+	private static final String TEST_NAME6 = "RewriteCTableToRExpandRightUnknownPos";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteCTableToRExpandTest.class.getSimpleName() + "/";
@@ -52,6 +55,8 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
 	}
 
 	@Test
@@ -94,6 +99,25 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 		testRewriteCTableRExpand( TEST_NAME4, CropType.PAD );
 	}
 	
+	@Test
+	public void testRewriteCTableRExpandLeftUnknownDenseCrop()  {
+		testRewriteCTableRExpand( TEST_NAME5, CropType.CROP );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandLeftUnknownDensePad()  {
+		testRewriteCTableRExpand( TEST_NAME5, CropType.PAD );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandRightUnknownDenseCrop()  {
+		testRewriteCTableRExpand( TEST_NAME6, CropType.CROP );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandRightUnknownDensePad()  {
+		testRewriteCTableRExpand( TEST_NAME6, CropType.PAD );
+	}
 	
 	private void testRewriteCTableRExpand( String testname, CropType type )
 	{	
@@ -101,30 +125,45 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 
 		int outDim = maxVal + ((type==CropType.CROP) ? -7 : 7);
+		boolean unknownTests = ( testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6) );
+			
 		
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + testname + ".dml";
-		programArgs = new String[]{ "-stats","-args", 
-			input("A"), String.valueOf(outDim), output("R") };
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		if( unknownTests )
+			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		
-		fullRScriptName = HOME + testname + ".R";
-		rCmd = getRCmd(inputDir(), String.valueOf(outDim), expectedDir());			
-
-		double[][] A = getRandomMatrix(rows, 1, 1, 10, 1.0, 7);
-		writeInputMatrixWithMTD("A", A, false);
-		
-		//run performance tests
-		runTest(true, false, null, -1); 
-		
-		//compare output meta data
-		boolean left = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME3));
-		boolean pos = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2));
-		int rrows = (left && pos) ? rows : outDim;
-		int rcols = (!left && pos) ? rows : outDim;
-		checkDMLMetaDataFile("R", new MatrixCharacteristics(rrows, rcols, 1, 1));
-		
-		//check for applied rewrite
-		Assert.assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2)),
+		try 
+		{
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + testname + ".dml";
+			programArgs = new String[]{ "-explain","-stats","-args", 
+				input("A"), String.valueOf(outDim), output("R") };
+			
+			fullRScriptName = HOME + testname + ".R";
+			rCmd = getRCmd(inputDir(), String.valueOf(outDim), expectedDir());
+	
+			double[][] A = getRandomMatrix(rows, 1, 1, 10, 1.0, 7);
+			writeInputMatrixWithMTD("A", A, false);
+			
+			//run performance tests
+			runTest(true, false, null, -1); 
+			
+			//compare output meta data
+			boolean left = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME3) 
+				|| testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6));
+			boolean pos = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2));
+			int rrows = (left && pos) ? rows : outDim;
+			int rcols = (!left && pos) ? rows : outDim;
+			if( !unknownTests )
+				checkDMLMetaDataFile("R", new MatrixCharacteristics(rrows, rcols, 1, 1));
+			
+			//check for applied rewrite
+			Assert.assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) 
+				|| testname.equals(TEST_NAME2) || unknownTests),
 				Boolean.valueOf(heavyHittersContainsSubString("rexpand")));
+		}
+		finally {
+			rtplatform = platformOld;
+		}
 	}
 }

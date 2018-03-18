@@ -34,32 +34,19 @@ public class PickByCountInstruction extends MRInstruction {
 	public double cst; // used only for rangepick
 	public boolean isValuePick = true;
 
-	/*
-	 * Constructor for valuepick valuepick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE 0 is
-	 * data matrix, 1 is the quantile matrix, 2 will have the resulting picked
-	 * data items
-	 */
 	private PickByCountInstruction(Operator op, byte _in1, byte _in2, byte out, String istr) {
-		super(op, out);
+		super(MRType.PickByCount, op, out);
 		input1 = _in1;
 		input2 = _in2;
 		cst = 0;
-		mrtype = MRINSTRUCTION_TYPE.PickByCount;
 		instString = istr;
 		isValuePick = true;
 	}
 
-	/*
-	 * Constructor for rangepick rangepick:::0:DOUBLE:::0.25:DOUBLE:::1:DOUBLE 0
-	 * is data matrix, 0.25 is the quantile that needs to be removed from both
-	 * ends in the PDF, 1 will have the resulting picked data items between
-	 * [Q_1-Q_3]
-	 */
 	private PickByCountInstruction(Operator op, byte _in1, double _cst, byte out, String istr) {
-		super(op, out);
+		super(MRType.PickByCount, op, out);
 		input1 = _in1;
 		cst = _cst;
-		mrtype = MRINSTRUCTION_TYPE.PickByCount;
 		instString = istr;
 		isValuePick = false;
 	}

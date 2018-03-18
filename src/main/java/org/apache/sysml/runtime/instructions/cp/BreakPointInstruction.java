@@ -43,7 +43,7 @@ public class BreakPointInstruction extends Instruction
 	 * Constructor for a breakpoint instruction
 	 */
 	public BreakPointInstruction() {
-		type = INSTRUCTION_TYPE.BREAKPOINT;
+		type = IType.BREAKPOINT;
 		bpStatus = BPINSTRUCTION_STATUS.ENABLED;
 	}
 
@@ -53,7 +53,7 @@ public class BreakPointInstruction extends Instruction
 	 * @param status Breakpoint instruction status
 	 */
 	public BreakPointInstruction(BPINSTRUCTION_STATUS status) {
-		type = INSTRUCTION_TYPE.BREAKPOINT;
+		type = IType.BREAKPOINT;
 		bpStatus = status;
 	}
 

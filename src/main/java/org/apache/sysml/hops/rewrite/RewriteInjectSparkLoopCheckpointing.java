@@ -54,6 +54,11 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 	}
 	
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 		throws HopsException 
 	{
@@ -107,7 +112,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 					livein.addVariable(var, read.getVariable(var));
 					liveout.addVariable(var, read.getVariable(var));
 				}
-				sb0.set_hops(hops);
+				sb0.setHops(hops);
 				sb0.setLiveIn(livein);
 				sb0.setLiveOut(liveout);
 				sb0.setSplitDag(true);

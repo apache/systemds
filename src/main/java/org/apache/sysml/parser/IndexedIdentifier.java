@@ -102,7 +102,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (rowLB_1_1 < 1){
 				raiseValidateError("lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1", conditional);
 			}
-			if ((this.getOrigDim1() > 0)  && (rowLB_1_1 > this.getOrigDim1())) {
+			if ((this.getOrigDim1() >= 0)  && (rowLB_1_1 > this.getOrigDim1())) {
 				raiseValidateError("lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1(), conditional);
 			}
 			// valid lower row bound value
@@ -138,7 +138,7 @@ public class IndexedIdentifier extends DataIdentifier
 						LOG.info(this.printInfoLocation() + "lower-bound row index " + identifierName + " initialized to "  + tempRowLB + " May cause runtime exception (runtime value must be >= 1)");	
 						validRowLB = false;
 					}
-					if (this.getOrigDim1() > 0  && tempRowLB > this.getOrigDim1()){ 
+					if (this.getOrigDim1() >= 0  && tempRowLB > this.getOrigDim1()){ 
 						LOG.info(this.printInfoLocation() + "lower-bound row index " + identifierName 
 								+ " initialized to " + tempRowLB + " May cause runtime exception (Rows in " 
 								+ this.getName() + ": " + this.getOrigDim1() +")");
@@ -185,7 +185,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (rowUB_1_1 < 1){
 				raiseValidateError("upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1", conditional);
 			}
-			if ((this.getOrigDim1() > 0)  && (rowUB_1_1 > this.getOrigDim1())) {
+			if ((this.getOrigDim1() >= 0)  && (rowUB_1_1 > this.getOrigDim1())) {
 				raiseValidateError("upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1(), conditional);
 			}
 			if (isConst_rowLowerBound && rowUB_1_1 < rowLB_1){
@@ -220,7 +220,7 @@ public class IndexedIdentifier extends DataIdentifier
 						LOG.info(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (runtime value must be >= 1)");	
 						validRowUB = false;
 					}
-					if (this.getOrigDim1() > 0  && tempRowUB > this.getOrigDim1()){ 
+					if (this.getOrigDim1() >= 0  && tempRowUB > this.getOrigDim1()){ 
 						LOG.info(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (Rows in " + this.getName() + ": " + this.getOrigDim1() +")");
 						validRowUB = false;
 					}	
@@ -262,7 +262,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (colLB_1_1 < 1){
 				raiseValidateError("lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1", conditional);
 			}
-			if ((this.getOrigDim2() > 0)  && (colLB_1_1 > this.getOrigDim2())){ 
+			if ((this.getOrigDim2() >= 0)  && (colLB_1_1 > this.getOrigDim2())){ 
 				raiseValidateError("lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2(), conditional);
 			}
 			// valid lower row bound value
@@ -296,7 +296,7 @@ public class IndexedIdentifier extends DataIdentifier
 						LOG.info(this.printInfoLocation() + "lower-bound column index " + identifierName + " initialized to "  + tempColLB + " May cause runtime exception (runtime value must be >= 1)");	
 						validColLB = false;
 					}
-					if (this.getOrigDim2() > 0  && tempColLB > this.getOrigDim2()){ 
+					if (this.getOrigDim2() >= 0  && tempColLB > this.getOrigDim2()){ 
 						LOG.info(this.printInfoLocation() + "lower-bound column index " 
 								+ identifierName + " initialized to " + tempColLB 
 								+ " May cause runtime exception (Columns in " + this.getName() 
@@ -344,7 +344,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (colUB_1_1 < 1){
 				raiseValidateError("upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1", conditional);
 			}
-			if ((this.getOrigDim2() > 0)  && (colUB_1_1 > this.getOrigDim2())) {
+			if ((this.getOrigDim2() >= 0)  && (colUB_1_1 > this.getOrigDim2())) {
 				raiseValidateError("upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2(), conditional);
 			}
 			if (isConst_rowLowerBound && colUB_1_1 < colLB_1) {
@@ -386,7 +386,7 @@ public class IndexedIdentifier extends DataIdentifier
 								+ " May cause runtime exception (runtime value must be >= 1)");	
 						validColUB = false;
 					}
-					if (this.getOrigDim2() > 0  && tempColUB > this.getOrigDim2()){ 
+					if (this.getOrigDim2() >= 0  && tempColUB > this.getOrigDim2()){ 
 						LOG.info(this.printInfoLocation() + "upper-bound column index " 
 								+ identifierName + " initialized to "  + tempColUB 
 								+ " May cause runtime exception (Columns in " + this.getName() 
@@ -435,7 +435,7 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> rowCount - lower bound + 1
-		else if (isConst_rowLowerBound && _rowUpperBound == null && this.getOrigDim1() > 0) {
+		else if (isConst_rowLowerBound && _rowUpperBound == null && this.getOrigDim1() >= 0) {
 			long rowCount = this.getOrigDim1();
 			if (_rowLowerBound instanceof IntIdentifier)
 				updatedRowDim = rowCount - ((IntIdentifier)_rowLowerBound).getValue() + 1;
@@ -485,7 +485,7 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> colCount - lower bound + 1
-		else if (isConst_colLowerBound && _colUpperBound == null && this.getOrigDim2() > 0) {
+		else if (isConst_colLowerBound && _colUpperBound == null && this.getOrigDim2() >= 0) {
 			long colCount = this.getOrigDim2();
 			if (_colLowerBound instanceof IntIdentifier)
 				updatedColDim = colCount - ((IntIdentifier)_colLowerBound).getValue() + 1;

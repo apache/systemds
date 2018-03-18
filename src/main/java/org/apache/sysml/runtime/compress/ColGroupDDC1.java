@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
@@ -117,6 +118,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	public void write(DataOutput out) throws IOException {
+		write(out, false);
+	}
+	
+	@Override
+	public void write(DataOutput out, boolean skipDict) throws IOException {
 		int numCols = getNumCols();
 		int numVals = getNumValues();
 		out.writeInt(_numRows);
@@ -128,9 +134,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 			out.writeInt( _colIndexes[i] );
 		
 		//write distinct values
-		for( int i=0; i<_values.length; i++ )
-			out.writeDouble(_values[i]);
-
+		if( !skipDict ) {
+			for( int i=0; i<_values.length; i++ )
+				out.writeDouble(_values[i]);
+		}
+		
 		//write data
 		for( int i=0; i<_numRows; i++ )
 			out.writeByte(_data[i]);
@@ -138,6 +146,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		readFields(in, false);
+	}
+	
+	@Override
+	public void readFields(DataInput in, boolean skipDict) throws IOException {
 		_numRows = in.readInt();
 		int numCols = in.readInt();
 		int numVals = in.readInt();
@@ -148,9 +161,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 			_colIndexes[i] = in.readInt();
 		
 		//read distinct values
-		_values = new double[numVals*numCols];
-		for( int i=0; i<numVals*numCols; i++ )
-			_values[i] = in.readDouble();
+		if( !skipDict || numCols!=1 ) {
+			_values = new double[numVals*numCols];
+			for( int i=0; i<numVals*numCols; i++ )
+				_values[i] = in.readDouble();
+		}
 		
 		//read data
 		_data = new byte[_numRows];
@@ -162,7 +177,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	public long getExactSizeOnDisk() {
 		long ret = 12; //header
 		//col indices
-		ret += 4 * _colIndexes.length; 
+		ret += 4 * _colIndexes.length;
 		//distinct values (groups of values)
 		ret += 8 * _values.length;
 		//data
@@ -195,7 +210,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	public void decompressToBlock(MatrixBlock target, int colpos) {
 		int nrow = getNumRows();
 		int ncol = getNumCols();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		int nnz = 0;
 		for( int i = 0; i < nrow; i++ )
 			nnz += ((c[i] = _values[(_data[i]&0xFF)*ncol+colpos])!=0) ? 1 : 0;
@@ -203,14 +218,14 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	@Override 
-	public int[] getCounts() {
-		return getCounts(0, getNumRows());
+	public int[] getCounts(int[] counts) {
+		return getCounts(0, getNumRows(), counts);
 	}
 	
 	@Override 
-	public int[] getCounts(int rl, int ru) {
+	public int[] getCounts(int rl, int ru, int[] counts) {
 		final int numVals = getNumValues();
-		int[] counts = new int[numVals];
+		Arrays.fill(counts, 0, numVals, 0);
 		for( int i=rl; i<ru; i++ )
 			counts[_data[i]&0xFF] ++;
 		return counts;
@@ -237,7 +252,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 		throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
@@ -260,7 +275,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 		throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		//prepare distinct values once
 		double[][] vals = new double[grps.length][];
@@ -286,7 +301,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) throws DMLRuntimeException {
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int numVals = getNumValues();
 		
@@ -303,7 +318,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) throws DMLRuntimeException {
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int numVals = getNumValues();
 		
@@ -340,9 +355,10 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
+		//note: due to corrections the output might be a large dense block
+		DenseBlock c = result.getDenseBlock();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] c = result.getDenseBlock();
 		
 		//pre-aggregate nnz per value tuple
 		double[] vals = sumAllValues(kplus, kbuff, false);
@@ -350,19 +366,22 @@ public class ColGroupDDC1 extends ColGroupDDC
 		//scan data and add to result (use kahan plus not general KahanFunction
 		//for correctness in case of sqk+)
 		for( int i=rl; i<ru; i++ ) {
-			kbuff.set(c[2*i], c[2*i+1]);
+			double[] cvals = c.values(i);
+			int cix = c.pos(i);
+			kbuff.set(cvals[cix], cvals[cix+1]);
 			kplus2.execute2(kbuff, vals[_data[i]&0xFF]);
-			c[2*i] = kbuff._sum;
-			c[2*i+1] = kbuff._correction;
+			cvals[cix] = kbuff._sum;
+			cvals[cix+1] = kbuff._correction;
 		}
 	}
 	
 	public static void computeRowSums(ColGroupDDC1[] grps, MatrixBlock result, KahanFunction kplus, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		//note: due to corrections the output might be a large dense block
+		DenseBlock c = result.getDenseBlock();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] c = result.getDenseBlock();
 		
 		//prepare distinct values once
 		double[][] vals = new double[grps.length][];
@@ -387,11 +406,13 @@ public class ColGroupDDC1 extends ColGroupDDC
 			}
 			//add partial results of all ddc groups
 			for( int i=bi; i<Math.min(bi+blksz, ru); i++ ) {
-				kbuff.set(c[2*i], c[2*i+1]);
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
+				kbuff.set(cvals[cix], cvals[cix+1]);
 				kplus2.execute2(kbuff, tmpAgg[i-bi]);
-				c[2*i] = kbuff._sum;
-				c[2*i+1] = kbuff._correction;
-			}	
+				cvals[cix] = kbuff._sum;
+				cvals[cix+1] = kbuff._correction;
+			}
 		}
 	}
 	

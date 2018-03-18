@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
-import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -367,7 +367,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	{
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TernaryInstruction )
+				if( inst instanceof CtableInstruction )
 					return true;
 		return false;
 	}
@@ -375,7 +375,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	protected boolean dimsKnownForTernaryInstructions() {
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TernaryInstruction && !((TernaryInstruction)inst).knownOutputDims() )
+				if( inst instanceof CtableInstruction && !((CtableInstruction)inst).knownOutputDims() )
 					return false;
 		return true;
 	}
@@ -384,9 +384,9 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	{
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TernaryInstruction )
+				if( inst instanceof CtableInstruction )
 				{
-					TernaryInstruction tinst = (TernaryInstruction) inst;
+					CtableInstruction tinst = (CtableInstruction) inst;
 					if( tinst.input1!=-1 )
 						dimensions.put(tinst.input1, MRJobConfiguration.getMatrixCharacteristicsForInput(job, tinst.input1));					
 					//extend as required, currently only ctableexpand needs blocksizes

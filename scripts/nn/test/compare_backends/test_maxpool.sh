@@ -40,7 +40,7 @@ do
 			# Running a test in GPU mode
 			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_maxpool.dml -stats -gpu force -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W pool=3
 			# Comparing the CPU vs GPU results to make sure they are the same
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "maxpool:stride="$stride",pad="$pad
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "maxpool:sparsity="$sparsity",stride="$stride",pad="$pad
 			rm -rf out_cp.csv out_gpu.csv out_cp.csv.mtd out_gpu.csv.mtd
 		done
 	done

@@ -260,21 +260,22 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
-				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT 
+				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT
+				&& ((UnaryOp)hop).getOp() != OpOp1.ASSERT
 				&& ((UnaryOp)hop).getOp() != OpOp1.STOP
 				&& hop.getDataType() == DataType.SCALAR);
 	}
 	
 	private static boolean isApplicableFalseConjunctivePredicate( Hop hop ) throws HopsException {
 		ArrayList<Hop> in = hop.getInput();
-		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND)
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND) && hop.getDataType().isScalar()
 				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())
 				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
 	}
 	
 	private static boolean isApplicableTrueDisjunctivePredicate( Hop hop ) throws HopsException {
 		ArrayList<Hop> in = hop.getInput();
-		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR)
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR) && hop.getDataType().isScalar()
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())
 				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );
 	}

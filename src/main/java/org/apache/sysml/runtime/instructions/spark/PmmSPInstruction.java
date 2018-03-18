@@ -54,8 +54,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 
 	private PmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CPOperand nrow, CacheType type,
 			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.PMM;
+		super(SPType.PMM, op, in1, in2, out, opcode, istr);
 		_type = type;
 		_nrow = nrow;
 	}

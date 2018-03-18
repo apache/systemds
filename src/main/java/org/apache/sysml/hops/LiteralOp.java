@@ -199,16 +199,15 @@ public class LiteralOp extends Hop
 		//do nothing; it is a scalar
 	}
 	
-	public long getLongValue() 
-	{
+	public long getLongValue() {
 		switch( getValueType() ) {
-			case INT:		
+			case INT:
 				return value_long;
-			case DOUBLE:	
+			case DOUBLE:
 				return UtilFunctions.toLong(value_double);
 			case STRING:
-				return Long.parseLong(value_string);	
-			case BOOLEAN: 
+				return Long.parseLong(value_string);
+			case BOOLEAN:
 				return value_boolean ? 1 : 0;
 			default:
 				return -1;
@@ -217,38 +216,46 @@ public class LiteralOp extends Hop
 	
 	public double getDoubleValue() throws HopsException {
 		switch( getValueType() ) {
-			case INT:		
+			case INT:
 				return value_long;
-			case DOUBLE:	
+			case DOUBLE:
 				return value_double;
 			case STRING:
 				return Double.parseDouble(value_string);
+			case BOOLEAN:
+				return value_boolean ? 1 : 0;
 			default:
 				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
 		}
 	}
 	
 	public boolean getBooleanValue() throws HopsException {
-		if ( getValueType() == ValueType.BOOLEAN ) {
-			return value_boolean;
+		switch( getValueType() ) {
+			case INT:
+				return (value_long != 0);
+			case DOUBLE:
+				return (value_double != 0);
+			case STRING:
+				return Boolean.parseBoolean(value_string);
+			case BOOLEAN:
+				return value_boolean;
+			default:
+				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Boolean.");
 		}
-		else
-			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Boolean.");
 	}
 	
-	public String getStringValue() 
-	{
+	public String getStringValue() {
 		switch( getValueType() ) {
 			case BOOLEAN:
 				return String.valueOf(value_boolean);
-			case INT:		
+			case INT:
 				return String.valueOf(value_long);
-			case DOUBLE:	
+			case DOUBLE:
 				return String.valueOf(value_double);
 			case STRING:
 				return value_string;
 			case OBJECT:
-			case UNKNOWN:	
+			case UNKNOWN:
 				//do nothing (return null)
 		}
 		

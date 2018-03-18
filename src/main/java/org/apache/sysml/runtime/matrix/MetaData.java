@@ -17,30 +17,44 @@
  * under the License.
  */
 
-
 package org.apache.sysml.runtime.matrix;
 
 /**
  * Class to store metadata associated with a file (e.g., a matrix) on disk.
- * This class must be extended to associate specific information with the file. 
  *
  */
-
-public abstract class MetaData
+public class MetaData
 {
-	@Override
-	public abstract boolean equals (Object anObject);
+	protected final MatrixCharacteristics _mc;
 	
-	@Override
-	public int hashCode()
-	{
-		//use identity hash code
-		return super.hashCode();
+	public MetaData(MatrixCharacteristics mc) {
+		_mc = mc;
+	}
+	
+	public MatrixCharacteristics getMatrixCharacteristics() {
+		return _mc;
 	}
 	
 	@Override
-	public abstract String toString();
+	public boolean equals (Object anObject) {
+		if( !(anObject instanceof MetaData) )
+			return false;
+		MetaData that = (MetaData)anObject;
+		return _mc.equals(that._mc);
+	}
 	
-	@Override 
-	public abstract Object clone();
+	@Override
+	public int hashCode() {
+		return _mc.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return _mc.toString();
+	}
+	
+	@Override
+	public Object clone() {
+		return new MetaData(new MatrixCharacteristics(_mc));
+	}
 }

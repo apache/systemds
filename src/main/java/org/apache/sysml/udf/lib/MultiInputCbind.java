@@ -96,7 +96,7 @@ public class MultiInputCbind extends PackageFunction {
 		allocateOutput();
 		
 		// Performs cbind (cbind (cbind ( X1, X2 ), X3 ), X4)
-		double [] retData = retMB.getDenseBlock();
+		double [] retData = retMB.getDenseBlockValues();
 		try {
 			int startColumn = 0;
 			for(int inputID = 2; inputID < numInputs + 2; inputID++) {
@@ -126,7 +126,7 @@ public class MultiInputCbind extends PackageFunction {
 					}
 				}
 				else {
-					double [] denseBlock = in.getDenseBlock();
+					double [] denseBlock = in.getDenseBlockValues();
 					if(denseBlock != null) {
 						if(spagetize) {
 							// Perform matrix(X1, rows=length(X1), cols=1) operation before cbind

@@ -24,8 +24,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public abstract class BinaryMRInstructionBase extends MRInstruction {
 	public byte input1, input2;
 
-	protected BinaryMRInstructionBase(Operator op, byte in1, byte in2, byte out) {
-		super(op, out);
+	protected BinaryMRInstructionBase(MRType type, Operator op, byte in1, byte in2, byte out) {
+		super(type, op, out);
 		input1 = in1;
 		input2 = in2;
 	}

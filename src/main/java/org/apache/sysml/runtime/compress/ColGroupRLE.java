@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
@@ -107,7 +108,7 @@ public class ColGroupRLE extends ColGroupOffset
 			
 			//cache conscious append via horizontal scans 
 			for( int bi=rl; bi<ru; bi+=blksz ) {
-				int bimax = Math.min(bi+blksz, ru);					
+				int bimax = Math.min(bi+blksz, ru);
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
@@ -122,7 +123,7 @@ public class ColGroupRLE extends ColGroupOffset
 									target.appendValue(i, _colIndexes[j], _values[off+j]);
 						start += len;
 					}
-					apos[k] = bix;	
+					apos[k] = bix;
 					astart[k] = start;
 				}
 			}
@@ -155,7 +156,7 @@ public class ColGroupRLE extends ColGroupOffset
 			
 			//cache conscious append via horizontal scans 
 			for( int bi=0; bi<n; bi+=blksz ) {
-				int bimax = Math.min(bi+blksz, n);					
+				int bimax = Math.min(bi+blksz, n);
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
@@ -172,7 +173,7 @@ public class ColGroupRLE extends ColGroupOffset
 									target.appendValue(i, cix[j], _values[off+j]);
 						start += len;
 					}
-					apos[k] = bix;	
+					apos[k] = bix;
 					astart[k] = start;
 				}
 			}
@@ -191,7 +192,7 @@ public class ColGroupRLE extends ColGroupOffset
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		
 		//position and start offset arrays
 		int[] astart = new int[numVals];
@@ -224,9 +225,9 @@ public class ColGroupRLE extends ColGroupOffset
 	}
 	
 	@Override 
-	public int[] getCounts() {
+	public int[] getCounts(int[] counts) {
 		final int numVals = getNumValues();
-		int[] counts = new int[numVals];
+		Arrays.fill(counts, 0, numVals, 0);
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -243,9 +244,9 @@ public class ColGroupRLE extends ColGroupOffset
 	}
 	
 	@Override 
-	public int[] getCounts(int rl, int ru) {
+	public int[] getCounts(int rl, int ru, int[] counts) {
 		final int numVals = getNumValues();
-		int[] counts = new int[numVals];
+		Arrays.fill(counts, 0, numVals, 0);
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -269,7 +270,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
@@ -333,8 +334,8 @@ public class ColGroupRLE extends ColGroupOffset
 				int bix = 0;
 				int start = 0;
 				
-				//scan to beginning offset if necessary 
-				if( rl > 0 ) { //rl aligned with blksz	
+				//scan to beginning offset if necessary
+				if( rl > 0 ) { //rl aligned with blksz
 					while( bix<blen ) {	
 						int lstart = _data[boff + bix]; //start
 						int llen = _data[boff + bix + 1]; //len
@@ -365,7 +366,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{		
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
@@ -390,7 +391,7 @@ public class ColGroupRLE extends ColGroupOffset
 				//horizontal scan, incl pos maintenance
 				for (int k = 0; k < numVals; k++) {
 					int boff = _ptr[k];
-					int blen = len(k);						
+					int blen = len(k);
 					int bix = apos[k];
 					int start = astart[k];
 					
@@ -443,7 +444,7 @@ public class ColGroupRLE extends ColGroupOffset
 			throws DMLRuntimeException 
 	{
 		//note: this method is only applicable for numrows < blocksize
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 
@@ -491,7 +492,7 @@ public class ColGroupRLE extends ColGroupOffset
 					applyScalarOp(op), _data, _ptr);
 		}
 		
-		double[] rvalues = applyScalarOp(op, val0, getNumCols());		
+		double[] rvalues = applyScalarOp(op, val0, getNumCols());
 		char[] lbitmap = BitmapEncoder.genRLEBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length+lbitmap.length);
 		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
@@ -534,11 +535,12 @@ public class ColGroupRLE extends ColGroupOffset
 	@Override
 	protected final void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru)
 	{
+		//note: due to corrections the output might be a large dense block
+		DenseBlock c = result.getDenseBlock();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
 		
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
 		
 		if( ALLOW_CACHE_CONSCIOUS_ROWSUMS 
 			&& LOW_LEVEL_OPT && numVals > 1 
@@ -573,10 +575,12 @@ public class ColGroupRLE extends ColGroupOffset
 						int from = Math.max(bi, start+lstart);
 						int to = Math.min(start+lstart+llen,bimax);
 						for (int rix=from; rix<to; rix++) {
-							kbuff.set(c[2*rix], c[2*rix+1]);
+							double[] cvals = c.values(rix);
+							int cix = c.pos(rix);
+							kbuff.set(cvals[cix], cvals[cix+1]);
 							kplus2.execute2(kbuff, val);
-							c[2*rix] = kbuff._sum;
-							c[2*rix+1] = kbuff._correction;
+							cvals[cix] = kbuff._sum;
+							cvals[cix+1] = kbuff._correction;
 						}
 						if(start+lstart+llen >= bimax)
 							break;
@@ -605,10 +609,12 @@ public class ColGroupRLE extends ColGroupOffset
 						curRunStartOff = curRunEnd + _data[boff+bix];
 						curRunEnd = curRunStartOff + _data[boff+bix+1];
 						for (int rix=curRunStartOff; rix<curRunEnd && rix<ru; rix++) {
-							kbuff.set(c[2*rix], c[2*rix+1]);
+							double[] cvals = c.values(rix);
+							int cix = c.pos(rix);
+							kbuff.set(cvals[cix], cvals[cix+1]);
 							kplus2.execute2(kbuff, val);
-							c[2*rix] = kbuff._sum;
-							c[2*rix+1] = kbuff._correction;
+							cvals[cix] = kbuff._sum;
+							cvals[cix+1] = kbuff._correction;
 						}
 					}
 				}
@@ -651,7 +657,7 @@ public class ColGroupRLE extends ColGroupOffset
 	{
 		//NOTE: zeros handled once for all column groups outside
 		final int numVals = getNumValues();
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -770,7 +776,7 @@ public class ColGroupRLE extends ColGroupOffset
 			int blen = len(k);
 			int bix = 0;
 			int start = 0;
-			while( bix<blen ) {	
+			while( bix<blen ) {
 				int lstart = _data[boff + bix]; //start
 				int llen = _data[boff + bix + 1]; //len
 				if( start+lstart+llen >= rl )

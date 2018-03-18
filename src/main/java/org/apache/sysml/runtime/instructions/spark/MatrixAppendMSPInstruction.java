@@ -84,12 +84,12 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 
 	private static boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, boolean cbind )
 	{
-		long ncblksIn1 = cbind ?
-				(long)Math.ceil((double)mcIn1.getCols()/mcIn1.getColsPerBlock()) : 
-				(long)Math.ceil((double)mcIn1.getRows()/mcIn1.getRowsPerBlock());
+		//determine if append is partitioning-preserving based on number of input and output blocks
+		//with awareness of zero number of rows or columns
+		long ncblksIn1 = cbind ? mcIn1.getNumColBlocks() : mcIn1.getNumRowBlocks();
 		long ncblksOut = cbind ? 
-				(long)Math.ceil(((double)mcIn1.getCols()+mcIn2.getCols())/mcIn1.getColsPerBlock()) : 
-				(long)Math.ceil(((double)mcIn1.getRows()+mcIn2.getRows())/mcIn1.getRowsPerBlock());
+				Math.max((long)Math.ceil(((double)mcIn1.getCols()+mcIn2.getCols())/mcIn1.getColsPerBlock()),1) : 
+				Math.max((long)Math.ceil(((double)mcIn1.getRows()+mcIn2.getRows())/mcIn1.getRowsPerBlock()),1);
 		
 		//mappend is partitioning-preserving if in-block append (e.g., common case of colvector append)
 		return (ncblksIn1 == ncblksOut);
@@ -99,25 +99,22 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 	{
 		private static final long serialVersionUID = 2738541014432173450L;
 		
-		private PartitionedBroadcast<MatrixBlock> _pm = null;
-		private boolean _cbind = true;
-		private long _offset; 
-		private int _brlen; 
-		private int _bclen;
-		private long _lastBlockColIndex;
+		private final PartitionedBroadcast<MatrixBlock> _pm;
+		private final boolean _cbind;
+		private final int _brlen; 
+		private final int _bclen;
+		private final long _lastBlockColIndex;
 		
 		public MapSideAppendFunction(PartitionedBroadcast<MatrixBlock> binput, boolean cbind, long offset, int brlen, int bclen)  
 		{
 			_pm = binput;
 			_cbind = cbind;
-			
-			_offset = offset;
 			_brlen = brlen;
 			_bclen = bclen;
 			
 			//check for boundary block
-			int blen = cbind ? bclen : brlen;
-			_lastBlockColIndex = (long)Math.ceil((double)_offset/blen);			
+			_lastBlockColIndex = Math.max((long)Math.ceil(
+				(double)offset/(cbind ? bclen : brlen)),1);
 		}
 		
 		@Override
@@ -199,8 +196,8 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 			_cbind = cbind;
 			
 			//check for boundary block
-			int blen = cbind ? bclen : brlen;
-			_lastBlockColIndex = (long)Math.ceil((double)offset/blen);			
+			_lastBlockColIndex = Math.max((long)Math.ceil(
+				(double)offset/(cbind ? bclen : brlen)),1);
 		}
 
 		@Override
@@ -237,7 +234,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 					int rowix = _cbind ? (int)ix.getRowIndex() : 1;
 					int colix = _cbind ? 1 : (int)ix.getColumnIndex();
 					MatrixBlock in2 = _pm.getBlock(rowix, colix);
-					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock(), _cbind);
+					MatrixBlock out = in1.append(in2, new MatrixBlock(), _cbind);
 					return new Tuple2<>(ix, out);
 				}
 			}

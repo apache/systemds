@@ -22,6 +22,7 @@ package org.apache.sysml.udf;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
@@ -85,7 +86,13 @@ public abstract class PackageFunction implements Serializable
 	 * @return function parameter
 	 */
 	public abstract FunctionParameter getFunctionOutput(int pos);
-
+	
+	public final void setFunctionInputs(ArrayList<FunctionParameter> inputs) {
+		setNumFunctionInputs(inputs.size());
+		for (int i = 0; i < inputs.size(); i++)
+			setInput(inputs.get(i), i);
+	}
+	
 	/**
 	 * Method to set the number of inputs for this package function
 	 * 
@@ -153,4 +160,14 @@ public abstract class PackageFunction implements Serializable
 	 */
 	public abstract void execute();
 	
+	/**
+	 * Method that will be executed to perform this function. The default
+	 * implementation simply forwards this call to execute.
+	 * 
+	 * @param ec execution context with access to the program
+	 *    e.g., for access to other dml-bodied or external functions.
+	 */
+	public void execute(ExecutionContext ec) {
+		execute(); //default impl
+	}
 }

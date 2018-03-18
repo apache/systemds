@@ -20,10 +20,12 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
@@ -83,6 +85,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			//apply indexing vectorization rewrites
 			//MB: disabled right indexing rewrite because (1) piggybacked in MR anyway, (2) usually
 			//not too much overhead, and (3) makes literal replacement more difficult
+			hi = vectorizeRightLeftIndexingChains(hi); //e.g., B[,1]=A[,1]; B[,2]=A[2]; -> B[,1:2] = A[,1:2]
 			//vectorizeRightIndexing( hi ); //e.g., multiple rightindexing X[i,1], X[i,3] -> X[i,];
 			hi = vectorizeLeftIndexing( hi );  //e.g., multiple left indexing X[i,1], X[i,3] -> X[i,]; 
 			
@@ -93,6 +96,89 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		hop.setVisited();
 	}
 
+	private static Hop vectorizeRightLeftIndexingChains(Hop hi)
+		throws HopsException
+	{
+		//check for valid root operator
+		if( !(hi instanceof LeftIndexingOp 
+			&& hi.getInput().get(1) instanceof IndexingOp
+			&& hi.getInput().get(1).getParent().size()==1) )
+			return hi;
+		LeftIndexingOp lix0 = (LeftIndexingOp) hi;
+		IndexingOp rix0 = (IndexingOp) hi.getInput().get(1);
+		if( !(lix0.isRowLowerEqualsUpper() || lix0.isColLowerEqualsUpper())
+			|| lix0.isRowLowerEqualsUpper() != rix0.isRowLowerEqualsUpper()
+			|| lix0.isColLowerEqualsUpper() != rix0.isColLowerEqualsUpper())
+			return hi;
+		boolean row = lix0.isRowLowerEqualsUpper();
+		if( !( (row ? HopRewriteUtils.isFullRowIndexing(lix0) : HopRewriteUtils.isFullColumnIndexing(lix0))
+			&& (row ? HopRewriteUtils.isFullRowIndexing(rix0) : HopRewriteUtils.isFullColumnIndexing(rix0))) )
+			return hi;
+		
+		//determine consecutive left-right indexing chains for rows/columns
+		List<LeftIndexingOp> lix = new ArrayList<>(); lix.add(lix0);
+		List<IndexingOp> rix = new ArrayList<>(); rix.add(rix0);
+		LeftIndexingOp clix = lix0;
+		IndexingOp crix = rix0;
+		while( isConsecutiveLeftRightIndexing(clix, crix, clix.getInput().get(0))
+			&& clix.getInput().get(0).getParent().size()==1
+			&& clix.getInput().get(0).getInput().get(1).getParent().size()==1 ) {
+			clix = (LeftIndexingOp)clix.getInput().get(0);
+			crix = (IndexingOp)clix.getInput().get(1);
+			lix.add(clix); rix.add(crix);
+		}
+		
+		//rewrite pattern if at least two consecutive pairs
+		if( lix.size() >= 2 ) {
+			IndexingOp rixn = rix.get(rix.size()-1);
+			Hop rlrix = rixn.getInput().get(1);
+			Hop rurix = row ? HopRewriteUtils.createBinary(rlrix, new LiteralOp(rix.size()-1), OpOp2.PLUS) : rixn.getInput().get(2);
+			Hop clrix = rixn.getInput().get(3);
+			Hop curix = row ? rixn.getInput().get(4) : HopRewriteUtils.createBinary(clrix, new LiteralOp(rix.size()-1), OpOp2.PLUS);
+			IndexingOp rixNew = HopRewriteUtils.createIndexingOp(rixn.getInput().get(0), rlrix, rurix, clrix, curix);
+			
+			LeftIndexingOp lixn = lix.get(rix.size()-1);
+			Hop rllix = lixn.getInput().get(2);
+			Hop rulix = row ? HopRewriteUtils.createBinary(rllix, new LiteralOp(lix.size()-1), OpOp2.PLUS) : lixn.getInput().get(3);
+			Hop cllix = lixn.getInput().get(4);
+			Hop culix = row ? lixn.getInput().get(5) : HopRewriteUtils.createBinary(cllix, new LiteralOp(lix.size()-1), OpOp2.PLUS);
+			LeftIndexingOp lixNew = HopRewriteUtils.createLeftIndexingOp(lixn.getInput().get(0), rixNew, rllix, rulix, cllix, culix);
+			
+			//rewire parents and childs
+			HopRewriteUtils.replaceChildReference(hi.getParent().get(0), hi, lixNew);
+			for( int i=0; i<lix.size(); i++ ) {
+				HopRewriteUtils.removeAllChildReferences(lix.get(i));
+				HopRewriteUtils.removeAllChildReferences(rix.get(i));
+			}
+			
+			hi = lixNew;
+			LOG.debug("Applied vectorizeRightLeftIndexingChains (line "+hi.getBeginLine()+")");
+		}
+		
+		return hi;
+	}
+	
+
+	private static boolean isConsecutiveLeftRightIndexing(LeftIndexingOp lix, IndexingOp rix, Hop input) {
+		if( !(input instanceof LeftIndexingOp 
+			&& input.getInput().get(1) instanceof IndexingOp) )
+			return false;
+		boolean row = lix.isRowLowerEqualsUpper();
+		LeftIndexingOp lix2 = (LeftIndexingOp) input;
+		IndexingOp rix2 = (IndexingOp) input.getInput().get(1);
+		//check row/column access with full row/column indexing
+		boolean access = (row ? HopRewriteUtils.isFullRowIndexing(lix2) && HopRewriteUtils.isFullRowIndexing(rix2) :
+			HopRewriteUtils.isFullColumnIndexing(lix2) && HopRewriteUtils.isFullColumnIndexing(rix2));
+		//check equivalent right indexing inputs
+		boolean rixInputs = (rix.getInput().get(0) == rix2.getInput().get(0));
+		//check consecutive access
+		boolean consecutive = (row ? HopRewriteUtils.isConsecutiveIndex(lix2.getInput().get(2), lix.getInput().get(2))
+				&& HopRewriteUtils.isConsecutiveIndex(rix2.getInput().get(1), rix.getInput().get(1)) : 
+			HopRewriteUtils.isConsecutiveIndex(lix2.getInput().get(4), lix.getInput().get(4))
+				&& HopRewriteUtils.isConsecutiveIndex(rix2.getInput().get(3), rix.getInput().get(3)));
+		return access && rixInputs && consecutive;
+	}
+	
 	/**
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites

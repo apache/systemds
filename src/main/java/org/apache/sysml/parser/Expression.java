@@ -86,10 +86,12 @@ public abstract class Expression implements ParseInfo
 		CUMSUM,
 		DIAG,
 		EIGEN,
+		EVAL,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA, BIAS_ADD, BIAS_MULTIPLY,
-		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD,
+		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD, AVG_POOL_BACKWARD,
 		EXP,
 		FLOOR,
+		IFELSE,
 		INTERQUANTILE,
 		INVERSE,
 		IQM,
@@ -135,7 +137,13 @@ public abstract class Expression implements ParseInfo
 		TANH,
 		TRACE, 
 		TRANS,
-		VAR
+		VAR,
+		XOR,
+		BITWAND,
+		BITWOR,
+		BITWXOR,
+		BITWSHIFTL,
+		BITWSHIFTR,
 	}
 
 	/**
@@ -172,6 +180,9 @@ public abstract class Expression implements ParseInfo
 		
 		public boolean isMatrix() {
 			return (this == MATRIX);
+		}
+		public boolean isFrame() {
+			return (this == FRAME);
 		}
 		public boolean isScalar() {
 			return (this == SCALAR);

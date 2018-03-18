@@ -20,17 +20,9 @@
 
 package org.apache.sysml.runtime.util;
 
-public abstract class PRNGenerator 
-{
+public abstract class PRNGenerator {
 
-	
-	long seed = -1;
-	
 	public abstract void setSeed(long sd);
-	
-	public PRNGenerator() {
-		seed = -1;
-	}
 
-	public abstract double nextDouble() ;
+	public abstract double nextDouble();
 }

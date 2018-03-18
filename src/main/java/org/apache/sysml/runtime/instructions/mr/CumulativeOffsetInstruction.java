@@ -36,7 +36,7 @@ public class CumulativeOffsetInstruction extends BinaryInstruction {
 	private UnaryOperator _uop = null;
 
 	private CumulativeOffsetInstruction(byte in1, byte in2, byte out, String opcode, String istr) {
-		super(null, in1, in2, out, istr);
+		super(MRType.CumsumOffset, null, in1, in2, out, istr);
 
 		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());
@@ -89,7 +89,7 @@ public class CumulativeOffsetInstruction extends BinaryInstruction {
 		
 		//blockwise offset aggregation and prefix sum computation
 		MatrixBlock data2 = new MatrixBlock(data); //cp data
-		MatrixBlock fdata2 = data2.sliceOperations(0, 0, 0, data2.getNumColumns()-1, new MatrixBlock()); //1-based
+		MatrixBlock fdata2 = data2.slice(0, 0, 0, data2.getNumColumns()-1, new MatrixBlock()); //1-based
 		fdata2.binaryOperationsInPlace(_bop, offset); //sum offset to first row
 		data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
 		data2.unaryOperations(_uop, blk); //compute columnwise prefix sums/prod/min/max

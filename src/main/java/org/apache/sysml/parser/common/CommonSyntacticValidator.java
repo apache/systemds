@@ -573,63 +573,51 @@ public abstract class CommonSyntacticValidator {
 	 */
 	protected abstract Expression handleLanguageSpecificFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions);
 
-	/** Checks for builtin functions and does Action 'f'.
-	 * <p>
-	 * Constructs the
-	 * appropriate {@link AssignmentStatement} from
-	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList, boolean)}
-	 * or Assign to {@link Expression} from
-	 * DmlSyntacticValidator's exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext).
-	 * </p>
+	/** Creates a builtin function expression.
 	 * 
 	 * @param ctx antlr rule context
 	 * @param functionName Name of the builtin function
 	 * @param paramExpressions Array of parameter names and values
-	 * @param f action to perform
-	 * @return true if a builtin function was found
+	 * @return expression if found otherwise null
 	 */
-	protected boolean buildForBuiltInFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions, Action f) {
+	protected Expression buildForBuiltInFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions) {
 		// In global namespace, so it can be a builtin function
 		// Double verification: verify passed function name is a (non-parameterized) built-in function.
 		try {
 			if (functions.contains(functionName)) {
 				// It is a user function definition (which takes precedence if name same as built-in)
-				return false;
+				return null;
 			}
 			
 			Expression lsf = handleLanguageSpecificFunction(ctx, functionName, paramExpressions);
-			if (lsf != null){
+			if (lsf != null) {
 				setFileLineColumn(lsf, ctx);
-				f.execute(lsf);
-				return true;
+				return lsf;
 			}
 
 			BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(ctx, functionName, paramExpressions, currentFile);
-			if (bife != null){
+			if (bife != null) {
 				// It is a builtin function
-				f.execute(bife);
-				return true;
+				return bife;
 			}
 
 			ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression
 					.getParamBuiltinFunctionExpression(ctx, functionName, paramExpressions, currentFile);
 			if (pbife != null){
 				// It is a parameterized builtin function
-				f.execute(pbife);
-				return true;
+				return pbife;
 			}
 
 			// built-in read, rand ...
 			DataExpression dbife = DataExpression.getDataExpression(ctx, functionName, paramExpressions, currentFile, errorListener);
 			if (dbife != null){
-				f.execute(dbife);
-				return true;
+				return dbife;
 			}
-		} catch(Exception e) {
+		} 
+		catch(Exception e) {
 			notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
-			return true;
 		}
-		return false;
+		return null;
 	}
 
 
@@ -670,33 +658,27 @@ public abstract class CommonSyntacticValidator {
 
 		// For builtin functions with LHS
 		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && !functions.contains(functionName)){
-			final DataIdentifier ftarget = target;
-			Action f = new Action() {
-				@Override public void execute(Expression e) { setAssignmentStatement(ctx, info , ftarget, e); }
-			};
-			boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-			if (validBIF)
+			Expression e = buildForBuiltInFunction(ctx, functionName, paramExpression);
+			if( e != null ) {
+				setAssignmentStatement(ctx, info, target, e);
 				return;
+			}
 		}
 
-		// If builtin functions weren't found...
+		// handle user-defined functions
+		setAssignmentStatement(ctx, info, target,
+			createFunctionCall(ctx, namespace, functionName, paramExpression));
+	}
+	
+	protected FunctionCallIdentifier createFunctionCall(ParserRuleContext ctx,
+		String namespace, String functionName, ArrayList<ParameterExpression> paramExpression) {
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		functCall.setFunctionName(functionName);
-		// Override default namespace for imported non-built-in function
-		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0
+			&& DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
 		functCall.setFunctionNamespace(inferNamespace);
-
 		functCall.setCtxValuesAndFilename(ctx, currentFile);
-
-		setAssignmentStatement(ctx, info, target, functCall);
-	}
-
-	/**
-	 * To allow for different actions in
-	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList, boolean)}
-	 */
-	public static interface Action {
-		public void execute(Expression e);
+		return functCall;
 	}
 
 	protected void setMultiAssignmentStatement(ArrayList<DataIdentifier> target, Expression expression, ParserRuleContext ctx, StatementInfo info) {

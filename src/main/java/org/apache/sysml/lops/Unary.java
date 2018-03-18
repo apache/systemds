@@ -39,10 +39,11 @@ public class Unary extends Lop
 	public enum OperationTypes {
 		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, MINUS1_MULTIPLY, 
 		POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, EXP, Over, 
-		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, 
+		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
+		AND, OR, XOR, BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR,
 		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
-		SPROP, SIGMOID, SELP, SUBTRACT_NZ, LOG_NZ,
+		SPROP, SIGMOID, SUBTRACT_NZ, LOG_NZ,
 		CAST_AS_MATRIX, CAST_AS_FRAME,
 		NOTSUPPORTED
 	}
@@ -224,7 +225,7 @@ public class Unary extends Lop
 
 		case SUBTRACT_NZ:
 			return "-nz";
-				
+		
 		case SUBTRACTRIGHT:
 			return "s-r";
 
@@ -244,7 +245,7 @@ public class Unary extends Lop
 			return "%%";
 			
 		case INTDIV:
-			return "%/%";	
+			return "%/%";
 			
 		case Over:
 			return "so";
@@ -253,7 +254,7 @@ public class Unary extends Lop
 			return "^";
 		
 		case POW2:
-			return "^2";	
+			return "^2";
 
 		case GREATER_THAN:
 			return ">";
@@ -312,15 +313,21 @@ public class Unary extends Lop
 		case SIGMOID:
 			return "sigmoid";
 		
-		case SELP:
-			return "sel+";
-		
 		case CAST_AS_MATRIX:
 			return UnaryCP.CAST_AS_MATRIX_OPCODE;
 
 		case CAST_AS_FRAME:
 			return UnaryCP.CAST_AS_FRAME_OPCODE;
-			
+		
+		case AND: return "&&";
+		case OR:  return "||";
+		case XOR: return "xor";
+		case BW_AND: return "bitwAnd";
+		case BW_OR:  return "bitwOr";
+		case BW_XOR: return "bitwXor";
+		case BW_SHIFTL: return "bitwShiftL";
+		case BW_SHIFTR: return "bitwShiftR";
+		
 		default:
 			throw new LopsException(
 					"Instruction not defined for Unary operation: " + op);

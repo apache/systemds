@@ -37,6 +37,7 @@ import scala.Tuple2;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
@@ -89,11 +90,11 @@ public class RemoteParForUtils
 		}
 	}
 
-	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars, OutputCollector<Writable, Writable> out ) 
+	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, OutputCollector<Writable, Writable> out ) 
 			throws DMLRuntimeException, IOException
 	{
 		exportResultVariables(workerID, vars, resultVars, null, out);
-	}	
+	}
 	
 	/**
 	 * For remote MR parfor workers.
@@ -106,7 +107,7 @@ public class RemoteParForUtils
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars, 
+	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, 
 			                                  HashMap<String,String> rvarFnames, OutputCollector<Writable, Writable> out ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -115,9 +116,9 @@ public class RemoteParForUtils
 		Text ovalue = new Text();
 		
 		//foreach result variables probe if export necessary
-		for( String rvar : resultVars )
+		for( ResultVar rvar : resultVars )
 		{
-			Data dat = vars.get( rvar );
+			Data dat = vars.get( rvar._name );
 			
 			//export output variable to HDFS (see RunMRJobs)
 			if ( dat != null && dat.getDataType() == DataType.MATRIX ) 
@@ -127,13 +128,13 @@ public class RemoteParForUtils
 				{
 					if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER && rvarFnames!=null )
 					{
-						String fname = rvarFnames.get( rvar );
+						String fname = rvarFnames.get( rvar._name );
 						if( fname!=null )
 							mo.setFileName( fname );
 							
 						//export result var (iff actually modified in parfor)
 						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)		
-						rvarFnames.put(rvar, mo.getFileName());	
+						rvarFnames.put(rvar._name, mo.getFileName());
 					}
 					else
 					{
@@ -143,7 +144,7 @@ public class RemoteParForUtils
 					
 					//pass output vars (scalars by value, matrix by ref) to result
 					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
-					String datStr = ProgramConverter.serializeDataObject(rvar, mo);
+					String datStr = ProgramConverter.serializeDataObject(rvar._name, mo);
 					ovalue.set( datStr );
 					out.collect( okey, ovalue );
 				}
@@ -161,31 +162,25 @@ public class RemoteParForUtils
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars) 
+	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars) 
 		throws DMLRuntimeException, IOException
 	{
 		ArrayList<String> ret = new ArrayList<>();
 		
 		//foreach result variables probe if export necessary
-		for( String rvar : resultVars )
-		{
-			Data dat = vars.get( rvar );
-			
+		for( ResultVar rvar : resultVars ) {
+			Data dat = vars.get( rvar._name );
 			//export output variable to HDFS (see RunMRJobs)
-			if ( dat != null && dat.getDataType() == DataType.MATRIX ) 
-			{
+			if ( dat != null && dat.getDataType() == DataType.MATRIX )  {
 				MatrixObject mo = (MatrixObject) dat;
-				if( mo.isDirty() )
-				{
+				if( mo.isDirty() ) {
 					//export result var (iff actually modified in parfor)
 					mo.exportData(); 
-					
-					
 					//pass output vars (scalars by value, matrix by ref) to result
 					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
-					ret.add( ProgramConverter.serializeDataObject(rvar, mo) );
+					ret.add( ProgramConverter.serializeDataObject(rvar._name, mo) );
 				}
-			}	
+			}
 		}
 		
 		return ret;

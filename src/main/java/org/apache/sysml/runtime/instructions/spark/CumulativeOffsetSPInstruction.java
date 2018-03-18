@@ -48,10 +48,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
 	private double _initValue = 0;
 
-	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init,
-			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CumsumOffset;
+	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, String opcode, String istr) {
+		super(SPType.CumsumOffset, op, in1, in2, out, opcode, istr);
 
 		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());
@@ -158,7 +156,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 				{
 					MatrixIndexes tmpix = new MatrixIndexes(rixOffset+i+2, ixIn.getColumnIndex());
 					MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
-					blkIn.sliceOperations(i, i, 0, blkIn.getNumColumns()-1, tmpblk);	
+					blkIn.slice(i, i, 0, blkIn.getNumColumns()-1, tmpblk);	
 					ret.add(new Tuple2<>(tmpix, tmpblk));
 				}
 			
@@ -190,7 +188,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			
 			//blockwise offset aggregation and prefix sum computation
 			MatrixBlock data2 = new MatrixBlock(dblkIn); //cp data
-			MatrixBlock fdata2 = data2.sliceOperations(0, 0, 0, data2.getNumColumns()-1, new MatrixBlock()); //1-based
+			MatrixBlock fdata2 = data2.slice(0, 0, 0, data2.getNumColumns()-1, new MatrixBlock()); //1-based
 			fdata2.binaryOperationsInPlace(_bop, oblkIn); //sum offset to first row
 			data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
 			data2.unaryOperations(_uop, blkOut); //compute columnwise prefix sums/prod/min/max

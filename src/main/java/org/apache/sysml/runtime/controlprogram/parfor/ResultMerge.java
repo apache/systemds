@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -26,8 +27,10 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -35,28 +38,31 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
  */
-public abstract class ResultMerge 
+public abstract class ResultMerge implements Serializable
 {
+	//note: this class needs to be serializable to ensure that all attributes of
+	//ResultMergeRemoteSparkWCompare are included in the task closure
+	private static final long serialVersionUID = 2620430969346516677L;
 	
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
-	
 	protected static final String NAME_SUFFIX = "_rm";
+	protected static final BinaryOperator PLUS = InstructionUtils.parseBinaryOperator("+");
 	
 	//inputs to result merge
 	protected MatrixObject   _output      = null;
 	protected MatrixObject[] _inputs      = null; 
 	protected String         _outputFName = null;
+	protected boolean        _isAccum     = false;
 	
-	protected ResultMerge( )
-	{
-		
+	protected ResultMerge( ) {
+		//do nothing
 	}
 	
-	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename )
-	{
+	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
+		_isAccum = accum;
 	}
 	
 	/**
@@ -90,11 +96,12 @@ public abstract class ResultMerge
 	 * @param appendOnly ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
-		throws DMLRuntimeException
-	{
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) throws DMLRuntimeException {
 		//pass through to matrix block operations
-		out.merge(in, appendOnly);	
+		if( _isAccum )
+			out.binaryOperationsInPlace(PLUS, in);
+		else
+			out.merge(in, appendOnly);
 	}
 
 	/**
@@ -106,7 +113,7 @@ public abstract class ResultMerge
 	 * @param compare ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
+	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, DenseBlock compare ) 
 		throws DMLRuntimeException
 	{
 		//Notes for result correctness:
@@ -114,52 +121,38 @@ public abstract class ResultMerge
 		//   (using sparse iterator would miss values set to 0) 
 		// * Explicit NaN awareness because for cases were original matrix contains
 		//   NaNs, since NaN != NaN, otherwise we would potentially overwrite results
+		// * For the case of accumulation, we add out += (new-old) to ensure correct results
+		//   because all inputs have the old values replicated
 		
-		if( in.isInSparseFormat() ) //sparse input format
-		{
+		if( in.isEmptyBlock(false) ) {
+			if( _isAccum ) return; //nothing to do
+			for( int i=0; i<in.getNumRows(); i++ )
+				for( int j=0; j<in.getNumColumns(); j++ )
+					if( compare.get(i, j) != 0 )
+						out.quickSetValue(i, j, 0);
+		}
+		else { //SPARSE/DENSE
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
 			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
-				{	
-				    double value = in.getValueSparseUnsafe(i,j);  //input value
-					if(   (value != compare[i][j] && !Double.isNaN(value) )     //for new values only (div)
-						|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
+				for( int j=0; j<cols; j++ ) {
+					double valOld = compare.get(i,j);
+					double valNew = in.quickGetValue(i,j); //input value
+					if( (valNew != valOld && !Double.isNaN(valNew) )      //for changed values 
+						|| Double.isNaN(valNew) != Double.isNaN(valOld) ) //NaN awareness 
 					{
-				    	out.quickSetValue( i, j, value );	
+						double value = !_isAccum ? valNew :
+							(out.quickGetValue(i, j) + (valNew - valOld));
+						out.quickSetValue(i, j, value);
 					}
 				}
 		}
-		else //dense input format
-		{
-			//for a merge this case will seldom happen, as each input MatrixObject
-			//has at most 1/numThreads of all values in it.
-			int rows = in.getNumRows();
-			int cols = in.getNumColumns();
-			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
-				{
-				    double value = in.getValueDenseUnsafe(i,j);  //input value
-				    if(    (value != compare[i][j] && !Double.isNaN(value) )    //for new values only (div)
-				    	|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
-				    {
-				    	out.quickSetValue( i, j, value );	
-				    }
-				}
-		}	
 	}
 
-	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in )
-	{
-		MatrixCharacteristics mc = out.getMatrixCharacteristics();
-		long outNNZ = mc.getNonZeros();	
-		long ret = outNNZ;
-		for( MatrixObject tmp : in ) {
-			MatrixCharacteristics tmpmc = tmp.getMatrixCharacteristics();
-			long inNNZ = tmpmc.getNonZeros();
-			ret +=  (inNNZ - outNNZ);
-		}
-		
-		return ret;
+	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in ) {
+		//sum of nnz of input (worker result) - output var existing nnz
+		long outNNZ = out.getMatrixCharacteristics().getNonZeros();
+		return outNNZ - in.size() * outNNZ + in.stream()
+			.mapToLong(m -> m.getMatrixCharacteristics().getNonZeros()).sum();
 	}
 }

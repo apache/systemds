@@ -644,7 +644,69 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	public void testVectorVectorGreaterEqualSparseDense() {
 		testVectorBinaryPrimitive(BinType.VECT_GREATEREQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
-	
+
+	@Test
+	public void testScalarVectorXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
+	}
+
+	@Test
+	public void testVectorScalarXorDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test
+	public void testVectorVectorXorDenseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test
+	public void testVectorScalarXorSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testScalarVectorXorSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorXorSparseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
+	}
+
+	//***************** Logical Bitwise Operators ********************//
+
+	@Test //1.
+	public void testVectorScalarBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.VECTOR_DENSE, InputType.SCALAR);
+	}
+
+	@Test //2.
+	public void testScalarVectorBitwAndDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND_SCALAR, InputType.SCALAR, InputType.VECTOR_DENSE);
+	}
+
+	@Test //3.
+	public void testVectorVectorBitwAndDenseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_DENSE, InputType.VECTOR_DENSE);
+	}
+
+	@Test //4.
+	public void testVectorScalarBitwAndSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test //5.
+	public void testScalarVectorBitwAndSparse() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test //6.
+	public void testVectorVectorBitwAndSparseDense() {
+		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{
@@ -662,12 +724,12 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			for( int i=0; i<m; i++ ) {
 				//execute vector primitive via reflection
 				Double ret1 = (Double) ((type1 == InputType.VECTOR_DENSE) ? 
-					me.invoke(null, in.getDenseBlock(), i*n, n) : 
+					me.invoke(null, in.getDenseBlockValues(), i*n, n) : 
 					me.invoke(null, in.getSparseBlock().values(i), in.getSparseBlock().indexes(i), 
 						in.getSparseBlock().pos(i), in.getSparseBlock().size(i), n));
 				
 				//execute comparison operation
-				MatrixBlock in2 = in.sliceOperations(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in2 = in.slice(i, i, 0, n-1, new MatrixBlock());
 				Double ret2 = -1d;
 				switch( aggtype ) {
 					case ROW_SUMS: ret2 = in2.sum(); break;
@@ -700,7 +762,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			for( int i=0; i<m; i++ ) {
 				//execute vector primitive via reflection
 				double[] ret1 = (double[]) ((type1 == InputType.VECTOR_DENSE) ? 
-					me.invoke(null, in.getDenseBlock(), i*n, n) : 
+					me.invoke(null, in.getDenseBlockValues(), i*n, n) : 
 					me.invoke(null, in.getSparseBlock().values(i), in.getSparseBlock().indexes(i), 
 						in.getSparseBlock().pos(i), in.getSparseBlock().size(i), n));
 				
@@ -708,7 +770,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				String opcode = utype.name().split("_")[1].toLowerCase();
 				UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 				double[] ret2 = DataConverter.convertToDoubleVector(((MatrixBlock)in
-					.sliceOperations(i, i, 0, n-1, new MatrixBlock())
+					.slice(i, i, 0, n-1, new MatrixBlock())
 					.unaryOperations(uop, new MatrixBlock())), false);
 				
 				//compare results
@@ -749,11 +811,11 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				//execute vector primitive via reflection
 				double[] ret1 = null;
 				if( type1==InputType.SCALAR && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.max(), inB.getDenseBlock(), i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.max(), inB.getDenseBlockValues(), i*n, n);
 				else if( type1==InputType.VECTOR_DENSE && type2==InputType.SCALAR )
-					ret1 = (double[]) me.invoke(null, inA.getDenseBlock(), inB.max(), i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.getDenseBlockValues(), inB.max(), i*n, n);
 				else if( type1==InputType.VECTOR_DENSE && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.getDenseBlock(), inB.getDenseBlock(), i*n, i*n, n);
+					ret1 = (double[]) me.invoke(null, inA.getDenseBlockValues(), inB.getDenseBlockValues(), i*n, i*n, n);
 				else if( type1==InputType.VECTOR_SPARSE && type2==InputType.SCALAR )
 					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.max(), inA.getSparseBlock().indexes(i), 
 						inA.getSparseBlock().pos(i), inA.getSparseBlock().size(i), n);
@@ -761,23 +823,23 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 					ret1 = (double[]) me.invoke(null, inA.max(), inB.getSparseBlock().values(i), 
 						inB.getSparseBlock().indexes(i), inB.getSparseBlock().pos(i), inB.getSparseBlock().size(i), n);
 				else if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_DENSE )
-					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.getDenseBlock(), 
+					ret1 = (double[]) me.invoke(null, inA.getSparseBlock().values(i), inB.getDenseBlockValues(), 
 						inA.getSparseBlock().indexes(i), inA.getSparseBlock().pos(i), i*n, inA.getSparseBlock().size(i), n);
 				
 				//execute comparison operation
 				String opcode = Hop.getBinaryOpCode(OpOp2.valueOf(bintype.name().split("_")[1]));
-				MatrixBlock in1 = inA.sliceOperations(i, i, 0, n-1, new MatrixBlock());
-				MatrixBlock in2 = inB.sliceOperations(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in1 = inA.slice(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in2 = inB.slice(i, i, 0, n-1, new MatrixBlock());
 				double[] ret2 = null;
 				if( type1 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, true);
-					bop.setConstant(inA.max());
+					bop = bop.setConstant(inA.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
 						in2.scalarOperations(bop, new MatrixBlock()), false);
 				}
 				else if( type2 == InputType.SCALAR ) {
 					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, false);
-					bop.setConstant(inB.max());
+					bop = bop.setConstant(inB.max());
 					ret2 = DataConverter.convertToDoubleVector((MatrixBlock)
 						in1.scalarOperations(bop, new MatrixBlock()), false);
 				}

@@ -197,8 +197,8 @@ public class SparkUtils
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
 	{
 		//compute degree of parallelism and block ranges
-		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.max(
-				mc.getRows(), mc.getRowsPerBlock()), Math.max(mc.getCols(), mc.getColsPerBlock()));
+		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.min(
+				Math.max(mc.getRows(),1), mc.getRowsPerBlock()), Math.min(Math.max(mc.getCols(),1), mc.getColsPerBlock()));
 		int par = (int) Math.min(Math.max(SparkExecutionContext.getDefaultParallelism(true),
 				Math.ceil(size/InfrastructureAnalyzer.getHDFSBlockSize())), mc.getNumBlocks());
 		long pNumBlocks = (long)Math.ceil((double)mc.getNumBlocks()/par);
@@ -231,6 +231,10 @@ public class SparkUtils
 				.reduce(new AggregateMatrixCharacteristics());
 		
 		return ret;
+	}
+	
+	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
+		return input.values().map(b -> b.getNonZeros()).reduce((a,b)->a+b);
 	}
 
 	private static class AnalyzeCellMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, MatrixCharacteristics> 

@@ -30,16 +30,17 @@ public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, //codegen specific
-		ROW_SUMS, ROW_MINS, ROW_MAXS, ROW_COUNTNNZS, //codegen specific
+		ROW_SUMS, ROW_SUMSQS, ROW_MINS, ROW_MAXS, ROW_COUNTNNZS, //codegen specific
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
 		VECT_SIN, VECT_COS, VECT_TAN, VECT_ASIN, VECT_ACOS, VECT_ATAN, 
 		VECT_SINH, VECT_COSH, VECT_TANH,
 		VECT_CUMSUM, VECT_CUMMIN, VECT_CUMMAX,
+		VECT_SPROP, VECT_SIGMOID,
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH,
-		SELP, SPROP, SIGMOID; 
+		SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
 			for( UnaryType ut : values()  )
@@ -51,6 +52,7 @@ public class CNodeUnary extends CNode
 		public String getTemplate(boolean sparse) {
 			switch( this ) {
 				case ROW_SUMS:
+				case ROW_SUMSQS:
 				case ROW_MINS:
 				case ROW_MAXS:
 				case ROW_COUNTNNZS: {
@@ -80,7 +82,9 @@ public class CNodeUnary extends CNode
 				case VECT_TANH:
 				case VECT_CUMSUM:
 				case VECT_CUMMIN:
-				case VECT_CUMMAX:{
+				case VECT_CUMMAX:
+				case VECT_SPROP:
+				case VECT_SIGMOID: {
 					String vectName = getVectorPrimitiveName();
 					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" : 
 									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
@@ -88,20 +92,20 @@ public class CNodeUnary extends CNode
 					
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
-			    case LOOKUP_R:
-			    	return sparse ?
-			    		"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
-			    		"    double %TMP% = getValue(%IN1%, rix);\n";
-			    case LOOKUP_C:
-			    	return "    double %TMP% = getValue(%IN1%, n, 0, cix);\n";
-			    case LOOKUP_RC:
-			    	return "    double %TMP% = getValue(%IN1%, n, rix, cix);\n";	
+				case LOOKUP_R:
+					return sparse ?
+						"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
+						"    double %TMP% = getValue(%IN1%, rix);\n";
+				case LOOKUP_C:
+					return "    double %TMP% = getValue(%IN1%, n, 0, cix);\n";
+				case LOOKUP_RC:
+					return "    double %TMP% = getValue(%IN1%, n, rix, cix);\n";
 				case LOOKUP0:
-					return "    double %TMP% = %IN1%[0];\n" ;
+					return "    double %TMP% = %IN1%[0];\n";
 				case POW2:
-					return "    double %TMP% = %IN1% * %IN1%;\n" ;
+					return "    double %TMP% = %IN1% * %IN1%;\n";
 				case MULT2:
-					return "    double %TMP% = %IN1% + %IN1%;\n" ;
+					return "    double %TMP% = %IN1% + %IN1%;\n";
 				case ABS:
 					return "    double %TMP% = Math.abs(%IN1%);\n";
 				case SIN:
@@ -134,8 +138,6 @@ public class CNodeUnary extends CNode
 					return "    double %TMP% = FastMath.ceil(%IN1%);\n";
 				case FLOOR:
 					return "    double %TMP% = FastMath.floor(%IN1%);\n";
-				case SELP:
-					return "    double %TMP% = (%IN1%>0) ? %IN1% : 0;\n";
 				case SPROP:
 					return "    double %TMP% = %IN1% * (1 - %IN1%);\n";
 				case SIGMOID:
@@ -156,8 +158,8 @@ public class CNodeUnary extends CNode
 				|| this == VECT_SIN || this == VECT_COS || this == VECT_TAN
 				|| this == VECT_ASIN || this == VECT_ACOS || this == VECT_ATAN
 				|| this == VECT_SINH || this == VECT_COSH || this == VECT_TANH
-				|| this == VECT_CUMSUM || this == VECT_CUMMIN
-				|| this == VECT_CUMMAX;
+				|| this == VECT_CUMSUM || this == VECT_CUMMIN || this == VECT_CUMMAX
+				|| this == VECT_SPROP || this == VECT_SIGMOID;
 		}
 		public UnaryType getVectorAddPrimitive() {
 			return UnaryType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
@@ -173,7 +175,7 @@ public class CNodeUnary extends CNode
 		public boolean isSparseSafeScalar() {
 			return ArrayUtils.contains(new UnaryType[]{
 				POW2, MULT2, ABS, ROUND, CEIL, FLOOR, SIGN, 
-				SIN, TAN, SELP, SPROP}, this);
+				SIN, TAN, SPROP}, this);
 		}
 	}
 	
@@ -214,10 +216,12 @@ public class CNodeUnary extends CNode
 		String varj = _inputs.get(0).getVarname();
 		
 		//replace sparse and dense inputs
+		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
-		tmp = tmp.replace("%IN1%", varj.startsWith("b") && !_type.isScalarLookup()
-			&& TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".values(rix)" : varj );
+		tmp = tmp.replace("%IN1%", 
+			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
+			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 
@@ -242,9 +246,10 @@ public class CNodeUnary extends CNode
 	@Override
 	public String toString() {
 		switch(_type) {
-			case ROW_SUMS:  return "u(R+)";
-			case ROW_MINS:  return "u(Rmin)";
-			case ROW_MAXS:  return "u(Rmax)";
+			case ROW_SUMS:   return "u(R+)";
+			case ROW_SUMSQS: return "u(Rsq+)";
+			case ROW_MINS:   return "u(Rmin)";
+			case ROW_MAXS:   return "u(Rmax)";
 			case ROW_COUNTNNZS: return "u(Rnnz)";
 			case VECT_EXP:
 			case VECT_POW2:
@@ -267,7 +272,9 @@ public class CNodeUnary extends CNode
 			case VECT_CUMSUM:
 			case VECT_CUMMIN:
 			case VECT_CUMMAX:
-			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
+			case VECT_SIGN:
+			case VECT_SIGMOID:
+			case VECT_SPROP:return "u(v"+_type.name().toLowerCase()+")";
 			case LOOKUP_R:  return "u(ixr)";
 			case LOOKUP_C:  return "u(ixc)";
 			case LOOKUP_RC: return "u(ixrc)";
@@ -302,12 +309,15 @@ public class CNodeUnary extends CNode
 			case VECT_CUMSUM:
 			case VECT_CUMMIN:
 			case VECT_CUMMAX:
+			case VECT_SPROP:
+			case VECT_SIGMOID:
 				_rows = _inputs.get(0)._rows;
 				_cols = _inputs.get(0)._cols;
 				_dataType= DataType.MATRIX;
 				break;
 			
 			case ROW_SUMS:
+			case ROW_SUMSQS:
 			case ROW_MINS:
 			case ROW_MAXS:
 			case ROW_COUNTNNZS:
@@ -334,7 +344,6 @@ public class CNodeUnary extends CNode
 			case ROUND:
 			case CEIL:
 			case FLOOR:
-			case SELP:
 			case SPROP:
 			case SIGMOID:
 			case LOG_NZ:

@@ -27,11 +27,11 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class PMMJCPInstruction extends ComputationCPInstruction {
 
-	private int _numThreads = -1;
+	private final int _numThreads;
 
 	private PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int k,
 			String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
+		super(CPType.AggregateBinary, op, in1, in2, in3, out, opcode, istr);
 		_numThreads = k;
 	}
 

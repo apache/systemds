@@ -59,7 +59,9 @@ public class PlanAnalyzer
 			HashSet<Long> Pnpc = getNodesWithNonPartitionConsumers(R, partition, memo);
 			InterestingPoint[] Mext = !ext ? null : 
 				getMaterializationPointsExt(R, partition, M, memo);
-			ret.add(new PlanPartition(partition, R, I, Pnpc, M, Mext));
+			boolean hasOuter = partition.stream()
+				.anyMatch(k -> memo.contains(k, TemplateType.OUTER));
+			ret.add(new PlanPartition(partition, R, I, Pnpc, M, Mext, hasOuter));
 		}
 		
 		return ret;

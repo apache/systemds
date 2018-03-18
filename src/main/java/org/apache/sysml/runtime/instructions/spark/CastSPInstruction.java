@@ -40,8 +40,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class CastSPInstruction extends UnarySPInstruction {
 
 	private CastSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Cast;
+		super(SPType.Cast, op, in, out, opcode, istr);
 	}
 
 	public static CastSPInstruction parseInstruction ( String str ) 

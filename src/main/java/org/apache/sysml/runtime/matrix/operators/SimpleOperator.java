@@ -27,10 +27,9 @@ import org.apache.sysml.runtime.functionobjects.FunctionObject;
  */
 public class SimpleOperator extends Operator 
 {
-
 	private static final long serialVersionUID = 625147299273287379L;
 
-	public FunctionObject fn;
+	public final FunctionObject fn;
 	
 	public SimpleOperator ( FunctionObject f ) {
 		fn = f;

@@ -160,6 +160,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryCumulativeOp(hop, hi, i);   //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if dims(in)==dims(out); r(X)->X, if 1x1 dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
+			hi = removeUnnecessaryIfElseOperation(hop, hi, i);//e.g., ifelse(E, A, B) -> A, if E==TRUE or nnz(E)==length(E)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
@@ -432,8 +433,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			else if(HopRewriteUtils.isValidOuterBinaryOp(bop) 
 				&& HopRewriteUtils.isMatrixMultiply(left)
 				&& HopRewriteUtils.isDataGenOpWithConstantValue(left.getInput().get(1), 1)
-				&& left.getInput().get(0).getDim2() == 1 //column vector 
-				&& left.getDim1() != 1 && right.getDim1() == 1 ) //outer vector product 
+				&& (left.getInput().get(0).getDim2() == 1 //outer product
+					|| left.getInput().get(1).getDim1() == 1)
+				&& left.getDim1() != 1 && right.getDim1() == 1 ) //outer vector binary 
 			{
 				Hop hnew = HopRewriteUtils.createBinary(left.getInput().get(0), right, bop, true);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
@@ -442,6 +444,48 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = hnew;
 				LOG.debug("Applied removeUnnecessaryOuterProduct3 (line "+right.getBeginLine()+")");
 			}
+		}
+		
+		return hi;
+	}
+	
+	private static Hop removeUnnecessaryIfElseOperation(Hop parent, Hop hi, int pos) throws HopsException
+	{
+		if( !HopRewriteUtils.isTernary(hi, OpOp3.IFELSE) )
+			return hi;
+		
+		Hop expr = hi.getInput().get(0);
+		Hop first = hi.getInput().get(1);
+		Hop second = hi.getInput().get(2);
+		boolean applied = false;
+		
+		//pattern 1: ifelse(TRUE/FALSE, A, B) -> A/B (constant scalar predicate)
+		if( expr instanceof LiteralOp ) {
+			Hop hnew = ((LiteralOp)expr).getBooleanValue() ? first : second;
+			if( HopRewriteUtils.isEqualSize(hnew, hi) ) {
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos );
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied removeUnnecessaryIfElse1 (line "+hi.getBeginLine()+")");
+				hi = hnew; applied = true;
+			}
+		}
+		//pattern 2: ifelse(E, A, B) -> A/B if nnz(E)==length(E) or nnz(E)==0 (constant matrix predicate)
+		if( !applied && expr.getNnz()==expr.getLength() || expr.getNnz()==0 ) {
+			Hop hnew = expr.getNnz()==0 ? second : first;
+			if( HopRewriteUtils.isEqualSize(hnew, hi) ) {
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos );
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				LOG.debug("Applied removeUnnecessaryIfElse2 (line "+hi.getBeginLine()+")");
+				hi = hnew; applied = true;
+			}
+		}
+		//pattern 3: ifelse(E, A, A) -> A (same input)
+		if( !applied && first == second  //dep CSE
+			&& HopRewriteUtils.isEqualSize(first, hi) ){
+			HopRewriteUtils.replaceChildReference(parent, hi, first, pos );
+			HopRewriteUtils.cleanupUnreferenced(hi);
+			LOG.debug("Applied removeUnnecessaryIfElse3 (line "+hi.getBeginLine()+")");
+			hi = first;
 		}
 		
 		return hi;
@@ -723,27 +767,25 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			AggUnaryOp uhi = (AggUnaryOp)hi;
 			Hop input = uhi.getInput().get(0);
 			
-			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_EMPTY_AGGREGATE) ){		
+			//check for valid empty aggregates, except for matrices with zero rows/cols
+			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_EMPTY_AGGREGATE) 
+				&& HopRewriteUtils.isEmpty(input)
+				&& input.getDim1()>=1 && input.getDim2() >= 1 )
+			{
+				Hop hnew = null;
+				if( uhi.getDirection() == Direction.RowCol ) 
+					hnew = new LiteralOp(0.0);
+				else if( uhi.getDirection() == Direction.Col ) 
+					hnew = HopRewriteUtils.createDataGenOp(uhi, input, 0); //nrow(uhi)=1
+				else //if( uhi.getDirection() == Direction.Row ) 
+					hnew = HopRewriteUtils.createDataGenOp(input, uhi, 0); //ncol(uhi)=1
 				
-				if( HopRewriteUtils.isEmpty(input) )
-				{
-					Hop hnew = null;
-					if( uhi.getDirection() == Direction.RowCol ) 
-						hnew = new LiteralOp(0.0);
-					else if( uhi.getDirection() == Direction.Col ) 
-						hnew = HopRewriteUtils.createDataGenOp(uhi, input, 0); //nrow(uhi)=1
-					else //if( uhi.getDirection() == Direction.Row ) 
-						hnew = HopRewriteUtils.createDataGenOp(input, uhi, 0); //ncol(uhi)=1
-					
-					//add new child to parent input
-					HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
-					hi = hnew;
-					
-					LOG.debug("Applied simplifyEmptyAggregate");
-				}
-			}			
+				//add new child to parent input
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+				hi = hnew;
+				LOG.debug("Applied simplifyEmptyAggregate");
+			}
 		}
-		
 		return hi;
 	}
 	
@@ -954,8 +996,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( left instanceof ReorgOp && ((ReorgOp)left).getOp()==ReOrgOp.DIAG //left diag
 				&& HopRewriteUtils.isDimsKnown(left) && left.getDim2()>1 ) //diagV2M
 			{
-				//System.out.println("diag mm rewrite: dim2(right)="+right.getDim2());
-				
 				if( right.getDim2()==1 ) //right column vector
 				{
 					//create binary operation over input and right
@@ -1811,18 +1851,15 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			Hop V = hi.getInput().get(1).getInput().get(1);
 			
 			//for this basic pattern, we're more conservative and only apply wdivmm if
-			//the factors are not known to be sparse
-			if( !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V) ) {
-				if( !HopRewriteUtils.isTransposeOperation(V) )
-					V = HopRewriteUtils.createTranspose(V);
-				else 
-					V = V.getInput().get(0);
-				
+			//W is sparse and U/V unknown or dense; or if U/V are dense
+			if( (HopRewriteUtils.isSparse(W) && !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V))
+				|| (HopRewriteUtils.isDense(U) && HopRewriteUtils.isDense(V)) ) {
+				V = !HopRewriteUtils.isTransposeOperation(V) ?
+					HopRewriteUtils.createTranspose(V) : V.getInput().get(0);
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-						  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
+					OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
 				hnew.setOutputBlocksizes(W.getRowsInBlock(), W.getColsInBlock());
 				hnew.refreshSizeInformation();
-				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");
 			}
@@ -2173,7 +2210,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop fuseAxpyBinaryOperationChain(Hop parent, Hop hi, int pos) 
 	{
-		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY		
+		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY
 		if( hi instanceof BinaryOp && !((BinaryOp) hi).isOuterVectorOperator()
 			&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) )
 		{
@@ -2185,6 +2222,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//pattern (a) X + s*Y -> X +* sY
 			if( bop.getOp() == OpOp2.PLUS && left.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& HopRewriteUtils.isEqualSize(left, right)
 				&& right.getParent().size() == 1 )           //single consumer s*Y
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
@@ -2196,18 +2234,19 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//pattern (b) s*Y + X -> X +* sY
 			else if( bop.getOp() == OpOp2.PLUS && right.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(left)
-				&& left.getParent().size() == 1              //single consumer s*Y
-				&& HopRewriteUtils.isEqualSize(left, right)) //correctness matrix-vector
+				&& HopRewriteUtils.isEqualSize(left, right)
+				&& left.getParent().size() == 1 )            //single consumer s*Y
 			{
 				Hop smid = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
 				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
 						right : HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
-				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");	
+				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");
 			}
 			//pattern (c) X - s*Y -> X -* sY
 			else if( bop.getOp() == OpOp2.MINUS && left.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& HopRewriteUtils.isEqualSize(left, right)
 				&& right.getParent().size() == 1 )           //single consumer s*Y
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
@@ -2512,7 +2551,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//even if the intermediate is otherwise not required, e.g., when part of a fused operator)
 		if( hi instanceof UnaryOp ) 
 		{
-			if( ((UnaryOp)hi).getOp()==OpOp1.NROW && hi.getInput().get(0).getDim1()>0 ) {
+			if( ((UnaryOp)hi).getOp()==OpOp1.NROW && hi.getInput().get(0).rowsKnown() ) {
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim1());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);
@@ -2520,7 +2559,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					+ hnew.getName()+" (line "+hi.getBeginLine()+").");
 				hi = hnew;
 			}
-			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).getDim2()>0 ) {
+			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).colsKnown() ) {
 				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim2());
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
 				HopRewriteUtils.cleanupUnreferenced(hi);
@@ -2539,15 +2578,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 
 		if(    hi instanceof TernaryOp && hi.getInput().size()==5 //table without weights 
-			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(2), 1) //i.e., weight of 1
-			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp)
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(2), 1) ) //i.e., weight of 1
 		{
 			Hop first = hi.getInput().get(0);
 			Hop second = hi.getInput().get(1);
 			
 			//pattern a: table(seq(1,nrow(v)), v, nrow(v), m, 1)
-			if( HopRewriteUtils.isBasic1NSequence(first, second, true) && second.dimsKnown() 
-				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), second.getDim1()) )
+			if( HopRewriteUtils.isBasic1NSequence(first, second, true) 
+				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(3), second, true) )
 			{
 				//setup input parameter hops
 				HashMap<String,Hop> args = new HashMap<>();
@@ -2567,8 +2605,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				LOG.debug("Applied simplifyTableSeqExpand1 (line "+hi.getBeginLine()+")");	
 			}
 			//pattern b: table(v, seq(1,nrow(v)), m, nrow(v))
-			else if( HopRewriteUtils.isBasic1NSequence(second, first, true) && first.dimsKnown() 
-				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(4), first.getDim1()) )
+			else if( HopRewriteUtils.isBasic1NSequence(second, first, true)
+				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(4), first, true) )
 			{
 				//setup input parameter hops
 				HashMap<String,Hop> args = new HashMap<>();

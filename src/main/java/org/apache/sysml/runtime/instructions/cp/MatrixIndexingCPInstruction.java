@@ -67,7 +67,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				//execute right indexing operation (with shallow row copies for range
 				//of entire sparse rows, which is safe due to copy on update)
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-				resultBlock = matBlock.sliceOperations((int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				resultBlock = matBlock.slice((int)ixrange.rowStart, (int)ixrange.rowEnd, 
 					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
 				
 				//unpin rhs input
@@ -75,7 +75,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				
 				//ensure correct sparse/dense output representation
 				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
-					resultBlock.examSparsity(getExtendedOpcode());
+					resultBlock.examSparsity();
 			}
 			
 			//unpin output
@@ -85,8 +85,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))
 		{
 			UpdateType updateType = mo.getUpdateType();
-			if(DMLScript.STATISTICS)
-			{
+			if(DMLScript.STATISTICS) {
 				if( updateType.isInPlace() )
 					Statistics.incrementTotalLixUIP();
 				Statistics.incrementTotalLix();
@@ -95,19 +94,17 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 			MatrixBlock resultBlock = null;
 			
-			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
-			{
+			if(input2.getDataType() == DataType.MATRIX) { //MATRIX<-MATRIX
 				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
-				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType, getExtendedOpcode());
+				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType);
 				ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 			}
-			else //MATRIX<-SCALAR 
-			{
+			else { //MATRIX<-SCALAR 
 				if(!ixrange.isScalar())
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, 
-						(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), updateType);
+					(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), updateType);
 			}
 
 			//unpin lhs input
@@ -115,7 +112,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			
 			//ensure correct sparse/dense output representation
 			//(memory guarded by release of input)
-			resultBlock.examSparsity(getExtendedOpcode());
+			resultBlock.examSparsity();
 			
 			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock, updateType, getExtendedOpcode());

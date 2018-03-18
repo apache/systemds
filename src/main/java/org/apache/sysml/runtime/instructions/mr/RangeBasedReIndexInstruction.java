@@ -42,8 +42,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 
 	private RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, boolean forleft, long rlen,
 			long clen, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.RightIndex;
+		super(MRType.RightIndex, op, in, out);
 		instString = istr;
 		_ixrange = rng;
 		_forLeft = forleft;

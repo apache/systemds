@@ -55,18 +55,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
 
-	private int arity;
-	protected HashMap<String, String> params;
+	protected final HashMap<String, String> params;
 
 	protected ParameterizedBuiltinCPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr) {
-		super(op, null, null, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.ParameterizedBuiltin;
+		super(CPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
-	}
-
-	public int getArity() {
-		return arity;
 	}
 	
 	public HashMap<String,String> getParameterMap() { 
@@ -203,19 +197,17 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 		}
 		else if ( opcode.equalsIgnoreCase("rmempty") ) {
+			String margin = params.get("margin");
+			if( !(margin.equals("rows") || margin.equals("cols")) )
+				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
+			
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
 			MatrixBlock select = params.containsKey("select")? ec.getMatrixInput(params.get("select"), getExtendedOpcode()):null;
 			
 			// compute the result
-			String margin = params.get("margin");
-			MatrixBlock soresBlock = null;
-			if( margin.equals("rows") )
-				soresBlock = target.removeEmptyOperations(new MatrixBlock(), true, select);
-			else if( margin.equals("cols") ) 
-				soresBlock = target.removeEmptyOperations(new MatrixBlock(), false, select);
-			else
-				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
+			MatrixBlock soresBlock = target.removeEmptyOperations(new MatrixBlock(),
+				margin.equals("rows"), margin.equals("empty.return"), select);
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());

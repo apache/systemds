@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -31,57 +32,45 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
  */
 public class ParForBody 
 {
-
-	
-	private ArrayList<String>       _resultVarNames;
+	private ArrayList<ResultVar>    _resultVars;
 	private ArrayList<ProgramBlock> _childBlocks;
-	private ExecutionContext 		_ec;
+	private ExecutionContext        _ec;
 	
-	public ParForBody()
-	{
-		
-	}
+	public ParForBody() {}
 
 	public ParForBody( ArrayList<ProgramBlock> childBlocks, 
-			ArrayList<String> resultVarNames, ExecutionContext ec ) 
+			ArrayList<ResultVar> resultVars, ExecutionContext ec ) 
 	{
-		_resultVarNames = resultVarNames;
-		_childBlocks    = childBlocks;
-		_ec             = ec;
+		_resultVars  = resultVars;
+		_childBlocks = childBlocks;
+		_ec          = ec;
 	}
 
-	public LocalVariableMap getVariables() 
-	{
+	public LocalVariableMap getVariables() {
 		return _ec.getVariables();
 	}
 
-	public ArrayList<String> getResultVarNames() 
-	{
-		return _resultVarNames;
+	public ArrayList<ResultVar> getResultVariables() {
+		return _resultVars;
 	}
 
-	public void setResultVarNames(ArrayList<String> resultVarNames) 
-	{
-		_resultVarNames = resultVarNames;
+	public void setResultVariables(ArrayList<ResultVar> resultVars) {
+		_resultVars = resultVars;
 	}
 
-	public ArrayList<ProgramBlock> getChildBlocks() 
-	{
+	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
 	}
 
-	public void setChildBlocks(ArrayList<ProgramBlock> childBlocks) 
-	{
+	public void setChildBlocks(ArrayList<ProgramBlock> childBlocks) {
 		_childBlocks = childBlocks;
 	}
 
-	public ExecutionContext getEc() 
-	{
+	public ExecutionContext getEc() {
 		return _ec;
 	}
 
-	public void setEc(ExecutionContext ec) 
-	{
+	public void setEc(ExecutionContext ec) {
 		_ec = ec;
 	}
 }

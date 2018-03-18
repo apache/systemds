@@ -37,12 +37,9 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class BinaryMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private VectorType _vectorType = null;
 
-	private BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out,
-			String istr) {
-		super(op, in1, in2, out);
-		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
+	private BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out, String istr) {
+		super(MRType.Binary, op, in1, in2, out);
 		instString = istr;
-
 		_vectorType = vtype;
 	}
 

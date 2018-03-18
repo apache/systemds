@@ -52,7 +52,7 @@ import org.apache.sysml.parser.Expression.DataType;
 public class IPAPassRemoveConstantBinaryOps extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.REMOVE_CONSTANT_BINARY_OPS;
 	}
 	
@@ -79,7 +79,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 			if( !(sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
 				  || sb instanceof ForStatementBlock) )
 			{
-				collectMatrixOfOnes(sb.get_hops(), mOnes);
+				collectMatrixOfOnes(sb.getHops(), mOnes);
 			}
 		}
 	}
@@ -128,9 +128,9 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 		}
 		else
 		{
-			if( sb.get_hops() != null ){
-				Hop.resetVisitStatus(sb.get_hops());
-				for( Hop hop : sb.get_hops() )
+			if( sb.getHops() != null ){
+				Hop.resetVisitStatus(sb.getHops());
+				for( Hop hop : sb.getHops() )
 					rRemoveConstantBinaryOp(hop, mOnes);
 			}
 		}

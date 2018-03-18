@@ -32,7 +32,7 @@ public class ReblockInstruction extends UnaryMRInstructionBase {
 	public boolean outputEmptyBlocks;
 
 	protected ReblockInstruction(Operator op, byte in, byte out, int br, int bc, boolean emptyBlocks, String istr) {
-		super(op, in, out);
+		super(MRType.Reblock, op, in, out);
 		brlen = br;
 		bclen = bc;
 		outputEmptyBlocks = emptyBlocks;

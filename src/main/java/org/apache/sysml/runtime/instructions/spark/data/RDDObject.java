@@ -32,8 +32,8 @@ public class RDDObject extends LineageObject
 	private boolean _parRDD = false;       //is a parallelized rdd at driver
 	private boolean _pending = true;       //is a pending rdd operation
 	
-	public RDDObject( JavaPairRDD<?,?> rddvar, String varName) {
-		super(varName);
+	public RDDObject( JavaPairRDD<?,?> rddvar) {
+		super();
 		_rddHandle = rddvar;
 	}
 

@@ -32,7 +32,7 @@ P = matrix(0.7, 600, 2);
 
 Q = P[,1:1] * (X %*% ssX_V);
 Y = X + 2;
-Y = printAndAssign(X);
+Y2 = printAndAssign(X);
 R = t(X) %*% (Q - P[,1:1] * rowSums(Q));
 
 write(R, $1);

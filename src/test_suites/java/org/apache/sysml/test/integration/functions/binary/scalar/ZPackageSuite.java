@@ -40,7 +40,8 @@ import org.junit.runners.Suite;
 	MultiplicationTest.class,
 	OrTest.class,
 	PowerTest.class,
-	SubtractionTest.class
+	SubtractionTest.class,
+	XorTest.class,
 })
 
 

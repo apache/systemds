@@ -21,7 +21,6 @@
 package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
-import java.util.stream.LongStream;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -69,8 +68,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				long blockColNumber = Long.parseLong(params[1]);
 				int blockRowSize = Integer.parseInt(params[2]);
 				int blockColSize = Integer.parseInt(params[3]);
-				long blockNNZ = Integer.parseInt(params[4]);
-				long seed=Long.parseLong(params[5]);
+				long seed=Long.parseLong(params[4]);
 				double minValue = randInst.getMinValue();
 				double maxValue = randInst.getMaxValue();
 				double sparsity = randInst.getSparsity();
@@ -81,10 +79,10 @@ implements Mapper<Writable, Writable, Writable, Writable>
 					indexes[i].setIndexes(blockRowNumber, blockColNumber);
 					
 					RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-																		pdf, blockRowSize, blockColSize, blockRowSize, blockColSize,   
-																		sparsity, minValue, maxValue, randInst.getPdfParams() );
+						pdf, blockRowSize, blockColSize, blockRowSize, blockColSize,
+						sparsity, minValue, maxValue, randInst.getPdfParams() );
 
-					block[i].randOperationsInPlace(rgen, LongStream.of(blockNNZ), null, seed); 
+					block[i].randOperationsInPlace(rgen, null, seed); 
 				} 
 				catch(DMLRuntimeException e) {
 					throw new IOException(e);

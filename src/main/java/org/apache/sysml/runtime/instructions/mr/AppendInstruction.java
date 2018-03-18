@@ -31,9 +31,8 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 	protected boolean _cbind = true;
 
 	protected AppendInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr) {
-		super(op, in1, in2, out);
+		super(MRType.Append, op, in1, in2, out);
 		instString = istr;
-		mrtype = MRINSTRUCTION_TYPE.Append;
 		_cbind = cbind;
 	}
 

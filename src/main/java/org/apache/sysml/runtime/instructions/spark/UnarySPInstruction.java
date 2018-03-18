@@ -26,18 +26,16 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class UnarySPInstruction extends ComputationSPInstruction {
 
-	protected UnarySPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		this(op, in, null, null, out, opcode, instr);
+	protected UnarySPInstruction(SPType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		this(type, op, in, null, null, out, opcode, instr);
 	}
 
-	protected UnarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String instr) {
-		this(op, in1, in2, null, out, opcode, instr);
+	protected UnarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String instr) {
+		this(type, op, in1, in2, null, out, opcode, instr);
 	}
 
-	protected UnarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
-			String instr) {
-		super(op, in1, in2, in3, out, opcode, instr);
+	protected UnarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String instr) {
+		super(type, op, in1, in2, in3, out, opcode, instr);
 	}
 
 	static String parseUnaryInstruction(String instr, CPOperand in,

@@ -194,7 +194,7 @@ public abstract class ColGroupDDC extends ColGroupValue
 	}
 	
 	protected void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru) {
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		int ncol = getNumCols();
 		
 		for( int i=rl; i<ru; i++ )

@@ -22,12 +22,15 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 
@@ -40,6 +43,11 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 {
 	private ProgramRewriter rewriter = new ProgramRewriter(
 		new RewriteCommonSubexpressionElimination(true));
+	
+	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, 
@@ -64,10 +72,18 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 				StatementBlock sb2 = tmpList.get(i+1);
 				if( HopRewriteUtils.isLastLevelStatementBlock(sb1) 
 					&& HopRewriteUtils.isLastLevelStatementBlock(sb2) 
-					&& !hasFunctionOpRoot(sb1) && !sb1.isSplitDag() && !sb2.isSplitDag() ) 
+					&& !sb1.isSplitDag() && !sb2.isSplitDag()
+					&& !(hasExternalFunctionOpRootWithSideEffect(sb1) 
+						&& hasExternalFunctionOpRootWithSideEffect(sb2))
+					&& (!hasFunctionOpRoot(sb1) || !hasFunctionIOConflict(sb1,sb2))
+					&& (!hasFunctionOpRoot(sb2) || !hasFunctionIOConflict(sb2,sb1)) )
 				{
-					ArrayList<Hop> sb1Hops = sb1.get_hops();
-					ArrayList<Hop> sb2Hops = sb2.get_hops();
+					//note: we intend to merge sb1 into sb2 to connect data dependencies
+					//however, we work with a temporary list of root nodes to preserve
+					//the original order of roots, which affects prints w/o dependencies
+					ArrayList<Hop> sb1Hops = sb1.getHops();
+					ArrayList<Hop> sb2Hops = sb2.getHops();
+					ArrayList<Hop> newHops = new ArrayList<>();
 					
 					//determine transient read inputs s2 
 					Hop.resetVisitStatus(sb2Hops);
@@ -92,23 +108,27 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 							//add transient write if necessary
 							if( !twrites.containsKey(root.getName()) 
 								&& sb2.liveOut().containsVariable(root.getName()) ) {
-								sb2Hops.add(HopRewriteUtils.createDataOp(
+								newHops.add(HopRewriteUtils.createDataOp(
 									root.getName(), in, DataOpTypes.TRANSIENTWRITE));
 							}
 						}
 						//add remaining roots from s1 to s2
 						else if( !(HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
 							&& (twrites.containsKey(root.getName()) || !sb2.liveOut().containsVariable(root.getName()))) ) {
-							sb2Hops.add(root);
+							newHops.add(root);
 						}
 					}
 					//clear partial hops from the merged statement block to avoid problems with 
 					//other statement block rewrites that iterate over the original program
 					sb1Hops.clear();
 					
+					//append all root nodes of s2 after root nodes of s1
+					newHops.addAll(sb2Hops);
+					sb2.setHops(newHops);
+					
 					//run common-subexpression elimination
-					Hop.resetVisitStatus(sb2Hops);
-					rewriter.rewriteHopDAG(sb2Hops, new ProgramRewriteStatus());
+					Hop.resetVisitStatus(sb2.getHops());
+					rewriter.rewriteHopDAG(sb2.getHops(), new ProgramRewriteStatus());
 					
 					//modify live variable sets of s2
 					sb2.setLiveIn(sb1.liveIn()); //liveOut remains unchanged
@@ -156,11 +176,46 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 	
 	private static boolean hasFunctionOpRoot(StatementBlock sb) 
 			throws HopsException {
-		if( sb == null || sb.get_hops() == null )
+		if( sb == null || sb.getHops() == null )
 			return false;
 		boolean ret = false;
-		for( Hop root : sb.get_hops() )
+		for( Hop root : sb.getHops() )
 			ret |= (root instanceof FunctionOp);
 		return ret;
+	}
+	
+	private static boolean hasExternalFunctionOpRootWithSideEffect(StatementBlock sb) 
+			throws HopsException {
+		if( sb == null || sb.getHops() == null )
+			return false;
+		for( Hop root : sb.getHops() )
+			if( root instanceof FunctionOp ) {
+				FunctionStatementBlock fsb = sb.getDMLProg()
+					.getFunctionStatementBlock(((FunctionOp)root).getFunctionKey());
+				//note: in case of builtin multi-return functions such as qr (namespace _internal), 
+				//there is no function statement block and hence we need to check for null
+				if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement
+					&& ((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects() )
+					return true; 
+			}
+		return false;
+	}
+	
+	private static boolean hasFunctionIOConflict(StatementBlock sb1, StatementBlock sb2) 
+		throws HopsException 
+	{
+		//semantics: a function op root in sb1 conflicts with sb2 if this function op writes
+		//to a variable that is read or written by sb2, where the write might be either
+		//a traditional transient write or another function op.
+		
+		//collect all function output variables of sb1
+		HashSet<String> outSb1 = new HashSet<>();
+		for( Hop root : sb1.getHops() )
+			if( root instanceof FunctionOp )
+				outSb1.addAll(Arrays.asList(((FunctionOp)root).getOutputVariableNames()));
+		
+		//check all output variables against read/updated sets
+		return sb2.variablesRead().containsAnyName(outSb1)
+			|| sb2.variablesUpdated().containsAnyName(outSb1);
 	}
 }

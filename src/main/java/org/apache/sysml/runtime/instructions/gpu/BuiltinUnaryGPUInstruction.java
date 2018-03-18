@@ -23,12 +23,9 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 	int _arity;
@@ -56,21 +53,10 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = null;
-		ValueFunction func = null;
 		
 		//print or stop or cumulative aggregates
-		if( parts.length==4 ) 
-		{
-			opcode = parts[0];
-			in.split(parts[1]);
-			out.split(parts[2]);
-			func = Builtin.getBuiltinFnObject(opcode);
-			
+		if( parts.length==4 ) {
 			throw new DMLRuntimeException("The instruction is not supported on GPU:" + str);
-//			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucummin","ucummax"}).contains(opcode) )
-//				return new MatrixBuiltinCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
-//			else
-//				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 		}
 		else //2+1, general case
 		{
@@ -78,13 +64,11 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 			opcode = parts[0];
 			in.split(parts[1]);
 			out.split(parts[2]);
-			func = Builtin.getBuiltinFnObject(opcode);
 			
 			if(in.getDataType() == DataType.SCALAR)
 				throw new DMLRuntimeException("The instruction is not supported on GPU:" + str);
-//				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 			else if(in.getDataType() == DataType.MATRIX)
-				return new MatrixBuiltinGPUInstruction(new UnaryOperator(func), in, out, opcode, str);
+				return new MatrixBuiltinGPUInstruction(null, in, out, opcode, str);
 		}
 		
 		return null;

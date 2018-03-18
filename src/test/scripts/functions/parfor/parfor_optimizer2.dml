@@ -119,9 +119,9 @@ parfor( i in 1:s1size, check=0, opt=RULEBASED) {
                 }
                 basestats[7,pairID] = dummy*eta;
                 basestats[8,pairID] = dummy*f;
-                cat_counts[,pairID] = counts;
-                cat_means[,pairID] = means;
-                cat_vars[,pairID] = vars; 
+                cat_counts[1:nrow(counts),pairID] = counts;
+                cat_means[1:nrow(means),pairID] = means;
+                cat_vars[1:nrow(vars),pairID] = vars;
             }
             else {
                 # nominal-ordinal or ordinal-nominal

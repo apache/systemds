@@ -33,8 +33,7 @@ public abstract class AppendMSPInstruction extends BinarySPInstruction {
 
 	protected AppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out,
 			boolean cbind, String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MAppend;
+		super(SPType.MAppend, op, in1, in2, out, opcode, istr);
 		_offset = offset;
 		_cbind = cbind;
 	}

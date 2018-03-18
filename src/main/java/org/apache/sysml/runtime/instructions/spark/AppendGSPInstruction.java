@@ -47,8 +47,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 
 	private AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand offset2,
 			CPOperand out, boolean cbind, String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.GAppend;
+		super(SPType.GAppend, op, in1, in2, out, opcode, istr);
 		_cbind = cbind;
 	}
 
@@ -198,11 +197,11 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				}
 				else {
 					// Since merge requires the dimensions matching, shifting = slicing + left indexing
-					MatrixBlock firstSlicedBlk = in.sliceOperations(0, in.getNumRows()-1, 0, cutAt-1, new MatrixBlock());
+					MatrixBlock firstSlicedBlk = in.slice(0, in.getNumRows()-1, 0, cutAt-1, new MatrixBlock());
 					MatrixBlock firstBlk = new MatrixBlock(in.getNumRows(), lblen1, true);
 					firstBlk = firstBlk.leftIndexingOperations(firstSlicedBlk, 0, in.getNumRows()-1, _shiftBy, _blen-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					
-					MatrixBlock secondSlicedBlk = in.sliceOperations(0, in.getNumRows()-1, cutAt, in.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock secondSlicedBlk = in.slice(0, in.getNumRows()-1, cutAt, in.getNumColumns()-1, new MatrixBlock());
 					int llen2 = UtilFunctions.computeBlockSize(_outlen, secondIndex.getColumnIndex(), _blen);
 					MatrixBlock secondBlk = new MatrixBlock(in.getNumRows(), llen2, true);
 					secondBlk = secondBlk.leftIndexingOperations(secondSlicedBlk, 0, in.getNumRows()-1, 0, secondSlicedBlk.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
@@ -224,11 +223,11 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				}
 				else {
 					// Since merge requires the dimensions matching, shifting = slicing + left indexing
-					MatrixBlock firstSlicedBlk = in.sliceOperations(0, cutAt-1, 0, in.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock firstSlicedBlk = in.slice(0, cutAt-1, 0, in.getNumColumns()-1, new MatrixBlock());
 					MatrixBlock firstBlk = new MatrixBlock(lblen1, in.getNumColumns(), true);
 					firstBlk = firstBlk.leftIndexingOperations(firstSlicedBlk, _shiftBy, _blen-1, 0, in.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					
-					MatrixBlock secondSlicedBlk = in.sliceOperations(cutAt, in.getNumRows()-1, 0, in.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock secondSlicedBlk = in.slice(cutAt, in.getNumRows()-1, 0, in.getNumColumns()-1, new MatrixBlock());
 					int lblen2 = UtilFunctions.computeBlockSize(_outlen, secondIndex.getRowIndex(), _blen);
 					MatrixBlock secondBlk = new MatrixBlock(lblen2, in.getNumColumns(), true);
 					secondBlk = secondBlk.leftIndexingOperations(secondSlicedBlk, 0, secondSlicedBlk.getNumRows()-1, 0, in.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);

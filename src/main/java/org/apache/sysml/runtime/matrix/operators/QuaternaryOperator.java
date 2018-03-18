@@ -32,26 +32,34 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 public class QuaternaryOperator extends Operator 
 {
-
 	private static final long serialVersionUID = -1642908613016116069L;
 
-	public WeightsType wtype1 = null;
-	public WSigmoidType wtype2 = null;
-	public WDivMMType wtype3 = null;
-	public WCeMMType wtype4 = null;
-	public WUMMType wtype5 = null;
+	public final WeightsType wtype1;
+	public final WSigmoidType wtype2;
+	public final WDivMMType wtype3;
+	public final WCeMMType wtype4;
+	public final WUMMType wtype5;
 	
-	public ValueFunction fn;
-	
-	private double eps = 0;
+	public final ValueFunction fn;
+	private final double eps;
 
+	private QuaternaryOperator( WeightsType wt1, WSigmoidType wt2, WDivMMType wt3, WCeMMType wt4, WUMMType wt5, ValueFunction fn, double eps ) {
+		wtype1 = wt1;
+		wtype2 = wt2;
+		wtype3 = wt3;
+		wtype4 = wt4;
+		wtype5 = wt5;
+		this.fn = fn;
+		this.eps = eps;
+	}
+	
 	/**
 	 * wsloss
 	 * 
 	 * @param wt Weights type
 	 */
 	public QuaternaryOperator( WeightsType wt ) {
-		wtype1 = wt;
+		this(wt, null, null, null, null, null, 0);
 	}
 	
 	/**
@@ -60,8 +68,7 @@ public class QuaternaryOperator extends Operator
 	 * @param wt WSigmoid type
 	 */
 	public QuaternaryOperator( WSigmoidType wt ) {
-		wtype2 = wt;
-		fn = Builtin.getBuiltinFnObject("sigmoid");
+		this(null, wt, null, null, null, Builtin.getBuiltinFnObject("sigmoid"), 0);
 	}
 	
 	/**
@@ -70,7 +77,7 @@ public class QuaternaryOperator extends Operator
 	 * @param wt WDivMM type
 	 */
 	public QuaternaryOperator( WDivMMType wt ) {
-		wtype3 = wt;
+		this(null, null, wt, null, null, null, 0);
 	}
 	
 	/**
@@ -80,8 +87,7 @@ public class QuaternaryOperator extends Operator
 	 * @param epsilon the epsilon value
 	 */
 	public QuaternaryOperator( WDivMMType wt, double epsilon) {
-		wtype3 = wt;
-		eps = epsilon;
+		this(null, null, wt, null, null, null, epsilon);
 	}
 	
 	/**
@@ -90,7 +96,7 @@ public class QuaternaryOperator extends Operator
 	 * @param wt WCeMM type
 	 */
 	public QuaternaryOperator( WCeMMType wt ) {
-		wtype4 = wt;
+		this(null, null, null, wt, null, null, 0);
 	}
 	
 	/**
@@ -100,8 +106,7 @@ public class QuaternaryOperator extends Operator
 	 * @param epsilon the epsilon value
 	 */
 	public QuaternaryOperator( WCeMMType wt, double epsilon) {
-		wtype4 = wt;
-		eps = epsilon;
+		this(null, null, null, wt, null, null, epsilon);
 	}
 	
 	/**
@@ -111,14 +116,10 @@ public class QuaternaryOperator extends Operator
 	 * @param op operator type
 	 */
 	public QuaternaryOperator( WUMMType wt, String op ) {
-		wtype5 = wt;
-		
-		if( op.equals("^2") )
-			fn = Power2.getPower2FnObject();
-		else if( op.equals("*2") )
-			fn = Multiply2.getMultiply2FnObject();
-		else
-			fn = Builtin.getBuiltinFnObject(op);
+		this(null, null, null, null, wt, 
+			op.equals("^2") ? Power2.getPower2FnObject() :
+			op.equals("*2") ? Multiply2.getMultiply2FnObject() :
+			Builtin.getBuiltinFnObject(op), 0);
 	}
 
 	public boolean hasFourInputs() {
@@ -135,5 +136,4 @@ public class QuaternaryOperator extends Operator
 	public double getScalar() {
 		return eps;
 	}
-
 }

@@ -20,7 +20,7 @@
 /**********************************
 When updating a kernel or adding a new one,
 please compile the ptx file and commit it:
-nvcc -ptx -arch=sm_30 SystemML.cu
+nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 ***********************************/
 
 #include <cfloat>
@@ -29,7 +29,8 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < N) {
-  	// TODO: Use __double2float_rd or __double2float_rn  or __double2float_ru or __double2float_rz after 
+    // TODO: Use __double2float_rd or __double2float_rn  or __double2float_ru or
+    // __double2float_rz after
     ret[tid] = (float)A[tid];
   }
 }
@@ -39,6 +40,200 @@ extern "C" __global__ void float2double_f(float *A, double *ret, int N) {
   if (tid < N) {
     ret[tid] = (double)A[tid];
   }
+}
+
+/**
+ * This method performs an im2col operation on sparse input image
+ *
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params colInd input col index pointer
+ * @param ret output matrix allocated on the GPU
+ * @param NCHW  value of N*C*H*W
+ * @param CHW value of C*H*W
+ * @param HW value of H*W
+ * @param W image height
+ * @param R filter height
+ * @param S filter width
+ * @param P height of conv2d output
+ * @param Q width of conv2d output
+ * @param PQ value of P*Q
+ * @param RS value of R*S
+ * @param NPQ value of N*P*Q
+ * @param stride_h stride height
+ * @param stride_w stride width
+ * @param pad_h padding height
+ * @param pad_w padding width
+ */
+template <typename T>
+__device__ void sparse_dense_im2col(T *inVal, int *inRowPtr, int *colInd, T *ret,
+  int nnz, int N, int CHW, int HW, int W,
+  int R, int S, int P, int Q,  int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < nnz) {
+  	T value = inVal[tid];
+  	int n = 0;
+    while (inRowPtr[n+1] <= tid) {
+      n++;
+    }
+  	int chw = colInd[tid];
+  	int c = chw / HW;
+  	int hw = chw % HW;
+  	int h = hw / W;
+  	int w = hw % W;
+  	
+  	// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (h - r + pad_h) % stride_h == 0) { ... } }
+	// Constraint 1: p >= 0 and p = (h - r + pad_h)  / stride_h
+	// Therefore,  r <= h + pad_h 
+	// Constraint 2: p < P and p = (h - r + pad_h)  / stride_h
+	// Therefore,  h + pad_h - P*stride_h < r
+	// Math.max(0, h + pad_h - P*stride_h + 1) <= r <= Math.min(R-1, h + pad_h)
+	int rMin = max(0, h + pad_h - P*stride_h + 1);
+	int rMax = min(R-1, h + pad_h);
+	int sMin = max(0, w + pad_w - Q*stride_w + 1);
+	int sMax = min(S-1, w + pad_w);
+	// Constraint 3: (h - r + pad_h) % stride_h == 0
+	while((h - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
+	while((w - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;
+	
+	for(int r = rMin; r <= rMax; r += stride_h) {
+		// Only append value if h == h, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+		// Therefore, p = (h - r + pad_h)  / stride_h. Use the same logic for q.
+		int p = (h - r + pad_h)  / stride_h;
+		int npQ = n*PQ + p*Q;
+		int outRowIndex = c*RS + r*S;
+		for(int s = sMin; s <= sMax; s += stride_w) {
+			int q = (w - s + pad_w)  / stride_w;
+			// chw -> [crs, npq]
+			ret[(outRowIndex + s)*NPQ + npQ + q] = value;
+		}
+	}
+  }
+}
+
+extern "C" __global__ void sparse_dense_im2col_d(double *inVal, int *inRowPtr, int *colInd, double *ret,
+  int nnz, int N, int CHW, int HW, int W,
+  int R, int S, int P, int Q,  int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  sparse_dense_im2col(inVal, inRowPtr, colInd, ret, nnz, N, CHW, HW, W, R, S, P, Q, PQ, RS, NPQ, stride_h, stride_w, pad_h, pad_w);
+}
+
+extern "C" __global__ void sparse_dense_im2col_f(float *inVal, int *inRowPtr, int *colInd, float *ret,
+  int nnz, int N, int CHW, int HW, int W,
+  int R, int S, int P, int Q, int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  sparse_dense_im2col(inVal, inRowPtr, colInd, ret, nnz, N, CHW, HW, W, R, S, P, Q, PQ, RS, NPQ, stride_h, stride_w, pad_h, pad_w);
+}
+
+/**
+ * This method performs an im2col operation on dense input image
+ *
+ * @param input input matrix allocated on the GPU
+ * @param ret output matrix allocated on the GPU
+ * @param NCHW  value of N*C*H*W
+ * @param CHW value of C*H*W
+ * @param HW value of H*W
+ * @param W image height
+ * @param R filter height
+ * @param S filter width
+ * @param P height of conv2d output
+ * @param Q width of conv2d output
+ * @param PQ value of P*Q
+ * @param RS value of R*S
+ * @param NPQ value of N*P*Q
+ * @param stride_h stride height
+ * @param stride_w stride width
+ * @param pad_h padding height
+ * @param pad_w padding width
+ */
+template <typename T>
+__device__ void dense_dense_im2col(T *input, T *ret,
+  int NCHW, int CHW, int HW, int W,
+  int R, int S, int P, int Q,  int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < NCHW) {
+  	T value = input[tid];
+  	int n = tid / CHW;
+  	int chw = tid % CHW;
+  	int c = chw / HW;
+  	int hw = chw % HW;
+  	int h = hw / W;
+  	int w = hw % W;
+  	
+  	// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (h - r + pad_h) % stride_h == 0) { ... } }
+	// Constraint 1: p >= 0 and p = (h - r + pad_h)  / stride_h
+	// Therefore,  r <= h + pad_h 
+	// Constraint 2: p < P and p = (h - r + pad_h)  / stride_h
+	// Therefore,  h + pad_h - P*stride_h < r
+	// Math.max(0, h + pad_h - P*stride_h + 1) <= r <= Math.min(R-1, h + pad_h)
+	int rMin = max(0, h + pad_h - P*stride_h + 1);
+	int rMax = min(R-1, h + pad_h);
+	int sMin = max(0, w + pad_w - Q*stride_w + 1);
+	int sMax = min(S-1, w + pad_w);
+	// Constraint 3: (h - r + pad_h) % stride_h == 0
+	while((h - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
+	while((w - sMin + pad_w) % stride_w != 0 && sMin <= sMax) sMin++;
+	
+	for(int r = rMin; r <= rMax; r += stride_h) {
+		// Only append value if h == h, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+		// Therefore, p = (h - r + pad_h)  / stride_h. Use the same logic for q.
+		int p = (h - r + pad_h)  / stride_h;
+		int npQ = n*PQ + p*Q;
+		int outRowIndex = c*RS + r*S;
+		for(int s = sMin; s <= sMax; s += stride_w) {
+			int q = (w - s + pad_w)  / stride_w;
+			// chw -> [crs, npq]
+			ret[(outRowIndex + s)*NPQ + npQ + q] = value;
+		}
+	}
+  }
+}
+
+extern "C" __global__ void dense_dense_im2col_d(double *input, double *ret,
+  int NCHW, int CHW, int HW, int W,
+  int R, int S, int P, int Q,  int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  dense_dense_im2col(input, ret, NCHW, CHW, HW, W, R, S, P, Q, PQ, RS, NPQ, stride_h, stride_w, pad_h, pad_w);
+}
+
+extern "C" __global__ void dense_dense_im2col_f(float *input, float *ret,
+  int NCHW, int CHW, int HW, int W,
+  int R, int S, int P, int Q, int PQ, int RS, int NPQ,
+  int stride_h, int stride_w, int pad_h, int pad_w) {
+  dense_dense_im2col(input, ret, NCHW, CHW, HW, W, R, S, P, Q, PQ, RS, NPQ, stride_h, stride_w, pad_h, pad_w);
+}
+
+/**
+ * This method performs a reorg operation of matrix with dimensions [K, NPQ]
+ * and returns a matrix with dimensions [N, KPQ]
+ *
+ * @param knpqPtr input matrix allocated on the GPU
+ * @param ret output matrix allocated on the GPU
+ * @param NKPQ length of input and output matrix
+ * @param NPQ the number of columns of input matrix
+ * @param KPQ the number of columns of output matrix
+ * @param PQ value of P*Q
+ */
+template <typename T>
+__device__ void reorg_knpq(T *knpqPtr, T *ret, int NKPQ, int NPQ, int KPQ, int PQ) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < NKPQ) {
+  	int k = tid / NPQ;
+  	int npq = tid % NPQ;
+  	int n = npq / PQ;
+  	int pq = npq % PQ;
+    ret[n*KPQ + k*PQ + pq] = knpqPtr[tid];
+  }
+}
+
+extern "C" __global__ void reorg_knpq_d(double *knpqPtr, double *ret, int NKPQ, int NPQ, int KPQ, int PQ) {
+  reorg_knpq(knpqPtr, ret, NKPQ, NPQ, KPQ, PQ);
+}
+
+extern "C" __global__ void reorg_knpq_f(float *knpqPtr, float *ret, int NKPQ, int NPQ, int KPQ, int PQ) {
+  reorg_knpq(knpqPtr, ret, NKPQ, NPQ, KPQ, PQ);
 }
 
 /**
@@ -84,15 +279,14 @@ __device__ void slice_sparse_dense_row(T *inVal, int *inRowPtr, int *colInd,
      *
      * int size = inRowPtr[rowIndex+1] - inRowPtr[rowIndex];
      * double numThreads = (double)min(size, MAX_NUM_THREADS_CHILD_KERNEL);
-     * slice_sparse_dense_row_helper<<< ceil(numThreads/
-*MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr,
-*colInd, ret,
-*			rl, ru, cl, cu, retClen, inRowPtr[rowIndex],
-*inRowPtr[rowIndex+1], index);
-*
-* Two-step compilation and linking process in JCudaKernels's constructor:
-* cuLinkAddFile(linkState, CUjitInputType.CU_JIT_INPUT_LIBRARY,
-*"/usr/local/cuda/lib64/libcudadevrt.a", jitOptions);
+     * slice_sparse_dense_row_helper
+     * <<< ceil(numThreads/MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>
+     * (inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen, inRowPtr[rowIndex],
+     *	inRowPtr[rowIndex+1], index);
+     *
+     * Two-step compilation and linking process in JCudaKernels's constructor:
+     * cuLinkAddFile(linkState, CUjitInputType.CU_JIT_INPUT_LIBRARY,
+     * "/usr/local/cuda/lib64/libcudadevrt.a", jitOptions);
      */
     // Iterate over elements of the row 'rowIndex'.
     for (int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex + 1]; i++) {
@@ -104,17 +298,18 @@ __device__ void slice_sparse_dense_row(T *inVal, int *inRowPtr, int *colInd,
   }
 }
 
-extern "C" __global__ void slice_sparse_dense_row_d(double *inVal, int *inRowPtr,
-                                                   int *colInd, double *ret,
-                                                   int rl, int ru, int cl,
-                                                   int cu, int retClen) {
+extern "C" __global__ void slice_sparse_dense_row_d(double *inVal,
+                                                    int *inRowPtr, int *colInd,
+                                                    double *ret, int rl, int ru,
+                                                    int cl, int cu,
+                                                    int retClen) {
   slice_sparse_dense_row(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
 }
 
 extern "C" __global__ void slice_sparse_dense_row_f(float *inVal, int *inRowPtr,
-                                                   int *colInd, float *ret,
-                                                   int rl, int ru, int cl,
-                                                   int cu, int retClen) {
+                                                    int *colInd, float *ret,
+                                                    int rl, int ru, int cl,
+                                                    int cu, int retClen) {
   slice_sparse_dense_row(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
 }
 
@@ -153,17 +348,18 @@ __device__ void slice_sparse_dense_nnz(T *inVal, int *inRowPtr, int *colInd,
   }
 }
 
-extern "C" __global__ void slice_sparse_dense_nnz_d(double *inVal, int *inRowPtr,
-                                                   int *colInd, double *ret,
-                                                   int rl, int ru, int cl,
-                                                   int cu, int retClen) {
+extern "C" __global__ void slice_sparse_dense_nnz_d(double *inVal,
+                                                    int *inRowPtr, int *colInd,
+                                                    double *ret, int rl, int ru,
+                                                    int cl, int cu,
+                                                    int retClen) {
   slice_sparse_dense_nnz(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
 }
 
 extern "C" __global__ void slice_sparse_dense_nnz_f(float *inVal, int *inRowPtr,
-                                                   int *colInd, float *ret,
-                                                   int rl, int ru, int cl,
-                                                   int cu, int retClen) {
+                                                    int *colInd, float *ret,
+                                                    int rl, int ru, int cl,
+                                                    int cu, int retClen) {
   slice_sparse_dense_nnz(inVal, inRowPtr, colInd, ret, rl, ru, cl, cu, retClen);
 }
 
@@ -194,16 +390,16 @@ __device__ void slice_dense_dense(T *in, T *ret, int rl, int ru, int cl, int cu,
 }
 
 extern "C" __global__ void slice_dense_dense_d(double *in, double *ret, int rl,
-                                              int ru, int cl, int cu,
-                                              int inClen, int retRlen,
-                                              int retClen) {
+                                               int ru, int cl, int cu,
+                                               int inClen, int retRlen,
+                                               int retClen) {
   slice_dense_dense(in, ret, rl, ru, cl, cu, inClen, retRlen, retClen);
 }
 
 extern "C" __global__ void slice_dense_dense_f(float *in, float *ret, int rl,
-                                              int ru, int cl, int cu,
-                                              int inClen, int retRlen,
-                                              int retClen) {
+                                               int ru, int cl, int cu,
+                                               int inClen, int retRlen,
+                                               int retClen) {
   slice_dense_dense(in, ret, rl, ru, cl, cu, inClen, retRlen, retClen);
 }
 
@@ -236,15 +432,15 @@ extern "C" __global__ void copy_u2l_dense_f(float *ret, int dim, int N) {
 
 // Use this method in templates to fetch the maximum value for a given datatype
 template <typename T>
-__forceinline__ __device__ T T_MAX(T x) {
-  return (T)DBL_MAX;
+__forceinline__ __device__ T MAX() {
+  return T();
 }
 template <>
-__forceinline__ __device__ float T_MAX(float x) {
+__forceinline__ __device__ float MAX <float>() {
   return FLT_MAX;
 }
 template <>
-__forceinline__ __device__ double T_MAX(double x) {
+__forceinline__ __device__ double MAX <double>() {
   return DBL_MAX;
 }
 
@@ -311,7 +507,7 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
       }
     }
     default:
-      return T_MAX(x);
+      return MAX<T>();
   }
 }
 
@@ -342,7 +538,8 @@ extern "C" __global__ void relu_f(float *A, float *ret, int rlen, int clen) {
 }
 
 /**
- * This method computes the backpropagation errors for previous layer of relu operation
+ * This method computes the backpropagation errors for previous layer of relu
+ * operation
  *
  * @param X input activation array allocated on the GPU
  * @param dout errors from previous layer
@@ -361,12 +558,12 @@ __device__ void relu_backward(T *X, T *dout, T *ret, int rlen, int clen) {
 }
 
 extern "C" __global__ void relu_backward_d(double *X, double *dout, double *ret,
-                                          int rlen, int clen) {
+                                           int rlen, int clen) {
   relu_backward(X, dout, ret, rlen, clen);
 }
 
 extern "C" __global__ void relu_backward_f(float *X, float *dout, float *ret,
-                                          int rlen, int clen) {
+                                           int rlen, int clen) {
   relu_backward(X, dout, ret, rlen, clen);
 }
 
@@ -389,12 +586,12 @@ __device__ void inplace_add(T *input, T *ret, int rlen, int clen) {
 }
 
 extern "C" __global__ void inplace_add_d(double *input, double *ret, int rlen,
-                                        int clen) {
+                                         int clen) {
   inplace_add(input, ret, rlen, clen);
 }
 
 extern "C" __global__ void inplace_add_f(float *input, float *ret, int rlen,
-                                        int clen) {
+                                         int clen) {
   inplace_add(input, ret, rlen, clen);
 }
 
@@ -416,12 +613,12 @@ __device__ void bias_add(T *input, T *bias, T *ret, int rlen, int clen,
 }
 
 extern "C" __global__ void bias_add_d(double *input, double *bias, double *ret,
-                                     int rlen, int clen, int PQ) {
+                                      int rlen, int clen, int PQ) {
   bias_add(input, bias, ret, rlen, clen, PQ);
 }
 
 extern "C" __global__ void bias_add_f(float *input, float *bias, float *ret,
-                                     int rlen, int clen, int PQ) {
+                                      int rlen, int clen, int PQ) {
   bias_add(input, bias, ret, rlen, clen, PQ);
 }
 
@@ -443,16 +640,16 @@ __device__ void daxpy_matrix_vector(T *A, T *B, double alpha, T *ret, int rlenA,
 }
 
 extern "C" __global__ void daxpy_matrix_vector_d(double *A, double *B,
-                                                double alpha, double *ret,
-                                                int rlenA, int clenA, int rlenB,
-                                                int clenB) {
+                                                 double alpha, double *ret,
+                                                 int rlenA, int clenA,
+                                                 int rlenB, int clenB) {
   daxpy_matrix_vector(A, B, alpha, ret, rlenA, clenA, rlenB, clenB);
 }
 
 extern "C" __global__ void daxpy_matrix_vector_f(float *A, float *B,
-                                                double alpha, float *ret,
-                                                int rlenA, int clenA, int rlenB,
-                                                int clenB) {
+                                                 double alpha, float *ret,
+                                                 int rlenA, int clenA,
+                                                 int rlenB, int clenB) {
   daxpy_matrix_vector(A, B, alpha, ret, rlenA, clenA, rlenB, clenB);
 }
 
@@ -471,13 +668,14 @@ __device__ void bias_multiply(T *input, T *bias, T *ret, int rlen, int clen,
 }
 
 extern "C" __global__ void bias_multiply_d(double *input, double *bias,
-                                          double *ret, int rlen, int clen,
-                                          int PQ) {
+                                           double *ret, int rlen, int clen,
+                                           int PQ) {
   bias_multiply(input, bias, ret, rlen, clen, PQ);
 }
 
-extern "C" __global__ void bias_multiply_f(float *input, float *bias, float *ret,
-                                          int rlen, int clen, int PQ) {
+extern "C" __global__ void bias_multiply_f(float *input, float *bias,
+                                           float *ret, int rlen, int clen,
+                                           int PQ) {
   bias_multiply(input, bias, ret, rlen, clen, PQ);
 }
 
@@ -563,14 +761,14 @@ __device__ void matrix_scalar_op(T *A, T scalar, T *C, int size, int op,
 }
 
 extern "C" __global__ void matrix_scalar_op_d(double *A, double scalar,
-                                             double *C, int size, int op,
-                                             int isLeftScalar) {
+                                              double *C, int size, int op,
+                                              int isLeftScalar) {
   matrix_scalar_op(A, scalar, C, size, op, isLeftScalar);
 }
 
 extern "C" __global__ void matrix_scalar_op_f(float *A, double scalar, float *C,
-                                             int size, int op,
-                                             int isLeftScalar) {
+                                              int size, int op,
+                                              int isLeftScalar) {
   matrix_scalar_op(A, (float)scalar, C, size, op, isLeftScalar);
 }
 
@@ -635,12 +833,12 @@ __device__ void cbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB,
 }
 
 extern "C" __global__ void cbind_d(double *A, double *B, double *C, int rowsA,
-                                  int colsA, int rowsB, int colsB) {
+                                   int colsA, int rowsB, int colsB) {
   cbind(A, B, C, rowsA, colsA, rowsB, colsB);
 }
 
 extern "C" __global__ void cbind_f(float *A, float *B, float *C, int rowsA,
-                                  int colsA, int rowsB, int colsB) {
+                                   int colsA, int rowsB, int colsB) {
   cbind(A, B, C, rowsA, colsA, rowsB, colsB);
 }
 
@@ -684,12 +882,12 @@ __device__ void rbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB,
 }
 
 extern "C" __global__ void rbind_d(double *A, double *B, double *C, int rowsA,
-                                  int colsA, int rowsB, int colsB) {
+                                   int colsA, int rowsB, int colsB) {
   rbind(A, B, C, rowsA, colsA, rowsB, colsB);
 }
 
 extern "C" __global__ void rbind_f(float *A, float *B, float *C, int rowsA,
-                                  int colsA, int rowsB, int colsB) {
+                                   int colsA, int rowsB, int colsB) {
   rbind(A, B, C, rowsA, colsA, rowsB, colsB);
 }
 
@@ -828,15 +1026,15 @@ template <typename ReductionOp, typename AssignmentOp, typename T>
 __device__ void reduce_row(
     T *g_idata,  ///< input data stored in device memory (of size rows*cols)
     T *g_odata,  ///< output/temporary array store in device memory (of size
-                 ///rows*cols)
+    /// rows*cols)
     unsigned int rows,  ///< rows in input and temporary/output arrays
     unsigned int cols,  ///< columns in input and temporary/output arrays
     ReductionOp
         reduction_op,  ///< Reduction operation to perform (functor object)
     AssignmentOp assignment_op,  ///< Operation to perform before assigning this
-                                 ///to its final location in global memory for
-                                 ///each row
-    T initialValue) {            ///< initial value for the reduction variable
+    /// to its final location in global memory for
+    /// each row
+    T initialValue) {  ///< initial value for the reduction variable
   // extern __shared__ T sdata[];
   extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
   T *sdata = reinterpret_cast<T *>(my_sdata);
@@ -935,15 +1133,15 @@ template <typename ReductionOp, typename AssignmentOp, typename T>
 __device__ void reduce_col(
     T *g_idata,  ///< input data stored in device memory (of size rows*cols)
     T *g_odata,  ///< output/temporary array store in device memory (of size
-                 ///rows*cols)
+    /// rows*cols)
     unsigned int rows,  ///< rows in input and temporary/output arrays
     unsigned int cols,  ///< columns in input and temporary/output arrays
     ReductionOp
         reduction_op,  ///< Reduction operation to perform (functor object)
     AssignmentOp assignment_op,  ///< Operation to perform before assigning this
-                                 ///to its final location in global memory for
-                                 ///each column
-    T initialValue)              ///< initial value for the reduction variable
+    /// to its final location in global memory for
+    /// each column
+    T initialValue)  ///< initial value for the reduction variable
 {
   unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (global_tid >= cols) {
@@ -990,12 +1188,12 @@ __device__ void reduce_sum(T *g_idata, T *g_odata, unsigned int n) {
 }
 
 extern "C" __global__ void reduce_sum_d(double *g_idata, double *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_sum(g_idata, g_odata, n);
 }
 
 extern "C" __global__ void reduce_sum_f(float *g_idata, float *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_sum(g_idata, g_odata, n);
 }
 
@@ -1016,14 +1214,14 @@ __device__ void reduce_row_sum(T *g_idata, T *g_odata, unsigned int rows,
 }
 
 extern "C" __global__ void reduce_row_sum_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_sum(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_row_sum_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_sum(g_idata, g_odata, rows, cols);
 }
 
@@ -1044,14 +1242,14 @@ __device__ void reduce_col_sum(T *g_idata, T *g_odata, unsigned int rows,
 }
 
 extern "C" __global__ void reduce_col_sum_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_sum(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_col_sum_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_sum(g_idata, g_odata, rows, cols);
 }
 
@@ -1063,11 +1261,12 @@ struct MaxOp {
   __device__ __forceinline__ T operator()(T a, T b) const { return fmax(a, b); }
 };
 
-template<>
+template <>
 struct MaxOp<float> {
-  __device__ __forceinline__ float operator()(float a, float b) const { return fmaxf(a, b); }
+  __device__ __forceinline__ float operator()(float a, float b) const {
+    return fmaxf(a, b);
+  }
 };
-
 
 /**
  * Do a max over all elements of an array/matrix
@@ -1078,16 +1277,16 @@ struct MaxOp<float> {
 template <typename T>
 __device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n) {
   MaxOp<T> op;
-  reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -T_MAX(g_idata[0]));
+  reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -MAX<T>());
 }
 
 extern "C" __global__ void reduce_max_d(double *g_idata, double *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_max(g_idata, g_odata, n);
 }
 
 extern "C" __global__ void reduce_max_f(float *g_idata, float *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_max(g_idata, g_odata, n);
 }
 
@@ -1104,18 +1303,18 @@ __device__ void reduce_row_max(T *g_idata, T *g_odata, unsigned int rows,
   MaxOp<T> op;
   IdentityOp<T> aop;
   reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         -T_MAX(g_idata[0]));
+                                         -MAX<T>());
 }
 
 extern "C" __global__ void reduce_row_max_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_max(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_row_max_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_max(g_idata, g_odata, rows, cols);
 }
 
@@ -1132,18 +1331,18 @@ __device__ void reduce_col_max(T *g_idata, T *g_odata, unsigned int rows,
   MaxOp<T> op;
   IdentityOp<T> aop;
   reduce_col<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         (T)-T_MAX(g_idata[0]));
+                                         -MAX<T>());
 }
 
 extern "C" __global__ void reduce_col_max_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_max(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_col_max_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_max(g_idata, g_odata, rows, cols);
 }
 
@@ -1164,16 +1363,16 @@ struct MinOp {
 template <typename T>
 __device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n) {
   MinOp<T> op;
-  reduce<MinOp<T>, T>(g_idata, g_odata, n, op, T_MAX(g_idata[0]));
+  reduce<MinOp<T>, T>(g_idata, g_odata, n, op, MAX<T>());
 }
 
 extern "C" __global__ void reduce_min_d(double *g_idata, double *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_min(g_idata, g_odata, n);
 }
 
 extern "C" __global__ void reduce_min_f(float *g_idata, float *g_odata,
-                                       unsigned int n) {
+                                        unsigned int n) {
   reduce_min(g_idata, g_odata, n);
 }
 
@@ -1190,18 +1389,18 @@ __device__ void reduce_row_min(T *g_idata, T *g_odata, unsigned int rows,
   MinOp<T> op;
   IdentityOp<T> aop;
   reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         T_MAX(g_idata[0]));
+                                         MAX<T>());
 }
 
 extern "C" __global__ void reduce_row_min_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_min(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_row_min_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_row_min(g_idata, g_odata, rows, cols);
 }
 
@@ -1218,18 +1417,18 @@ __device__ void reduce_col_min(T *g_idata, T *g_odata, unsigned int rows,
   MinOp<T> op;
   IdentityOp<T> aop;
   reduce_col<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op, aop,
-                                         T_MAX(g_idata[0]));
+                                         MAX<T>());
 }
 
 extern "C" __global__ void reduce_col_min_d(double *g_idata, double *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_min(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_col_min_f(float *g_idata, float *g_odata,
-                                           unsigned int rows,
-                                           unsigned int cols) {
+                                            unsigned int rows,
+                                            unsigned int cols) {
   reduce_col_min(g_idata, g_odata, rows, cols);
 }
 
@@ -1254,12 +1453,12 @@ __device__ void reduce_prod(T *g_idata, T *g_odata, unsigned int n) {
 }
 
 extern "C" __global__ void reduce_prod_d(double *g_idata, double *g_odata,
-                                        unsigned int n) {
+                                         unsigned int n) {
   reduce_prod(g_idata, g_odata, n);
 }
 
 extern "C" __global__ void reduce_prod_f(float *g_idata, float *g_odata,
-                                        unsigned int n) {
+                                         unsigned int n) {
   reduce_prod(g_idata, g_odata, n);
 }
 
@@ -1293,14 +1492,14 @@ __device__ void reduce_row_mean(T *g_idata, T *g_odata, unsigned int rows,
 }
 
 extern "C" __global__ void reduce_row_mean_d(double *g_idata, double *g_odata,
-                                            unsigned int rows,
-                                            unsigned int cols) {
+                                             unsigned int rows,
+                                             unsigned int cols) {
   reduce_row_mean(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_row_mean_f(float *g_idata, float *g_odata,
-                                            unsigned int rows,
-                                            unsigned int cols) {
+                                             unsigned int rows,
+                                             unsigned int cols) {
   reduce_row_mean(g_idata, g_odata, rows, cols);
 }
 
@@ -1321,14 +1520,14 @@ __device__ void reduce_col_mean(T *g_idata, T *g_odata, unsigned int rows,
 }
 
 extern "C" __global__ void reduce_col_mean_d(double *g_idata, double *g_odata,
-                                            unsigned int rows,
-                                            unsigned int cols) {
+                                             unsigned int rows,
+                                             unsigned int cols) {
   reduce_col_mean(g_idata, g_odata, rows, cols);
 }
 
 extern "C" __global__ void reduce_col_mean_f(float *g_idata, float *g_odata,
-                                            unsigned int rows,
-                                            unsigned int cols) {
+                                             unsigned int rows,
+                                             unsigned int cols) {
   reduce_col_mean(g_idata, g_odata, rows, cols);
 }
 
@@ -1347,7 +1546,7 @@ __device__ void matrix_exp(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_exp_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_exp(A, C, size);
 }
 
@@ -1370,11 +1569,12 @@ __device__ void matrix_sqrt(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_sqrt_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_sqrt(A, C, size);
 }
 
-extern "C" __global__ void matrix_sqrt_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_sqrt_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_sqrt(A, C, size);
 }
 
@@ -1393,12 +1593,12 @@ __device__ void matrix_round(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_round_d(double *A, double *C,
-                                         unsigned int size) {
+                                          unsigned int size) {
   matrix_round(A, C, size);
 }
 
 extern "C" __global__ void matrix_round_f(float *A, float *C,
-                                         unsigned int size) {
+                                          unsigned int size) {
   matrix_round(A, C, size);
 }
 
@@ -1417,7 +1617,7 @@ __device__ void matrix_abs(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_abs_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_abs(A, C, size);
 }
 
@@ -1440,7 +1640,7 @@ __device__ void matrix_log(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_log_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_log(A, C, size);
 }
 
@@ -1463,12 +1663,12 @@ __device__ void matrix_floor(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_floor_d(double *A, double *C,
-                                         unsigned int size) {
+                                          unsigned int size) {
   matrix_floor(A, C, size);
 }
 
 extern "C" __global__ void matrix_floor_f(float *A, float *C,
-                                         unsigned int size) {
+                                          unsigned int size) {
   matrix_floor(A, C, size);
 }
 
@@ -1487,11 +1687,12 @@ __device__ void matrix_ceil(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_ceil_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_ceil(A, C, size);
 }
 
-extern "C" __global__ void matrix_ceil_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_ceil_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_ceil(A, C, size);
 }
 
@@ -1510,7 +1711,7 @@ __device__ void matrix_sin(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_sin_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_sin(A, C, size);
 }
 
@@ -1533,11 +1734,12 @@ __device__ void matrix_sinh(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_sinh_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_sinh(A, C, size);
 }
 
-extern "C" __global__ void matrix_sinh_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_sinh_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_sinh(A, C, size);
 }
 
@@ -1556,7 +1758,7 @@ __device__ void matrix_cos(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_cos_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_cos(A, C, size);
 }
 
@@ -1579,11 +1781,12 @@ __device__ void matrix_cosh(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_cosh_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_cosh(A, C, size);
 }
 
-extern "C" __global__ void matrix_cosh_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_cosh_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_cosh(A, C, size);
 }
 
@@ -1602,7 +1805,7 @@ __device__ void matrix_tan(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_tan_d(double *A, double *C,
-                                       unsigned int size) {
+                                        unsigned int size) {
   matrix_tan(A, C, size);
 }
 
@@ -1625,11 +1828,12 @@ __device__ void matrix_tanh(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_tanh_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_tanh(A, C, size);
 }
 
-extern "C" __global__ void matrix_tanh_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_tanh_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_tanh(A, C, size);
 }
 
@@ -1648,11 +1852,12 @@ __device__ void matrix_asin(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_asin_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_asin(A, C, size);
 }
 
-extern "C" __global__ void matrix_asin_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_asin_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_asin(A, C, size);
 }
 
@@ -1671,11 +1876,12 @@ __device__ void matrix_acos(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_acos_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_acos(A, C, size);
 }
 
-extern "C" __global__ void matrix_acos_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_acos_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_acos(A, C, size);
 }
 
@@ -1694,11 +1900,12 @@ __device__ void matrix_atan(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_atan_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_atan(A, C, size);
 }
 
-extern "C" __global__ void matrix_atan_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_atan_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_atan(A, C, size);
 }
 
@@ -1722,10 +1929,35 @@ __device__ void matrix_sign(T *A, T *C, unsigned int size) {
 }
 
 extern "C" __global__ void matrix_sign_d(double *A, double *C,
-                                        unsigned int size) {
+                                         unsigned int size) {
   matrix_sign(A, C, size);
 }
 
-extern "C" __global__ void matrix_sign_f(float *A, float *C, unsigned int size) {
+extern "C" __global__ void matrix_sign_f(float *A, float *C,
+                                         unsigned int size) {
   matrix_sign(A, C, size);
+}
+
+/**
+ * Do an sigmoid over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+template <typename T>
+__device__ void matrix_sigmoid(T *A, T *C, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+    C[index] = 0.5 * tanh(0.5 * A[index]) + 0.5;
+  }
+}
+
+extern "C" __global__ void matrix_sigmoid_d(double *A, double *C,
+                                         unsigned int size) {
+  matrix_sigmoid(A, C, size);
+}
+
+extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
+                                         unsigned int size) {
+  matrix_sigmoid(A, C, size);
 }

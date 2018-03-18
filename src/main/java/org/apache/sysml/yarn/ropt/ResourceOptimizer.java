@@ -57,7 +57,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.yarn.DMLYarnClient;
 import org.apache.sysml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
@@ -256,7 +256,7 @@ public class ResourceOptimizer
 		{
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(
-				sb, sb.get_hops(), new LocalVariableMap(), null, false, false, 0);
+				sb, sb.getHops(), new LocalVariableMap(), null, false, false, 0);
 			pb.setInstructions( inst );
 			B.add(pb);
 			_cntCompilePB ++;
@@ -337,7 +337,7 @@ public class ResourceOptimizer
 		{
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(
-				sb, sb.get_hops(), new LocalVariableMap(), null, false, false, 0);
+				sb, sb.getHops(), new LocalVariableMap(), null, false, false, 0);
 			inst = annotateMRJobInstructions(inst, cp, mr);
 			pb.setInstructions( inst );
 		}
@@ -388,7 +388,7 @@ public class ResourceOptimizer
 		double val = 0;
 		if( COST_INDIVIDUAL_BLOCKS ) {
 			LocalVariableMap vars = new LocalVariableMap();
-			collectReadVariables(pb.getStatementBlock().get_hops(), vars);
+			collectReadVariables(pb.getStatementBlock().getHops(), vars);
 			ExecutionContext ec = ExecutionContextFactory.createContext(false, null);
 			ec.setVariables(vars);
 			val = CostEstimationWrapper.getTimeEstimate(pb, ec, false);	
@@ -440,8 +440,7 @@ public class ResourceOptimizer
 			String varname = hop.getName();
 			MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 
 					    (int)hop.getRowsInBlock(), (int)hop.getColsInBlock(), hop.getNnz());
-			MatrixDimensionsMetaData md = new MatrixDimensionsMetaData(mc);
-			MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "/tmp", md);
+			MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "/tmp", new MetaData(mc));
 			vars.put(varname, mo);
 		}
 		
@@ -500,7 +499,7 @@ public class ResourceOptimizer
 		else //last-level program blocks
 		{
 			StatementBlock sb = pb.getStatementBlock();
-			return pruneHasOnlyUnknownMR(sb.get_hops());
+			return pruneHasOnlyUnknownMR(sb.getHops());
 		}
 	}
 

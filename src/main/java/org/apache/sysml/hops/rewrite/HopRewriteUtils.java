@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -40,6 +41,7 @@ import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
@@ -47,6 +49,7 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -65,6 +68,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -197,6 +201,17 @@ public class HopRewriteUtils
 			&& getDoubleValueSafe((LiteralOp)hop)==val);
 	}
 	
+	public static boolean isLiteralOfValue( Hop hop, boolean val ) {
+		try {
+			return (hop instanceof LiteralOp 
+				&& (hop.getValueType()==ValueType.BOOLEAN)
+				&& ((LiteralOp)hop).getBooleanValue()==val);
+		}
+		catch(HopsException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+	
 	public static ScalarObject getScalarObject( LiteralOp op )
 	{
 		try {
@@ -295,22 +310,17 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop getLargestInput(Hop hop) {
-		Hop max = null; long maxSize = -1;
-		for(Hop in : hop.getInput())
-			if(in.getLength() > maxSize) {
-				max = in;
-				maxSize = in.getLength();
-			}
-		return max;
+		return hop.getInput().stream()
+			.max(Comparator.comparing(h -> h.getLength())).orElse(null);
 	}
 	
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
-		Hop cols = (input.getDim2()>0) ? new LiteralOp(input.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
+		Hop rows = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop cols = input.colsKnown() ? new LiteralOp(input.getDim2()) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -393,10 +403,10 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (rowInput.getDim1()>0) ? new LiteralOp(rowInput.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
-		Hop cols = (colInput.getDim2()>0) ? new LiteralOp(colInput.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
+		Hop rows = rowInput.rowsKnown() ? new LiteralOp(rowInput.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
+		Hop cols = colInput.colsKnown() ? new LiteralOp(colInput.getDim2()) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -406,7 +416,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
@@ -426,10 +436,10 @@ public class HopRewriteUtils
 		long nrow = tRowInput ? rowInput.getDim2() : rowInput.getDim1();
 		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
-		Hop rows = (nrow>0) ? new LiteralOp(nrow) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
-		Hop cols = (ncol>0) ? new LiteralOp(ncol) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
+		Hop rows = (nrow>=0) ? new LiteralOp(nrow) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
+		Hop cols = (ncol>=0) ? new LiteralOp(ncol) :
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -479,6 +489,32 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	public static Hop createDataGenOpByVal( ArrayList<LiteralOp> values, long rows, long cols ) 
+		throws HopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		for(LiteralOp lit : values) {
+			if(sb.length()>0)
+				sb.append(StringInitCPInstruction.DELIM);
+			sb.append(lit.getStringValue());
+		}
+		LiteralOp str = new LiteralOp(sb.toString());
+		
+		HashMap<String, Hop> params = new HashMap<>();
+		params.put(DataExpression.RAND_ROWS, new LiteralOp(rows));
+		params.put(DataExpression.RAND_COLS, new LiteralOp(cols));
+		params.put(DataExpression.RAND_MIN, str);
+		params.put(DataExpression.RAND_MAX, str);
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));
+		
+		Hop datagen = new DataGenOp(DataGenMethod.SINIT, new DataIdentifier("tmp"), params);
+		int blksz = ConfigurationManager.getBlocksize();
+		datagen.setOutputBlocksizes(blksz, blksz);
+		copyLineNumbers(values.get(0), datagen);
+		
+		return datagen;
+	}
+	
 	public static boolean isDataGenOp(Hop hop, DataGenMethod... ops) {
 		return (hop instanceof DataGenOp 
 			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
@@ -504,14 +540,21 @@ public class HopRewriteUtils
 		return createReorg(input, ReOrgOp.TRANSPOSE);
 	}
 	
-	public static ReorgOp createReorg(Hop input, ReOrgOp rop)
-	{
-		ReorgOp transpose = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
-		transpose.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
-		copyLineNumbers(input, transpose);
-		transpose.refreshSizeInformation();	
-		
-		return transpose;
+	public static ReorgOp createReorg(Hop input, ReOrgOp rop) {
+		ReorgOp reorg = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
+		reorg.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, reorg);
+		reorg.refreshSizeInformation();
+		return reorg;
+	}
+	
+	public static ReorgOp createReorg(ArrayList<Hop> inputs, ReOrgOp rop) {
+		Hop main = inputs.get(0);
+		ReorgOp reorg = new ReorgOp(main.getName(), main.getDataType(), main.getValueType(), rop, inputs);
+		reorg.setOutputBlocksizes(main.getRowsInBlock(), main.getColsInBlock());
+		copyLineNumbers(main, reorg);
+		reorg.refreshSizeInformation();
+		return reorg;
 	}
 	
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
@@ -589,18 +632,40 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
-		Hop ix = createMatrixIndexing(input, rix, cix);
+		Hop ix = createIndexingOp(input, rix, cix);
 		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
 	}
 	
-	public static Hop createMatrixIndexing(Hop input, long rix, long cix) {
+	public static IndexingOp createIndexingOp(Hop input, long rix, long cix) {
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
-		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
+		return createIndexingOp(input, row, row, col, col);
+	}
+	
+	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
+		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, rl, ru, cl, cu, rl==ru, cl==cu);
 		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, ix);
 		ix.refreshSizeInformation();
 		return ix;
+	}
+	
+	public static LeftIndexingOp createLeftIndexingOp(Hop lhs, Hop rhs, Hop rl, Hop ru, Hop cl, Hop cu) {
+		LeftIndexingOp ix = new LeftIndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, lhs, rhs, rl, ru, cl, cu, rl==ru, cl==cu);
+		ix.setOutputBlocksizes(lhs.getRowsInBlock(), lhs.getColsInBlock());
+		copyLineNumbers(lhs, ix);
+		ix.refreshSizeInformation();
+		return ix;
+	}
+	
+	public static NaryOp createNary(OpOpN op, Hop... inputs) throws HopsException {
+		Hop mainInput = inputs[0];
+		NaryOp nop = new NaryOp(mainInput.getName(), mainInput.getDataType(),
+			mainInput.getValueType(), op, inputs);
+		nop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
+		copyLineNumbers(mainInput, nop);
+		nop.refreshSizeInformation();
+		return nop;
 	}
 	
 	public static Hop createValueHop( Hop hop, boolean row ) 
@@ -608,12 +673,12 @@ public class HopRewriteUtils
 	{
 		Hop ret = null;
 		if( row ){
-			ret = (hop.getDim1()>0) ? new LiteralOp(hop.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
+			ret = hop.rowsKnown() ? new LiteralOp(hop.getDim1()) : 
+				new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
 		}
 		else{
-			ret = (hop.getDim2()>0) ? new LiteralOp(hop.getDim2()) :
-			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
+			ret = hop.colsKnown() ? new LiteralOp(hop.getDim2()) :
+				new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
 		}
 		
 		return ret;
@@ -629,8 +694,8 @@ public class HopRewriteUtils
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) 
 		throws HopsException
 	{		
-		Hop to = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
-			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<>();
 		if( asc ) {
@@ -715,20 +780,18 @@ public class HopRewriteUtils
 	///////////////////////////////////
 	// hop size information
 	
-	public static boolean isDimsKnown( Hop hop )
-	{
-		return ( hop.getDim1()>0 && hop.getDim2()>0 );
+	public static boolean isDimsKnown( Hop hop ) {
+		return hop.dimsKnown();
 	}
 	
-	public static boolean isEmpty( Hop hop )
-	{
+	public static boolean isEmpty( Hop hop ) {
 		return ( hop.getNnz()==0 );
 	}
 	
 	public static boolean isEqualSize( Hop hop1, Hop hop2 ) {
 		return (hop1.dimsKnown() && hop2.dimsKnown()
-				&& hop1.getDim1() == hop2.getDim1()
-				&& hop1.getDim2() == hop2.getDim2());
+			&& hop1.getDim1() == hop2.getDim1()
+			&& hop1.getDim2() == hop2.getDim2());
 	}
 	
 	public static boolean isEqualSize( Hop hop1, Hop... hops ) {
@@ -761,8 +824,8 @@ public class HopRewriteUtils
 		}
 		
 		//check row- or column-wise single block constraint 
-		return cols ? (hop.getDim2()>0 && hop.getDim2()<=hop.getColsInBlock())
-				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
+		return cols ? (hop.colsKnown() && hop.getDim2()<=hop.getColsInBlock()) :
+			(hop.rowsKnown() && hop.getDim1()<=hop.getRowsInBlock());
 	}
 	
 	public static boolean isOuterProductLikeMM( Hop hop ) {
@@ -777,9 +840,14 @@ public class HopRewriteUtils
 		return (Hop.getOpOp2ForOuterVectorOperation(opcode) == op);
 	}
 	
-	public static boolean isSparse( Hop hop ) {
+	public static boolean isSparse(Hop hop) {
 		return hop.dimsKnown(true) //dims and nnz known
 			&& MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
+	}
+	
+	public static boolean isDense(Hop hop) {
+		return hop.dimsKnown(true) //dims and nnz known
+			&& !MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
 	}
 	
 	public static boolean isSparse( Hop hop, double threshold ) {
@@ -819,8 +887,17 @@ public class HopRewriteUtils
 		return ret;
 	}
 
+	public static boolean isReorg(Hop hop, ReOrgOp type) {
+		return hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==type;
+	}
+	
+	public static boolean isReorg(Hop hop, ReOrgOp... types) {
+		return ( hop instanceof ReorgOp 
+			&& ArrayUtils.contains(types, ((ReorgOp) hop).getOp()));
+	}
+	
 	public static boolean isTransposeOperation(Hop hop) {
-		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
+		return isReorg(hop, ReOrgOp.TRANSPOSE);
 	}
 	
 	public static boolean isTransposeOperation(Hop hop, int maxParents) {
@@ -899,6 +976,15 @@ public class HopRewriteUtils
 			|| isLiteralOfValue(hop.getInput().get(1), val));
 	}
 	
+	public static boolean isTernary(Hop hop, OpOp3 type) {
+		return hop instanceof TernaryOp && ((TernaryOp)hop).getOp()==type;
+	}
+	
+	public static boolean isTernary(Hop hop, OpOp3... types) {
+		return ( hop instanceof TernaryOp 
+			&& ArrayUtils.contains(types, ((TernaryOp) hop).getOp()));
+	}
+	
 	public static boolean containsInput(Hop current, Hop probe) {
 		return rContainsInput(current, probe, new HashSet<Long>());	
 	}
@@ -957,6 +1043,15 @@ public class HopRewriteUtils
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM_SQ);
 	}
 	
+	public static boolean isNary(Hop hop, OpOpN type) {
+		return hop instanceof NaryOp && ((NaryOp)hop).getOp()==type;
+	}
+	
+	public static boolean isNary(Hop hop, OpOpN... types) {
+		return ( hop instanceof NaryOp 
+			&& ArrayUtils.contains(types, ((NaryOp) hop).getOp()));
+	}
+	
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )
 	{
 		if( pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL
@@ -977,19 +1072,41 @@ public class HopRewriteUtils
 		return true;
 	}
 	
+	public static boolean isColumnRightIndexing(Hop hop) {
+		return hop instanceof IndexingOp
+			&& ((IndexingOp) hop).isColLowerEqualsUpper()
+			&& ((hop.dimsKnown() && hop.getDim1() == hop.getInput().get(0).getDim1())
+			|| (isLiteralOfValue(hop.getInput().get(1), 1) 
+				&& isUnary(hop.getInput().get(2), OpOp1.NROW) 
+				&& hop.getInput().get(2).getInput().get(0)==hop.getInput().get(0)));
+	}
+	
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop) {
 		return hop.isColLowerEqualsUpper()
 			&& isLiteralOfValue(hop.getInput().get(2), 1)
-			&& isLiteralOfValue(hop.getInput().get(3), hop.getDim1());
-		//TODO extend by input/output size conditions, which are currently
-		//invalid due to temporarily incorrect size information
+			&& (isLiteralOfValue(hop.getInput().get(3), hop.getDim1())
+				|| isSizeExpressionOf(hop.getInput().get(3), hop.getInput().get(0), true));
+	}
+	
+	public static boolean isFullColumnIndexing(IndexingOp hop) {
+		return hop.isColLowerEqualsUpper()
+			&& isLiteralOfValue(hop.getInput().get(1), 1)
+			&& (isLiteralOfValue(hop.getInput().get(2), hop.getDim1())
+				|| isSizeExpressionOf(hop.getInput().get(2), hop.getInput().get(0), true));
 	}
 	
 	public static boolean isFullRowIndexing(LeftIndexingOp hop) {
 		return hop.isRowLowerEqualsUpper()
 			&& isLiteralOfValue(hop.getInput().get(4), 1)
-			&& isLiteralOfValue(hop.getInput().get(5), hop.getDim2());
-		//TODO extend by input/output size conditions (see above)
+			&& (isLiteralOfValue(hop.getInput().get(5), hop.getDim2())
+				|| isSizeExpressionOf(hop.getInput().get(5), hop.getInput().get(0), false));
+	}
+	
+	public static boolean isFullRowIndexing(IndexingOp hop) {
+		return hop.isRowLowerEqualsUpper()
+			&& isLiteralOfValue(hop.getInput().get(3), 1)
+			&& (isLiteralOfValue(hop.getInput().get(4), hop.getDim2())
+				|| isSizeExpressionOf(hop.getInput().get(4), hop.getInput().get(0), false));
 	}
 	
 	public static boolean isColumnRangeIndexing(IndexingOp hop) {
@@ -998,6 +1115,13 @@ public class HopRewriteUtils
 			|| hop.getDim1() == hop.getInput().get(0).getDim1())
 			&& isLiteralOfValue(hop.getInput().get(3), 1)
 			&& hop.getInput().get(4) instanceof LiteralOp;
+	}
+	
+	public static boolean isConsecutiveIndex(Hop index, Hop index2) {
+		return (index instanceof LiteralOp && index2 instanceof LiteralOp) ?
+			getDoubleValueSafe((LiteralOp)index2) == (getDoubleValueSafe((LiteralOp)index)+1) :
+			(isBinaryMatrixScalar(index2, OpOp2.PLUS, 1) && 
+				(index2.getInput().get(0) == index || index2.getInput().get(1) == index));
 	}
 	
 	public static boolean isUnnecessaryRightIndexing(Hop hop) {
@@ -1037,9 +1161,7 @@ public class HopRewriteUtils
 			Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
 			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 			return isLiteralOfValue(from, 1) && isLiteralOfValue(incr, 1)
-				&& (isLiteralOfValue(to, row?input.getDim1():input.getDim2())
-					|| (to instanceof UnaryOp && ((UnaryOp)to).getOp()==(row?
-						OpOp1.NROW:OpOp1.NCOL) && to.getInput().get(0)==input));
+				&& isSizeExpressionOf(to, input, row);
 		}
 		return false;
 	}
@@ -1074,6 +1196,11 @@ public class HopRewriteUtils
 		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
 	}
 	
+	public static boolean isSizeExpressionOf(Hop size, Hop input, boolean row) {
+		return (input.dimsKnown() && isLiteralOfValue(size, row?input.getDim1():input.getDim2()))
+			|| ((row ? isUnary(size, OpOp1.NROW) : isUnary(size, OpOp1.NCOL)) && (size.getInput().get(0)==input 
+			|| (isColumnRightIndexing(input) && size.getInput().get(0)==input.getInput().get(0))));
+	}
 	
 	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
 	{
@@ -1213,5 +1340,30 @@ public class HopRewriteUtils
 			|| sb instanceof WhileStatementBlock
 			|| sb instanceof IfStatementBlock
 			|| sb instanceof ForStatementBlock); //incl parfor
+	}
+	
+	public static long getMaxNrowInput(Hop hop) {
+		return getMaxInputDim(hop, true);
+	}
+	
+	public static long getMaxNcolInput(Hop hop) {
+		return getMaxInputDim(hop, false);
+	}
+	
+	public static long getMaxInputDim(Hop hop, boolean dim1) {
+		return hop.getInput().stream().mapToLong(
+			h -> (dim1?h.getDim1():h.getDim2())).max().orElse(-1);
+	}
+	
+	public static long getSumValidInputDims(Hop hop, boolean dim1) {
+		if( !hasValidInputDims(hop, dim1) )
+			return -1;
+		return hop.getInput().stream().mapToLong(
+			h -> (dim1?h.getDim1():h.getDim2())).sum();
+	}
+	
+	public static boolean hasValidInputDims(Hop hop, boolean dim1) {
+		return hop.getInput().stream().allMatch(
+			h -> dim1 ? h.rowsKnown() : h.colsKnown());
 	}
 }

@@ -99,6 +99,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			mcOut.setNonZerosBound(Math.min(mcOut.getLength(), mcIn.getNonZerosBound()));
 			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation (partitioning-preserving if possible)
@@ -223,11 +224,12 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		
 		MatrixBlock tmp = list.get(0);
 		MatrixBlock mbout = (tmp.getNumRows()==mcOut.getRows() && tmp.getNumColumns()==mcOut.getCols()) ? 
-				tmp : tmp.sliceOperations( //reference full block or slice out sub-block
+				tmp : tmp.slice( //reference full block or slice out sub-block
 				UtilFunctions.computeCellInBlock(ixrange.rowStart, mcIn.getRowsPerBlock()), 
 				UtilFunctions.computeCellInBlock(ixrange.rowEnd, mcIn.getRowsPerBlock()), 
 				UtilFunctions.computeCellInBlock(ixrange.colStart, mcIn.getColsPerBlock()), 
 				UtilFunctions.computeCellInBlock(ixrange.colEnd, mcIn.getColsPerBlock()), new MatrixBlock());
+		mbout.examSparsity();
 		return mbout;
 	}
 	
@@ -438,7 +440,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 					long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 					
 					// Provide global zero-based index to sliceOperations
-					MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+					MatrixBlock slicedRHSMatBlock = _binput.slice(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 					
 					// Provide local zero-based index to leftIndexingOperations
 					int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);
@@ -494,7 +496,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			}
 			else {
 				return new Tuple2<>(ixOut, 
-					block.sliceOperations(lrl, lru, lcl, lcu, new MatrixBlock()));
+					block.slice(lrl, lru, lcl, lcu, new MatrixBlock()));
 			}
 		}		
 	}

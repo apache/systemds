@@ -22,9 +22,11 @@ package org.apache.sysml.lops.compile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,18 +69,17 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.Instruction.IType;
 import org.apache.sysml.runtime.instructions.InstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
-
 
 
 /**
@@ -113,7 +114,7 @@ public class Dag<N extends Lop>
 		var_index = new IDSequence();
 	}
 	
-	// hash set for all nodes in dag
+	// list of all nodes in the dag
 	private ArrayList<Lop> nodes = null;
 	
 	/* 
@@ -178,11 +179,10 @@ public class Dag<N extends Lop>
 		}
 		public void addLastInstruction(Instruction inst) {
 			lastInstructions.add(inst);
-		}		
+		}
 	}
 	
-	public Dag() 
-	{
+	public Dag() {
 		//allocate internal data structures
 		nodes = new ArrayList<>();
 		IDMap = new HashMap<>();
@@ -245,26 +245,17 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException {
-		
-		if (config != null) 
-		{
+			throws LopsException, DMLRuntimeException {
+		if (config != null) {
 			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
 		
-		// hold all nodes in a vector (needed for ordering)
-		ArrayList<Lop> node_v = new ArrayList<>();
-		node_v.addAll(nodes);
-		
-		/*
-		 * Sort the nodes by topological order.
-		 * 
-		 * 1) All nodes with level i appear prior to the nodes in level i+1.
-		 * 2) All nodes within a level are ordered by their ID i.e., in the order
-		 * they are created
-		 */
-		doTopologicalSort_strict_order(node_v);
+		// create ordering of lops (for MR, we sort by level, while for all
+		// other exec types we use a two-level sorting of )
+		ArrayList<Lop> node_v = OptimizerUtils.isHadoopExecutionMode() ?
+			doTopologicalSortStrictOrder(nodes) :
+			doTopologicalSortTwoLevelOrder(nodes);
 		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst = doGreedyGrouping(sb, node_v);
@@ -647,7 +638,8 @@ public class Dag<N extends Lop>
 	 * @throws LopsException if LopsException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
+	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst)
+		throws LopsException {
 		for(Lop n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
@@ -655,9 +647,9 @@ public class Dag<N extends Lop>
 				
 				if ( !((Data)n).isLiteral() ) {
 					try {
-						String inst_string = n.getInstructions();						
+						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
-						currInstr.setLocation(n);						
+						currInstr.setLocation(n);
 						inst.add(currInstr);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
@@ -780,7 +772,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<Lop> node_v)
-			throws LopsException, IOException, DMLRuntimeException
+			throws LopsException, DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Grouping DAG ============");
@@ -1240,8 +1232,8 @@ public class Dag<N extends Lop>
 	private static void excludeRemoveInstruction(String varName, ArrayList<Instruction> deleteInst) {
 		for(int i=0; i < deleteInst.size(); i++) {
 			Instruction inst = deleteInst.get(i);
-			if ((inst.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM  || inst.getType() == INSTRUCTION_TYPE.SPARK)
-					&& ((CPInstruction)inst).getCPInstructionType() == CPINSTRUCTION_TYPE.Variable 
+			if ((inst.getType() == IType.CONTROL_PROGRAM  || inst.getType() == IType.SPARK)
+					&& ((CPInstruction)inst).getCPInstructionType() == CPType.Variable 
 					&& ((VariableCPInstruction)inst).isRemoveVariable(varName) ) {
 				deleteInst.remove(i);
 			}
@@ -1383,14 +1375,16 @@ public class Dag<N extends Lop>
 						inputs[count++] = in.getOutputParameters().getLabel();
 					count = 0;
 					for( Lop out : node.getOutputs() )
-					{
 						outputs[count++] = out.getOutputParameters().getLabel();
-					}
-					
 					inst_string = node.getInstructions(inputs, outputs);
 				}
-				else if (node.getType() == Lop.Type.MULTIPLE_CP) { // ie, MultipleCP class
-					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
+				else if (node.getType() == Lop.Type.Nary) {
+					String[] inputs = new String[node.getInputs().size()];
+					int count = 0;
+					for( Lop in : node.getInputs() )
+						inputs[count++] = in.getOutputParameters().getLabel();
+					inst_string = node.getInstructions(inputs, 
+						node.getOutputParameters().getLabel());
 				}
 				else {
 					if ( node.getInputs().isEmpty() ) {
@@ -1408,7 +1402,7 @@ public class Dag<N extends Lop>
 								node.getInputs().get(1).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					} 
-					else if (node.getInputs().size() == 3 || node.getType() == Type.Ternary) {
+					else if (node.getInputs().size() == 3 || node.getType() == Type.Ctable) {
 						inst_string = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(),
 								node.getInputs().get(1).getOutputParameters().getLabel(),
@@ -3125,11 +3119,11 @@ public class Dag<N extends Lop>
 				}
 
 				return output_index;
-			} else if (inputIndices.size() == 3 || node.getType() == Type.Ternary) {
+			} else if (inputIndices.size() == 3 || node.getType() == Type.Ctable) {
 				int output_index = start_index[0];
 				start_index[0]++;
 
-				if (node.getType() == Type.Ternary ) {
+				if (node.getType() == Type.Ctable ) {
 					// in case of CTABLE_TRANSFORM_SCALAR_WEIGHT: inputIndices.get(2) would be -1
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), inputIndices.get(1),
@@ -3605,14 +3599,16 @@ public class Dag<N extends Lop>
 	}
 	
 	/**
-	 * Method to topologically sort lops
+	 * Sort the lops by topological order.
+	 * 
+	 *  1) All nodes with level i appear prior to the nodes in level i+1.
+	 *  2) All nodes within a level are ordered by their ID i.e., in the order
+	 *  they are created
 	 * 
 	 * @param v list of lops
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void doTopologicalSort_strict_order(ArrayList<Lop> v) {
-		//int numNodes = v.size();
-
+	private ArrayList<Lop> doTopologicalSortStrictOrder(ArrayList<Lop> v) {
 		/*
 		 * Step 1: compute the level for each node in the DAG. Level for each node is 
 		 *   computed as lops are created. So, this step is need not be performed here.
@@ -3625,13 +3621,30 @@ public class Dag<N extends Lop>
 		Lop[] nodearray = v.toArray(new Lop[0]);
 		Arrays.sort(nodearray, new LopComparator());
 
+		return createIDMapping(nodearray);
+	}
+	
+	private ArrayList<Lop> doTopologicalSortTwoLevelOrder(ArrayList<Lop> v) {
+		//partition nodes into leaf/inner nodes and dag root nodes,
+		//+ sort leaf/inner nodes by ID to force depth-first scheduling
+		//+ append root nodes in order of their original definition 
+		//  (which also preserves the original order of prints)
+		Lop[] nodearray = Stream.concat(
+			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
+			v.stream().filter(l -> l.getOutputs().isEmpty()))
+			.toArray(Lop[]::new);
+		
+		return createIDMapping(nodearray);
+	}
+	
+	private ArrayList<Lop> createIDMapping(Lop[] nodearray) {
 		// Copy sorted nodes into "v" and construct a mapping between Lop IDs and sequence of numbers
-		v.clear();
+		ArrayList<Lop> ret = new ArrayList<>();
 		IDMap.clear();
 		
 		for (int i = 0; i < nodearray.length; i++) {
-			v.add(nodearray[i]);
-			IDMap.put(v.get(i).getID(), i);
+			ret.add(nodearray[i]);
+			IDMap.put(nodearray[i].getID(), i);
 		}
 		
 		/*
@@ -3640,17 +3653,14 @@ public class Dag<N extends Lop>
 		 * - and construct the list of reachable nodes from the node $u$
 		 * - store the constructed reachability information in $u$.reachable[] boolean array
 		 */
-		// 
-		//  
 		for (int i = 0; i < nodearray.length; i++) {
-			boolean[] arr = v.get(i).create_reachable(nodearray.length);
-			Arrays.fill(arr, false);
-			dagDFS(v.get(i), arr);
+			dagDFS(nodearray[i], nodearray[i]
+				.create_reachable(nodearray.length));
 		}
 
 		// print the nodes in sorted order
 		if (LOG.isTraceEnabled()) {
-			for ( Lop vnode : v ) {
+			for ( Lop vnode : ret ) {
 				StringBuilder sb = new StringBuilder();
 				sb.append(vnode.getID());
 				sb.append("(");
@@ -3663,13 +3673,12 @@ public class Dag<N extends Lop>
 					sb.append(",");
 				}
 				sb.append("), ");
-				
 				LOG.trace(sb.toString());
 			}
-			
 			LOG.trace("topological sort -- done");
 		}
-
+		
+		return ret;
 	}
 
 	/**

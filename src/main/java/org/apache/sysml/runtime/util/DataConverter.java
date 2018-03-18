@@ -32,6 +32,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.MatrixWriter;
@@ -39,6 +40,8 @@ import org.apache.sysml.runtime.io.MatrixWriterFactory;
 import org.apache.sysml.runtime.io.ReadProperties;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
+import org.apache.sysml.runtime.matrix.data.DenseBlockFactory;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
@@ -117,7 +120,7 @@ public class DataConverter
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, double expectedSparsity) 
 		throws IOException
-	{	
+	{
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
@@ -232,19 +235,18 @@ public class DataConverter
 		
 		if( mb.getNonZeros() > 0 )
 		{
-			if( mb.isInSparseFormat() )
-			{
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
 					ret[cell.getI()][cell.getJ()] = cell.getV();
 				}
 			}
-			else
-			{			
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-						ret[i][j] = mb.getValueDenseUnsafe(i, j);
+			else {
+				double[] a = mb.getDenseBlockValues();
+				for( int i=0, ix=0; i<rows; i++ )
+					for( int j=0; j<cols; j++, ix++ )
+						ret[i][j] = a[ix];
 			}
 		}
 		
@@ -278,36 +280,77 @@ public class DataConverter
 		return ret;
 	}
 
-	public static int[] convertToIntVector( MatrixBlock mb)
-	{
+	public static int[] convertToIntVector( MatrixBlock mb) {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		int[] ret = new int[rows*cols]; //0-initialized
+		if( mb.isEmptyBlock(false) ) 
+			return ret;
+		if( mb.isInSparseFormat() ) {
+			Iterator<IJV> iter = mb.getSparseBlockIterator();
+			while( iter.hasNext() ) {
+				IJV cell = iter.next();
+				ret[cell.getI()*cols+cell.getJ()] = (int)cell.getV();
+			}
+		}
+		else {
+			//memcopy row major representation if at least 1 non-zero
+			for( int i=0, cix=0; i<rows; i++ )
+				for( int j=0; j<cols; j++, cix++ )
+					ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
+		}
+		return ret;
+	}
+	
+	public static long[] convertToLongVector( MatrixBlock mb) {
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		long[] ret = new long[rows*cols]; //0-initialized
+		if( mb.isEmptyBlock(false) ) 
+			return ret;
+		if( mb.isInSparseFormat() ) {
+			Iterator<IJV> iter = mb.getSparseBlockIterator();
+			while( iter.hasNext() ) {
+				IJV cell = iter.next();
+				ret[cell.getI()*cols+cell.getJ()] = (int)cell.getV();
+			}
+		}
+		else {
+			//memcopy row major representation if at least 1 non-zero
+			for( int i=0, cix=0; i<rows; i++ )
+				for( int j=0; j<cols; j++, cix++ )
+					ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
+		}
+		return ret;
+	}
+	
+	public static DenseBlock convertToDenseBlock(MatrixBlock mb) {
+		return convertToDenseBlock(mb, true);
+	}
+	
+	public static DenseBlock convertToDenseBlock(MatrixBlock mb, boolean deep) {
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		DenseBlock ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+			mb.getDenseBlock() : DenseBlockFactory.createDenseBlock(rows, cols); //0-initialized
 		
-		
-		if( mb.getNonZeros() > 0 )
-		{
-			if( mb.isInSparseFormat() )
-			{
+		if( !mb.isEmptyBlock(false) ) {
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret[cell.getI()*cols+cell.getJ()] = (int)cell.getV();
+					ret.set(cell.getI(), cell.getJ(), cell.getV());
 				}
 			}
-			else
-			{
-				//memcopy row major representation if at least 1 non-zero
-				for( int i=0, cix=0; i<rows; i++ )
-					for( int j=0; j<cols; j++, cix++ )
-						ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
+			else if( deep ) {
+				ret.set(mb.getDenseBlock());
 			}
 		}
 		
 		return ret;
 	}
 
-	public static double[] convertToDoubleVector( MatrixBlock mb ) {
+	public static double[] convertToDoubleVector(MatrixBlock mb) {
 		return convertToDoubleVector(mb, true);
 	}
 	
@@ -316,10 +359,9 @@ public class DataConverter
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
-			mb.getDenseBlock() : new double[rows*cols]; //0-initialized
+			mb.getDenseBlockValues() : new double[rows*cols]; //0-initialized
 		
-		if( !mb.isEmptyBlock(false) )
-		{
+		if( !mb.isEmptyBlock(false) ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
@@ -329,7 +371,7 @@ public class DataConverter
 			}
 			else if( deep ) {
 				//memcopy row major representation if at least 1 non-zero
-				System.arraycopy(mb.getDenseBlock(), 0, ret, 0, rows*cols);
+				System.arraycopy(mb.getDenseBlockValues(), 0, ret, 0, rows*cols);
 			}
 		}
 		
@@ -441,14 +483,14 @@ public class DataConverter
 	public static MatrixBlock convertToMatrixBlock( HashMap<MatrixIndexes,Double> map, int rlen, int clen )
 	{
 		int nnz = map.size();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
 		
 		// copy map values into new block
 		if( sparse ) //SPARSE <- cells
 		{
 			//append cells to sparse target (prevent shifting)
-			for( Entry<MatrixIndexes,Double> e : map.entrySet() ) 
+			for( Entry<MatrixIndexes,Double> e : map.entrySet() )
 			{
 				MatrixIndexes index = e.getKey();
 				double value = e.getValue();
@@ -526,9 +568,9 @@ public class DataConverter
 			// special case double schema (without cell-object creation, 
 			// cache-friendly row-column copy)
 			double[][] a = new double[n][];
-			double[] c = mb.getDenseBlock();
+			double[] c = mb.getDenseBlockValues();
 			for( int j=0; j<n; j++ )
-				a[j] = (double[])frame.getColumnData(j);			
+				a[j] = (double[])frame.getColumnData(j);
 			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
 			for( int bi=0; bi<m; bi+=blocksizeIJ )
 				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
@@ -564,7 +606,7 @@ public class DataConverter
 	public static String[][] convertToStringFrame(FrameBlock frame) 
 	{
 		String[][] ret = new String[frame.getNumRows()][];
-		Iterator<String[]> iter = frame.getStringRowIterator();		
+		Iterator<String[]> iter = frame.getStringRowIterator();
 		for( int i=0; iter.hasNext(); i++ ) {
 			//deep copy output rows due to internal reuse
 			ret[i] = iter.next().clone();
@@ -639,7 +681,7 @@ public class DataConverter
 		
 		if( mb.isInSparseFormat() ) //SPARSE
 		{
-			SparseBlock sblock = mb.getSparseBlock();			
+			SparseBlock sblock = mb.getSparseBlock();
 			for( int i=0; i<mb.getNumRows(); i++ ) {
 				Arrays.fill(row, null); //reset
 				if( sblock != null && !sblock.isEmpty(i) ) {
@@ -649,7 +691,7 @@ public class DataConverter
 					double[] aval = sblock.values(i);
 					for( int j=apos; j<apos+alen; j++ ) {
 						row[aix[j]] = UtilFunctions.doubleToObject(
-								schema[aix[j]], aval[j]);					
+								schema[aix[j]], aval[j]);
 					}
 				}
 				frame.appendRow(row);
@@ -658,13 +700,20 @@ public class DataConverter
 		else //DENSE
 		{
 			int dFreq = UtilFunctions.frequency(schema, ValueType.DOUBLE);
-		
-			if( dFreq == schema.length ) {
+			
+			if( schema.length==1 && dFreq==1 && mb.isAllocated() ) {
+				// special case double schema and single columns which
+				// allows for a shallow copy since the physical representation
+				// of row-major matrix and column-major frame match exactly
+				frame.reset();
+				frame.appendColumns(new double[][]{mb.getDenseBlockValues()});
+			}
+			else if( dFreq == schema.length ) {
 				// special case double schema (without cell-object creation, 
 				// col pre-allocation, and cache-friendly row-column copy)
 				int m = mb.getNumRows();
 				int n = mb.getNumColumns();
-				double[] a = mb.getDenseBlock();
+				double[] a = mb.getDenseBlockValues();
 				double[][] c = new double[n][m];
 				int blocksizeIJ = 16; //blocks of a/c+overhead in L1 cache
 				if( !mb.isEmptyBlock(false) )
@@ -737,8 +786,8 @@ public class DataConverter
 			//cache-friendly sparse/dense row slicing 
 			if( !mb.isEmptyBlock(false) ) {
 				for( int i=0; i<rows; i++ )
-					mb.sliceOperations(i, i, 0, cols-1, ret[i]);
-			}			
+					mb.slice(i, i, 0, cols-1, ret[i]);
+			}
 		}
 		
 		return ret;
@@ -757,7 +806,7 @@ public class DataConverter
 	{
 		MatrixBlock mb = mo.acquireRead();
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
-		mo.release();		
+		mo.release();
 		return new Array2DRowRealMatrix(data, false);
 	}
 
@@ -778,7 +827,7 @@ public class DataConverter
 		}
 		else {
 			//memcopy row major representation if at least 1 non-zero
-			System.arraycopy(mb.getDenseBlock(), 0, dest, destPos, rows*cols);
+			System.arraycopy(mb.getDenseBlockValues(), 0, dest, destPos, rows*cols);
 		}
 	}
 	
@@ -930,14 +979,17 @@ public class DataConverter
 		while( iter.hasNext() ) {
 			Object[] row = iter.next();
 			for( int j=0; j<colLength; j++ ) {
-				if( row[j]!=null ) {
-					if( fb.getSchema()[j] == ValueType.DOUBLE )
-						sb.append(dfFormat(df, (Double)row[j]));
-					else
-						sb.append(row[j]);
-					if( j != colLength-1 )
-						sb.append(separator);
-				}
+				if( row[j]==null )
+					sb.append(String.valueOf(row[j]));
+				else if( fb.getSchema()[j] == ValueType.DOUBLE )
+					sb.append(dfFormat(df, (Double)row[j]));
+				else if( fb.getSchema()[j] == ValueType.BOOLEAN )
+					sb.append(new BooleanObject((Boolean)row[j])
+						.getLanguageSpecificStringValue());
+				else
+					sb.append(row[j]);
+				if( j != colLength-1 )
+					sb.append(separator);
 			}
 			sb.append(lineseparator);
 		}

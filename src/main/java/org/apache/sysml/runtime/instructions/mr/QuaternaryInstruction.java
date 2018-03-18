@@ -58,8 +58,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 
 	private QuaternaryInstruction(Operator op, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU,
 			boolean cacheV, String istr) {
-		super(op, out);
-		mrtype = MRINSTRUCTION_TYPE.Quaternary;
+		super(MRType.Quaternary, op, out);
 		instString = istr;
 
 		_input1 = in1;
@@ -294,7 +293,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				if( imv==null )
 					continue;
 				MatrixIndexes inIx = imv.getIndexes();
-				MatrixValue inVal = imv.getValue();
+				MatrixBlock inVal = (MatrixBlock) imv.getValue();
 				
 				//allocate space for the output value
 				IndexedMatrixValue iout = null;
@@ -306,8 +305,8 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				MatrixIndexes outIx = iout.getIndexes();
 				MatrixValue outVal = iout.getValue();
 				
-				//Step 2: get remaining inputs: Wij, Ui, Vj		
-				MatrixValue Xij = inVal;
+				//Step 2: get remaining inputs: Wij, Ui, Vj
+				MatrixBlock Xij = inVal;
 				
 				//get Wij if existing (null of WeightsType.NONE or WSigmoid any type)
 				IndexedMatrixValue iWij = (_input4 != -1) ? cachedValues.getFirst(_input4) : null; 
@@ -332,7 +331,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				}
 				
 				//Step 3: process instruction
-				Xij.quaternaryOperations(qop, Ui, Vj, Wij, outVal);
+				Xij.quaternaryOperations(qop, (MatrixBlock)Ui, (MatrixBlock)Vj, (MatrixBlock)Wij, (MatrixBlock)outVal);
 				
 				//set output indexes
 				

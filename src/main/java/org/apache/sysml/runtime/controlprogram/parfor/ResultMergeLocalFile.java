@@ -41,8 +41,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -51,7 +49,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -72,16 +71,17 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class ResultMergeLocalFile extends ResultMerge
 {
-	
+	private static final long serialVersionUID = -6905893742840020489L;
+
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
-	public static final boolean ALLOW_COPY_CELLFILES = false;	
+	public static final boolean ALLOW_COPY_CELLFILES = false;
 	
 	//internal comparison matrix
 	private IDSequence _seq = null;
 	
-	public ResultMergeLocalFile( MatrixObject out, MatrixObject[] in, String outputFilename )
+	public ResultMergeLocalFile( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum )
 	{
-		super( out, in, outputFilename );
+		super( out, in, outputFilename, accum );
 		
 		_seq = new IDSequence();
 	}
@@ -92,17 +92,13 @@ public class ResultMergeLocalFile extends ResultMerge
 		throws DMLRuntimeException 
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
-
-		//Timing time = null;
-		LOG.trace("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-		//	time = new Timing();
-		//	time.start();
-
+		
+		if( LOG.isTraceEnabled() )
+		LOG.trace("ResultMerge (local, file): Execute serial merge for output "
+			+_output.hashCode()+" (fname="+_output.getFileName()+")");
 		
 		try
 		{
-			
-			
 			//collect all relevant inputs
 			ArrayList<MatrixObject> inMO = new ArrayList<>();
 			for( MatrixObject in : _inputs )
@@ -127,7 +123,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				merge( _outputFName, _output, inMO );
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
-				moNew = createNewMatrixObject( _output, inMO );	
+				moNew = createNewMatrixObject( _output, inMO );
 			}
 			else
 			{
@@ -152,25 +148,19 @@ public class ResultMergeLocalFile extends ResultMerge
 		return executeSerialMerge();
 	}
 
-	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO ) 
+	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO)
 		throws DMLRuntimeException
 	{
-		String varName = _output.getVarName();
-		ValueType vt = _output.getValueType();
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
-		
-		MatrixObject moNew = new MatrixObject( vt, _outputFName );
-		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
-		moNew.setDataType( DataType.MATRIX );
+		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
+		MatrixObject moNew = new MatrixObject( _output.getValueType(), _outputFName );
 		
 		//create deep copy of metadata obj
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
-		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
-				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
-		mc.setNonZeros( computeNonZeros(output, inMO) );
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
+		mc.setNonZeros(_isAccum ? -1 : computeNonZeros(output, inMO));
+		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );
 		
 		return moNew;
@@ -179,7 +169,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		OutputInfo oi = ((MatrixFormatMetaData)outMo.getMetaData()).getOutputInfo();
+		OutputInfo oi = ((MetaDataFormat)outMo.getMetaData()).getOutputInfo();
 		boolean withCompare = ( outMo.getNnz() != 0 ); //if nnz exist or unknown (-1)
 		
 		if( oi == OutputInfo.TextCellOutputInfo )
@@ -231,7 +221,9 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="
+							+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
@@ -282,20 +274,23 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			createTextCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createTextCellStagingFile( fnameStaging, in, ID );
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createTextCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createTextCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -334,7 +329,9 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					if( LOG.isTraceEnabled() )
+						LOG.trace("ResultMerge (local, file): Merge input "
+							+in.hashCode()+" (fname="+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
 					Path tmpPath = new Path(in.getFileName());
@@ -377,20 +374,23 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			createBinaryCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createBinaryCellStagingFile( fnameStaging, in, ID );
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createBinaryCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -414,13 +414,14 @@ public class ResultMergeLocalFile extends ResultMerge
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");				
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryBlockResultFile(fnameStaging, null, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), false);
+			createBinaryBlockResultFile(fnameStaging, null, fnameNew, (MetaDataFormat)outMo.getMetaData(), false);
 		}	
 		catch(Exception ex)
 		{
@@ -442,19 +443,22 @@ public class ResultMergeLocalFile extends ResultMerge
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");			
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
+					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
 			
 			createBinaryBlockStagingFile(fnameStagingCompare, outMo);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");		
+				if( LOG.isTraceEnabled() )
+					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
 	
 			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryBlockResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MatrixFormatMetaData)outMo.getMetaData(), true);
+			createBinaryBlockResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
 		}	
 		catch(Exception ex)
 		{
@@ -644,7 +648,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}	
 
 	@SuppressWarnings("deprecation")
-	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -678,17 +682,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = LocalFileUtils.readMatrixBlockFromLocal( dir2+"/"+lnames2[0] );
 							boolean appendOnly = mb.isInSparseFormat();
-							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
-							
-							String[] lnames = dir.list();
-							for( String lname : lnames )
-							{
+							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
+							for( String lname : dir.list() ) {
 								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -697,50 +698,44 @@ public class ResultMergeLocalFile extends ResultMerge
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
-							String[] lnames = dir.list();
 							boolean appendOnly = false;
-							for( String lname : lnames )
-							{
-								if( mb == null )
-								{
+							for( String lname : dir.list() ) {
+								if( mb == null ) {
 									mb = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 									appendOnly = mb.isInSparseFormat();
 								}
-								else
-								{
+								else {
 									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 									mergeWithoutComp(mb, tmp, appendOnly);
 								}
-							}	
+							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
 							mb.examSparsity(); 
 						}
 					}
-					else
-					{
+					else {
 						//NOTE: whenever runtime does not need all blocks anymore, this can be removed
 						int maxRow = (int)(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
 						int maxCol = (int)(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
-				
 						mb = new MatrixBlock(maxRow, maxCol, true);
-					}	
+					}
 					
 					//mb.examSparsity(); //done on write anyway and mb not reused
 					indexes.setIndexes(brow, bcol);
 					writer.append(indexes, mb);
-				}	
+				}
 		}
 		finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 
-	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -752,10 +747,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
-				
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-		try
-		{
+		
+		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
@@ -781,17 +774,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
 							boolean appendOnly = mb.isInSparseFormat();
-							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
-							
-							String[] lnames = dir.list();
-							for( String lname : lnames )
-							{
+							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
+							for( String lname : dir.list() ) {
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
 								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse and exam sparsity due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -800,24 +790,20 @@ public class ResultMergeLocalFile extends ResultMerge
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
-							String[] lnames = dir.list();
 							boolean appendOnly = false;
-							for( String lname : lnames )
-							{
-								if( mb == null )
-								{
+							for( String lname : dir.list() ) {
+								if( mb == null ) {
 									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
 									appendOnly = mb.isInSparseFormat();
 								}
-								else
-								{
+								else {
 									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
 									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}	
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -828,11 +814,9 @@ public class ResultMergeLocalFile extends ResultMerge
 					//write the block to text cell
 					if( mb!=null )
 					{
-						if( mb.isInSparseFormat() )
-						{
+						if( mb.isInSparseFormat() ) {
 							Iterator<IJV> iter = mb.getSparseBlockIterator();
-							while( iter.hasNext() )
-							{
+							while( iter.hasNext() ) {
 								IJV lcell = iter.next();
 								sb.append(row_offset+lcell.getI());
 								sb.append(' ');
@@ -840,13 +824,12 @@ public class ResultMergeLocalFile extends ResultMerge
 								sb.append(' ');
 								sb.append(lcell.getV());
 								sb.append('\n');
-								out.write( sb.toString() ); 
+								out.write( sb.toString() );
 								sb.setLength(0);
 								written = true;
-							}							
+							}
 						}
-						else
-						{
+						else {
 							for( int i=0; i<brlen; i++ )
 								for( int j=0; j<bclen; j++ )
 								{
@@ -865,19 +848,16 @@ public class ResultMergeLocalFile extends ResultMerge
 									}
 								}
 						}
-					}				
-				}	
+					}
+				}
 			
 			if( !written )
-				out.write("1 1 0\n");
-		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
+				out.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 	}
 
 	@SuppressWarnings("deprecation")
-	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
+	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -889,10 +869,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
-				
 		
 		MatrixIndexes indexes = new MatrixIndexes(1,1);
-		MatrixCell cell = new MatrixCell(0);	
+		MatrixCell cell = new MatrixCell(0);
 		
 		SequenceFile.Writer out = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
 		try
@@ -919,17 +898,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
 							boolean appendOnly = mb.isInSparseFormat();
-							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
-							
-							String[] lnames = dir.list();
-							for( String lname : lnames )
-							{
+							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
+							for( String lname : dir.list() ) {
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
 								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -938,24 +914,20 @@ public class ResultMergeLocalFile extends ResultMerge
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
-							String[] lnames = dir.list();
 							boolean appendOnly = false;
-							for( String lname : lnames )
-							{
-								if( mb == null )
-								{
+							for( String lname : dir.list() ) {
+								if( mb == null ) {
 									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
 									appendOnly = mb.isInSparseFormat();
 								}
-								else
-								{
+								else {
 									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
 									mergeWithoutComp(mb, tmp, appendOnly);
 								}
-							}	
+							}
 							
 							//sort sparse due to append-only
-							if( appendOnly )
+							if( appendOnly && !_isAccum )
 								mb.sortSparseRows();
 							
 							//change sparsity if required after 
@@ -969,8 +941,7 @@ public class ResultMergeLocalFile extends ResultMerge
 						if( mb.isInSparseFormat() )
 						{
 							Iterator<IJV> iter = mb.getSparseBlockIterator();
-							while( iter.hasNext() )
-							{
+							while( iter.hasNext() ) {
 								IJV lcell = iter.next();
 								indexes.setIndexes(row_offset+lcell.getI(), col_offset+lcell.getJ());
 								cell.setValue(lcell.getV());
@@ -993,7 +964,7 @@ public class ResultMergeLocalFile extends ResultMerge
 									}
 								}
 						}
-					}				
+					}
 				}	
 			
 			if( !written )
@@ -1017,8 +988,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		//merge in all input matrix objects
 		IDSequence seq = new IDSequence();
 		for( MatrixObject in : inMO )
-		{			
-			LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via file rename.");
+		{
+			if( LOG.isTraceEnabled() )
+				LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()
+					+" (fname="+in.getFileName()+") via file rename.");
 			
 			//copy over files (just rename file or entire dir)
 			Path tmpPath = new Path(in.getFileName());
@@ -1026,5 +999,4 @@ public class ResultMergeLocalFile extends ResultMerge
 			fs.rename(tmpPath, new Path(fnameNew+"/"+lname+seq.getNextID()));
 		}
 	}
-
 }

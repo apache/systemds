@@ -40,6 +40,8 @@ source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/elu.dml") as elu
+
 
 batch_norm1d = function() {
   /*
@@ -838,10 +840,10 @@ compare_tanh_builtin_forward_with_old = function() {
   X = rand(rows=N, cols=C, pdf="normal")
 
   out = tanh::forward(X)
-  
+
   sigma2X = sigmoid::forward(2*X)
   out_ref = 2*sigma2X - 1
-  
+
   # Equivalency check
   for (i in 1:nrow(out)) {
     for (j in 1:ncol(out)) {
@@ -853,22 +855,22 @@ compare_tanh_builtin_forward_with_old = function() {
 
 compare_tanh_builtin_backward_with_old = function() {
   /*
-   * Test for the `tanh` forward function.
+   * Test for the `tanh` backward function.
    */
-  print("Testing the tanh forward function.")
+  print("Testing the tanh backward function.")
 
   # Generate data
   N = 2  # num examples
   C = 3  # num channels
   X = rand(rows=N, cols=C, pdf="normal")
   dout = rand(rows=N, cols=C, pdf="normal")
-  
+
   sigma2X = sigmoid::forward(2*X)
   out = 2*sigma2X - 1
   out_ref = (1-out^2) * dout
-  
+
   out = tanh::backward(dout, X)
-  
+
   # Equivalency check
   for (i in 1:nrow(out)) {
     for (j in 1:ncol(out)) {
@@ -1089,6 +1091,37 @@ softmax2d = function() {
     for (j in 1:ncol(probs)) {
       rel_error = test_util::check_rel_error(as.scalar(probs[i,j]), as.scalar(probs_expected[i,j]),
                                              1e-5, 1e-6)
+    }
+  }
+}
+
+elu = function() {
+  /*
+   * Test for ELU function.
+   */
+  print("Testing ELU function.")
+
+  X = matrix("0.3923 -0.2236 -0.3195 -1.2050  1.0445 -0.6332  0.5731  0.5409 -0.3919 -1.0427", rows = 10, cols = 1)
+
+  print(" - Testing forward")
+  out = elu::forward(X, 1)
+  out_ref = matrix("0.3923 -0.2003 -0.2735 -0.7003  1.0445 -0.4691  0.5731  0.5409 -0.3242 -0.6475", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+          as.scalar(out_ref[i,j]), 1e-3, 1e-3)
+    }
+  }
+
+  print(" - Testing backward")
+  out = elu::backward(X, X, 1)
+  out_ref = matrix("0.3923 -0.1788 -0.2321 -0.3611  1.0445 -0.3362  0.5731  0.5409 -0.2648 -0.3676", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+          as.scalar(out_ref[i,j]), 1e-3, 1e-3)
     }
   }
 }

@@ -79,9 +79,9 @@ public class EncoderBin extends Encoder
 			
 			// initialize internal transformation metadata
 			_min = new double[_colList.length];
-			Arrays.fill(_min, Double.MAX_VALUE);
+			Arrays.fill(_min, Double.POSITIVE_INFINITY);
 			_max = new double[_colList.length];
-			Arrays.fill(_max, -Double.MAX_VALUE);
+			Arrays.fill(_max, Double.NEGATIVE_INFINITY);
 		}
 	}
 

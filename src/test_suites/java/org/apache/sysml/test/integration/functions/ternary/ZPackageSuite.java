@@ -31,6 +31,7 @@ import org.junit.runners.Suite;
 	CovarianceWeightsTest.class,
 	CTableMatrixIgnoreZerosTest.class,
 	CTableSequenceTest.class,
+	FullIfElseTest.class,
 	QuantileWeightsTest.class,
 	TableOutputTest.class,
 	TernaryAggregateTest.class,

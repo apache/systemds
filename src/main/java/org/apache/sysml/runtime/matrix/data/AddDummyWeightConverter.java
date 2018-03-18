@@ -60,6 +60,7 @@ public class AddDummyWeightConverter implements Converter<Writable, Writable, Ma
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Pair<MatrixIndexes, WeightedPair> next() {
 		Pair<MatrixIndexes, MatrixCell> temp=toCellConverter.next();
 		pair.setKey(temp.getKey());

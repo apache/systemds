@@ -265,16 +265,7 @@ public class ForStatementBlock extends StatementBlock
 		return loReturn;
 	
 	}
-
-	@Override
-	public ArrayList<Hop> get_hops() throws HopsException {
-		if (_hops != null && !_hops.isEmpty()){
-			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
-			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
-		}
-		return _hops;
-	}
-
+	
 	public void setFromHops(Hop hops) { _fromHops = hops; }
 	public void setToHops(Hop hops) { _toHops = hops; }
 	public void setIncrementHops(Hop hops) { _incrementHops = hops; }
@@ -410,29 +401,24 @@ public class ForStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public void updatePredicateRecompilationFlags() 
-		throws HopsException
-	{
+	public boolean updatePredicateRecompilationFlags() throws HopsException {
 		if( ConfigurationManager.isDynamicRecompilation() ) {
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());
 			_requiresIncrementRecompile = Recompiler.requiresRecompilation(getIncrementHops());
 		}
+		return (_requiresFromRecompile || _requiresToRecompile || _requiresIncrementRecompile);
 	}
 	
-	public boolean requiresFromRecompilation()
-	{
+	public boolean requiresFromRecompilation() {
 		return _requiresFromRecompile;
 	}
 	
-	public boolean requiresToRecompilation()
-	{
+	public boolean requiresToRecompilation() {
 		return _requiresToRecompile;
 	}
 	
-	public boolean requiresIncrementRecompilation()
-	{
+	public boolean requiresIncrementRecompilation() {
 		return _requiresIncrementRecompile;
 	}
-	
 }

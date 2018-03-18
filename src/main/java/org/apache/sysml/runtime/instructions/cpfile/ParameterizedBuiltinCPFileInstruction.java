@@ -42,8 +42,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -59,7 +57,7 @@ import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -161,7 +159,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			//initial setup
 			String fnameOld = _src.getFileName();
 			String fnameNew = _out.getFileName();
-			InputInfo ii = ((MatrixFormatMetaData)_src.getMetaData()).getInputInfo();
+			InputInfo ii = ((MetaDataFormat)_src.getMetaData()).getInputInfo();
 			MatrixCharacteristics mc = _src.getMatrixCharacteristics();
 			
 			String stagingDir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_WORK);
@@ -180,15 +178,11 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				else if( ii == InputInfo.BinaryBlockInputInfo )
 					diagBlocks = createBinaryBlockStagingFile( fnameOld, stagingDir );
 				
-				//System.out.println("Executed phase 1 in "+time.stop());
-				
 				//Phase 2: scan empty rows/cols
 				if( diagBlocks )
 					ret = createKeyMappingDiag(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
 				else
 					ret = createKeyMapping(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
-				
-				//System.out.println("Executed phase 2 in "+time.stop());
 				
 				//Phase 3: create output files
 				MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
@@ -204,11 +198,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					else
 						createBlockResultFile( fnameNew, stagingDir, mc.getRows(), mc.getCols(), ret, mc.getNonZeros(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii );
 				}
-				
-				//System.out.println("Executed phase 3 in "+time.stop());
 			}
-			catch( IOException ioe )
-			{
+			catch( IOException ioe ) {
 				throw new DMLRuntimeException( ioe );
 			}
 			
@@ -225,14 +216,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		private static MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
 			throws DMLRuntimeException
 		{
-			String varName = out.getVarName();
 			String fName = out.getFileName();
-			ValueType vt = src.getValueType();
-			MatrixFormatMetaData metadata = (MatrixFormatMetaData) src.getMetaData();
-			
-			MatrixObject moNew = new MatrixObject( vt, fName );
-			moNew.setVarName( varName );
-			moNew.setDataType( DataType.MATRIX );
+			MetaDataFormat metadata = (MetaDataFormat) src.getMetaData();
+			MatrixObject moNew = new MatrixObject(src.getValueType(), fName);
 			
 			//handle empty output block (ensure valid dimensions)
 			if( rows==0 || cols ==0 ){
@@ -251,9 +237,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 			OutputInfo oiOld = metadata.getOutputInfo();
 			InputInfo iiOld = metadata.getInputInfo();
-			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols, mcOld.getRowsPerBlock(),
-					                                              mcOld.getColsPerBlock(), mcOld.getNonZeros());
-			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols,
+				mcOld.getRowsPerBlock(), mcOld.getColsPerBlock(), mcOld.getNonZeros());
+			MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 			moNew.setMetaData( meta );
 
 			return moNew;

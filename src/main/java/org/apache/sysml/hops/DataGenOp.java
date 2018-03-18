@@ -45,7 +45,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class DataGenOp extends Hop implements MultiThreadedHop
 {
-	
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	 // defines the specific data generation method
@@ -162,9 +161,9 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		
 		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-			if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
+			if( cur.getKey().equals(DataExpression.RAND_ROWS) && rowsKnown() )
 				inputLops.put(cur.getKey(), new LiteralOp(_dim1).constructLops());
-			else if( cur.getKey().equals(DataExpression.RAND_COLS) && _dim2>0 )
+			else if( cur.getKey().equals(DataExpression.RAND_COLS) && colsKnown() )
 				inputLops.put(cur.getKey(), new LiteralOp(_dim2).constructLops());
 			else
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
@@ -244,7 +243,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
 			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
 			long nnz = _sparsity >= 0 ? (long)(_sparsity * dim1 * dim2) : -1;
-			if( dim1>0 && dim2>0 )
+			if( dim1>=0 && dim2>=0 )
 				return new long[]{ dim1, dim2, nnz };
 		}
 		else if ( _op == DataGenMethod.SEQ )
@@ -366,14 +365,20 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 	
 
-	public HashMap<String, Integer> getParamIndexMap()
-	{
+	public HashMap<String, Integer> getParamIndexMap() {
 		return _paramIndexMap;
 	}
 	
-	public int getParamIndex(String key)
-	{
+	public int getParamIndex(String key) {
 		return _paramIndexMap.get(key);
+	}
+	
+	public Hop getInput(String key) {
+		return getInput().get(getParamIndex(key));
+	}
+	
+	public void setInput(String key, Hop hop) {
+		getInput().set(getParamIndex(key), hop);
 	}
 
 	public boolean hasConstantValue() 

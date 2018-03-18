@@ -24,6 +24,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
@@ -162,24 +163,32 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 	
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
-		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
-		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
-		if(PERFORM_CONVERSION_ON_DEVICE) {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
+		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		// We invoke transfer matrix from device to host in two cases:
+		// 1. During eviction of unlocked matrices
+		// 2. During acquireHostRead
+		// 
+		// If the single-precision support is enabled, then float-to-double conversion is required as CP expects the data to be in double format. 
+		// This conversion can be done on host or on device. We typically prefer to do this conversion on device due to GPU's high-memory bandwidth. 
+		// However, the conversion requires an additional space to be allocated for the conversion, which can lead to infinite recursion 
+		// during eviction: `evict -> devictToHost -> float2double -> allocate -> ensureFreeSpace -> evict`. 
+		// To avoid this recursion, it is necessary to perform this conversion in host.
+		if(PERFORM_CONVERSION_ON_DEVICE && !isEviction) {
 			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
 			gCtx.cudaFreeHelper(deviceDoubleData);
 		}
 		else {
-			// TODO: Perform conversion on GPU using double2float and float2double kernels
+			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
 			float [] floatData = new float[dest.length];
 			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
 			for(int i = 0; i < dest.length; i++) {
 				dest[i] = floatData[i];
 			}
 		}
-		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
+		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
 	}
 
@@ -187,7 +196,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) throws DMLRuntimeException {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
-		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
+		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
 		if(PERFORM_CONVERSION_ON_DEVICE) {
 			Pointer deviceDoubleData = gCtx.allocate(((long)src.length)*Sizeof.DOUBLE);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
@@ -202,7 +211,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 		}
 		
-		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
+		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 	}
 }

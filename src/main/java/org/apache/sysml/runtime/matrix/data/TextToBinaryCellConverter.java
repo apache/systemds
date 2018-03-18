@@ -53,14 +53,18 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 			hasValue=false;
 			return;
 		}
-			
+		
 		//reset the tokenizer
 		st.reset( str );
 		
 		//convert text to matrix cell
 		indexes.setIndexes( st.nextLong(), st.nextLong() );
+		if( indexes.getRowIndex() == 0 || indexes.getColumnIndex() == 0 ) {
+			hasValue = false;
+			return;
+		}
 		value.setValue( st.nextDouble() );
-		hasValue = true;		
+		hasValue = true;
 	}
 	
 	@Override
@@ -72,14 +76,12 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 	public Pair<MatrixIndexes, MatrixCell> next() {
 		if(!hasValue)
 			return null;
-		
 		hasValue=false;
 		return pair;
 	}
 
 	@Override
-	public void setBlockSize(int rl, int cl) 
-	{
-		
+	public void setBlockSize(int rl, int cl) {
+		//do nothing
 	}
 }

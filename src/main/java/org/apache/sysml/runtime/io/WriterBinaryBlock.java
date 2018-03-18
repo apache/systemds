@@ -77,15 +77,14 @@ public class WriterBinaryBlock extends MatrixWriter
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
 		SequenceFile.Writer writer = null;
 		try {
 			writer = new SequenceFile.Writer(fs, job, path,
-					                        MatrixIndexes.class, MatrixBlock.class);
-			
+				MatrixIndexes.class, MatrixBlock.class);
 			MatrixIndexes index = new MatrixIndexes(1, 1);
-			MatrixBlock block = new MatrixBlock((int)Math.min(rlen, brlen),
-												(int)Math.min(clen, bclen), true);
+			MatrixBlock block = new MatrixBlock(
+				(int)Math.max(Math.min(rlen, brlen),1),
+				(int)Math.max(Math.min(clen, bclen),1), true);
 			writer.append(index, block);
 		}
 		finally {
@@ -161,7 +160,7 @@ public class WriterBinaryBlock extends MatrixWriter
 						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 	
 						//copy submatrix to block
-						src.sliceOperations( row_offset, row_offset+maxRow-1, 
+						src.slice( row_offset, row_offset+maxRow-1, 
 								             col_offset, col_offset+maxCol-1, block );
 						
 						//append block to sequence file
@@ -239,7 +238,7 @@ public class WriterBinaryBlock extends MatrixWriter
 							block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 		
 							//copy submatrix to block
-							src.sliceOperations( row_offset, row_offset+maxRow-1, 
+							src.slice( row_offset, row_offset+maxRow-1, 
 								col_offset, col_offset+maxCol-1, block );
 						}
 						else //empty block (not on diagonal)
@@ -281,10 +280,10 @@ public class WriterBinaryBlock extends MatrixWriter
 		{
 			case ROW_BLOCK_WISE_N:
 			{
-				long numBlocks = ((rlen-1)/brlen)+1;
+				long numBlocks = Math.max(((rlen-1)/brlen)+1, 1);
 				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/clen/brlen);
 						
-				int count = 0;		
+				int count = 0;
 				for( int k = 0; k<numBlocks; k+=numPartBlocks )
 				{
 					// 1) create sequence file writer, with right replication factor 
@@ -311,7 +310,7 @@ public class WriterBinaryBlock extends MatrixWriter
 								MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 			
 								//copy submatrix to block
-								src.sliceOperations( row_offset, row_offset+maxRow-1, 
+								src.slice( row_offset, row_offset+maxRow-1, 
 										             col_offset, col_offset+maxCol-1, block );
 								
 								//append block to sequence file
@@ -331,10 +330,10 @@ public class WriterBinaryBlock extends MatrixWriter
 			}
 			case COLUMN_BLOCK_WISE_N:
 			{
-				long numBlocks = ((clen-1)/bclen)+1;
+				long numBlocks = Math.max(((clen-1)/bclen)+1, 1);
 				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/rlen/bclen);
 				
-				int count = 0;		
+				int count = 0;
 				for( int k = 0; k<numBlocks; k+=numPartBlocks )
 				{
 					// 1) create sequence file writer, with right replication factor 
@@ -361,7 +360,7 @@ public class WriterBinaryBlock extends MatrixWriter
 								MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 			
 								//copy submatrix to block
-								src.sliceOperations( row_offset, row_offset+maxRow-1, 
+								src.slice( row_offset, row_offset+maxRow-1, 
 										             col_offset, col_offset+maxCol-1, block );
 								
 								//append block to sequence file

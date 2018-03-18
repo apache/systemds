@@ -36,9 +36,10 @@ public abstract class IPAPass
 	 * configuration such as global flags or the chosen execution 
 	 * mode (e.g., hybrid_spark).
 	 * 
+	 * @param fgraph function call graph
 	 * @return true if applicable.
 	 */
-	public abstract boolean isApplicable();
+	public abstract boolean isApplicable(FunctionCallGraph fgraph);
 	
 	/**
 	 * Rewrites the given program or its functions in place,

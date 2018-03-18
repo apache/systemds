@@ -38,10 +38,12 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
@@ -147,29 +149,33 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);   //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = fuseDatagenAndBinaryOperation(hi);              //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hi);               //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
- 			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
- 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
- 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
- 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
- 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
- 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
- 			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
- 			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
- 			hi = removeUnnecessaryAggregates(hi);                //e.g., sum(rowSums(X)) -> sum(X)
- 			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
- 			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
- 			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
- 			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
- 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
- 			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
- 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
- 				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
+			hi = foldMultipleAppendOperations(hi);               //e.g., cbind(X,cbind(Y,Z)) -> cbind(X,Y,Z)
+			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
+			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
+			hi = simplifyCTableWithConstMatrixInputs(hi);        //e.g., table(X, matrix(1,...)) -> table(X, 1)
+			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
+			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
+				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
+			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
+			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
+			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
+			hi = removeUnnecessaryAggregates(hi);                //e.g., sum(rowSums(X)) -> sum(X)
+			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
+			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
+			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
+			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
+			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
+			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
+			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
+				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
+			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
 			hi = simplifyTransposeAggBinBinaryChains(hop, hi, i);//e.g., t(t(A)%*%t(B)+C) -> B%*%A+t(C)
+			hi = simplifyReplaceZeroOperation(hop, hi, i);       //e.g., X + (X==0) * s -> replace(X, 0, s)
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplify binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
@@ -358,19 +364,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//the creation of multiple datagen ops and thus potentially different results if seed not specified)
 			
 			//left input rand and hence output matrix double, right scalar literal
-			if( left instanceof DataGenOp && ((DataGenOp)left).getOp()==DataGenMethod.RAND &&
+			if( HopRewriteUtils.isDataGenOp(left, DataGenMethod.RAND) &&
 				right instanceof LiteralOp && left.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)left;
-				HashMap<String,Integer> params = inputGen.getParamIndexMap();
-				Hop pdf = left.getInput().get(params.get(DataExpression.RAND_PDF));
-				Hop min = left.getInput().get(params.get(DataExpression.RAND_MIN));
-				Hop max = left.getInput().get(params.get(DataExpression.RAND_MAX));
+				Hop pdf = inputGen.getInput(DataExpression.RAND_PDF);
+				Hop min = inputGen.getInput(DataExpression.RAND_MIN);
+				Hop max = inputGen.getInput(DataExpression.RAND_MAX);
 				double sval = ((LiteralOp)right).getDoubleValue();
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
 				
 				if( HopRewriteUtils.isBinary(bop, OpOp2.MULT, OpOp2.PLUS, OpOp2.MINUS, OpOp2.DIV)
-					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
-					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdfUniform )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -388,7 +394,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation1 (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation1 "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
@@ -396,15 +403,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				left instanceof LiteralOp && right.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
-				HashMap<String,Integer> params = inputGen.getParamIndexMap();
-				Hop pdf = right.getInput().get(params.get(DataExpression.RAND_PDF));
-				Hop min = right.getInput().get(params.get(DataExpression.RAND_MIN));
-				Hop max = right.getInput().get(params.get(DataExpression.RAND_MAX));
+				Hop pdf = inputGen.getInput(DataExpression.RAND_PDF);
+				Hop min = inputGen.getInput(DataExpression.RAND_MIN);
+				Hop max = inputGen.getInput(DataExpression.RAND_MAX);
 				double sval = ((LiteralOp)left).getDoubleValue();
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
 				
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
-					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
-					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdfUniform )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -420,7 +427,51 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.replaceChildReference(p, bop, gen);
 					
 					hi = gen;
-					LOG.debug("Applied fuseDatagenAndBinaryOperation2 (line "+bop.getBeginLine()+").");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation2 "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
+				}
+			}
+			//left input rand and hence output matrix double, right scalar variable
+			else if( HopRewriteUtils.isDataGenOp(left, DataGenMethod.RAND) 
+				&& right.getDataType().isScalar() && left.getParent().size()==1 )
+			{
+				DataGenOp gen = (DataGenOp)left;
+				Hop min = gen.getInput(DataExpression.RAND_MIN);
+				Hop max = gen.getInput(DataExpression.RAND_MAX);
+				Hop pdf = gen.getInput(DataExpression.RAND_PDF);
+				boolean pdfUniform = pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
+					
+				
+				if( HopRewriteUtils.isBinary(bop, OpOp2.PLUS)
+					&& HopRewriteUtils.isLiteralOfValue(min, 0)
+					&& HopRewriteUtils.isLiteralOfValue(max, 0) )
+				{
+					gen.setInput(DataExpression.RAND_MIN, right);
+					gen.setInput(DataExpression.RAND_MAX, right);
+					//rewire all parents (avoid anomalies with replicated datagen)
+					List<Hop> parents = new ArrayList<>(bop.getParent());
+					for( Hop p : parents )
+						HopRewriteUtils.replaceChildReference(p, bop, gen);
+					hi = gen;
+					LOG.debug("Applied fuseDatagenAndBinaryOperation3a "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
+				}
+				else if( HopRewriteUtils.isBinary(bop, OpOp2.MULT)
+					&& ((HopRewriteUtils.isLiteralOfValue(min, 0) && pdfUniform)
+						|| HopRewriteUtils.isLiteralOfValue(min, 1))
+					&& HopRewriteUtils.isLiteralOfValue(max, 1) )
+				{
+					if( HopRewriteUtils.isLiteralOfValue(min, 1) )
+						gen.setInput(DataExpression.RAND_MIN, right);
+					gen.setInput(DataExpression.RAND_MAX, right);
+					//rewire all parents (avoid anomalies with replicated datagen)
+					List<Hop> parents = new ArrayList<>(bop.getParent());
+					for( Hop p : parents )
+						HopRewriteUtils.replaceChildReference(p, bop, gen);
+					hi = gen;
+					LOG.debug("Applied fuseDatagenAndBinaryOperation3b "
+						+ "("+bop.getFilename()+", line "+bop.getBeginLine()+").");
 				}
 			}
 		}
@@ -471,6 +522,55 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					hi = inputGen;
 					LOG.debug("Applied fuseDatagenAndMinusOperation (line "+bop.getBeginLine()+").");
+				}
+			}
+		}
+		
+		return hi;
+	}
+	
+	private static Hop foldMultipleAppendOperations(Hop hi) 
+		throws HopsException
+	{
+		if( hi.getDataType().isMatrix() //no string appends or frames
+			&& (HopRewriteUtils.isBinary(hi, OpOp2.CBIND, OpOp2.RBIND) 
+			|| HopRewriteUtils.isNary(hi, OpOpN.CBIND, OpOpN.RBIND))
+			&& !OptimizerUtils.isHadoopExecutionMode() )
+		{
+			OpOp2 bop = (hi instanceof BinaryOp) ? ((BinaryOp)hi).getOp() :
+				OpOp2.valueOf(((NaryOp)hi).getOp().name());
+			OpOpN nop = (hi instanceof NaryOp) ? ((NaryOp)hi).getOp() :
+				OpOpN.valueOf(((BinaryOp)hi).getOp().name());
+			
+			boolean converged = false;
+			while( !converged ) {
+				//get first matching cbind or rbind
+				Hop first = hi.getInput().stream()
+					.filter(h -> HopRewriteUtils.isBinary(h, bop) || HopRewriteUtils.isNary(h, nop))
+					.findFirst().orElse(null);
+				
+				//replace current op with new nary cbind/rbind
+				if( first != null && first.getParent().size()==1 ) {
+					//construct new list of inputs (in original order)
+					ArrayList<Hop> linputs = new ArrayList<>();
+					for(Hop in : hi.getInput())
+						if( in == first )
+							linputs.addAll(first.getInput());
+						else
+							linputs.add(in);
+					Hop hnew = HopRewriteUtils.createNary(nop, linputs.toArray(new Hop[0]));
+					//clear dangling references
+					HopRewriteUtils.removeAllChildReferences(hi);
+					HopRewriteUtils.removeAllChildReferences(first);
+					//rewire all parents (avoid anomalies with refs to hi)
+					List<Hop> parents = new ArrayList<>(hi.getParent());
+					for( Hop p : parents )
+						HopRewriteUtils.replaceChildReference(p, hi, hnew);
+					hi = hnew;
+					LOG.debug("Applied foldMultipleAppendOperations (line "+hi.getBeginLine()+").");
+				}
+				else {
+					converged = true;
 				}
 			}
 		}
@@ -575,11 +675,30 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				bop.setOp(OpOp2.PLUS);
 				HopRewriteUtils.replaceChildReference(bop,  right,
-						HopRewriteUtils.createBinaryMinus(right), 1);				
+						HopRewriteUtils.createBinaryMinus(right), 1);
 				LOG.debug("Applied canonicalizeMatrixMultScalarAdd2 (line "+hi.getBeginLine()+").");
 			}
 		}
 		
+		return hi;
+	}
+	
+	private static Hop simplifyCTableWithConstMatrixInputs( Hop hi ) 
+		throws HopsException
+	{
+		//pattern: table(X, matrix(1,...), matrix(7, ...)) -> table(X, 1, 7)
+		if( HopRewriteUtils.isTernary(hi, OpOp3.CTABLE) ) {
+			//note: the first input always expected to be a matrix
+			for( int i=1; i<hi.getInput().size(); i++ ) {
+				Hop inCurr = hi.getInput().get(i);
+				if( HopRewriteUtils.isDataGenOpWithConstantValue(inCurr) ) {
+					Hop inNew = ((DataGenOp)inCurr).getInput(DataExpression.RAND_MIN);
+					HopRewriteUtils.replaceChildReference(hi, inCurr, inNew, i);
+					LOG.debug("Applied simplifyCTableWithConstMatrixInputs"
+						+ i + " (line "+hi.getBeginLine()+").");
+				}
+			}
+		}
 		return hi;
 	}
 
@@ -998,8 +1117,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			UnaryOp uop = (UnaryOp) hi; //valid unary op
 			if( uop.getOp()==OpOp1.ABS || uop.getOp()==OpOp1.SIGN
-				|| uop.getOp()==OpOp1.SELP || uop.getOp()==OpOp1.CEIL
-				|| uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
+				|| uop.getOp()==OpOp1.CEIL || uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
 			{
 				//clear link unary-binary
 				Hop input = uop.getInput().get(0);
@@ -1175,66 +1293,40 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					BinaryOp bleft = (BinaryOp)left;
 					Hop left1 = bleft.getInput().get(0);
-					Hop left2 = bleft.getInput().get(1);		
+					Hop left2 = bleft.getInput().get(1);
 				
 					if( left2 instanceof LiteralOp &&
-						HopRewriteUtils.getDoubleValue((LiteralOp)left2)==0 &&	
-						left1 == right && bleft.getOp() == OpOp2.GREATER  ) 
+						HopRewriteUtils.getDoubleValue((LiteralOp)left2)==0 &&
+						left1 == right && (bleft.getOp() == OpOp2.GREATER ) )
 					{
-						UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);
-						HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
+						BinaryOp binary = HopRewriteUtils.createBinary(right, new LiteralOp(0), OpOp2.MAX);
+						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);
 						HopRewriteUtils.cleanupUnreferenced(bop, left);
-						hi = unary;
+						hi = binary;
 						applied = true;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp1");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-max0a");
 					}
-				}				
+				}
 				if( !applied && right instanceof BinaryOp ) //X*(X>0)
 				{
 					BinaryOp bright = (BinaryOp)right;
 					Hop right1 = bright.getInput().get(0);
-					Hop right2 = bright.getInput().get(1);		
+					Hop right2 = bright.getInput().get(1);
 				
 					if( right2 instanceof LiteralOp &&
-						HopRewriteUtils.getDoubleValue((LiteralOp)right2)==0 &&	
+						HopRewriteUtils.getDoubleValue((LiteralOp)right2)==0 &&
 						right1 == left && bright.getOp() == OpOp2.GREATER )
 					{
-						UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
-						HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
+						BinaryOp binary = HopRewriteUtils.createBinary(left, new LiteralOp(0), OpOp2.MAX);
+						HopRewriteUtils.replaceChildReference(parent, bop, binary, pos);
 						HopRewriteUtils.cleanupUnreferenced(bop, left);
-						hi = unary;
+						hi = binary;
 						applied= true;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp2");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-max0b");
 					}
 				}
-			}
-			
-			//select positive (selp) operator; pattern: max(X,0) -> selp+
-			if( !applied && bop.getOp() == OpOp2.MAX && left.getDataType()==DataType.MATRIX 
-					&& right instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)right)==0 )
-			{
-				UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
-				HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
-				HopRewriteUtils.cleanupUnreferenced(bop);
-				hi = unary;
-				applied = true;
-				
-				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
-			}
-			
-			//select positive (selp) operator; pattern: max(0,X) -> selp+
-			if( !applied && bop.getOp() == OpOp2.MAX && right.getDataType()==DataType.MATRIX 
-					&& left instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left)==0 )
-			{
-				UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);
-				HopRewriteUtils.replaceChildReference(parent, bop, unary, pos);
-				HopRewriteUtils.cleanupUnreferenced(bop);
-				hi = unary;
-				applied = true;
-				
-				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp4");
 			}
 		}
 		
@@ -1387,12 +1479,70 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						LOG.debug("Applied simplifyOrderedSort2.");
 					}
 				}
-			}	   
+			}
 		}
 		
 		return hi;
 	}
 
+	private static Hop fuseOrderOperationChain(Hop hi) 
+		throws HopsException
+	{
+		//order(order(X,2),1) -> order(X, (12)), 
+		if( HopRewriteUtils.isReorg(hi, ReOrgOp.SORT)
+			&& hi.getInput().get(1) instanceof LiteralOp //scalar by
+			&& hi.getInput().get(2) instanceof LiteralOp //scalar desc
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false) //not ixret
+			&& !OptimizerUtils.isHadoopExecutionMode() )
+		{ 
+			LiteralOp by = (LiteralOp) hi.getInput().get(1);
+			boolean desc = HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2));
+			
+			//find chain of order operations with same desc/ixret configuration and single consumers
+			ArrayList<LiteralOp> byList = new ArrayList<LiteralOp>();
+			byList.add(by);
+			Hop input = hi.getInput().get(0);
+			while( HopRewriteUtils.isReorg(input, ReOrgOp.SORT)
+				&& input.getInput().get(1) instanceof LiteralOp //scalar by
+				&& HopRewriteUtils.isLiteralOfValue(input.getInput().get(2), desc)
+				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false)
+				&& input.getParent().size() == 1 ) 
+			{
+				byList.add((LiteralOp)input.getInput().get(1));
+				input = input.getInput().get(0);
+			}
+			
+			//merge order chain if at least two instances
+			if( byList.size() >= 2 ) {
+				//create new order operations
+				ArrayList<Hop> inputs = new ArrayList<>();
+				inputs.add(input);
+				inputs.add(HopRewriteUtils.createDataGenOpByVal(byList, 1, byList.size()));
+				inputs.add(new LiteralOp(desc));
+				inputs.add(new LiteralOp(false));
+				Hop hnew = HopRewriteUtils.createReorg(inputs, ReOrgOp.SORT);
+				
+				//cleanup references recursively
+				Hop current = hi;
+				while(current != input ) {
+					Hop tmp = current.getInput().get(0);
+					HopRewriteUtils.removeAllChildReferences(current);
+					current = tmp;
+				}
+				
+				//rewire all parents (avoid anomalies with replicated datagen)
+				List<Hop> parents = new ArrayList<>(hi.getParent());
+				for( Hop p : parents )
+					HopRewriteUtils.replaceChildReference(p, hi, hnew);
+				
+				hi = hnew;
+				LOG.debug("Applied fuseOrderOperationChain (line "+hi.getBeginLine()+").");
+			}
+		}
+		
+		return hi;
+	}
+	
 	/**
 	 * Patterns: t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 	 * 
@@ -1407,14 +1557,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	{
 		if( HopRewriteUtils.isTransposeOperation(hi)
 			&& hi.getInput().get(0) instanceof BinaryOp                       //basic binary
-			&& ((BinaryOp)hi.getInput().get(0)).supportsMatrixScalarOperations()) 
+			&& ((BinaryOp)hi.getInput().get(0)).supportsMatrixScalarOperations())
 		{
 			Hop left = hi.getInput().get(0).getInput().get(0);
 			Hop C = hi.getInput().get(0).getInput().get(1);
 			
 			//check matrix mult and both inputs transposes w/ single consumer
 			if( left instanceof AggBinaryOp && C.getDataType().isMatrix()
-				&& HopRewriteUtils.isTransposeOperation(left.getInput().get(0))     
+				&& HopRewriteUtils.isTransposeOperation(left.getInput().get(0))
 				&& left.getInput().get(0).getParent().size()==1 
 				&& HopRewriteUtils.isTransposeOperation(left.getInput().get(1))
 				&& left.getInput().get(1).getParent().size()==1 )
@@ -1429,10 +1579,33 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.replaceChildReference(parent, hi, bop, pos);
 				
 				hi = bop;
-				LOG.debug("Applied simplifyTransposeAggBinBinaryChains (line "+hi.getBeginLine()+").");						
-			}  
+				LOG.debug("Applied simplifyTransposeAggBinBinaryChains (line "+hi.getBeginLine()+").");
+			}
 		}
 		
+		return hi;
+	}
+	
+	// Patterns: X + (X==0) * s -> replace(X, 0, s)
+	private static Hop simplifyReplaceZeroOperation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( HopRewriteUtils.isBinary(hi, OpOp2.PLUS) && hi.getInput().get(0).isMatrix()
+			&& HopRewriteUtils.isBinary(hi.getInput().get(1), OpOp2.MULT)
+			&& hi.getInput().get(1).getInput().get(1).isScalar()
+			&& HopRewriteUtils.isBinaryMatrixScalar(hi.getInput().get(1).getInput().get(0), OpOp2.EQUAL, 0)
+			&& hi.getInput().get(1).getInput().get(0).getInput().contains(hi.getInput().get(0)) )
+		{
+			HashMap<String, Hop> args = new HashMap<>();
+			args.put("target", hi.getInput().get(0));
+			args.put("pattern", new LiteralOp(0));
+			args.put("replacement", hi.getInput().get(1).getInput().get(1));
+			Hop replace = HopRewriteUtils.createParameterizedBuiltinOp(
+				hi.getInput().get(0), args, ParamBuiltinOp.REPLACE);
+			HopRewriteUtils.replaceChildReference(parent, hi, replace, pos);
+			hi = replace;
+			LOG.debug("Applied simplifyReplaceZeroOperation (line "+hi.getBeginLine()+").");
+		}
 		return hi;
 	}
 	

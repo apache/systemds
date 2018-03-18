@@ -30,9 +30,10 @@ public class ConvolutionTransform extends Lop
 
 	
 	public enum OperationTypes {
-		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD, RELU_MAX_POOLING_BACKWARD,
+		MAX_POOLING, MAX_POOLING_BACKWARD, AVG_POOLING, AVG_POOLING_BACKWARD,
+		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY
+		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS
 	}
 	
 	private OperationTypes operation = null;
@@ -67,6 +68,18 @@ public class ConvolutionTransform extends Lop
 		input2.addOutput(this);
 		setLevel();
 	}
+	
+	public ConvolutionTransform(Lop input1, Lop input2, Lop input3, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
+	{
+		super(Lop.Type.Transform, dt, vt);		
+		init(input1, op, dt, vt, et);
+		numThreads = k;
+		this.addInput(input2);
+		input2.addOutput(this);
+		this.addInput(input3);
+		input3.addOutput(this);
+		setLevel();
+	}
 
 	private void init (Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
@@ -88,6 +101,10 @@ public class ConvolutionTransform extends Lop
 			lps.addCompatibility(JobType.INVALID);
 			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
+	}
+	
+	public void updateLopProperties() {
+		lps.setLevel(inputs);
 	}
 
 	@Override
@@ -124,6 +141,12 @@ public class ConvolutionTransform extends Lop
 		case MAX_POOLING_BACKWARD:
 			return "maxpooling_backward";
 		
+		case AVG_POOLING:
+			return "avgpooling";
+			
+		case AVG_POOLING_BACKWARD:
+			return "avgpooling_backward";
+		
 		case DIRECT_CONV2D:
 			return "conv2d";
 		
@@ -141,6 +164,9 @@ public class ConvolutionTransform extends Lop
 			
 		case DIRECT_CONV2D_BACKWARD_DATA:
 			return "conv2d_backward_data";
+			
+		case CHANNEL_SUMS:
+			return "channel_sums";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
@@ -176,6 +202,31 @@ public class ConvolutionTransform extends Lop
 		}
 		else {
 			throw new LopsException("The operation is not supported with two operands:" + operation.name());
+		}
+	}
+	
+	@Override
+	public String getInstructions(String input, String C, String HW, String output) throws LopsException {
+		if(operation == OperationTypes.CHANNEL_SUMS) {
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(1).prepInputOperand(C));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(2).prepInputOperand(HW));
+			//output
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			
+			return sb.toString();
+		}
+		else {
+			throw new LopsException("The operation is not supported with three operands:" + operation.name());
 		}
 	}
 	

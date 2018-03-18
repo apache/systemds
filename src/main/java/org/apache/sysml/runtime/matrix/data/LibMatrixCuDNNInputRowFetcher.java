@@ -20,6 +20,8 @@ package org.apache.sysml.runtime.matrix.data;
 
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.Pointer;
+
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -59,10 +61,10 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	public Pointer getNthRow(int n) throws DMLRuntimeException {
 		if(isInputInSparseFormat) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			cudaMemset(outPointer, 0, numColumns*sizeOfDataType);
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
+			if(DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
 			LibMatrixCUDA.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);
 		}
 		else {
@@ -75,6 +77,10 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	 */
 	@Override
 	public void close() {
-		gCtx.cudaFreeHelper(outPointer, true);
+		try {
+			gCtx.cudaFreeHelper(outPointer, true);
+		} catch (DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

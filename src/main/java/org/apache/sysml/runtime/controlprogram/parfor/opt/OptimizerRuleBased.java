@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +63,7 @@ import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -93,8 +95,9 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseRowVector;
@@ -288,7 +291,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<>();
+			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			// rewrite 15: disable caching
@@ -303,7 +306,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<>();
+			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
@@ -414,9 +417,8 @@ public class OptimizerRuleBased extends Optimizer
 		if(    OptimizerUtils.isHybridExecutionMode()  //only if we are allowed to recompile
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
-			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
 			HashMap<String, PartitionFormat> cand2 = new HashMap<>();
-			for( String c : cand )
+			for( String c : pfsb.getReadOnlyParentVars() )
 			{
 				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
 				
@@ -424,7 +426,7 @@ public class OptimizerRuleBased extends Optimizer
 					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) 
 				{
 					cand2.put( c, dpf );
-				}	
+				}
 			}
 			
 			apply = rFindDataPartitioningCandidates(n, cand2, vars, thetaM);
@@ -624,7 +626,7 @@ public class OptimizerRuleBased extends Optimizer
 		return apply;
 	}
 
-	protected boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
+	protected boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<ResultVar> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -638,7 +640,7 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
-	protected boolean isResultPartitionable( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
+	protected boolean isResultPartitionable( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -656,7 +658,7 @@ public class OptimizerRuleBased extends Optimizer
 			base = h.getInput().get(0);
 			
 			//check result variable
-			if( !resultVars.contains(base.getName()) )
+			if( !ResultVar.contains(resultVars, base.getName()) )
 				ret = false;
 		}
 
@@ -773,7 +775,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//construct new instructions
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
-			sb, sb.get_hops(), vars, null, false, false, 0);
+			sb, sb.getHops(), vars, null, false, false, 0);
 		pb.setInstructions( newInst );   
 		
 		//reset all rix estimated (modified by recompile)
@@ -891,8 +893,11 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//rule-based decision based on number of outer iterations or maximum number of
 		//inner iterations (w/ appropriately scaled minimum data size threshold); 
+		boolean isCtxCreated = OptimizerUtils.isSparkExecutionMode()
+				&& SparkExecutionContext.isSparkContextCreated();
 		return (_N >= PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB)
-			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB/10);
+			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE
+				&& M > PROB_SIZE_THRESHOLD_MB/(isCtxCreated?10:1));
 	}
 
 	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 
@@ -905,7 +910,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
 			if(    h.getForcedExecType()!=LopProperties.ExecType.MR  //e.g., -exec=hadoop
-				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK) 
+				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK 
+				&& h.hasValidCPDimsAndSize() ) //integer dims
 			{
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
 				if( mem <= memBudget )
@@ -1095,15 +1101,14 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//account for remaining hdfs capacity
 			try {
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+				FileSystem fs = IOUtilFunctions.getFileSystem(ConfigurationManager.getCachedJobConf());
 				long hdfsCapacityRemain = fs.getStatus().getRemaining();
 				long sizeInputs = 0; //sum of all input sizes (w/o replication)
-				for( String var : partitionedMatrices.keySet() )
-				{
+				for( String var : partitionedMatrices.keySet() ) {
 					MatrixObject mo = (MatrixObject)vars.get(var);
 					Path fname = new Path(mo.getFileName());
 					if( fs.exists( fname ) ) //non-existing (e.g., CP) -> small file
-						sizeInputs += fs.getContentSummary(fname).getLength();		
+						sizeInputs += fs.getContentSummary(fname).getLength();
 				}
 				replication = (int) Math.min(replication, Math.floor(0.9*hdfsCapacityRemain/sizeInputs));
 				
@@ -1664,7 +1669,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set in-place result indexing
 	///
 
-	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars, ExecutionContext ec) 
+	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<ResultVar> inPlaceResultVars, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1678,14 +1683,14 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//note currently we decide for all result vars jointly, i.e.,
 		//only if all fit pinned in remaining budget, we apply this rewrite.
-		ArrayList<String> retVars = pfpb.getResultVariables();
+		ArrayList<ResultVar> retVars = pfpb.getResultVariables();
 		
 		//compute total sum of pinned result variable memory
 		double sum = computeTotalSizeResultVariables(retVars, vars, pfpb.getDegreeOfParallelism());
 		
 		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
 		//most importantly counted twice if this is part of the maximum operation)
-		double totalMem = Math.max((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<String>()));
+		double totalMem = Math.max((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<ResultVar>()));
 		
 		//optimization decision
 		if( rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) ) //basic correctness constraint
@@ -1711,8 +1716,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			//add result vars to result and set state
 			//will be serialized and transfered via symbol table 
-			for( String var : retVars ){
-				Data dat = vars.get(var);
+			for( ResultVar var : retVars ){
+				Data dat = vars.get(var._name);
 				if( dat instanceof MatrixObject )
 					((MatrixObject)dat).setUpdateType(UpdateType.INPLACE_PINNED);
 			}
@@ -1720,10 +1725,10 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set in-place result indexing' - result="+
-			apply+" ("+ProgramConverter.serializeStringCollection(inPlaceResultVars)+", M="+toMB(totalMem)+")" );
+			apply+" ("+Arrays.toString(inPlaceResultVars.toArray(new ResultVar[0]))+", M="+toMB(totalMem)+")" );
 	}
 	
-	protected boolean rHasOnlyInPlaceSafeLeftIndexing( OptNode n, ArrayList<String> retVars ) 
+	protected boolean rHasOnlyInPlaceSafeLeftIndexing( OptNode n, ArrayList<ResultVar> retVars ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -1733,17 +1738,18 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		else if( n.getNodeType()== NodeType.HOP) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( h instanceof LeftIndexingOp && retVars.contains( h.getInput().get(0).getName() ) )
+			if( h instanceof LeftIndexingOp && ResultVar.contains(retVars, h.getInput().get(0).getName() )
+				&& !retVars.stream().anyMatch(rvar -> rvar._isAccum) )
 				ret &= (h.getParent().size()==1 
 					&& h.getParent().get(0).getName().equals(h.getInput().get(0).getName()));
 		}
 		return ret;
 	}
 
-	private static double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars, int k) {
+	private static double computeTotalSizeResultVariables(ArrayList<ResultVar> retVars, LocalVariableMap vars, int k) {
 		double sum = 1;
-		for( String var : retVars ) {
-			Data dat = vars.get(var);
+		for( ResultVar var : retVars ) {
+			Data dat = vars.get(var._name);
 			if( !(dat instanceof MatrixObject) )
 				continue;
 			MatrixObject mo = (MatrixObject)dat;
@@ -1763,7 +1769,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE disable CP caching  
 	///
 
-	protected void rewriteDisableCPCaching(OptNode pn, HashSet<String> inplaceResultVars, LocalVariableMap vars) 
+	protected void rewriteDisableCPCaching(OptNode pn, HashSet<ResultVar> inplaceResultVars, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1785,7 +1791,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'disable CP caching' - result="+apply+" (M="+toMB(M_sumInterm)+")" );
 	}
 
-	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<String> inplaceResultVars )
+	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<ResultVar> inplaceResultVars )
 		throws DMLRuntimeException
 	{
 		double sum = 0;
@@ -1810,7 +1816,7 @@ public class OptimizerRuleBased extends Optimizer
 				if( h.getInput() != null )
 					for( Hop cn : h.getInput() )
 						if( cn instanceof DataOp && ((DataOp)cn).isRead()  //read data
-							&& !inplaceResultVars.contains(cn.getName())) //except in-place result vars
+							&& !ResultVar.contains(inplaceResultVars, cn.getName())) //except in-place result vars
 							sum += cn.getMemEstimate();
 			}
 		}
@@ -1867,15 +1873,13 @@ public class OptimizerRuleBased extends Optimizer
 				
 				if(    ch instanceof DataOp && ch.getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getName()) )
-					//&& !partitionedVars.contains(ch.getName()))
 				{
 					ret = true;
 					sharedVars.add(ch.getName());
 				}
-				else if( HopRewriteUtils.isTransposeOperation(ch)  
+				else if( HopRewriteUtils.isTransposeOperation(ch)
 					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getInput().get(0).getName()) )
-					//&& !partitionedVars.contains(ch.getInput().get(0).getName()))
 				{
 					ret = true;
 					sharedVars.add(ch.getInput().get(0).getName());
@@ -1909,7 +1913,7 @@ public class OptimizerRuleBased extends Optimizer
 			ProgramRewriter rewriter = new ProgramRewriter(rewrite);
 			ProgramRewriteStatus state = new ProgramRewriteStatus();
 			rewriter.rRewriteStatementBlockHopDAGs( pfsb, state );
-			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
+			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state, true));
 			
 			//recompile if additional checkpoints introduced
 			if( state.getInjectedCheckpoints() ) {
@@ -2062,24 +2066,24 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
-		ArrayList<String> cleanedVars = new ArrayList<>();
-		ArrayList<String> resultVars = pfpb.getResultVariables();
+		ArrayList<ResultVar> cleanedVars = new ArrayList<>();
+		ArrayList<ResultVar> resultVars = pfpb.getResultVariables();
 		String itervar = pfpb.getIterVar();
 		
-		for( String rvar : resultVars ) {
-			Data dat = ec.getVariable(rvar);
+		for( ResultVar rvar : resultVars ) {
+			Data dat = ec.getVariable(rvar._name);
 			if( dat instanceof MatrixObject && ((MatrixObject)dat).getNnz()!=0     //subject to result merge with compare
 				&& n.hasOnlySimpleChilds()                                         //guaranteed no conditional indexing	
-				&& rContainsResultFullReplace(n, rvar, itervar, (MatrixObject)dat) //guaranteed full matrix replace 
+				&& rContainsResultFullReplace(n, rvar._name, itervar, (MatrixObject)dat) //guaranteed full matrix replace 
 				//&& !pfsb.variablesRead().containsVariable(rvar)                  //never read variable in loop body
-				&& !rIsReadInRightIndexing(n, rvar)                                //never read variable in loop body
+				&& !rIsReadInRightIndexing(n, rvar._name)                          //never read variable in loop body
 				&& ((MatrixObject)dat).getNumRows()<=Integer.MAX_VALUE
 				&& ((MatrixObject)dat).getNumColumns()<=Integer.MAX_VALUE )
 			{
 				//replace existing matrix object with empty matrix
 				MatrixObject mo = (MatrixObject)dat;
-				ec.cleanupMatrixObject(mo);
-				ec.setMatrixOutput(rvar, new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(),false), null);
+				ec.cleanupCacheableData(mo);
+				ec.setMatrixOutput(rvar._name, new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(),false), null);
 				
 				//keep track of cleaned result variables
 				cleanedVars.add(rvar);
@@ -2087,7 +2091,8 @@ public class OptimizerRuleBased extends Optimizer
 		}
 
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary compare matrix' - result="+(!cleanedVars.isEmpty())+" ("+ProgramConverter.serializeStringCollection(cleanedVars)+")" );
+		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary compare matrix' - result="+(!cleanedVars.isEmpty())
+			+" ("+ProgramConverter.serializeResultVariables(cleanedVars)+")" );
 	}
 
 	protected boolean rContainsResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
@@ -2180,7 +2185,7 @@ public class OptimizerRuleBased extends Optimizer
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		PResultMerge REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
 				PResultMerge.REMOTE_SPARK : PResultMerge.REMOTE_MR;
@@ -2222,7 +2227,7 @@ public class OptimizerRuleBased extends Optimizer
 		pfpb.setResultMerge(ret);
 			
 		// modify plan
-		n.addParam(ParamType.RESULT_MERGE, ret.toString());			
+		n.addParam(ParamType.RESULT_MERGE, ret.toString());
 
 		//recursively apply rewrite for parfor nodes
 		if( n.getChilds() != null )
@@ -2232,13 +2237,13 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result merge' - result="+ret );
 	}
 
-	protected boolean determineFlagCellFormatWoCompare( ArrayList<String> resultVars, LocalVariableMap vars  )
+	protected boolean determineFlagCellFormatWoCompare( ArrayList<ResultVar> resultVars, LocalVariableMap vars  )
 	{
 		boolean ret = true;
 		
-		for( String rVar : resultVars )
+		for( ResultVar rVar : resultVars )
 		{
-			Data dat = vars.get(rVar);
+			Data dat = vars.get(rVar._name);
 			if( dat == null || !(dat instanceof MatrixObject) )
 			{
 				ret = false; 
@@ -2247,12 +2252,11 @@ public class OptimizerRuleBased extends Optimizer
 			else
 			{
 				MatrixObject mo = (MatrixObject)dat;
-				MatrixFormatMetaData meta = (MatrixFormatMetaData) mo.getMetaData();
+				MetaDataFormat meta = (MetaDataFormat) mo.getMetaData();
 				OutputInfo oi = meta.getOutputInfo();
 				long nnz = meta.getMatrixCharacteristics().getNonZeros();
 				
-				if( oi == OutputInfo.BinaryBlockOutputInfo || nnz != 0 )
-				{
+				if( oi == OutputInfo.BinaryBlockOutputInfo || nnz != 0 ) {
 					ret = false; 
 					break;
 				}
@@ -2262,7 +2266,7 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
-	protected boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
+	protected boolean hasResultMRLeftIndexing( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean checkSize ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = false;
@@ -2277,7 +2281,7 @@ public class OptimizerRuleBased extends Optimizer
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
-				if( resultVars.contains(varName) )
+				if( ResultVar.contains(resultVars, varName) )
 				{
 					ret = true;
 					if( checkSize && vars.keySet().contains(varName) )
@@ -2310,7 +2314,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return true if result sizes larger than local memory budget
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected boolean hasLargeTotalResults( OptNode pn, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
+	protected boolean hasLargeTotalResults( OptNode pn, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean checkSize ) 
 		throws DMLRuntimeException
 	{
 		double totalSize = 0;
@@ -2320,17 +2324,17 @@ public class OptimizerRuleBased extends Optimizer
 		int k = pn.getK();
 		long W = estimateNumTasks(tp, _N, k); 
 		
-		for( String var : resultVars )
+		for( ResultVar var : resultVars )
 		{
 			//Potential unknowns: for local result var of child parfor (but we're only interested in top level)
-			//Potential scalars: for disabled dependency analysis and unbounded scoping			
-			Data dat = vars.get( var );
+			//Potential scalars: for disabled dependency analysis and unbounded scoping
+			Data dat = vars.get( var._name );
 			if( dat != null && dat instanceof MatrixObject ) 
 			{
-				MatrixObject mo = (MatrixObject) vars.get( var );
+				MatrixObject mo = (MatrixObject) dat;
 				
 				long rows = mo.getNumRows();
-				long cols = mo.getNumColumns();	
+				long cols = mo.getNumColumns();
 				long nnz = mo.getNnz();
 				
 				if( nnz > 0 ) //w/ compare
@@ -2365,7 +2369,7 @@ public class OptimizerRuleBased extends Optimizer
 		return W;
 	}
 
-	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean inLocal ) 
+	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -2379,7 +2383,7 @@ public class OptimizerRuleBased extends Optimizer
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
-				if( resultVars.contains(varName) && vars.keySet().contains(varName) )
+				if( ResultVar.contains(resultVars, varName) && vars.keySet().contains(varName) )
 				{
 					//dims of result vars must be known at this point in time
 					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
@@ -2471,7 +2475,7 @@ public class OptimizerRuleBased extends Optimizer
 			try 
 			{
 				ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+					.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 				if( recPBs.contains(pfpb) ) 
 					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs, vars);
 			}

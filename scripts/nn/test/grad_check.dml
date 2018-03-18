@@ -23,6 +23,7 @@
  * Gradient checks for various architectures.
  */
 source("nn/layers/affine.dml") as affine
+source("nn/layers/low_rank_affine.dml") as low_rank_affine
 source("nn/layers/batch_norm1d.dml") as batch_norm1d
 source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
@@ -33,6 +34,7 @@ source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/cross_entropy_loss2d.dml") as cross_entropy_loss2d
 source("nn/layers/dropout.dml") as dropout
+source("nn/layers/fm.dml") as fm
 source("nn/layers/l1_loss.dml") as l1_loss
 source("nn/layers/l1_reg.dml") as l1_reg
 source("nn/layers/l2_loss.dml") as l2_loss
@@ -41,6 +43,8 @@ source("nn/layers/log_loss.dml") as log_loss
 source("nn/layers/lstm.dml") as lstm
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
+source("nn/layers/avg_pool2d_builtin.dml") as avg_pool2d_builtin
+source("nn/layers/upsample2d.dml") as upsample2d
 source("nn/layers/relu.dml") as relu
 source("nn/layers/rnn.dml") as rnn
 source("nn/layers/scale_shift1d.dml") as scale_shift1d
@@ -53,6 +57,7 @@ source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
+source("nn/layers/elu.dml") as elu
 
 affine = function() {
   /*
@@ -123,6 +128,105 @@ affine = function() {
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
       outph = affine::forward(X, W, b)
+      lossph = l2_loss::forward(outph, y)
+      b[i,j] = old  # reset
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+    }
+  }
+}
+
+low_rank_affine = function() {
+  /*
+   * Gradient check for the low rank affine layer.
+   */
+  print("Grad checking the low rank affine layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 100 # num features
+  M = 10 # num neurons
+  R = 2 # rank
+  X = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=M)
+  [U, V, b] = low_rank_affine::init(D, M, R)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = low_rank_affine::forward(X, U, V, b)
+  dout = l2_loss::backward(out, y)
+  [dX, dU, dV, db] = low_rank_affine::backward(dout, X, U, V, b)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking X.")
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = low_rank_affine::forward(X, U, V, b)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = low_rank_affine::forward(X, U, V, b)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking U.")
+  for (i in 1:nrow(U)) {
+    for (j in 1:ncol(U)) {
+      # Compute numerical derivative
+      old = as.scalar(U[i,j])
+      U[i,j] = old - h
+      outmh = low_rank_affine::forward(X, U, V, b)
+      lossmh = l2_loss::forward(outmh, y)
+      U[i,j] = old + h
+      outph = low_rank_affine::forward(X, U, V, b)
+      lossph = l2_loss::forward(outph, y)
+      U[i,j] = old  # reset
+      dU_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dU[i,j]), dU_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking V.")
+  for (i in 1:nrow(V)) {
+    for (j in 1:ncol(V)) {
+      # Compute numerical derivative
+      old = as.scalar(V[i,j])
+      V[i,j] = old - h
+      outmh = low_rank_affine::forward(X, U, V, b)
+      lossmh = l2_loss::forward(outmh, y)
+      V[i,j] = old + h
+      outph = low_rank_affine::forward(X, U, V, b)
+      lossph = l2_loss::forward(outph, y)
+      V[i,j] = old  # reset
+      dV_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dV[i,j]), dV_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking b.")
+  for (i in 1:nrow(b)) {
+    for (j in 1:ncol(b)) {
+      # Compute numerical derivative
+      old = as.scalar(b[i,j])
+      b[i,j] = old - h
+      outmh = low_rank_affine::forward(X, U, V, b)
+      lossmh = l2_loss::forward(outmh, y)
+      b[i,j] = old + h
+      outph = low_rank_affine::forward(X, U, V, b)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -1031,6 +1135,86 @@ dropout = function() {
   }
 }
 
+fm = function() {
+  /*
+   * Gradient check for the factorization machines.
+   */
+  print("Grad checking the factorization machines with L2 loss.")
+
+  # Generate data
+  n = 5# num examples
+  d = 100 # num features
+  k = 2 # factorization dimensionality
+  X = rand(rows=n, cols=d)
+  y = rand(rows=n, cols=1)
+  [w0, W, V] = fm::init(n, d, k)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = fm::forward(X, w0, W, V)
+  dout = l2_loss::backward(out, y)
+  [dw0, dW, dV] = fm::backward(dout, X, w0, W, V)
+
+  # Grad check
+  h = 1e-5
+
+  print(" - Grad checking w0.")
+  for (i in 1:nrow(w0)) {
+    for (j in 1:ncol(w0)) {
+      # Compute numerical derivative
+      old = as.scalar(w0[i,j])
+      w0[i,j] = old - h  # h = 1e-5
+      outmh = fm::forward(X, w0, W, V)
+      lossmh = l2_loss::forward(outmh, y)
+      w0[i,j] = old + h  # h = 1e-5
+      outph = fm::forward(X, w0, W, V)
+      lossph = l2_loss::forward(outph, y)
+      w0[i,j] = old  # reset
+      dw0_num = (lossph-lossmh) / (2*h) # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dw0[i,j]), dw0_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking W.")
+  for (i in 1:nrow(W)) {
+    for (j in 1:ncol(W)) {
+      # Compute numerical derivative
+      old = as.scalar(W[i,j])
+      W[i,j] = old - h  # h = 1e-5
+      outmh = fm::forward(X, w0, W, V)
+      lossmh = l2_loss::forward(outmh, y)
+      W[i,j] = old + h  # h = 1e-5
+      outph = fm::forward(X, w0, W, V)
+      lossph = l2_loss::forward(outph, y)
+      W[i,j] = old  # reset
+      dW_num = (lossph-lossmh) / (2*h) # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking V.")
+  for (i in 1:nrow(V)) {
+    for(i in 1:ncol(V)) {
+      # Compute numerical derivative
+      old = as.scalar(V[i,j])
+      V[i,j] = old - h  # h = 1e-5
+      outmh = fm::forward(X, w0, W, V)
+      lossmh = l2_loss::forward(outmh, y)
+      V[i,j] = old + h  # h= 1e-5
+      outph = fm::forward(X, w0, W, V)
+      lossph = l2_loss::forward(outph, y)
+      V[i,j] = old  # reset
+      dV_num = (lossph-lossmh) / (2*h) # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dV[i,j]), dV_num, lossph, lossmh)
+    }
+  }
+}
+
 l1_loss = function() {
   /*
    * Gradient check for the L1 loss function.
@@ -1461,6 +1645,60 @@ max_pool2d_builtin = function() {
   }
 }
 
+avg_pool2d_builtin = function() {
+  /*
+   * Gradient check for the 2D avg pooling layer.
+   */
+  print("Grad checking the built-in 2D avg pooling layer with L2 loss.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 2  # num channels
+  Hin = 4  # input height
+  Win = 4  # input width
+  Hf = 2  # pool filter height
+  Wf = 2  # pool filter width
+  stride = 2
+  X = rand(rows=N, cols=C*Hin*Win)
+
+  for (pad in 0:1) {
+    print(" - Grad checking w/ pad="+pad+".")
+    Hout = as.integer(floor((Hin + 2 * pad - Hf) / stride + 1))
+    Wout = as.integer(floor((Win + 2 * pad - Wf) / stride + 1))
+    y = rand(rows=N, cols=C*Hout*Wout)
+
+    # Compute analytical gradients of loss wrt parameters
+    [out, Hout, Wout] = avg_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
+    dout = l2_loss::backward(out, y)
+    dX = avg_pool2d_builtin::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                      pad, pad)
+
+    # Grad check
+    h = 1e-5
+    for (i in 1:nrow(X)) {
+      for (j in 1:ncol(X)) {
+        # Compute numerical derivative
+        old = as.scalar(X[i,j])
+        X[i,j] = old - h
+        [outmh, Hout, Wout] = avg_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                          pad, pad)
+        lossmh = l2_loss::forward(outmh, y)
+        X[i,j] = old + h
+        [outph, Hout, Wout] = avg_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                          pad, pad)
+        lossph = l2_loss::forward(outph, y)
+        X[i,j] = old  # reset
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+        # Check error
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      }
+    }
+  }
+}
+
+
 max_pool2d_simple = function() {
   /*
    * Gradient check for the simple reference 2D max pooling layer.
@@ -1509,6 +1747,42 @@ max_pool2d_simple = function() {
         # Check error
         rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
+    }
+  }
+}
+
+upsample2d = function() {
+  print("Grad checking the upsample2d layer with L2 loss.")
+
+  C=2; Hin=3; Win=3; size_h=2; size_w=2
+  # Generate data
+  N = 3 # num examples
+  M = C*Hin*Win # num neurons
+  X = rand(rows=N, cols=M, min=-5, max=5)
+  y = rand(rows=N, cols=M*size_h*size_w)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = upsample2d::forward(X, C, Hin, Win, size_h, size_w)
+  dout = l2_loss::backward(out, y)
+  dX = upsample2d::backward(dout, C, Hin, Win, size_h, size_w)
+
+  # Grad check
+  h = 1e-5
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = upsample2d::forward(X, C, Hin, Win, size_h, size_w)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = upsample2d::forward(X, C, Hin, Win, size_h, size_w)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -2183,5 +2457,44 @@ two_layer_affine_l2_net_backward = function(matrix[double] X, matrix[double] y, 
   [daout, dW2, db2] = affine::backward(dpred, aout, W2, b2)
   dhout = relu::backward(daout, hout)
   [dX, dW1, db1] = affine::backward(dhout, X, W1, b1)
+}
+
+elu = function() {
+  /*
+   * Gradient check for ELU nonlinearity
+   * layer.
+   */
+   print("Grad checking ELU nonlinearity layer with L2 loss.")
+   # Generate data
+   N = 3 # num examples
+   M = 10 # num neurons
+
+   X = rand(rows=N, cols=M, min=-5, max=5)
+   y = rand(rows=N, cols=M)
+
+   out = elu::forward(X, 1)
+   dout = l2_loss::backward(out, y)
+   dX = elu::backward(dout, X, 1)
+
+   # Grad check
+   h = 1e-5
+   print(" - Grad checking X.")
+   for (i in 1:nrow(X)) {
+     for (j in 1:ncol(X)) {
+       # Compute numerical derivative
+       old = as.scalar(X[i,j])
+       X[i,j] = old - h
+       outmh = elu::forward(X, 1)
+       lossmh = l2_loss::forward(outmh, y)
+       X[i,j] = old + h
+       outph = elu::forward(X, 1)
+       lossph = l2_loss::forward(outph, y)
+       X[i,j] = old  # reset
+       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+       # Check error
+       rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+     }
+   }
 }
 

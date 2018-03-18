@@ -22,8 +22,6 @@ package org.apache.sysml.runtime.matrix;
 
 import java.io.PrintWriter;
 import java.util.HashSet;
-import java.util.PrimitiveIterator;
-import java.util.stream.LongStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,7 +42,7 @@ import org.apache.sysml.runtime.instructions.MRInstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -130,7 +128,7 @@ public class DataGenMR
 			dataGenInsStr=dataGenInsStr+Lop.INSTRUCTION_DELIMITOR+dataGenInstructions[i];
 			
 			MRInstruction mrins = MRInstructionParser.parseSingleInstruction(dataGenInstructions[i]);
-			MRINSTRUCTION_TYPE mrtype = mrins.getMRInstructionType();
+			MRType mrtype = mrins.getMRInstructionType();
 			DataGenMRInstruction genInst = (DataGenMRInstruction) mrins;
 			
 			rlens[i]  = genInst.getRows();
@@ -141,7 +139,7 @@ public class DataGenMR
 			maxbrlen = Math.max(maxbrlen, brlens[i]);
 			maxbclen = Math.max(maxbclen, bclens[i]);
 
-			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
+			if ( mrtype == MRType.Rand ) 
 			{
 				RandInstruction randInst = (RandInstruction) mrins;
 				inputs[i]=LibMatrixDatagen.generateUniqueSeedPath(genInst.getBaseDir());
@@ -156,14 +154,10 @@ public class DataGenMR
 					
 					//seed generation
 					Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.getSeed());
-					LongStream nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.getSparsity());
-					PrimitiveIterator.OfLong nnzIter = nnz.iterator();
-					for(long r = 0; r < rlens[i]; r += brlens[i]) {
+					for(long r = 0; r < Math.max(rlens[i],1); r += brlens[i]) {
 						long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
-						for(long c = 0; c < clens[i]; c += bclens[i])
-						{
+						for(long c = 0; c < Math.max(clens[i],1); c += bclens[i]) {
 							long curBlockColSize = Math.min(bclens[i], (clens[i] - c));
-							
 							sb.append((r / brlens[i]) + 1);
 							sb.append(',');
 							sb.append((c / bclens[i]) + 1);
@@ -171,8 +165,6 @@ public class DataGenMR
 							sb.append(curBlockRowSize);
 							sb.append(',');
 							sb.append(curBlockColSize);
-							sb.append(',');
-							sb.append(nnzIter.nextLong());
 							sb.append(',');
 							sb.append(bigrand.nextLong());
 							pw.println(sb.toString());
@@ -186,7 +178,7 @@ public class DataGenMR
 				}
 				inputInfos[i] = InputInfo.TextCellInputInfo;
 			}
-			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
+			else if ( mrtype == MRType.Seq ) {
 				SeqInstruction seqInst = (SeqInstruction) mrins;
 				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".seqinput";
 				maxsparsity = 1.0; //always dense

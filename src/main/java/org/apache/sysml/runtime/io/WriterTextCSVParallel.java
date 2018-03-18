@@ -46,11 +46,11 @@ public class WriterTextCSVParallel extends WriterTextCSV
 	}
 
 	@Override
-	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
+	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops)
 		throws IOException 
 	{
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), 
+		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(),
 				src.getNonZeros(), OutputInfo.CSVOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
@@ -80,7 +80,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 			}
 
 			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);
 			pool.shutdown();
 			
 			//check for exceptions 
@@ -101,13 +101,12 @@ public class WriterTextCSVParallel extends WriterTextCSV
 
 	private class WriteCSVTask implements Callable<Object> 
 	{
-		private JobConf _job = null;
-		private FileSystem _fs = null;
-		private MatrixBlock _src = null;
-		private Path _path =null;
-		private int _rl = -1;
-		private int _ru = -1;
-		private CSVFileFormatProperties _props = null;
+		private final JobConf _job;
+		private final FileSystem _fs;
+		private final MatrixBlock _src;
+		private final Path _path;
+		private final int _rl, _ru;
+		private final CSVFileFormatProperties _props;
 		
 		public WriteCSVTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props) {
 			_path = path;
@@ -120,8 +119,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		}
 
 		@Override
-		public Object call() throws Exception 
-		{
+		public Object call() throws Exception {
 			writeCSVMatrixToFile(_path, _job, _fs, _src, _rl, _ru, _props);
 			return null;
 		}

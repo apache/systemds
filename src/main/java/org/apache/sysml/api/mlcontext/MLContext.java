@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api.mlcontext;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 
@@ -27,8 +26,8 @@ import org.apache.log4j.Logger;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.DataExpression;
@@ -39,10 +38,9 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.MLContextProxy;
@@ -51,7 +49,8 @@ import org.apache.sysml.utils.MLContextProxy;
  * languages such as Scala, Java, and Python.
  *
  */
-public class MLContext {
+public class MLContext implements ConfigurableAPI
+{
 	/**
 	 * Logger for MLContext
 	 */
@@ -280,24 +279,12 @@ public class MLContext {
 		MLContextUtil.setCompilerConfig();
 	}
 
-	/**
-	 * Reset configuration settings to default settings.
-	 */
+	@Override
 	public void resetConfig() {
 		MLContextUtil.setDefaultConfig();
 	}
-	
-	
 
-	/**
-	 * Set configuration property, such as
-	 * {@code setConfigProperty("sysml.localtmpdir", "/tmp/systemml")}.
-	 *
-	 * @param propertyName
-	 *            property name
-	 * @param propertyValue
-	 *            property value
-	 */
+	@Override
 	public void setConfigProperty(String propertyName, String propertyValue) {
 		DMLConfig config = ConfigurationManager.getDMLConfig();
 		try {
@@ -540,8 +527,8 @@ public class MLContext {
 						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source));
 						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source));
 
-						if (mo.getMetaData() instanceof MatrixFormatMetaData) {
-							MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
+						if (mo.getMetaData() instanceof MetaDataFormat) {
+							MetaDataFormat metaData = (MetaDataFormat) mo.getMetaData();
 							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
 										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source));
@@ -589,14 +576,6 @@ public class MLContext {
 				}
 			}
 			throw new MLContextException("getMatrixObject not set for parameter: " + parameterName);
-		}
-
-		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
-			if (executionScript == null || executionScript.getOutputVariables() == null)
-				return instructions;
-
-			Set<String> outputVariableNames = executionScript.getOutputVariables();
-			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
 	}
 

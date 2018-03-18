@@ -67,17 +67,13 @@ public abstract class MMCJMRCache
 			_buffer[i] = new Pair<>(new MatrixIndexes(), valueClass.newInstance());
 		if( buffMap )
 			_bufferMap = new HashMap<>();
-	
-		//System.out.println("allocated buffer: "+_bufferCapacity);
 	}
 
-	protected void constructLocalFilePrefix(String fname)
-	{
+	protected void constructLocalFilePrefix(String fname) {
 		//get random localdir (to spread load across available disks)
 		String[] localDirs = _job.get(MRConfigurationNames.MR_CLUSTER_LOCAL_DIR).split(",");
 		Random rand = new Random();
 		int randPos = rand.nextInt(localDirs.length);
-				
 		//construct file prefix
 		String hadoopLocalDir = localDirs[ randPos ];
 		String uniqueSubDir = MapReduceTool.getGloballyUniqueName(_job);

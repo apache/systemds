@@ -44,7 +44,7 @@ public class FrameReaderFactory
 		FrameReader reader = null;
 
 		if( iinfo == InputInfo.TextCellInputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new FrameReaderTextCellParallel();
 			else	
 				reader = new FrameReaderTextCell();
@@ -52,7 +52,7 @@ public class FrameReaderFactory
 		else if( iinfo == InputInfo.CSVInputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new FrameReaderTextCSVParallel( (CSVFileFormatProperties)props );
 			else
 				reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props );
@@ -65,7 +65,7 @@ public class FrameReaderFactory
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create frame reader for unknown input info: "
-		                                   + InputInfo.inputInfoToString(iinfo));
+				+ InputInfo.inputInfoToString(iinfo));
 		}
 		
 		return reader;

@@ -111,7 +111,7 @@ public class OptimizationWrapper
 		
 		//set max contraints if not specified
 		int ck = UtilFunctions.toInt( Math.max( InfrastructureAnalyzer.getCkMaxCP(),
-						                        InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE );
+			InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE );
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
@@ -185,7 +185,7 @@ public class OptimizationWrapper
 				ProgramRewriter rewriter = createProgramRewriterWithRuleSets();
 				ProgramRewriteStatus state = new ProgramRewriteStatus();
 				rewriter.rRewriteStatementBlockHopDAGs( sb, state );
-				fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
+				fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state, true));
 				if( state.getRemovedBranches() ){
 					LOG.debug("ParFOR Opt: Removed branches during program rewrites, rebuilding runtime program");
 					pb.setChildBlocks(ProgramRecompiler.generatePartitialRuntimeProgram(pb.getProgram(), fs.getBody()));

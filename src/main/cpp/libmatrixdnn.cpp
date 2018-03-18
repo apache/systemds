@@ -31,7 +31,7 @@
   #include "omp.h"
 #endif
 
-int computeNNZ(double* arr, int limit) {
+template<class FP> int computeNNZ(FP* arr, int limit) {
   int nnz = 0;
 #ifndef USE_INTEL_MKL
   #pragma omp parallel for reduction(+: nnz)
@@ -41,9 +41,14 @@ int computeNNZ(double* arr, int limit) {
   return nnz;
 }
 
+template<class FP> void biasAdd(FP* bias, FP* output, int K, int PQ) {
+  for(int k = 0, index=0; k < K; k++)
+    for(int pq = 0; pq < PQ; pq++, index++)
+      output[index] += bias[k];
+}
+
 void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int W,
-            int K, int R, int S, int stride_h, int stride_w, int pad_h,
-            int pad_w, int P, int Q) {
+    int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q) {
     int PQ = P*Q;
     int KQ = K*Q;
 	for (int k = 0; k < K; k++) {
@@ -56,8 +61,7 @@ void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int
 }
 
 void col2im(double* inputArray, double* outputArray, int N, int C, int H, int W,
-            int K, int R, int S, int stride_h, int stride_w, int pad_h,
-            int pad_w, int P, int Q) {
+    int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q) {
 	for (int p = 0; p < P; p++) {
 		// h = p*stride_h + r - pad_h
 		//   = r + hOffset
@@ -88,11 +92,10 @@ void col2im(double* inputArray, double* outputArray, int N, int C, int H, int W,
 	}
 }
 
-void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
-            int K, int R, int S, int stride_h, int stride_w, int pad_h,
-            int pad_w, int P, int Q) {
+template<class FP> void im2col(FP* inputArray, FP* outputArray, int N, int C, int H, int W,
+    int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q) {
   int CRS = C * R * S;
-  std::size_t size = Q * sizeof(double);
+  std::size_t size = Q * sizeof(FP);
   if (stride_h == 1 && stride_w == 1 && pad_h == 0 && pad_w == 0) {
     for (int c = 0; c < CRS; ++c) {
       int wOffset = c % S;
@@ -102,8 +105,7 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
         int hPadded = h + hOffset;
         int outOffset = (c * P + h) * Q;
         int inputOffset = (cInput * H + hPadded) * W;
-        std::memcpy(outputArray + outOffset, inputArray + inputOffset + wOffset,
-                    size);
+        std::memcpy(outputArray + outOffset, inputArray + inputOffset + wOffset, size);
         int w = Q - 1;
         int wPadded = w + wOffset;
         if (hPadded < H && wPadded < W)
@@ -141,15 +143,17 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
 // Returns true if error
 bool MKL_DNN_ERROR(dnnError_t code) {
   if(code == E_SUCCESS) return false;
-  else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "ERROR: Incorrect input parameter\n";
-  else if(code == E_MEMORY_ERROR) std::cerr << "ERROR: Memory error\n";
-  else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "ERROR: Unsupported dimensions\n";
-  else if(code == E_UNIMPLEMENTED) std::cerr << "ERROR: Unimplemented operation\n";
+  else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "MKL ERROR: Incorrect input parameter.\n";
+  else if(code == E_MEMORY_ERROR) std::cerr << "MKL ERROR: Memory error.\n";
+  else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "MKL ERROR: Unsupported dimensions.\n";
+  else if(code == E_UNIMPLEMENTED) std::cerr << "MKL ERROR: Unimplemented operation.\n";
+  else std::cerr << "MKL ERROR: Unhandled error code = " << code << ".\n";
   return true;
 } 
 #endif
 
-int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
+    int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CRS = C*R*S;
 #ifdef USE_INTEL_MKL
@@ -167,7 +171,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   resources[dnnResourceSrc] = inputPtr;
   resources[dnnResourceDiffFilter] = retPtr;
   dnnConvolutionCreateBackwardFilter_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
-      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
   if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
@@ -201,18 +205,16 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
-  	double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
+    double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
-    im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
-           R, S, stride_h, stride_w, pad_h, pad_w,
-           P, Q);
-           
+    im2col<double>(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
+      R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
+    
     // Step 2: Rotate dout
     double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
     rotate180(doutPtr + n * KPQ, rotatedDoutPtr, 1, C, H, W, K,
-           R, S, stride_h, stride_w, pad_h, pad_w,
-           P, Q);
+           R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
     
     // Multiply to get tmp1 = CRS X K
     double* temp1 = temp + numTempElem*threadID;
@@ -240,7 +242,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   
   delete [] temp;
 #endif
-  return computeNNZ(retPtr, K*CRS);
+  return computeNNZ<double>(retPtr, K*CRS);
 }
 
 int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
@@ -296,20 +298,18 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
 
     // Step 2: t(rotatedDout (PQ X K) %*% filter (K X CRS))
     double* col2imInput = col2imInputArrays + numCol2ImElem*threadID;
-    matmult(rotatedDoutPtr, filterPtr, col2imInput,
-            PQ, K, CRS, 1);
+    dmatmult(rotatedDoutPtr, filterPtr, col2imInput, PQ, K, CRS, 1);
 
     // Step 3: Perform col2im
     double* outputArr = retPtr + n * CHW;
     col2im(col2imInput, outputArr, 1, C, H, W, K,
-           R, S, stride_h, stride_w, pad_h, pad_w,
-           P, Q);
+           R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
   } // end omp parallel for
   
   delete [] rotatedDoutPtrArrays;
   delete [] col2imInputArrays;
 #endif
-  return computeNNZ(retPtr, N*CHW);
+  return computeNNZ<double>(retPtr, N*CHW);
 }
 
 void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr, double* retPtr, int N, int C, int H, int W, 
@@ -323,14 +323,13 @@ void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr
 	std::memset(temp, 0, size);
 	for(int j=apos; j<apos+alen; j++)
 		temp[ aix[j] ] = avals[j];
-	im2col(temp, loweredMat, 1, C, H, W, K,
-       R, S, stride_h, stride_w, pad_h, pad_w,
-       P, Q);	
+	im2col<double>(temp, loweredMat, 1, C, H, W, K,
+		R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
 	delete [] temp;
 	
 	// Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
-    matmult(filterPtr, loweredMat, retPtr, K, C * R * S, P * Q, 1);
-    
+	dmatmult(filterPtr, loweredMat, retPtr, K, C * R * S, P * Q, 1);
+
 	delete [] loweredMat;
 }
 
@@ -361,7 +360,7 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	// Multiply to get CRS X K
 	double* temp1 = new double[CRS * K];
 	// Step 3: loweredMat (CRS X PQ) %*% rotatedDoutPtr (PQ X K) 
-    matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
+    dmatmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
     delete [] loweredMat;
      
     // Inplace addition
@@ -372,8 +371,8 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	delete [] temp1;
 }
 
-
-int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, 
+    int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;
   
@@ -408,8 +407,8 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   
   // Step 3: Destroy the description of the operation
   dnnDelete_F64(pConvolution);
+  return computeNNZ<double>(retPtr, N*KPQ);
 #else 
-  // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
@@ -420,35 +419,107 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   // Allocate temporary data structures used in parallel for
   int numOpenMPThreads = MIN(numThreads, N);
   double* loweredMatArrays = new double[numIm2ColElem*numOpenMPThreads];
+  int nnz = 0;
   
-#pragma omp parallel for num_threads(numOpenMPThreads)
+#pragma omp parallel for reduction(+: nnz) num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
     double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
-    im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
-           R, S, stride_h, stride_w, pad_h, pad_w,
-           P, Q);
+    im2col<double>(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
+      R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
 
     // Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
-    matmult(filterPtr, loweredMat, retPtr + n * KPQ, K,
+    dmatmult(filterPtr, loweredMat, retPtr + n * KPQ, K,
             C * R * S, P * Q, 1);
-    
+
     // Step 3: Add bias
     double* outputArr = retPtr + n*KPQ;
-    if(addBias) {
-	    int index = 0;
-		for(int k = 0; k < K; k++) {
-			for(int pq = 0; pq < PQ; pq++, index++) {
-				outputArr[index] += biasPtr[k];
-			}
-		}
-    }
-  } // end omp parallel for
+    if( addBias )
+       biasAdd<double>(biasPtr, outputArr, K, PQ);
+    
+    // Step 4: thread-local nnz maintenance
+    nnz += computeNNZ<double>(retPtr + n*KPQ, KPQ);    
+  } 
   delete [] loweredMatArrays;
-  // ------------------------------------------------------------------------------------
+  return nnz;
+#endif
+}
+
+int sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float* retPtr, 
+    int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
+  int KPQ = K * P * Q;
+  
+#ifdef USE_INTEL_MKL
+  setNumThreadsForBLAS(numThreads);
+  // Step 1: Create a description of a DNN operation
+  dnnPrimitive_t pConvolution;
+  size_t dimension = 4;
+  size_t srcSize[4] = {W, H, C, N};
+  size_t dstSize[4] = {Q, P, K, N};
+  size_t filterSize[4] = {S, R, C, K};
+  size_t convolutionStrides[2] = {stride_w, stride_h};
+  int pads[2] = {-pad_w, -pad_h};
+  void* resources[dnnResourceNumber] = {0};
+  resources[dnnResourceSrc] = inputPtr;
+  resources[dnnResourceFilter] = filterPtr;
+  resources[dnnResourceDst] = retPtr;
+  if(addBias) {
+    dnnConvolutionCreateForwardBias_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    resources[dnnResourceBias] = biasPtr;
+  }
+  else { 
+    dnnConvolutionCreateForward_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  }
+  
+  // Step 2: Perform the DNN operation
+  if(MKL_DNN_ERROR(dnnExecute_F32(pConvolution, resources))) {
+    return -1; // nnz == -1 indicates error.
+  }
+  
+  // Step 3: Destroy the description of the operation
+  dnnDelete_F32(pConvolution);
+  return computeNNZ<float>(retPtr, N*KPQ);
+#else 
+  // First step:  Avoids oversubscription and other openmp/internal blas threading issues
+  setNumThreadsForBLAS(1);
+  
+  int CHW = C * H * W;
+  int PQ = P * Q;
+  int numIm2ColElem = C * R * S * P * Q;
+  
+  // Allocate temporary data structures used in parallel for
+  int numOpenMPThreads = MIN(numThreads, N);
+  float* loweredMatArrays = new float[numIm2ColElem*numOpenMPThreads];
+  int nnz = 0;
+  
+#pragma omp parallel for reduction(+: nnz) num_threads(numOpenMPThreads)
+  for (int n = 0; n < N; n++) {
+    int threadID = omp_get_thread_num();
+    float* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
+
+    // Step 1: Perform im2col
+    im2col<float>(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
+      R, S, stride_h, stride_w, pad_h, pad_w, P, Q);
+
+    // Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
+    smatmult(filterPtr, loweredMat, retPtr + n * KPQ, K,
+            C * R * S, P * Q, 1);
+
+    // Step 3: Add bias
+    float* outputArr = retPtr + n*KPQ;
+    if( addBias )
+       biasAdd<float>(biasPtr, outputArr, K, PQ);
+       
+    // Step 4: thread-local nnz maintenance
+    nnz += computeNNZ<float>(retPtr + n*KPQ, KPQ);   
+  }
+  delete [] loweredMatArrays;
+  return nnz;
 #endif
   
-  return computeNNZ(retPtr, N*KPQ);
 }

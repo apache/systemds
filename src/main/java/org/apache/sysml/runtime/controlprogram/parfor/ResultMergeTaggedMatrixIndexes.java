@@ -38,35 +38,27 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
  */
 public class ResultMergeTaggedMatrixIndexes implements WritableComparable<ResultMergeTaggedMatrixIndexes>
 {
-	
 	private MatrixIndexes _ix;
 	private byte _tag = -1;
 	
-	public ResultMergeTaggedMatrixIndexes()
-	{
+	public ResultMergeTaggedMatrixIndexes() {
 		_ix = new MatrixIndexes();
 	}
 
-	public MatrixIndexes getIndexes()
-	{
+	public MatrixIndexes getIndexes() {
 		return _ix;
 	}
 	
-	
-	public byte getTag()
-	{
+	public byte getTag() {
 		return _tag;
 	}
 	
-	public void setTag(byte tag)
-	{
+	public void setTag(byte tag) {
 		_tag = tag;
 	}
 
 	@Override
-	public void readFields(DataInput in) 
-		throws IOException 
-	{
+	public void readFields(DataInput in) throws IOException {
 		if( _ix == null )
 			_ix = new MatrixIndexes();
 		_ix.readFields(in);
@@ -74,33 +66,24 @@ public class ResultMergeTaggedMatrixIndexes implements WritableComparable<Result
 	}
 
 	@Override
-	public void write(DataOutput out) 
-		throws IOException 
-	{
+	public void write(DataOutput out) throws IOException {
 		_ix.write(out);
 		out.writeByte(_tag);
 	}
 
 	@Override
-	public int compareTo(ResultMergeTaggedMatrixIndexes that) 
-	{
+	public int compareTo(ResultMergeTaggedMatrixIndexes that) {
 		int ret = _ix.compareTo(that._ix);
-		
 		if( ret == 0 )
-		{
 			ret = ((_tag == that._tag) ? 0 : 
-				   (_tag < that._tag)? -1 : 1);
-		}
-		
+				(_tag < that._tag)? -1 : 1);
 		return ret;
 	}
 	
 	@Override
-	public boolean equals(Object other) 
-	{
+	public boolean equals(Object other) {
 		if( !(other instanceof ResultMergeTaggedMatrixIndexes) )
 			return false;
-		
 		ResultMergeTaggedMatrixIndexes that = (ResultMergeTaggedMatrixIndexes)other;
 		return (_ix.equals(that._ix) && _tag == that._tag);
 	}

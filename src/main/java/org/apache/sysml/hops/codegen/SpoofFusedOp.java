@@ -32,6 +32,7 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.SpoofFused;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class SpoofFusedOp extends Hop implements MultiThreadedHop
@@ -47,7 +48,8 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		MULTI_SCALAR,
 		ROW_RANK_DIMS, // right wdivmm, row mm
 		COLUMN_RANK_DIMS,  // left wdivmm, row mm
-		COLUMN_RANK_DIMS_T;
+		COLUMN_RANK_DIMS_T,
+		VECT_CONST2;
 	}
 	
 	private Class<?> _class = null;
@@ -91,7 +93,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-		return OptimizerUtils.estimateSize(dim1, dim2);
+		return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
+			OptimizerUtils.estimateSize(dim1, dim2) :
+			OptimizerUtils.estimatePartitionedSizeExactSparsity(
+				dim1, dim2, getRowsInBlock(), getColsInBlock(), nnz);
 	}
 
 	@Override
@@ -176,6 +181,9 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				case INPUT_DIMS_CONST2:
 					ret = new long[]{mc.getRows(), _constDim2, -1};
 					break;
+				case VECT_CONST2:
+					ret = new long[]{1, _constDim2, -1};
+					break;	
 				case SCALAR:
 					ret = new long[]{0, 0, -1};
 					break;
@@ -238,6 +246,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				setDim1(getInput().get(0).getDim1());
 				setDim2(_constDim2);
 				break;
+			case VECT_CONST2:
+				setDim1(1);
+				setDim2(_constDim2);
+				break;
 			case SCALAR:
 				setDim1(0);
 				setDim2(0);
@@ -260,7 +272,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 				break;	
 			default:
 				throw new RuntimeException("Failed to refresh size information "
-						+ "for type: "+_dimsType.toString());
+					+ "for type: "+_dimsType.toString());
 		}
 	}
 
@@ -276,6 +288,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		ret._class = _class;
 		ret._distSupported = _distSupported;
 		ret._numThreads = _numThreads;
+		ret._constDim2 = _constDim2;
 		ret._dimsType = _dimsType;
 		return ret;
 	}
@@ -286,10 +299,12 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		if( !(that instanceof SpoofFusedOp) )
 			return false;
 		
-		SpoofFusedOp that2 = (SpoofFusedOp)that;		
+		SpoofFusedOp that2 = (SpoofFusedOp)that;
+		//note: class implies dims type as well
 		boolean ret = ( _class.equals(that2._class)
 				&& _distSupported == that2._distSupported
 				&& _numThreads == that2._numThreads
+				&& _constDim2 == that2._constDim2
 				&& getInput().size() == that2.getInput().size());
 		
 		if( ret ) {

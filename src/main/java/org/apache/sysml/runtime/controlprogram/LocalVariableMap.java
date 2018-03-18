@@ -20,12 +20,14 @@
 package org.apache.sysml.runtime.controlprogram;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -37,12 +39,16 @@ import org.apache.sysml.runtime.instructions.cp.Data;
  */
 public class LocalVariableMap implements Cloneable
 {
-	private static String eol = System.getProperty ("line.separator");
-	private static String ELEMENT_DELIM = org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
-	private static IDSequence _seq = new IDSequence();
+	private static final String eol = System.getProperty ("line.separator");
+	private static final String ELEMENT_DELIM = ProgramConverter.ELEMENT_DELIM;
+	private static final IDSequence _seq = new IDSequence();
 	
-	private HashMap <String, Data> localMap = null;
+	//variable map data and id
+	private final HashMap<String, Data> localMap;
 	private final long localID;
+	
+	//optional set of registered outputs
+	private HashSet<String> outputs = null;
 	
 	public LocalVariableMap() {
 		localMap = new HashMap<>();
@@ -56,6 +62,10 @@ public class LocalVariableMap implements Cloneable
 
 	public Set<String> keySet() {
 		return localMap.keySet();
+	}
+	
+	public Set<Entry<String, Data>> entrySet() {
+		return localMap.entrySet();
 	}
 	
 	/**
@@ -104,7 +114,23 @@ public class LocalVariableMap implements Cloneable
 	public boolean hasReferences( Data d ) {
 		return localMap.containsValue(d);
 	}
+	
+	public void setRegisteredOutputs(HashSet<String> outputs) {
+		this.outputs = outputs;
+	}
+	
+	public HashSet<String> getRegisteredOutputs() {
+		return outputs;
+	}
 
+	public double getPinnedDataSize() {
+		//note: this method returns the total size of pinned data objects
+		//that are not subject to automatic eviction.
+		return localMap.values().stream()
+			.filter(d -> (d instanceof CacheableData))
+			.mapToDouble(d -> ((CacheableData<?>)d).getDataSize()).sum();
+	}
+	
 	public String serialize() throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
@@ -115,7 +141,7 @@ public class LocalVariableMap implements Cloneable
 				.serializeDataObject(e.getKey(), e.getValue()));
 			count++;
 		}
-		return sb.toString();		
+		return sb.toString();
 	}
 
 	public static LocalVariableMap deserialize(String varStr) 
@@ -128,7 +154,7 @@ public class LocalVariableMap implements Cloneable
 			Object[] tmp2 = ProgramConverter.parseDataObject (tmp);
 			vars.put((String) tmp2 [0], (Data) tmp2 [1]);
 		}
-		return vars;		
+		return vars;
 	}
 
 	@Override

@@ -337,6 +337,7 @@ public class TfMetaUtils
 	 * @return list of column ids
 	 * @throws IOException if IOException occurs
 	 */
+	@SuppressWarnings("unchecked")
 	private static List<Integer> parseRecodeColIDs(String spec, String[] colnames) 
 		throws IOException 
 	{	

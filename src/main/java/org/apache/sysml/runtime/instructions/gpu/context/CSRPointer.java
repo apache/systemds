@@ -298,7 +298,6 @@ public class CSRPointer {
 			// with no memory allocated on the GPU.
 			return r;
 		}
-		gCtx.ensureFreeSpace(getDataTypeSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
 		// increment the cudaCount by 1 for the allocation of all 3 arrays
 		r.val = gCtx.allocate(null, getDataTypeSizeOf(nnz2));
 		r.rowPtr = gCtx.allocate(null, getIntSizeOf(rows + 1));
@@ -430,8 +429,6 @@ public class CSRPointer {
 		CSRPointer that = new CSRPointer(me.getGPUContext());
 
 		that.allocateMatDescrPointer();
-		long totalSize = estimateSize(me.nnz, rows);
-		that.gpuContext.ensureFreeSpace(totalSize);
 
 		that.nnz = me.nnz;
 		that.val = allocate(that.nnz * LibMatrixCUDA.sizeOfDataType);
@@ -497,7 +494,7 @@ public class CSRPointer {
 	 */
 	public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows,
 			int cols, String instName) throws DMLRuntimeException {
-		long t0 = GPUStatistics.DISPLAY_STATISTICS && instName != null ? System.nanoTime() : 0;
+		long t0 = DMLScript.FINEGRAINED_STATISTICS && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
 		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
@@ -510,7 +507,7 @@ public class CSRPointer {
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");
 		}
-		if (GPUStatistics.DISPLAY_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
+		if (DMLScript.FINEGRAINED_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 		return A;
 	}
 

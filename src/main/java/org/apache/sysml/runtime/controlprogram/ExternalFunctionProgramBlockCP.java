@@ -22,20 +22,15 @@ package org.apache.sysml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.ExternalFunctionStatement;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
-import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
 
 /**
  * CP external function program block, that overcomes the need for 
@@ -51,10 +46,6 @@ import org.apache.sysml.udf.Matrix;
  */
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 
 {
-	
-	public static String DEFAULT_FILENAME = "ext_funct";
-	private static IDSequence _defaultSeq = new IDSequence();
-	
 	/**
 	 * Constructor that also provides otherParams that are needed for external
 	 * functions. Remaining parameters will just be passed to constructor for
@@ -90,45 +81,24 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	@Override
 	public void execute(ExecutionContext ec) throws DMLRuntimeException 
 	{
-		_runID = _idSeq.getNextID();
+		if( _inst.size() != 1 )
+			throw new DMLRuntimeException("Invalid number of instructions: "+_inst.size());
 		
-		ExternalFunctionInvocationInstruction inst = null;
-		
-		// execute package function
-		for (int i=0; i < _inst.size(); i++) 
-		{
-			try {
-				inst = (ExternalFunctionInvocationInstruction)_inst.get(i);
-				inst._namespace = _namespace;
-				inst._functionName = _functionName;
-				executeInstruction( ec, inst );
-			}
-			catch (Exception e){
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString(), e);
-			}
+		// execute package function via ExternalFunctionInvocationInstruction
+		try {
+			 _inst.get(0).processInstruction(ec);
+		}
+		catch (Exception e){
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating external function: "
+				+ DMLProgram.constructFunctionKey(_namespace, _functionName), e);
 		}
 		
 		// check return values
 		checkOutputParameters(ec.getVariables());
 	}
-	
-	/**
-	 * Executes the external function instruction.
-	 * 
-	 */
-	@Override
-	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 
-		throws DMLRuntimeException 
-	{
-		// After the udf framework rework, we moved the code of ExternalFunctionProgramBlockCP 
-		// to ExternalFunctionProgramBlock and hence hence both types of external functions can
-		// share the same code path here.
-		super.executeInstruction(ec, inst);
-	}
-	
 
 	@Override
-	protected void createInstructions() 
+	protected void createInstructions() throws DMLRuntimeException 
 	{
 		_inst = new ArrayList<>();
 
@@ -141,48 +111,16 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 			throw new RuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
-		String inputParameterString = getParameterString(getInputParams());
-		String outputParameterString = getParameterString(getOutputParams());
-
+		CPOperand[] inputs = getOperands(getInputParams());
+		CPOperand[] outputs = getOperands(getOutputParams());
+		
 		// generate instruction
-		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
-				className, configFile, inputParameterString,
-				outputParameterString);
-
+		PackageFunction fun = createFunctionObject(className, configFile);
+		ExternalFunctionInvocationInstruction einst = 
+			new ExternalFunctionInvocationInstruction(inputs, outputs, fun, _baseDir, InputInfo.BinaryBlockInputInfo);
+		verifyFunctionInputsOutputs(fun, inputs, outputs);
+		
 		_inst.add(einst);
-
-	}
-
-	@Override
-	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
-	{
-		//pass in-memory object to external function
-		m.setMatrixObject( mobj );
-	}
-	
-	@Override
-	protected MatrixObject createOutputMatrixObject(Matrix m)
-	{
-		MatrixObject ret = m.getMatrixObject();
-		
-		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
-		{
-			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
-		}
-		
-		//for allowing in-memory packagesupport matrices w/o filesnames
-		if( ret.getFileName().equals( DEFAULT_FILENAME ) ) 
-		{
-			ret.setFileName( createDefaultOutputFilePathAndName() );
-		}
-			
-		return ret;
-	}
-	
-	public String createDefaultOutputFilePathAndName( ) {
-		return _baseDir + DEFAULT_FILENAME + _defaultSeq.getNextID();
 	}
 
 	@Override

@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -94,7 +95,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		//result allocation and preparations
 		out.reset(1, _aggOps.length, false);
 		out.allocateDenseBlock();
-		double[] c = out.getDenseBlock();
+		double[] c = out.getDenseBlockValues(); //1x<num_agg>
 		setInitialOutputValues(c);
 		
 		//input preparation
@@ -109,8 +110,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			if( inputs.get(0) instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)inputs.get(0), b, scalars, c, m, n, 0, m);
 			else if( !inputs.get(0).isInSparseFormat() )
-				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, 0, m);
-			else	
+				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, sparseSafe, 0, m);
+			else
 				executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, m, n, sparseSafe, 0, m);
 		}
 		else  //MULTI-THREADED
@@ -144,15 +145,23 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		return out;
 	}
 	
-	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
+	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
+		throws DMLRuntimeException
 	{
 		SideInput[] lb = createSparseSideInputs(b);
 		
 		//core dense aggregation operation
-		for( int i=rl, ix=rl*n; i<ru; i++ ) { 
-			for( int j=0; j<n; j++, ix++ ) {
-				double in = (a != null) ? a[ix] : 0;
-				genexec( in, lb, scalars, c, m, n, i, j );
+		if( a == null && !sparseSafe ) {
+			for( int i=rl; i<ru; i++ )
+				for( int j=0; j<n; j++ )
+					genexec( 0, lb, scalars, c, m, n, i, j );
+		}
+		else if( a != null ) {
+			for( int i=rl; i<ru; i++ ) { 
+				double[] avals = a.values(i);
+				int aix = a.pos(i);
+				for( int j=0; j<n; j++ )
+					genexec( avals[aix+j], lb, scalars, c, m, n, i, j );
 			}
 		}
 	}
@@ -215,8 +224,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		switch( aggop ) {
 			case SUM:
 			case SUM_SQ: return 0; 
-			case MIN:    return Double.MAX_VALUE;
-			case MAX:    return -Double.MAX_VALUE;
+			case MIN:    return Double.POSITIVE_INFINITY;
+			case MAX:    return Double.NEGATIVE_INFINITY;
 		}
 		return 0;
 	}
@@ -307,8 +316,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			if( _a instanceof CompressedMatrixBlock )
 				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _rlen, _clen, _rl, _ru);
 			else if( !_a.isInSparseFormat() )
-				executeDense(_a.getDenseBlock(), _b, _scalars, c, _rlen, _clen, _rl, _ru);
-			else	
+				executeDense(_a.getDenseBlock(), _b, _scalars, c, _rlen, _clen, _safe, _rl, _ru);
+			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _rlen, _clen, _safe, _rl, _ru);
 			return c;
 		}

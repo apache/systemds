@@ -32,9 +32,9 @@ public class AggregateUnaryOperator  extends Operator
 {
 	private static final long serialVersionUID = 6690553323120787735L;
 
-	public AggregateOperator aggOp;
-	public IndexFunction indexFn;
-	private int k; //num threads
+	public final AggregateOperator aggOp;
+	public final IndexFunction indexFn;
+	private final int k; //num threads
 
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{
@@ -45,24 +45,13 @@ public class AggregateUnaryOperator  extends Operator
 
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop, int numThreads)
 	{
+		super(aop.increOp.fn instanceof Plus 
+			|| aop.increOp.fn instanceof KahanPlus 
+			|| aop.increOp.fn instanceof KahanPlusSq 
+			|| aop.increOp.fn instanceof Or 
+			|| aop.increOp.fn instanceof Minus);
 		aggOp = aop;
 		indexFn = iop;
-		k = numThreads;
-		
-		//decide on sparse safe
-		if( aggOp.increOp.fn instanceof Plus || 
-			aggOp.increOp.fn instanceof KahanPlus ||
-			aggOp.increOp.fn instanceof KahanPlusSq ||
-			aggOp.increOp.fn instanceof Or ||
-			aggOp.increOp.fn instanceof Minus ) 
-		{
-			sparseSafe=true;
-		}
-		else
-			sparseSafe=false;
-	}
-	
-	public void setNumThreads(int numThreads) {
 		k = numThreads;
 	}
 	

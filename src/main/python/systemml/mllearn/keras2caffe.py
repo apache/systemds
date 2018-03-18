@@ -21,404 +21,66 @@
 
 # Script to generate caffe proto and .caffemodel files from Keras models
 
-from caffe import *
-import caffe
-from caffe import layers as L
-from caffe import params as P
-
-import keras
-from keras.models import load_model
-from keras.models import model_from_json
-from keras.utils.conv_utils import convert_kernel
 
 import numpy as np
+import os, math
+from itertools import chain, imap
+from ..converters import *
+from ..classloader import *
+import keras
+from keras import backend as K
+from keras.layers import Activation
 
+try:
+    import py4j.java_gateway
+    from py4j.java_gateway import JavaObject
+    from pyspark import SparkContext
+except ImportError:
+    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
-def load_keras_model(filepath):
-    model = load_model(filepath)
-    return model
+# --------------------------------------------------------------------------------------
+# Design Document:
+# We support Keras model by first converting it to Caffe models and then using Caffe2DML to read them
+#
+# Part 1: Keras network to Caffe network conversion:
+# - Core logic: model.layers.flatMap(layer => _parseJSONObject(_parseKerasLayer(layer)))
+# That is, for each layer, we first convert it into JSON format and then convert the JSON object into String  
+# - This is true for all the layers except the "specialLayers" (given in below hashmap). These are redirected to their custom parse function in _parseKerasLayer.
+# - To add an activation, simply add the keras type to caffe type in supportedCaffeActivations.
+# - To add a layer, add the corresponding caffe layer type in supportedLayers. If the layer accepts parameters then update layerParamMapping too.
+# - The above logic is implemented in the function converKerasToCaffeNetwork
+# --------------------------------------------------------------------------------------
 
+supportedCaffeActivations = {'relu':'ReLU', 'softmax':'Softmax', 'sigmoid':'Sigmoid' }
+supportedLayers = {
+    keras.layers.InputLayer: 'Data',
+    keras.layers.Dense: 'InnerProduct',
+    keras.layers.Dropout: 'Dropout',
+    keras.layers.Add: 'Eltwise',
+    keras.layers.Concatenate: 'Concat',
+    keras.layers.Conv2DTranspose: 'Deconvolution',
+    keras.layers.Conv2D: 'Convolution',
+    keras.layers.UpSampling2D: 'Upsample',
+    keras.layers.MaxPooling2D: 'Pooling',
+    keras.layers.AveragePooling2D: 'Pooling',
+	keras.layers.SimpleRNN: 'RNN',
+    keras.layers.LSTM: 'LSTM',
+	keras.layers.Flatten: 'None',
+    keras.layers.BatchNormalization: 'None',
+    keras.layers.Activation: 'None'
+    }
 
-def load_keras_skeleton_model(filepath):
-    json_file = open(filepath, 'r')
-    model_json = json_file.read()
-    json_file.close()
-    loaded_model = model_from_json(model_json)
-    return loaded_model
-
-
-def load_weights_to_model(model, filepath):
-    model.load_weights(filepath)
-    return model
-
-
-# Currently can only generate a Dense model
-def generate_caffe_model(kModel, filepath, weights_filepath, input_shape=None, phases=None):
-    n = caffe.NetSpec()
-    layers = kModel.layers
-    net_params = dict()
-    input_name = kModel.inputs[0].name
-    label_name = input_name + "_label"
-
-    for layer in layers:
-        blobs = layer.get_weights()
-
-        generate_layer(blobs, layer, n, net_params)
-
-    # Determine the loss needed to be added
-    generate_loss(kModel, n, label_name)
-    print("Converting model to proto and converting weights")
-    write_caffe_model(n, filepath)
-    caffe_model = caffe.Net(filepath, caffe.TEST)
-    for layer in caffe_model.params.keys():
-        for i in range(0, len(caffe_model.params[layer])):
-            print(layer + ": ")
-            print(net_params[layer][i].shape)
-            print(caffe_model.params[layer][i].data.shape)
-            # print(dir(caffe_model.params[layer]))
-            caffe_model.params[layer][i].data[...] = net_params[layer][i]
-
-    caffe_model.save(weights_filepath)
-
-    # Change back Input into Data layer for Caffe2DML
-    n[label_name], n[input_name] = L.Data(ntop=2)
-
-    write_caffe_model(n, filepath)
-
-    return n, caffe_model
-
-
-def generate_layer(blobs, layer, n, net_params):
-    """
-    Parameters: blobs: weights for keras, layer: keras layer, n: Caffe NetSpec,
-    net_params: Dictionary to store Caffe weights
-    """
-    if type(layer) == keras.layers.InputLayer:
-        # Grab the batchsize from i 0, shift over channels to index 1, and place the rest into the dictionary
-        # TODO determine when to transform for layer types/input shape
-        num = len(layer.batch_input_shape) - 1  # Range from 1st index to second last
-        # TODO check for image_data_format to be channels_first or channels_last
-        batch_list = [layer.batch_input_shape[0], layer.batch_input_shape[-1]]
-        for i in range(1, num):
-            batch_list.append(layer.batch_input_shape[i])
-        for i in range(len(batch_list)):  # Set None dimensions to 0 for Caffe
-            if (batch_list[i] == None):
-                batch_list[i] = 1
-        name = layer.name
-        # TODO figure out having 2 tops, with n.label
-        n[name] = L.Input(shape=[dict(dim=batch_list)])
-
-    elif type(layer) == keras.layers.Dense:
-        # Pull name from Keras
-        name = layer.name
-        # Pull layer name of the layer passing to current layer
-        in_names = get_inbound_layers(layer)
-        # Pipe names into caffe using unique Keras layer names
-        n[name] = L.InnerProduct(n[in_names[0].name], num_output=layer.units)  # TODO: Assert only 1
-        config = layer.get_config()
-        if config['use_bias']:
-            net_params[name] = (np.array(blobs[0]).transpose(1, 0), np.array(blobs[1]))
-        else:
-            net_params[name] = (blobs[0])
-        if layer.activation is not None and layer.activation.__name__ != 'linear':
-            name_act = name + "_activation_" + layer.activation.__name__  # get function string
-            n[name_act] = get_activation(layer, n[name])
-
-    elif type(layer) == keras.layers.Flatten:
-
-        """
-        Caffe2DML implicitly stores all tensors as a 1D array with shapes so after every passthrough
-        all outputs are already flatten thus, we can ignore all flattens are just pass the
-        tops and bottoms across all flatten layers.
-        """
-
-    elif type(layer) == keras.layers.Dropout:  # TODO Random seed will be lost
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.Dropout(n[in_names[0].name], dropout_ratio=layer.rate, in_place=True)
-
-    # elif type(layer) == keras.Layers.LSTM:
-
-    elif type(layer) == keras.layers.Add:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # turn list of names into network layers
-        network_layers = []
-        for ref in in_names:
-            network_layers.append(n[ref.name])
-        # print(network_layers)
-        # unpack the bottom layers
-        n[name] = L.Eltwise(*network_layers, operation=1)  # 1 is SUM
-
-    elif type(layer) == keras.layers.Multiply:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # turn list of names into network layers
-        network_layers = []
-        for ref in in_names:
-            network_layers.append(n[ref.name])
-        # unpack the bottom layers
-        n[name] = L.Eltwise(*network_layers, operation=0)
-
-    elif type(layer) == keras.layers.Concatenate:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # turn list of names into network layers
-        network_layers = []
-        for ref in in_names:
-            network_layers.append(n[ref.name])
-        axis = get_compensated_axis(layer)
-        n[name] = L.Concat(*network_layers, axis=1)
-
-    elif type(layer) == keras.layers.Maximum:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # turn list of names into network layers
-        network_layers = []
-        for ref in in_names:
-            network_layers += n[ref.name]
-        # unpack the bottom layers
-        n[name] = L.Eltwise(*network_layers, operation=2)
-
-    elif type(layer) == keras.layers.Conv2DTranspose:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # Stride
-        if layer.strides is None:
-            stride = (1, 1)
-        else:
-            stride = layer.strides
-        # Padding
-        if layer.padding == 'same':  # Calculate the padding for 'same'
-            padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2]
-        else:
-            padding = [0, 0]  # If padding is valid(aka no padding)
-        # get bias parameter
-        config = layer.get_config()
-        use_bias = config['use_bias']
-        param = dict(bias_term=use_bias)
-
-        n[name] = L.Deconvolution(n[in_names[0].name], kernel_h=layer.kernel_size[0],
-                                  kernel_w=layer.kernel_size[1], stride_h=stride[0],
-                                  stride_w=stride[1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
-                                  convolution_param=param)
-        blobs[0] = np.array(blobs[0]).transpose(3, 2, 0, 1)
-        net_params[name] = blobs
-        if layer.activation is not None and layer.activation.__name__ != 'linear':
-            name_act = name + "_activation_" + layer.activation.__name__  # get function string
-            n[name_act] = get_activation(layer, n[name])
-
-    elif type(layer) == keras.layers.BatchNormalization:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.BatchNorm(n[in_names[0].name], moving_average_fraction=layer.momentum, eps=layer.epsilon)
-        variance = np.array(blobs[-1])
-        mean = np.array(blobs[-2])
-
-        config = layer.get_config()
-        # Set mean variance and gamma into respective params
-        param = dict()
-        if config['scale']:
-            gamma = np.array(blobs[0])
-        else:
-            gamma = np.ones(mean.shape, dtype=np.float32)
-
-        if config['center']:
-            beta = np.array(blobs[1])
-            param['bias_term'] = True
-        else:
-            beta = np.zeros(mean.shape, dtype=np.float32)
-            param['bias_term'] = False
-
-        net_params[name] = (mean, variance, np.array(1.0))
-
-        name_scale = name + '_scale'
-        # Scale after batchNorm
-        n[name_scale] = L.Scale(n[name], in_place=True, scale_param=param)
-        net_params[name_scale] = (gamma, beta)
-    # TODO Needs to be implemented
-    elif type(layer) == keras.layers.Conv1D:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.Convolution(n[in_names[0]])
-
-    elif type(layer) == keras.layers.Conv2D:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        # Stride
-        if layer.strides is None:
-            stride = (1, 1)
-        else:
-            stride = layer.strides
-        # Padding
-        if layer.padding == 'same':  # Calculate the padding for 'same'
-            padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2]
-        else:
-            padding = [0, 0]  # If padding is valid(aka no padding)
-        # TODO The rest of the arguements including bias, regulizers, dilation,
-        config = layer.get_config()
-        # get bias parameter
-        use_bias = config['use_bias']
-        param = dict(bias_term=use_bias)
-        n[name] = L.Convolution(n[in_names[0].name], kernel_h=layer.kernel_size[0],
-                                kernel_w=layer.kernel_size[1], stride_h=stride[0],
-                                stride_w=stride[1], num_output=layer.filters, pad_h=padding[0], pad_w=padding[1],
-                                convolution_param=param)
-        weights = blobs
-        blobs[0] = np.array(blobs[0]).transpose((3, 2, 0, 1))
-        print(type(weights))
-        net_params[name] = blobs
-        if layer.activation is not None and layer.activation.__name__ != 'linear':
-            name_act = name + "_activation_" + layer.activation.__name__  # get function string
-            n[name_act] = get_activation(layer, n[name])
-
-    elif type(layer) == keras.layers.MaxPooling2D or type(layer) == keras.layers.AveragePooling2D:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        if type(layer) == keras.layers.MaxPooling2D:
-            pool = P.Pooling.MAX
-        else:  # NOTE AveragePooling needs to be implemented
-            pool = P.Pooling.AVE
-        # Padding
-        # TODO The rest of the arguements including bias, regulizers, dilatin,
-        if layer.strides is None:
-            stride = (1, 1)
-        else:
-            stride = layer.strides
-        # Padding
-        if layer.padding == 'same':  # Calculate the padding for 'same'
-            padding = [layer.pool_size[0] / 2, layer.pool_size[1] / 2]
-        else:
-            padding = [0, 0]  # If padding is valid(aka no padding)
-        n[name] = L.Pooling(n[in_names[0].name], kernel_h=layer.pool_size[0],
-                            kernel_w=layer.pool_size[1], stride_h=stride[0],
-                            stride_w=stride[1], pad_h=padding[0], pad_w=padding[1],
-                            pool=pool)
-        """
-        if hasattr(layer,layer.activation):
-            name_act = name + "_activation_" + layer.activation.__name__ #get function string
-            n[name_act] = get_activation(layer,n[name])
-        """
-    # Activation (wrapper for activations) and Advanced Activation Layers
-    elif type(layer) == keras.layers.Activation:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = get_activation(layer, n[in_names[0].name])  # TODO: Assert only 1
-
-    # Caffe lacks intializer, regulizer, and constraint params
-    elif type(layer) == keras.layers.LeakyReLU:
-        # TODO: figure out how to pass Leaky params
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.PReLU(n[in_names[0].name])
-
-    elif type(layer) == keras.layers.PReLU:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.PReLU(n[in_names[0].name])
-
-    elif type(layer) == keras.layers.ELU:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.ELU(n[in_names[0].name], layer.alpha)
-
-    elif type(layer) == keras.layers.GlobalAveragePooling2D:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        n[name] = L.Pooling(n[in_names[0].name], kernel_size=8, stride=8, pad=0, pool=P.Pooling.AVE)
-
-    elif type(layer) == keras.layers.ZeroPadding2D:
-        name = layer.name
-        in_names = get_inbound_layers(layer)
-        config = layer.get_config()
-        padding = config['padding']
-        n[name] = L.Convolution(n[in_names[0].name], num_output=3, kernel_size=1, stride=1,
-                                pad_h=padding[0][0], pad_w=padding[1][0], convolution_param=dict(bias_term=False))
-        net_params[name] = np.ones((3, 3, 1, 1))
-
-    else:
-        raise Exception("Cannot convert model. " + layer.name + " is not supported.")
-
-
-def get_inbound_layers(layer):
+def _getInboundLayers(layer):
     in_names = []
-    for node in layer.inbound_nodes:  # get inbound nodes to current layer
+    # get inbound nodes to current layer (support newer as well as older APIs)
+    inbound_nodes = layer.inbound_nodes if hasattr(layer, 'inbound_nodes') else layer._inbound_nodes
+    for node in inbound_nodes:
         node_list = node.inbound_layers  # get layers pointing to this node
         in_names = in_names + node_list
-    if any('flat' in s.name for s in in_names):  # For Caffe2DML to reroute any use of Flatten layers
-        return get_inbound_layers([s for s in in_names if 'flat' in s.name][0])
-    return in_names
+    # For Caffe2DML to reroute any use of Flatten layers
+    return list(chain.from_iterable( [ _getInboundLayers(l) if isinstance(l, keras.layers.Flatten) else [ l ] for l in in_names ] ))
 
-
-# Only works with non Tensorflow functions!
-def get_activation(layer, bottom):
-    if keras.activations.serialize(layer.activation) == 'relu':
-        return L.ReLU(bottom, in_place=True)
-    elif keras.activations.serialize(layer.activation) == 'softmax':
-        return L.Softmax(bottom)  # Cannot extract axis from model, so default to -1
-    elif keras.activations.serialize(layer.activation) == 'softsign':
-        # Needs to be implemented in caffe2dml
-        raise Exception("softsign is not implemented")
-    elif keras.activations.serialize(layer.activation) == 'elu':
-        return L.ELU(bottom)
-    elif keras.activations.serialize(layer.activation) == 'selu':
-        # Needs to be implemented in caffe2dml
-        raise Exception("SELU activation is not implemented")
-    elif keras.activations.serialize(layer.activation) == 'sigmoid':
-        return L.Sigmoid(bottom)
-    elif keras.activations.serialize(layer.activation) == 'tanh':
-        return L.TanH(bottom)
-        # To add more acitvaiton functions, add more elif statements with
-        # activation funciton __name__'s.
-
-
-def generate_loss(kModel, n, label_name):
-    # Determine the loss needed to be added
-    for output in kModel.output_layers:
-        if hasattr(kModel, 'loss'):
-            if kModel.loss == 'categorical_crossentropy' and output.activation.__name__ == 'softmax':
-                name = output.name + "_activation_" + output.activation.__name__
-                n[name] = L.SoftmaxWithLoss(n[output.name], n[label_name])
-            elif kModel.loss == 'binary_crossentropy' and output.activation.__name__ == 'sigmoid':
-                name = output.name + "_activation_" + output.activation.__name__
-                n[name] = L.SigmoidCrossEntropyLoss(n[output.name])
-            else:  # Map the rest of the loss functions to the end of the output layer in Keras
-                if kModel.loss == 'hinge':
-                    name = kModel.name + 'hinge'
-                    n[name] = L.HingeLoss(n[output.name])
-                elif kModel.loss == 'categorical_crossentropy':
-                    name = kModel.name + 'categorical_crossentropy'
-                    n[name] = L.MultinomialLogisticLoss(n[output.name])
-                    # TODO Post warning to use softmax before this loss
-                elif kModel.loss == 'mean_squared_error':
-                    name = kModel.name + 'mean_squared_error'
-                    n[name] = L.EuclideanLoss(n[output.name])
-                # TODO implement Infogain Loss
-                else:
-                    raise Exception(kModel.loss + "is not supported")
-
-
-# Params: keras Model, caffe prototxt filepath, filepath to save solver
-def generate_caffe_solver(kModel, cModelPath, filepath):
-    solver_param = CaffeSolver(trainnet_prototxt_path=cModelPath,
-                               testnet_prototxt_path=cModelPath,
-                               debug=True)  # Currently train and test are the same protos
-    solver_param.write(filepath)
-
-
-# Params: NetSpec, filepath and filename
-def write_caffe_model(cModel, filepath):
-    with open(filepath, 'w') as f:
-        f.write(str(cModel.to_proto()))
-
-
-"""
-Get compensated axis since Caffe has n,c,h,w and Keras has n,h,w,c for tensor dimensions
-Params: Current Keras layer
-"""
-
-
-def get_compensated_axis(layer):
+def _getCompensatedAxis(layer):
     compensated_axis = layer.axis
     # Cover all cases for anything accessing the 0th index or the last index
     if layer.axis > 0 and layer.axis < layer.input[0].shape.ndims - 1:
@@ -429,91 +91,265 @@ def get_compensated_axis(layer):
         compensated_axis = 1
     return compensated_axis
 
-def format_optimizer_name(self,optimizer):
-    if optimizer == "Adadelta":
-        return "AdaDelta"
-    elif optimizer == "Adagrad":
-        return "AdaGrad"
-    elif optimizer == "Adam":
-        return "Adam"
-    elif optimizer == "RMSprop":
-        return "RMSProp"
-    elif optimizer == "SGD":
-        return "SGD"
-    else:
-        raise Exception(optimizer + " is not supported in Caffe2DML")
+str_keys = [ 'name', 'type', 'top', 'bottom' ]
+def toKV(key, value):
+	return str(key) + ': "' + str(value) + '"' if key in str_keys else str(key) + ': ' + str(value)
+	
 
-class CaffeSolver:
-    """
-    Caffesolver is a class for creating a solver.prototxt file. It sets default
-    values and can export a solver parameter file.
-    Note that all parameters are stored as strings. Strings variables are
-    stored as strings in strings.
-    """
+def _parseJSONObject(obj):
+	rootName = obj.keys()[0]
+	ret = ['\n', rootName, ' {']
+	for key in obj[rootName]:
+		if isinstance(obj[rootName][key], dict):
+			ret = ret + [ '\n\t', key, ' {' ]
+			for key1 in obj[rootName][key]:
+				ret = ret + [ '\n\t\t', toKV(key1, obj[rootName][key][key1]) ]
+			ret = ret + [ '\n\t', '}' ]
+		elif isinstance(obj[rootName][key], list):
+			for v in obj[rootName][key]:
+				ret = ret + ['\n\t', toKV(key, v) ]
+		else:
+			ret = ret + ['\n\t', toKV(key, obj[rootName][key]) ]
+	return ret + ['\n}' ]
+	
 
-    def __init__(self, keras_model, testnet_prototxt_path="testnet.prototxt",
-                 debug=False):
+def _getBottomLayers(layer):
+    return [ bottomLayer.name for bottomLayer in _getInboundLayers(layer) ]
 
-        self.sp = {}
 
-        optimizer_name = format_optimizer_name(keras_model.optimizer.__name__)
-        # TODO Grab momentum values from other optimizers
-        # critical:
-        self.sp['base_lr'] = '{}'.format(keras_model.optimizer.lr)
-        self.sp['momentum'] = '0.9'
-        self.sp['type'] = '"{}"'.format(optimizer_name)
+def _parseActivation(layer, customLayerName=None):
+	kerasActivation = keras.activations.serialize(layer.activation)
+	if kerasActivation not in supportedCaffeActivations:
+		raise TypeError('Unsupported activation ' + kerasActivation + ' for the layer:' + layer.name)
+	if customLayerName is not None:
+		return { 'layer':{'name':customLayerName, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':layer.name }}
+	else:
+		return { 'layer':{'name':layer.name, 'type':supportedCaffeActivations[kerasActivation], 'top':layer.name, 'bottom':_getBottomLayers(layer) }}
 
-        # speed:
-        self.sp['test_iter'] = '100'
-        self.sp['test_interval'] = '250'
 
-        # looks:
-        self.sp['display'] = '25'
-        self.sp['snapshot'] = '2500'
-        self.sp['snapshot_prefix'] = '"snapshot"'  # string within a string!
+def _shouldParseActivation(layer):
+    ignore_activation = [ keras.layers.SimpleRNN , keras.layers.LSTM ]
+    return hasattr(layer, 'activation') and (type(layer) not in ignore_activation) and keras.activations.serialize(layer.activation) != 'linear'
 
-        # learning rate policy
-        self.sp['lr_policy'] = '"fixed"'
+def _parseKerasLayer(layer):
+	layerType = type(layer)
+	if layerType in specialLayers:
+		return specialLayers[layerType](layer)
+	elif layerType == keras.layers.Activation:
+		return [ _parseActivation(layer) ]
+	param = layerParamMapping[layerType](layer)
+	paramName = param.keys()[0]
+	if layerType == keras.layers.InputLayer:
+		ret = { 'layer': { 'name':layer.name, 'type':'Data', paramName:param[paramName], 'top':layer.name, 'top':'label' } }
+	else:
+		ret = { 'layer': { 'name':layer.name, 'type':supportedLayers[layerType], 'bottom':_getBottomLayers(layer), 'top':layer.name, paramName:param[paramName] } }
+	return [ ret, _parseActivation(layer, layer.name + '_activation') ] if _shouldParseActivation(layer)  else [ ret ]
 
-        # important, but rare:
-        self.sp['gamma'] = '0.1'
-        self.sp['weight_decay'] = '0.0005'
-        # self.sp['train_net'] = '"' + trainnet_prototxt_path + '"'
-        # self.sp['test_net'] = '"' + testnet_prototxt_path + '"'
 
-        self.sp['net'] = '"' + testnet_prototxt_path + '"'
+def _parseBatchNorm(layer):
+	bnName = layer.name + '_1'
+	config = layer.get_config()
+	bias_term = 'true' if config['center'] else 'false'
+	return [ { 'layer': { 'name':bnName, 'type':'BatchNorm', 'bottom':_getBottomLayers(layer), 'top':bnName, 'batch_norm_param':{'moving_average_fraction':layer.momentum, 'eps':layer.epsilon} } }, { 'layer': { 'name':layer.name, 'type':'Scale', 'bottom':bnName, 'top':layer.name, 'scale_param':{'bias_term':bias_term} } } ]
 
-        # pretty much never change these.
-        self.sp['max_iter'] = '100000'
-        self.sp['test_initialization'] = 'false'
-        self.sp['average_loss'] = '25'  # this has to do with the display.
-        self.sp['iter_size'] = '1'  # this is for accumulating gradients
+# The special are redirected to their custom parse function in _parseKerasLayer
+specialLayers = {
+    keras.layers.Flatten: lambda x: [],
+    keras.layers.BatchNormalization: _parseBatchNorm
+    }
+	
+def getConvParam(layer):
+	stride = (1, 1) if layer.strides is None else layer.strides
+	padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2] if layer.padding == 'same' else [0, 0]
+	config = layer.get_config()
+	return {'num_output':layer.filters,'bias_term':str(config['use_bias']).lower(),'kernel_h':layer.kernel_size[0], 'kernel_w':layer.kernel_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
-        if (debug):
-            self.sp['max_iter'] = '12'
-            self.sp['test_iter'] = '1'
-            self.sp['test_interval'] = '4'
-            self.sp['display'] = '1'
+def getUpSamplingParam(layer):
+	return { 'size_h':layer.size[0], 'size_w':layer.size[1] }
 
-    def add_from_file(self, filepath):
-        """
-        Reads a caffe solver prototxt file and updates the Caffesolver
-        instance parameters.
-        """
-        with open(filepath, 'r') as f:
-            for line in f:
-                if line[0] == '#':
-                    continue
-                splitLine = line.split(':')
-                self.sp[splitLine[0].strip()] = splitLine[1].strip()
+def getPoolingParam(layer, pool='MAX'):
+	stride = (1, 1) if layer.strides is None else layer.strides
+	padding = [layer.pool_size[0] / 2, layer.pool_size[1] / 2] if layer.padding == 'same' else [0, 0]
+	return {'pool':pool, 'kernel_h':layer.pool_size[0], 'kernel_w':layer.pool_size[1], 'stride_h':stride[0],'stride_w':stride[1],'pad_h':padding[0], 'pad_w':padding[1]}
 
-    def write(self, filepath):
-        """
-        Export solver parameters to INPUT "filepath". Sorted alphabetically.
-        """
-        f = open(filepath, 'w')
-        for key, value in sorted(self.sp.items()):
-            if not (type(value) is str):
-                raise Exception('All solver parameters must be strings')
-            f.write('%s: %s\n' % (key, value))
+def getRecurrentParam(layer):
+	if(not layer.use_bias):
+		raise Exception('Only use_bias=True supported for recurrent layers')
+	if(keras.activations.serialize(layer.activation) != 'tanh'):
+		raise Exception('Only tanh activation supported for recurrent layers')
+	if(layer.dropout != 0 or layer.recurrent_dropout != 0):
+		raise Exception('Only dropout not supported for recurrent layers')
+	return {'num_output': layer.units, 'return_sequences': str(layer.return_sequences).lower() }
 
+# TODO: Update AveragePooling2D when we add maxpooling support 
+layerParamMapping = {
+    keras.layers.InputLayer: lambda l: \
+        {'data_param': {'batch_size': l.batch_size}},
+    keras.layers.Dense: lambda l: \
+        {'inner_product_param': {'num_output': l.units}},
+    keras.layers.Dropout: lambda l: \
+        {'dropout_param': {'dropout_ratio': l.rate}},
+    keras.layers.Add: lambda l: \
+        {'eltwise_param': {'operation': 'SUM'}},
+    keras.layers.Concatenate: lambda l: \
+        {'concat_param': {'axis': _getCompensatedAxis(l)}},
+    keras.layers.Conv2DTranspose: lambda l: \
+        {'convolution_param': getConvParam(l)},
+    keras.layers.UpSampling2D: lambda l: \
+        {'upsample_param': getUpSamplingParam(l)},
+    keras.layers.Conv2D: lambda l: \
+        {'convolution_param': getConvParam(l)},
+    keras.layers.MaxPooling2D: lambda l: \
+        {'pooling_param': getPoolingParam(l, 'MAX')},
+    keras.layers.AveragePooling2D: lambda l: \
+        {'pooling_param': getPoolingParam(l, 'AVE')},
+    keras.layers.SimpleRNN: lambda l: \
+        {'recurrent_param': getRecurrentParam(l)},
+    keras.layers.LSTM: lambda l: \
+        {'recurrent_param': getRecurrentParam(l)},
+    }
+
+def _checkIfValid(myList, fn, errorMessage):
+	bool_vals = np.array([ fn(elem) for elem in myList])
+	unsupported_elems = np.where(bool_vals)[0]
+	if len(unsupported_elems) != 0:
+		raise ValueError(errorMessage + str(np.array(myList)[unsupported_elems]))
+
+def _transformLayer(layer, batch_size):
+	if type(layer) == keras.layers.InputLayer:
+		layer.batch_size = batch_size
+	return [ layer ]
+
+def _appendKerasLayers(fileHandle, kerasLayers, batch_size):
+	if len(kerasLayers) >= 1:
+		transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasLayers)))  
+		jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
+		parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
+		fileHandle.write(''.join(parsedLayers))
+		fileHandle.write('\n')
+	
+def lossLayerStr(layerType, bottomLayer):
+	return 'layer {\n  name: "loss"\n  type: "' + layerType + '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
+	
+def _appendKerasLayerWithoutActivation(fileHandle, layer, batch_size):
+	if type(layer) != keras.layers.Activation:
+		lastLayerActivation = layer.activation
+		layer.activation = keras.activations.linear
+		_appendKerasLayers(fileHandle, [layer], batch_size)
+		layer.activation = lastLayerActivation
+
+def _getExactlyOneBottomLayer(layer):
+	bottomLayers = _getBottomLayers(layer)
+	if len(bottomLayers) != 1:
+		raise Exception('Expected only one bottom layer for ' + str(layer.name) + ', but found ' + str(bottomLayers))
+	return bottomLayers[0]
+
+def _isMeanSquaredError(loss):
+	return loss == 'mean_squared_error' or loss == 'mse' or loss == 'MSE' 
+	
+def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
+	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
+	with open(outCaffeNetworkFilePath, 'w') as f:
+		# Write the parsed layers for all but the last layer
+		_appendKerasLayers(f, kerasModel.layers[:-1], batch_size)
+		# Now process the last layer with loss
+		lastLayer = kerasModel.layers[-1]
+		if _isMeanSquaredError(kerasModel.loss):
+			_appendKerasLayers(f, [ lastLayer ], batch_size)
+			f.write(lossLayerStr('EuclideanLoss', lastLayer.name))
+		elif kerasModel.loss == 'categorical_crossentropy':
+			_appendKerasLayerWithoutActivation(f, lastLayer, batch_size)
+			bottomLayer = _getExactlyOneBottomLayer(lastLayer) if type(lastLayer) == keras.layers.Activation else lastLayer.name  
+			lastLayerActivation = str(keras.activations.serialize(lastLayer.activation))
+			if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
+				f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+			else:
+				raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
+		else:
+			raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
+
+
+def getNumPyMatrixFromKerasWeight(param):
+	x = np.array(param)
+	if len(x.shape) > 2:
+		x = x.transpose(3, 2, 0, 1)
+		return x.reshape(x.shape[0], -1)
+	elif len(x.shape) == 1:
+		return np.matrix(param).transpose()
+	else:
+		return x
+
+
+defaultSolver = """
+solver_mode: CPU
+"""
+
+def evaluateValue(val):
+	if type(val) == int or type(val) == float:
+		return float(val)
+	else:
+		return K.eval(val)
+	
+def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
+	if type(kerasModel.optimizer) == keras.optimizers.SGD:
+		solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
+	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+		solver = 'type: "Adagrad"\n'
+	elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+		solver = 'type: "Adam"\n'
+	else:
+		raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
+	base_lr = evaluateValue(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
+	gamma = evaluateValue(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
+	with open(outCaffeSolverFilePath, 'w') as f:
+		f.write('net: "' + caffeNetworkFilePath + '"\n')
+		f.write(defaultSolver)
+		f.write(solver)
+		f.write('lr_policy: "' + lr_policy + '"\n')
+		f.write('regularization_type: "' + str(regularization_type) + '"\n')
+		f.write('weight_decay: ' + str(weight_decay) + '\n')
+		f.write('max_iter: ' + str(max_iter) + '\ntest_iter: ' + str(test_iter) + '\ntest_interval: ' + str(test_interval) + '\n')
+		f.write('display: ' + str(display) + '\n')
+		f.write('base_lr: ' + str(base_lr) + '\n')
+		f.write('gamma: ' + str(gamma) + '\n')
+		if type(kerasModel.optimizer) == keras.optimizers.SGD:
+			momentum = evaluateValue(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
+			f.write('momentum: ' + str(momentum) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+			momentum = evaluateValue(kerasModel.optimizer.beta_1) if hasattr(kerasModel.optimizer, 'beta_1') else 0.9
+			momentum2 = evaluateValue(kerasModel.optimizer.beta_2) if hasattr(kerasModel.optimizer, 'beta_2') else 0.999
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('momentum: ' + str(momentum) + '\n')
+			f.write('momentum2: ' + str(momentum2) + '\n')
+			f.write('delta: ' + str(delta) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('delta: ' + str(delta) + '\n')
+		else:
+			raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
+
+
+def getInputMatrices(layer):
+	if type(layer) == keras.layers.LSTM or type(layer) == keras.layers.SimpleRNN:
+		weights = layer.get_weights()
+		return [np.vstack((weights[0], weights[1])), np.matrix(weights[2]) ]
+	else:
+		return [ getNumPyMatrixFromKerasWeight(param) for param in layer.get_weights() ]
+
+def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
+	_checkIfValid(kerasModel.layers, lambda layer: False if len(layer.get_weights()) <= 4 or len(layer.get_weights()) != 3 else True, 'Unsupported number of weights:')
+	layers = [layer for layer in kerasModel.layers if len(layer.get_weights()) > 0]
+	sc = spark._sc
+	biasToTranspose = [ keras.layers.Dense ]
+	dmlLines = []
+	script_java = sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml('')
+	for layer in layers:
+		inputMatrices = getInputMatrices(layer)
+		potentialVar = [ layer.name + '_weight', layer.name + '_bias',  layer.name + '_1_weight', layer.name + '_1_bias' ]
+		for i in range(len(inputMatrices)):
+			dmlLines = dmlLines + [ 'write(' + potentialVar[i] + ', "' + outDirectory + '/' + potentialVar[i] + '.mtx", format="binary");\n' ]
+			mat = inputMatrices[i].transpose() if (i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
+			py4j.java_gateway.get_method(script_java, "in")(potentialVar[i], convertToMatrixBlock(sc, mat))
+	script_java.setScriptString(''.join(dmlLines))
+	ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
+	ml.execute(script_java)

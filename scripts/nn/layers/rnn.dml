@@ -54,6 +54,11 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
    */
   N = nrow(X)
   M = ncol(W)
+  N1 = nrow(out0)
+  if(N < N1) {
+    # Allow for smaller out0 for last batch
+    out0 = out0[1:N,]
+  }
   out_prev = out0
   if (return_sequences) {
     out = matrix(0, rows=N, cols=T*M)
@@ -113,6 +118,12 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, mat
    */
   N = nrow(X)
   M = ncol(W)
+  N1 = nrow(out0)
+  if(N < N1) {
+    # Allow for smaller out0 for last batch
+    out0 = out0[1:N,]
+    cache_out = cache_out[,1:(N*M)]
+  }
   dX = matrix(0, rows=N, cols=T*D)
   dW = matrix(0, rows=D+M, cols=M)
   db = matrix(0, rows=1, cols=M)
@@ -135,8 +146,8 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, mat
     }
     input = cbind(X_t, out_prev)  # shape (N, D+M)
     dout_t_raw = (1-out_t^2) * dout_t  # into tanh, shape (N, M)
-    dW = dW + t(input) %*% dout_t_raw  # shape (D+M, M)
-    db = db + colSums(dout_t_raw)  # shape (1, M)
+    dW += t(input) %*% dout_t_raw  # shape (D+M, M)
+    db += colSums(dout_t_raw)  # shape (1, M)
     dinput = dout_t_raw %*% t(W)  # shape (N, D+M)
     dX[,(t-1)*D+1:t*D] = dinput[,1:D]
     dout_prev = dinput[,D+1:D+M]  # shape (N, M)

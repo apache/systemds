@@ -48,7 +48,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 public class IPAPassPropagateReplaceLiterals extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.PROPAGATE_SCALAR_LITERALS;
 	}
 	
@@ -116,7 +116,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 				rReplaceLiterals(current, constants);
 		}
 		else {
-			replaceLiterals(sb.get_hops(), constants);
+			replaceLiterals(sb.getHops(), constants);
 		}
 	}
 	

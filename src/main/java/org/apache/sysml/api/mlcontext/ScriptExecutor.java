@@ -20,16 +20,19 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.DMLOptions;
+import org.apache.sysml.api.DMLScript.EvictionPolicy;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
@@ -230,10 +233,11 @@ public class ScriptExecutor {
 	protected void createAndInitializeExecutionContext() {
 		executionContext = ExecutionContextFactory.createContext(runtimeProgram);
 		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null) {
+		if (symbolTable != null)
 			executionContext.setVariables(symbolTable);
-		}
-
+		//attach registered outputs (for dynamic recompile)
+		executionContext.getVariables().setRegisteredOutputs(
+			new HashSet<String>(script.getOutputVariables()));
 	}
 
 	/**
@@ -248,9 +252,29 @@ public class ScriptExecutor {
 		DMLScript.USE_ACCELERATOR = gpu;
 		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
 
-		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
-		GPUContextPool.AVAILABLE_GPUS = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.AVAILABLE_GPUS);
+		// set the global compiler configuration
+		try {
+			OptimizerUtils.resetStaticCompilerFlags();
+			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(
+					ConfigurationManager.getCompilerConfig(), config);
+			ConfigurationManager.setGlobalConfig(cconf);
+		} 
+		catch(DMLRuntimeException ex) {
+			throw new RuntimeException(ex);
+		}
+
+		// set the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
+		GPUContextPool.AVAILABLE_GPUS = config.getTextValue(DMLConfig.AVAILABLE_GPUS);
+
+		String evictionPolicy = config.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
+		try {
+			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
+		} 
+		catch(IllegalArgumentException e) {
+			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+		}
 	}
+	
 
 	/**
 	 * Reset the global flags (for example: statistics, gpu, etc)
@@ -386,7 +410,7 @@ public class ScriptExecutor {
 		restoreInputsInSymbolTable();
 		resetGlobalFlags();
 	}
-
+	
 	/**
 	 * Restore the input variables in the symbol table after script execution.
 	 */

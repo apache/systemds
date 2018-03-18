@@ -156,13 +156,14 @@ public class EncoderRecode extends Encoder
 		meta.ensureAllocatedColumns(maxDistinct);
 		
 		//create compact meta data representation
+		StringBuilder sb = new StringBuilder(); //for reuse
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
 			int rowID = 0;
 			if( _rcdMaps.containsKey(_colList[j]) )
 				for( Entry<String, Long> e : _rcdMaps.get(colID).entrySet() ) {
-					String tmp = constructRecodeMapEntry(e.getKey(), e.getValue());
-					meta.set(rowID++, colID-1, tmp); 
+					meta.set(rowID++, colID-1, 
+						constructRecodeMapEntry(e.getKey(), e.getValue(), sb)); 
 				}
 			meta.getColumnMetadata(colID-1).setNumDistinct(
 					_rcdMaps.get(colID).size());
@@ -197,7 +198,14 @@ public class EncoderRecode extends Encoder
 	 * @return the concatenation of token and code with delimiter in between
 	 */
 	public static String constructRecodeMapEntry(String token, Long code) {
-		return token + Lop.DATATYPE_PREFIX + code.toString();
+		StringBuilder sb = new StringBuilder(token.length()+16);
+		return constructRecodeMapEntry(token, code, sb);
+	}
+	
+	private static String constructRecodeMapEntry(String token, Long code, StringBuilder sb) {
+		sb.setLength(0); //reset reused string builder
+		return sb.append(token).append(Lop.DATATYPE_PREFIX)
+			.append(code.longValue()).toString();
 	}
 	
 	/**

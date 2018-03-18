@@ -71,12 +71,14 @@ object Utils {
     val momentum = if (solver.hasMomentum) solver.getMomentum else 0.0
     val lambda   = if (solver.hasWeightDecay) solver.getWeightDecay else 0.0
     val delta    = if (solver.hasDelta) solver.getDelta else 0.0
+    val regularizationType = if(solver.hasRegularizationType) solver.getRegularizationType else "L2"
 
     solver.getType.toLowerCase match {
-      case "sgd"      => new SGD(lambda, momentum)
-      case "adagrad"  => new AdaGrad(lambda, delta)
-      case "nesterov" => new Nesterov(lambda, momentum)
-      case _          => throw new DMLRuntimeException("The solver type is not supported: " + solver.getType + ". Try: SGD, AdaGrad or Nesterov.")
+      case "sgd"      => new SGD(regularizationType, lambda, momentum)
+      case "adagrad"  => new AdaGrad(regularizationType, lambda, delta)
+      case "nesterov" => new Nesterov(regularizationType, lambda, momentum)
+      case "adam" 	  => new Adam(regularizationType, lambda, momentum, if(solver.hasMomentum2) solver.getMomentum2 else 0.0, delta)
+      case _          => throw new DMLRuntimeException("The solver type is not supported: " + solver.getType + ". Try: SGD, AdaGrad or Nesterov or Adam.")
     }
 
   }
@@ -126,7 +128,7 @@ object Utils {
   def allocateDeconvolutionWeight(data: java.util.List[java.lang.Float], F: Int, C: Int, H: Int, W: Int): (MatrixBlock, CopyFloatToDoubleArray) = {
     val mb = new MatrixBlock(C, F * H * W, false)
     mb.allocateDenseBlock()
-    val arr    = mb.getDenseBlock
+    val arr    = mb.getDenseBlockValues
     val thread = new CopyCaffeDeconvFloatToSystemMLDeconvDoubleArray(data, F, C, H, W, arr)
     thread.start
     return (mb, thread)
@@ -135,7 +137,7 @@ object Utils {
   def allocateMatrixBlock(data: java.util.List[java.lang.Float], rows: Int, cols: Int, transpose: Boolean): (MatrixBlock, CopyFloatToDoubleArray) = {
     val mb = new MatrixBlock(rows, cols, false)
     mb.allocateDenseBlock()
-    val arr    = mb.getDenseBlock
+    val arr    = mb.getDenseBlockValues
     val thread = new CopyFloatToDoubleArray(data, rows, cols, transpose, arr)
     thread.start
     return (mb, thread)
@@ -169,6 +171,7 @@ object Utils {
     ml.execute(script)
   }
 
+  // TODO: Loading of extra weights is not supported
   def readCaffeNet(net: CaffeNetwork, netFilePath: String, weightsFilePath: String, inputVariables: java.util.HashMap[String, MatrixBlock]): NetParameter = {
     // Load network
     val reader: InputStreamReader     = getInputStreamReader(netFilePath);
@@ -299,6 +302,22 @@ object Utils {
     }
   }
   // --------------------------------------------------------------
+  
+  // Returns the memory requirement for the layer in number of bytes
+  def getMemInBytes(l:CaffeLayer, batchSize:Int, isTraining:Boolean):Long = {
+    val numLayerInput =  if(!l.isInstanceOf[Data]) l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize else 0
+    val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
+    val numLayerError = numLayerOutput
+    val numLayerWeights = if(l.weightShape != null) {
+      val nWt = l.weightShape()(0).toLong * l.weightShape()(1).toLong
+      if(l.extraWeightShape != null) l.extraWeightShape()(0).toLong * l.extraWeightShape()(1).toLong + nWt
+      else nWt
+    } else 0
+    val numLayerBias = if(l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
+    val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
+    if(isTraining) (numLayerInput + numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*java.lang.Double.BYTES
+    else (numLayerInput + numLayerOutput + numLayerWeights + numLayerBias)*java.lang.Double.BYTES
+  }
 }
 
 class Utils {

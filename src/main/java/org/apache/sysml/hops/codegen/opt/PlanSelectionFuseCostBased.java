@@ -632,21 +632,21 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		double costs = 1;
 		if( current instanceof UnaryOp ) {
 			switch( ((UnaryOp)current).getOp() ) {
-				case ABS:   
+				case ABS:
 				case ROUND:
 				case CEIL:
 				case FLOOR:
-				case SIGN:
-				case SELP:    costs = 1; break; 
+				case SIGN:    costs = 1; break; 
 				case SPROP:
 				case SQRT:    costs = 2; break;
 				case EXP:     costs = 18; break;
 				case SIGMOID: costs = 21; break;
-				case LOG:    
+				case LOG:
 				case LOG_NZ:  costs = 32; break;
 				case NCOL:
 				case NROW:
 				case PRINT:
+				case ASSERT:
 				case CAST_AS_BOOLEAN:
 				case CAST_AS_DOUBLE:
 				case CAST_AS_INT:
@@ -684,7 +684,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case LESS:
 				case LESSEQUAL:
 				case GREATER:
-				case GREATEREQUAL: 
+				case GREATEREQUAL:
 				case CBIND:
 				case RBIND:   costs = 1; break;
 				case INTDIV:  costs = 6; break;

@@ -41,9 +41,9 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 //key class to read has to be DoubleWritable
@@ -62,7 +62,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		return false;
 	}
 	
-	public static void setZeroValues(JobConf job, NumItemsByEachReducerMetaData metadata)
+	public static void setZeroValues(JobConf job, MetaDataNumItemsByEachReducer metadata)
 	{
 		job.setInt(PARTITION_OF_ZERO, metadata.getPartitionOfZero());
 		job.setLong(NUMBER_OF_ZERO, metadata.getNumberOfZero());
@@ -141,7 +141,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		}
 	}
 	
-	public static Set<Integer> setPickRecordsInEachPartFile(JobConf job, NumItemsByEachReducerMetaData metadata, double[] probs)
+	public static Set<Integer> setPickRecordsInEachPartFile(JobConf job, MetaDataNumItemsByEachReducer metadata, double[] probs)
 	{
 		HashMap<Integer, ArrayList<Pair<Integer, Integer>>> posMap = new HashMap<>();
 		getPointsInEachPartFile(metadata.getNumItemsArray(), probs, posMap);
@@ -155,7 +155,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		return posMap.keySet();
 	}
 	
-	public static void setRangePickPartFiles(JobConf job, NumItemsByEachReducerMetaData metadata, double lbound, double ubound) {
+	public static void setRangePickPartFiles(JobConf job, MetaDataNumItemsByEachReducer metadata, double lbound, double ubound) {
 		
 		if(lbound<0 || lbound > 1 || ubound <0 || ubound >1 || lbound >= ubound ) {
 			throw new RuntimeException("Invalid ranges for range pick: [" + lbound + "," + ubound + "]");

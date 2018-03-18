@@ -63,7 +63,7 @@ public class LibCommonsMath
 		if(opcode.equals("inverse"))
 			return computeMatrixInverse(matrixInput);
 		else if (opcode.equals("cholesky"))
-			return computeCholesky(matrixInput);		
+			return computeCholesky(matrixInput);
 		return null;
 	}
 	
@@ -240,8 +240,8 @@ public class LibCommonsMath
 		RealMatrix u = svd.getU();
 		RealMatrix v = svd.getV();
 		MatrixBlock U = DataConverter.convertToMatrixBlock(u.getData());
-	        MatrixBlock Sigma = DataConverter.convertToMatrixBlock(sigma, true);
-	        Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(Sigma.rlen, Sigma.rlen, true));
+		MatrixBlock Sigma = DataConverter.convertToMatrixBlock(sigma, true);
+		Sigma = LibMatrixReorg.diag(Sigma, new MatrixBlock(Sigma.rlen, Sigma.rlen, true));
 		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
 
 		return new MatrixBlock[] { U, Sigma, V };
@@ -281,7 +281,8 @@ public class LibCommonsMath
 		if ( !in.isSquare() )
 			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a " + in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
 
-		CholeskyDecomposition cholesky = new CholeskyDecomposition(in);
+		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, 1e-14,
+			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		
 		return DataConverter.convertToMatrixBlock(rmL.getData());

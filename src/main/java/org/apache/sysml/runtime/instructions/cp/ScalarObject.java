@@ -25,16 +25,9 @@ import org.apache.sysml.parser.Expression.ValueType;
 public abstract class ScalarObject extends Data
 {
 	private static final long serialVersionUID = 6994413375932824892L;
-
-	private String _name;
 	
-	public ScalarObject(String name, ValueType vt) {
+	public ScalarObject(ValueType vt) {
 		super(DataType.SCALAR, vt);
-		_name = name;
-	}
-
-	public String getName() {
-		return _name;
 	}
 
 	public abstract boolean getBooleanValue();
@@ -49,7 +42,7 @@ public abstract class ScalarObject extends Data
 		return getStringValue();
 	}
 	
-	public abstract Object getValue();	
+	public abstract Object getValue();
 	
 	@Override
 	public String toString() { 

@@ -38,6 +38,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -55,7 +56,7 @@ public class ReaderTextCSV extends MatrixReader
 	{
 		//allocate output matrix block
 		MatrixBlock ret = null;
-		if( rlen>0 && clen>0 ) //otherwise allocated on read
+		if( rlen>=0 && clen>=0 ) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
 		//prepare file access
@@ -182,15 +183,13 @@ public class ReaderTextCSV extends MatrixReader
 			} 
 			else //DENSE<-value
 			{
-				while( (value=br.readLine())!=null ) //foreach line
-				{
+				DenseBlock a = dest.getDenseBlock();
+				while( (value=br.readLine())!=null ) { //foreach line
 					String cellStr = value.toString().trim();
 					emptyValuesFound = false;
 					String[] parts = IOUtilFunctions.split(cellStr, delim);
 					int col = 0;
-					
-					for( String part : parts ) //foreach cell
-					{
+					for( String part : parts ) { //foreach cell
 						part = part.trim();
 						if ( part.isEmpty() ) {
 							emptyValuesFound = true;
@@ -200,7 +199,7 @@ public class ReaderTextCSV extends MatrixReader
 							cellValue = UtilFunctions.parseToDouble(part);
 						}
 						if ( cellValue != 0 ) {
-							dest.setValueDenseUnsafe(row, col, cellValue);
+							a.set(row, col, cellValue);
 							lnnz++;
 						}
 						col++;

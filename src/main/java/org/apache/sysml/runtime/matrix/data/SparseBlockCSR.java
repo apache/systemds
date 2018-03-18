@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * SparseBlock implementation that realizes a traditional 'compressed sparse row'
@@ -68,7 +69,7 @@ public class SparseBlockCSR extends SparseBlock
 		_values = values;
 		_size = nnz;
 	}
-	
+
 	/**
 	 * Copy constructor sparse block abstraction. 
 	 * 
@@ -337,6 +338,11 @@ public class SparseBlockCSR extends SparseBlock
 		return true;
 	}
 	
+	@Override
+	public boolean isAllocated(int r) {
+		return true;
+	}
+
 	@Override 
 	public void reset() {
 		if( _size > 0 ) {
@@ -451,14 +457,14 @@ public class SparseBlockCSR extends SparseBlock
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
 		int pos = pos(r);
-		int len = size(r);		
+		int len = size(r);
 		int alen = row.size();
 		int[] aix = row.indexes();
 		double[] avals = row.values();
 		
 		//delete existing values if necessary
 		if( len > 0 ) //incl size update
-			deleteIndexRange(r, aix[0], aix[alen-1]+1);
+			deleteIndexRange(r, aix[pos], aix[pos+len-1]+1);
 		
 		//prepare free space (allocate and shift)
 		int lsize = _size+alen;
@@ -497,15 +503,13 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-		//delete existing values in range if necessary 
+		//delete existing values in range if necessary
 		if( !isEmpty(r) )
 			deleteIndexRange(r, cl, cu);
 		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+vlen; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
-
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
+		
 		//prepare free space (allocate and shift)
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )
@@ -522,6 +526,29 @@ public class SparseBlockCSR extends SparseBlock
 				index2++;
 			}
 		incrPtr(r+1, lnnz);
+	}
+	
+	@Override
+	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//delete existing values in range if necessary
+		if( !isEmpty(r) )
+			deleteIndexRange(r, cl, cu);
+		
+		//prepare free space (allocate and shift)
+		int lsize = _size+vlen;
+		if( _values.length < lsize )
+			resize(lsize);
+		int index = internPosFIndexGT(r, cl);
+		int index2 = (index>0)?index:pos(r+1);
+		shiftRightByN(index2, vlen);
+		
+		//insert values
+		for( int i=vpos; i<vpos+vlen; i++ ) {
+			_indexes[ index2 ] = cl+vix[i];
+			_values[ index2 ] = v[i];
+			index2++;
+		}
+		incrPtr(r+1, vlen);
 	}
 	
 	/**
@@ -541,8 +568,7 @@ public class SparseBlockCSR extends SparseBlock
 		//step 1: determine output nnz
 		int nnz = _size - (int)size(rl, ru, cl, cu);
 		if( v != null )
-			for( int i=vix; i<vix+vlen; i++ )
-				nnz += (v[i]!=0) ? 1: 0;
+			nnz += UtilFunctions.computeNnz(v, vix, vlen);
 		
 		//step 2: reallocate if necessary
 		if( _values.length < nnz )
@@ -815,18 +841,68 @@ public class SparseBlockCSR extends SparseBlock
 		
 		return sb.toString();
 	}
-	
+
+	@Override
+	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
+		//1. correct meta data
+		if( rlen < 0 || clen < 0 ) {
+			throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
+		}
+
+		//2. correct array lengths
+		if(_size != nnz && _ptr.length < rlen+1 && _values.length < nnz && _indexes.length < nnz ) {
+			throw new RuntimeException("Incorrect array lengths.");
+		}
+
+		//3. non-decreasing row pointers
+		for( int i=1; i<rlen; i++ ) {
+			if(_ptr[i-1] > _ptr[i] && strict)
+				throw new RuntimeException("Row pointers are decreasing at row: "+i
+					+ ", with pointers "+_ptr[i-1]+" > "+_ptr[i]);
+		}
+
+		//4. sorted column indexes per row
+		for( int i=0; i<rlen; i++ ) {
+			int apos = pos(i);
+			int alen = size(i);
+			for( int k=apos+1; k<apos+alen; k++)
+				if( _indexes[k-1] >= _indexes[k] )
+					throw new RuntimeException("Wrong sparse row ordering: "
+						+ k + " "+_indexes[k-1]+" "+_indexes[k]);
+			for( int k=apos; k<apos+alen; k++ )
+				if( _values[k] == 0 )
+					throw new RuntimeException("Wrong sparse row: zero at "
+						+ k + " at col index " + _indexes[k]);
+		}
+
+		//5. non-existing zero values
+		for( int i=0; i<_size; i++ ) {
+			if( _values[i] == 0 ) {
+				throw new RuntimeException("The values array should not contain zeros."
+					+ " The " + i + "th value is "+_values[i]);
+			}
+		}
+
+		//6. a capacity that is no larger than nnz times resize factor.
+		int capacity = _values.length;
+		if(capacity > nnz*RESIZE_FACTOR1 ) {
+			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
+				+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
+		}
+
+		return true;
+	}
+
 	///////////////////////////
 	// private helper methods
 	
 	private int newCapacity(int minsize) {
 		//compute new size until minsize reached
-		double tmpCap = _values.length;
+		double tmpCap = Math.max(_values.length, 1);
 		while( tmpCap < minsize ) {
 			tmpCap *= (tmpCap <= 1024) ? 
-					RESIZE_FACTOR1 : RESIZE_FACTOR2;
+				RESIZE_FACTOR1 : RESIZE_FACTOR2;
 		}
-		
 		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
 	}
 

@@ -445,41 +445,34 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			Hop currentHop = p.getNode().getHop();
 			ProgramBlock pb = p.getNode().getProgramBlock();
 			
-			try
-			{
-				//keep the old dag roots
-				ArrayList<Hop> oldRoots = pb.getStatementBlock().get_hops();
-				Hop tmpHop = null;
-				if( !(currentHop instanceof DataOp && ((DataOp)currentHop).isWrite()) ){
-					ArrayList<Hop> newRoots = new ArrayList<>();
-					tmpHop = new DataOp("_tmp", currentHop.getDataType(), currentHop.getValueType(), currentHop, DataOpTypes.TRANSIENTWRITE, "tmp");
-					tmpHop.setVisited(); //ensure recursive visitstatus reset on recompile
-					newRoots.add(tmpHop);
-					pb.getStatementBlock().set_hops(newRoots);
-				}
-				
-				//recompile modified runtime program
-				Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(),
-					new LocalVariableMap(), 0, ResetType.NO_RESET);
-				_compiledPlans++;
-				
-				//cost partial runtime program up to current hop
-				ExecutionContext ec = ExecutionContextFactory.createContext(prog);
-				costs = CostEstimationWrapper.getTimeEstimate(prog, ec);	
-				
-				//restore original hop dag
-				if( tmpHop !=null )
-					HopRewriteUtils.removeChildReference(tmpHop, currentHop);
-				pb.getStatementBlock().set_hops(oldRoots);	
+			//keep the old dag roots
+			ArrayList<Hop> oldRoots = pb.getStatementBlock().getHops();
+			Hop tmpHop = null;
+			if( !(currentHop instanceof DataOp && ((DataOp)currentHop).isWrite()) ){
+				ArrayList<Hop> newRoots = new ArrayList<>();
+				tmpHop = new DataOp("_tmp", currentHop.getDataType(), currentHop.getValueType(), currentHop, DataOpTypes.TRANSIENTWRITE, "tmp");
+				tmpHop.setVisited(); //ensure recursive visitstatus reset on recompile
+				newRoots.add(tmpHop);
+				pb.getStatementBlock().setHops(newRoots);
 			}
-			catch(HopsException ex)
-			{
-				throw new DMLRuntimeException(ex);
-			}
+			
+			//recompile modified runtime program
+			Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(),
+				new LocalVariableMap(), 0, ResetType.NO_RESET);
+			_compiledPlans++;
+			
+			//cost partial runtime program up to current hop
+			ExecutionContext ec = ExecutionContextFactory.createContext(prog);
+			costs = CostEstimationWrapper.getTimeEstimate(prog, ec);
+			
+			//restore original hop dag
+			if( tmpHop !=null )
+				HopRewriteUtils.removeChildReference(tmpHop, currentHop);
+			pb.getStatementBlock().setHops(oldRoots);
 		}
 		
 		//release forced data flow configuration from program
-		rResetRuntimePlanConfig(p, new HashMap<Long,Plan>());		
+		rResetRuntimePlanConfig(p, new HashMap<Long,Plan>());
 		_costedPlans++;
 		
 		return costs;

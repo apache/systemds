@@ -90,8 +90,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 	private ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr, boolean bRmEmptyBC) {
-		super(op, null, null, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.ParameterizedBuiltin;
+		super(SPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
 		_bRmEmptyBC = bRmEmptyBC;
 	}
@@ -321,6 +320,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			String rddOffVar = params.get("offset");
 			
 			boolean rows = sec.getScalarInput(params.get("margin"), ValueType.STRING, true).getStringValue().equals("rows");
+			boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
 			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.DOUBLE, false).getLongValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddInVar);
 			
@@ -341,14 +341,14 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					broadcastOff = sec.getBroadcastForVariable( rddOffVar );
 					// Broadcast offset vector
 					out = in
-						.flatMapToPair(new RDDRemoveEmptyFunctionInMem(rows, maxDim, brlen, bclen, broadcastOff));		
+						.flatMapToPair(new RDDRemoveEmptyFunctionInMem(rows, maxDim, brlen, bclen, broadcastOff));
 				}
 				else {
 					off = sec.getBinaryBlockRDDHandleForVariable( rddOffVar );
 					out = in
 						.join( off.flatMapToPair(new ReplicateVectorFunction(!rows,numRep)) )
-						.flatMapToPair(new RDDRemoveEmptyFunction(rows, maxDim, brlen, bclen));		
-				}				
+						.flatMapToPair(new RDDRemoveEmptyFunction(rows, maxDim, brlen, bclen));
+				}
 	
 				out = RDDAggregateUtils.mergeByKey(out, false);
 				
@@ -366,7 +366,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			else //special case: empty output (ensure valid dims)
 			{
-				MatrixBlock out = new MatrixBlock(rows?1:(int)mcIn.getRows(), rows?(int)mcIn.getCols():1, true); 
+				int n = emptyReturn ? 1 : 0;
+				MatrixBlock out = new MatrixBlock(rows?n:(int)mcIn.getRows(), rows?(int)mcIn.getCols():n, true); 
 				sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
 		}
@@ -522,13 +523,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	{
 		private static final long serialVersionUID = 4906304771183325289L;
 
-		private boolean _rmRows; 
-		private long _len;
-		private long _brlen;
-		private long _bclen;
-				
-		public RDDRemoveEmptyFunction(boolean rmRows, long len, long brlen, long bclen) 
-		{
+		private final boolean _rmRows;
+		private final long _len;
+		private final long _brlen;
+		private final long _bclen;
+		
+		public RDDRemoveEmptyFunction(boolean rmRows, long len, long brlen, long bclen) {
 			_rmRows = rmRows;
 			_len = len;
 			_brlen = brlen;
@@ -546,7 +546,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _brlen, _bclen, out);
-
+			
 			//prepare and return outputs
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}
@@ -556,13 +556,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	{
 		private static final long serialVersionUID = 4906304771183325289L;
 
-		private boolean _rmRows; 
-		private long _len;
-		private long _brlen;
-		private long _bclen;
+		private final boolean _rmRows;
+		private final long _len;
+		private final long _brlen;
+		private final long _bclen;
 		
 		private PartitionedBroadcast<MatrixBlock> _off = null;
-				
+		
 		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen, PartitionedBroadcast<MatrixBlock> off) 
 		{
 			_rmRows = rmRows;
@@ -578,12 +578,9 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		{
 			//prepare inputs (for internal api compatibility)
 			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2());
-			//IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
-			IndexedMatrixValue offsets = null;
-			if(_rmRows)
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock((int)arg0._1().getRowIndex(), 1));
-			else
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)arg0._1().getColumnIndex()));
+			IndexedMatrixValue offsets = _rmRows ?
+				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock((int)arg0._1().getRowIndex(), 1)) :
+				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.compress.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.compress.ColGroup;
@@ -68,18 +67,9 @@ public class ConverterUtils
 		return DataConverter.convertToDoubleVector(vector, false);
 	}
 
-	public static MatrixBlock getUncompressedColBlock( ColGroup group )
-	{
-		MatrixBlock ret = null;
-		if( group instanceof ColGroupUncompressed ) {
-			ret = ((ColGroupUncompressed) group).getData();
-		}
-		else {
-			ArrayList<ColGroup> tmpGroup = new ArrayList<>(Arrays.asList(group));
-			ColGroupUncompressed decompressedCols = new ColGroupUncompressed(tmpGroup);
-			ret = decompressedCols.getData();
-		}
-		
-		return ret;
+	public static MatrixBlock getUncompressedColBlock( ColGroup group ) {
+		return (group instanceof ColGroupUncompressed) ?
+			((ColGroupUncompressed) group).getData() : 
+			new ColGroupUncompressed(Arrays.asList(group)).getData();
 	}
 }

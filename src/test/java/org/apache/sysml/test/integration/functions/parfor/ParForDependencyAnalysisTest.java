@@ -40,12 +40,12 @@ import org.junit.Test;
  * Different test cases for ParFOR loop dependency analysis:
  * 
  * * scalar tests - expected results
- *    1: no, 2: dep, 3: no, 4: no, 5: dep, 6: no, 7: no, 8: dep, 9: dep, 10: no   
+ *    1: no, 2: dep, 3: no, 4: no, 5: dep, 6: no, 7: no, 8: dep, 9: dep, 10: no
  * * matrix 1D tests - expected results
- *    11: no, 12: no, 13: no, 14:dep, 15: no, 16: dep, 17: dep, 18: no, 19: no (DEP, hard), 20: no, 
+ *    11: no, 12: no, 13: no, 14:dep, 15: no, 16: dep, 17: dep, 18: no, 19: no (DEP, hard), 20: no,
  *    21: dep, 22: no, 23: no, 24: no, 25: no, 26:no, 26b:dep, 26c: no, 26c2: no,  29: no
  * * nested control structures
- *    27:dep                                                                    
+ *    27:dep
  * * nested parallelism and nested for/parfor
  *    28: no, 28b: no, 28c: no, 28d: dep, 28e: no, 28f: no, 28g: no, 28h: no
  * * range indexing
@@ -53,42 +53,25 @@ import org.junit.Test;
  * * set indexing
  *    33: dep, 34: dep, 35: no
  * * indexing w/ double identifiers
- *    35b: no, 35c: no, 35d: dep (no int)   
+ *    35b: no, 35c: no, 35d: dep (no int)
  * * multiple matrix references per statement
  *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
  * * scoping (create object in loop, but used afterwards)
  *    44: dep   
  * * application testcases
- *    45: no, 46: no, 47 no, 50: no (w/ check=0 on i2), 51: dep, 52: dep       
+ *    45: no, 46: no, 47 no, 50: no (w/ check=0 on i2), 51: dep, 52: dep
  * * general parfor validate (e.g., expressions)
- *    48: no, 48b: err, 48c: no   
+ *    48: no, 48b: err, 48c: no
  * * functions
- *    49a: dep, 49b: dep       
+ *    49a: dep, 49b: dep
+ * * accumulators
+ *    53a: no, 53b dep, 53c dep, 53d dep, 53e dep
  */
 public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
-	
 	private static final String TEST_DIR = "functions/parfor/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParForDependencyAnalysisTest.class.getSimpleName() + "/";
-	
-	/**
-	 * Main method for running one test at a time.
-	 */
-	public static void main(String[] args) {
-		long startMsec = System.currentTimeMillis();
-
-		ParForDependencyAnalysisTest t = new ParForDependencyAnalysisTest();
-		t.setUpBase();
-		t.setUp();
-		t.testDependencyAnalysis1();
-		t.tearDown();
-
-		long elapsedMsec = System.currentTimeMillis() - startMsec;
-		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-
-	}
-	
 	
 	@Override
 	public void setUp() {
@@ -318,13 +301,23 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	@Test
 	public void testDependencyAnalysis52() { runTest("parfor52.dml", true); }
 	
-	/**
-	 * 
-	 * @param scriptFilename
-	 * @param expectedException
-	 */
-	private void runTest( String scriptFilename, boolean expectedException )
-	{
+	@Test
+	public void testDependencyAnalysis53a() { runTest("parfor53a.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis53b() { runTest("parfor53b.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis53c() { runTest("parfor53c.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis53d() { runTest("parfor53d.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis53e() { runTest("parfor53e.dml", true); }
+	
+	
+	private void runTest( String scriptFilename, boolean expectedException ) {
 		boolean raisedException = false;
 		try
 		{
@@ -348,22 +341,20 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 				String s1 = null;
 				while ((s1 = in.readLine()) != null)
 					dmlScriptString += s1 + "\n";
-			}	
+			}
 			
 			//parsing and dependency analysis
 			ParserWrapper parser = ParserFactory.createParser(org.apache.sysml.api.mlcontext.ScriptType.DML);
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.validateParseTree(prog);	
+			dmlt.validateParseTree(prog);
 		}
-		catch(LanguageException ex)
-		{
+		catch(LanguageException ex) {
 			raisedException = true;
 			if(raisedException!=expectedException)
 				ex.printStackTrace();
 		}
-		catch(Exception ex2)
-		{
+		catch(Exception ex2) {
 			ex2.printStackTrace();
 			throw new RuntimeException(ex2);
 			//Assert.fail( "Unexpected exception occured during test run." );

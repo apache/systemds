@@ -28,8 +28,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -38,27 +36,25 @@ import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Statistics;
 
-/**
- * MR job class for submitting parfor result merge MR jobs.
- * 
- */
 public class ResultMergeRemoteSpark extends ResultMerge
-{	
+{
+	private static final long serialVersionUID = -6924566953903424820L;
 	
 	private ExecutionContext _ec = null;
 	private int  _numMappers = -1;
 	private int  _numReducers = -1;
 	
-	public ResultMergeRemoteSpark(MatrixObject out, MatrixObject[] in, String outputFilename, ExecutionContext ec, int numMappers, int numReducers) 
+	public ResultMergeRemoteSpark(MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum,
+		ExecutionContext ec, int numMappers, int numReducers) 
 	{
-		super(out, in, outputFilename);
+		super(out, in, outputFilename, accum);
 		
 		_ec = ec;
 		_numMappers = numMappers;
@@ -79,50 +75,44 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
-		LOG.trace("ResultMerge (remote, spark): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		if( LOG.isTraceEnabled() )
+			LOG.trace("ResultMerge (remote, spark): Execute serial merge for output "
+				+_output.hashCode()+" (fname="+_output.getFileName()+")");
 
 		try
 		{
-			if( _inputs != null && _inputs.length>0 )
-			{
+			if( _inputs != null && _inputs.length>0 ) {
 				//prepare compare
-				MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
+				MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 				MatrixObject compare = (mcOld.getNonZeros()==0) ? null : _output;
 				
 				//actual merge
-				RDDObject ro = executeMerge(compare, _inputs, _output.getVarName(), mcOld.getRows(), mcOld.getCols(), mcOld.getRowsPerBlock(), mcOld.getColsPerBlock());
+				RDDObject ro = executeMerge(compare, _inputs, mcOld.getRows(), mcOld.getCols(), mcOld.getRowsPerBlock(), mcOld.getColsPerBlock());
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
-				String varName = _output.getVarName();
-				ValueType vt = _output.getValueType();
-				moNew = new MatrixObject( vt, _outputFName );
-				moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
-				moNew.setDataType( DataType.MATRIX );
+				moNew = new MatrixObject(_output.getValueType(), _outputFName);
 				OutputInfo oiOld = metadata.getOutputInfo();
 				InputInfo iiOld = metadata.getInputInfo();
-				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
-						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
-				mc.setNonZeros( computeNonZeros(_output, Arrays.asList(_inputs)) );
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
+				mc.setNonZeros(_isAccum ? -1 : computeNonZeros(_output, Arrays.asList(_inputs)));
+				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
 				moNew.setRDDHandle( ro );
 			}
-			else
-			{
+			else {
 				moNew = _output; //return old matrix, to prevent copy
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
-		return moNew;		
+		return moNew;
 	}
 
 	@SuppressWarnings("unchecked")
-	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, String varname, long rlen, long clen, int brlen, int bclen)
+	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, long rlen, long clen, int brlen, int bclen)
 		throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-RMSP";
@@ -169,25 +159,26 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			
 			//Step 2a: merge with compare
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
-			if( withCompare )
-			{
+			if( withCompare ) {
 				JavaPairRDD<MatrixIndexes, MatrixBlock> compareRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 						sec.getRDDHandleForMatrixObject(compare, InputInfo.BinaryBlockInputInfo);
-		    	
+				
 				//merge values which differ from compare values
-				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare();
+				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare(_isAccum);
 				out = rdd.groupByKey(numRed) //group all result blocks per key
-		    			.join(compareRdd)   //join compare block and result blocks 
-		    			.mapToPair(cfun);   //merge result blocks w/ compare
+					.join(compareRdd)        //join compare block and result blocks 
+					.mapToPair(cfun);        //merge result blocks w/ compare
 			}
 			//Step 2b: merge without compare
 			else {
 				//direct merge in any order (disjointness guaranteed)
-				out = RDDAggregateUtils.mergeByKey(rdd, false);
+				out = _isAccum ?
+					RDDAggregateUtils.sumByKeyStable(rdd, false) :
+					RDDAggregateUtils.mergeByKey(rdd, false);
 			}
-		    
+			
 			//Step 3: create output rdd handle w/ lineage
-			ret = new RDDObject(out, varname);
+			ret = new RDDObject(out);
 			for(int i=0; i<paths.length; i++)
 				ret.addLineageChild(inputs[i].getRDDHandle());
 			if( withCompare )
@@ -195,7 +186,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		}
 		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
-		}	    
+		}
 		
 		//maintain statistics
 		Statistics.incrementNoOfCompiledSPInst();
@@ -210,9 +201,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	private static int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
 		//set the number of mappers and reducers 
 		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
-		int ret = (int)Math.min( numRed, reducerGroups );
-		
-		return ret; 	
+		return (int)Math.min( numRed, reducerGroups );
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -221,7 +210,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		JavaSparkContext sc = sec.getSparkContext();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) 
 			sc.hadoopFile( mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
-		RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+		RDDObject rddhandle = new RDDObject(rdd);
 		rddhandle.setHDFSFile(true);
 		mo.setRDDHandle(rddhandle);
 	}

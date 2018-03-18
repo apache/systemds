@@ -145,7 +145,7 @@ public class ProgramBlock implements ParseInfo
 				&& _sb.requiresRecompilation() )
 			{
 				tmp = Recompiler.recompileHopsDag(
-					_sb, _sb.get_hops(), ec.getVariables(), null, false, true, _tid);
+					_sb, _sb.getHops(), ec.getVariables(), null, false, true, _tid);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
@@ -235,10 +235,10 @@ public class ProgramBlock implements ParseInfo
 		//check and correct scalar ret type (incl save double to int)
 		if( ret.getValueType() != retType )
 			switch( retType ) {
-				case BOOLEAN: ret = new BooleanObject(ret.getName(),ret.getBooleanValue()); break;
-				case INT:	  ret = new IntObject(ret.getName(),ret.getLongValue()); break;
-				case DOUBLE:  ret = new DoubleObject(ret.getName(),ret.getDoubleValue()); break;
-				case STRING:  ret = new StringObject(ret.getName(),ret.getStringValue()); break;
+				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
+				case INT:	  ret = new IntObject(ret.getLongValue()); break;
+				case DOUBLE:  ret = new DoubleObject(ret.getDoubleValue()); break;
+				case STRING:  ret = new StringObject(ret.getStringValue()); break;
 				default:
 					//do nothing
 			}
@@ -255,7 +255,7 @@ public class ProgramBlock implements ParseInfo
 		{
 			// start time measurement for statistics
 			long t0 = (DMLScript.STATISTICS || LOG.isTraceEnabled()) ?
-					System.nanoTime() : 0;
+				System.nanoTime() : 0;
 
 			// pre-process instruction (debug state, inst patching, listeners)
 			Instruction tmp = currInst.preprocessInstruction( ec );
@@ -363,7 +363,13 @@ public class ProgramBlock implements ParseInfo
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
+
 					}
+					if( mb.isInSparseFormat() && mb.isAllocated() ) {
+						mb.getSparseBlock().checkValidity(mb.getNumRows(),
+							mb.getNumColumns(), mb.getNonZeros(), true);
+					}
+
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();
 					mo.release();
@@ -371,7 +377,7 @@ public class ProgramBlock implements ParseInfo
 					if( nnz1 != nnz2 )
 						throw new DMLRuntimeException("Matrix nnz meta data was incorrect: ("+varname+", actual="+nnz1+", expected="+nnz2+", inst="+lastInst+")");
 
-					if( sparse1 != sparse2 )
+					if( sparse1 != sparse2 && mb.isAllocated() )
 						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2 +
 								", nrow="+mb.getNumRows()+", ncol="+mb.getNumColumns()+", nnz="+nnz1+", inst="+lastInst+")");
 				}

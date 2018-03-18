@@ -108,23 +108,21 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
-	// See: https://issues.apache.org/jira/browse/SYSTEMML-658
-	// @Test
-	// public void testScalarInputString() throws IOException, DMLException {
-	// Connection conn = new Connection();
-	// String str = conn.readScript(baseDirectory + File.separator +
-	// "scalar-input.dml");
-	// PreparedScript script = conn.prepareScript(str, new String[] {
-	// "inScalar1", "inScalar2" }, new String[] {},
-	// false);
-	// String inScalar1 = "hello";
-	// String inScalar2 = "goodbye";
-	// script.setScalar("inScalar1", inScalar1);
-	// script.setScalar("inScalar2", inScalar2);
-	//
-	// setExpectedStdOut("total:hellogoodbye");
-	// script.executeScript();
-	// }
+	@Test
+	public void testScalarInputString() throws IOException, DMLException {
+		Connection conn = new Connection();
+		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
+				false);
+		String inScalar1 = "Plant";
+		String inScalar2 = " Trees";
+		script.setScalar("inScalar1", inScalar1);
+		script.setScalar("inScalar2", inScalar2);
+
+		setExpectedStdOut("total:Plant Trees");
+		script.executeScript();
+		conn.close();
+	}
 
 	@Test
 	public void testScalarInputStringExplicitValueType() throws IOException, DMLException {

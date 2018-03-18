@@ -28,12 +28,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class CombineUnaryInstruction extends UnaryMRInstructionBase {
 
-	/*
-	 * combineunary:::0:DOUBLE:::1:DOUBLE
-	 */
 	private CombineUnaryInstruction(Operator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.CombineUnary;
+		super(MRType.CombineUnary, op, in, out);
 		instString = istr;
 	}
 

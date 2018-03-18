@@ -60,7 +60,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 		for( long i = lFrom; i<=lTo;  )
 		{
 			//create new task and add to list of tasks
-			Task lTask = new Task( type );
+			Task lTask = new Task(_iterVarName, type);
 			tasks.addLast(lTask);
 			
 			int corr = (lfnp1-- > 0)? 1:0; //correction for static partitioner
@@ -71,9 +71,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 			{
 				//value based tasks
 				for( long j=0; j<_taskSize+corr && i<=lTo; j++, i+=lIncr )
-				{
-					lTask.addIteration(new IntObject(_iterVarName, i));				
-				}				
+					lTask.addIteration(new IntObject(i));
 			}
 			else 
 			{
@@ -81,9 +79,9 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 				long to = Math.min( i+(_taskSize-1+corr)*lIncr, lTo );
 				
 				//range based tasks
-				lTask.addIteration(new IntObject(_iterVarName, i));	    //from
-				lTask.addIteration(new IntObject(_iterVarName, to));    //to
-				lTask.addIteration(new IntObject(_iterVarName, lIncr));	//increment
+				lTask.addIteration(new IntObject(i));     //from
+				lTask.addIteration(new IntObject(to));    //to
+				lTask.addIteration(new IntObject(lIncr)); //increment
 				
 				i = to + lIncr;
 			}
@@ -112,7 +110,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 			for( long i = lFrom; i<=lTo;  )
 			{
 				//create new task and add to list of tasks
-				Task lTask = new Task( type );
+				Task lTask = new Task(_iterVarName, type);
 				
 				int corr = (lfnp1-- > 0)? 1:0; //correction for static partitioner
 				
@@ -122,9 +120,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 				{
 					//value based tasks
 					for( long j=0; j<_taskSize+corr && i<=lTo; j++, i+=lIncr )
-					{
-						lTask.addIteration(new IntObject(_iterVarName, i));				
-					}				
+						lTask.addIteration(new IntObject(i));
 				}
 				else 
 				{
@@ -132,9 +128,9 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 					long to = Math.min( i+(_taskSize-1+corr)*lIncr, lTo );
 					
 					//range based tasks
-					lTask.addIteration(new IntObject(_iterVarName, i));	    //from
-					lTask.addIteration(new IntObject(_iterVarName, to));    //to
-					lTask.addIteration(new IntObject(_iterVarName, lIncr));	//increment
+					lTask.addIteration(new IntObject(i));     //from
+					lTask.addIteration(new IntObject(to));    //to
+					lTask.addIteration(new IntObject(lIncr)); //increment
 					
 					i = to + lIncr;
 				}

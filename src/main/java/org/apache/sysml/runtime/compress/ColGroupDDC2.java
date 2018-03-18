@@ -29,6 +29,7 @@ import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
@@ -184,7 +185,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	public void decompressToBlock(MatrixBlock target, int colpos) {
 		int nrow = getNumRows();
 		int ncol = getNumCols();
-		double[] c = target.getDenseBlock();
+		double[] c = target.getDenseBlockValues();
 		int nnz = 0;
 		for( int i = 0; i < nrow; i++ )
 			nnz += ((c[i] = _values[_data[i]*ncol+colpos])!=0) ? 1 : 0;
@@ -192,14 +193,14 @@ public class ColGroupDDC2 extends ColGroupDDC
 	}
 	
 	@Override 
-	public int[] getCounts() {
-		return getCounts(0, getNumRows());
+	public int[] getCounts(int[] counts) {
+		return getCounts(0, getNumRows(), counts);
 	}
 	
 	@Override 
-	public int[] getCounts(int rl, int ru) {
+	public int[] getCounts(int rl, int ru, int[] counts) {
 		final int numVals = getNumValues();
-		int[] counts = new int[numVals];
+		Arrays.fill(counts, 0, numVals, 0);
 		for( int i=rl; i<ru; i++ )
 			counts[_data[i]] ++;
 		return counts;
@@ -224,7 +225,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) throws DMLRuntimeException {
 		double[] b = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 
@@ -247,7 +248,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 		throws DMLRuntimeException 
 	{
 		double[] a = ConverterUtils.getDenseVector(vector);
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
@@ -280,7 +281,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) 
 		throws DMLRuntimeException 
 	{
-		double[] c = result.getDenseBlock();
+		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
@@ -298,7 +299,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 			postScaling(vals, c);
 		}
 		else //general case
-		{	
+		{
 			//iterate over codes, compute all, and add to the result
 			for( int i=0; i<nrow; i++ ) {
 				double aval = a.getData(i, 0);
@@ -339,9 +340,10 @@ public class ColGroupDDC2 extends ColGroupDDC
 	
 	@Override
 	protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
+		//note: due to corrections the output might be a large dense block
+		DenseBlock c = result.getDenseBlock();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] c = result.getDenseBlock();
 		
 		//pre-aggregate nnz per value tuple
 		double[] vals = sumAllValues(kplus, kbuff, false);
@@ -349,10 +351,12 @@ public class ColGroupDDC2 extends ColGroupDDC
 		//scan data and add to result (use kahan plus not general KahanFunction
 		//for correctness in case of sqk+)
 		for( int i=rl; i<ru; i++ ) {
-			kbuff.set(c[2*i], c[2*i+1]);
+			double[] cvals = c.values(i);
+			int cix = c.pos(i);
+			kbuff.set(cvals[cix], cvals[cix+1]);
 			kplus2.execute2(kbuff, vals[_data[i]]);
-			c[2*i] = kbuff._sum;
-			c[2*i+1] = kbuff._correction;
+			cvals[cix] = kbuff._sum;
+			cvals[cix+1] = kbuff._correction;
 		}
 	}
 	

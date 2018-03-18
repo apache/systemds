@@ -77,9 +77,9 @@ public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writabl
 	}
 	
 	@Override
-	public void configure(JobConf job)
-	{
-		try  {
+	@SuppressWarnings("unchecked")
+	public void configure(JobConf job) {
+		try {
 			brlen = MRJobConfiguration.getNumRowsPerBlock(job, (byte) 0);
 			bclen = MRJobConfiguration.getNumColumnsPerBlock(job, (byte) 0);
 			String str=job.get(SortMR.COMBINE_INSTRUCTION, null);

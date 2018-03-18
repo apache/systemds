@@ -47,9 +47,9 @@ X = X * maxFeatureValue
 w = w * maxWeight
 Y = X %*% w
 
-if(b!=0) {
+if( b != 0 ) {
 	b_mat = Rand(rows=1, cols=1, min=b, max=b, pdf="uniform")
-	w =  t(cbind(t(w), b_mat))
+	w =  rbind(w, t(b_mat))
 	Y = Y + b
 }
 

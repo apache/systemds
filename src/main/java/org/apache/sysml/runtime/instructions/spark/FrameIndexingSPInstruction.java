@@ -321,7 +321,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				long rhs_ru_pb = Math.min(rhs_ru, (((rhs_rl-1)/brlen)+1)*brlen); 
 				while(rhs_rl_pb <= rhs_ru_pb) {
 					// Provide global zero-based index to sliceOperations, but only for one RHS partition block at a time.
-					FrameBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl_pb, rhs_ru_pb, rhs_cl, rhs_cu, new FrameBlock());
+					FrameBlock slicedRHSMatBlock = _binput.slice(rhs_rl_pb, rhs_ru_pb, rhs_cl, rhs_cu, new FrameBlock());
 					
 					// Provide local zero-based index to leftIndexingOperations
 					int lhs_lrl_pb = (int) (lhs_lrl + (rhs_rl_pb - rhs_rl));
@@ -359,7 +359,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 					in.getNumRows()-1 : _ixrange.rowEnd-rowindex);
 			
 			//slice out the block
-			FrameBlock out = in.sliceOperations(rl, ru, (int)(_ixrange.colStart-1), 
+			FrameBlock out = in.slice(rl, ru, (int)(_ixrange.colStart-1), 
 					(int)(_ixrange.colEnd-1), new FrameBlock());
 			
 			//return block with shifted row index
@@ -403,7 +403,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				FrameBlock in = arg._2();
 				
 				//slice out the block
-				FrameBlock out = in.sliceOperations(0, in.getNumRows()-1, 
+				FrameBlock out = in.slice(0, in.getNumRows()-1, 
 						(int)_ixrange.colStart-1, (int)_ixrange.colEnd-1, new FrameBlock());
 				
 				//return block with shifted row index

@@ -52,7 +52,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 
 	private ParameterizedBuiltinMRInstruction(Operator op, byte in, double pattern, double replace, byte out,
 			String opcode, String istr) {
-		super(op, in, out, istr);
+		super(MRType.ParameterizedBuiltin, op, in, out, istr);
 		instString = istr;
 		_opcode = opcode;
 		_pattern = pattern;
@@ -61,7 +61,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 
 	private ParameterizedBuiltinMRInstruction(Operator op, byte in, double max, boolean dirRows, boolean cast,
 			boolean ignore, byte out, String opcode, String istr) {
-		super(op, in, out, istr);
+		super(MRType.ParameterizedBuiltin, op, in, out, istr);
 		instString = istr;
 		_opcode = opcode;
 		_max = max;

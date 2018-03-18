@@ -15,7 +15,7 @@ exclude:
   - lang-ref
 
 # These allow the documentation to be updated with newer releases
-SYSTEMML_VERSION: 1.0.0-SNAPSHOT
+SYSTEMML_VERSION: 1.1.0-SNAPSHOT
 
 # if 'analytics_on' is true, analytics section will be rendered on the HTML pages
 analytics_on: true

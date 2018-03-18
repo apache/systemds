@@ -44,10 +44,20 @@ import org.apache.sysml.runtime.util.DataConverter;
  * the execution of that code.
  *
  */
-public class BuildLiteExecution {
-
-	protected static Logger log = Logger.getLogger(BuildLiteExecution.class);
-
+public class BuildLiteExecution 
+{
+	private static Logger log = Logger.getLogger(BuildLiteExecution.class);
+	private static final String ROOT = "functions/jmlc/temp/";
+	private static String _rootPrefix = null;
+	
+	public static void setRootPrefix(String prefix) {
+		_rootPrefix = prefix;
+	}
+	
+	public static String getRoot() {
+		return (_rootPrefix != null) ? _rootPrefix + ROOT : ROOT;
+	}
+	
 	public static void main(String[] args) throws Exception {
 
 		BasicConfigurator.configure();
@@ -78,7 +88,6 @@ public class BuildLiteExecution {
 	}
 
 	public static void jmlcScoringExample() throws Exception {
-		/* @formatter:off */
 		String scriptString =
 		"X = read(\"./tmp/X\", rows=-1, cols=-1);\n" +
 		"W = read(\"./tmp/W\", rows=-1, cols=-1);\n" +
@@ -92,15 +101,15 @@ public class BuildLiteExecution {
 		"print('pred:' + toString(predicted_y))\n" +
 		"\n" +
 		"write(predicted_y, \"./tmp\", format=\"text\");\n";
-		/* @formatter:on */
 
-		File file = new File("temp/scoring-example.dml");
+		File file = new File(getRoot()+"scoring-example.dml");
+		System.out.println(file.toString());
 		FileUtils.writeStringToFile(file, scriptString);
 
 		Connection conn = getConfiguredConnection();
-		String dml = conn.readScript("temp/scoring-example.dml");
-		PreparedScript script = conn.prepareScript(dml, new String[] { "W", "X" }, new String[] { "predicted_y" },
-				false);
+		String dml = conn.readScript(getRoot()+"scoring-example.dml");
+		PreparedScript script = conn.prepareScript(dml,
+			new String[] { "W", "X" }, new String[] { "predicted_y" }, false);
 
 		double[][] mtx = matrix(4, 3, new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
 		double[][] result = null;
@@ -131,8 +140,8 @@ public class BuildLiteExecution {
 		Map<String, String> m = new HashMap<>();
 		m.put("$CONSOLE_OUTPUT", "TRUE");
 
-		PreparedScript script = conn.prepareScript(dml, m, new String[] { "A", "K" }, new String[] { "baseStats" },
-				false);
+		PreparedScript script = conn.prepareScript(dml,
+			m, new String[] { "A", "K" }, new String[] { "baseStats" }, false);
 
 		double[][] data = new double[100][4];
 		for (int i = 0; i < 100; i++) {
@@ -158,18 +167,16 @@ public class BuildLiteExecution {
 	public static void jmlcWriteMatrix() throws Exception {
 		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript(
-				"x=matrix('1 2 3 4',rows=2,cols=2);write(x,'temp/x.csv',format='csv');", new String[] {},
+				"x=matrix('1 2 3 4',rows=2,cols=2);write(x,'"+getRoot()+"x.csv',format='csv');", new String[] {},
 				new String[] {}, false);
 		script.executeScript();
 
-		/* @formatter:off */
 		String scriptString =
 		"m = matrix('1 2 3 0 0 0 7 8 9 0 0 0', rows=4, cols=3)\n" +
-		"write(m, 'temp/m.txt', format='text')\n" +
-		"write(m, 'temp/m.mm', format='mm')\n" +
-		"write(m, 'temp/m.csv', format='csv')\n" +
-		"write(m, 'temp/m.binary', format='binary')\n";
-		/* @formatter:on */
+		"write(m, '"+getRoot()+"m.txt', format='text')\n" +
+		"write(m, '"+getRoot()+"m.mm', format='mm')\n" +
+		"write(m, '"+getRoot()+"m.csv', format='csv')\n" +
+		"write(m, '"+getRoot()+"m.binary', format='binary')\n";
 
 		script = conn.prepareScript(scriptString, new String[] {}, new String[] {}, false);
 		script.executeScript();
@@ -179,12 +186,11 @@ public class BuildLiteExecution {
 
 	public static void jmlcReadMatrix() throws Exception {
 		Connection conn = getConfiguredConnection();
-		PreparedScript script = conn.prepareScript("x=read('temp/x.csv',format='csv');y=x*2;print(toString(y));",
+		PreparedScript script = conn.prepareScript("x=read('"+getRoot()+"x.csv',format='csv');y=x*2;print(toString(y));",
 				new String[] {}, new String[] {}, false);
 		script.executeScript();
-
-		/* @formatter:off */
-		String scriptString = "m = read('temp/m.csv',format='csv')\n" +
+		
+		String scriptString = "m = read('"+getRoot()+"m.csv',format='csv')\n" +
 		"print(toString(m))\n" +
 		"print('min:' + min(m))\n" +
 		"print('max:' + max(m))\n" +
@@ -197,17 +203,6 @@ public class BuildLiteExecution {
 		"for (i in 1:ncol(mColSums)) {\n" +
 		"    print('col ' + i + ' sum:' + as.scalar(mColSums[1,i]))\n" +
 		"}\n";
-		
-		// note: the following can be set to work using the following setting
-		// in the Connection class: cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, false);
-		
-		// "m2=read('temp/m.txt', format='text')\n" +
-		// "m3=read('temp/m.mm', format='mm')\n" +
-		// "m4=read('temp/m.binary', format='binary')\n" +
-		// "print('m2:'+toString(m2))\n" +
-		// "print('m3:'+toString(m3))\n" +
-		// "print('m4:'+toString(m4))\n";
-		/* @formatter:on */
 
 		script = conn.prepareScript(scriptString, new String[] {}, new String[] {}, false);
 		script.executeScript();
@@ -217,7 +212,6 @@ public class BuildLiteExecution {
 
 	public static void jmlcBasics() throws Exception {
 
-		/* @formatter:off */
 		String dml =
 		"A = matrix(\"1 2 3 4 5 6\", rows=3, cols=2)\n"+
 		"print(toString(A))\n"+
@@ -273,9 +267,8 @@ public class BuildLiteExecution {
 		"\n"+
 		"A = rand(rows=3, cols=2, min=0, max=2) # random 3x2 matrix with values 0 to 2\n"+
 		"B = doSomething(A)\n"+
-		"write(A, \"A.csv\", format=\"csv\")\n"+
-		"write(B, \"B.csv\", format=\"csv\")\n";
-		/* @formatter:on */
+		"write(A, \""+getRoot()+"A.csv\", format=\"csv\")\n"+
+		"write(B, \""+getRoot()+"B.csv\", format=\"csv\")\n";
 
 		Connection conn = getConfiguredConnection();
 		PreparedScript script = conn.prepareScript(dml, new String[] {}, new String[] {}, false);
@@ -330,7 +323,7 @@ public class BuildLiteExecution {
 		m.put("$confusion", "temp/2.csv");
 		m.put("$scores", "temp/3.csv");
 
-		PreparedScript l2svmPredict = conn.prepareScript(s, m, new String[] { "X", "y", "w", "fmt" },
+		PreparedScript l2svmPredict = conn.prepareScript(s, m, new String[] { "X", "Y", "w", "fmt" },
 				new String[] { "scores", "confusion_mat" }, false);
 
 		double[][] testData = new double[150][3];
@@ -349,7 +342,7 @@ public class BuildLiteExecution {
 			double[] row = new double[] { one };
 			testLabels[i] = row;
 		}
-		l2svmPredict.setMatrix("y", testLabels);
+		l2svmPredict.setMatrix("Y", testLabels);
 
 		l2svmPredict.setMatrix("w", model);
 
@@ -704,5 +697,4 @@ public class BuildLiteExecution {
 				ConfigType.PARALLEL_CP_MATRIX_OPERATIONS);
 		return conn;
 	}
-
 }

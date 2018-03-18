@@ -27,14 +27,18 @@ import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
 
 public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 {
-	
 	private static final long serialVersionUID = -5970805069405942836L;
+	
+	public ResultMergeRemoteSparkWCompare(boolean accum) {
+		_isAccum = accum;
+	}
 	
 	@Override
 	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, MatrixBlock>> arg)
@@ -45,7 +49,7 @@ public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairF
 		MatrixBlock cin = arg._2()._2();
 		
 		//create compare array
-		double[][] compare = DataConverter.convertToDoubleMatrix(cin);
+		DenseBlock compare = DataConverter.convertToDenseBlock(cin, false);
 		
 		//merge all blocks into compare block
 		MatrixBlock out = new MatrixBlock(cin);
@@ -57,16 +61,12 @@ public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairF
 	}
 
 	@Override
-	public MatrixObject executeSerialMerge() 
-			throws DMLRuntimeException 
-	{
+	public MatrixObject executeSerialMerge() throws DMLRuntimeException {
 		throw new DMLRuntimeException("Unsupported operation.");
 	}
 
 	@Override
-	public MatrixObject executeParallelMerge(int par)
-			throws DMLRuntimeException 
-	{
+	public MatrixObject executeParallelMerge(int par) throws DMLRuntimeException {
 		throw new DMLRuntimeException("Unsupported operation.");
 	}
 }

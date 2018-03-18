@@ -95,8 +95,6 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	{
 		long start=System.currentTimeMillis();
 		
-		//System.out.println("read in Mapper: "+rawKey+": "+rawValue);
-		
 		//for each representative matrix, read the record and apply instructions
 		for(int i=0; i<representativeMatrixes.size(); i++)
 		{
@@ -216,22 +214,17 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		//get the dimension of all the representative matrices
 		rlens=new long[representativeMatrixes.size()];
 		clens=new long[representativeMatrixes.size()];
-		for(int i=0; i<representativeMatrixes.size(); i++)
-		{
+		for(int i=0; i<representativeMatrixes.size(); i++) {
 			rlens[i]=MRJobConfiguration.getNumRows(job, representativeMatrixes.get(i));
 			clens[i]=MRJobConfiguration.getNumColumns(job, representativeMatrixes.get(i));
-		//	System.out.println("get dimension for "+representativeMatrixes.get(i)+": "+rlens[i]+", "+clens[i]);
 		}
 		
 		//get the block sizes of the representative matrices
 		brlens=new int[representativeMatrixes.size()];
 		bclens=new int[representativeMatrixes.size()];
-		
-		for(int i=0; i<representativeMatrixes.size(); i++)
-		{
+		for(int i=0; i<representativeMatrixes.size(); i++) {
 			brlens[i]=MRJobConfiguration.getNumRowsPerBlock(job, representativeMatrixes.get(i));
 			bclens[i]=MRJobConfiguration.getNumColumnsPerBlock(job, representativeMatrixes.get(i));
-		//	System.out.println("get blocksize for "+representativeMatrixes.get(i)+": "+brlens[i]+", "+bclens[i]);
 		}
 		
 		rbounds=new long[representativeMatrixes.size()];
@@ -242,10 +235,9 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		//calculate upper boundaries for key value pairs
 		if(valueClass.equals(MatrixBlock.class))
 		{
-			for(int i=0; i<representativeMatrixes.size(); i++)
-			{
-				rbounds[i]=(long)Math.ceil((double)rlens[i]/(double)brlens[i]);
-				cbounds[i]=(long)Math.ceil((double)clens[i]/(double)bclens[i]);
+			for(int i=0; i<representativeMatrixes.size(); i++) {
+				rbounds[i]=(long)Math.max(Math.ceil((double)rlens[i]/brlens[i]),1);
+				cbounds[i]=(long)Math.max(Math.ceil((double)clens[i]/bclens[i]),1);
 				
 				lastblockrlens[i]=(int) (rlens[i]%brlens[i]);
 				lastblockclens[i]=(int) (clens[i]%bclens[i]);
@@ -253,24 +245,17 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 					lastblockrlens[i]=brlens[i];
 				if(lastblockclens[i]==0)
 					lastblockclens[i]=bclens[i];
-				
-				/*
-				 * what is this for????
-				// DRB: the row indexes need to be fixed 
-				rbounds[i] = rlens[i];*/
 			}
-		}else
-		{
-			for(int i=0; i<representativeMatrixes.size(); i++)
-			{
+		}
+		else {
+			for(int i=0; i<representativeMatrixes.size(); i++) {
 				rbounds[i]=rlens[i];
 				cbounds[i]=clens[i];
 				lastblockrlens[i]=1;
 				lastblockclens[i]=1;
-			//	System.out.println("get bound for "+representativeMatrixes.get(i)+": "+rbounds[i]+", "+cbounds[i]);
 			}
 		}
-				
+		
 		//load data from distributed cache (if required, reuse if jvm_reuse)
 		try {
 			setupDistCacheFiles(job);

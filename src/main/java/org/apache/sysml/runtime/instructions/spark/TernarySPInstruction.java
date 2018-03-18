@@ -19,492 +19,182 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.Serializable;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
-
-import org.apache.sysml.lops.Ternary;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.functionobjects.CTable;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
-import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
-import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
-import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
+
+import scala.Tuple2;
 
 public class TernarySPInstruction extends ComputationSPInstruction {
-	private String _outDim1;
-	private String _outDim2;
-	private boolean _dim1Literal;
-	private boolean _dim2Literal;
-	private boolean _isExpand;
-	private boolean _ignoreZeros;
-
-	private TernarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-			boolean ignoreZeros, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-		_outDim1 = outputDim1;
-		_dim1Literal = dim1Literal;
-		_outDim2 = outputDim2;
-		_dim2Literal = dim2Literal;
-		_isExpand = isExpand;
-		_ignoreZeros = ignoreZeros;
+	private TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String str) throws DMLRuntimeException {
+		super(SPType.Ternary, op, in1, in2, in3, out, opcode, str);
 	}
 
-	public static TernarySPInstruction parseInstruction(String inst) 
-		throws DMLRuntimeException
-	{	
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
-		InstructionUtils.checkNumFields ( parts, 7 );
-		
-		String opcode = parts[0];
-		
-		//handle opcode
-		if ( !(opcode.equalsIgnoreCase("ctable") || opcode.equalsIgnoreCase("ctableexpand")) ) {
-			throw new DMLRuntimeException("Unexpected opcode in TertiarySPInstruction: " + inst);
-		}
-		boolean isExpand = opcode.equalsIgnoreCase("ctableexpand");
-		
-		//handle operands
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand in3 = new CPOperand(parts[3]);
-		
-		//handle known dimension information
-		String[] dim1Fields = parts[4].split(Instruction.LITERAL_PREFIX);
-		String[] dim2Fields = parts[5].split(Instruction.LITERAL_PREFIX);
-
-		CPOperand out = new CPOperand(parts[6]);
-		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-		
-		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TernarySPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+	public static TernarySPInstruction parseInstruction(String str) throws DMLRuntimeException
+	{
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode=parts[0];
+		CPOperand operand1 = new CPOperand(parts[1]);
+		CPOperand operand2 = new CPOperand(parts[2]);
+		CPOperand operand3 = new CPOperand(parts[3]);
+		CPOperand outOperand = new CPOperand(parts[4]);
+		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode);
+		return new TernarySPInstruction(op,operand1, operand2, operand3, outOperand, opcode,str);
 	}
-
-
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
-	
-		//get input rdd handle
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
-		double scalar_input2 = -1, scalar_input3 = -1;
-		
-		Ternary.OperationTypes ctableOp = Ternary.findCtableOperationByInputDataTypes(
-				input1.getDataType(), input2.getDataType(), input3.getDataType());
-		ctableOp = _isExpand ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
-		
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		
-		// First get the block sizes and then set them as -1 to allow for binary cell reblock
-		int brlen = mc1.getRowsPerBlock();
-		int bclen = mc1.getColsPerBlock();
-		
-		JavaPairRDD<MatrixIndexes, ArrayList<MatrixBlock>> inputMBs = null;
-		JavaPairRDD<MatrixIndexes, CTableMap> ctables = null;
-		JavaPairRDD<MatrixIndexes, Double> bincellsNoFilter = null;
-		boolean setLineage2 = false;
-		boolean setLineage3 = false;
-		switch(ctableOp) {
-			case CTABLE_TRANSFORM: //(VECTOR)
-				// F=ctable(A,B,W) 
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
-				setLineage2 = true;
-				setLineage3 = true;
-				
-				inputMBs = in1.cogroup(in2).cogroup(in3)
-							.mapToPair(new MapThreeMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-							scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
-				break;
-			
-				
-			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
-				// F = ctable(seq,A) or F = ctable(seq,B,1)
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				if(scalar_input3 == 1) {
-					in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-					setLineage2 = true;
-					bincellsNoFilter = in2.flatMapToPair(new ExpandScalarCtableOperation(brlen));
-					break;
-				}
-			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
-				// F = ctable(A,B) or F = ctable(A,B,1)
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-				setLineage2 = true;
-
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				inputMBs = in1.cogroup(in2).mapToPair(new MapTwoMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
-				break;
-				
-			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
-				// F=ctable(A,1) or F = ctable(A,1,1)
-				scalar_input2 = sec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				inputMBs = in1.mapToPair(new MapMBIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
-				break;
-				
-			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
-				// F=ctable(A,1,W)
-				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
-				setLineage3 = true;
-				
-				scalar_input2 = sec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				inputMBs = in1.cogroup(in3).mapToPair(new MapTwoMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
-				break;
-			
-			default:
-				throw new DMLRuntimeException("Encountered an invalid ctable operation ("+ctableOp+") while executing instruction: " + this.toString());
-		}
-		
-		// Now perform aggregation on ctables to get binaryCells 
-		if(bincellsNoFilter == null && ctables != null) {
-			bincellsNoFilter =  
-					ctables.values()
-					.flatMapToPair(new ExtractBinaryCellsFromCTable());
-			bincellsNoFilter = RDDAggregateUtils.sumCellsByKeyStable(bincellsNoFilter);
-		}
-		else if(!(bincellsNoFilter != null && ctables == null)) {
-			throw new DMLRuntimeException("Incorrect ctable operation");
-		}
-		
-		// handle known/unknown dimensions
-		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (sec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
-		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (sec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
-		MatrixCharacteristics mcBinaryCells = null;
-		boolean findDimensions = (outputDim1 == -1 && outputDim2 == -1); 
-		
-		if( !findDimensions ) {
-			if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1))
-				throw new DMLRuntimeException("Incorrect output dimensions passed to TernarySPInstruction:" + outputDim1 + " " + outputDim2);
-			else 
-				mcBinaryCells = new MatrixCharacteristics(outputDim1, outputDim2, brlen, bclen);	
-			
-			// filtering according to given dimensions
-			bincellsNoFilter = bincellsNoFilter
-					.filter(new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-		}
-		
-		// convert double values to matrix cell
-		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = bincellsNoFilter
-				.mapToPair(new ConvertToBinaryCell());
-		
-		// find dimensions if necessary (w/ cache for reblock)
-		if( findDimensions ) {						
-			binaryCells = SparkUtils.cacheBinaryCellRDD(binaryCells);
-			mcBinaryCells = SparkUtils.computeMatrixCharacteristics(binaryCells);
-		}
-		
-		//store output rdd handle
-		sec.setRDDHandleForVariable(output.getName(), binaryCells);
-		mcOut.set(mcBinaryCells);
-		// Since we are outputing binary cells, we set block sizes = -1
-		mcOut.setRowsPerBlock(-1); mcOut.setColsPerBlock(-1);
-		sec.addLineageRDD(output.getName(), input1.getName());
-		if(setLineage2)
-			sec.addLineageRDD(output.getName(), input2.getName());
-		if(setLineage3)
-			sec.addLineageRDD(output.getName(), input3.getName());
-	}	
-
-	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> 
+		throws DMLRuntimeException
 	{
-		private static final long serialVersionUID = -12552669148928288L;
-	
-		private int _brlen;
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = !input1.isMatrix() ? null :
+			sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = !input2.isMatrix() ? null :
+			sec.getBinaryBlockRDDHandleForVariable(input2.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = !input3.isMatrix() ? null :
+			sec.getBinaryBlockRDDHandleForVariable(input3.getName());
+		MatrixBlock m1 = input1.isMatrix() ? null :
+			new MatrixBlock(ec.getScalarInput(input1).getDoubleValue());
+		MatrixBlock m2 = input2.isMatrix() ? null :
+			new MatrixBlock(ec.getScalarInput(input2).getDoubleValue());
+		MatrixBlock m3 = input3.isMatrix() ? null :
+			new MatrixBlock(ec.getScalarInput(input3).getDoubleValue());
 		
-		public ExpandScalarCtableOperation(int brlen) {
-			_brlen = brlen;
-		}
-
-		@Override
-		public Iterator<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
-			throws Exception 
-		{
-			MatrixIndexes ix = arg0._1();
-			MatrixBlock mb = arg0._2(); //col-vector
-			
-			//create an output cell per matrix block row (aligned w/ original source position)
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
-			CTable ctab = CTable.getCTableFnObject();
-			for( int i=0; i<mb.getNumRows(); i++ )
-			{
-				//compute global target indexes (via ctable obj for error handling consistency)
-				long row = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
-				double v2 = mb.quickGetValue(i, 0);
-				Pair<MatrixIndexes,Double> p = ctab.execute(row, v2, 1.0);
-				
-				//indirect construction over pair to avoid tuple2 dependency in general ctable obj
-				if( p.getKey().getRowIndex() >= 1 ) //filter rejected entries
-					retVal.add(new Tuple2<>(p.getKey(), p.getValue()));
+		TernaryOperator op = (TernaryOperator) _optr;
+		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		if( input1.isMatrix() && !input2.isMatrix() && !input3.isMatrix() )
+			out = in1.mapValues(new TernaryFunctionMSS(op, m1, m2, m3));
+		else if( !input1.isMatrix() && input2.isMatrix() && !input3.isMatrix() )
+			out = in2.mapValues(new TernaryFunctionSMS(op, m1, m2, m3));
+		else if( !input1.isMatrix() && !input2.isMatrix() && input3.isMatrix() )
+			out = in3.mapValues(new TernaryFunctionSSM(op, m1, m2, m3));
+		else if( input1.isMatrix() && input2.isMatrix() && !input3.isMatrix() )
+			out = in1.join(in2).mapValues(new TernaryFunctionMMS(op, m1, m2, m3));
+		else if( input1.isMatrix() && !input2.isMatrix() && input3.isMatrix() )
+			out = in1.join(in3).mapValues(new TernaryFunctionMSM(op, m1, m2, m3));
+		else if( !input1.isMatrix() && input2.isMatrix() && input3.isMatrix() )
+			out = in2.join(in3).mapValues(new TernaryFunctionSMM(op, m1, m2, m3));
+		else // all matrices
+			out = in1.join(in2).join(in3).mapValues(new TernaryFunctionMMM(op, m1, m2, m3));
+		
+		//set output RDD
+		updateTernaryOutputMatrixCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		if( input1.isMatrix() )
+			sec.addLineageRDD(output.getName(), input1.getName());
+		if( input2.isMatrix() )
+			sec.addLineageRDD(output.getName(), input2.getName());
+		if( input3.isMatrix() )
+			sec.addLineageRDD(output.getName(), input3.getName());
+	}
+	
+	protected void updateTernaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		for(CPOperand input : new CPOperand[]{input1, input2, input3})
+			if( input.isMatrix() ) {
+				MatrixCharacteristics mc = sec.getMatrixCharacteristics(input.getName());
+				if( mc.dimsKnown() )
+					mcOut.set(mc);
 			}
-			
-			return retVal.iterator();
+	}
+	
+	private static abstract class TernaryFunction implements Serializable {
+		private static final long serialVersionUID = 8345737737972434426L;
+		protected final TernaryOperator _op;
+		protected final MatrixBlock _m1, _m2, _m3;
+		public TernaryFunction(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			_op = op; _m1 = m1; _m2 = m2; _m3 = m3;
 		}
 	}
 	
-	private static class MapTwoMBIterableIntoAL implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = 271459913267735850L;
-
-		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
-			for(MatrixBlock blk1 : blks) {
-				if(retVal != null) {
-					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
-				}
-				retVal = blk1;
-			}
-			if(retVal == null) {
-				throw new Exception("ERROR: No matrixblock found for one of the inputs at a given index");
-			}
-			return retVal;
+	private static class TernaryFunctionMSS extends TernaryFunction implements Function<MatrixBlock, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionMSS(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
 		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> kv)
-				throws Exception {
-			MatrixBlock in1 = null; MatrixBlock in2 = null;
-			in1 = extractBlock(kv._2._1, in1);
-			in2 = extractBlock(kv._2._2, in2);
-			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<>();
-			inputs.add(in1); inputs.add(in2);  
-			return new Tuple2<>(kv._1, inputs);
+		public MatrixBlock call(MatrixBlock v1) throws Exception {
+			return v1.ternaryOperations(_op, _m2, _m3, new MatrixBlock());
 		}
-		
 	}
 	
-	private static class MapThreeMBIterableIntoAL implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>,Iterable<MatrixBlock>>>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = -4873754507037646974L;
-		
-		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
-			for(MatrixBlock blk1 : blks) {
-				if(retVal != null) {
-					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
-				}
-				retVal = blk1;
-			}
-			if(retVal == null) {
-				throw new Exception("ERROR: No matrixblock found for one of the inputs at a given index");
-			}
-			return retVal;
+	private static class TernaryFunctionSMS extends TernaryFunction implements Function<MatrixBlock, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionSMS(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-
 		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, Tuple2<Iterable<Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>>, Iterable<MatrixBlock>>> kv)
-				throws Exception {
-			MatrixBlock in1 = null; MatrixBlock in2 = null; MatrixBlock in3 = null;
-			
-			for(Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>> blks : kv._2._1) {
-				in1 = extractBlock(blks._1, in1);
-				in2 = extractBlock(blks._2, in2);
-			}
-			in3 = extractBlock(kv._2._2, in3);
-			
-			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<>();
-			inputs.add(in1); inputs.add(in2); inputs.add(in3);  
-			return new Tuple2<>(kv._1, inputs);
+		public MatrixBlock call(MatrixBlock v1) throws Exception {
+			return _m1.ternaryOperations(_op, v1, _m3, new MatrixBlock());
 		}
-		
 	}
 	
-	private static class PerformCTableMapSideOperation implements PairFunction<Tuple2<MatrixIndexes,ArrayList<MatrixBlock>>, MatrixIndexes, CTableMap> {
-
-		private static final long serialVersionUID = 5348127596473232337L;
-
-		Ternary.OperationTypes ctableOp;
-		double scalar_input2; double scalar_input3;
-		String instString;
-		Operator optr;
-		boolean ignoreZeros;
-		
-		public PerformCTableMapSideOperation(Ternary.OperationTypes ctableOp, double scalar_input2, double scalar_input3, String instString, Operator optr, boolean ignoreZeros) {
-			this.ctableOp = ctableOp;
-			this.scalar_input2 = scalar_input2;
-			this.scalar_input3 = scalar_input3;
-			this.instString = instString;
-			this.optr = optr;
-			this.ignoreZeros = ignoreZeros;
+	private static class TernaryFunctionSSM extends TernaryFunction implements Function<MatrixBlock, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionSSM(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
-		private static void expectedALSize(int length, ArrayList<MatrixBlock> al) throws Exception {
-			if(al.size() != length) {
-				throw new Exception("Expected arraylist of size:" + length + ", but found " + al.size());
-			}
-		}
-		
 		@Override
-		public Tuple2<MatrixIndexes, CTableMap> call(
-				Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> kv) throws Exception {
-			CTableMap ctableResult = new CTableMap();
-			MatrixBlock ctableResultBlock = null;
-			
-			IndexedMatrixValue in1, in2, in3 = null;
-			in1 = new IndexedMatrixValue(kv._1, kv._2.get(0));
-			MatrixBlock matBlock1 = kv._2.get(0);
-			
-			switch( ctableOp )
-			{
-				case CTABLE_TRANSFORM: {
-					in2 = new IndexedMatrixValue(kv._1, kv._2.get(1));
-					in3 = new IndexedMatrixValue(kv._1, kv._2.get(2));
-					expectedALSize(3, kv._2);
-					
-					if(in1==null || in2==null || in3 == null )
-						break;	
-					else
-						OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
-                                in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);
-					break;
-				}
-				case CTABLE_TRANSFORM_SCALAR_WEIGHT: 
-				case CTABLE_EXPAND_SCALAR_WEIGHT:
-				{
-					// 3rd input is a scalar
-					in2 = new IndexedMatrixValue(kv._1, kv._2.get(1));
-					expectedALSize(2, kv._2);
-					if(in1==null || in2==null )
-						break;
-					else
-						matBlock1.ternaryOperations((SimpleOperator)optr, kv._2.get(1), scalar_input3, ignoreZeros, ctableResult, ctableResultBlock);
-						break;
-				}
-				case CTABLE_TRANSFORM_HISTOGRAM: {
-					expectedALSize(1, kv._2);
-					OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, 
-							scalar_input3, ctableResult, ctableResultBlock, optr);
-					break;
-				}
-				case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
-					// 2nd and 3rd inputs are scalars
-					expectedALSize(2, kv._2);
-					in3 = new IndexedMatrixValue(kv._1, kv._2.get(1)); // Note: kv._2.get(1), not kv._2.get(2)
-					
-					if(in1==null || in3==null)
-						break;
-					else
-						OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, 
-								in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);		
-					break;
-				}
-				default:
-					throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);
-			}
-			return new Tuple2<>(kv._1, ctableResult);
+		public MatrixBlock call(MatrixBlock v1) throws Exception {
+			return _m1.ternaryOperations(_op, _m2, v1, new MatrixBlock());
 		}
-		
 	}
 	
-	private static class MapMBIntoAL implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = 2068398913653350125L;
-
-		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			ArrayList<MatrixBlock> retVal = new ArrayList<>();
-			retVal.add(kv._2);
-			return new Tuple2<>(kv._1, retVal);
+	private static class TernaryFunctionMMS extends TernaryFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionMMS(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
+		@Override
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> v1) throws Exception {
+			return v1._1().ternaryOperations(_op, v1._2(), _m3, new MatrixBlock());
+		}
 	}
 	
-	private static class ExtractBinaryCellsFromCTable implements PairFlatMapFunction<CTableMap, MatrixIndexes, Double> {
-
-		private static final long serialVersionUID = -5933677686766674444L;
-		
-		@Override
-		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
-				throws Exception {
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
-			Iterator<LLDoubleEntry> iter = ctableMap.getIterator();
-			while( iter.hasNext() ) {
-				LLDoubleEntry ijv = iter.next();
-				long i = ijv.key1;
-				long j =  ijv.key2;
-				double v =  ijv.value;
-				retVal.add(new Tuple2<>(new MatrixIndexes(i, j), v));
-			}
-			return retVal.iterator();
+	private static class TernaryFunctionMSM extends TernaryFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionMSM(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
+		@Override
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> v1) throws Exception {
+			return v1._1().ternaryOperations(_op, _m2, v1._2(), new MatrixBlock());
+		}
 	}
 	
-	private static class ConvertToBinaryCell implements PairFunction<Tuple2<MatrixIndexes,Double>, MatrixIndexes, MatrixCell> {
-
-		private static final long serialVersionUID = 7481186480851982800L;
-		
-		@Override
-		public Tuple2<MatrixIndexes, MatrixCell> call(
-				Tuple2<MatrixIndexes, Double> kv) throws Exception {
-			
-			MatrixCell cell = new MatrixCell(kv._2().doubleValue());
-			return new Tuple2<>(kv._1(), cell);
+	private static class TernaryFunctionSMM extends TernaryFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionSMM(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
+		@Override
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> v1) throws Exception {
+			return _m1.ternaryOperations(_op, v1._1(), v1._2(), new MatrixBlock());
+		}
 	}
 	
-	private static class FilterCells implements Function<Tuple2<MatrixIndexes,Double>, Boolean> {
-		private static final long serialVersionUID = 108448577697623247L;
-
-		long rlen; long clen;
-		public FilterCells(long rlen, long clen) {
-			this.rlen = rlen;
-			this.clen = clen;
+	private static class TernaryFunctionMMM extends TernaryFunction implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, MatrixBlock> {
+		private static final long serialVersionUID = 1L;
+		public TernaryFunctionMMM(TernaryOperator op, MatrixBlock m1, MatrixBlock m2, MatrixBlock m3) {
+			super(op, m1, m2, m3);
 		}
-		
 		@Override
-		public Boolean call(Tuple2<MatrixIndexes, Double> kv) throws Exception {
-			if(kv._1.getRowIndex() <= 0 || kv._1.getColumnIndex() <= 0) {
-				throw new Exception("Incorrect cell values in TernarySPInstruction:" + kv._1);
-			}
-			if(kv._1.getRowIndex() <= rlen && kv._1.getColumnIndex() <= clen) {
-				return true;
-			}
-			return false;
+		public MatrixBlock call(Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock> v1) throws Exception {
+			return v1._1()._1().ternaryOperations(_op, v1._1()._2(), v1._2(), new MatrixBlock());
 		}
-		
 	}
 }

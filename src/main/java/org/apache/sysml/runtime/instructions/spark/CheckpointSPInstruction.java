@@ -47,10 +47,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
 	private StorageLevel _level = null;
 
-	private CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode,
-			String istr) {
-		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Checkpoint;
+	private CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode, String istr) {
+		super(SPType.Checkpoint, op, in, out, opcode, istr);
 		_level = level;
 	}
 
@@ -110,8 +108,9 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//(trigger coalesce if intended number of partitions exceeded by 20%
 			//and not hash partitioned to avoid losing the existing partitioner)
 			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
-			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions() 
-					&& !SparkUtils.isHashPartitioned(in) );
+			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions()
+				&& !SparkUtils.isHashPartitioned(in) && in.getNumPartitions()
+				> SparkExecutionContext.getDefaultParallelism(true));
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {
@@ -132,19 +131,26 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//convert mcsr into memory-efficient csr if potentially sparse
 			if( input1.getDataType()==DataType.MATRIX 
 				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn)
-				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) 
-			{				
+				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) {
 				out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)out)
 					.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));
 			}
 			
 			//actual checkpoint into given storage level
 			out = out.persist( _level );
+			
+			//trigger nnz computation for datasets that are forced to spark by their dimensions
+			//(larger than MAX_INT) to handle ultra-sparse data sets during recompilation because
+			//otherwise these their nnz would never be evaluated due to lazy evaluation in spark
+			if( input1.isMatrix() && mcIn.dimsKnown() 
+				&& !mcIn.dimsKnown(true) && !OptimizerUtils.isValidCPDimensions(mcIn) ) {
+				mcIn.setNonZeros(SparkUtils.getNonZeros((JavaPairRDD<MatrixIndexes,MatrixBlock>)out));
+			}
 		}
 		else {
 			out = in; //pass-through
 		}
-			
+		
 		// Step 3: In-place update of input matrix/frame rdd handle and set as output
 		// -------
 		// We use this in-place approach for two reasons. First, it is correct because our checkpoint 
@@ -157,7 +163,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		CacheableData<?> cd = sec.getCacheableData( input1.getName() );
 		if( out != in ) {                         //prevent unnecessary lineage info
 			RDDObject inro =  cd.getRDDHandle();  //guaranteed to exist (see above)
-			RDDObject outro = new RDDObject(out, output.getName()); //create new rdd object
+			RDDObject outro = new RDDObject(out); //create new rdd object
 			outro.setCheckpointRDD(true);         //mark as checkpointed
 			outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
 			cd.setRDDHandle(outro);

@@ -69,7 +69,9 @@ public class ReachabilityGraph
 		//short-cut for partitions without cutsets
 		if( tmpCS.isEmpty() ) {
 			_cutSets = new CutSet[0];
-			_searchSpace = part.getMatPointsExt();
+			//sort materialization points in decreasing order of their sizes
+			//which can improve the pruning efficiency by skipping larger sub-spaces.
+			_searchSpace = sortBySize(part.getMatPointsExt(), memo, false);
 			return;
 		}
 		
@@ -120,7 +122,7 @@ public class ReachabilityGraph
 				.map(p -> p.getLeft()).toArray(CutSet[]::new);
 		
 		//created sorted order of materialization points
-		//(cut sets in predetermined order, all other points appended)
+		//(cut sets in predetermined order, other points sorted by size)
 		HashMap<InterestingPoint, Integer> probe = new HashMap<>();
 		ArrayList<InterestingPoint> lsearchSpace = new ArrayList<>();
 		for( CutSet cs : _cutSets ) {
@@ -128,7 +130,9 @@ public class ReachabilityGraph
 			for( InterestingPoint p : cs.cut )
 				probe.put(p, probe.size());
 		}
-		for( InterestingPoint p : part.getMatPointsExt() )
+		//sort materialization points in decreasing order of their sizes
+		//which can improve the pruning efficiency by skipping larger sub-spaces.
+		for( InterestingPoint p : sortBySize(part.getMatPointsExt(), memo, false) )
 			if( !probe.containsKey(p) ) {
 				lsearchSpace.add(p);
 				probe.put(p, probe.size());
@@ -258,7 +262,19 @@ public class ReachabilityGraph
 		
 		return cutSets;
 	}
-		
+	
+	private InterestingPoint[] sortBySize(InterestingPoint[] points, CPlanMemoTable memo, boolean asc) {
+		return Arrays.stream(points)
+			.sorted(Comparator.comparing(p -> (asc ? 1 : -1) *
+				getSize(memo.getHopRefs().get(p.getToHopID()))))
+			.toArray(InterestingPoint[]::new);
+	}
+	
+	private static long getSize(Hop hop) {
+		return Math.max(hop.getDim1(),1) 
+			* Math.max(hop.getDim2(),1);
+	}
+	
 	public static class SubProblem {
 		public int offset;
 		public int[] freePos;

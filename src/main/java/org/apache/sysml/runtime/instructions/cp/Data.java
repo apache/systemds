@@ -30,15 +30,10 @@ import org.apache.sysml.runtime.matrix.MetaData;
 
 public abstract class Data implements Serializable 
 {
-
 	private static final long serialVersionUID = 9176228330268046168L;
 
-	protected DataType dataType;
-	protected ValueType valueType;
-	
-	public Data() {
-		//default constructor for serialize
-	}
+	protected final DataType dataType;
+	protected final ValueType valueType;
 	
 	protected Data(DataType dt, ValueType vt) {
 		dataType = dt;
@@ -52,16 +47,8 @@ public abstract class Data implements Serializable
 		return dataType;
 	}
 
-	public void setDataType(DataType dataType) {
-		this.dataType = dataType;
-	}
-
 	public ValueType getValueType() {
 		return valueType;
-	}
-
-	public void setValueType(ValueType valueType) {
-		this.valueType = valueType;
 	}
 
 	public void setMetaData(MetaData md) throws DMLRuntimeException {

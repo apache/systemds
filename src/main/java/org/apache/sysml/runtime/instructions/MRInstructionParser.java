@@ -64,7 +64,7 @@ import org.apache.sysml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PMMJMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.ParameterizedBuiltinMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
-import org.apache.sysml.runtime.instructions.mr.PlusMultInstruction;
+import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.QuaternaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.RangeBasedReIndexInstruction;
@@ -74,228 +74,247 @@ import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
 import org.apache.sysml.runtime.instructions.mr.ReplicateInstruction;
 import org.apache.sysml.runtime.instructions.mr.ScalarInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
-import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.matrix.SortMR;
 
 
 public class MRInstructionParser extends InstructionParser 
 {	
-	static public HashMap<String, MRINSTRUCTION_TYPE> String2MRInstructionType;
+	static public HashMap<String, MRType> String2MRInstructionType;
 	static {
 		String2MRInstructionType = new HashMap<>();
 		
 		// AGG Instruction Opcodes 
-		String2MRInstructionType.put( "a+"    , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "ak+"   , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "asqk+" , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "a*"    , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "amax"  , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "amin"  , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "amean" , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "avar"  , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "arimax"  , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "arimin"  , MRINSTRUCTION_TYPE.Aggregate);
+		String2MRInstructionType.put( "a+"    , MRType.Aggregate);
+		String2MRInstructionType.put( "ak+"   , MRType.Aggregate);
+		String2MRInstructionType.put( "asqk+" , MRType.Aggregate);
+		String2MRInstructionType.put( "a*"    , MRType.Aggregate);
+		String2MRInstructionType.put( "amax"  , MRType.Aggregate);
+		String2MRInstructionType.put( "amin"  , MRType.Aggregate);
+		String2MRInstructionType.put( "amean" , MRType.Aggregate);
+		String2MRInstructionType.put( "avar"  , MRType.Aggregate);
+		String2MRInstructionType.put( "arimax"  , MRType.Aggregate);
+		String2MRInstructionType.put( "arimin"  , MRType.Aggregate);
 
 		// AGG_BINARY Instruction Opcodes 
-		String2MRInstructionType.put( "cpmm" 	, MRINSTRUCTION_TYPE.AggregateBinary);
-		String2MRInstructionType.put( "rmm"  	, MRINSTRUCTION_TYPE.AggregateBinary);
-		String2MRInstructionType.put( MapMult.OPCODE, MRINSTRUCTION_TYPE.AggregateBinary);
+		String2MRInstructionType.put( "cpmm" 	, MRType.AggregateBinary);
+		String2MRInstructionType.put( "rmm"  	, MRType.AggregateBinary);
+		String2MRInstructionType.put( MapMult.OPCODE, MRType.AggregateBinary);
 		
 		// AGG_UNARY Instruction Opcodes 
-		String2MRInstructionType.put( "ua+"   , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uar+"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uac+"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uak+"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uark+" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uack+" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uasqk+" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarsqk+", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uacsqk+", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uamean", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarmean",MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uacmean",MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uavar",  MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarvar", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uacvar", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "ua*"   , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uamax" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uamin" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uatrace" , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uaktrace", MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarmax"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarimax"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uacmax"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarimin"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uacmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "ua+"   , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uar+"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uac+"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uak+"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uark+" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uack+" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uasqk+" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarsqk+", MRType.AggregateUnary);
+		String2MRInstructionType.put( "uacsqk+", MRType.AggregateUnary);
+		String2MRInstructionType.put( "uamean", MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarmean",MRType.AggregateUnary);
+		String2MRInstructionType.put( "uacmean",MRType.AggregateUnary);
+		String2MRInstructionType.put( "uavar",  MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarvar", MRType.AggregateUnary);
+		String2MRInstructionType.put( "uacvar", MRType.AggregateUnary);
+		String2MRInstructionType.put( "ua*"   , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uamax" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uamin" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uatrace" , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uaktrace", MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarmax"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarimax"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uacmax"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarmin"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uarimin"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uacmin"  , MRType.AggregateUnary);
 
 		// BUILTIN Instruction Opcodes 
-		String2MRInstructionType.put( "abs"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sin"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "cos"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "tan"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "asin" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "acos" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "atan" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sign" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sqrt" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "exp"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "log"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "log_nz"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "slog" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "pow"  , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "ceil" , MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "floor", MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sprop", MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sigmoid", MRINSTRUCTION_TYPE.Unary);
-		String2MRInstructionType.put( "sel+", MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "abs"  , MRType.Unary);
+		String2MRInstructionType.put( "sin"  , MRType.Unary);
+		String2MRInstructionType.put( "cos"  , MRType.Unary);
+		String2MRInstructionType.put( "tan"  , MRType.Unary);
+		String2MRInstructionType.put( "asin" , MRType.Unary);
+		String2MRInstructionType.put( "acos" , MRType.Unary);
+		String2MRInstructionType.put( "atan" , MRType.Unary);
+		String2MRInstructionType.put( "sign" , MRType.Unary);
+		String2MRInstructionType.put( "sqrt" , MRType.Unary);
+		String2MRInstructionType.put( "exp"  , MRType.Unary);
+		String2MRInstructionType.put( "log"  , MRType.Unary);
+		String2MRInstructionType.put( "log_nz"  , MRType.Unary);
+		String2MRInstructionType.put( "slog" , MRType.Unary);
+		String2MRInstructionType.put( "pow"  , MRType.Unary);
+		String2MRInstructionType.put( "round", MRType.Unary);
+		String2MRInstructionType.put( "ceil" , MRType.Unary);
+		String2MRInstructionType.put( "floor", MRType.Unary);
+		String2MRInstructionType.put( "sprop", MRType.Unary);
+		String2MRInstructionType.put( "sigmoid", MRType.Unary);
+		String2MRInstructionType.put( "!", MRType.Unary);
 		
 		// Specific UNARY Instruction Opcodes
-		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
-		String2MRInstructionType.put( "pmm" , MRINSTRUCTION_TYPE.PMMJ);
-		String2MRInstructionType.put( MapMultChain.OPCODE, MRINSTRUCTION_TYPE.MapMultChain);
-		String2MRInstructionType.put( "binuaggchain", MRINSTRUCTION_TYPE.BinUaggChain);
+		String2MRInstructionType.put( "tsmm" , MRType.MMTSJ);
+		String2MRInstructionType.put( "pmm" , MRType.PMMJ);
+		String2MRInstructionType.put( MapMultChain.OPCODE, MRType.MapMultChain);
+		String2MRInstructionType.put( "binuaggchain", MRType.BinUaggChain);
 		
 		// BINARY and SCALAR Instruction Opcodes 
-		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "s-r"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "%%"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "%/%"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "1-*"  , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
-		String2MRInstructionType.put( "so"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "^2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
-		String2MRInstructionType.put( "*2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
-		String2MRInstructionType.put( "-nz"  , MRINSTRUCTION_TYPE.ArithmeticBinary); //special - case
-		String2MRInstructionType.put( "+*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
-		String2MRInstructionType.put( "-*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
+		String2MRInstructionType.put( "+"    , MRType.Binary);
+		String2MRInstructionType.put( "-"    , MRType.Binary);
+		String2MRInstructionType.put( "s-r"  , MRType.Binary);
+		String2MRInstructionType.put( "*"    , MRType.Binary);
+		String2MRInstructionType.put( "/"    , MRType.Binary);
+		String2MRInstructionType.put( "%%"   , MRType.Binary);
+		String2MRInstructionType.put( "%/%"  , MRType.Binary);
+		String2MRInstructionType.put( "1-*"  , MRType.Binary); //special * case
+		String2MRInstructionType.put( "so"   , MRType.Binary);
+		String2MRInstructionType.put( "^"    , MRType.Binary);
+		String2MRInstructionType.put( "max"  , MRType.Binary);
+		String2MRInstructionType.put( "min"  , MRType.Binary);
+		String2MRInstructionType.put( ">"    , MRType.Binary);
+		String2MRInstructionType.put( ">="   , MRType.Binary);
+		String2MRInstructionType.put( "<"    , MRType.Binary);
+		String2MRInstructionType.put( "<="   , MRType.Binary);
+		String2MRInstructionType.put( "=="   , MRType.Binary);
+		String2MRInstructionType.put( "!="   , MRType.Binary);
+		String2MRInstructionType.put( "^"    , MRType.Binary);
+		String2MRInstructionType.put( "^2"   , MRType.Binary); //special ^ case
+		String2MRInstructionType.put( "*2"   , MRType.Binary); //special * case
+		String2MRInstructionType.put( "-nz"  , MRType.Binary); //special - case
+		String2MRInstructionType.put( "&&"   , MRType.Binary);
+		String2MRInstructionType.put( "||"   , MRType.Binary);
+		String2MRInstructionType.put( "xor"  , MRType.Binary);
+		String2MRInstructionType.put( "bitwAnd", MRType.Binary);
+		String2MRInstructionType.put( "bitwOr", MRType.Binary);
+		String2MRInstructionType.put( "bitwXor", MRType.Binary);
+		String2MRInstructionType.put( "bitwShiftL", MRType.Binary);
+		String2MRInstructionType.put( "bitwShiftR", MRType.Binary);
 		
-		String2MRInstructionType.put( "map+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map/"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map%%"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map%/%"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map1-*"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "mapmax"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "mapmin"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map>"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map>="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map<"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-		String2MRInstructionType.put( "map!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
-	
-		String2MRInstructionType.put( "uaggouterchain", MRINSTRUCTION_TYPE.UaggOuterChain);
+		String2MRInstructionType.put( "map+"    , MRType.Binary);
+		String2MRInstructionType.put( "map-"    , MRType.Binary);
+		String2MRInstructionType.put( "map*"    , MRType.Binary);
+		String2MRInstructionType.put( "map/"    , MRType.Binary);
+		String2MRInstructionType.put( "map%%"   , MRType.Binary);
+		String2MRInstructionType.put( "map%/%"  , MRType.Binary);
+		String2MRInstructionType.put( "map1-*"  , MRType.Binary);
+		String2MRInstructionType.put( "map^"    , MRType.Binary);
+		String2MRInstructionType.put( "mapmax"  , MRType.Binary);
+		String2MRInstructionType.put( "mapmin"  , MRType.Binary);
+		String2MRInstructionType.put( "map>"    , MRType.Binary);
+		String2MRInstructionType.put( "map>="   , MRType.Binary);
+		String2MRInstructionType.put( "map<"    , MRType.Binary);
+		String2MRInstructionType.put( "map<="   , MRType.Binary);
+		String2MRInstructionType.put( "map=="   , MRType.Binary);
+		String2MRInstructionType.put( "map!="   , MRType.Binary);
+		String2MRInstructionType.put( "map&&"   , MRType.Binary);
+		String2MRInstructionType.put( "map||"   , MRType.Binary);
+		String2MRInstructionType.put( "mapxor"  , MRType.Binary);
+		String2MRInstructionType.put( "mapbitwAnd", MRType.Binary);
+		String2MRInstructionType.put( "mapbitwOr", MRType.Binary);
+		String2MRInstructionType.put( "mapbitwXor", MRType.Binary);
+		String2MRInstructionType.put( "mapbitwShiftL", MRType.Binary);
+		String2MRInstructionType.put( "mapbitwShiftR", MRType.Binary);
+		
+		// Ternary Instruction Opcodes
+		String2MRInstructionType.put( "+*",     MRType.Ternary); 
+		String2MRInstructionType.put( "-*",     MRType.Ternary); 
+		String2MRInstructionType.put( "ifelse", MRType.Ternary); 
+		
+		String2MRInstructionType.put( "uaggouterchain", MRType.UaggOuterChain);
 		
 		// REORG Instruction Opcodes 
-		String2MRInstructionType.put( "r'"     , MRINSTRUCTION_TYPE.Reorg);
-		String2MRInstructionType.put( "rev"     , MRINSTRUCTION_TYPE.Reorg);
-		String2MRInstructionType.put( "rdiag"  , MRINSTRUCTION_TYPE.Reorg);
+		String2MRInstructionType.put( "r'"     , MRType.Reorg);
+		String2MRInstructionType.put( "rev"     , MRType.Reorg);
+		String2MRInstructionType.put( "rdiag"  , MRType.Reorg);
 		
 		// REPLICATE Instruction Opcodes
-		String2MRInstructionType.put( "rep"     , MRINSTRUCTION_TYPE.Replicate);
+		String2MRInstructionType.put( "rep"     , MRType.Replicate);
 		
 		// DataGen Instruction Opcodes 
-		String2MRInstructionType.put( DataGen.RAND_OPCODE   , MRINSTRUCTION_TYPE.Rand);
-		String2MRInstructionType.put( DataGen.SEQ_OPCODE   , MRINSTRUCTION_TYPE.Seq);
+		String2MRInstructionType.put( DataGen.RAND_OPCODE   , MRType.Rand);
+		String2MRInstructionType.put( DataGen.SEQ_OPCODE   , MRType.Seq);
 		
 		// REBLOCK Instruction Opcodes 
-		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);
-		String2MRInstructionType.put( "csvrblk", MRINSTRUCTION_TYPE.CSVReblock);
+		String2MRInstructionType.put( "rblk"   , MRType.Reblock);
+		String2MRInstructionType.put( "csvrblk", MRType.CSVReblock);
 		
 		// Ternary Reorg Instruction Opcodes 
-		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Ternary);
-		String2MRInstructionType.put( "ctabletransformscalarweight", MRINSTRUCTION_TYPE.Ternary);
-		String2MRInstructionType.put( "ctableexpandscalarweight", MRINSTRUCTION_TYPE.Ternary);
-		String2MRInstructionType.put( "ctabletransformhistogram", MRINSTRUCTION_TYPE.Ternary);
-		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Ternary);
+		String2MRInstructionType.put( "ctabletransform", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformscalarweight", MRType.Ctable);
+		String2MRInstructionType.put( "ctableexpandscalarweight", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformhistogram", MRType.Ctable);
+		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRType.Ctable);
 		
 		// Quaternary Instruction Opcodes
-		String2MRInstructionType.put( WeightedSquaredLoss.OPCODE,  MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedSquaredLossR.OPCODE, MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedSigmoid.OPCODE,      MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedSigmoidR.OPCODE,     MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedDivMM.OPCODE,        MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedDivMMR.OPCODE,       MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedCrossEntropy.OPCODE, MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedCrossEntropyR.OPCODE,MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedUnaryMM.OPCODE,      MRINSTRUCTION_TYPE.Quaternary);
-		String2MRInstructionType.put( WeightedUnaryMMR.OPCODE,     MRINSTRUCTION_TYPE.Quaternary);
+		String2MRInstructionType.put( WeightedSquaredLoss.OPCODE,  MRType.Quaternary);
+		String2MRInstructionType.put( WeightedSquaredLossR.OPCODE, MRType.Quaternary);
+		String2MRInstructionType.put( WeightedSigmoid.OPCODE,      MRType.Quaternary);
+		String2MRInstructionType.put( WeightedSigmoidR.OPCODE,     MRType.Quaternary);
+		String2MRInstructionType.put( WeightedDivMM.OPCODE,        MRType.Quaternary);
+		String2MRInstructionType.put( WeightedDivMMR.OPCODE,       MRType.Quaternary);
+		String2MRInstructionType.put( WeightedCrossEntropy.OPCODE, MRType.Quaternary);
+		String2MRInstructionType.put( WeightedCrossEntropyR.OPCODE,MRType.Quaternary);
+		String2MRInstructionType.put( WeightedUnaryMM.OPCODE,      MRType.Quaternary);
+		String2MRInstructionType.put( WeightedUnaryMMR.OPCODE,     MRType.Quaternary);
 		
 		// Combine Instruction Opcodes
-		String2MRInstructionType.put( "combinebinary" , MRINSTRUCTION_TYPE.CombineBinary);
-		String2MRInstructionType.put( "combineunary"  , MRINSTRUCTION_TYPE.CombineUnary);
-		String2MRInstructionType.put( "combineternary" , MRINSTRUCTION_TYPE.CombineTernary);
+		String2MRInstructionType.put( "combinebinary" , MRType.CombineBinary);
+		String2MRInstructionType.put( "combineunary"  , MRType.CombineUnary);
+		String2MRInstructionType.put( "combineternary" , MRType.CombineTernary);
 		
 		// PickByCount Instruction Opcodes
-		String2MRInstructionType.put( "valuepick"  , MRINSTRUCTION_TYPE.PickByCount);  // for quantile()
-		String2MRInstructionType.put( "rangepick"  , MRINSTRUCTION_TYPE.PickByCount);  // for interQuantile()
+		String2MRInstructionType.put( "valuepick"  , MRType.PickByCount);  // for quantile()
+		String2MRInstructionType.put( "rangepick"  , MRType.PickByCount);  // for interQuantile()
 		
 		// CM Instruction Opcodes
-		String2MRInstructionType.put( "cm"  , MRINSTRUCTION_TYPE.CM_N_COV); 
-		String2MRInstructionType.put( "cov"  , MRINSTRUCTION_TYPE.CM_N_COV); 
-		String2MRInstructionType.put( "mean"  , MRINSTRUCTION_TYPE.CM_N_COV); 
+		String2MRInstructionType.put( "cm"  , MRType.CM_N_COV); 
+		String2MRInstructionType.put( "cov"  , MRType.CM_N_COV); 
+		String2MRInstructionType.put( "mean"  , MRType.CM_N_COV); 
 		
 		//groupedAgg Instruction Opcodes
-		String2MRInstructionType.put( "groupedagg"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
-		String2MRInstructionType.put( "mapgroupedagg"  , MRINSTRUCTION_TYPE.MapGroupedAggregate); 
+		String2MRInstructionType.put( "groupedagg"  , MRType.GroupedAggregate); 
+		String2MRInstructionType.put( "mapgroupedagg"  , MRType.MapGroupedAggregate); 
 		
 		//right indexing
-		String2MRInstructionType.put( RightIndex.OPCODE , MRINSTRUCTION_TYPE.RightIndex);
-		String2MRInstructionType.put( RightIndex.OPCODE+"ForLeft" , MRINSTRUCTION_TYPE.RightIndex);
-		String2MRInstructionType.put( "zeroOut" , MRINSTRUCTION_TYPE.ZeroOut);
+		String2MRInstructionType.put( RightIndex.OPCODE , MRType.RightIndex);
+		String2MRInstructionType.put( RightIndex.OPCODE+"ForLeft" , MRType.RightIndex);
+		String2MRInstructionType.put( "zeroOut" , MRType.ZeroOut);
 
 		//append
-		String2MRInstructionType.put( "mappend"  , MRINSTRUCTION_TYPE.Append);
-		String2MRInstructionType.put( "rappend"  , MRINSTRUCTION_TYPE.Append);
-		String2MRInstructionType.put( "gappend"  , MRINSTRUCTION_TYPE.Append);
+		String2MRInstructionType.put( "mappend"  , MRType.Append);
+		String2MRInstructionType.put( "rappend"  , MRType.Append);
+		String2MRInstructionType.put( "gappend"  , MRType.Append);
 		
 		//misc
-		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
+		String2MRInstructionType.put( "rshape", MRType.MatrixReshape);
 		
 		//partitioning
-		String2MRInstructionType.put( "partition", MRINSTRUCTION_TYPE.Partition);
+		String2MRInstructionType.put( "partition", MRType.Partition);
 		
 		//cumsum/cumprod/cummin/cummax
-		String2MRInstructionType.put( "ucumack+"  , MRINSTRUCTION_TYPE.CumsumAggregate);
-		String2MRInstructionType.put( "ucumac*"   , MRINSTRUCTION_TYPE.CumsumAggregate);
-		String2MRInstructionType.put( "ucumacmin" , MRINSTRUCTION_TYPE.CumsumAggregate);
-		String2MRInstructionType.put( "ucumacmax" , MRINSTRUCTION_TYPE.CumsumAggregate);
-		String2MRInstructionType.put( "ucumsplit" , MRINSTRUCTION_TYPE.CumsumSplit);
-		String2MRInstructionType.put( "bcumoffk+" , MRINSTRUCTION_TYPE.CumsumOffset);
-		String2MRInstructionType.put( "bcumoff*"  , MRINSTRUCTION_TYPE.CumsumOffset);
-		String2MRInstructionType.put( "bcumoffmin", MRINSTRUCTION_TYPE.CumsumOffset);
-		String2MRInstructionType.put( "bcumoffmax", MRINSTRUCTION_TYPE.CumsumOffset);
+		String2MRInstructionType.put( "ucumack+"  , MRType.CumsumAggregate);
+		String2MRInstructionType.put( "ucumac*"   , MRType.CumsumAggregate);
+		String2MRInstructionType.put( "ucumacmin" , MRType.CumsumAggregate);
+		String2MRInstructionType.put( "ucumacmax" , MRType.CumsumAggregate);
+		String2MRInstructionType.put( "ucumsplit" , MRType.CumsumSplit);
+		String2MRInstructionType.put( "bcumoffk+" , MRType.CumsumOffset);
+		String2MRInstructionType.put( "bcumoff*"  , MRType.CumsumOffset);
+		String2MRInstructionType.put( "bcumoffmin", MRType.CumsumOffset);
+		String2MRInstructionType.put( "bcumoffmax", MRType.CumsumOffset);
 		
 		//dummy (pseudo instructions)
-		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
-		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
+		String2MRInstructionType.put( "sort", MRType.Sort);
+		String2MRInstructionType.put( "csvwrite", MRType.CSVWrite);
 		
 		//parameterized builtins
-		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2MRInstructionType.put( "rexpand", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2MRInstructionType.put( "replace", MRType.ParameterizedBuiltin);
+		String2MRInstructionType.put( "rexpand", MRType.ParameterizedBuiltin);
 		
 		//remove empty (special type since binary not unary)
-		String2MRInstructionType.put( "rmempty", MRINSTRUCTION_TYPE.RemoveEmpty);
+		String2MRInstructionType.put( "rmempty", MRType.RemoveEmpty);
 	}
 	
 	
@@ -305,11 +324,11 @@ public class MRInstructionParser extends InstructionParser
 		if ( str == null || str.isEmpty() )
 			return null;
 		
-		MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
+		MRType mrtype = InstructionUtils.getMRType(str); 
 		return parseSingleInstruction(mrtype, str);
 	}
 	
-	public static MRInstruction parseSingleInstruction (MRINSTRUCTION_TYPE mrtype, String str ) 
+	public static MRInstruction parseSingleInstruction (MRType mrtype, String str ) 
 		throws DMLRuntimeException 
 	{
 		if ( str == null || str.isEmpty() )
@@ -320,7 +339,7 @@ public class MRInstructionParser extends InstructionParser
 			case Aggregate:
 				return AggregateInstruction.parseInstruction(str);
 				
-			case ArithmeticBinary: {
+			case Binary: {
 				String opcode = InstructionUtils.getOpCode(str);
 				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				// extract datatypes of first and second input operands
@@ -337,8 +356,8 @@ public class MRInstructionParser extends InstructionParser
 				}
 			}
 			
-			case ArithmeticBinary2:
-				return PlusMultInstruction.parseInstruction(str);
+			case Ternary:
+				return TernaryInstruction.parseInstruction(str);
 			
 			case AggregateBinary:
 				return AggregateBinaryInstruction.parseInstruction(str);
@@ -346,8 +365,8 @@ public class MRInstructionParser extends InstructionParser
 			case AggregateUnary:
 				return AggregateUnaryInstruction.parseInstruction(str);
 				
-			case Ternary: 
-				return TernaryInstruction.parseInstruction(str);
+			case Ctable: 
+				return CtableInstruction.parseInstruction(str);
 			
 			case Quaternary: 
 				return QuaternaryInstruction.parseInstruction(str);
@@ -449,8 +468,6 @@ public class MRInstructionParser extends InstructionParser
 			
 			case CumsumOffset:
 				return CumulativeOffsetInstruction.parseInstruction(str);
-			
-			case INVALID:
 			
 			default: 
 				throw new DMLRuntimeException("Invalid MR Instruction Type: " + mrtype );
@@ -576,10 +593,10 @@ public class MRInstructionParser extends InstructionParser
 			
 			for(int i=0; i < strlist.length; i++)
 			{
-				MRINSTRUCTION_TYPE type = InstructionUtils.getMRType(strlist[i]);
-				if(type==MRINSTRUCTION_TYPE.CombineBinary)
+				MRType type = InstructionUtils.getMRType(strlist[i]);
+				if(type==MRType.CombineBinary)
 					inst[i] = (CombineBinaryInstruction) CombineBinaryInstruction.parseInstruction( strlist[i] );
-				else if(type==MRINSTRUCTION_TYPE.CombineTernary)
+				else if(type==MRType.CombineTernary)
 					inst[i] = (CombineTernaryInstruction)CombineTernaryInstruction.parseInstruction(strlist[i]);
 				else
 					throw new DMLRuntimeException("unknown combine instruction: "+strlist[i]);

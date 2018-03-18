@@ -39,4 +39,9 @@ public class Not extends ValueFunction
 	public boolean execute(boolean in) {
 		return !in;
 	}
+
+	@Override
+	public double execute(double in) {
+		return (in == 0) ? 1 : 0;
+	}
 }

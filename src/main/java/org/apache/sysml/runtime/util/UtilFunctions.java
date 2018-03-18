@@ -27,9 +27,9 @@ import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
@@ -242,7 +242,7 @@ public class UtilFunctions
 		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
 	}
 	
-	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
+	public static long getTotalLength(MetaDataNumItemsByEachReducer metadata) {
 		long[] counts=metadata.getNumItemsArray();
 		long total=0;
 		for(long count: counts)
@@ -250,7 +250,7 @@ public class UtilFunctions
 		return total;
 	}
 	
-	public static long getLengthForInterQuantile(NumItemsByEachReducerMetaData metadata, double p)
+	public static long getLengthForInterQuantile(MetaDataNumItemsByEachReducer metadata, double p)
 	{
 		long total = UtilFunctions.getTotalLength(metadata);
 		long lpos=(long)Math.ceil(total*p);//lower bound is inclusive
@@ -302,6 +302,13 @@ public class UtilFunctions
 	public static int toInt(Object obj) {
 		return (obj instanceof Long) ?
 			((Long)obj).intValue() : ((Integer)obj).intValue();
+	}
+	
+	public static float[] toFloat(double[] data) {
+		float[] ret = new float[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = (float)data[i];
+		return ret;
 	}
 	
 	public static long getSeqLength(double from, double to, double incr) {
@@ -559,6 +566,13 @@ public class UtilFunctions
 			return (!sobj.equals("0") && !sobj.equals("0.0"));
 		}
 	}
+	
+	public static int computeNnz(double[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
 
 	public static ValueType[] nCopies(int n, ValueType vt) {
 		ValueType[] ret = new ValueType[n];
@@ -592,11 +606,35 @@ public class UtilFunctions
 	}
 	
 	@SafeVarargs
+	public static <T> List<T> asList(List<T>... inputs) {
+		List<T> ret = new ArrayList<>();
+		for( List<T> list : inputs )
+			ret.addAll(list);
+		return ret;
+	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(List<T>... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( List<T> list : inputs )
+			ret.addAll(list);
+		return ret;
+	}
+	
+	@SafeVarargs
 	public static <T> Set<T> asSet(T[]... inputs) {
 		Set<T> ret = new HashSet<>();
 		for( T[] input : inputs )
 			for( T element : input )
 				ret.add(element);
+		return ret;
+	}
+	
+	@SafeVarargs
+	public static <T> Set<T> asSet(T... inputs) {
+		Set<T> ret = new HashSet<>();
+		for( T element : inputs )
+			ret.add(element);
 		return ret;
 	}
 }

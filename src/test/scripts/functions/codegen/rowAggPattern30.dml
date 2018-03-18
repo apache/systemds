@@ -28,5 +28,7 @@ K = 4;
 while(FALSE){}
 Q = P[,1:K] * (X %*% ssX_V);
 R = t(X) %*% (Q - P[,1:K] * rowSums(Q));
+if( nrow(R)!=10 | ncol(R)!=4 )
+  stop("Wrong output dimensions.");
 
 write(R, $1)

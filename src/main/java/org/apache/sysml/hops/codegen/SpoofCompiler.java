@@ -39,7 +39,6 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.cplan.CNode;
-import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
@@ -53,7 +52,6 @@ import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBased;
 import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
 import org.apache.sysml.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
@@ -61,6 +59,7 @@ import org.apache.sysml.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
+import org.apache.sysml.hops.codegen.template.CPlanOpRewriter;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.recompile.RecompileStatus;
 import org.apache.sysml.hops.recompile.Recompiler;
@@ -68,7 +67,6 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
@@ -242,7 +240,7 @@ public class SpoofCompiler
 		}
 		else //generic (last-level)
 		{
-			current.set_hops( generateCodeFromHopDAGs(current.get_hops()) );
+			current.setHops( generateCodeFromHopDAGs(current.getHops()) );
 			current.updateRecompilationFlag();
 		}
 	}
@@ -293,7 +291,7 @@ public class SpoofCompiler
 		else //generic (last-level)
 		{
 			StatementBlock sb = current.getStatementBlock();
-			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.get_hops()) );
+			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.getHops()) );
 		}
 	}
 
@@ -423,14 +421,14 @@ public class SpoofCompiler
 						planCache.putPlan(tmp.getValue(), cla);
 				}
 				else if( DMLScript.STATISTICS ) {
-					Statistics.incrementCodegenPlanCacheHits();
+					Statistics.incrementCodegenOpCacheHits();
 				}
 				
 				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
 				if( DMLScript.STATISTICS )
-					Statistics.incrementCodegenPlanCacheTotal();
+					Statistics.incrementCodegenOpCacheTotal();
 			}
 			
 			//create modified hop dag (operator replacement and CSE)
@@ -440,7 +438,7 @@ public class SpoofCompiler
 				ret = constructModifiedHopDag(roots, cplans, clas);
 				
 				//run common subexpression elimination and other rewrites
-				ret = rewriteCSE.rewriteHopDAG(ret, new ProgramRewriteStatus());	
+				ret = rewriteCSE.rewriteHopDAG(ret, new ProgramRewriteStatus());
 				
 				//explain after modification
 				if( LOG.isTraceEnabled() ) {
@@ -649,7 +647,7 @@ public class SpoofCompiler
 				for( int i=0; i<roots.size(); i++ ) {
 					Hop hnewi = (roots.get(i) instanceof AggUnaryOp) ? 
 						HopRewriteUtils.createScalarIndexing(hnew, 1, i+1) :
-						HopRewriteUtils.createMatrixIndexing(hnew, 1, i+1);
+						HopRewriteUtils.createIndexingOp(hnew, 1, i+1);
 					HopRewriteUtils.rewireAllParentChildReferences(roots.get(i), hnewi);
 				}
 			}
@@ -657,7 +655,8 @@ public class SpoofCompiler
 				HopRewriteUtils.setOutputParametersForScalar(hnew);
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
-			else if( tmpCNode instanceof CNodeRow && ((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST )
+			else if( tmpCNode instanceof CNodeRow && (((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST
+				|| ((CNodeRow)tmpCNode).getRowType()==RowType.COL_AGG_CONST) )
 				((SpoofFusedOp)hnew).setConstDim2(((CNodeRow)tmpCNode).getConstDim2());
 			
 			if( !(tmpCNode instanceof CNodeMultiAgg) )
@@ -684,19 +683,25 @@ public class SpoofCompiler
 	private static HashMap<Long, Pair<Hop[],CNodeTpl>> cleanupCPlans(CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) 
 	{
 		HashMap<Long, Pair<Hop[],CNodeTpl>> cplans2 = new HashMap<>();
+		CPlanOpRewriter rewriter = new CPlanOpRewriter();
 		CPlanCSERewriter cse = new CPlanCSERewriter();
 		
 		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) {
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
-			//perform common subexpression elimination
+			//remove invalid plans with null inputs 
+			if( Arrays.stream(inHops).anyMatch(h -> (h==null)) )
+				continue;
+			
+			//perform simplifications and cse rewrites
+			tpl = rewriter.simplifyCPlan(tpl);
 			tpl = cse.eliminateCommonSubexpressions(tpl);
 			
 			//update input hops (order-preserving)
 			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
 			inHops = Arrays.stream(inHops)
-				.filter(p -> inputHopIDs.contains(p.getHopID()))
+				.filter(p -> p != null && inputHopIDs.contains(p.getHopID()))
 				.toArray(Hop[]::new);
 			cplans2.put(e.getKey(), new Pair<>(inHops, tpl));
 			
@@ -727,10 +732,6 @@ public class SpoofCompiler
 			else
 				rFindAndRemoveLookup(tpl.getOutput(), in1, !(tpl instanceof CNodeRow));
 			
-			//remove unnecessary neq 0 on main input of outer template
-			if( tpl instanceof CNodeOuterProduct )
-				rFindAndRemoveBinaryMS(tpl.getOutput(), in1, BinType.NOTEQUAL, "0", "1");
-			
 			//remove invalid row templates (e.g., unsatisfied blocksize constraint)
 			if( tpl instanceof CNodeRow ) {
 				//check for invalid row cplan over column vector
@@ -740,17 +741,19 @@ public class SpoofCompiler
 						LOG.trace("Removed invalid row cplan w/o agg on column vector.");
 				}
 				else if( OptimizerUtils.isSparkExecutionMode() ) {
+					Hop hop = memo.getHopRefs().get(e.getKey());
 					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-						|| OptimizerUtils.getTotalMemEstimate(inHops, memo.getHopRefs().get(e.getKey()))
+						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
-					boolean invalidNcol = false;
+					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?
+						hop.getDim1() > hop.getRowsInBlock() : hop.getDim2() > hop.getColsInBlock());
 					for( Hop in : inHops )
 						invalidNcol |= (in.getDataType().isMatrix() 
 							&& in.getDim2() > in.getColsInBlock());
 					if( isSpark && invalidNcol ) {
 						cplans2.remove(e.getKey());
 						if( LOG.isTraceEnabled() )
-							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");		
+							LOG.trace("Removed invalid row cplan w/ ncol>ncolpb.");
 					}
 				}
 			}
@@ -807,37 +810,6 @@ public class SpoofCompiler
 			}
 			else
 				rFindAndRemoveLookup(tmp, mainInput, includeRC1);
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private static void rFindAndRemoveUnary(CNode node, CNodeData mainInput, UnaryType type) {
-		for( int i=0; i<node.getInput().size(); i++ ) {
-			CNode tmp = node.getInput().get(i);
-			if( TemplateUtils.isUnary(tmp, type) && tmp.getInput().get(0) instanceof CNodeData
-				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
-			{
-				node.getInput().set(i, tmp.getInput().get(0));
-			}
-			else
-				rFindAndRemoveUnary(tmp, mainInput, type);
-		}
-	}
-	
-	private static void rFindAndRemoveBinaryMS(CNode node, CNodeData mainInput, BinType type, String lit, String replace) {
-		for( int i=0; i<node.getInput().size(); i++ ) {
-			CNode tmp = node.getInput().get(i);
-			if( TemplateUtils.isBinary(tmp, type) && tmp.getInput().get(1).isLiteral()
-				&& tmp.getInput().get(1).getVarname().equals(lit)
-				&& tmp.getInput().get(0) instanceof CNodeData
-				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
-			{
-				CNodeData cnode = new CNodeData(new LiteralOp(replace));
-				cnode.setLiteral(true);
-				node.getInput().set(i, cnode);
-			}
-			else
-				rFindAndRemoveBinaryMS(tmp, mainInput, type, lit, replace);
 		}
 	}
 	

@@ -55,6 +55,9 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
+	//for empty text lines we use 0-0 despite for 1-based indexing in order
+	//to allow matrices with zero rows and columns (consistent with R)
+	public static final String EMPTY_TEXT_LINE = "0 0 0\n";
 	private static final char CSV_QUOTE_CHAR = '"';
 	
 	public static FileSystem getFileSystem(String fname) throws IOException {
@@ -67,8 +70,20 @@ public class IOUtilFunctions
 			ConfigurationManager.getCachedJobConf());
 	}
 	
+	public static FileSystem getFileSystem(Configuration conf) throws IOException {
+		try{
+			return FileSystem.get(conf);
+		} catch(NoClassDefFoundError err) {
+			throw new IOException(err.getMessage());
+		}
+	}
+	
 	public static FileSystem getFileSystem(Path fname, Configuration conf) throws IOException {
-		return FileSystem.get(fname.toUri(), conf);
+		try {
+			return FileSystem.get(fname.toUri(), conf);
+		} catch(NoClassDefFoundError err) {
+			throw new IOException(err.getMessage());
+		}
 	}
 	
 	public static boolean isSameFileScheme(Path path1, Path path2) {
@@ -420,7 +435,7 @@ public class IOUtilFunctions
 	 * @return the number of columns in the collection of csv file splits
 	 * @throws IOException if IOException occurs
 	 */
-	@SuppressWarnings({ "rawtypes" })
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static int countNumColumnsCSV(InputSplit[] splits, InputFormat informat, JobConf job, String delim ) 
 		throws IOException 
 	{

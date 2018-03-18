@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
@@ -56,6 +57,7 @@ import org.apache.sysml.runtime.instructions.mr.ReplicateInstruction;
 import org.apache.sysml.runtime.instructions.mr.ScalarInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.instructions.mr.TernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CtableInstruction;
 import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
@@ -74,23 +76,21 @@ public class MatrixCharacteristics implements Serializable
 	private int numRowsPerBlock = 1;
 	private int numColumnsPerBlock = 1;
 	private long nonZero = -1;
+	private boolean ubNnz = false;
 	
 	public MatrixCharacteristics() {
 	
 	}
 	
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc)
-	{
+	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc) {
 		set(nr, nc, bnr, bnc);
 	}
 
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz)
-	{
+	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz) {
 		set(nr, nc, bnr, bnc, nnz);
 	}
 	
-	public MatrixCharacteristics(MatrixCharacteristics that)
-	{
+	public MatrixCharacteristics(MatrixCharacteristics that) {
 		set(that.numRows, that.numColumns, that.numRowsPerBlock, that.numColumnsPerBlock, that.nonZero);
 	}
 
@@ -107,6 +107,7 @@ public class MatrixCharacteristics implements Serializable
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
 		nonZero = nnz;
+		ubNnz = false;
 	}
 	
 	public void set(MatrixCharacteristics that) {
@@ -115,6 +116,7 @@ public class MatrixCharacteristics implements Serializable
 		numRowsPerBlock = that.numRowsPerBlock;
 		numColumnsPerBlock = that.numColumnsPerBlock;
 		nonZero = that.nonZero;
+		ubNnz = that.ubNnz;
 	}
 	
 	public long getRows(){
@@ -123,6 +125,10 @@ public class MatrixCharacteristics implements Serializable
 
 	public long getCols(){
 		return numColumns;
+	}
+	
+	public long getLength() {
+		return numRows * numColumns;
 	}
 	
 	public int getRowsPerBlock() {
@@ -146,16 +152,18 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public long getNumRowBlocks() {
-		return (long) Math.ceil((double)getRows() / getRowsPerBlock());
+		//number of row blocks w/ awareness of zero rows
+		return Math.max((long) Math.ceil((double)getRows() / getRowsPerBlock()), 1);
 	}
 	
 	public long getNumColBlocks() {
-		return (long) Math.ceil((double)getCols() / getColsPerBlock());
+		//number of column blocks w/ awareness of zero columns
+		return Math.max((long) Math.ceil((double)getCols() / getColsPerBlock()), 1);
 	}
 	
 	@Override
 	public String toString() {
-		return "["+numRows+" x "+numColumns+", nnz="+nonZero
+		return "["+numRows+" x "+numColumns+", nnz="+nonZero+" ("+ubNnz+")"
 		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}
 	
@@ -174,38 +182,49 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public void setNonZeros(long nnz) {
+		ubNnz = false;
 		nonZero = nnz;
 	}
 	
 	public long getNonZeros() {
+		return !ubNnz ? nonZero : -1;
+	}
+	
+	public void setNonZerosBound(long nnz) {
+		ubNnz = true;
+		nonZero = nnz;
+	}
+	
+	public long getNonZerosBound() {
 		return nonZero;
 	}
 	
 	public boolean dimsKnown() {
-		return ( numRows > 0 && numColumns > 0 );
+		return ( numRows >= 0 && numColumns >= 0 );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( numRows > 0 && numColumns > 0 && (!includeNnz || nonZero>=0));
+		return ( numRows >= 0 && numColumns >= 0
+			&& (!includeNnz || nnzKnown()));
 	}
 	
 	public boolean rowsKnown() {
-		return ( numRows > 0 );
+		return ( numRows >= 0 );
 	}
 
 	public boolean colsKnown() {
-		return ( numColumns > 0 );
+		return ( numColumns >= 0 );
 	}
 	
 	public boolean nnzKnown() {
-		return ( nonZero >= 0 );
+		return ( !ubNnz && nonZero >= 0 );
 	}
 	
-	public boolean mightHaveEmptyBlocks() 
-	{
-		long singleBlk =  Math.min(numRows, numRowsPerBlock) 
-				        * Math.min(numColumns, numColumnsPerBlock);
-		return !nnzKnown() || (nonZero < numRows*numColumns - singleBlk);
+	public boolean mightHaveEmptyBlocks() {
+		long singleBlk = Math.max(Math.min(numRows, numRowsPerBlock),1) 
+				* Math.max(Math.min(numColumns, numColumnsPerBlock),1);
+		return !nnzKnown() || numRows==0 || numColumns==0
+			|| (nonZero < numRows*numColumns - singleBlk);
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
@@ -375,8 +394,11 @@ public class MatrixCharacteristics implements Serializable
 				dimOut.set(mc1);	
 			}
 		}
+		else if( ins instanceof TernaryInstruction ) {
+			dimOut.set(dims.get(ins.getInputIndexes()[0]));
+		}
 		else if (ins instanceof CombineTernaryInstruction ) {
-			TernaryInstruction realIns=(TernaryInstruction)ins;
+			CtableInstruction realIns=(CtableInstruction)ins;
 			dimOut.set(dims.get(realIns.input1));
 		}
 		else if (ins instanceof CombineUnaryInstruction ) {
@@ -392,8 +414,8 @@ public class MatrixCharacteristics implements Serializable
 			MatrixCharacteristics dimIn = dims.get(realIns.input);
 			realIns.computeOutputCharacteristics(dimIn, dimOut);
 		}
-		else if (ins instanceof TernaryInstruction) {
-			TernaryInstruction realIns = (TernaryInstruction)ins;
+		else if (ins instanceof CtableInstruction) {
+			CtableInstruction realIns = (CtableInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
 			dimOut.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
@@ -409,24 +431,20 @@ public class MatrixCharacteristics implements Serializable
 	}
 
 	@Override
-	public boolean equals (Object anObject)
-	{
-		if (anObject instanceof MatrixCharacteristics)
-		{
-			MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
-			return ((numRows == mc.numRows) && 
-					(numColumns == mc.numColumns) && 
-					(numRowsPerBlock == mc.numRowsPerBlock) && 
-					(numColumnsPerBlock == mc.numColumnsPerBlock) && 
-					(nonZero == mc.nonZero)) ;
-		}
-		else
+	public boolean equals (Object anObject) {
+		if( !(anObject instanceof MatrixCharacteristics) )
 			return false;
+		MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
+		return ((numRows == mc.numRows)
+			&& (numColumns == mc.numColumns)
+			&& (numRowsPerBlock == mc.numRowsPerBlock)
+			&& (numColumnsPerBlock == mc.numColumnsPerBlock)
+			&& (nonZero == mc.nonZero));
 	}
 	
 	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
+	public int hashCode() {
+		return Arrays.hashCode(new long[]{numRows,numColumns,
+			numRowsPerBlock,numColumnsPerBlock,nonZero});
 	}
 }

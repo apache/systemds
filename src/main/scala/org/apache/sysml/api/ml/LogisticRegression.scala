@@ -59,6 +59,11 @@ class LogisticRegression(override val uid: String, val sc: SparkContext)
     val that = new LogisticRegression(uid, sc)
     copyValues(that, extra)
   }
+  
+  def fit(X_file: String, y_file: String): LogisticRegressionModel = {
+    mloutput = baseFit(X_file, y_file, sc)
+    new LogisticRegressionModel(this)
+  }
 
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LogisticRegressionModel = {
@@ -116,7 +121,9 @@ class LogisticRegressionModel(override val uid: String)(estimator: LogisticRegre
   def modelVariables(): List[String]         = List[String]("B_out")
 
   def transform(X: MatrixBlock): MatrixBlock               = baseTransform(X, sc, "means")
+  def transform(X: String): String                         = baseTransform(X, sc, "means")
   def transform_probability(X: MatrixBlock): MatrixBlock   = baseTransformProbability(X, sc, "means")
+  def transform_probability(X: String): String             = baseTransformProbability(X, sc, "means")
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "means")
 }
 

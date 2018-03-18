@@ -95,7 +95,7 @@ public interface CacheBlock extends Writable
 	 * @return sub-block of cache block
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
+	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) 
 		throws DMLRuntimeException;
 	
 	/**

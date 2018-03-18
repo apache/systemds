@@ -30,25 +30,23 @@ public class AggregateTernaryOperator extends Operator implements Serializable
 {
 	private static final long serialVersionUID = 4251745081160216784L;
 	
-	public ValueFunction binaryFn;
-	public AggregateOperator aggOp;
-	public IndexFunction indexFn;
-	private int k; //num threads
+	public final ValueFunction binaryFn;
+	public final AggregateOperator aggOp;
+	public final IndexFunction indexFn;
+	private final int k; //num threads
 	
 	public AggregateTernaryOperator(ValueFunction inner, AggregateOperator outer, IndexFunction ixfun) {
 		//default degree of parallelism is 1 (e.g., for distributed operations)
 		this( inner, outer, ixfun, 1 );
 	}
 	
-	public AggregateTernaryOperator(ValueFunction inner, AggregateOperator outer, IndexFunction ixfun, int numThreads)
-	{
+	public AggregateTernaryOperator(ValueFunction inner, AggregateOperator outer, IndexFunction ixfun, int numThreads) {
+		//so far we only support sum-product and its sparse-safe
+		super(true);
 		binaryFn = inner;
 		aggOp = outer;
 		indexFn = ixfun;
 		k = numThreads;
-		
-		//so far we only support sum-product and its sparse-safe
-		sparseSafe = true;
 	}
 	
 	public int getNumThreads() {

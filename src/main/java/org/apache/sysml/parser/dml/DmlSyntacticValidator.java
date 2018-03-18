@@ -62,6 +62,7 @@ import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
+import org.apache.sysml.parser.dml.DmlParser.AccumulatorAssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
@@ -118,7 +119,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		super(errorListener, argVals, sourceNamespace, prepFunctions);
 	}
-	
+
 	@Override public String namespaceResolutionOp() { return "::"; }
 	@Override public String trueStringLiteral() { return "TRUE"; }
 	@Override public String falseStringLiteral() { return "FALSE"; }
@@ -477,6 +478,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		Set<String> printStatements = new  HashSet<>();
 		printStatements.add("print");
 		printStatements.add("stop");
+		printStatements.add("assert");
 
 		Set<String> outputStatements = new HashSet<>();
 		outputStatements.add("write");
@@ -490,9 +492,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-		
+
 		castAsScalarDeprecationCheck(functionName, ctx);
-		
+
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
@@ -517,7 +519,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String functionName = names[1];
 
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-
 		castAsScalarDeprecationCheck(functionName, ctx);
 
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);
@@ -528,15 +529,14 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			functionName = convertedSyntax.functionName;
 			paramExpression = convertedSyntax.paramExpression;
 		}
-		final ExpressionInfo info = ctx.info;
-		Action f = new Action() {
-			@Override public void execute(Expression e) { info.expr = e; }
-		};
-		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-		if (validBIF)
+		
+		// handle built-in functions
+		ctx.info.expr = buildForBuiltInFunction(ctx, functionName, paramExpression);
+		if( ctx.info.expr != null )
 			return;
-
-		notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
+		
+		// handle user-defined functions
+		ctx.info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
 	}
 
 
@@ -578,13 +578,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 
 		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
-			final FunctionCallMultiAssignmentStatementContext fctx = ctx;
-			Action f = new Action() {
-				@Override public void execute(Expression e) { setMultiAssignmentStatement(targetList, e, fctx, fctx.info); }
-			};
-			boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-			if (validBIF)
+			Expression e = buildForBuiltInFunction(ctx, functionName, paramExpression);
+			if( e != null ) {
+				setMultiAssignmentStatement(targetList, e, ctx, ctx.info);
 				return;
+			}
 		}
 
 		// Override default namespace for imported non-built-in function
@@ -715,7 +713,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			
+
 			//check and assign data type
 			checkValidDataType(dataType, paramCtx.start);
 			if( dataType.equalsIgnoreCase("matrix") )
@@ -921,6 +919,19 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	}
 
 	@Override
+	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {
+		if(ctx.targetList == null) {
+			notifyErrorListeners("incorrect parsing for accumulator assignment", ctx.start);
+			return;
+		}
+		//process as default assignment statement
+		exitAssignmentStatementHelper(ctx, ctx.targetList.getText(),
+			ctx.targetList.dataInfo, ctx.targetList.start, ctx.source.info, ctx.info);
+		//mark as accumulator
+		((AssignmentStatement)ctx.info.stmt).setAccumulator(true);
+	}
+	
+	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
 		checkValidDataType(ctx.ID().getText(), ctx.start);
 	}
@@ -954,6 +965,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override public void enterIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {}
 
+	@Override public void enterAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {}
+	
 	@Override public void enterConstStringIdExpression(ConstStringIdExpressionContext ctx) {}
 
 	@Override public void enterConstTrueExpression(ConstTrueExpressionContext ctx) {}

@@ -20,9 +20,6 @@
 package org.apache.sysml.runtime.util;
 
 import java.util.Arrays;
-import java.util.Random;
-
-import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -35,20 +32,32 @@ public class SortUtils
 	public static boolean isSorted(int start, int end, int[] indexes) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-    		ret &= (indexes[i]<indexes[i-1]);
+			ret &= (indexes[i]<indexes[i-1]);
 		return ret;
 	}
 
 	public static boolean isSorted(int start, int end, double[] values) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-    		ret &= (values[i]<values[i-1]);
+			ret &= (values[i]<values[i-1]);
 		return ret;
 	}
 	
 	public static boolean isSorted(MatrixBlock in) {
 		return in.isInSparseFormat() ? false : !in.isAllocated() ? true :
-			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlock());
+			isSorted(0, in.getNumRows()*in.getNumColumns(), in.getDenseBlockValues());
+	}
+	
+	public static int compare(double[] d1, double[] d2) {
+		if( d1 == null || d2 == null )
+			throw new RuntimeException("Invalid invocation w/ null parameter.");
+		int ret = Long.compare(d1.length, d2.length);
+		if( ret != 0 ) return ret;
+		for(int i=0; i<d1.length; i++) {
+			ret = Double.compare(d1[i], d2[i]);
+			if( ret != 0 ) return ret;
+		}
+		return 0;
 	}
 	
 	/**
@@ -430,30 +439,5 @@ public class SortUtils
         double x = array[a], y = array[b], z = array[c];
         return x < y ? (y < z ? b : (x < z ? c : a)) : (y > z ? b : (x > z ? c
                 : a));
-    }
-    
-
-    public static void main(String[] args)
-    {
-    	int n = 10000000;
-    	int[] indexes = new int[n];
-    	double[] values = new double[n];
-    	Random rand = new Random();
-    	for( int i=0; i<n; i++ )
-    	{
-    		indexes[i] = rand.nextInt();
-    		values[i] = rand.nextDouble();
-    	}
-    	
-    	System.out.println("Running quicksort test ...");
-    	Timing time = new Timing();
-    	
-    	time.start();   	
-    	SortUtils.sortByIndex(0, indexes.length, indexes, values);    	
-    	System.out.println("quicksort n="+n+" in "+time.stop()+"ms.");
-    	
-    	time.start();   	
-    	boolean flag = SortUtils.isSorted(0, indexes.length, indexes);
-    	System.out.println("check sorted n="+n+" in "+time.stop()+"ms, "+flag+".");
     }
 }

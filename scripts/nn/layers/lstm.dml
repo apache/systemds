@@ -70,15 +70,17 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
    */
   N = nrow(X)
   M = as.integer(ncol(W)/4)
+  N1 = nrow(out0)
+  if(N < N1) {
+    # Allow for smaller out0 for last batch
+    out0 = out0[1:N,]
+    c0 = c0[1:N,]
+  }
   out_prev = out0
   c_prev = c0
   c = c_prev
-  if (return_sequences) {
-    out = matrix(0, rows=N, cols=T*M)
-  }
-  else {
-    out = matrix(0, rows=N, cols=M)
-  }
+  out = matrix(0, rows=N, cols=ifelse(return_sequences,T*M, M))
+  
   # caches to be used during the backward pass for performance
   cache_out = matrix(0, rows=T, cols=N*M)
   cache_c = matrix(0, rows=T, cols=N*M)
@@ -88,15 +90,12 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
     input = cbind(X_t, out_prev)  # shape (N, D+M)
     ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-    tmp = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
-    ifog[,1:3*M] = tmp
-    tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
-    ifog[,3*M+1:4*M] = tmp
+    ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+    ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
     # c_t = f*prev_c + i*g
     c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
     # out_t = o*tanh(c)
-    tmp = tanh::forward(c)
-    out_t = ifog[,2*M+1:3*M] * tmp  # shape (N, M)
+    out_t = ifog[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
 
     # store
     if (return_sequences) {
@@ -161,6 +160,13 @@ backward = function(matrix[double] dout, matrix[double] dc,
    */
   N = nrow(X)
   M = as.integer(ncol(W)/4)
+  N1 = nrow(out0)
+  if(N != N1) {
+    # Allow for smaller out0 for last batch 
+    # out0 = out0[1:N,]
+    # c0 = c0[1:N,]
+    stop("Unsupported operation: The batch size of previous iteration " + N1 + " is different than the batch size of current iteration " + N)
+  }
   dX = matrix(0, rows=N, cols=T*D)
   dW = matrix(0, rows=D+M, cols=4*M)
   db = matrix(0, rows=1, cols=4*M)
@@ -193,10 +199,8 @@ backward = function(matrix[double] dout, matrix[double] dc,
     o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
     g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
 
-    tmp = tanh::backward(dout_t, ct)
-    dct = dct + o*tmp  # shape (N, M)
-    tmp = tanh::forward(ct)
-    do = tmp * dout_t  # output gate, shape (N, M)
+    dct = dct + o*tanh::backward(dout_t, ct)  # shape (N, M)
+    do = tanh::forward(ct) * dout_t  # output gate, shape (N, M)
     df = c_prev * dct  # forget gate, shape (N, M)
     dc_prev = f * dct  # shape (N, M)
     di = g * dct  # input gate, shape (N, M)
@@ -206,7 +210,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
     df_raw = f * (1-f) * df
     do_raw = o * (1-o) * do
     dg_raw = (1-g^2) * dg
-    difog_raw = cbind(di_raw, cbind(df_raw, cbind(do_raw, dg_raw)))  # shape (N, 4M)
+    difog_raw = cbind(di_raw, df_raw, do_raw, dg_raw)  # shape (N, 4M)
 
     dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
     db = db + colSums(difog_raw)  # shape (1, 4M)

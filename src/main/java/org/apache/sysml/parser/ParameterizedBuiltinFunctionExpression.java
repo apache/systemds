@@ -23,10 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 
@@ -444,15 +447,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			orderby = new IntIdentifier(1);
 			addVarParam("by", orderby);
 		}
-		else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
-			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
+		else if( orderby !=null && !(orderby.getOutput().getDataType().isScalar() 
+			|| orderby.getOutput().getDataType().isMatrix()) ) {
+			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, use a scalar or row vector to specify column indexes.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
 		
 		Expression decreasing = getVarParam("decreasing"); //[OPTIONAL] DECREASING
 		if( decreasing == null ) { //default: ascending
 			addVarParam("decreasing", new BooleanIdentifier(false));
 		}
-		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){				
+		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
@@ -461,7 +465,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			indexreturn = new BooleanIdentifier(false);
 			addVarParam("index.return", indexreturn);
 		}
-		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
+		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
@@ -475,6 +479,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	private void validateRemoveEmpty(DataIdentifier output, boolean conditional) throws LanguageException {
+		
+		//check for invalid parameters
+		Set<String> valid = UtilFunctions.asSet("target", "margin", "select", "empty.return");
+		Set<String> invalid = _varParams.keySet().stream()
+			.filter(k -> !valid.contains(k)).collect(Collectors.toSet());
+		if( !invalid.isEmpty() )
+			raiseValidateError("Invalid parameters for removeEmpty: "
+				+ Arrays.toString(invalid.toArray(new String[0])), false);
+		
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target");
 		if( target==null ) {
@@ -497,11 +510,18 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Index matrix 'select' is of type '"+select.getOutput().getDataType()+"'. Please specify the select matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
+		Expression empty = getVarParam("empty.return");
+		if( empty!=null && (!empty.getOutput().getDataType().isScalar() || empty.getOutput().getValueType() != ValueType.BOOLEAN) ){
+			raiseValidateError("Boolean parameter 'empty.return' is of type "+empty.getOutput().getDataType()
+				+"["+empty.getOutput().getValueType()+"].", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		if( empty == null ) //default handling
+			_varParams.put("empty.return", new BooleanIdentifier(true));
+		
 		// Output is a matrix with unknown dims
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.DOUBLE);
 		output.setDimensions(-1, -1);
-		
 	}
 	
 	private void validateGroupedAgg(DataIdentifier output, boolean conditional) 

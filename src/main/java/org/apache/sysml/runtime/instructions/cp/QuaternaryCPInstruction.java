@@ -29,19 +29,17 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 
 public class QuaternaryCPInstruction extends ComputationCPInstruction {
 
-	private CPOperand input4 = null;
-	private int _numThreads = -1;
+	private final CPOperand input4;
+	private final int _numThreads;
 
 	private QuaternaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 			CPOperand out, int k, String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-
+		super(CPType.Quaternary, op, in1, in2, in3, out, opcode, istr);
 		input4 = in4;
 		_numThreads = k;
 	}
@@ -123,7 +121,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 		}
 		
 		//core execute
-		MatrixValue out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
+		MatrixBlock out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
 		
 		//release inputs and output
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
@@ -135,14 +133,14 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 				if (input4.getDataType() == DataType.MATRIX) {
 					ec.releaseMatrixInput(input4.getName(), getExtendedOpcode());
 				}
-			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
+			ec.setVariable(output.getName(), new DoubleObject(out.quickGetValue(0, 0)));
 		}
 		else { //wsigmoid / wdivmm / wumm
 			if( qop.wtype3 != null && qop.wtype3.hasFourInputs() )
 				if (input4.getDataType() == DataType.MATRIX) {
 					ec.releaseMatrixInput(input4.getName(), getExtendedOpcode());
 				}
-			ec.setMatrixOutput(output.getName(), (MatrixBlock)out, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 		}
 	}	
 }

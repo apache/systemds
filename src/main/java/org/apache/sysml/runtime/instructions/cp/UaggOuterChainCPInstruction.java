@@ -33,19 +33,14 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
-	// operators
-	private AggregateUnaryOperator _uaggOp = null;
-	private BinaryOperator _bOp = null;
+	private final AggregateUnaryOperator _uaggOp;
+	private final BinaryOperator _bOp;
 
 	private UaggOuterChainCPInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop,
 			CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(bop, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.UaggOuterChain;
-
+		super(CPType.UaggOuterChain, bop, in1, in2, out, opcode, istr);
 		_uaggOp = uaggop;
 		_bOp = bop;
-
-		instString = istr;
 	}
 
 	public static UaggOuterChainCPInstruction parseInstruction(String str)
@@ -110,7 +105,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 			//create and set output scalar
 			ScalarObject ret = null;
 			switch( output.getValueType() ) {
-				case DOUBLE:  ret = new DoubleObject(output_name, mbOut.quickGetValue(0, 0)); break;
+				case DOUBLE:  ret = new DoubleObject(mbOut.quickGetValue(0, 0)); break;
 				
 				default: 
 					throw new DMLRuntimeException("Invalid output value type: "+output.getValueType());

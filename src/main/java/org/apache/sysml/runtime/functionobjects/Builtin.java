@@ -49,7 +49,9 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP }
+	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
+		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX,
+		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, EVAL }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -79,6 +81,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
 		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
 		String2BuiltinCode.put( "printf"  , BuiltinCode.PRINTF);
+		String2BuiltinCode.put( "eval"  , BuiltinCode.EVAL);
 		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
 		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
 		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
@@ -93,7 +96,6 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "inverse", BuiltinCode.INVERSE);
 		String2BuiltinCode.put( "sprop",   BuiltinCode.SPROP);
 		String2BuiltinCode.put( "sigmoid", BuiltinCode.SIGMOID);
-		String2BuiltinCode.put( "sel+",    BuiltinCode.SELP);
 	}
 	
 	// We should create one object for every builtin function that we support
@@ -102,7 +104,7 @@ public class Builtin extends ValueFunction
 	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
-	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
+	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null;
 	
 	private Builtin(BuiltinCode bf) {
 		bFunc = bf;
@@ -111,9 +113,16 @@ public class Builtin extends ValueFunction
 	public BuiltinCode getBuiltinCode() {
 		return bFunc;
 	}
+	
+	public static boolean isBuiltinCode(ValueFunction fn, BuiltinCode code) {
+		return (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode() == code);
+	}
 
-	public static Builtin getBuiltinFnObject (String str) 
-	{
+	public static boolean isBuiltinFnObject(String str) {
+		return String2BuiltinCode.containsKey(str);
+	}
+	
+	public static Builtin getBuiltinFnObject(String str) {
 		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}
@@ -274,12 +283,7 @@ public class Builtin extends ValueFunction
 			if ( sigmoidObj == null )
 				sigmoidObj = new Builtin(BuiltinCode.SIGMOID);
 			return sigmoidObj;
-		
-		case SELP:
-			if ( selpObj == null )
-				selpObj = new Builtin(BuiltinCode.SELP);
-			return selpObj;
-			
+
 		default:
 			// Unknown code --> return null
 			return null;
@@ -327,10 +331,6 @@ public class Builtin extends ValueFunction
 				//sigmoid: 1/(1+exp(-x))
 				return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
 			
-			case SELP:
-				//select positive: x*(x>0)
-				return (in > 0) ? in : 0;
-				
 			default:
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -398,9 +398,7 @@ public class Builtin extends ValueFunction
 			return (Math.log(in1)/Math.log(in2)); 
 		case LOG_NZ:
 			//faster in Math
-			return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
-		
-			
+			return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2));
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -415,7 +413,7 @@ public class Builtin extends ValueFunction
 	 */
 	public double execute2(double in1, double in2) 
 	{
-		switch(bFunc) {		
+		switch(bFunc) {
 			case MAX:
 			case CUMMAX:
 				//return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
@@ -425,10 +423,9 @@ public class Builtin extends ValueFunction
 				//return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
 				return (in1 <= in2 ? in1 : in2);
 			case MAXINDEX: 
-				return (in1 >= in2) ? 1 : 0;	
+				return (in1 >= in2) ? 1 : 0;
 			case MININDEX: 
-				return (in1 <= in2) ? 1 : 0;	
-				
+				return (in1 <= in2) ? 1 : 0;
 			default:
 				// For performance reasons, avoid throwing an exception 
 				return -1;
@@ -454,9 +451,7 @@ public class Builtin extends ValueFunction
 		case LOG_NZ:
 			//faster in Math
 			return (in1==0) ? 0 : Math.log(in1)/Math.log(in2);
-		
-				
-		
+
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}

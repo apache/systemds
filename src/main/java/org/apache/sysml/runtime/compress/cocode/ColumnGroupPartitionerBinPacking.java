@@ -87,12 +87,12 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 					assigned = true; break;
 				}
 			}
-				
+			
 			//create new bin at end of list
 			if( !assigned ) {
 				bins.add(new ArrayList<>(Arrays.asList(items[i])));
 				binWeights.add(BIN_CAPACITY-itemWeights[i]);
-			}		
+			}
 		}
 		
 		return bins;

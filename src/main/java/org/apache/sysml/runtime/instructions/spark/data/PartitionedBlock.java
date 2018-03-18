@@ -82,7 +82,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 			for( int i=0, ix=0; i<nrblks; i++ )
 				for( int j=0; j<ncblks; j++, ix++ ) {
 					T tmp = (T) CacheBlockFactory.newInstance(code);
-					block.sliceOperations(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
+					block.slice(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
 							           j*_bclen, Math.min((j+1)*_bclen, clen)-1, tmp);
 					_partBlocks[ix] = tmp;
 				}
@@ -215,7 +215,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unchecked")
-	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
+	public T slice(long rl, long ru, long cl, long cu, T block) 
 		throws DMLRuntimeException 
 	{
 		int lrl = (int) rl;

@@ -21,11 +21,13 @@
 package org.apache.sysml.runtime.matrix.operators;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 
 /**
  * Scalar operator for scalar-matrix operations with scalar 
@@ -37,21 +39,17 @@ public class LeftScalarOperator extends ScalarOperator
 	private static final long serialVersionUID = 2360577666575746424L;
 	
 	public LeftScalarOperator(ValueFunction p, double cst) {
-		super(p, cst);
+		super(p, cst, (p instanceof GreaterThan && cst<=0)
+			|| (p instanceof GreaterThanEquals && cst<0)
+			|| (p instanceof LessThan && cst>=0)
+			|| (p instanceof LessThanEquals && cst>0)
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MAX) && cst<=0)
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0));
 	}
 	
 	@Override
-	public void setConstant(double cst) 
-	{
-		//overwrites constant and sparse safe flag
-		super.setConstant(cst);
-		
-		//enable conditionally sparse safe operations
-		sparseSafe |= ( isSparseSafeStatic()
-			|| (fn instanceof GreaterThan && _constant<=0)
-			|| (fn instanceof GreaterThanEquals && _constant<0)
-			|| (fn instanceof LessThan && _constant>=0)
-			|| (fn instanceof LessThanEquals && _constant>0));
+	public ScalarOperator setConstant(double cst) {
+		return new LeftScalarOperator(fn, cst);
 	}
 
 	@Override

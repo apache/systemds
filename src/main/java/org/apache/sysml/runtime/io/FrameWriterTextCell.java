@@ -128,12 +128,11 @@ public class FrameWriterTextCell extends FrameWriter
 			}
 	
 			//handle empty result
-			if ( !entriesWritten ) {
-				br.write("1 1 0\n");
-			}
+			if ( !entriesWritten )
+				br.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(br);
-		}		
+		}
 	}
 }

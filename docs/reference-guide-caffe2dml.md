@@ -97,7 +97,7 @@ Invokes [nn/layers/max_pool2d_builtin.dml](https://github.com/apache/systemml/bl
 - kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
 
 **Optional Parameters:**
-- pool (default MAX): the pooling method. Currently, we only support MAX, not AVE, or STOCHASTIC.
+- pool (default MAX): the pooling method. Currently, we only support MAX and AVE, not STOCHASTIC.
 - pad (or pad_h and pad_w) (default 0): specifies the number of pixels to (implicitly) add to each side of the input
 - stride (or stride_h and stride_w) (default 1): specifies the intervals at which to apply the filters to the input
 
@@ -115,6 +115,30 @@ layer {
   }
 }
 ```
+
+
+### Upsampling Layer
+
+Invokes [nn/layers/upsample2d.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/upsample2d.dml) layer.
+ 
+**Required Parameters:**
+
+- size_h and size_w: specifies the upsampling factor for rows and columns.
+
+**Sample Usage:**
+```
+layer {
+  name: "upsample1"
+  type: "Upsample"
+  bottom: "pool1"
+  top: "upsample1"
+  upsample_param  {
+    size_h = 2
+    size_w = 2
+  }
+}
+```
+
 
 ### Deconvolution Layer
 
@@ -168,6 +192,61 @@ layer {
 }
 ```
 
+## Recurrent Layers
+
+### RNN Layer
+
+In a simple RNN, the output of the previous timestep is fed back in as an additional input at the current timestep.
+
+Invokes [nn/layers/rnn.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/rnn.dml) layer.
+
+**Required Parameters:**
+
+- num_output: number of output
+- return_sequences: Whether to return output at all timesteps, or just for the final timestep.
+
+**Sample Usage:**
+```
+layer {
+        top: "rnn_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "RNN"
+        name: "rnn_1"
+        bottom: "rnn_1_input"
+}
+```
+
+### LSTM Layer
+
+In an LSTM, an internal cell state is maintained, additive
+interactions operate over the cell state at each timestep, and
+some amount of this cell state is exposed as output at each
+timestep.  Additionally, the output of the previous timestep is fed
+back in as an additional input at the current timestep.
+   
+Invokes [nn/layers/lstm.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/lstm.dml) layer.
+
+**Required Parameters:**
+
+- num_output: number of output
+- return_sequences: Whether to return output at all timesteps, or just for the final timestep.
+
+**Sample Usage:**
+```
+layer {
+        top: "lstm_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "LSTM"
+        name: "lstm_1"
+        bottom: "lstm_1_input"
+}
+```
 
 ## Common Layers
 
@@ -523,7 +602,34 @@ The parameter `lr_policy` specifies the learning rate decay policy. Caffe2DML su
 - `inv`: return `base_lr * (1 + gamma * iter) ^ (- power)`
 - `poly`: the effective learning rate follows a polynomial decay, to be zero by the max_iter. return `base_lr (1 - iter/max_iter) ^ (power)`
 - `sigmoid`: the effective learning rate follows a sigmod decay return b`ase_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))`
-      
+
+
+The parameters `base_lr` and  `lr_policy` are required and other parameters are optional:
+```
+lr_policy: "step" # learning rate policy: drop the learning rate in "steps"
+                  # by a factor of gamma every stepsize iterations (required)
+base_lr: 0.01     # begin training at a learning rate of 0.01 (required)
+gamma: 0.95       # drop the learning rate by the given factor (optional, default value: 0.95)
+stepsize: 100000  # drop the learning rate every 100K iterations (optional, default value: 100000)
+power: 0.75       # (optional, default value: 0.75)
+``` 
+
+#### How do I regularize weight matrices in the neural network ?
+
+The user can specify the type of regularization using the parameter `regularization_type` in the solver file.
+The valid values are `L2` (default) and `L1`.
+Caffe2DML then invokes the backward function of the layers `nn/layers/l2_reg.dml` and `nn/layers/l1_reg.dml` respectively.
+The regularation strength is set using the property `weight_decay` in the solver file:
+```
+regularization_type: "L2"
+weight_decay: 5e-4
+```
+
+Like learning rate, you can customize the regularation strength of a given layer by specifying the property `decay_mult` in the network file:
+```
+param { lr_mult: 1 decay_mult: 1 }
+```  
+
 #### How to set batch size ?
 
 Batch size is set in `data_param` of the Data layer:

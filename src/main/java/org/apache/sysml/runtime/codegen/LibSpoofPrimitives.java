@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.codegen;
 import java.util.Arrays;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.runtime.functionobjects.BitwAnd;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
@@ -37,6 +38,7 @@ public class LibSpoofPrimitives
 {
 	private static IntegerDivide intDiv = IntegerDivide.getFnObject();
 	private static Modulus mod = Modulus.getFnObject();
+	private static BitwAnd bwAnd = BitwAnd.getBitwAndFnObject();
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
@@ -118,6 +120,19 @@ public class LibSpoofPrimitives
 		}
 	}
 	
+	public static void vectOuterMultAdd(double[] a, double[] b, double[] c, int ai, int[] bix, int bi, int ci, int blen, int len1, int len2) {
+		if( isFlipOuter(len1, len2) ) {
+			for( int i=bi; i<bi+blen; i++ ) {
+				final int cix = ci + bix[i] * len1;
+				LibMatrixMult.vectMultiplyAdd(b[i], a, c, ai, cix, len1);
+			}
+		}
+		else {
+			for( int i=0, cix=ci; i < len1; i++, cix+=len2 )
+				LibMatrixMult.vectMultiplyAdd(a[ai+i], b, c, bix, bi, cix, blen);
+		}
+	}
+	
 	public static void vectMultAdd(double[] a, double bval, double[] c, int bi, int ci, int len) {
 		if( a == null || bval == 0 ) return;
 		LibMatrixMult.vectMultiplyAdd(bval, a, c, bi, ci, len);
@@ -193,30 +208,53 @@ public class LibSpoofPrimitives
 		System.arraycopy(a, 0, c, ci, len);
 	}
 	
+	public static void vectWrite(double[] a, double[] c, int ai, int ci, int len) {
+		if( a == null ) return;
+		System.arraycopy(a, ai, c, ci, len);
+	}
+	
 	public static void vectWrite(boolean[] a, boolean[] c, int[] aix) {
 		if( a == null ) return;
 		for( int i=0; i<aix.length; i++ )
 			c[aix[i]] = a[i];
 	}
 	
+	public static void vectWrite(boolean[] a, boolean[] c, int[] aix, int ai, int ci, int alen) {
+		if( a == null ) return;
+		for( int i=ai; i<ai+alen; i++ )
+			c[ci+aix[i]] = a[i];
+	}
+	
 	// cbind handling
 	
-	public static double[] vectCBindWrite(double a, double b) {
+	public static double[] vectCbindAdd(double[] a, double b, double[] c, int ai, int ci, int len) {
+		LibMatrixMult.vectAdd(a, c, ai, ci, len);
+		c[ci+len] += b;
+		return c;
+	}
+	
+	public static double[] vectCbindAdd(double[] a, double b, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		LibMatrixMult.vectAdd(a, c, aix, ai, ci, alen);
+		c[ci+len] += b;
+		return c;
+	}
+	
+	public static double[] vectCbindWrite(double a, double b) {
 		double[] c = allocVector(2, false);
 		c[0] = a;
 		c[1] = b;
 		return c;
 	}
 	
-	public static double[] vectCBindWrite(double[] a, double b, int aix, int len) {
+	public static double[] vectCbindWrite(double[] a, double b, int aix, int len) {
 		double[] c = allocVector(len+1, false);
 		System.arraycopy(a, aix, c, 0, len);
 		c[len] = b;
 		return c;
 	}
 	
-	public static double[] vectCBindWrite(double[] a, double b, int[] aix, int ai, int alen, int len) {
-		double[] c = allocVector(len+1, false);
+	public static double[] vectCbindWrite(double[] a, double b, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len+1, true);
 		for( int j = ai; j < ai+alen; j++ )
 			c[aix[j]] = a[j];
 		c[len] = b;
@@ -257,8 +295,16 @@ public class LibSpoofPrimitives
 		return vectSum(avals, ai, alen);
 	}
 	
+	public static double vectSumsq(double[] a, int ai, int len) { 
+		return LibMatrixMult.dotProduct(a, a, ai, ai, len);
+	}
+	
+	public static double vectSumsq(double[] avals, int[] aix, int ai, int alen, int len) {
+		return LibMatrixMult.dotProduct(avals, avals, ai, ai, alen);
+	}
+	
 	public static double vectMin(double[] a, int ai, int len) { 
-		double val = Double.MAX_VALUE;
+		double val = Double.POSITIVE_INFINITY;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.min(a[i], val);
 		return val; 
@@ -270,7 +316,7 @@ public class LibSpoofPrimitives
 	}
 	
 	public static double vectMax(double[] a, int ai, int len) { 
-		double val = -Double.MAX_VALUE;
+		double val = Double.NEGATIVE_INFINITY;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.max(a[i], val);
 		return val; 
@@ -516,9 +562,88 @@ public class LibSpoofPrimitives
 		//invariant to the ordering of inputs
 		return vectPlusWrite(b, a, bix, bi, ai, blen, len);
 	}
-	
+
+	//custom vector xor
+	/**
+	 * Computes c = xor(A,B)
+	 *
+	 * @param a dense input vector A
+	 * @param bval scalar value
+	 * @param c resultant vector
+	 * @param ai start position in A
+	 * @param ci index of c
+	 * @param len number of processed elements
+	 */
+	public static void vectXorAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+	}
+
+	public static void vectXorAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+		vectXorAdd(a, bval, c, ai, ci, len);
+	}
+
+	public static void vectXorAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += ( (a[j] != 0) != (bval != 0) ) ? 1 : 0;
+	}
+
+	public static void vectXorAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		vectXorAdd(a, bval, c, aix, ai, ci, alen, len);
+	}
+
+	//1. scalar vs. dense vector
+	public static double[] vectXorWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++)
+			c[j] = ( ( a[ai+j] != 0) != (bval != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//2. dense vector vs. scalar
+	public static double[] vectXorWrite(double bval, double[] a, int ai, int len) {
+		return vectXorWrite(a, bval, ai, len);
+	}
+
+	//3. dense vector vs. dense vector
+	public static double[] vectXorWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++)
+			c[j] = ( (a[ai + j] != 0) != (b[bi + j] != 0) ) ? 1 : 0;
+		return c;
+	}
+
+	//4. sparse vector vs scalar
+	public static double[] vectXorWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
+		double init = (bval != 0) ? 1 : 0;
+		double[] c = allocVector(len, true, init);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = (a[j] != 0) ? 0 : 1;
+		return c;
+	}
+
+	//5. scalar vs. sparse vector
+	public static double[] vectXorWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
+		return vectXorWrite(a, bval, aix, ai, alen, len);
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectXorWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = (b[bi+j] != 0) ? 1 : 0;
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = ( ( a[j] != 0) != (c[aix[j]] != 0) )? 1 : 0;
+		return c;
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectXorWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		return vectXorWrite(a, b, aix, ai, bi, alen, len);
+	}
+
 	//custom vector pow
-	
+
 	public static void vectPowAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += Math.pow(a[j], bval);
@@ -530,15 +655,16 @@ public class LibSpoofPrimitives
 	}
 
 	public static void vectPowAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
-		if( bval == 0 ) //handle 0^0=1
+		if( bval == 0 ) //handle 0^0=1 & a^0=1
 			for( int j=0; j<len; j++ )
 				c[ci + j] += 1;
-		for( int j = ai; j < ai+alen; j++ )
-			c[ci + aix[j]] += Math.pow(a[j], bval) - 1;
+		else //handle 0^b=0 & a^b
+			for( int j = ai; j < ai+alen; j++ )
+				c[ci + aix[j]] += Math.pow(a[j], bval);
 	}
 	
 	public static void vectPowAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
-		for( int j=0; j<len; j++ )
+		for( int j=0; j<len; j++ ) //handle 0^0=1 & b^0=1
 			c[ci + j] += 1;
 		for( int j = ai; j < ai+alen; j++ )
 			c[ci + aix[j]] += Math.pow(bval, a[j]) - 1;
@@ -1372,6 +1498,58 @@ public class LibSpoofPrimitives
 			c[aix[j]] = Math.sqrt(a[j]);
 		return c;
 	}
+
+	//custom sprop
+	
+	public static void vectSpropAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] += a[j] * (1 - a[j]);
+	}
+
+	public static void vectSpropAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += a[j] * (1 - a[j]);
+	}
+	
+	public static double[] vectSpropWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = a[j] * (1 - a[j]);
+		return c;
+	}
+
+	public static double[] vectSpropWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = a[j] * (1 - a[j]);
+		return c;
+	}
+	
+	//custom sigmoid
+	
+	public static void vectSigmoidAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  1 / (1 + FastMath.exp(-a[j]));
+	}
+
+	public static void vectSigmoidAdd(double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+		for( int j = ai; j < ai+alen; j++ )
+			c[ci + aix[j]] += 1 / (1 + FastMath.exp(-a[j]));
+	}
+	
+	public static double[] vectSigmoidWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = 1 / (1 + FastMath.exp(-a[j]));
+		return c;
+	}
+
+	public static double[] vectSigmoidWrite(double[] a, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true, 0.5); //sigmoid(0) = 0.5
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = 1 / (1 + FastMath.exp(-a[j]));
+		return c;
+	}
 	
 	//custom vector equal
 	
@@ -1781,7 +1959,57 @@ public class LibSpoofPrimitives
 		//invariant to the ordering of inputs
 		return vectLessWrite(b, a, bix, bi, ai, blen, len);
 	}
+
+	//bitwise and
 	
+	//1. dense vector vs. scalar
+	public static double[] vectBitwandWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = bwAnd(a[ai+j], bval);
+		return c;
+	}
+
+	//2. scalar vs. dense vector
+	public static double[] vectBitwandWrite(double bval, double[] a, int ai, int len) {
+		return vectBitwandWrite(a, bval, ai, len);
+	}
+
+	//3. dense vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c= allocVector(len, false);
+		for( int j = 0; j < len; j++ )
+			c[j] = bwAnd(a[ai+j], b[bi+j]);
+		return c;
+	}
+
+	//4. sparse vector vs. scalar.
+	public static double[] vectBitwandWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
+		double[] c = allocVector(len, true);
+		int bval1 = (int)bval;
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = bwAnd(a[j], bval1);
+		return c;
+	}
+
+	//5. scalar vs. sparse vector
+	public static double[] vectBitwandWrite(double bval, double[] a, int[] aix, int ai, int alen, int len) {
+		return vectBitwandWrite(a, bval, aix, ai, alen, len);
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+alen; j++ )
+			c[aix[j]] = bwAnd(a[j], b[bi+aix[j]]);
+		return c;
+	}
+
+	//6. sparse vector vs. dense vector
+	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
+		return vectBitwandWrite(a, b, aix, ai, bi, alen, len);
+	}
+
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)
 	
@@ -1791,6 +2019,10 @@ public class LibSpoofPrimitives
 	
 	public static double mod(double in1, double in2) {
 		return mod.execute(in1, in2);
+	}
+	
+	public static double bwAnd(double in1, double in2) {
+		return bwAnd.execute(in1, in2);
 	}
 	
 	public static boolean isFlipOuter(int len1, int len2) {
@@ -1813,12 +2045,12 @@ public class LibSpoofPrimitives
 		memPool.remove();
 	}
 	
-	protected static double[] allocVector(int len, boolean reset) {
+	public static double[] allocVector(int len, boolean reset) {
 		return allocVector(len, reset, 0);
 	}
 	
 	protected static double[] allocVector(int len, boolean reset, double resetVal) {
-		VectorBuffer buff = memPool.get(); 
+		VectorBuffer buff = memPool.get();
 		
 		//find next matching vector in ring buffer or
 		//allocate new vector if required
@@ -1837,12 +2069,18 @@ public class LibSpoofPrimitives
 	 * vectors of different sizes are interspersed.
 	 */
 	private static class VectorBuffer {
+		private static final int MAX_SIZE = 512*1024; //4MB
 		private final double[][] _data;
 		private int _pos;
 		private int _len1;
 		private int _len2;
 		
 		public VectorBuffer(int num, int len1, int len2) {
+			//best effort size restriction since large intermediates
+			//not necessarily used (num refers to the total number)
+			len1 = Math.min(len1, MAX_SIZE);
+			len2 = Math.min(len2, MAX_SIZE);
+			//pre-allocate ring buffer
 			int lnum = (len2>0 && len1!=len2) ? 2*num : num;
 			_data = new double[lnum][];
 			for( int i=0; i<num; i++ ) {

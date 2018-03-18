@@ -33,14 +33,12 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 
 	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
+		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(op, in1, in2, in3, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
+		super(CPType.AggregateBinary, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	public static CovarianceCPInstruction parseInstruction( String str ) 
@@ -106,8 +104,6 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		}
 		
 		double val = covobj.getRequiredResult(_optr);
-		DoubleObject ret = new DoubleObject(output_name, val);
-			
-		ec.setScalarOutput(output_name, ret);
+		ec.setScalarOutput(output_name, new DoubleObject(val));
 	}
 }

@@ -288,8 +288,8 @@ public class LibMatrixOuterAgg
 	 * @param outVal output matrix block
 	 * @param uaggOp aggregate unary operator
 	 */
-	public static void resetOutputMatix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, AggregateUnaryOperator uaggOp) 
-	{		
+	public static void resetOutputMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, AggregateUnaryOperator uaggOp) 
+	{
 		if(uaggOp.indexFn instanceof ReduceCol) {
 			outIx.setIndexes(in1Ix.getRowIndex(), 1); 
 			outVal.reset(in1Val.getNumRows(), 2, false);
@@ -396,7 +396,7 @@ public class LibMatrixOuterAgg
 	 */
 	private static void uaRowSumGtLe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
 			throws DMLRuntimeException
-	{		
+	{
 		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
 		int m = in.rlen;
 		
@@ -459,7 +459,7 @@ public class LibMatrixOuterAgg
 	 */
 	private static void uaColSumGtLe(MatrixBlock in1Val, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
 			throws DMLRuntimeException
-	{		
+	{
 		if (in1Val.isInSparseFormat())
 			s_uaColSumGtLe(in1Val, outVal, bv, bOp);
 		else
@@ -870,26 +870,26 @@ public class LibMatrixOuterAgg
 
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
-		if(agg0 != 0.0)
-			out.setNonZeros(out.getNumColumns());
+		if(agg0 != 0.0) {
+			out.getDenseBlock().set(0, 1, 0, out.clen, agg0);
+			out.setNonZeros(out.clen);
+		}
 		
 		if( in.isEmptyBlock(false) )
 			return;
-			
-		SparseBlock sblock = in.getSparseBlock();		
+		
+		SparseBlock sblock = in.getSparseBlock();
 		for( int j = 0; j < sblock.numRows(); j++)
 		if( !sblock.isEmpty(j) ) {
 			int apos = sblock.pos(j);
 			int alen = sblock.size(j);
 			int[] aix = sblock.indexes(j);
 			double [] avals = sblock.values(j);
-			
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumRowSumGtLeColSumLtGe(avals[i], bv, bOp);
 				out.quickSetValue(0, aix[i], cnt);
 			}
-		}		
+		}
 	}
 
 	/**
@@ -927,29 +927,29 @@ public class LibMatrixOuterAgg
 			throws DMLRuntimeException
 	{
 		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
-
+		
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
-		if(agg0 != 0.0)
+		if(agg0 != 0.0) {
+			out.getDenseBlock().set(0, 1, 0, out.clen, agg0);
 			out.setNonZeros(out.getNumColumns());
+		}
 		
 		if( in.isEmptyBlock(false) )
 			return;
-			
-		SparseBlock sblock = in.getSparseBlock();		
+		
+		SparseBlock sblock = in.getSparseBlock();
 		for (int j = 0; j < sblock.numRows(); j++)
 		if( !sblock.isEmpty(j) ) {
 			int apos = sblock.pos(j);
 			int alen = sblock.size(j);
 			int[] aix = sblock.indexes(j);
 			double [] avals = sblock.values(j);
-			
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumRowSumLtGeColSumGtLe(avals[i], bv, bOp);
 				out.quickSetValue(0, aix[i], cnt);
 			}
-		}		
+		}
 	}
 
 	/**
@@ -990,26 +990,26 @@ public class LibMatrixOuterAgg
 
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
-		if(agg0 != 0.0)
+		if(agg0 != 0.0) {
+			out.getDenseBlock().set(0, 1, 0, out.clen, agg0);
 			out.setNonZeros(out.getNumColumns());
+		}
 		
 		if( in.isEmptyBlock(false) )
 			return;
-			
-		SparseBlock sblock = in.getSparseBlock();		
+		
+		SparseBlock sblock = in.getSparseBlock();
 		for (int j = 0; j < sblock.numRows(); j++)
 		if( !sblock.isEmpty(j) ) {
 			int apos = sblock.pos(j);
 			int alen = sblock.size(j);
 			int[] aix = sblock.indexes(j);
 			double [] avals = sblock.values(j);
-			
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumEqNe(avals[i], bv, bOp);
 				out.quickSetValue(0, aix[i], cnt);
 			}
-		}		
+		}
 	}
 
 	

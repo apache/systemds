@@ -23,13 +23,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -71,12 +69,7 @@ public abstract class DataPartitioner
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force )
 		throws DMLRuntimeException
 	{
-		ValueType vt = in.getValueType();
-		String varname = in.getVarName();
-		MatrixObject out = new MatrixObject(vt, fnameNew );
-		out.setDataType( DataType.MATRIX );
-		out.setVarName( varname+NAME_SUFFIX );		
-		
+		MatrixObject out = new MatrixObject(in.getValueType(), fnameNew);
 		return createPartitionedMatrixObject(in, out, force);
 	}
 	
@@ -102,7 +95,7 @@ public abstract class DataPartitioner
 			return in;
 		
 		//analyze input matrix object
-		MatrixFormatMetaData meta = (MatrixFormatMetaData)in.getMetaData();
+		MetaDataFormat meta = (MetaDataFormat)in.getMetaData();
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		InputInfo ii = meta.getInputInfo();
 		OutputInfo oi = meta.getOutputInfo();
@@ -111,7 +104,7 @@ public abstract class DataPartitioner
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		long nonZeros = mc.getNonZeros();
-		double sparsity = (nonZeros>=0 && rows>0 && cols>0)?
+		double sparsity = mc.dimsKnown(true) ?
 				((double)nonZeros)/(rows*cols) : 1.0;
 		
 		if( !force ) //try to optimize, if format not forced
@@ -167,7 +160,7 @@ public abstract class DataPartitioner
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
-		MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,oi,ii);
+		MetaDataFormat metaNew = new MetaDataFormat(mcNew,oi,ii);
 		out.setMetaData(metaNew);	 
 		
 		return out;

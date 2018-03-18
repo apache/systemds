@@ -37,20 +37,19 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
 	protected SparkAggType _aggType = null;
 
-	IndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+	protected IndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
 			CPOperand out, SparkAggType aggtype, String opcode, String istr) {
-		super(op, in, out, opcode, istr);
+		super(SPType.MatrixIndexing, op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
-
 		_aggType = aggtype;
 	}
 
-	IndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl,
+	protected IndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(op, lhsInput, rhsInput, out, opcode, istr);
+		super(SPType.MatrixIndexing, op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;

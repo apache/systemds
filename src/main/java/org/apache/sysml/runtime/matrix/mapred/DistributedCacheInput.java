@@ -34,8 +34,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
 
 public class DistributedCacheInput 
-{	
-	
+{
 	//internal partitioning parameter (threshold and partition size) 
 	public static final long PARTITION_SIZE = 4000000; //32MB
 	//public static final String PARTITION_SUFFIX = "_dp";
@@ -137,7 +136,7 @@ public class DistributedCacheInput
 			
 		//read matrix partition (or entire vector)
 		try 
-		{		
+		{
 			ReaderBinaryBlock reader = (ReaderBinaryBlock) MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
 			reader.setLocalFS( !MRBaseForCommonInstructions.isJobLocal );
 			ArrayList<IndexedMatrixValue> tmp = reader.readIndexedMatrixBlocksFromHDFS(fname, _rlen, _clen, _brlen, _bclen);
@@ -147,7 +146,6 @@ public class DistributedCacheInput
 
 			if( dataBlocks==null )
 				dataBlocks = new IndexedMatrixValue[rowBlocks][colBlocks];
-
 			for (IndexedMatrixValue val : tmp) {
 				MatrixIndexes idx = val.getIndexes();
 				dataBlocks[(int) idx.getRowIndex() - 1][(int) idx.getColumnIndex() - 1] = val;

@@ -58,8 +58,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 
 	private QuantilePickSPInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 			boolean inmem, String opcode, String istr) {
-		super(op, in, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.QPick;
+		super(SPType.QPick, op, in, in2, out, opcode, istr);
 		_type = type;
 	}
 
@@ -316,7 +315,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				sum += v2.next()._2().sumWeightForQuantile();
 			
 			//return tuple for partition aggregate
-			return Arrays.asList(new Tuple2<>(v1,sum)).iterator();
+			return Arrays.asList(new Tuple2<Integer, Double>(v1,sum)).iterator();
 		}
 	}
 	

@@ -26,12 +26,10 @@ import org.apache.hadoop.io.WritableComparable;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
@@ -41,7 +39,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 @SuppressWarnings("rawtypes")
 public abstract class MatrixValue implements WritableComparable 
 {
-	
 	static public class CellIndex {
 		public int row;
 		public int column;
@@ -117,24 +114,21 @@ public abstract class MatrixValue implements WritableComparable
 			int startRow, int startColumn, int length)
 	throws DMLRuntimeException;
 	
-	public abstract void ternaryOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
+	public abstract void ctableOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLRuntimeException;
 	
-	public abstract void ternaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
+	public abstract void ctableOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLRuntimeException;
 	
-	public abstract void ternaryOperations(Operator op, double scalar_that, double scalar_that2, CTableMap resultMap, MatrixBlock resultBlock)
+	public abstract void ctableOperations(Operator op, double scalar_that, double scalar_that2, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLRuntimeException;
 	
-	public abstract void ternaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
+	public abstract void ctableOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLRuntimeException;
 
-	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ctableOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock)
 		throws DMLRuntimeException;
-
-	public abstract MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
-		throws DMLRuntimeException;
-		
+	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int brlen, int bclen, MatrixIndexes indexesIn) throws DMLRuntimeException;
 	
@@ -142,18 +136,8 @@ public abstract class MatrixValue implements WritableComparable
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
 	throws DMLRuntimeException;
 	
-	public abstract MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLRuntimeException;
-	
-	public abstract MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLRuntimeException;
-	
 	public abstract MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
 	throws DMLRuntimeException;
-	
-	public abstract void unaryOperationsInPlace(UnaryOperator op) throws DMLRuntimeException;
 
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
 			MatrixValue newWithCorrection)	throws DMLRuntimeException;
@@ -164,14 +148,14 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 	throws DMLRuntimeException;
 	
-	public abstract void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
+	public abstract void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen)
 	throws DMLRuntimeException;
 
 	public abstract MatrixValue replaceOperations( MatrixValue result, double pattern, double replacement )
 			throws DMLRuntimeException;
 
-	public abstract void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+	public abstract void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 			throws DMLRuntimeException ;
 }

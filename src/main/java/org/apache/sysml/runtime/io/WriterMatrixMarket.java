@@ -74,7 +74,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		FSDataOutputStream writer = null;
 		try {
 			writer = fs.create(path);
-			writer.writeBytes("1 1 0");
+			writer.writeBytes(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(writer);
@@ -156,9 +156,8 @@ public class WriterMatrixMarket extends MatrixWriter
 			}
 	
 			//handle empty result
-			if ( src.isEmptyBlock(false) && rl==0 ) {
-				br.write("1 1 0\n");
-			}
+			if ( src.isEmptyBlock(false) && rl==0 )
+				br.write(IOUtilFunctions.EMPTY_TEXT_LINE);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(br);

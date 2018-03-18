@@ -49,6 +49,11 @@ import org.apache.sysml.parser.Expression.DataType;
 public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 		throws HopsException 
 	{
@@ -114,8 +119,8 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 					ret &= rIsApplicableForUpdateInPlace(istmt.getElseBody(), varname);	
 			}
 			else {
-				if( sb.get_hops() != null )
-					for( Hop hop : sb.get_hops() ) 
+				if( sb.getHops() != null )
+					for( Hop hop : sb.getHops() ) 
 						ret &= isApplicableForUpdateInPlace(hop, varname);
 			}
 			

@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public final class SparseRowVector extends SparseRow implements Serializable 
 {
@@ -54,7 +55,7 @@ public final class SparseRowVector extends SparseRow implements Serializable
 			estimatedNzs = estnnz;
 		maxNzs = maxnnz;
 		int capacity = ((estnnz<initialCapacity && estnnz>0) ? 
-				         estnnz : initialCapacity);
+				estnnz : initialCapacity);
 		values = new double[capacity];
 		indexes = new int[capacity];
 	}
@@ -147,9 +148,12 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	 * @return new capacity for resizing
 	 */
 	private int newCapacity() {
-		return (int) ((values.length < estimatedNzs) ?
-			Math.min(estimatedNzs, values.length*SparseBlock.RESIZE_FACTOR1) :
-			Math.min(maxNzs, Math.ceil(values.length*SparseBlock.RESIZE_FACTOR2)));
+		final double currLen = values.length;
+		//scale length exponentially based on estimated number of non-zeros
+		final int nextLen = (int)Math.ceil(currLen * ((currLen < estimatedNzs) ? 
+			SparseBlock.RESIZE_FACTOR1 : SparseBlock.RESIZE_FACTOR2));
+		//cap at max number of non-zeros with robustness of initial zero
+		return Math.max(2, Math.min(maxNzs, nextLen));
 	}
 
 	@Override
@@ -163,10 +167,10 @@ public final class SparseRowVector extends SparseRow implements Serializable
 				shiftLeftAndDelete(index);
 				return true; // nnz--
 			}
-			else { 	
+			else {
 				values[index] = v;
 				return false;
-			} 
+			}
 		}
 
 		//early abort on zero (if no overwrite)
@@ -201,68 +205,44 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	@Override
 	public double get(int col) {
 		//search for existing col index
-		int index = Arrays.binarySearch(indexes, 0, size, col);		
-		if( index >= 0 )
-			return values[index];
-		else
-			return 0;
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		return (index >= 0) ? values[index] : 0;
 	}
 
 	public int searchIndexesFirstLTE(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index < size )
-				return index;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index < size) ? index : -1;
 		
 		//search lt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index-1 < size )
-			return index-1;
-		else 
-			return -1;
+		return (index-1 < size) ? index-1 : -1;
 	}
 
 	public int searchIndexesFirstGTE(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index < size )
-				return index;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index < size) ? index : -1;
 		
 		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index < size )
-			return index;
-		else 
-			return -1;
+		return (index < size) ? index : -1;
 	}
 
 	public int searchIndexesFirstGT(int col)
 	{
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0  ) {
-			if( index+1 < size )
-				return index+1;
-			else 
-				return -1;
-		}
+		if( index >= 0 )
+			return (index+1 < size) ? index+1 : -1;
 		
 		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index < size )
-			return index;
-		else 
-			return -1;
+		return (index < size) ? index : -1;
 	}
 
 	public void deleteIndexRange(int lowerCol, int upperCol)
@@ -281,37 +261,24 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		size -= (end-start);
 	}
 	
-	/**
-	 * Inserts a dense vector into a column range; calling this methods helps to
-	 * avoid repeated shifting of remaining values/indexes for every set value. 
-	 * 
-	 * @param lowerCol lower column index
-	 * @param upperCol upper column index
-	 * @param v dense vector
-	 * @param vix ?
-	 * @param len ?
-	 */
-	public void setIndexRange(int lowerCol, int upperCol, double[] v, int vix, int len)
-	{
-		int start = searchIndexesFirstGTE(lowerCol);
+	public void setIndexRange(int cl, int cu, double[] v, int vix, int vlen) {
+		//handle special cases
+		int start = searchIndexesFirstGTE(cl);
 		if( start < 0 ) { //nothing to delete/shift
-			for( int i=vix; i<vix+len; i++ )
-				append(lowerCol+i-vix, v[i]);
+			for( int i=vix; i<vix+vlen; i++ )
+				append(cl+i-vix, v[i]);
 			return;
 		}
-		
-		int end = searchIndexesFirstGT(upperCol);
+		int end = searchIndexesFirstGT(cu);
 		if( end < 0 ) { //delete all remaining
 			size = start;
-			for( int i=vix; i<vix+len; i++ )
-				append(lowerCol+i-vix, v[i]);
+			for( int i=vix; i<vix+vlen; i++ )
+				append(cl+i-vix, v[i]);
 			return;
 		}
 		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+len; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
 		
 		//prepare free space (allocate and shift)
 		int lsize = size+lnnz-(end-start);
@@ -320,14 +287,44 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		shiftRightByN(end, lnnz-(end-start));
 		
 		//insert values
-		for( int i=vix, pos=start; i<vix+len; i++ )
+		for( int i=vix, pos=start; i<vix+vlen; i++ )
 			if( v[i] != 0 ) {
 				values[ pos ] = v[i];
-				indexes[ pos ] = lowerCol+i-vix;
+				indexes[ pos ] = cl+i-vix;
 				pos++;
 			}
 	}
 
+	public void setIndexRange(int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//handle special cases
+		int start = searchIndexesFirstGTE(cl);
+		if( start < 0 ) { //nothing to delete/shift
+			for( int i=vpos; i<vpos+vlen; i++ )
+				append(cl+vix[i], v[i]);
+			return;
+		}
+		int end = searchIndexesFirstGT(cu);
+		if( end < 0 ) { //delete all remaining
+			size = start;
+			for( int i=vpos; i<vpos+vlen; i++ )
+				append(cl+vix[i], v[i]);
+			return;
+		}
+		
+		//prepare free space (allocate and shift)
+		int lsize = size+vlen-(end-start);
+		if( values.length < lsize )
+			recap(lsize);
+		shiftRightByN(end, vlen-(end-start));
+		
+		//insert values
+		for( int i=vpos, pos=start; i<vpos+vlen; i++ ) {
+			values[ pos ] = v[i];
+			indexes[ pos ] = cl+vix[i];
+			pos++;
+		}
+	}
+	
 	private void resizeAndInsert(int index, int col, double v) {
 		//allocate new arrays
 		int newCap = newCapacity();

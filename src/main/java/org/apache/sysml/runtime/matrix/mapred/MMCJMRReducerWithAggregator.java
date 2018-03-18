@@ -123,15 +123,15 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 					{
 						//perform matrix multiplication
 						indexesbuffer.setIndexes(tmp.getKey().getRowIndex(), inIndex);
-						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(tmp.getValue(), inValue, valueBuffer, 
-								                               (AggregateBinaryOperator)aggBinInstruction.getOperator());
+						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes((MatrixBlock)tmp.getValue(),
+							(MatrixBlock)inValue, (MatrixBlock)valueBuffer, (AggregateBinaryOperator)aggBinInstruction.getOperator());
 					}
 					else //right cached
 					{
 						//perform matrix multiplication
 						indexesbuffer.setIndexes(inIndex, tmp.getKey().getColumnIndex());
-						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(inValue, tmp.getValue(), valueBuffer, 
-								                               (AggregateBinaryOperator)aggBinInstruction.getOperator());		
+						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes((MatrixBlock)inValue,
+							(MatrixBlock)tmp.getValue(), (MatrixBlock)valueBuffer, (AggregateBinaryOperator)aggBinInstruction.getOperator());
 					}
 					
 					//aggregate block to output buffer or direct output

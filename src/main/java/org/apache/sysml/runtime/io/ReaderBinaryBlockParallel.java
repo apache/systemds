@@ -66,8 +66,11 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
 		
-		//core read 
-		readBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		//core read
+		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
+		long numBlocks = (long)Math.ceil((double)rlen / brlen);
+		readBinaryBlockMatrixFromHDFS(path, job, fs, ret,
+			rlen, clen, brlen, bclen, numThreads<=numBlocks);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -77,7 +80,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		return ret;
 	}
 
-	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest,
+			long rlen, long clen, int brlen, int bclen, boolean syncBlock )
 		throws IOException, DMLRuntimeException
 	{
 		//set up preferred custom serialization framework for binary block format
@@ -90,7 +94,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
-				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen);
+				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen, syncBlock);
 				tasks.add(t);
 			}
 
@@ -116,16 +120,14 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 
 	private static class ReadFileTask implements Callable<Object> 
 	{
-		private Path _path = null;
-		private JobConf _job = null;
-		private MatrixBlock _dest = null;
-		private long _rlen = -1;
-		private long _clen = -1;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private final Path _path;
+		private final JobConf _job;
+		private final MatrixBlock _dest;
+		private final long _rlen, _clen;
+		private final int _brlen, _bclen;
+		private final boolean _syncBlocks;
 		
-		public ReadFileTask(Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen)
-		{
+		public ReadFileTask(Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean syncBlocks) {
 			_path = path;
 			_job = job;
 			_dest = dest;
@@ -133,6 +135,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			_clen = clen;
 			_brlen = brlen;
 			_bclen = bclen;
+			_syncBlocks = syncBlocks;
 		}
 
 		@Override
@@ -179,8 +182,16 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 							//NOTE: fine-grained locking depends on MCSR SparseRow objects 
 							SparseBlock sblock = _dest.getSparseBlock();
 							if( sblock instanceof SparseBlockMCSR && sblock.get(row_offset) != null ) {
-								synchronized( sblock.get(row_offset) ){ 
-									_dest.appendToSparse(value, row_offset, col_offset);
+								if( _syncBlocks ) {
+									synchronized( sblock.get(row_offset) ){ 
+										_dest.appendToSparse(value, row_offset, col_offset);
+									}
+								}
+								else {
+									for( int i=0; i<rows; i++ ) 
+										synchronized( sblock.get(row_offset+i) ) {
+											_dest.appendRowToSparse(sblock, value, i, row_offset, col_offset, true);
+										}
 								}
 							}
 							else {
@@ -193,8 +204,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 							_dest.appendToSparse(value, row_offset, col_offset);
 						}
 					} 
-					else
-					{
+					else {
 						_dest.copy( row_offset, row_offset+rows-1, 
 							col_offset, col_offset+cols-1, value, false );
 					}

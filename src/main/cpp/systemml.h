@@ -28,11 +28,17 @@ extern "C" {
 #endif
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    matrixMultDenseDense
- * Signature: ([D[D[DIIII)Z
+ * Method:    dmmdd
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_dmmdd
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    smmdd
+ */
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_smmdd
+  (JNIEnv *, jclass, jobject, jobject, jobject, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
@@ -52,11 +58,18 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    conv2dBiasAddDense
- * Signature: ([D[D[D[DIIIIIIIIIIIIII)I
+ * Method:    dconv2dBiasAddDense
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_dconv2dBiasAddDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    sconv2dBiasAddDense
+ */
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_sconv2dBiasAddDense
+  (JNIEnv *, jclass, jobject, jobject, jobject, jobject, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper

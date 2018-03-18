@@ -30,6 +30,7 @@ public class AssignmentStatement extends Statement
 {
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
+	private boolean _isAccum; //+=
 	 
 	// rewrites statement to support function inlining (creates deep copy)
 	@Override
@@ -42,18 +43,20 @@ public class AssignmentStatement extends Statement
 		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource, this);
 		return retVal;
 	}
-
-	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
+	
+	public AssignmentStatement(DataIdentifier di, Expression exp) {
 		_targetList = new ArrayList<>();
 		_targetList.add(di);
 		_source = exp;
+	}
+	
+	public AssignmentStatement(DataIdentifier di, Expression exp, ParseInfo parseInfo) {
+		this(di, exp);
 		setParseInfo(parseInfo);
 	}
 
 	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) throws LanguageException {
-		_targetList = new ArrayList<>();
-		_targetList.add(di);
-		_source = exp;
+		this(di, exp);
 		setCtxValues(ctx);
 	}
 
@@ -66,16 +69,24 @@ public class AssignmentStatement extends Statement
 		return _targetList.get(0);
 	}
 	
-	public ArrayList<DataIdentifier> getTargetList()
-	{
+	public ArrayList<DataIdentifier> getTargetList() {
 		return _targetList;
 	}
 
 	public Expression getSource(){
 		return _source;
 	}
+	
 	public void setSource(Expression s){
 		_source = s;
+	}
+	
+	public boolean isAccumulator() {
+		return _isAccum;
+	}
+	
+	public void setAccumulator(boolean flag) {
+		_isAccum = flag;
 	}
 	
 	@Override
@@ -106,29 +117,22 @@ public class AssignmentStatement extends Statement
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		
 		// add variables read by source expression
 		result.addVariables(_source.variablesRead());
-		
-		// for LHS IndexedIdentifier, add variables for indexing expressions
-		for (int i=0; i<_targetList.size(); i++){
-			if (_targetList.get(i) instanceof IndexedIdentifier) {
-				IndexedIdentifier target = (IndexedIdentifier) _targetList.get(i);
+		// for left indexing or accumulators add targets as well
+		for (DataIdentifier target : _targetList)
+			if (target instanceof IndexedIdentifier || _isAccum )
 				result.addVariables(target.variablesRead());
-			}
-		}		
 		return result;
 	}
 	
 	@Override
 	public  VariableSet variablesUpdated() {
 		VariableSet result =  new VariableSet();
-		
 		// add target to updated list
 		for (DataIdentifier target : _targetList)
-			if (target != null) {
+			if (target != null)
 				result.addVariable(target.getName(), target);
-			}
 		return result;
 	}
 	
@@ -139,7 +143,7 @@ public class AssignmentStatement extends Statement
 			DataIdentifier di = _targetList.get(i);
 			sb.append(di);
 		}
-		sb.append(" = ");
+		sb.append(_isAccum ? " += " : " = ");
 		if (_source instanceof StringIdentifier) {
 			sb.append("\"");
 			sb.append(_source.toString());

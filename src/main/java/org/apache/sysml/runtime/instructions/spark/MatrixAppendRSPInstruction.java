@@ -52,14 +52,14 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 		
 		//execute reduce-append operations (partitioning preserving)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.join(in2)
-				.mapValues(new ReduceSideAppendFunction(_cbind));
+			.join(in2)
+			.mapValues(new ReduceSideAppendFunction(_cbind));
 
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());		
+		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
 	private static class ReduceSideAppendFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
@@ -67,7 +67,7 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 		private static final long serialVersionUID = -6763904972560309095L;
 
 		private boolean _cbind = true;
-				
+		
 		public ReduceSideAppendFunction(boolean cbind) {
 			_cbind = cbind;
 		}
@@ -76,11 +76,7 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
 		{
-			MatrixBlock left = arg0._1();
-			MatrixBlock right = arg0._2();
-			
-			return left.appendOperations(right, new MatrixBlock(), _cbind);
+			return arg0._1().append(arg0._2(), new MatrixBlock(), _cbind);
 		}
 	}
 }
-

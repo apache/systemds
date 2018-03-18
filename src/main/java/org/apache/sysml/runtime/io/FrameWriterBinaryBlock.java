@@ -115,7 +115,7 @@ public class FrameWriterBinaryBlock extends FrameWriter
 					
 					//get reuse frame block and copy subpart to block (incl meta on first)
 					FrameBlock block = getFrameBlockForReuse(blocks);
-					src.sliceOperations( bi, bi+len-1, 0, src.getNumColumns()-1, block );
+					src.slice( bi, bi+len-1, 0, src.getNumColumns()-1, block );
 					if( bi==0 ) //first block
 						block.setColumnMetadata(src.getColumnMetadata());
 					

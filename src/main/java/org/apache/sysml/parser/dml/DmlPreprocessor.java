@@ -27,6 +27,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.common.CustomErrorListener;
+import org.apache.sysml.parser.dml.DmlParser.AccumulatorAssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
@@ -336,6 +337,12 @@ public class DmlPreprocessor implements DmlListener {
 
 	@Override
 	public void exitIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {}
+
+	@Override
+	public void enterAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {}
+
+	@Override
+	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {}
 
 	@Override
 	public void enterBooleanAndExpression(BooleanAndExpressionContext ctx) {}

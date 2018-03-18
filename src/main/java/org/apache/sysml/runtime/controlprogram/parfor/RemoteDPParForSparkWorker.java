@@ -121,8 +121,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			mo.setInMemoryPartition( partition );
 			
 			//create tasks for input data
-			Task lTask = new Task(TaskType.SET);
-			lTask.addIteration( new IntObject(_iterVar, larg._1()) );
+			Task lTask = new Task(_iterVar, TaskType.SET);
+			lTask.addIteration( new IntObject(larg._1()) );
 			
 			//execute program
 			long numIter = getExecutedIterations();
@@ -147,16 +147,14 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_workerID = ID;
 		
 		//initialize codegen class cache (before program parsing)
-		synchronized( CodegenUtils.class ) {
-			for( Entry<String, byte[]> e : _clsMap.entrySet() )
-				CodegenUtils.getClass(e.getKey(), e.getValue());
-		}
-		
+		for( Entry<String, byte[]> e : _clsMap.entrySet() )
+			CodegenUtils.getClassSync(e.getKey(), e.getValue());
+	
 		//parse and setup parfor body program
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
-		_ec          = body.getEc();				
-		_resultVars  = body.getResultVarNames();
+		_ec          = body.getEc();
+		_resultVars  = body.getResultVariables();
 		_numTasks    = 0;
 		_numIters    = 0;
 

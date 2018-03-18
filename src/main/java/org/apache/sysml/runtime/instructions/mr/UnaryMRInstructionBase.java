@@ -24,8 +24,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public abstract class UnaryMRInstructionBase extends MRInstruction {
 	public byte input;
 
-	protected UnaryMRInstructionBase(Operator op, byte in, byte out) {
-		super(op, out);
+	protected UnaryMRInstructionBase(MRType type, Operator op, byte in, byte out) {
+		super(type, op, out);
 		input = in;
 	}
 

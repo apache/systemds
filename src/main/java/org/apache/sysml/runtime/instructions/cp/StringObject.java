@@ -28,14 +28,10 @@ public class StringObject extends ScalarObject
 
 	private static final int MAX_STRING_SIZE = 1*1024*1024; //1MB
 	
-	private String _value;
+	private final String _value;
 
-	public StringObject (String val){
-		this(null,val);
-	}
-
-	public StringObject(String name, String val){
-		super(name, ValueType.STRING);
+	public StringObject(String val){
+		super(ValueType.STRING);
 		_value = val;
 	}
 	

@@ -34,7 +34,8 @@ public class PoissonPRNGenerator extends PRNGenerator
 {
 	private PoissonDistribution _pdist = null;
 	private double _mean = Double.NaN;
-
+	private long seed;
+	
 	public PoissonPRNGenerator() {
 		// default mean and default seed
 		super();

@@ -36,7 +36,7 @@ public class CumulativeSplitInstruction extends UnaryInstruction {
 	private double _initValue = 0;
 
 	private CumulativeSplitInstruction(byte in, byte out, double init, String istr) {
-		super(null, in, out, istr);
+		super(MRType.CumsumSplit, null, in, out, istr);
 		_initValue = init;
 	}
 
@@ -97,7 +97,7 @@ public class CumulativeSplitInstruction extends UnaryInstruction {
 					IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 					MatrixBlock tmpBlk = (MatrixBlock) out.getValue();
 					tmpBlk.reset(1,blk.getNumColumns());
-					blk.sliceOperations(i, i, 0, blk.getNumColumns()-1, tmpBlk);	
+					blk.slice(i, i, 0, blk.getNumColumns()-1, tmpBlk);	
 					out.getIndexes().setIndexes(rixOffset+i+2, inix.getColumnIndex());
 				}
 		}

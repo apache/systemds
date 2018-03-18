@@ -101,7 +101,7 @@ def parse_hdfs_base(std_outs):
     hdfs_uri = None
     for line in std_outs:
         if line.startswith('hdfs://'):
-            hdfs_uri = line
+            hdfs_uri = line.strip()
     if hdfs_uri is None:
         sys.exit('HDFS URI not found')
     return hdfs_uri
@@ -160,7 +160,7 @@ def parse_hdfs_paths(std_outs):
         if 'No such file or directory' in i:
             break
         elif 'hdfs' in i:
-            current_dir = i.split(' ')[-1]
+            current_dir = i.split(' ')[-1].strip()
             hdfs_dir.append(current_dir)
 
     return hdfs_dir

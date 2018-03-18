@@ -405,6 +405,9 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  
+  // Nike:
+  optional UpsampleParameter upsample_param = 147;
 }
 
 // Message that stores parameters used to apply transformation
@@ -833,6 +836,8 @@ message InnerProductParameter {
   // of the weight matrix. The weight matrix itself is not going to be transposed
   // but rather the transfer flag of operations will be toggled accordingly.
   optional bool transpose = 6 [default = false];
+  
+  optional int32 rank = 7 [default = 0]; // rank of U, V matrices
 }
 
 message InputParameter {
@@ -959,6 +964,12 @@ message RecurrentParameter {
   // blobs.  The number of additional bottom/top blobs required depends on the
   // recurrent architecture -- e.g., 1 for RNNs, 2 for LSTMs.
   optional bool expose_hidden = 5 [default = false];
+
+  // ========================================================================  
+  // SystemML extension:
+  // Whether to return `out` at all timesteps, or just for the final timestep.
+  optional bool return_sequences = 6 [default = false];
+  // ========================================================================
 }
 
 // Message that stores parameters used by ReductionLayer
@@ -1163,6 +1174,12 @@ message TileParameter {
 // Message that stores parameters used by ThresholdLayer
 message ThresholdParameter {
   optional float threshold = 1 [default = 0]; // Strictly positive values
+}
+
+// Nike:
+message UpsampleParameter {
+  optional uint32 size_h = 6; // upsampling factors for rows
+  optional uint32 size_w = 7; // upsampling factors for columns
 }
 
 message WindowDataParameter {

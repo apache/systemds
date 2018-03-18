@@ -53,6 +53,10 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	private static final OpOp2[] MAP_SCALAR_AGGREGATE_SOURCE_OPS = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT, OpOp2.MIN, OpOp2.MAX};
 	private static final AggOp[] MAP_SCALAR_AGGREGATE_TARGET_OPS = new AggOp[]{AggOp.SUM,  AggOp.PROD, AggOp.MIN, AggOp.MAX};
 	
+	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
@@ -119,8 +123,8 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		boolean rightScalar = false;
 		boolean rowIx = false; //row or col
 		
-		if( csb.get_hops()!=null && csb.get_hops().size()==1 ){
-			Hop root = csb.get_hops().get(0);
+		if( csb.getHops()!=null && csb.getHops().size()==1 ){
+			Hop root = csb.getHops().get(0);
 			
 			if( root.getDataType()==DataType.SCALAR && root.getInput().get(0) instanceof BinaryOp ) {
 				BinaryOp bop = (BinaryOp) root.getInput().get(0);
@@ -171,7 +175,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		//apply rewrite if possible
 		if( leftScalar || rightScalar ) 
 		{
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			BinaryOp bop = (BinaryOp) root.getInput().get(0);
 			Hop cast = bop.getInput().get( leftScalar?1:0 );
 			Hop ix = cast.getInput().get(0);
@@ -218,9 +222,9 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		//check for applicability
 		boolean apply = false;
 		boolean rowIx = false; //row or col
-		if( csb.get_hops()!=null && csb.get_hops().size()==1 )
+		if( csb.getHops()!=null && csb.getHops().size()==1 )
 		{
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			
 			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
 			{
@@ -262,7 +266,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		//apply rewrite if possible
 		if( apply ) 
 		{
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 			BinaryOp bop = (BinaryOp) lix.getInput().get(1);
 			IndexingOp rix0 = (IndexingOp) bop.getInput().get(0);
@@ -302,9 +306,9 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		//check for applicability
 		boolean apply = false;
 		boolean rowIx = false; //row or col
-		if( csb.get_hops()!=null && csb.get_hops().size()==1 )
+		if( csb.getHops()!=null && csb.getHops().size()==1 )
 		{
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			
 			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
 			{
@@ -326,7 +330,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		
 		//apply rewrite if possible
 		if( apply ) {
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 			UnaryOp uop = (UnaryOp) lix.getInput().get(1);
 			IndexingOp rix = (IndexingOp) uop.getInput().get(0);
@@ -362,9 +366,9 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		//check for applicability
 		boolean apply = false;
 		boolean rowIx = false; //row or col
-		if( csb.get_hops()!=null && csb.get_hops().size()==1 )
+		if( csb.getHops()!=null && csb.getHops().size()==1 )
 		{
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			
 			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
 			{
@@ -384,7 +388,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		
 		//apply rewrite if possible
 		if( apply ) {
-			Hop root = csb.get_hops().get(0);
+			Hop root = csb.getHops().get(0);
 			LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 			IndexingOp rix = (IndexingOp) lix.getInput().get(1);
 			int index1 = rowIx ? 2 : 4;

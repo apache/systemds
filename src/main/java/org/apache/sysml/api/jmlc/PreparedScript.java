@@ -23,17 +23,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -48,7 +53,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -59,18 +64,35 @@ import org.apache.sysml.utils.Explain;
 /**
  * Representation of a prepared (precompiled) DML/PyDML script.
  */
-public class PreparedScript 
+public class PreparedScript implements ConfigurableAPI
 {
 	private static final Log LOG = LogFactory.getLog(PreparedScript.class.getName());
 	
 	//input/output specification
-	private HashSet<String> _inVarnames = null;
-	private HashSet<String> _outVarnames = null;
-	private HashMap<String,Data> _inVarReuse = null;
+	private final HashSet<String> _inVarnames;
+	private final HashSet<String> _outVarnames;
+	private final HashMap<String,Data> _inVarReuse;
 	
 	//internal state (reused)
-	private Program _prog = null;
-	private LocalVariableMap _vars = null; 
+	private final Program _prog;
+	private final LocalVariableMap _vars;
+	private final DMLConfig _dmlconf;
+	private final CompilerConfig _cconf;
+	
+	private PreparedScript(PreparedScript that) {
+		//shallow copy, except for a separate symbol table
+		//and related meta data of reused inputs
+		_prog = that._prog.clone(false);
+		_vars = new LocalVariableMap();
+		for(Entry<String, Data> e : that._vars.entrySet())
+			_vars.put(e.getKey(), e.getValue());
+		_vars.setRegisteredOutputs(that._outVarnames);
+		_inVarnames = that._inVarnames;
+		_outVarnames = that._outVarnames;
+		_inVarReuse = new HashMap<>(that._inVarReuse);
+		_dmlconf = that._dmlconf;
+		_cconf = that._cconf;
+	}
 	
 	/**
 	 * Meant to be invoked only from Connection.
@@ -78,8 +100,10 @@ public class PreparedScript
 	 * @param prog the DML/PyDML program
 	 * @param inputs input variables to register
 	 * @param outputs output variables to register
+	 * @param dmlconf dml configuration 
+	 * @param cconf compiler configuration
 	 */
-	protected PreparedScript( Program prog, String[] inputs, String[] outputs ) 
+	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) 
 	{
 		_prog = prog;
 		_vars = new LocalVariableMap();
@@ -90,6 +114,49 @@ public class PreparedScript
 		_outVarnames = new HashSet<>();
 		Collections.addAll(_outVarnames, outputs);
 		_inVarReuse = new HashMap<>();
+		
+		//attach registered outputs (for dynamic recompile)
+		_vars.setRegisteredOutputs(_outVarnames);
+		
+		//keep dml and compiler configuration to be set as thread-local config
+		//on execute, which allows different threads creating/executing the script
+		_dmlconf = dmlconf;
+		_cconf = cconf;
+	}
+	
+	@Override
+	public void resetConfig() {
+		_dmlconf.set(new DMLConfig());
+	}
+
+	@Override
+	public void setConfigProperty(String propertyName, String propertyValue) {
+		try {
+			_dmlconf.setTextValue(propertyName, propertyValue);
+		} 
+		catch( DMLRuntimeException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Get the dml configuration object associated with
+	 * the prepared script instance.
+	 * 
+	 * @return dml configuration
+	 */
+	public DMLConfig getDMLConfig() {
+		return _dmlconf;
+	}
+	
+	/**
+	 * Get the compiler configuration object associated with
+	 * the prepared script instance.
+	 * 
+	 * @return compiler configuration
+	 */
+	public CompilerConfig getCompilerConfig() {
+		return _cconf;
 	}
 	
 	/**
@@ -112,7 +179,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, boolean scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new BooleanObject(varname, scalar), reuse);
+		setScalar(varname, new BooleanObject(scalar), reuse);
 	}
 	
 	/**
@@ -135,7 +202,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, long scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new IntObject(varname, scalar), reuse);
+		setScalar(varname, new IntObject(scalar), reuse);
 	}
 	
 	/** Binds a scalar double to a registered input variable.
@@ -157,7 +224,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, double scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new DoubleObject(varname, scalar), reuse);
+		setScalar(varname, new DoubleObject(scalar), reuse);
 	}
 	
 	/**
@@ -180,7 +247,7 @@ public class PreparedScript
 	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, String scalar, boolean reuse) throws DMLException {
-		setScalar(varname, new StringObject(varname, scalar), reuse);
+		setScalar(varname, new StringObject(scalar), reuse);
 	}
 
 	/**
@@ -245,7 +312,7 @@ public class PreparedScript
 		
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(matrix); 
 		mo.release();
@@ -352,7 +419,7 @@ public class PreparedScript
 		
 		//create new frame object
 		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
 		fo.release();
@@ -386,11 +453,15 @@ public class PreparedScript
 		//add reused variables
 		_vars.putAll(_inVarReuse);
 		
-		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);	
+		//set thread-local configurations
+		ConfigurationManager.setLocalConfig(_dmlconf);
+		ConfigurationManager.setLocalConfig(_cconf);
 		
-		//core execute runtime program	
-		_prog.execute(ec);  
+		//create and populate execution context
+		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
+		
+		//core execute runtime program
+		_prog.execute(ec);
 		
 		//cleanup unnecessary outputs
 		_vars.removeAllNotIn(_outVarnames);
@@ -402,6 +473,10 @@ public class PreparedScript
 			if( tmpVar != null )
 				rvars.addResult(ovar, tmpVar);
 		}
+		
+		//clear thread-local configurations
+		ConfigurationManager.clearLocalConfigs();
+		
 		return rvars;
 	}
 	
@@ -459,5 +534,25 @@ public class PreparedScript
 				LOG.warn("Failed to enable function recompile for recursive '"+fkey+"'.");
 			}
 		}
+	}
+	
+	/**
+	 * Creates a cloned instance of the prepared script, which
+	 * allows for concurrent execution without side effects.
+	 * 
+	 * @param deep indicator if a deep copy needs to be created;
+	 *   if false, only a shallow (i.e., by reference) copy of the 
+	 *   program and read-only meta data is created. 
+	 * @return an equivalent prepared script
+	 */
+	public PreparedScript clone(boolean deep) {
+		if( deep )
+			throw new NotImplementedException();
+		return new PreparedScript(this);
+	}
+	
+	@Override
+	public Object clone() {
+		return clone(true);
 	}
 }

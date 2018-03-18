@@ -166,6 +166,15 @@ public abstract class SparseBlock implements Serializable
 	}
 	
 	/**
+	 * Indicates if the underlying data structure for a given row
+	 * is already allocated.
+	 * 
+	 * @param r row index
+	 * @return true if already allocated
+	 */
+	public abstract boolean isAllocated(int r);
+	
+	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
 	 * all size() calls are guaranteed to return 0.
 	 */
@@ -236,9 +245,22 @@ public abstract class SparseBlock implements Serializable
 	 * @param r  row index starting at 0
 	 * @return true if row does not contain non-zero values
 	 */
-	public abstract boolean isEmpty(int r); 
-	
-	
+	public abstract boolean isEmpty(int r);
+
+	/**
+	 * Validate the correctness of the internal data structures of the different
+	 * sparse block implementations.
+	 *
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param nnz number of non zeros
+	 * @param strict enforce optional properties
+	 * @return true if the sparse block is valid wrt the corresponding format
+	 *         such as COO, CSR, MCSR.
+	 */
+
+	public abstract boolean checkValidity(int rlen, int clen, long nnz, boolean strict);
+
 	////////////////////////
 	//obtain indexes/values/positions
 	
@@ -314,7 +336,7 @@ public abstract class SparseBlock implements Serializable
 	public abstract void append(int r, int c, double v);
 	
 	/**
-	 * Sets a sorted array of non-zeros values into the column range [cl,cu) 
+	 * Sets a dense array of non-zeros values into the column range [cl,cu) 
 	 * in row r. The passed value array may be larger and the relevant range 
 	 * is given by [vix,vix+len).
 	 * 
@@ -326,6 +348,20 @@ public abstract class SparseBlock implements Serializable
 	 * @param vlen number of relevant values 
 	 */
 	public abstract void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen);
+	
+	/**
+	 * Sets a sparse array of non-zeros values and indexes into the column range [cl,cu) 
+	 * in row r. The passed value array may be larger.
+	 * 
+	 * @param r    row index starting at 0
+	 * @param cl   lower column index starting at 0
+	 * @param cu   upper column index starting at 0
+	 * @param v    value array
+	 * @param vix  column index array
+	 * @param vpos start index in value and index arrays
+	 * @param vlen number of relevant values 
+	 */
+	public abstract void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen);
 	
 	/**
 	 * Deletes all non-zero values of the given column range [cl,cu) in row r.

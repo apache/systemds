@@ -38,8 +38,10 @@ import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.MultipleCP;
+import org.apache.sysml.lops.Nary;
 import org.apache.sysml.lops.ReBlock;
+import org.apache.sysml.lops.Ternary;
+import org.apache.sysml.lops.Unary;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -97,7 +99,6 @@ public abstract class Hop implements ParseInfo
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
 	protected double _processingMemEstimate = 0;
 	protected double _spBroadcastMemEstimate = 0;
-	protected boolean _validCPSizeEstimate = false;
 	
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
@@ -215,23 +216,10 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()
-	{		
-		if( _etype == ExecType.CP )
-		{
-			boolean invalid = false;
-			
-			//Step 1: check dimensions of output and all inputs (INTEGER)
-			invalid |= !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
-			for( Hop in : getInput() )
-				invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
-			
-			//Step 2: check valid output and input sizes for cp (<16GB for DENSE)
-			//(if the memory estimate is smaller than max_numcells we are guaranteed to have it in sparse representation)
-			invalid |= !(  OptimizerUtils.isValidCPMatrixSize(_dim1, _dim2, OptimizerUtils.getSparsity(_dim1, _dim2, _nnz))
-					    || getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || _validCPSizeEstimate );
-			for( Hop in : getInput() )
-				invalid |= !(   OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz))
-						     || in.getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || in._validCPSizeEstimate);
+	{
+		if( _etype == ExecType.CP || _etype == ExecType.GPU ) {
+			//check dimensions of output and all inputs (INTEGER)
+			boolean invalid = !hasValidCPDimsAndSize();
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
@@ -241,6 +229,13 @@ public abstract class Hop implements ParseInfo
 					_etype = ExecType.SPARK;
 			}
 		}
+	}
+	
+	public boolean hasValidCPDimsAndSize() {
+		boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
+		for( Hop in : getInput() )
+			invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+		return !invalid;
 	}
 
 	public boolean hasMatrixInputWithDifferentBlocksizes()
@@ -323,12 +318,12 @@ public abstract class Hop implements ParseInfo
 					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
 				{
 					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
-							getDataType(), getValueType(), et);
+						getDataType(), getValueType(), et);
 				}
-				else //TEXT / MM / BINARYBLOCK / BINARYCELL  
+				else //TEXT / MM / BINARYBLOCK / BINARYCELL
 				{
 					reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
-		                    getDataType(), getValueType(), _outputEmptyBlocks, et);
+						getDataType(), getValueType(), _outputEmptyBlocks, et);
 				}
 			}
 			catch( LopsException ex ) {
@@ -352,8 +347,8 @@ public abstract class Hop implements ParseInfo
 			//conditional checkpoint based on memory estimate in order to 
 			//(1) avoid unnecessary persist and unpersist calls, and 
 			//(2) avoid unnecessary creation of spark context (incl executors)
-			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate)
+			if( (OptimizerUtils.isHybridExecutionMode() && hasValidCPDimsAndSize()
+				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate))
 				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;
@@ -385,10 +380,10 @@ public abstract class Hop implements ParseInfo
 				}
 			
 				//construct checkpoint w/ right storage level
-				Lop input = getLops();			
+				Lop input = getLops();
 				Lop chkpoint = new Checkpoint(input, getDataType(), getValueType(), 
 						serializedStorage ? Checkpoint.getSerializeStorageLevelString() :
-								            Checkpoint.getDefaultStorageLevelString() );
+						Checkpoint.getDefaultStorageLevelString() );
 				
 				setOutputDimensions( chkpoint );
 				setLineNumbers( chkpoint );
@@ -427,7 +422,7 @@ public abstract class Hop implements ParseInfo
 		{
 			try
 			{
-				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);				
+				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);
 				setOutputDimensions( compress );
 				setLineNumbers( compress );
 				setLops( compress );
@@ -712,10 +707,6 @@ public abstract class Hop implements ParseInfo
 		
 		//final estimate (sum of inputs/intermediates/output)
 		_memEstimate = getInputOutputSize();
-		
-		//update optional valid cp size estimate (based on worst-case dimensions)
-		_validCPSizeEstimate = (wstats!=null) ? OptimizerUtils.isValidCPMatrixSize(
-			wstats[0], wstats[1], OptimizerUtils.getSparsity(wstats[0], wstats[1], wstats[2])) : false;
 	}
 	
 	/**
@@ -898,19 +889,24 @@ public abstract class Hop implements ParseInfo
 	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR 
 			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& _dim1 > 0 && _dim2 > 0) );
+				&& _dim1 >= 0 && _dim2 >= 0) );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)));
+		return rowsKnown() && colsKnown()
+			&& (_dataType.isScalar() || ((includeNnz) ? _nnz>=0 : true));
 	}
 
 	public boolean dimsKnownAny() {
-		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& (_dim1 > 0 || _dim2 > 0)) );
+		return rowsKnown() || colsKnown();
+	}
+	
+	public boolean rowsKnown() {
+		return _dataType.isScalar() || _dim1 >= 0;
+	}
+	
+	public boolean colsKnown() {
+		return _dataType.isScalar() || _dim2 >= 0;
 	}
 	
 	public static void resetVisitStatus( ArrayList<Hop> hops ) {
@@ -934,7 +930,7 @@ public abstract class Hop implements ParseInfo
 		if( !isVisited() )
 			return;
 		for( Hop h : getInput() )
-			h.resetVisitStatus();		
+			h.resetVisitStatus();
 		setVisited(false);
 	}
 	
@@ -971,8 +967,10 @@ public abstract class Hop implements ParseInfo
 		
 		//reset recompile flag
 		if( (et == null || getExecType() == et || getExecType() == null)
-			&& (reset==ResetType.RESET || (reset==ResetType.RESET_KNOWN_DIMS && dimsKnown())) )
+			&& (reset==ResetType.RESET || (reset==ResetType.RESET_KNOWN_DIMS && dimsKnown()))
+			&& !(_requiresCheckpoint && getLops() instanceof Checkpoint && !dimsKnown(true)) ) {
 			_requiresRecompile = false;
+		}
 		
 		setVisited();
 	}
@@ -1063,31 +1061,31 @@ public abstract class Hop implements ParseInfo
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
+		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		SVD,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
-		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
-		SELP, //select positive: X * (X>0)
+		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 	}
 
 	// Operations that require two operands
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
-		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
+		MIN, MAX, AND, OR, XOR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM,
 		CENTRALMOMENT, COVARIANCE, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT, //1-X*Y
+		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
 	}
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT, IFELSE
 	}
 	
 	// Operations that require 4 operands
@@ -1100,8 +1098,8 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	// Operations that require a variable number of operands
-	public enum MultiInputOp {
-		PRINTF
+	public enum OpOpN {
+		PRINTF, CBIND, RBIND, EVAL
 	}
 	
 	public enum AggOp {
@@ -1117,7 +1115,7 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public enum ConvOp {
-		MAX_POOLING, MAX_POOLING_BACKWARD,
+		MAX_POOLING, MAX_POOLING_BACKWARD, AVG_POOLING, AVG_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
 		BIAS_ADD, BIAS_MULTIPLY
 	}
@@ -1184,6 +1182,8 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops = new HashMap<>();
 		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
 		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
+		HopsConv2Lops.put(ConvOp.AVG_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING);
+		HopsConv2Lops.put(ConvOp.AVG_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING_BACKWARD);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
 		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
 		HopsConv2Lops.put(ConvOp.BIAS_MULTIPLY, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_MULTIPLY);
@@ -1218,11 +1218,17 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.NOTEQUAL, Binary.OperationTypes.NOT_EQUALS);
 		HopsOpOp2LopsB.put(OpOp2.MIN, Binary.OperationTypes.MIN);
 		HopsOpOp2LopsB.put(OpOp2.MAX, Binary.OperationTypes.MAX);
-		HopsOpOp2LopsB.put(OpOp2.AND, Binary.OperationTypes.OR);
-		HopsOpOp2LopsB.put(OpOp2.OR, Binary.OperationTypes.AND);
+		HopsOpOp2LopsB.put(OpOp2.AND, Binary.OperationTypes.AND);
+		HopsOpOp2LopsB.put(OpOp2.XOR, Binary.OperationTypes.XOR);
+		HopsOpOp2LopsB.put(OpOp2.OR, Binary.OperationTypes.OR);
 		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
 		HopsOpOp2LopsB.put(OpOp2.LOG, Binary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsB.put(OpOp2.BITWAND, Binary.OperationTypes.BW_AND);
+		HopsOpOp2LopsB.put(OpOp2.BITWOR, Binary.OperationTypes.BW_OR);
+		HopsOpOp2LopsB.put(OpOp2.BITWXOR, Binary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTL, Binary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTR, Binary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
@@ -1244,9 +1250,15 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.MAX, BinaryScalar.OperationTypes.MAX);
 		HopsOpOp2LopsBS.put(OpOp2.AND, BinaryScalar.OperationTypes.AND);
 		HopsOpOp2LopsBS.put(OpOp2.OR, BinaryScalar.OperationTypes.OR);
+		HopsOpOp2LopsBS.put(OpOp2.XOR, BinaryScalar.OperationTypes.XOR);
 		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
+		HopsOpOp2LopsBS.put(OpOp2.BITWAND, BinaryScalar.OperationTypes.BW_AND);
+		HopsOpOp2LopsBS.put(OpOp2.BITWOR, BinaryScalar.OperationTypes.BW_OR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWXOR, BinaryScalar.OperationTypes.BW_XOR);
+		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTL, BinaryScalar.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
@@ -1265,14 +1277,20 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsU.put(OpOp2.GREATER, org.apache.sysml.lops.Unary.OperationTypes.GREATER_THAN);
 		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.apache.sysml.lops.Unary.OperationTypes.EQUALS);
 		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.apache.sysml.lops.Unary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysml.lops.Unary.OperationTypes.AND);
+		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysml.lops.Unary.OperationTypes.OR);
+		HopsOpOp2LopsU.put(OpOp2.XOR, org.apache.sysml.lops.Unary.OperationTypes.XOR);
 		HopsOpOp2LopsU.put(OpOp2.MAX, org.apache.sysml.lops.Unary.OperationTypes.MAX);
 		HopsOpOp2LopsU.put(OpOp2.MIN, org.apache.sysml.lops.Unary.OperationTypes.MIN);
 		HopsOpOp2LopsU.put(OpOp2.LOG, org.apache.sysml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysml.lops.Unary.OperationTypes.POW);
 		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT_NZ);
 		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp2LopsU.put(OpOp2.BITWAND, Unary.OperationTypes.BW_AND);
+		HopsOpOp2LopsU.put(OpOp2.BITWOR, Unary.OperationTypes.BW_OR);
+		HopsOpOp2LopsU.put(OpOp2.BITWXOR, Unary.OperationTypes.BW_XOR);
+		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTL, Unary.OperationTypes.BW_SHIFTL);
+		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTR, Unary.OperationTypes.BW_SHIFTR);
 	}
 
 	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1306,7 +1324,6 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysml.lops.Unary.OperationTypes.SPROP);
 		HopsOpOp1LopsU.put(OpOp1.SIGMOID, org.apache.sysml.lops.Unary.OperationTypes.SIGMOID);
-		HopsOpOp1LopsU.put(OpOp1.SELP, org.apache.sysml.lops.Unary.OperationTypes.SELP);
 		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_MATRIX);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_FRAME);
@@ -1339,22 +1356,34 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysml.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysml.lops.UnaryCP.OperationTypes.LENGTH);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysml.lops.UnaryCP.OperationTypes.PRINT);
+		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.apache.sysml.lops.UnaryCP.OperationTypes.ASSERT);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysml.lops.UnaryCP.OperationTypes.ROUND);
 		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.apache.sysml.lops.UnaryCP.OperationTypes.CEIL);
 		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.apache.sysml.lops.UnaryCP.OperationTypes.FLOOR);
 		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
+	protected static final HashMap<OpOp3, Ternary.OperationType> HopsOpOp3Lops;
+	static {
+		HopsOpOp3Lops = new HashMap<>();
+		HopsOpOp3Lops.put(OpOp3.PLUS_MULT, Ternary.OperationType.PLUS_MULT);
+		HopsOpOp3Lops.put(OpOp3.MINUS_MULT, Ternary.OperationType.MINUS_MULT);
+		HopsOpOp3Lops.put(OpOp3.IFELSE, Ternary.OperationType.IFELSE);
+	}
+	
 	/**
 	 * Maps from a multiple (variable number of operands) Hop operation type to
 	 * the corresponding Lop operation type. This is called in the MultipleOp
 	 * constructLops() method that is used to construct the Lops that correspond
 	 * to a Hop.
 	 */
-	protected static final HashMap<MultiInputOp, MultipleCP.OperationType> MultipleOperandOperationHopTypeToLopType;
+	protected static final HashMap<OpOpN, Nary.OperationType> HopsOpOpNLops;
 	static {
-		MultipleOperandOperationHopTypeToLopType = new HashMap<>();
-		MultipleOperandOperationHopTypeToLopType.put(MultiInputOp.PRINTF, MultipleCP.OperationType.PRINTF);
+		HopsOpOpNLops = new HashMap<>();
+		HopsOpOpNLops.put(OpOpN.PRINTF, Nary.OperationType.PRINTF);
+		HopsOpOpNLops.put(OpOpN.CBIND, Nary.OperationType.CBIND);
+		HopsOpOpNLops.put(OpOpN.RBIND, Nary.OperationType.RBIND);
+		HopsOpOpNLops.put(OpOpN.EVAL, Nary.OperationType.EVAL);
 	}
 
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;
@@ -1374,6 +1403,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp12String.put(OpOp1.NOT, "!");
 		HopsOpOp12String.put(OpOp1.NROW, "nrow");
 		HopsOpOp12String.put(OpOp1.PRINT, "print");
+		HopsOpOp12String.put(OpOp1.ASSERT, "assert");
 		HopsOpOp12String.put(OpOp1.ROUND, "round");
 		HopsOpOp12String.put(OpOp1.SIN, "sin");
 		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");
@@ -1440,6 +1470,12 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
+		HopsOpOp2String.put(OpOp2.XOR, "xor");
+		HopsOpOp2String.put(OpOp2.BITWAND, "bitwAnd");
+		HopsOpOp2String.put(OpOp2.BITWOR,  "bitwOr");
+		HopsOpOp2String.put(OpOp2.BITWXOR, "bitwXor");
+		HopsOpOp2String.put(OpOp2.BITWSHIFTL, "bitwShiftL");
+		HopsOpOp2String.put(OpOp2.BITWSHIFTR, "bitwShiftR");
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
@@ -1456,6 +1492,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
 		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
+		HopsOpOp3String.put(OpOp3.IFELSE, "ifelse");
 	}
 	
 	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;
@@ -1526,11 +1563,17 @@ public abstract class Hop implements ParseInfo
 		else if( "==".equals(op) ) return OpOp2.EQUAL;
 		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
 		else if( "|".equals(op) ) return OpOp2.OR;
+		else if( "xor".equals(op) ) return OpOp2.XOR;
 		else if( "&".equals(op) ) return OpOp2.AND;
 		else if( "log".equals(op) ) return OpOp2.LOG;
 		else if( "^".equals(op) ) return OpOp2.POW;
+		else if("bitwAnd".equals(op) ) return OpOp2.BITWAND;
+		else if("bitwOr".equals(op) ) return OpOp2.BITWOR;
+		else if("bitwXor".equals(op) ) return OpOp2.BITWXOR;
+		else if("bitwShiftL".equals(op) ) return OpOp2.BITWSHIFTL;
+		else if("bitwShiftR".equals(op) ) return OpOp2.BITWSHIFTR;
 		
-		return null;		
+		return null;
 	}
 
 	/////////////////////////////////////
@@ -1630,87 +1673,72 @@ public abstract class Hop implements ParseInfo
 		
 		return ret;
 	}
-
-	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars )
-	{
-		long size = computeSizeInformation(input, vars);
-		
-		//always set the computed size not just if known (positive) in order to allow 
-		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
-		setDim1( size );
+	
+	//always set the computed size not just if known (positive) in order to allow 
+	//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
+	
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars ) {
+		setDim1(computeSizeInformation(input, vars));
 	}
 
-	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars )
-	{
-		long size = computeSizeInformation(input, vars);
-
-		//always set the computed size not just if known (positive) in order to allow 
-		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
-		setDim2( size );
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+		setDim1(computeSizeInformation(input, vars, memo));
+	}
+	
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars ) {
+		setDim2(computeSizeInformation(input, vars));
+	}
+	
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+		setDim2(computeSizeInformation(input, vars, memo));
 	}
 
-	public long computeSizeInformation( Hop input, LocalVariableMap vars )
+	public long computeSizeInformation( Hop input, LocalVariableMap vars ) {
+		return computeSizeInformation(input, vars, new HashMap<Long,Long>());
+	}
+	
+	public long computeSizeInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo )
 	{
 		long ret = -1;
-		
-		try 
-		{
-			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, new HashMap<Long,Long>(), vars);
+		try {
+			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, memo, vars);
 			if( tmp!=Long.MAX_VALUE )
 				ret = tmp;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute size information.", ex);
 			ret = -1;
 		}
-		
 		return ret;
 	}
 
-	public double computeBoundsInformation( Hop input ) 
-	{
+	public double computeBoundsInformation( Hop input ) {
 		double ret = Double.MAX_VALUE;
-		
-		try
-		{
+		try {
 			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, new HashMap<Long, Double>());
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
-		
 		return ret;
 	}
 	
-	/**
-	 * Computes bound information for sequence if possible, otherwise returns
-	 * Double.MAX_VALUE
-	 * 
-	 * @param input high-level operator
-	 * @param vars local variable map
-	 * @return bounds information
-	 */
-	public double computeBoundsInformation( Hop input, LocalVariableMap vars ) 
-	{
+	public double computeBoundsInformation( Hop input, LocalVariableMap vars ) {
+		return computeBoundsInformation(input, vars, new HashMap<Long, Double>());
+	}
+	
+	public double computeBoundsInformation( Hop input, LocalVariableMap vars, HashMap<Long, Double> memo ) {
 		double ret = Double.MAX_VALUE;
-		
-		try
-		{
-			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, new HashMap<Long, Double>(), vars);
-
+		try {
+			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, memo, vars);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
-		
 		return ret;
 	}
-	
 	
 	/**
 	 * Compute worst case estimate for size expression based on worst-case
@@ -1727,16 +1755,14 @@ public abstract class Hop implements ParseInfo
 		
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW )
-			{
+			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW ) {
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.getRows()>0 )
+				if( mc.rowsKnown() )
 					ret = mc.getRows();
 			}
-			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL )
-			{
+			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL ) {
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.getCols()>0 )
+				if( mc.colsKnown() )
 					ret = mc.getCols();
 			}
 		}
@@ -1842,8 +1868,8 @@ public abstract class Hop implements ParseInfo
 		_updateType = that._updateType;
 
 		//no copy of lops (regenerated)
-		_parent = new ArrayList<>();
-		_input = new ArrayList<>();
+		_parent = new ArrayList<>(_parent.size());
+		_input = new ArrayList<>(_input.size());
 		_lops = null;
 		
 		_etype = that._etype;

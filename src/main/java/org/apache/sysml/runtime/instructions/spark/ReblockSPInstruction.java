@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -53,7 +53,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 
 	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
 			String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+		super(SPType.Reblock, op, in, out, opcode, instr);
 		brlen = br;
 		bclen = bc;
 		outputEmptyBlocks = emptyBlocks;
@@ -92,7 +92,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		mcOut.set(mc.getRows(), mc.getCols(), brlen, bclen, mc.getNonZeros());
 		
 		//get the source format form the meta data
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) obj.getMetaData();
+		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if(iimd == null)
 			throw new DMLRuntimeException("Error: Metadata not found");
 		InputInfo iinfo = iimd.getInputInfo();
@@ -121,18 +121,14 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		if(iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) 
-		{
-			//check jdk version (prevent double.parseDouble contention on <jdk8)
-			sec.checkAndRaiseValidationWarningJDKVersion();
-			
+		if(iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
 			//get the input textcell rdd
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
-					sec.getRDDHandleForVariable(input1.getName(), iinfo);
+			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
+				sec.getRDDHandleForVariable(input1.getName(), iinfo);
 			
 			//convert textcell to binary block
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-					RDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out =
+				RDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -200,18 +196,14 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		FrameObject fo = sec.getFrameObject(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		if(iinfo == InputInfo.TextCellInputInfo ) 
-		{
-			//check jdk version (prevent double.parseDouble contention on <jdk8)
-			sec.checkAndRaiseValidationWarningJDKVersion();
-			
+		if(iinfo == InputInfo.TextCellInputInfo ) {
 			//get the input textcell rdd
 			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
-					sec.getRDDHandleForVariable(input1.getName(), iinfo);
+				sec.getRDDHandleForVariable(input1.getName(), iinfo);
 			
 			//convert textcell to binary block
 			JavaPairRDD<Long, FrameBlock> out = 
-					FrameRDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, fo.getSchema());
+				FrameRDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, fo.getSchema());
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -225,8 +217,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
-			if(fo.getFileFormatProperties() instanceof CSVFileFormatProperties 
-			   && fo.getFileFormatProperties() != null ) 
+			if(fo.getFileFormatProperties() instanceof CSVFileFormatProperties
+				&& fo.getFileFormatProperties() != null ) 
 			{
 				CSVFileFormatProperties props = (CSVFileFormatProperties) fo.getFileFormatProperties();
 				hasHeader = props.hasHeader();
@@ -240,7 +232,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		}
 		else {
 			throw new DMLRuntimeException("The given InputInfo is not implemented "
-					+ "for ReblockSPInstruction: " + InputInfo.inputInfoToString(iinfo));
+				+ "for ReblockSPInstruction: " + InputInfo.inputInfoToString(iinfo));
 		}
 	}
 }

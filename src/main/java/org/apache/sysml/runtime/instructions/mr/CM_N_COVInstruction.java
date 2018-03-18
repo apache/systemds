@@ -34,8 +34,7 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 public class CM_N_COVInstruction extends UnaryMRInstructionBase {
 
 	private CM_N_COVInstruction(Operator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.CM_N_COV;
+		super(MRType.CM_N_COV, op, in, out);
 		instString = istr;
 	}
 

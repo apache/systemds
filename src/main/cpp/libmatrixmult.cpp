@@ -23,6 +23,12 @@
 #include "omp.h"
 #include <cmath>
 
+#ifdef USE_OPEN_BLAS
+	#include <cblas.h>
+#else
+  #include <mkl_service.h>  
+#endif
+
 int SYSML_CURRENT_NUM_THREADS = -1;
 void setNumThreadsForBLAS(int numThreads) {
 	if(SYSML_CURRENT_NUM_THREADS != numThreads) {
@@ -35,20 +41,14 @@ void setNumThreadsForBLAS(int numThreads) {
 	}
 }
  
-// Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
-// (m1rlen, m1clen) and (m1clen, m2clen)
-void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
-             int m1clen, int m2clen, int numThreads) {
-  int m = m1rlen;
-  int n = m2clen;
-  int k = m1clen;
-  
+void dmatmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m, int k, int n, int numThreads) {
   setNumThreadsForBLAS(numThreads);
-  
-  // if(m2clen == 1)
-  // 	cblas_dgemv(CblasRowMajor, CblasNoTrans, m1rlen, m1clen, 1, m1Ptr, m1clen, m2Ptr, 1, 0, retPtr, 1);
-  // else 
-  	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
+}
+
+void smatmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m, int k, int n, int numThreads) {  
+  setNumThreadsForBLAS(numThreads);
+  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
 }
 
 void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose, int numThreads) {
@@ -57,7 +57,5 @@ void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTran
   int k = isLeftTranspose ? m1rlen : m1clen;
   
   setNumThreadsForBLAS(numThreads);
-  
   cblas_dgemm(CblasRowMajor, isLeftTranspose ? CblasTrans : CblasNoTrans, isLeftTranspose ? CblasNoTrans : CblasTrans, m, n, k, 1, m1Ptr, k, m1Ptr, n, 0, retPtr, n);
 }
- 

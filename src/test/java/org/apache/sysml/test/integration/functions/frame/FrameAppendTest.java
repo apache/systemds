@@ -110,10 +110,10 @@ public class FrameAppendTest extends AutomatedTestBase
 			//core append operations matrix blocks
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 			MatrixBlock mbB = DataConverter.convertToMatrixBlock(B);
-			MatrixBlock mbC = mbA.appendOperations(mbB, new MatrixBlock(), atype==AppendType.CBIND);
+			MatrixBlock mbC = mbA.append(mbB, new MatrixBlock(), atype==AppendType.CBIND);
 			
 			//core append operations frame blocks
-			FrameBlock frame3 = frame1.appendOperations(frame2, new FrameBlock(), atype==AppendType.CBIND);
+			FrameBlock frame3 = frame1.append(frame2, new FrameBlock(), atype==AppendType.CBIND);
 			
 			//check basic meta data
 			if( frame3.getNumRows() != mbC.getNumRows() )

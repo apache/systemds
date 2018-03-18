@@ -58,9 +58,10 @@ public class WriterTextCSV extends MatrixWriter
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen )
 			throw new IOException("Matrix dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
-		}
+		if( rlen == 0 || clen == 0 )
+			throw new IOException("Write of matrices with zero rows or columns not supported ("+rlen+"x"+clen+").");
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());

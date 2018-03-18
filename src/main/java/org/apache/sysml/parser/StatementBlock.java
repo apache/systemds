@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,6 +32,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.rewrite.RewriteSplitDagDataDependentOperators;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.FormatType;
@@ -70,6 +72,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		_constVarsIn = new HashMap<>();
 		_constVarsOut = new HashMap<>();
 		_updateInPlaceVars = new ArrayList<>();
+	}
+	
+	public StatementBlock(StatementBlock sb) {
+		this();
+		setParseInfo(sb);
+		_dmlProg = sb._dmlProg;
 	}
 
 	public void setDMLProg(DMLProgram dmlProg){
@@ -114,8 +122,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _statements.get(i);
 	}
 
-	public ArrayList<Statement> getStatements()
-	{
+	public ArrayList<Statement> getStatements() {
 		return _statements;
 	}
 
@@ -124,7 +131,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		_statements = s;
 	}
 
-	public ArrayList<Hop> get_hops() throws HopsException {
+	public ArrayList<Hop> getHops() {
 		return _hops;
 	}
 
@@ -132,7 +139,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _lops;
 	}
 
-	public void set_hops(ArrayList<Hop> hops) {
+	public void setHops(ArrayList<Hop> hops) {
 		_hops = hops;
 	}
 
@@ -156,6 +163,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _splitDag;
 	}
 
+	private boolean isMergeablePrintStatement(Statement stmt) {
+		return ( stmt instanceof PrintStatement && (((PrintStatement)stmt).getType() == PRINTTYPE.STOP || ((PrintStatement)stmt).getType() == PRINTTYPE.ASSERT) );
+	}
 
     public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) throws LanguageException{
 
@@ -168,7 +178,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement
-			|| stmt instanceof FunctionStatement || ( stmt instanceof PrintStatement && ((PrintStatement)stmt).getType() == PRINTTYPE.STOP )/*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) /*|| stmt instanceof ELStatement*/ )
 		{
 			return false;
 		}
@@ -397,8 +407,172 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return result;
 
 	}
+	
+	public static List<StatementBlock> rHoistFunctionCallsFromExpressions(StatementBlock current) {
+		if (current instanceof FunctionStatementBlock) {
+			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
+			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
+			for (StatementBlock sb : fstmt.getBody())
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			fstmt.setBody(tmp);
+		}
+		else if (current instanceof WhileStatementBlock) {
+			WhileStatementBlock wsb = (WhileStatementBlock) current;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
+			for (StatementBlock sb : wstmt.getBody())
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			wstmt.setBody(tmp);
+		}
+		else if (current instanceof IfStatementBlock) {
+			IfStatementBlock isb = (IfStatementBlock) current;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
+			for (StatementBlock sb : istmt.getIfBody())
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			istmt.setIfBody(tmp);
+			if( istmt.getElseBody() != null && !istmt.getElseBody().isEmpty() ) {
+				ArrayList<StatementBlock> tmp2 = new ArrayList<>();
+				for (StatementBlock sb : istmt.getElseBody())
+					tmp2.addAll(rHoistFunctionCallsFromExpressions(sb));
+				istmt.setElseBody(tmp2);
+			}
+		}
+		else if (current instanceof ForStatementBlock) { //incl parfor
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			//TODO handle predicates
+			ArrayList<StatementBlock> tmp = new ArrayList<>();
+			for (StatementBlock sb : fstmt.getBody())
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+			fstmt.setBody(tmp);
+		}
+		else { //generic (last-level)
+			ArrayList<Statement> tmp = new ArrayList<>();
+			for(Statement stmt : current.getStatements())
+				tmp.addAll(rHoistFunctionCallsFromExpressions(stmt));
+			if( current.getStatements().size() != tmp.size() )
+				return createStatementBlocks(current, tmp);
+		}
+		return Arrays.asList(current);
+	}
 
-
+	public static List<Statement> rHoistFunctionCallsFromExpressions(Statement stmt) {
+		ArrayList<Statement> tmp = new ArrayList<>();
+		if( stmt instanceof AssignmentStatement ) {
+			AssignmentStatement astmt = (AssignmentStatement)stmt;
+			boolean ix = (astmt.getTargetList().get(0) instanceof IndexedIdentifier);
+			rHoistFunctionCallsFromExpressions(astmt.getSource(), !ix, tmp);
+			if( ix && astmt.getSource() instanceof FunctionCallIdentifier ) {
+				AssignmentStatement lstmt = (AssignmentStatement) tmp.get(tmp.size()-1);
+				astmt.setSource(copy(lstmt.getTarget()));
+			}
+		}
+		else if( stmt instanceof MultiAssignmentStatement ) {
+			MultiAssignmentStatement mstmt = (MultiAssignmentStatement)stmt;
+			rHoistFunctionCallsFromExpressions(mstmt.getSource(), true, tmp);
+		}
+		else if( stmt instanceof PrintStatement ) {
+			PrintStatement pstmt = (PrintStatement)stmt;
+			for(int i=0; i<pstmt.expressions.size(); i++) {
+				Expression lexpr = pstmt.getExpressions().get(i);
+				rHoistFunctionCallsFromExpressions(lexpr, false, tmp);
+				if( lexpr instanceof FunctionCallIdentifier ) {
+					AssignmentStatement lstmt = (AssignmentStatement) tmp.get(tmp.size()-1);
+					pstmt.getExpressions().set(i, copy(lstmt.getTarget()));
+				}
+			}
+		}
+		
+		//most statements will be returned unchanged, while expressions with
+		//function calls are split into potentially many statements
+		List<Statement> ret = tmp.isEmpty() ? Arrays.asList(stmt) : tmp;
+		if( !tmp.isEmpty() ) {
+			for( Statement ltmp : tmp )
+				ltmp.setParseInfo(stmt);
+			tmp.add(stmt);
+		}
+		return ret;
+	}
+	
+	public static Expression rHoistFunctionCallsFromExpressions(Expression expr, boolean root, ArrayList<Statement> tmp) {
+		if( expr == null || expr instanceof ConstIdentifier )
+			return expr; //do nothing
+		if( expr instanceof BinaryExpression ) {
+			BinaryExpression lexpr = (BinaryExpression) expr;
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+		}
+		else if( expr instanceof RelationalExpression ) {
+			RelationalExpression lexpr = (RelationalExpression) expr;
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+		}
+		else if( expr instanceof BooleanExpression ) {
+			BooleanExpression lexpr = (BooleanExpression) expr;
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+		}
+		else if( expr instanceof BuiltinFunctionExpression ) {
+			BuiltinFunctionExpression lexpr = (BuiltinFunctionExpression) expr;
+			Expression[] clexpr = lexpr.getAllExpr();
+			for( int i=0; i<clexpr.length; i++ )
+				clexpr[i] = rHoistFunctionCallsFromExpressions(clexpr[i], false, tmp);
+		}
+		else if( expr instanceof ParameterizedBuiltinFunctionExpression ) {
+			ParameterizedBuiltinFunctionExpression lexpr = (ParameterizedBuiltinFunctionExpression) expr;
+			HashMap<String, Expression> clexpr = lexpr.getVarParams();
+			for( String key : clexpr.keySet() )
+				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp));
+		}
+		else if( expr instanceof DataExpression ) {
+			DataExpression lexpr = (DataExpression) expr;
+			HashMap<String, Expression> clexpr = lexpr.getVarParams();
+			for( String key : clexpr.keySet() )
+				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp));
+		}
+		else if( expr instanceof FunctionCallIdentifier ) {
+			FunctionCallIdentifier fexpr = (FunctionCallIdentifier) expr;
+			for( ParameterExpression pexpr : fexpr.getParamExprs() )
+				pexpr.setExpr(rHoistFunctionCallsFromExpressions(pexpr.getExpr(), false, tmp));
+			if( !root ) { //core hoisting
+				String varname = RewriteSplitDagDataDependentOperators.createCutVarName(true);
+				DataIdentifier di = new DataIdentifier(varname);
+				di.setDataType(fexpr.getDataType());
+				di.setValueType(fexpr.getValueType());
+				tmp.add(new AssignmentStatement(di, fexpr, di));
+				return di;
+			}
+		}
+		//note: all remaining expressions data identifiers remain unchanged
+		return expr;
+	}
+	
+	private static DataIdentifier copy(DataIdentifier di) {
+		return new DataIdentifier(di);
+	}
+	
+	private static List<StatementBlock> createStatementBlocks(StatementBlock sb, List<Statement> stmts) {
+		List<StatementBlock> ret = new ArrayList<StatementBlock>();
+		StatementBlock current = new StatementBlock(sb);
+		for(Statement stmt : stmts) {
+			current.addStatement(stmt);
+			//cut the statement block after the current function
+			if( stmt instanceof AssignmentStatement
+				&& ((AssignmentStatement)stmt).getSource()
+				instanceof FunctionCallIdentifier ) {
+				ret.add(current);
+				current = new StatementBlock(sb);
+			}
+		}
+		if( current.getNumStatements() > 0 )
+			ret.add(current);
+		return ret;
+	}
+	
 	public ArrayList<Statement> rewriteFunctionCallStatements (DMLProgram dmlProg, ArrayList<Statement> statements) throws LanguageException {
 
 		ArrayList<Statement> newStatements = new ArrayList<>();
@@ -1044,9 +1218,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	// materialized hops recompilation / updateinplace flags
 	////
 
-	public void updateRecompilationFlag() throws HopsException {
-		_requiresRecompile = ConfigurationManager.isDynamicRecompilation()
-			                 && Recompiler.requiresRecompilation(get_hops());
+	public boolean updateRecompilationFlag() throws HopsException {
+		return (_requiresRecompile =
+			ConfigurationManager.isDynamicRecompilation()
+			&& Recompiler.requiresRecompilation(getHops()));
 	}
 
 	public boolean requiresRecompilation() {
@@ -1060,5 +1235,4 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public void setUpdateInPlaceVars( ArrayList<String> vars ) {
 		_updateInPlaceVars = vars;
 	}
-
-}  // end class
+}

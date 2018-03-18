@@ -25,8 +25,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 import scala.Tuple2;
 
@@ -100,23 +101,22 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_workerID = taskID;
 		
 		//initialize codegen class cache (before program parsing)
-		synchronized( CodegenUtils.class ) {
-			for( Entry<String, byte[]> e : _clsMap.entrySet() )
-				CodegenUtils.getClass(e.getKey(), e.getValue());
-		}
-		
+		for( Entry<String, byte[]> e : _clsMap.entrySet() )
+			CodegenUtils.getClassSync(e.getKey(), e.getValue());
+	
 		//parse and setup parfor body program
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
-		_resultVars  = body.getResultVarNames();
+		_resultVars  = body.getResultVariables();
 		_numTasks    = 0;
 		_numIters    = 0;
 		
 		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
 		//we reuse everything except result variables and partitioned input matrices)
 		_ec.pinVariables(_ec.getVarList()); //avoid cleanup of shared inputs
-		Collection<String> blacklist = CollectionUtils.union(_resultVars, _ec.getVarListPartitioned());
+		Collection<String> blacklist = UtilFunctions.asSet(_resultVars.stream()
+			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
 		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist);
 		
 		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 

@@ -38,27 +38,12 @@ import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class OperationsOnMatrixValues 
 {
-	
-	public static void performScalarIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, ScalarOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.scalarOperations(op, valueOut);
-	}
-	
-	public static void performUnaryIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.unaryOperations(op, valueOut);
-	}
-
 	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			         MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) 
 		throws DMLRuntimeException
@@ -74,7 +59,7 @@ public class OperationsOnMatrixValues
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor,  boolean cbind, boolean m2IsLast, int nextNCol) 
 	throws DMLRuntimeException
 	{
-		valueIn1.appendOperations(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
+		valueIn1.append(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
 	}
 	
 	public static void performZeroOut(MatrixIndexes indexesIn, MatrixValue valueIn, 
@@ -86,44 +71,44 @@ public class OperationsOnMatrixValues
 	}
 	
 	// ------------- Ternary Operations -------------
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
 			int brlen, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
 	}
 	
-	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
 		throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.ternaryOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
+		valueIn1.ctableOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
 	}
 	// -----------------------------------------------------
 	
@@ -212,14 +197,13 @@ public class OperationsOnMatrixValues
 			
 			//set initial values according to operator
 			if(op.initialValue==0) {
-				valueOut.reset(outRow, outCol, sparseHint);
-				correction.reset(corRow, corCol, false);
+				valueOut.reset(Math.max(outRow,0), Math.max(outCol,0), sparseHint);
+				correction.reset(Math.max(corRow,0), Math.max(corCol,0), false);
 			}
 			else {
-				valueOut.reset(outRow, outCol, op.initialValue);
-				correction.reset(corRow, corCol, op.initialValue);
+				valueOut.reset(Math.max(outRow, 0), Math.max(outCol,0), op.initialValue);
+				correction.reset(Math.max(corRow,0), Math.max(corCol,0), op.initialValue);
 			}
-			
 		}
 		else
 		{
@@ -255,13 +239,12 @@ public class OperationsOnMatrixValues
 		valueIn.aggregateUnaryOperations(op, valueOut, brlen, bclen, indexesIn);
 	}
 	
-	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
-			MatrixIndexes indexesOut, MatrixValue valueOut, AggregateBinaryOperator op)
+	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixBlock value1, MatrixIndexes indexes2, MatrixBlock value2, 
+			MatrixIndexes indexesOut, MatrixBlock valueOut, AggregateBinaryOperator op)
 	throws DMLRuntimeException
 	{
 		//compute output index
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
-		
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
 			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
@@ -269,11 +252,9 @@ public class OperationsOnMatrixValues
 			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
-	public static MatrixValue performAggregateBinaryIgnoreIndexes(
-			MatrixValue value1, MatrixValue value2,
-			MatrixValue valueOut, AggregateBinaryOperator op) 
+	public static MatrixValue performAggregateBinaryIgnoreIndexes(MatrixBlock value1, MatrixBlock value2,
+			MatrixBlock valueOut, AggregateBinaryOperator op) 
 	throws DMLRuntimeException {
-			
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
 			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
@@ -363,7 +344,7 @@ public class OperationsOnMatrixValues
 			}
 		
 		//execute actual slice operation
-		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
+		in.getValue().slice(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
 	}
 
 	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) 
@@ -406,7 +387,7 @@ public class OperationsOnMatrixValues
 				int rhs_lcl = UtilFunctions.computeCellInBlock(rhs_cl, bclen);
 				int rhs_lcu = UtilFunctions.computeCellInBlock(rhs_cu, bclen);
 				
-				MatrixBlock slicedRHSBlk = mb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
+				MatrixBlock slicedRHSBlk = mb.slice(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
 				
 				int lbrlen = UtilFunctions.computeBlockSize(rlen, leftRowIndex, brlen);
 				int lbclen = UtilFunctions.computeBlockSize(clen, leftColIndex, bclen);
@@ -439,7 +420,7 @@ public class OperationsOnMatrixValues
 				int row_offset = blockRow*brlen;
 
 				//copy submatrix to block
-				MatrixBlock tmp = out.sliceOperations( row_offset, row_offset+maxRow-1, 
+				MatrixBlock tmp = out.slice( row_offset, row_offset+maxRow-1, 
 						             0, out.getNumColumns()-1, new MatrixBlock() );
 				
 				//append block to result cache
@@ -517,7 +498,7 @@ public class OperationsOnMatrixValues
 		}
 		
 		//execute actual slice operation
-		block.sliceOperations(outlist, tmpRange, rowCut);
+		block.slice(outlist, tmpRange, rowCut);
 	}
 
 	public static void performShift(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlenLeft, int clenLeft/*, int bclen*/, long rlen, long clen, ArrayList<Pair<Long,FrameBlock>> outlist) 
@@ -557,7 +538,7 @@ public class OperationsOnMatrixValues
 			int rhs_lcl = (int)rhs_cl-1;
 			int rhs_lcu = (int)rhs_cu-1;
 																				
-			FrameBlock slicedRHSBlk = fb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new FrameBlock());
+			FrameBlock slicedRHSBlk = fb.slice(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new FrameBlock());
 			
 			int lbclen = clenLeft;
 			

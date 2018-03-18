@@ -60,7 +60,6 @@ import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -227,7 +226,7 @@ public abstract class CostEstimator
 			if( dat instanceof MatrixObject ) //matrix
 			{
 				MatrixObject mo = (MatrixObject) dat;
-				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 				long rlen = mc.getRows();
 				long clen = mc.getCols();
 				long brlen = mc.getRowsPerBlock();
@@ -242,7 +241,6 @@ public abstract class CostEstimator
 			}
 			
 			stats.put(varname, vs);
-			//System.out.println(varname+" "+vs);
 		}
 	}
 	
@@ -264,8 +262,6 @@ public abstract class CostEstimator
 				long nnz = Long.parseLong(parts[10]);
 				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
 				stats.put(varname, vs);
-				
-				//System.out.println(varname+" "+vs);
 			}
 			else if ( optype.equals("cpvar") ) {
 				String varname = parts[1];
@@ -308,10 +304,7 @@ public abstract class CostEstimator
 			FunctionCallCPInstruction finst = (FunctionCallCPInstruction) inst;
 			ArrayList<String> outVars = finst.getBoundOutputParamNames();
 			for( String varname : outVars )
-			{
 				stats.put(varname, _unknownStats);
-				//System.out.println(varname+" "+vs);
-			}
 		}
 	}
 

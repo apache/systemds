@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 public abstract class Instruction 
 {
-	public enum INSTRUCTION_TYPE { 
+	public enum IType { 
 		CONTROL_PROGRAM,
 		MAPREDUCE,
 		MAPREDUCE_JOB,
@@ -50,7 +50,7 @@ public abstract class Instruction
 	public static final String GPU_INST_PREFIX = "gpu_";
 	
 	//basic instruction meta data
-	protected INSTRUCTION_TYPE type = null;
+	protected IType type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
 	private String extendedOpcode = null;
@@ -83,11 +83,11 @@ public abstract class Instruction
 		return endCol;
 	}
 
-	public void setType (INSTRUCTION_TYPE tp ) {
+	public void setType (IType tp ) {
 		type = tp;
 	}
 	
-	public INSTRUCTION_TYPE getType() {
+	public IType getType() {
 		return type;
 	}
 	
@@ -179,18 +179,18 @@ public abstract class Instruction
 				scriptInfo = " [" + filename + " " + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
 			else
 				scriptInfo = " [" + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
-			if( type == INSTRUCTION_TYPE.SPARK )
+			if( type == IType.SPARK )
 				extendedOpcode = SP_INST_PREFIX + getOpcode() + scriptInfo;
-			else if( type == INSTRUCTION_TYPE.GPU )
+			else if( type == IType.GPU )
 				extendedOpcode = GPU_INST_PREFIX + getOpcode() + scriptInfo;
 			else
 				extendedOpcode = getOpcode() + scriptInfo;
 		}
 		else {
 			// This ensures that there is no overhead if finegrained statistics is disabled
-			if( type == INSTRUCTION_TYPE.SPARK )
+			if( type == IType.SPARK )
 				extendedOpcode = SP_INST_PREFIX + getOpcode();
-			else if( type == INSTRUCTION_TYPE.GPU )
+			else if( type == IType.GPU )
 				extendedOpcode = GPU_INST_PREFIX + getOpcode();
 			else
 				extendedOpcode = getOpcode();

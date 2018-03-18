@@ -50,7 +50,7 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 		} 
 			
 		//execute append operations (append both inputs to initially empty output)
-		MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock(), _type==AppendType.CBIND);
+		MatrixBlock ret = matBlock1.append(matBlock2, new MatrixBlock(), _type==AppendType.CBIND);
 		
 		//set output and release inputs 
 		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());

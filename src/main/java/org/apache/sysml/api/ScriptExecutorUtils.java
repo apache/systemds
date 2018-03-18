@@ -30,8 +30,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
-import org.apache.sysml.utils.GPUStatistics;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
 public class ScriptExecutorUtils {
@@ -75,12 +74,12 @@ public class ScriptExecutorUtils {
 			throws DMLRuntimeException {
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
-		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
-		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
-		DMLScript.FINEGRAINED_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
-		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
+		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);		
+		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
+		
 		if(DMLScript.USE_ACCELERATOR) {
 			DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
 			org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
@@ -106,7 +105,9 @@ public class ScriptExecutorUtils {
 			throw e;
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
-				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
+				for(GPUContext gCtx : ec.getGPUContexts()) {
+					gCtx.clearTemporaryMemory();
+				}
 				GPUContextPool.freeAllGPUContexts();
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
@@ -114,18 +115,9 @@ public class ScriptExecutorUtils {
 			
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
-
-			if (!exceptionThrown) {
-				if (statisticsMaxHeavyHitters > 0)
-					System.out.println(Statistics.display(statisticsMaxHeavyHitters));
-				else
-					System.out.println(Statistics.display());
-			} else {
-				if (statisticsMaxHeavyHitters > 0)
-					System.err.println(Statistics.display(statisticsMaxHeavyHitters));
-				else
-					System.err.println(Statistics.display());
-			}
+			(exceptionThrown ? System.err : System.out)
+				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
+					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
 		}
 	}
 

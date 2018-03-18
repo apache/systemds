@@ -34,10 +34,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 
-	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
+	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
 	}
 
 	public static AggregateBinaryCPInstruction parseInstruction( String str ) 
@@ -76,7 +74,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		//compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		MatrixBlock main = (matBlock2 instanceof CompressedMatrixBlock) ? matBlock2 : matBlock1;
-		MatrixBlock ret = (MatrixBlock) main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		MatrixBlock ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
 		
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

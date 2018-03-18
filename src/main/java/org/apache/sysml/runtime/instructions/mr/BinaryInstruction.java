@@ -31,9 +31,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class BinaryInstruction extends BinaryMRInstructionBase {
 
-	protected BinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
-		super(op, in1, in2, out);
-		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
+	protected BinaryInstruction(MRType type, Operator op, byte in1, byte in2, byte out, String istr) {
+		super(type, op, in1, in2, out);
 		instString = istr;
 	}
 
@@ -52,7 +51,7 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
 		if( bop != null )
-			return new BinaryInstruction(bop, in1, in2, out, str);
+			return new BinaryInstruction(MRType.Binary, bop, in1, in2, out, str);
 		else
 			return null;
 	}

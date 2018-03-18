@@ -46,18 +46,24 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return Arrays.asList(sb);
 		
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 		
 		//collect all unknown csv reads hops
 		ArrayList<Hop> cand = new ArrayList<>();
-		collectCSVReadHopsUnknownSize( sb.get_hops(), cand );
+		collectCSVReadHopsUnknownSize( sb.getHops(), cand );
 		
 		//split hop dag on demand
 		if( !cand.isEmpty() )
@@ -117,7 +123,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					}
 				}
 				
-				sb1.set_hops(sb1hops);
+				sb1.setHops(sb1hops);
 				sb1.updateRecompilationFlag();
 				ret.add(sb1); //statement block with csv reblocks
 				ret.add(sb); //statement block with remaining hops

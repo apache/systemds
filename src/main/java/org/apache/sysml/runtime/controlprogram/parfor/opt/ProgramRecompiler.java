@@ -28,6 +28,8 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
+import org.apache.sysml.hops.codegen.SpoofCompiler.IntegrationType;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties;
@@ -50,7 +52,7 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -72,6 +74,13 @@ public class ProgramRecompiler
 		//construct runtime program from lops
 		for( StatementBlock sb : sbs ) {
 			ret.add(dmlt.createRuntimeProgramBlock(rtprog, sb, config));
+		}
+		
+		//enhance runtime program by automatic operator fusion
+		if( ConfigurationManager.isCodegenEnabled() 
+			&& SpoofCompiler.INTEGRATION==IntegrationType.RUNTIME ) {
+			for( ProgramBlock pb : ret )
+				dmlt.codgenHopsDAG(pb);
 		}
 		
 		return ret;
@@ -164,17 +173,17 @@ public class ProgramRecompiler
 			{
 				//process actual hops
 				boolean ret = false;
-				Hop.resetVisitStatus(sb.get_hops());
+				Hop.resetVisitStatus(sb.getHops());
 				if( force )
 				{
 					//set forced execution type
-					for( Hop h : sb.get_hops() )
+					for( Hop h : sb.getHops() )
 						ret |= rFindAndSetCPIndexingHOP(h, var);
 				}
 				else
 				{
 					//release forced execution type
-					for( Hop h : sb.get_hops() )
+					for( Hop h : sb.getHops() )
 						ret |= rFindAndReleaseIndexingHOP(h, var);
 				}
 				
@@ -183,7 +192,7 @@ public class ProgramRecompiler
 				{
 					//construct new instructions
 					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
-						sb, sb.get_hops(), ec.getVariables(), null, true, false, 0);
+						sb, sb.getHops(), ec.getVariables(), null, true, false, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}
@@ -245,7 +254,7 @@ public class ProgramRecompiler
 		}
 		else //last level block
 		{
-			ArrayList<Hop> hops = sb.get_hops();
+			ArrayList<Hop> hops = sb.getHops();
 			if( hops != null ) 
 			{	
 				//replace constant literals
@@ -477,7 +486,7 @@ public class ProgramRecompiler
 		
 		//create instruction set
 		ArrayList<Instruction> tmp = new ArrayList<>();
-		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
+		Instruction inst = BinaryCPInstruction.parseInstruction(str);
 		tmp.add(inst);
 		
 		return tmp;

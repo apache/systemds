@@ -30,15 +30,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class StringInitCPInstruction extends UnaryCPInstruction {
-	private static final String DELIM = " ";
+	public static final String DELIM = " ";
 
-	private long _rlen = -1;
-	private long _clen = -1;
-	private String _data = null;
+	private final long _rlen;
+	private final long _clen;
+	private final String _data;
 
 	private StringInitCPInstruction(Operator op, CPOperand in, CPOperand out, long rows, long cols, int rpb, int cpb,
 			String data, String opcode, String inst) {
-		super(op, in, out, opcode, inst);
+		super(CPType.StringInit, op, in, out, opcode, inst);
 		_rlen = rows;
 		_clen = cols;
 		_data = data;

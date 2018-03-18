@@ -30,22 +30,20 @@ import java.util.Random;
 
 public class NormalPRNGenerator extends PRNGenerator
 {
-	private Random r;
+	private final Random rnorm;
 	private RandNPair pair;
 	private boolean flag = false; // we use pair.N1 if flag=false, and pair.N2 otherwise
 	
 	public NormalPRNGenerator() {
-		super();
+		rnorm = new Random();
 	}
 	
 	@Override
-	public void setSeed(long sd) {
-		//seed = s;
-		seed = sd;
-		r = new Random(seed);
+	public void setSeed(long seed) {
+		rnorm.setSeed(seed);
 		pair = new RandNPair();
 		flag = false;
-		pair.compute(r);
+		pair.compute(rnorm);
 	}
 	
 	@Override
@@ -56,7 +54,7 @@ public class NormalPRNGenerator extends PRNGenerator
 		}
 		else {
 			d = pair.getSecond();
-			pair.compute(r);
+			pair.compute(rnorm);
 		}
 		flag = !flag;
 		return d;

@@ -65,6 +65,7 @@ public abstract class GPUInstruction extends Instruction {
 	
 	public final static String MISC_TIMER_CUDA_FREE =               "f";		// time spent in calling cudaFree
 	public final static String MISC_TIMER_ALLOCATE =                "a";		// time spent to allocate memory on gpu
+	public final static String MISC_TIMER_EVICT =                	"evict";	// time spent in eviction on gpu
 	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT =   "ad";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
 	public final static String MISC_TIMER_ALLOCATE_SPARSE_OUTPUT =  "as";		// time spent to allocate sparse output (recorded differently than MISC_TIMER_ALLOCATE)
 	public final static String MISC_TIMER_SET_ZERO =                "az";		// time spent to allocate
@@ -113,6 +114,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_ACOS_KERNEL =                      "acosk";   // time spent in the acos kernel
 	public final static String MISC_TIMER_ATAN_KERNEL =                      "atank";   // time spent in the atan kernel
 	public final static String MISC_TIMER_SIGN_KERNEL =                      "signk";   // time spent in the sign kernel
+	public final static String MISC_TIMER_SIGMOID_KERNEL =                   "sigmk";   // time spent in the sigmoid kernel
 	public final static String MISC_TIMER_CBIND_KERNEL =                     "cbindk";  // time spent in the cbind kernel
 	public final static String MISC_TIMER_RBIND_KERNEL =                     "rbindk";  // time spent in the rbind kernel
 
@@ -140,6 +142,9 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_RELU_KERNEL =                    "nnrk";  // time spent in the relu kernel
 	public final static String MISC_TIMER_CUDNN_INIT =                     "nni";   // time spent in initializations for cudnn call
 	public final static String MISC_TIMER_CUDNN_CLEANUP =                  "nnc";   // time spent in cleanup for cudnn call
+	public final static String MISC_TIMER_DENSE_IM2COL_KERNEL=             "nndim2c"; // time spent in dense im2col cuda kernel
+	public final static String MISC_TIMER_SPARSE_IM2COL_KERNEL=            "nnsim2c"; // time spent in sparse im2col cuda kernel
+	public final static String MISC_TIMER_DENSE_REORG_KNPQ_KERNEL=         "nndrknpq"; // time spent in dense reorg_knpq cuda kernel
 
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
@@ -147,7 +152,7 @@ public abstract class GPUInstruction extends Instruction {
 	protected boolean _requiresLabelUpdate = false;
 
 	private GPUInstruction(String opcode, String istr) {
-		type = INSTRUCTION_TYPE.GPU;
+		type = IType.GPU;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
@@ -200,9 +205,9 @@ public abstract class GPUInstruction extends Instruction {
 					throws DMLRuntimeException
 	{
 		if(DMLScript.SYNCHRONIZE_GPU) {
-			long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(GPUStatistics.DISPLAY_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS) {
 				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
 			}
 		}
@@ -238,9 +243,9 @@ public abstract class GPUInstruction extends Instruction {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
-		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (GPUStatistics.DISPLAY_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

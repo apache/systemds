@@ -19,11 +19,12 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['createJavaObject']
+__all__ = ['createJavaObject', 'jvm_stdout', 'default_jvm_stdout', 'default_jvm_stdout_parallel_flush', 'set_default_jvm_stdout', 'get_spark_context' ]
 
 import os
 import numpy as np
 import pandas as pd
+import threading, time
 
 try:
     import py4j.java_gateway
@@ -32,6 +33,95 @@ try:
     from pyspark.sql import SparkSession
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
+
+_loadedSystemML = False
+def get_spark_context():
+    """
+    Internal method to get already initialized SparkContext.  Developers should always use
+    get_spark_context() instead of SparkContext._active_spark_context to ensure SystemML loaded.
+
+    Returns
+    -------
+    sc: SparkContext
+        SparkContext
+    """
+    if SparkContext._active_spark_context is not None:
+        sc = SparkContext._active_spark_context
+        global _loadedSystemML
+        if not _loadedSystemML:
+            createJavaObject(sc, 'dummy')
+            _loadedSystemML = True
+        return sc
+    else:
+        raise Exception('Expected spark context to be created.')
+        
+_in_jvm_stdout = False
+default_jvm_stdout = True
+default_jvm_stdout_parallel_flush = True
+def set_default_jvm_stdout(enable, parallel_flush=True):
+    """
+    This is useful utility method to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    enable: boolean
+        Should flush the stdout by default when mlcontext.execute is invoked
+        
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    global default_jvm_stdout, default_jvm_stdout_parallel_flush
+    default_jvm_stdout = enable
+    default_jvm_stdout_parallel_flush = parallel_flush
+    
+# This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+# Example usage:
+# with jvm_stdout():
+#    ml.execute(script)
+class jvm_stdout(object):
+    """
+    This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    def __init__(self, parallel_flush=False):
+        self.util = get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
+        self.parallel_flush = parallel_flush
+        self.t = threading.Thread(target=self.flush_stdout)
+        self.stop = False
+        
+    def flush_stdout(self):
+        while not self.stop: 
+            time.sleep(1) # flush stdout every 1 second
+            str = self.util.flushStdOut()
+            if str != '':
+                str = str[:-1] if str.endswith('\n') else str
+                print(str)
+    
+    def __enter__(self):
+        global _in_jvm_stdout
+        if _in_jvm_stdout:
+            # Allow for nested jvm_stdout    
+            self.donotRedirect = True
+        else:
+            self.donotRedirect = False
+            self.util.startRedirectStdOut()
+            if self.parallel_flush:
+                self.t.start()
+            _in_jvm_stdout = True
+
+    def __exit__(self, *args):
+        global _in_jvm_stdout
+        if not self.donotRedirect:
+            if self.parallel_flush:
+                self.stop = True
+                self.t.join()
+            print(self.util.stopRedirectStdOut())
+            _in_jvm_stdout = False
+
 
 _initializedSparkSession = False
 def _createJavaObject(sc, obj_type):
@@ -50,14 +140,15 @@ def _createJavaObject(sc, obj_type):
     else:
         raise ValueError('Incorrect usage: supported values: mlcontext or dummy')
 
-def _getJarFileName(sc, suffix):
+def _getJarFileNames(sc):
     import imp, fnmatch
     jar_file_name = '_ignore.jar'
     java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
+    jar_file_names = []
     for file in os.listdir(java_dir):
-        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT' + suffix + '.jar') or fnmatch.fnmatch(file, 'systemml-*' + suffix + '.jar'):
-            jar_file_name = os.path.join(java_dir, file)
-    return jar_file_name
+        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*.jar'):
+            jar_file_names = jar_file_names + [ os.path.join(java_dir, file) ]
+    return jar_file_names
 
 def _getLoaderInstance(sc, jar_file_name, className, hint):
     err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
@@ -89,16 +180,18 @@ def createJavaObject(sc, obj_type):
         ret = None
         err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
         hint = 'Provide the following argument to pyspark: --driver-class-path '
-        # First load SystemML
-        jar_file_name = _getJarFileName(sc, '')
-        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.utils.SystemMLLoaderUtils', hint + 'SystemML.jar')
-        x.loadSystemML(jar_file_name)
+        jar_file_names = _getJarFileNames(sc)
+        if len(jar_file_names) != 2:
+            raise ImportError('Expected only systemml and systemml-extra jars, but found ' + str(jar_file_names))
+        for jar_file_name in jar_file_names:
+            if 'extra' in jar_file_name:
+                x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-extra.jar')
+                x.loadCaffe2DML(jar_file_name)
+            else:
+                x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.utils.SystemMLLoaderUtils', hint + 'systemml-*.jar')
+                x.loadSystemML(jar_file_name)
         try:
             ret = _createJavaObject(sc, obj_type)
         except (py4j.protocol.Py4JError, TypeError):
             raise ImportError(err_msg + ' Hint: ' + hint + jar_file_name)
-        # Now load caffe2dml
-        jar_file_name = _getJarFileName(sc, '-extra')
-        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-extra.jar')
-        x.loadCaffe2DML(jar_file_name)
         return ret

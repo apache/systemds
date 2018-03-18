@@ -31,9 +31,8 @@ public abstract class DataGenMRInstruction extends MRInstruction {
 	protected int colsInBlock;
 	protected String baseDir;
 
-	protected DataGenMRInstruction(Operator op, DataGenMethod mthd, byte in, byte out, long r, long c, int rpb, int cpb,
-			String dir) {
-		super(op, out);
+	protected DataGenMRInstruction(MRType type, Operator op, DataGenMethod mthd, byte in, byte out, long r, long c, int rpb, int cpb, String dir) {
+		super(type, op, out);
 		method = mthd;
 		input = in;
 		rows = r;

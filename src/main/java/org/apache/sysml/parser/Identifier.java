@@ -66,7 +66,6 @@ public abstract class Identifier extends Expression
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
-				
 	}
 	
 	public void setDimensionValueProperties(Identifier i)
@@ -252,6 +251,6 @@ public abstract class Identifier extends Expression
 	}
 	
 	public boolean dimsKnown(){
-		return ( _dim1 > 0 && _dim2 > 0);
+		return ( _dim1 >= 0 && _dim2 >= 0);
 	}
 }

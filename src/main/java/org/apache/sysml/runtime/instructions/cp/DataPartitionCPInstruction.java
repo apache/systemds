@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.io.WriterBinaryBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -38,12 +38,11 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class DataPartitionCPInstruction extends UnaryCPInstruction {
 
-	private PDataPartitionFormat _pformat = null;
+	private final PDataPartitionFormat _pformat;
 
 	private DataPartitionCPInstruction(Operator op, CPOperand in1, PDataPartitionFormat pformat, CPOperand out,
 			String opcode, String istr) {
-		super(op, in1, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.MMTSJ;
+		super(CPType.Partition, op, in1, out, opcode, istr);
 		_pformat = pformat;
 	}
 
@@ -73,7 +72,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 		MatrixBlock mb = moIn.acquireRead();
 		
 		//execute operations 
-		MatrixObject moOut = (MatrixObject) ec.getVariable(output.getName());		
+		MatrixObject moOut = (MatrixObject) ec.getVariable(output.getName());
 		String fname = moOut.getFileName();
 		moOut.setPartitioned(_pformat, -1); //modify meta data output
 		try
@@ -85,7 +84,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)
 			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), moIn.getNnz()); 
-			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			moOut.setMetaData(meta);
 		}
 		catch(Exception ex)
@@ -94,6 +93,6 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 		}
 		
 		//release input
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());		
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 	}
 }

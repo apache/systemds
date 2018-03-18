@@ -46,11 +46,9 @@ forward = function(matrix[double] X, double p, int seed)
   #    `mask = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, seed=seed) <= p`
   # to create a dropout mask.  Fortunately, SystemML has a `sparsity` parameter on
   # the `rand` function that allows use to create a mask directly.
-  if (seed == -1) {
-    mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p)
-  } else {
-    mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p, seed=seed)
-  }
+  mask = ifelse(seed == -1,
+    rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p),
+    rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p, seed=seed));
   out = X * mask / p
 }
 

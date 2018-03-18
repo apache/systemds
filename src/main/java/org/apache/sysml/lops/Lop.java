@@ -41,7 +41,7 @@ public abstract class Lop
 		Data, DataGen,                                      //CP/MR read/write/datagen 
 		ReBlock, CSVReBlock,                                //MR reblock operations
 		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
-		UnaryCP, UNARY, BinaryCP, Binary, Ternary,          //CP/MR unary/binary/ternary
+		UnaryCP, UNARY, BinaryCP, Binary, Ternary, Nary,    //CP/MR unary/binary/ternary
 		RightIndex, LeftIndex, ZeroOut,                     //CP/MR indexing 
 		Aggregate, PartialAggregate,                        //CP/MR aggregation
 		BinUaggChain, UaggOuterChain,                       //CP/MR aggregation
@@ -55,12 +55,10 @@ public abstract class Lop
 		FunctionCallCP, FunctionCallCPSingle,               //CP function calls 
 		CumulativePartialAggregate, CumulativeSplitAggregate, CumulativeOffsetBinary, //MR cumsum/cumprod/cummin/cummax
 		WeightedSquaredLoss, WeightedSigmoid, WeightedDivMM, WeightedCeMM, WeightedUMM,
-		SortKeys, PickValues,
+		SortKeys, PickValues, Ctable,
 		Checkpoint,                                         //Spark persist into storage level
 		PlusMult, MinusMult,                                //CP
 		SpoofFused,                                         //CP/SP generated fused operator
-		/** CP operation on a variable number of operands */
-		MULTIPLE_CP
 	}
 
 	/**
@@ -341,7 +339,7 @@ public abstract class Lop
 		return lps.getLevel();
 	}
 	
-	public void setLevel() {
+	protected void setLevel() {
 		lps.setLevel(inputs);
 	}
 	

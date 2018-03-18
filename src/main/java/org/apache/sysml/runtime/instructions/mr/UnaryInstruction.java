@@ -22,10 +22,8 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
-import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -33,30 +31,20 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public class UnaryInstruction extends UnaryMRInstructionBase {
 
-	public UnaryInstruction(Operator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Unary;
+	public UnaryInstruction(MRType type, Operator op, byte in, byte out, String istr) {
+		super(type, op, in, out);
 		instString = istr;
 	}
 
 	public static UnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
 		String opcode = InstructionUtils.getOpCode(str);
-	 
 		InstructionUtils.checkNumFields ( str, 2 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		byte in, out;
 		in = Byte.parseByte(parts[1]);
 		out = Byte.parseByte(parts[2]);
-		
-		// Currently, UnaryInstructions are used primarily for executing Builtins like SIN(A), LOG(A,2)
-		if ( InstructionUtils.isBuiltinFunction(opcode) ) {
-			UnaryOperator unary = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
-			return new UnaryInstruction(unary, in, out, str);
-		}
-		else 
-			return new UnaryInstruction(null, in, out, str);
+		return new UnaryInstruction(MRType.Unary,
+			InstructionUtils.parseUnaryOperator(opcode), in, out, str);
 	}
 
 	@Override
@@ -68,21 +56,16 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		
 		if( blkList != null )
-			for(IndexedMatrixValue in : blkList )
-			{
-				if(in==null)
-					continue;
+			for(IndexedMatrixValue in : blkList ) {
+				if(in==null) continue;
 				
 				//allocate space for the output value
-				IndexedMatrixValue out;
-				if(input==output)
-					out=tempValue;
-				else
-					out=cachedValues.holdPlace(output, valueClass);
+				IndexedMatrixValue out= (input==output) ? tempValue :
+					cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
 				out.getIndexes().setIndexes(in.getIndexes());
-				OperationsOnMatrixValues.performUnaryIgnoreIndexes(in.getValue(), out.getValue(), (UnaryOperator)optr);
+				in.getValue().unaryOperations((UnaryOperator)optr, out.getValue());
 				
 				//put the output value in the cache
 				if(out==tempValue)

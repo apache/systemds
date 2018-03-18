@@ -34,26 +34,22 @@ public class SortIndex extends IndexFunction
 {
 	private static final long serialVersionUID = -8446389232078905200L;
 
-	private int     _col        = -1;
-	private boolean _decreasing = false;
-	private boolean _ixreturn   = false;
+	private final int[] _cols;
+	private final boolean _decreasing;
+	private final boolean _ixreturn;
 	
-	private SortIndex() {
-		// nothing to do here
+	public SortIndex(int col, boolean decreasing, boolean indexreturn) {
+		this(new int[]{col}, decreasing, indexreturn);
+	}
+	
+	public SortIndex(int[] cols, boolean decreasing, boolean indexreturn) {
+		_cols = cols;
+		_decreasing = decreasing;
+		_ixreturn = indexreturn;
 	}
 
-	public static SortIndex getSortIndexFnObject(int col, boolean decreasing, boolean indexreturn) 
-	{
-		SortIndex ix = new SortIndex();
-		ix._col = col;
-		ix._decreasing = decreasing;
-		ix._ixreturn = indexreturn;
-		
-		return ix;
-	}
-
-	public int getCol() {
-		return _col;
+	public int[] getCols() {
+		return _cols;
 	}
 	
 	public boolean getDecreasing() {

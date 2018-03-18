@@ -44,7 +44,7 @@ import org.apache.sysml.parser.WhileStatementBlock;
 public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.FLAG_FUNCTION_RECOMPILE_ONCE;
 	}
 	

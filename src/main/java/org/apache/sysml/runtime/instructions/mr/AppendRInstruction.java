@@ -42,10 +42,9 @@ public class AppendRInstruction extends AppendInstruction {
 		byte in2 = Byte.parseByte(parts[2]);
 		byte out = Byte.parseByte(parts[3]);
 		boolean cbind = Boolean.parseBoolean(parts[4]);
-			
+		
 		return new AppendRInstruction(null, in1, in2, out, cbind, str);
 	}
-	
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
@@ -64,7 +63,7 @@ public class AppendRInstruction extends AppendInstruction {
 		MatrixBlock mbLeft = (MatrixBlock)left.getValue();
 		MatrixBlock mbRight = (MatrixBlock)right.getValue();
 		
-		MatrixBlock ret = mbLeft.appendOperations(mbRight, new MatrixBlock(), _cbind);
+		MatrixBlock ret = mbLeft.append(mbRight, new MatrixBlock(), _cbind);
 		
 		//put result into cache
 		cachedValues.add(output, new IndexedMatrixValue(left.getIndexes(), ret));

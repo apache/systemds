@@ -87,6 +87,11 @@ public class CPlanMemoTable
 			.anyMatch(p -> p.type==type);
 	}
 	
+	public boolean contains(long hopID, MemoTableEntry me, TemplateType type) {
+		return contains(hopID) && get(hopID).stream()
+			.anyMatch(p -> p.type==type && p.equalPlanRefs(me));
+	}
+	
 	public boolean contains(long hopID, boolean checkClose, TemplateType... type) {
 		if( !checkClose && type.length==1 )
 			return contains(hopID, type[0]);
@@ -100,6 +105,15 @@ public class CPlanMemoTable
 		return contains(hopID) && get(hopID).stream()
 			.anyMatch(p -> (!checkChildRefs || p.hasPlanRef())
 				&& p.isValid() && !types.contains(p.type));
+	}
+	
+	public boolean hasOnlyExactMatches(long hopID, TemplateType type1, TemplateType type2) {
+		List<MemoTableEntry> l1 = get(hopID, type1);
+		List<MemoTableEntry> l2 = get(hopID, type2);
+		boolean ret = l1.size() == l2.size();
+		for( MemoTableEntry me : l1 )
+			ret &= l2.stream().anyMatch(p -> p.equalPlanRefs(me));
+		return ret;
 	}
 	
 	public int countEntries(long hopID) {
@@ -407,6 +421,11 @@ public class CPlanMemoTable
 		public int getPlanRefIndex() {
 			return (input1>=0) ? 0 : (input2>=0) ? 
 				1 : (input3>=0) ? 2 : -1;
+		}
+		public boolean equalPlanRefs(MemoTableEntry that) {
+			return (input1 == that.input1
+				&& input2 == that.input2
+				&& input3 == that.input3);
 		}
 		public long input(int index) {
 			return (index==0) ? input1 : (index==1) ? input2 : input3;

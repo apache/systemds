@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.util.ConvolutionUtils
 import caffe.Caffe.EltwiseParameter.EltwiseOp
 import org.apache.sysml.runtime.DMLRuntimeException;
 import java.util.ArrayList
+import caffe.Caffe.PoolingParameter.PoolMethod
 
 trait CaffeLayer extends BaseDMLGenerator {
   // -------------------------------------------------
@@ -42,6 +43,8 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedOutputShape
   }
   // -------------------------------------------------
+  var debugLayer = false
+  var caffe2dmlObj:Caffe2DML = null
   var computedBottomLayerOutputShape: (String, String, String) = null
   def bottomLayerOutputShape: (String, String, String) = {
     if (computedBottomLayerOutputShape == null) {
@@ -85,17 +88,23 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedDout
   }
   def dX(bottomLayerID: Int) = "dOut" + id + "_" + bottomLayerID
+  def getIgnoreVarName(varNameHint:String):String = "ignore" + varNameHint + "_" + id + "_" + Math.abs(Caffe2DML.rand.nextLong)
   // --------------------------------------------------------------------------------------
   // No need to override these methods in subclasses, instead classes that have weights and biases
   // should implement HasWeight and HasBias traits.
-  def dWeight(): String = throw new DMLRuntimeException("dWeight is not implemented in super class")
-  def dBias(): String   = throw new DMLRuntimeException("dBias is not implemented in super class")
   def weight(): String  = null;
   def weightShape(): Array[Int];
+  def dWeight(): String = throw new DMLRuntimeException("dWeight is not implemented in super class")
+  def shouldUpdateWeight(): Boolean = if (weight != null) true else false
   def bias(): String = null;
   def biasShape(): Array[Int];
-  def shouldUpdateWeight(): Boolean = if (weight != null) true else false
+  def dBias(): String   = throw new DMLRuntimeException("dBias is not implemented in super class")
   def shouldUpdateBias(): Boolean   = if (bias != null) true else false
+  
+  def extraWeight(): String  = null;
+  def extraWeightShape(): Array[Int] = null;
+  def dExtraWeight(): String = throw new DMLRuntimeException("dExtraWeight is not implemented in super class")
+  def shouldUpdateExtraWeight():Boolean = if(extraWeight != null) true else false
   // --------------------------------------------------------------------------------------
   // Helper methods to simplify the code of subclasses
   def invokeInit(dmlScript: StringBuilder, returnVariables: List[String], arguments: String*): Unit =
@@ -364,7 +373,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
       eps
     )
 
-  private def withSuffix(str: String): String = if (update_mean_var) str else str + "_ignore"
+  private def withSuffix(str: String): String = if (update_mean_var) str else getIgnoreVarName(str)
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
   override def biasShape(): Array[Int]        = Array(numChannels.toInt, 1)
   def cache_mean(): String                    = "cache_mean" + id
@@ -431,6 +440,8 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
   // This is useful because we do not support multi-input cbind and rbind in DML.
   def _getMultiFn(fn: String): String = {
     if (_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+    if(_childLayers.length < 2)
+        throw new DMLRuntimeException("Incorrect usage of Concat layer. Expected atleast 2 bottom layers, but found " + _childLayers.length)
     var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
     for (i <- 2 until _childLayers.size) {
       tmp = fn + "(" + tmp + ", " + _childLayers(i).out + ")"
@@ -484,20 +495,20 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
       else " = " + dOutVar + "[," + indexString + " ]; "
 
     // concat_start_index = concat_end_index + 1
-    // concat_end_index = concat_start_index + $$ - 1
+    // concat_end_index = concat_start_index + ## - 1
     val initializeIndexString = "concat_start_index" + outSuffix + " = concat_end_index" + outSuffix + " + 1; concat_end_index" + outSuffix +
-    " = concat_start_index" + outSuffix + " + $$ - 1; "
+    " = concat_start_index" + outSuffix + " + ## - 1; "
     if (param.getConcatParam.getAxis == 0) {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", nrow(l.out)))
+          .append(initializeIndexString.replaceAll("##", nrow(l.out)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })
     } else {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
+          .append(initializeIndexString.replaceAll("##", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })
@@ -532,27 +543,25 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
 
 // L2 loss function.
 class EuclideanLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
-  override def sourceFileName: String = if (!isSegmentationProblem()) "l2_loss" else throw new DMLRuntimeException("Segmentation is not supported for EuclideanLoss in Caffe2DML yet")
+  override def sourceFileName: String = "l2_loss"
   override def weightShape(): Array[Int] = null
   override def biasShape(): Array[Int]   = null
   
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out), scores, "yb")
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = 
+    assign(dmlScript, out, scores)
   
-  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit = 
+  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit =  {
+      invokeForward(dmlScript, List[String](out), scores, "yb")
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id + outSuffix), scores, "yb")
-  
-  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit =
-    if (!isSegmentationProblem()) {
-      val tabBuilder = new StringBuilder
-      for (i <- 0 until numTabs) tabBuilder.append("\t")
-      val tabs = tabBuilder.toString
-      dmlScript.append("tmp_loss = l2_loss::forward(" + commaSep(out, "yb") + ")\n")
-      dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
-      dmlScript.append(tabs).append("accuracy = -1\n")
-    } else {
-      throw new RuntimeException("Computation of loss for SoftmaxWithLoss is not implemented for segmentation problem")
-    }
+  }
+  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit = {
+    val tabBuilder = new StringBuilder
+    for (i <- 0 until numTabs) tabBuilder.append("\t")
+    val tabs = tabBuilder.toString
+    invokeForward(dmlScript, List[String]("tmp_loss"), scores, "yb")
+    dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
+    dmlScript.append(tabs).append("accuracy = -1\n")
+  }
 }
 
 class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
@@ -705,6 +714,54 @@ class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   // -------------------------------------------------
 }
 
+class Upsample(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  // -------------------------------------------------
+  override def sourceFileName                 = "upsample2d"
+  override def init(dmlScript: StringBuilder) = {}
+  /*
+   * Computes the forward pass for a Upsampling layer.
+   *
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - size_h: upsampling factor for rows.
+   *  - size_w: upsampling factor for columns.
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = 
+    invokeForward(dmlScript, List[String](out), X, num_channels, Hin, Win, size_h, size_w)
+  /*
+   * Computes the backward pass for a Upsampling layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream.
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - size_h: upsampling factor for rows.
+   *  - size_w: upsampling factor for columns.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = 
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, num_channels, Hin, Win, size_h, size_w)
+  override def weightShape(): Array[Int]                             = null
+  override def biasShape(): Array[Int]                               = null
+  def size_h(): String = param.getUpsampleParam.getSizeH.toString
+  def size_w(): String = param.getUpsampleParam.getSizeW.toString
+  def num_channels():String = bottomLayerOutputShape._1
+  def Hin():String = bottomLayerOutputShape._2
+  def Win():String = bottomLayerOutputShape._3
+  override def outputShape = (num_channels, int_mult(size_h, bottomLayerOutputShape._2), int_mult(size_w, bottomLayerOutputShape._3))
+  // -------------------------------------------------
+}
+
 class Softmax(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
   override def sourceFileName                 = "softmax"
@@ -818,7 +875,8 @@ class Dropout(val param: LayerParameter, val id: Int, val net: CaffeNetwork) ext
 class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // -------------------------------------------------
   // TODO: bias_filler [default type: 'constant' value: 0]; bias_term [default true]: specifies whether to learn and apply a set of additive biases to the filter outputs
-  override def sourceFileName = "affine"
+  val isLowRank = param.getInnerProductParam.hasRank && param.getInnerProductParam.getRank > 0
+  override def sourceFileName = if(isLowRank) "low_rank_affine" else "affine"
   /*
    * Initialize the parameters of this layer.
    *
@@ -839,7 +897,10 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - W: Weights, of shape (D, M).
    *  - b: Biases, of shape (1, M).
    */
-  override def init(dmlScript: StringBuilder) = invokeInit(dmlScript, List[String](weight, bias), numFeatures, numNeurons)
+  override def init(dmlScript: StringBuilder) = {
+    if(isLowRank) invokeInit(dmlScript, List[String](weight, extraWeight, bias), numFeatures, numNeurons, param.getInnerProductParam.getRank.toString)
+    else invokeInit(dmlScript, List[String](weight, bias), numFeatures, numNeurons)
+  }
   /*
    * Computes the forward pass for an affine (fully-connected) layer
    * with M neurons.  The input data has N examples, each with D
@@ -853,8 +914,14 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    * Outputs:
    *  - out: Outputs, of shape (N, M).
    */
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out), X, weight, bias)
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    if(debugLayer && caffe2dmlObj != null && !caffe2dmlObj.containsParfor) {
+      dmlScript.append("assert(ncol(" + X + ") == nrow(" + weight + ") | ncol(" + weight + ") == ncol(" + bias + ")); ")
+    }
+    if(isLowRank) invokeForward(dmlScript, List[String](out), X, weight, extraWeight, bias)
+    else invokeForward(dmlScript, List[String](out), X, weight, bias)
+  }
+    
   /*
    * Computes the backward pass for a fully-connected (affine) layer
    * with M neurons.
@@ -870,21 +937,108 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - dW: Gradient wrt `W`, of shape (D, M).
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) =
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  override def backward(dmlScript: StringBuilder, outSuffix: String) =  {
+    if(isLowRank) invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dExtraWeight, dBias), dout, X, weight, extraWeight, bias)
+    else invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  }
+  
   // -------------------------------------------------
   // num_output (c_o): the number of filters
   def numNeurons  = param.getInnerProductParam.getNumOutput.toString
   def numFeatures = int_mult(bottomLayerOutputShape._1, bottomLayerOutputShape._2, bottomLayerOutputShape._3)
   // n * c_o * 1 * 1
   override def outputShape               = (param.getInnerProductParam.getNumOutput.toString, "1", "1")
-  override def weightShape(): Array[Int] = Array(numFeatures.toInt, numNeurons.toInt)
+  override def weightShape(): Array[Int] = if(isLowRank) Array(numFeatures.toInt, param.getInnerProductParam.getRank) else Array(numFeatures.toInt, numNeurons.toInt)
   override def biasShape(): Array[Int]   = Array(1, numNeurons.toInt)
+  override def extraWeight(): String  = if(isLowRank) weight + "_extra" else null
+  override def extraWeightShape(): Array[Int] = if(isLowRank) Array(param.getInnerProductParam.getRank, numNeurons.toInt) else null
+  override def dExtraWeight(): String = if(isLowRank) dWeight + "_extra" else null
+}
+
+
+class RNN(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  val return_sequences = param.getRecurrentParam.getReturnSequences
+  
+  // ---------------------------------------------------------
+  // Note: since Caffe doesnot have return_sequences, number of output is same as number of neurons
+  def M():String = param.getRecurrentParam.getNumOutput.toString
+  // ---------------------------------------------------------
+  
+  def timesteps():String = bottomLayerOutputShape._1
+  def input_features():String = bottomLayerOutputShape._2
+  def output_features():Int = param.getRecurrentParam.getNumOutput
+  override def sourceFileName = "rnn"
+  override def outputShape               = if(return_sequences) (timesteps, output_features.toString, "1") else (output_features.toString, "1", "1")
+  override def biasShape(): Array[Int]   = Array(1, M.toInt)
+  override def weightShape(): Array[Int] = Array(input_features.toInt + M.toInt, M.toInt)
+  
+  override def init(dmlScript: StringBuilder) = {
+    invokeInit(dmlScript, List[String](weight, bias, out0), Caffe2DML.batchSize, input_features, M)
+  }
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    invokeForward(dmlScript, List[String](out, cache_out), X, weight, bias, timesteps, input_features, return_sequences.toString.toUpperCase, out0)
+  }
+  
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0), dout, X, weight, bias,
+        timesteps, input_features, return_sequences.toString.toUpperCase, out0, cache_out)
+  }
+  
+  val cache_out = "cache_out_" + id
+  val out0 = "out0_" + id
+  val dout0 = "dout0_" + id
+}
+
+class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  val return_sequences = param.getRecurrentParam.getReturnSequences
+  
+  // ---------------------------------------------------------
+  // Note: since Caffe doesnot have return_sequences, number of output is same as number of neurons
+  def M():String = param.getRecurrentParam.getNumOutput.toString
+  // ---------------------------------------------------------
+  
+  def timesteps():String = bottomLayerOutputShape._1
+  def input_features():String = bottomLayerOutputShape._2
+  def output_features():Int = param.getRecurrentParam.getNumOutput
+  override def sourceFileName = "lstm"
+  override def outputShape               = if(return_sequences) (timesteps, output_features.toString, "1") else (output_features.toString, "1", "1")
+  override def biasShape(): Array[Int]   = Array(1, 4*M.toInt)
+  override def weightShape(): Array[Int] = Array(input_features.toInt + M.toInt, 4*M.toInt)
+  
+  override def init(dmlScript: StringBuilder) = {
+    invokeInit(dmlScript, List[String](weight, bias, out0, c0), Caffe2DML.batchSize, input_features, M)
+    // Also, initialize gradient wrt `c` to empty matrix 
+    dmlScript.append(dc0 + " = matrix(0, rows=" + Caffe2DML.batchSize + ", cols=" + M + ")\n")
+  }
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    val N:String = null // output_features.toString
+    val T = timesteps()
+    val D = input_features()
+    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
+  }
+  
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val T = timesteps()
+    val D = input_features()
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
+        T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
+  }
+  
+  val cache_out = "cache_out_" + id
+  val out0 = "out0_" + id
+  val dout0 = "dout0_" + id
+  val c0 = "cellState0_" + id
+  val dc0 = "dcellState0_" + id
+  val c = "cellState_" + id
+  val cache_c = "cache_c_" + id
+  val cache_ifog = "cache_ifog_" + id
 }
 
 class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
-  override def sourceFileName                 = "max_pool2d_builtin"
+  override def sourceFileName                 = if(param.getPoolingParam.getPool == PoolMethod.AVE) "avg_pool2d_builtin" else "max_pool2d_builtin"; 
   override def init(dmlScript: StringBuilder) = {}
   /*
    * Computes the forward pass for a 2D spatial max pooling layer.
@@ -914,7 +1068,7 @@ class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) 
    *  - Wout: Output width.
    */
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out, "ignoreHout_" + id, "ignoreWout_" + id), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    invokeForward(dmlScript, List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   /*
    * Computes the backward pass for a 2D spatial max pooling layer.
    * The input data has N examples, each represented as a 3D volume
@@ -1066,7 +1220,7 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
     if (isDepthWise)
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,
@@ -1083,7 +1237,7 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
       )
     else
       invokeForward(dmlScript,
-                    List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+                    List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
                     X,
                     weight,
                     bias,
@@ -1321,7 +1475,7 @@ class DeConvolution(val param: LayerParameter, val id: Int, val net: CaffeNetwor
     if (isDepthWise)
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,
@@ -1341,7 +1495,7 @@ class DeConvolution(val param: LayerParameter, val id: Int, val net: CaffeNetwor
     else
       invokeForward(
         dmlScript,
-        List[String](out, "ignoreHout_" + id, "ignoreWout_" + id),
+        List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
         X,
         weight,
         bias,

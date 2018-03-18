@@ -1144,16 +1144,14 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			functionName = convertedSyntax.functionName;
 			paramExpression = convertedSyntax.paramExpression;
 		}
-
-		final ExpressionInfo info = ctx.info;
-		Action f = new Action() {
-			@Override public void execute(Expression e) { info.expr = e; }
-		};
-		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-		if (validBIF)
+		
+		//handle builtin functions
+		ctx.info.expr= buildForBuiltInFunction(ctx, functionName, paramExpression);
+		if( ctx.info.expr != null )
 			return;
 
-		notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
+		// handle user-defined functions
+		ctx.info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
 	}
 
 	@Override
@@ -1196,13 +1194,11 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 
 		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
-			final FunctionCallMultiAssignmentStatementContext fctx = ctx;
-			Action f = new Action() {
-				@Override public void execute(Expression e) { setMultiAssignmentStatement(targetList, e, fctx, fctx.info); }
-			};
-			boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-			if (validBIF)
+			Expression e = buildForBuiltInFunction(ctx, functionName, paramExpression);
+			if( e != null ) {
+				setMultiAssignmentStatement(targetList, e, ctx, ctx.info);
 				return;
+			}
 		}
 
 		// Override default namespace for imported non-built-in function

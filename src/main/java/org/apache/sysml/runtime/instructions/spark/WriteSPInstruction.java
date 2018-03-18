@@ -57,11 +57,10 @@ public class WriteSPInstruction extends SPInstruction {
 	private FileFormatProperties formatProperties;
 
 	private WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
-		super(opcode, str);
+		super(SPType.Write, opcode, str);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
-
 		formatProperties = null; // set in case of csv
 	}
 
@@ -190,6 +189,11 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{
+			if( mc.getRows() == 0 || mc.getCols() == 0 ) {
+				throw new IOException("Write of matrices with zero rows or columns"
+					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
+			}
+			
 			LongAccumulator aNnz = null;
 			
 			//piggyback nnz computation on actual write

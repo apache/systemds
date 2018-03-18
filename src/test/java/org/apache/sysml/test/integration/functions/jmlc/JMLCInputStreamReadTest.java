@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.parser.Expression.DataType;
@@ -41,6 +42,7 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
+@Ignore
 public class JMLCInputStreamReadTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "jmlc";
@@ -142,6 +144,7 @@ public class JMLCInputStreamReadTest extends AutomatedTestBase
 				//read matrix from input stream 
 				FileInputStream fis = new FileInputStream(output("X"));
 				double[][] data2 = conn.convertToDoubleMatrix(fis, rows, cols, format);
+				fis.close();
 				
 				//compare matrix result
 				TestUtils.compareMatrices(data, data2, rows, cols, 0);
@@ -164,6 +167,7 @@ public class JMLCInputStreamReadTest extends AutomatedTestBase
 				//read frame from input stream 
 				FileInputStream fis = new FileInputStream(output("X"));
 				String[][] fdata2 = conn.convertToStringFrame(fis, rows, cols, format);
+				fis.close();
 				
 				//compare frame result
 				TestUtils.compareFrames(fdata, fdata2, rows, cols);

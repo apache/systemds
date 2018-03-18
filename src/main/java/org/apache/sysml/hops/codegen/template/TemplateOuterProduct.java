@@ -174,25 +174,22 @@ public class TemplateOuterProduct extends TemplateBase {
 		}
 		else if(hop instanceof BinaryOp)
 		{
-			BinaryOp bop = (BinaryOp) hop;
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
 			
-			if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )
-				inHops2.put("_X", hop.getInput().get(0));
-			if( TemplateUtils.isMatrix(hop.getInput().get(1)) && cdata2 instanceof CNodeData )
-				inHops2.put("_X", hop.getInput().get(1));
+			if( HopRewriteUtils.isBinarySparseSafe(hop) ) {
+				if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )
+					inHops2.put("_X", hop.getInput().get(0));
+				if( TemplateUtils.isMatrix(hop.getInput().get(1)) && cdata2 instanceof CNodeData )
+					inHops2.put("_X", hop.getInput().get(1));
+			}
 			
 			//add lookups if required
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
-			if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-				out = new CNodeUnary(cdata1, UnaryType.POW2);
-			else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-				out = new CNodeUnary(cdata1, UnaryType.MULT2);
-			else
-				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
+			
+			out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof AggBinaryOp)
 		{

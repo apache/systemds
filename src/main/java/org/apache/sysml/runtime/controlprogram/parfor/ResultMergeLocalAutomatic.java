@@ -29,12 +29,12 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class ResultMergeLocalAutomatic extends ResultMerge
 {
+	private static final long serialVersionUID = 1600893100602101732L;
 	
 	private ResultMerge _rm = null;
 	
-	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename )
-	{
-		super( out, in, outputFilename );
+	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {
+		super( out, in, outputFilename, accum );
 	}
 
 	@Override
@@ -48,9 +48,9 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long cols = mc.getCols();
 		
 		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols, OptimizerUtils.getLocalMemBudget()) )
-			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
+			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName, _isAccum );
 		else
-			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
+			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName, _isAccum );
 		
 		MatrixObject ret = _rm.executeSerialMerge();
 
@@ -68,10 +68,10 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long cols = mc.getCols();
 		
 		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols, OptimizerUtils.getLocalMemBudget()) )
-			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
+			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName, _isAccum );
 		else
-			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
+			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName, _isAccum );
 		
-		return _rm.executeParallelMerge(par);	
+		return _rm.executeParallelMerge(par);
 	}
 }

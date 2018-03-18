@@ -40,13 +40,11 @@ import org.apache.sysml.utils.lite.LiteCheck;
  */
 public class InfrastructureAnalyzer 
 {
-	
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
 	
 	//static local master node properties
 	private static int  _localPar        = -1;
 	private static long _localJVMMaxMem  = -1;
-	private static boolean _isLtJDK8 = false;
 	
 	//static hadoop cluster properties
 	private static int  _remotePar       = -1;
@@ -60,8 +58,7 @@ public class InfrastructureAnalyzer
 	private static boolean _yarnEnabled  = false;
 	
 	//static initialization, called for each JVM (on each node)
-	static 
-	{
+	static {
 		//analyze local node properties
 		analyzeLocalMachine();
 		
@@ -69,11 +66,6 @@ public class InfrastructureAnalyzer
 		//analyzeHadoopCluster(); //note: due to overhead - analyze on-demand
 	}
 
-	public static boolean isJavaVersionLessThanJDK8()
-	{
-		return _isLtJDK8;
-	}
-	
 	///////
 	//methods for obtaining parallelism properties
 	
@@ -83,8 +75,7 @@ public class InfrastructureAnalyzer
 	 * 
 	 * @return number of local processors of the current node
 	 */
-	public static int getLocalParallelism()
-	{
+	public static int getLocalParallelism() {
 		return _localPar;
 	}	
 	
@@ -111,8 +102,7 @@ public class InfrastructureAnalyzer
 		return _remoteParMap;
 	}
 
-	public static void setRemoteParallelMapTasks(int pmap)
-	{
+	public static void setRemoteParallelMapTasks(int pmap) {
 		_remoteParMap = pmap;
 	}
 	
@@ -127,8 +117,7 @@ public class InfrastructureAnalyzer
 		return _remoteParReduce;
 	}
 
-	public static void setRemoteParallelReduceTasks(int preduce)
-	{
+	public static void setRemoteParallelReduceTasks(int preduce) {
 		_remoteParReduce = preduce;
 	}
 	
@@ -140,13 +129,11 @@ public class InfrastructureAnalyzer
 	 * 
 	 * @return maximum memory of the current JVM
 	 */
-	public static long getLocalMaxMemory()
-	{
+	public static long getLocalMaxMemory() {
 		return _localJVMMaxMem;
 	}
 
-	public static void setLocalMaxMemory( long localMem )
-	{
+	public static void setLocalMaxMemory( long localMem ) {
 		_localJVMMaxMem = localMem;
 	}
 	
@@ -161,8 +148,7 @@ public class InfrastructureAnalyzer
 		return _remoteJVMMaxMemMap;
 	}
 
-	public static void setRemoteMaxMemoryMap( long remoteMem )
-	{
+	public static void setRemoteMaxMemoryMap( long remoteMem ) {
 		_remoteJVMMaxMemMap = remoteMem;
 	}
 	
@@ -177,8 +163,7 @@ public class InfrastructureAnalyzer
 		return _remoteJVMMaxMemReduce;
 	}
 
-	public static void setRemoteMaxMemoryReduce( long remoteMem )
-	{
+	public static void setRemoteMaxMemoryReduce( long remoteMem ) {
 		_remoteJVMMaxMemReduce = remoteMem;
 	}
 
@@ -199,8 +184,7 @@ public class InfrastructureAnalyzer
 		return _localJT;
 	}
 
-	public static boolean isLocalMode(JobConf job)
-	{
+	public static boolean isLocalMode(JobConf job) {
 		// Due to a bug in HDP related to fetching the "mode" of execution within mappers,
 		// we explicitly probe the relevant properties instead of relying on results from 
 		// analyzeHadoopCluster().
@@ -219,8 +203,7 @@ public class InfrastructureAnalyzer
 	 * 
 	 * @return maximum local parallelism constraint
 	 */
-	public static int getCkMaxCP() 
-	{
+	public static int getCkMaxCP() {
 		//default value (if not specified)
 		return getLocalParallelism();
 	}
@@ -230,8 +213,7 @@ public class InfrastructureAnalyzer
 	 * 
 	 * @return maximum remote parallelism constraint
 	 */
-	public static int getCkMaxMR() 
-	{
+	public static int getCkMaxMR() {
 		if( OptimizerUtils.isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(true);
 		else
@@ -243,8 +225,7 @@ public class InfrastructureAnalyzer
 	 * 
 	 * @return maximum memory constraint
 	 */
-	public static long getCmMax() 
-	{
+	public static long getCmMax() {
 		//default value (if not specified)
 		return Math.min( getLocalMaxMemory(), getRemoteMaxMemoryMap() );
 	}
@@ -297,28 +278,22 @@ public class InfrastructureAnalyzer
 		return ret;
 	}
 
-	public static void setMaxMemoryOpt(JobConf job, String key, long bytes)
-	{
+	public static void setMaxMemoryOpt(JobConf job, String key, long bytes) {
 		String javaOptsOld = job.get( key );
 		String javaOptsNew = null;
-
-		//StringTokenizer st = new StringTokenizer( javaOptsOld, " " );
 		String[] tokens = javaOptsOld.split(" "); //account also for no ' '
 		StringBuilder sb = new StringBuilder();
-		for( String arg : tokens )
-		{
-			if( arg.startsWith("-Xmx") ) //search for max mem
-			{
+		for( String arg : tokens ) {
+			if( arg.startsWith("-Xmx") ) { //search for max mem
 				sb.append("-Xmx");
 				sb.append( (bytes/(1024*1024)) );
 				sb.append("M");
 			}
 			else
 				sb.append(arg);
-			
 			sb.append(" ");
 		}
-		javaOptsNew = sb.toString().trim();		
+		javaOptsNew = sb.toString().trim();
 		job.set(key, javaOptsNew);
 	}
 	
@@ -343,22 +318,18 @@ public class InfrastructureAnalyzer
 		ClusterStatus stat = client.getClusterStatus();
 		
 		double ret = 0.0;
-		if( stat != null ) //if in cluster mode
-		{	
-			if( mapOnly )
-			{
+		if( stat != null ) { //if in cluster mode
+			if( mapOnly ) {
 				int capacity = stat.getMaxMapTasks();
 				int current = stat.getMapTasks();
 				ret = ((double)current) / capacity;
 			}
-			else
-			{
+			else {
 				int capacity = stat.getMaxMapTasks() + stat.getMaxReduceTasks();
 				int current = stat.getMapTasks() + stat.getReduceTasks();
 				ret = ((double)current) / capacity;
 			}
 		}
-		
 		return ret;
 	}
 	
@@ -368,31 +339,21 @@ public class InfrastructureAnalyzer
 	/**
 	 * Analyzes properties of local machine and JVM.
 	 */
-	private static void analyzeLocalMachine()
-	{
+	private static void analyzeLocalMachine() {
 		//step 1: basic parallelism and memory
 		_localPar       = Runtime.getRuntime().availableProcessors();
 		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
-		
-		//step 2: analyze if used jdk older than jdk8
-		String version = System.getProperty("java.version");
-		
-		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		_isLtJDK8 = (UtilFunctions.compareVersion(version, "1.8") < 0); 
 	}
 	
 	/**
 	 * Analyzes properties of hadoop cluster and configuration.
 	 */
-	private static void analyzeHadoopCluster()
-	{
-		try 
-		{
+	private static void analyzeHadoopCluster() {
+		try {
 			JobConf job = ConfigurationManager.getCachedJobConf();
 			JobClient client = new JobClient(job);
 			ClusterStatus stat = client.getClusterStatus();
-			if( stat != null ) //if in cluster mode
-			{
+			if( stat != null ) { //if in cluster mode
 				//analyze cluster status
 				_remotePar = stat.getTaskTrackers();
 				_remoteParMap = stat.getMaxMapTasks(); 
@@ -400,10 +361,9 @@ public class InfrastructureAnalyzer
 				
 				//analyze pure configuration properties
 				analyzeHadoopConfiguration();
-			}		
+			}
 		} 
-		catch (IOException e) 
-		{
+		catch (IOException e) {
 			throw new RuntimeException("Unable to analyze infrastructure.",e);
 		}
 	}
@@ -412,12 +372,11 @@ public class InfrastructureAnalyzer
 	 * Analyzes only properties of hadoop configuration in order to prevent 
 	 * expensive call to cluster status .
 	 */
-	private static void analyzeHadoopConfiguration()
-	{
+	private static void analyzeHadoopConfiguration() {
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		
 		_remoteMRSortMem = (1024*1024) * job.getLong(MRConfigurationNames.MR_TASK_IO_SORT_MB,100); //1MB
-			
+		
 		//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 		//(for robustness we probe both: child and map configuration parameters)
 		String javaOpts1 = job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS); //internally mapred/mapreduce synonym
@@ -441,15 +400,13 @@ public class InfrastructureAnalyzer
 		_yarnEnabled = (framework!=null && framework.equals("yarn"));
 		
 		//analyze if local mode (internally requires yarn_enabled)
-		_localJT = analyzeLocalMode(job);		
+		_localJT = analyzeLocalMode(job);
 	}
 
-	private static boolean analyzeLocalMode(JobConf job)
-	{
+	private static boolean analyzeLocalMode(JobConf job) {
 		//analyze if local mode (if yarn enabled, we always assume cluster mode
 		//in order to workaround configuration issues on >=Hadoop 2.6)
 		String jobTracker = job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS, "local");
-		return "local".equals(jobTracker)
-			   & !isYarnEnabled();
+		return "local".equals(jobTracker) && !isYarnEnabled();
 	}
 }

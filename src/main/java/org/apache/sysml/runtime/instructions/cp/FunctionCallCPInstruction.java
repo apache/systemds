@@ -20,10 +20,8 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
@@ -34,15 +32,28 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 
 public class FunctionCallCPInstruction extends CPInstruction {
-	private String _functionName;
-	private String _namespace;
+	private final String _functionName;
+	private final String _namespace;
+	private final CPOperand[] _boundInputs;
+	private final ArrayList<String> _boundInputNames;
+	private final ArrayList<String> _boundOutputNames;
+
+	public FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs,
+		ArrayList<String> boundInputNames, ArrayList<String> boundOutputNames, String istr) {
+		super(CPType.External, null, functName, istr);
+		_functionName = functName;
+		_namespace = namespace;
+		_boundInputs = boundInputs;
+		_boundInputNames = boundInputNames;
+		_boundOutputNames = boundOutputNames;
+	}
 
 	public String getFunctionName() {
 		return _functionName;
@@ -51,51 +62,29 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	public String getNamespace() {
 		return _namespace;
 	}
-
-	// stores both the bound input and output parameters
-	private ArrayList<CPOperand> _boundInputParamOperands;
-	private ArrayList<String> _boundInputParamNames;
-	private ArrayList<String> _boundOutputParamNames;
-
-	private FunctionCallCPInstruction(String namespace, String functName, ArrayList<CPOperand> boundInParamOperands,
-			ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
-		super(null, functName, istr);
-
-		_cptype = CPINSTRUCTION_TYPE.External;
-		_functionName = functName;
-		_namespace = namespace;
-		_boundInputParamOperands = boundInParamOperands;
-		_boundInputParamNames = boundInParamNames;
-		_boundOutputParamNames = boundOutParamNames;
-
-	}
-
+	
 	public static FunctionCallCPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
-	{	
+	{
 		//schema: extfunct, fname, num inputs, num outputs, inputs, outputs
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
 		String functionName = parts[2];
 		int numInputs = Integer.valueOf(parts[3]);
 		int numOutputs = Integer.valueOf(parts[4]);
-		ArrayList<CPOperand> boundInParamOperands = new ArrayList<>();
-		ArrayList<String> boundInParamNames = new ArrayList<>();
-		ArrayList<String> boundOutParamNames = new ArrayList<>();
+		CPOperand[] boundInputs = new CPOperand[numInputs];
+		ArrayList<String> boundInputNames = new ArrayList<>();
+		ArrayList<String> boundOutputNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
-			CPOperand operand = new CPOperand(parts[5 + i]);
-			boundInParamOperands.add(operand);
-			boundInParamNames.add(operand.getName());
+			boundInputs[i] = new CPOperand(parts[5 + i]);
+			boundInputNames.add(boundInputs[i].getName());
 		}
-		for (int i = 0; i < numOutputs; i++) {
-			boundOutParamNames.add(parts[5 + numInputs + i]);
-		}
-		
-		return new FunctionCallCPInstruction ( namespace,functionName, 
-				boundInParamOperands, boundInParamNames, boundOutParamNames, str );
+		for (int i = 0; i < numOutputs; i++)
+			boundOutputNames.add(parts[5 + numInputs + i]);
+		return new FunctionCallCPInstruction ( namespace,
+			functionName, boundInputs, boundInputNames, boundOutputNames, str );
 	}
-
-		
+	
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 
@@ -114,7 +103,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
-	{		
+	{
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Executing instruction : " + this.toString());
 		}
@@ -122,47 +111,42 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
 		
-		// sanity check number of function paramters
-		if( _boundInputParamNames.size() < fpb.getInputParams().size() ) {
+		// sanity check number of function parameters
+		if( _boundInputs.length < fpb.getInputParams().size() ) {
 			throw new DMLRuntimeException("Number of bound input parameters does not match the function signature "
-				+ "("+_boundInputParamNames.size()+", but "+fpb.getInputParams().size()+" expected)");
+				+ "("+_boundInputs.length+", but "+fpb.getInputParams().size()+" expected)");
 		}
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
-		LocalVariableMap functionVariables = new LocalVariableMap();		
+		LocalVariableMap functionVariables = new LocalVariableMap();
 		for( int i=0; i<fpb.getInputParams().size(); i++) 
-		{				
-			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
-			String currFormalParamName = currFormalParam.getName();
-			Data currFormalParamValue = null; 
-				
-			CPOperand operand = _boundInputParamOperands.get(i);
-			String varname = operand.getName();
+		{
 			//error handling non-existing variables
-			if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
-				throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
-						DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
+			CPOperand input = _boundInputs[i];
+			if( !input.isLiteral() && !ec.containsVariable(input.getName()) ) {
+				throw new DMLRuntimeException("Input variable '"+input.getName()+"' not existing on call of " + 
+					DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 			}
 			//get input matrix/frame/scalar
-			currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
-				ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
+			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
+			Data value = ec.getVariable(input);
 			
 			//graceful value type conversion for scalar inputs with wrong type
-			if( currFormalParamValue.getDataType() == DataType.SCALAR
-				&& currFormalParamValue.getValueType() != operand.getValueType() )
+			if( value.getDataType() == DataType.SCALAR
+				&& value.getValueType() != currFormalParam.getValueType() ) 
 			{
-				ScalarObject so = (ScalarObject) currFormalParamValue;
-				currFormalParamValue = ScalarObjectFactory
-					.createScalarObject(operand.getValueType(), so);
+				value = ScalarObjectFactory.createScalarObject(
+					currFormalParam.getValueType(), (ScalarObject)value);
 			}
 			
-			functionVariables.put(currFormalParamName, currFormalParamValue);						
+			//set input parameter
+			functionVariables.put(currFormalParam.getName(), value);
 		}
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-	    HashMap<String,Boolean> pinStatus = ec.pinVariables(_boundInputParamNames);
+		boolean[] pinStatus = ec.pinVariables(_boundInputNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
@@ -185,42 +169,38 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 
-		Collection<String> retVarnames = new LinkedList<>(retVars.keySet());
-		HashSet<String> probeVars = new HashSet<>();
+		HashSet<String> expectRetVars = new HashSet<>();
 		for(DataIdentifier di : fpb.getOutputParams())
-			probeVars.add(di.getName());
-		for( String var : retVarnames ) {
-			if( !probeVars.contains(var) ) //cleanup candidate
-			{
-				Data dat = fn_ec.removeVariable(var);
-				if( dat != null && dat instanceof MatrixObject )
-					fn_ec.cleanupMatrixObject((MatrixObject)dat);
-			}
+			expectRetVars.add(di.getName());
+		
+		LocalVariableMap retVars = fn_ec.getVariables();
+		for( Entry<String,Data> var : retVars.entrySet() ) {
+			if( expectRetVars.contains(var.getKey()) )
+				continue;
+			//cleanup unexpected return values to avoid leaks
+			if( var.getValue() instanceof CacheableData )
+				fn_ec.cleanupCacheableData((CacheableData<?>)var.getValue());
 		}
 		
 		// Unpin the pinned variables
-		ec.unpinVariables(_boundInputParamNames, pinStatus);
+		ec.unpinVariables(_boundInputNames, pinStatus);
 
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){
-		
-			String boundVarName = _boundOutputParamNames.get(i); 
+			String boundVarName = _boundOutputNames.get(i);
 			Data boundValue = retVars.get(fpb.getOutputParams().get(i).getName());
 			if (boundValue == null)
 				throw new DMLRuntimeException(boundVarName + " was not assigned a return value");
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
-			if ( exdata != null && exdata instanceof MatrixObject && exdata != boundValue ) {
-				ec.cleanupMatrixObject( (MatrixObject)exdata );
+			if ( exdata != null && exdata instanceof CacheableData && exdata != boundValue ) {
+				ec.cleanupCacheableData( (CacheableData<?>)exdata );
 			}
 			
 			//add/replace data in symbol table
-			if( boundValue instanceof MatrixObject )
-				((MatrixObject) boundValue).setVarName(boundVarName);
 			ec.setVariable(boundVarName, boundValue);
 		}
 	}
@@ -243,25 +223,12 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		LOG.debug("ExternalBuiltInFunction: " + this.toString());
 	}
 
-	public ArrayList<String> getBoundInputParamNames()
-	{
-		return _boundInputParamNames;
+	public ArrayList<String> getBoundInputParamNames() {
+		return _boundInputNames;
 	}
 	
-	public ArrayList<String> getBoundOutputParamNames()
-	{
-		return _boundOutputParamNames;
-	}
-
-	public void setFunctionName(String fname)
-	{
-		//update instruction string
-		String oldfname = _functionName;
-		instString = updateInstStringFunctionName(oldfname, fname);
-		
-		//set attribute
-		_functionName = fname;
-		instOpcode = fname;
+	public ArrayList<String> getBoundOutputParamNames() {
+		return _boundOutputNames;
 	}
 
 	public String updateInstStringFunctionName(String pattern, String replace)
@@ -280,6 +247,4 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 		return sb.substring( 0, sb.length()-Lop.OPERAND_DELIMITOR.length() );
 	}
-	
-	
 }

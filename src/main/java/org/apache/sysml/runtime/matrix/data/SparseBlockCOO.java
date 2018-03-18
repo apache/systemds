@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * SparseBlock implementation that realizes a traditional 'coordinate matrix'
@@ -186,6 +187,60 @@ public class SparseBlockCOO extends SparseBlock
 		return true;
 	}
 	
+	@Override
+	public boolean isAllocated(int r) {
+		return true;
+	}
+
+	@Override
+	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
+		//1. correct meta data
+		if(rlen < 0 || clen < 0) {
+			throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
+		}
+
+		//2. correct array lengths
+		if(_size != nnz && _cindexes.length < nnz && _rindexes.length < nnz && _values.length < nnz) {
+			throw new RuntimeException("Incorrect array lengths.");
+		}
+
+		//3.1. sort order of row indices
+		for( int i=1; i<=nnz; i++ ) {
+			if(_rindexes[i] < _rindexes[i-1])
+				throw new RuntimeException("Wrong sorted order of row indices");
+		}
+
+		//3.2. sorted values wrt to col indexes wrt to a given row index
+		for( int i=0; i<rlen; i++ ) {
+			int apos = pos(i);
+			int alen = size(i);
+			for(int k=apos+i; k<apos+alen; k++)
+				if( _cindexes[k+1] >= _cindexes[k] )
+					throw new RuntimeException("Wrong sparse row ordering: "
+							+ k + " "+_cindexes[k-1]+" "+_cindexes[k]);
+			for( int k=apos; k<apos+alen; k++ )
+				if(_values[k] == 0)
+					throw new RuntimeException("Wrong sparse row: zero at "
+							+ k + " at col index " + _cindexes[k]);
+		}
+
+		//4. non-existing zero values
+		for( int i=0; i<_size; i++ ) {
+			if( _values[i] == 0)
+				throw new RuntimeException("The values array should not contain zeros."
+						+ " The " + i + "th value is "+_values[i]);
+		}
+
+		//5. a capacity that is no larger than nnz times the resize factor
+		int capacity = _values.length;
+		if( capacity > nnz*RESIZE_FACTOR1 ) {
+			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
+					+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
+		}
+
+		return true;
+	}
+
 	@Override 
 	public void reset() {
 		_size = 0;
@@ -206,7 +261,7 @@ public class SparseBlockCOO extends SparseBlock
 			System.arraycopy(_rindexes, pos+len, _rindexes, pos, _size-(pos+len));
 			System.arraycopy(_cindexes, pos+len, _cindexes, pos, _size-(pos+len));
 			System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
-			_size -= len;	
+			_size -= len;
 		}
 	}
 	
@@ -225,7 +280,7 @@ public class SparseBlockCOO extends SparseBlock
 		double rix0 = _rindexes[pos];
 		int cnt = 0;
 		while( pos<_size && rix0 == _rindexes[pos++] )
-			cnt ++;		
+			cnt ++;
 		return cnt;
 	}
 	
@@ -272,7 +327,7 @@ public class SparseBlockCOO extends SparseBlock
 		//scan to begin of row index partition
 		while( index>0 && _rindexes[index-1]==r )
 			index--;
-		return index;	
+		return index;
 	}
 
 	@Override
@@ -290,7 +345,7 @@ public class SparseBlockCOO extends SparseBlock
 				shiftLeftAndDelete(index);
 				return true; // nnz--
 			}
-			else { 	
+			else {
 				_values[index] = v;
 				return false;
 			} 
@@ -314,12 +369,16 @@ public class SparseBlockCOO extends SparseBlock
 		int alen = row.size();
 		int[] aix = row.indexes();
 		double[] avals = row.values();
+		//delete existing values in range if necessary 
 		deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		//prepare free space (allocate and shift)
+		int lsize = _size+alen;
+		if( _values.length < lsize )
+			resize(lsize);
 		shiftRightByN(pos, alen);
 		Arrays.fill(_rindexes, pos, pos+alen, r);
 		System.arraycopy(aix, 0, _cindexes, pos, alen);
 		System.arraycopy(avals, 0, _values, pos, alen);
-		_size+=alen;
 	}
 
 	@Override
@@ -329,19 +388,17 @@ public class SparseBlockCOO extends SparseBlock
 	
 		if( _size==_values.length ) 
 			resize();
-		insert(_size, r, c, v);	
+		insert(_size, r, c, v);
 	}
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-		//delete existing values in range if necessary 
+		//delete existing values in range if necessary
 		deleteIndexRange(r, cl, cu);
-
+		
 		//determine input nnz
-		int lnnz = 0;
-		for( int i=vix; i<vix+vlen; i++ )
-			lnnz += ( v[i] != 0 ) ? 1 : 0;
-
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
+		
 		//prepare free space (allocate and shift)
 		int lsize = _size+lnnz;
 		if( _values.length < lsize )
@@ -357,6 +414,27 @@ public class SparseBlockCOO extends SparseBlock
 				_values[ index ] = v[i];
 				index++;
 			}
+	}
+	
+	@Override
+	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
+		//delete existing values in range if necessary
+		deleteIndexRange(r, cl, cu);
+		
+		//prepare free space (allocate and shift)
+		int lsize = _size+vlen;
+		if( _values.length < lsize )
+			resize(lsize);
+		int index = internPosFIndexGT(r, cl);
+		shiftRightByN((index>0)?index:pos(r+1), vlen);
+		
+		//insert values
+		for( int i=vpos; i<vpos+vlen; i++ ) {
+			_rindexes[ index ] = r;
+			_cindexes[ index ] = cl+vix[i];
+			_values[ index ] = v[i];
+			index++;
+		}
 	}
 
 	@Override
@@ -384,11 +462,12 @@ public class SparseBlockCOO extends SparseBlock
 		
 		//sort _cindexes/_values by _cindexes per row partition
 		int index = 0;
-		while( index < _size ){
-			int r = _rindexes[index];		
+		while( index < _size ) {
+			int r = _rindexes[index];
 			int len = 0;
-			while( r == _rindexes[index] ) {
-				len ++;	index ++;	
+			while( index < _size && r == _rindexes[index] ) {
+				len ++;
+				index ++;
 			}
 			SortUtils.sortByIndex(index-len, index, _cindexes, _values);
 		}
@@ -398,7 +477,7 @@ public class SparseBlockCOO extends SparseBlock
 	public void sort(int r) {
 		int pos = pos(r);
 		int len = size(r);
-				
+		
 		if( len<=100 || !SortUtils.isSorted(pos, pos+len, _cindexes) )
 			SortUtils.sortByIndex(pos, pos+len, _cindexes, _values);
 	}
@@ -525,7 +604,7 @@ public class SparseBlockCOO extends SparseBlock
 
 	private void resize() {
 		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
+		double tmpCap = Math.ceil(_values.length * RESIZE_FACTOR1);
 		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
 		
 		resize(newCap);
@@ -540,11 +619,11 @@ public class SparseBlockCOO extends SparseBlock
 
 	private void resizeAndInsert(int ix, int r, int c, double v) {
 		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
+		double tmpCap = Math.ceil(_values.length * RESIZE_FACTOR1);
 		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
 		
 		int[] oldrindexes = _rindexes;
-		int[] oldcindexes = _cindexes;		
+		int[] oldcindexes = _cindexes;
 		double[] oldvalues = _values;
 		_rindexes = new int[newCap];
 		_cindexes = new int[newCap];
@@ -564,7 +643,7 @@ public class SparseBlockCOO extends SparseBlock
 		insert(ix, r, c, v);
 	}
 
-	private void shiftRightAndInsert(int ix, int r, int c, double v)  {		
+	private void shiftRightAndInsert(int ix, int r, int c, double v) {
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_rindexes, ix, _rindexes, ix+1, _size-ix);
 		System.arraycopy(_cindexes, ix, _cindexes, ix+1, _size-ix);
@@ -583,8 +662,7 @@ public class SparseBlockCOO extends SparseBlock
 		_size--;
 	}
 
-	private void shiftRightByN(int ix, int n) 
-	{		
+	private void shiftRightByN(int ix, int n) {
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_rindexes, ix, _rindexes, ix+n, _size-ix);
 		System.arraycopy(_cindexes, ix, _cindexes, ix+n, _size-ix);
@@ -596,7 +674,7 @@ public class SparseBlockCOO extends SparseBlock
 		_rindexes[ix] = r;
 		_cindexes[ix] = c;
 		_values[ix] = v;
-		_size++;	
+		_size++;
 	}
 	
 	/**

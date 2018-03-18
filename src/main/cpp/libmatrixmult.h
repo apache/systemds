@@ -39,24 +39,23 @@
 //#endif
 
 // Since we call cblas_dgemm in openmp for loop,
-// we call "extension" APIs for setting number of threads of the given API.
-// For example: for OpenBLAS we use openblas_set_num_threads and  
-// for MKL we use mkl_set_num_threads. This avoids performance degradation due to overprovisioning.
-#ifdef USE_OPEN_BLAS
-#include <cblas.h>
-// extern "C" void openblas_set_num_threads(int numThreads);
-#elif defined USE_INTEL_MKL
-#include <mkl.h>
-#include <mkl_service.h>
+// we call "extension" APIs for setting the number of threads.
+#ifdef USE_INTEL_MKL
+  #include <mkl.h>
+  #include <mkl_service.h>
+  extern "C" void mkl_set_num_threads(int numThreads);
+#else
+  #include <cblas.h>
+  extern "C" void openblas_set_num_threads(int numThreads);
 #endif
 
 void setNumThreadsForBLAS(int numThreads);
 
 // Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
 // (m1rlen, m1clen) and (m1clen, m2clen)
-void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
-             int m1clen, int m2clen, int numThreads);
-             
+void dmatmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m, int k, int n, int numThreads);
+void smatmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m, int k, int n, int numThreads);
+
 void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
-             
+
 #endif

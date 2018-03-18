@@ -26,6 +26,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
@@ -167,7 +168,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			super.rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 
 			//rewrite 14:
-			HashSet<String> inplaceResultVars = new HashSet<>();
+			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 
 			//rewrite 15:
@@ -183,7 +184,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<>();
+			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 
 			if( !OptimizerUtils.isSparkExecutionMode() ) {

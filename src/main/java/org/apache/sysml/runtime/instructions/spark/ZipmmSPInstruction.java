@@ -47,9 +47,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 
 	private ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean tRewrite,
 			String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.ZIPMM;
-
+		super(SPType.ZIPMM, op, in1, in2, out, opcode, istr);
 		_tRewrite = tRewrite;
 	}
 
@@ -131,7 +129,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock tmp = (MatrixBlock)in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 				
 			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
-			return (MatrixBlock)tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
+			return tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
 		}
 	}
 }

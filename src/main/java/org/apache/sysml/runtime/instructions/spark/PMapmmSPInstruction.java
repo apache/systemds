@@ -59,8 +59,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 	private static final int NUM_ROWBLOCKS = 4;
 
 	private PMapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MAPMM;
+		super(SPType.PMAPMM, op, in1, in2, out, opcode, istr);
 	}
 
 	public static PMapmmSPInstruction parseInstruction( String str ) 

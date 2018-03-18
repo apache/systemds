@@ -33,12 +33,11 @@ import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 
 public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
-	protected ArrayList<CPOperand> _outputs;
+	protected final ArrayList<CPOperand> _outputs;
 
 	private MultiReturnParameterizedBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
 			ArrayList<CPOperand> outputs, String opcode, String istr) {
-		super(op, input1, input2, outputs.get(0), opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
+		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
 		_outputs = outputs;
 	}
 

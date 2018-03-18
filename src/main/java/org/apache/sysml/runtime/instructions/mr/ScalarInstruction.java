@@ -26,7 +26,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
-import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
@@ -34,12 +33,8 @@ import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 public class ScalarInstruction extends UnaryMRInstructionBase {
 
 	private ScalarInstruction(ScalarOperator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
+		super(MRType.Binary, op, in, out);
 		instString = istr;
-
-		// value dependent safe-safeness (trigger re-evaluation sparse-safe)
-		op.setConstant(op.getConstant());
 	}
 
 	public static ScalarInstruction parseInstruction ( String str )
@@ -65,21 +60,16 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList != null )
-			for( IndexedMatrixValue in : blkList )
-			{
-				if(in==null)
-					continue;
+			for( IndexedMatrixValue in : blkList ) {
+				if(in==null) continue;
 			
 				//allocate space for the output value
-				IndexedMatrixValue out;
-				if(input==output)
-					out=tempValue;
-				else
-					out=cachedValues.holdPlace(output, valueClass);
+				IndexedMatrixValue out = (input==output) ? tempValue :
+					cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
 				out.getIndexes().setIndexes(in.getIndexes());
-				OperationsOnMatrixValues.performScalarIgnoreIndexes(in.getValue(), out.getValue(), ((ScalarOperator)this.optr));
+				in.getValue().scalarOperations((ScalarOperator)this.optr, out.getValue());
 				
 				//put the output value in the cache
 				if(out==tempValue)
@@ -87,8 +77,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 			}
 	}
 
-	private static boolean isFirstArgumentScalar(String inst)
-	{
+	private static boolean isFirstArgumentScalar(String inst) {
 		//get first argument
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String arg1 = parts[1];

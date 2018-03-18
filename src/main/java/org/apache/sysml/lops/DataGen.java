@@ -123,13 +123,13 @@ public class DataGen extends Lop
 		switch( method ) 
 		{
 			case RAND:
-				return getCPInstruction_Rand(output);
+				return getRandInstructionCPSpark(output);
 			case SINIT:
-				return getCPInstruction_SInit(output);
+				return getSInitInstructionCPSpark(output);
 			case SEQ:
-				return getCPInstruction_Seq(output);
+				return getSeqInstructionCPSpark(output);
 			case SAMPLE:
-				return getCPInstruction_Sample(output);
+				return getSampleInstructionCPSpark(output);
 				
 			default:
 				throw new LopsException("Unknown data generation method: " + method);
@@ -142,9 +142,9 @@ public class DataGen extends Lop
 	{
 		switch(method) {
 		case RAND:
-			return getMRInstruction_Rand(inputIndex, outputIndex);
+			return getRandInstructionMR(inputIndex, outputIndex);
 		case SEQ:
-			return getMRInstruction_Seq(inputIndex, outputIndex);
+			return getSeqInstructionMR(inputIndex, outputIndex);
 			
 		default:
 			throw new LopsException("Unknown data generation method: " + method);
@@ -158,7 +158,7 @@ public class DataGen extends Lop
 	 * @return cp instruction for rand
 	 * @throws LopsException if LopsException occurs
 	 */
-	private String getCPInstruction_Rand(String output) 
+	private String getRandInstructionCPSpark(String output) 
 		throws LopsException 
 	{	
 		//sanity checks
@@ -178,11 +178,11 @@ public class DataGen extends Lop
 		sb.append(OPERAND_DELIMITOR);
 		
 		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
-		sb.append(iLop.prepScalarLabel());
+		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
 		iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
-		sb.append(iLop.prepScalarLabel());
+		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
 		sb.append(String.valueOf(getOutputParameters().getRowsInBlock()));
@@ -238,7 +238,7 @@ public class DataGen extends Lop
 		return sb.toString(); 
 	}
 
-	private String getCPInstruction_SInit(String output) 
+	private String getSInitInstructionCPSpark(String output) 
 		throws LopsException 
 	{
 		if ( method != DataGenMethod.SINIT )
@@ -286,7 +286,7 @@ public class DataGen extends Lop
 		return sb.toString();
 	}
 	
-	private String getCPInstruction_Sample(String output) 
+	private String getSampleInstructionCPSpark(String output) 
 		throws LopsException
 	{
 		if ( method != DataGenMethod.SAMPLE )
@@ -294,7 +294,7 @@ public class DataGen extends Lop
 		
 		//prepare instruction parameters
 		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
-		String size = lsize.prepScalarLabel();
+		String size = lsize.prepScalarInputOperand(getExecType());
 		
 		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
 		String range = lrange.prepScalarLabel();
@@ -337,7 +337,7 @@ public class DataGen extends Lop
 	 * @return cp instruction for seq
 	 * @throws LopsException if LopsException occurs
 	 */
-	private String getCPInstruction_Seq(String output) throws LopsException {
+	private String getSeqInstructionCPSpark(String output) throws LopsException {
 		if ( method != DataGenMethod.SEQ )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
 		
@@ -349,13 +349,13 @@ public class DataGen extends Lop
 		Lop iLop = null;
 
 		iLop = _inputParams.get(Statement.SEQ_FROM.toString()); 
-		String fromString = iLop.prepScalarLabel();
+		String fromString = iLop.prepScalarInputOperand(et);
 		
 		iLop = _inputParams.get(Statement.SEQ_TO.toString());
-		String toString = iLop.prepScalarLabel();
+		String toString = iLop.prepScalarInputOperand(et);
 		
 		iLop = _inputParams.get(Statement.SEQ_INCR.toString()); 
-		String incrString = iLop.prepScalarLabel();
+		String incrString = iLop.prepScalarInputOperand(et);
 		
 		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());
 		String colsString = String.valueOf(this.getOutputParameters().getNumCols());
@@ -395,7 +395,7 @@ public class DataGen extends Lop
 	 * @return mr instruction for rand
 	 * @throws LopsException if LopsException occurs
 	 */
-	private String getMRInstruction_Rand(int inputIndex, int outputIndex) 
+	private String getRandInstructionMR(int inputIndex, int outputIndex) 
 		throws LopsException 
 	{
 		//sanity checks
@@ -474,7 +474,7 @@ public class DataGen extends Lop
 	 * @return mr instruction for seq
 	 * @throws LopsException if LopsException occurs
 	 */
-	private String getMRInstruction_Seq(int inputIndex, int outputIndex) throws LopsException {
+	private String getSeqInstructionMR(int inputIndex, int outputIndex) throws LopsException {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append( getExecType() );

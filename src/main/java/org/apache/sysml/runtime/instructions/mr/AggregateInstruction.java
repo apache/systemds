@@ -30,8 +30,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class AggregateInstruction extends UnaryMRInstructionBase {
 
 	public AggregateInstruction(Operator op, byte in, byte out, String istr) {
-		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Aggregate;
+		super(MRType.Aggregate, op, in, out);
 		instString = istr;
 	}
 

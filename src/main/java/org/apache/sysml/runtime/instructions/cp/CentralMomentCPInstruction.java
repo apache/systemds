@@ -33,7 +33,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 
 	private CentralMomentCPInstruction(CMOperator cm, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String str) {
-		super(cm, in1, in2, in3, out, opcode, str);
+		super(cm, in1, in2, in3, out, AUType.DEFAULT, opcode, str);
 	}
 
 	public static CentralMomentCPInstruction parseInstruction(String str)
@@ -107,9 +107,8 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
 		
 		CMOperator cm_op = ((CMOperator)_optr); 
-		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {
-			((CMOperator)_optr).setCMAggOp((int)order.getLongValue());
-		}
+		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID )
+			cm_op = cm_op.setCMAggOp((int)order.getLongValue());
 		
 		CM_COV_Object cmobj = null; 
 		if (input3 == null ) {
@@ -123,8 +122,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		
-		double val = cmobj.getRequiredResult(_optr);
-		DoubleObject ret = new DoubleObject(output_name, val);
-		ec.setScalarOutput(output_name, ret);
+		double val = cmobj.getRequiredResult(cm_op);
+		ec.setScalarOutput(output_name, new DoubleObject(val));
 	}
 }

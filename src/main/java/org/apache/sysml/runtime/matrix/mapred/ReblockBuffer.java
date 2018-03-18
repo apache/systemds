@@ -187,10 +187,11 @@ public class ReblockBuffer
 				if( bi != cbi || bj != cbj ) {
 					outputBlock(out, tmpIx, outTVal, tmpBlock);
 					cbi = bi;
-					cbj = bj;					
+					cbj = bj;
 					tmpIx.setIndexes(bi, bj);
-					tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)),
-							       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
+					tmpBlock.reset(
+						UtilFunctions.computeBlockSize(_rlen, bi, _brlen),
+						UtilFunctions.computeBlockSize(_clen, bj, _bclen), sparse);
 				}
 				
 				int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);
@@ -263,10 +264,11 @@ public class ReblockBuffer
 			if( bi != cbi || bj != cbj ) {
 				outputBlock(outList, tmpIx, tmpBlock);
 				cbi = bi;
-				cbj = bj;					
+				cbj = bj;
 				tmpIx = new MatrixIndexes(bi, bj);
-				tmpBlock = new MatrixBlock(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)),
-						       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
+				tmpBlock = new MatrixBlock(
+					UtilFunctions.computeBlockSize(_rlen, bi, _brlen),
+					UtilFunctions.computeBlockSize(_clen, bj, _bclen), sparse);
 			}
 			
 			int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);

@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.udf.lib.DynamicReadMatrixCP;
 import org.apache.sysml.udf.lib.DynamicReadMatrixRcCP;
 import org.apache.sysml.udf.lib.OrderWrapper;
@@ -84,7 +84,7 @@ public class InterProceduralAnalysis
 {
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
-    
+
 	//internal configuration parameters
 	protected static final boolean INTRA_PROCEDURAL_ANALYSIS      = true; //propagate statistics across statement blocks (main/functions)	
 	protected static final boolean PROPAGATE_KNOWN_UDF_STATISTICS = true; //propagate statistics for known external functions 
@@ -96,12 +96,13 @@ public class InterProceduralAnalysis
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
 	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
+	protected static final int     INLINING_MAX_NUM_OPS           = 10;    //inline single-statement functions w/ #ops <= threshold, other than dataops and literals
 	
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.apache.sysml.hops.ipa.InterProceduralAnalysis")
-				  .setLevel((Level) Level.DEBUG);
+				.setLevel((Level) Level.DEBUG);
 		}
 	}
 	
@@ -136,6 +137,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassApplyStaticHopRewrites());
+		_passes.add(new IPAPassInlineFunctions());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {
@@ -164,7 +166,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException in case of compilation errors
 	 */
 	public void analyzeProgram(int repetitions) 
-		throws HopsException	
+		throws HopsException
 	{
 		//sanity check for valid number of repetitions
 		if( repetitions <= 0 )
@@ -199,7 +201,7 @@ public class InterProceduralAnalysis
 			
 			//step 2: apply additional IPA passes
 			for( IPAPass pass : _passes )
-				if( pass.isApplicable() )
+				if( pass.isApplicable(_fgraph) )
 					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
 			
 			//early abort without functions or on reached fixpoint
@@ -215,7 +217,7 @@ public class InterProceduralAnalysis
 		//cleanup pass: remove unused functions
 		FunctionCallGraph graph2 = new FunctionCallGraph(_prog);
 		IPAPass rmFuns = new IPAPassRemoveUnusedFunctions();
-		if( rmFuns.isApplicable() )
+		if( rmFuns.isApplicable(graph2) )
 			rmFuns.rewriteProgram(_prog, graph2, null);
 	}
 	
@@ -351,7 +353,7 @@ public class InterProceduralAnalysis
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 			//old stats in, new stats out if updated
-			ArrayList<Hop> roots = sb.get_hops();
+			ArrayList<Hop> roots = sb.getHops();
 			DMLProgram prog = sb.getDMLProg();
 			//replace scalar reads with literals
 			Hop.resetVisitStatus(roots);
@@ -552,7 +554,7 @@ public class InterProceduralAnalysis
 				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(), 
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+				MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	
 			}
@@ -636,8 +638,9 @@ public class InterProceduralAnalysis
 						{
 							MatrixObject moOut = (MatrixObject)dat;
 							MatrixCharacteristics mc = moOut.getMatrixCharacteristics();
-							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
-							    < OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
+							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?
+								OptimizerUtils.getSparsity(mc):1.0) 
+								< OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
 							{
 								//update statistics if necessary
 								mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());
@@ -727,7 +730,7 @@ public class InterProceduralAnalysis
 		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
 		MatrixCharacteristics mc = new MatrixCharacteristics( dim1, dim2,
 				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), nnz);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
 		
 		return moOut;

@@ -43,7 +43,9 @@ public class ConvolutionParameters implements Serializable
 	public MatrixBlock input1; public MatrixBlock input2; public MatrixBlock output;
 	
 	public MatrixBlock bias;
-	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 
+	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w;
+	
+	public double minValForMaxPoolOperations = -Double.MAX_VALUE; 
 	
 	public ConvolutionParameters(long N, long C, long H, long W,
 			long K, long R, long S, long stride_h, long stride_w, 

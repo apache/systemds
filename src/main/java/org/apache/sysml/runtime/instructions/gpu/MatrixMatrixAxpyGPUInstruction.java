@@ -62,7 +62,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 	 
 		Operator operator = (dt1 != dt2) ?
 				InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
-				InstructionUtils.parseBinaryOperator(opcode);
+				InstructionUtils.parseTernaryOperator(opcode);
 		
 		if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX && dt3 == DataType.MATRIX) {
 			return new MatrixMatrixAxpyGPUInstruction(operator, in1, constant, multiplier, in2, out, opcode, str);	

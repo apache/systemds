@@ -22,11 +22,9 @@ package org.apache.sysml.runtime.matrix.operators;
 
 public class ZeroOutOperator extends Operator 
 {
-	
 	private static final long serialVersionUID = 8991309598821495444L;
 	
-	public ZeroOutOperator()
-	{
-		sparseSafe=true;
+	public ZeroOutOperator() {
+		super(true);
 	}
 }

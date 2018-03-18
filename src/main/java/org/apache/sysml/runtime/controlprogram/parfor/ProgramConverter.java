@@ -45,6 +45,7 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
@@ -84,7 +85,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -543,7 +544,7 @@ public class ProgramConverter
 		{
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null  //forced deep copy for function recompilation
-				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
+				&& (Recompiler.requiresRecompilation( sb.getHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
@@ -555,10 +556,10 @@ public class ProgramConverter
 				ret.setReadVariables( sb.variablesRead() );
 				
 				//deep copy hops dag for concurrent recompile
-				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
+				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.getHops() );
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );
-				ret.set_hops( hops );
+				ret.setHops( hops );
 				ret.updateRecompilationFlag();
 			}
 			else
@@ -726,7 +727,7 @@ public class ProgramConverter
 		throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
-		ArrayList<String> rVnames = body.getResultVarNames();
+		ArrayList<ResultVar> rVnames = body.getResultVariables();
 		ExecutionContext ec = body.getEc();
 		
 		if( pbs.isEmpty() )
@@ -741,7 +742,7 @@ public class ProgramConverter
 		//handle DMLScript UUID (propagate original uuid for writing to scratch space)
 		sb.append( DMLScript.getUUID() );
 		sb.append( COMPONENTS_DELIM );
-		sb.append( NEWLINE );		
+		sb.append( NEWLINE );
 		
 		//handle DML config
 		sb.append( ConfigurationManager.getDMLConfig().serializeDMLConfig() );
@@ -763,7 +764,7 @@ public class ProgramConverter
 		sb.append( NEWLINE );
 		
 		//handle result variable names
-		sb.append( serializeStringArrayList(rVnames) );
+		sb.append( serializeResultVariables(rVnames) );
 		sb.append( COMPONENTS_DELIM );
 		
 		//handle execution context
@@ -878,7 +879,7 @@ public class ProgramConverter
 				break;
 			case MATRIX:
 				MatrixObject mo = (MatrixObject) dat;
-				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
+				MetaDataFormat md = (MetaDataFormat) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
 				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
@@ -1024,6 +1025,18 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
+	public static String serializeResultVariables( ArrayList<ResultVar> vars) {
+		StringBuilder sb = new StringBuilder();
+		int count=0;
+		for( ResultVar var : vars ) {
+			if(count>0)
+				sb.append( ELEMENT_DELIM );
+			sb.append( var._isAccum ? var._name+"+" : var._name );
+			count++;
+		}
+		return sb.toString();
+	}
+	
 	public static String serializeStringArrayList( ArrayList<String> vars)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1179,7 +1192,7 @@ public class ProgramConverter
 			
 			sb.append( pfpb.getIterVar() );
 			sb.append( COMPONENTS_DELIM );
-			sb.append( serializeStringArrayList( pfpb.getResultVariables()) );
+			sb.append( serializeResultVariables( pfpb.getResultVariables()) );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( serializeStringHashMap( pfpb.getParForParams()) ); //parameters of nested parfor
 			sb.append( COMPONENTS_DELIM );
@@ -1323,13 +1336,13 @@ public class ProgramConverter
 		
 		//handle result variable names
 		String rvarStr = st.nextToken();
-		ArrayList<String> rvars = parseStringArrayList(rvarStr);
-		body.setResultVarNames(rvars);
+		ArrayList<ResultVar> rvars = parseResultVariables(rvarStr);
+		body.setResultVariables(rvars);
 		
 		//handle execution context
 		String ecStr = st.nextToken();
 		ExecutionContext ec = parseExecutionContext( ecStr, prog );
-			
+		
 		//handle program blocks
 		String spbs = st.nextToken();
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(spbs, prog, id);
@@ -1337,7 +1350,7 @@ public class ProgramConverter
 		body.setChildBlocks( pbs );
 		body.setEc( ec );
 		
-		return body;		
+		return body;
 	}
 
 	public static Program parseProgram( String in, int id ) 
@@ -1499,7 +1512,7 @@ public class ProgramConverter
 		
 		//inputs
 		String iterVar = st.nextToken();
-		ArrayList<String> resultVars = parseStringArrayList(st.nextToken());
+		ArrayList<ResultVar> resultVars = parseResultVariables(st.nextToken());
 		HashMap<String,String> params = parseStringHashMap(st.nextToken());
 		
 		//instructions 
@@ -1639,6 +1652,15 @@ public class ProgramConverter
 		}
 		return insts;
 	}
+	
+	private static ArrayList<ResultVar> parseResultVariables(String in) {
+		ArrayList<ResultVar> ret = new ArrayList<>();
+		for(String var : parseStringArrayList(in)) {
+			boolean accum = var.endsWith("+");
+			ret.add(new ResultVar(accum ? var.substring(0, var.length()-1) : var, accum));
+		}
+		return ret;
+	}
 
 	private static HashMap<String,String> parseStringHashMap( String in ) {
 		HashMap<String,String> vars = new HashMap<>();
@@ -1718,19 +1740,16 @@ public class ProgramConverter
 				switch ( valuetype )
 				{
 					case INT:
-						long value1 = Long.parseLong(valString);
-						dat = new IntObject(name,value1);
+						dat = new IntObject(Long.parseLong(valString));
 						break;
 					case DOUBLE:
-						double value2 = Double.parseDouble(valString);
-						dat = new DoubleObject(name,value2);
+						dat = new DoubleObject(Double.parseDouble(valString));
 						break;
 					case BOOLEAN:
-						boolean value3 = Boolean.parseBoolean(valString);
-						dat = new BooleanObject(name,value3);
+						dat = new BooleanObject(Boolean.parseBoolean(valString));
 						break;
 					case STRING:
-						dat = new StringObject(name,valString);
+						dat = new StringObject(valString);
 						break;
 					default:
 						throw new DMLRuntimeException("Unable to parse valuetype "+valuetype);
@@ -1750,9 +1769,8 @@ public class ProgramConverter
 				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
-				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
+				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
 				mo.setMetaData( md );
-				mo.setVarName( name );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )
 					mo.setPartitioned( partFormat._dpf, partFormat._N );
 				mo.setUpdateType(inplace);

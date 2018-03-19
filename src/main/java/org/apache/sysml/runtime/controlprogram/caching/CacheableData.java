@@ -38,6 +38,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -1275,7 +1276,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public static long getBroadcastSize() {
-		return _refBCs.longValue();
+		//scale the total sum of all broadcasts by the current fraction
+		//of local memory to equally distribute it across parfor workers
+		return (long) (_refBCs.longValue() *
+			InfrastructureAnalyzer.getLocalMaxMemoryFraction());
 	}
 	
 	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------

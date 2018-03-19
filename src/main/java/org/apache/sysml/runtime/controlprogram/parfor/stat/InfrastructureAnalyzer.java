@@ -44,7 +44,8 @@ public class InfrastructureAnalyzer
 	
 	//static local master node properties
 	private static int  _localPar        = -1;
-	private static long _localJVMMaxMem  = -1;
+	private static long _localJVMMaxMem  = -1; //mutable
+	private static long _fLocalJVMMaxMem = -1; //immutable
 	
 	//static hadoop cluster properties
 	private static int  _remotePar       = -1;
@@ -135,6 +136,12 @@ public class InfrastructureAnalyzer
 
 	public static void setLocalMaxMemory( long localMem ) {
 		_localJVMMaxMem = localMem;
+	}
+	
+	public static double getLocalMaxMemoryFraction() {
+		//since parfor modifies _localJVMMaxMem, some internal primitives
+		//need access to the current fraction of total local memory
+		return (double)_localJVMMaxMem / _fLocalJVMMaxMem;
 	}
 	
 	/**
@@ -343,6 +350,7 @@ public class InfrastructureAnalyzer
 		//step 1: basic parallelism and memory
 		_localPar       = Runtime.getRuntime().availableProcessors();
 		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
+		_fLocalJVMMaxMem = _localJVMMaxMem;
 	}
 	
 	/**

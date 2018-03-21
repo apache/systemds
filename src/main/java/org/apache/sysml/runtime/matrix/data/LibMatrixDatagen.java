@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
 
@@ -35,6 +34,7 @@ import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.NormalPRNGenerator;
 import org.apache.sysml.runtime.util.PRNGenerator;
 import org.apache.sysml.runtime.util.PoissonPRNGenerator;
@@ -322,7 +322,7 @@ public class LibMatrixDatagen
 		long[] seeds = generateSeedsForCP(bigrand, nrb, ncb);
 		long nnz = 0;
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<RandTask> tasks = new ArrayList<>();
 			int blklen = ((int)(Math.ceil((double)parnb/k)));
 			for( int i=0; i<k & i*blklen<parnb; i++ ) {

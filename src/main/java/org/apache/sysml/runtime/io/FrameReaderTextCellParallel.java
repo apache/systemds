@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -36,6 +35,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 
 /**
  * Multi-threaded frame textcell reader.
@@ -58,7 +58,7 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 		try 
 		{
 			//create read tasks for all splits
-			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+			ExecutorService pool = CommonThreadPool.get(numThreads);
 			InputSplit[] splits = informat.getSplits(job, numThreads);
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits )

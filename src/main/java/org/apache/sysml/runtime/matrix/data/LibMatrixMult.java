@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
@@ -40,6 +39,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -205,7 +205,7 @@ public class LibMatrixMult
 		//core multi-threaded matrix mult computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = getBalancedBlockSizesDefault(num, k, (pm2r||pm2c));
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -317,7 +317,7 @@ public class LibMatrixMult
 		//core matrix mult chain computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<Integer> blklens = getBalancedBlockSizesDefault(mX.rlen, k, true);
 			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -398,7 +398,7 @@ public class LibMatrixMult
 	
 		//core multi-threaded matrix mult computation
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 			//load balance via #tasks=2k due to triangular shape 
 			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
@@ -478,7 +478,7 @@ public class LibMatrixMult
 		
 		try
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultPermuteTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)pm1.rlen/k));
 			for( int i=0; i<k & i*blklen<pm1.rlen; i++ )
@@ -553,7 +553,7 @@ public class LibMatrixMult
 		
 		try 
 		{			
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
@@ -629,7 +629,7 @@ public class LibMatrixMult
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
@@ -744,7 +744,7 @@ public class LibMatrixMult
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
@@ -821,7 +821,7 @@ public class LibMatrixMult
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
@@ -893,7 +893,7 @@ public class LibMatrixMult
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWuTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )

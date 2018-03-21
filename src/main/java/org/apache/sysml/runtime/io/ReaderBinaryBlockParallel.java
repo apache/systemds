@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -39,6 +38,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 
 
 public class ReaderBinaryBlockParallel extends ReaderBinaryBlock 
@@ -91,7 +91,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		try 
 		{
 			//create read tasks for all files
-			ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
+			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
 				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen, syncBlock);

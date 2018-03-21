@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -42,6 +41,7 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 
 /**
  * Multi-threaded frame text csv reader.
@@ -67,7 +67,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(
+			ExecutorService pool = CommonThreadPool.get(
 				Math.min(numThreads, splits.length));
 			
 			//compute num rows per split
@@ -115,7 +115,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		
 		//compute number of rows
 		int nrow = 0;
-		ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )

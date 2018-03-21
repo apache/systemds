@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -37,6 +36,7 @@ import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofOuterProduct extends SpoofOperator
@@ -131,7 +131,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<ParOuterProdAggTask> tasks = new ArrayList<>();
 			int numThreads2 = getPreferredNumberOfTasks(m, n, nnz, k, numThreads);
 			int blklen = (int)(Math.ceil((double)m/numThreads2));
@@ -282,7 +282,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<ParExecTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)

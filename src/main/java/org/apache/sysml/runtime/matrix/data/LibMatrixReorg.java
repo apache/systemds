@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -42,6 +41,7 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.SortUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -185,7 +185,7 @@ public class LibMatrixReorg
 		
 		//core multi-threaded transpose
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			//pre-processing (compute nnz per column once for sparse)
 			int[] cnt = null;
 			if( in.sparse && out.sparse ) {
@@ -2051,7 +2051,7 @@ public class LibMatrixReorg
 		}
 		else {
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<RExpandColsTask> tasks = new ArrayList<>();
 				int blklen = (int)(Math.ceil((double)rlen/k/8));
 				for( int i=0; i<8*k & i*blklen<rlen; i++ )

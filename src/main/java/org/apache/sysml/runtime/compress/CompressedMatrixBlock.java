@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
@@ -92,6 +91,7 @@ import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.SortUtils;
 
@@ -439,7 +439,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		throws DMLRuntimeException 
 	{	
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<SizeEstimTask> tasks = new ArrayList<>();
 			for( int col=0; col<clen; col++ )
 				tasks.add(new SizeEstimTask(estim, col));
@@ -468,7 +468,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		throws DMLRuntimeException
 	{
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<CompressTask> tasks = new ArrayList<>();
 			for( int[] colIndexes : groups )
 				tasks.add(new CompressTask(in, estim, compRatios, rlen, colIndexes, denseEst));
@@ -673,7 +673,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//multi-threaded decompression
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
@@ -1252,7 +1252,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				if( uc != null )
 					uc.unaryAggregateOperations(op, ret);
 				//compute all compressed column groups
-				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
+				ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
 				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
 					int blklen = BitmapEncoder.getAlignedBlocksize(
@@ -1435,7 +1435,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		if( !isEmptyBlock(false) ) {
 			//compute matrix mult
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 				int numgrp = _colGroups.size();
 				int blklen = (int)(Math.ceil((double)numgrp/(2*k)));
@@ -1507,7 +1507,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				uc.rightMultByVector(vector, result, k);
 			
 			//compute remaining compressed column groups in parallel
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
@@ -1654,7 +1654,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				uc.leftMultByRowVector(vector, result, k);
 			
 			//compute remaining compressed column groups in parallel
-			ExecutorService pool = Executors.newFixedThreadPool( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
+			ExecutorService pool = CommonThreadPool.get( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
 			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(4*k, false);
 			ArrayList<LeftMatrixMultTask> tasks = new ArrayList<>();
 			for( ArrayList<ColGroup> groups : grpParts )

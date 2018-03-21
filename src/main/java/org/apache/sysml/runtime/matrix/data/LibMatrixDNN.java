@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 /*
@@ -437,7 +437,7 @@ public class LibMatrixDNN {
 				}
 			}
 			else {
-				ExecutorService pool = Executors.newFixedThreadPool( Math.min(k, params.N) );
+				ExecutorService pool = CommonThreadPool.get( Math.min(k, params.N) );
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				pool.shutdown();
 				for( Future<Long> task : taskret )

@@ -38,7 +38,7 @@ public class UtilFunctions
 	//for accurate cast of double values to int and long 
 	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
 	//(same epsilon as used for matrix index cast in R)
-	public static double DOUBLE_EPS = Math.pow(2, -53);
+	public static final double DOUBLE_EPS = Math.pow(2, -53);
 	
 	//prime numbers for old hash function (divide prime close to max int, 
 	//because it determines the max hash domain size

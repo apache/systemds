@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -44,6 +43,7 @@ import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofMultiAggregate extends SpoofOperator implements Serializable
@@ -117,7 +117,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		else  //MULTI-THREADED
 		{
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));

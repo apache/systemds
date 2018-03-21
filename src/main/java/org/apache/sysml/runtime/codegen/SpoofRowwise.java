@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
@@ -41,6 +40,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.matrix.data.SparseRowVector;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 
 
 public abstract class SpoofRowwise extends SpoofOperator
@@ -205,7 +205,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core parallel execute
-		ExecutorService pool = Executors.newFixedThreadPool( k );
+		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<Integer> blklens = (a instanceof CompressedMatrixBlock) ?
 			LibMatrixMult.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
 			LibMatrixMult.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);

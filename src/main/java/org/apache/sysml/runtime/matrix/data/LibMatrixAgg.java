@@ -25,7 +25,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
@@ -55,6 +54,7 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -249,7 +249,7 @@ public class LibMatrixAgg
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)m/k));
 			for( int i=0; i<k & i*blklen<m; i++ ) {
@@ -343,7 +343,7 @@ public class LibMatrixAgg
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int blklen = (int)(Math.ceil((double)m/k));
 			
 			//step 1: compute aggregates per row partition
@@ -438,7 +438,7 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTernaryTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)in1.rlen/k));
 			IndexFunction ixFn = op.indexFn;
@@ -516,7 +516,7 @@ public class LibMatrixAgg
 		//core multi-threaded grouped aggregate computation
 		//(currently: parallelization over columns to avoid additional memory requirements)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<GrpAggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)target.clen/k));
 			for( int i=0; i<k & i*blklen<target.clen; i++ )

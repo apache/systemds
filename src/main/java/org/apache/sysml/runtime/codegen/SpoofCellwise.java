@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -49,6 +48,7 @@ import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofCellwise extends SpoofOperator implements Serializable
@@ -147,7 +147,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		else  //MULTI-THREADED
 		{
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = (a instanceof CompressedMatrixBlock) ? k :
 					UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
@@ -243,7 +243,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		else  //MULTI-THREADED
 		{
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParExecTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));

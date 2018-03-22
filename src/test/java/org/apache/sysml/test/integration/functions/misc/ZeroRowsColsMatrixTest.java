@@ -54,33 +54,63 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesEmptyRetCP() {
+		runEmptyMatrixTest(TEST_NAME1, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesEmptyRetCP() {
+		runEmptyMatrixTest(TEST_NAME1, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesEmptyRetMR() {
+		runEmptyMatrixTest(TEST_NAME1, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesEmptyRetMR() {
+		runEmptyMatrixTest(TEST_NAME1, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyNoRewritesEmptyRetSP() {
+		runEmptyMatrixTest(TEST_NAME1, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEmptyMatrixRemoveEmptyRewritesEmptyRetSP() {
+		runEmptyMatrixTest(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
+	@Test
 	public void testEmptyMatrixRemoveEmptyNoRewritesCP() {
-		runEmptyMatrixTest(TEST_NAME1, false, ExecType.CP);
+		runEmptyMatrixTest(TEST_NAME1, false, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyRewritesCP() {
-		runEmptyMatrixTest(TEST_NAME1, true, ExecType.CP);
+		runEmptyMatrixTest(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyNoRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME1, false, ExecType.MR);
+		runEmptyMatrixTest(TEST_NAME1, false, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME1, true, ExecType.MR);
+		runEmptyMatrixTest(TEST_NAME1, true, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyNoRewritesSP() {
-		runEmptyMatrixTest(TEST_NAME1, false, ExecType.SPARK);
+		runEmptyMatrixTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyRewritesSP() {
-		runEmptyMatrixTest(TEST_NAME1, true, ExecType.SPARK);
+		runEmptyMatrixTest(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
 	@Test
@@ -173,7 +203,11 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 		runEmptyMatrixTest(TEST_NAME4, true, ExecType.SPARK);
 	}
 	
-	private void runEmptyMatrixTest( String testname, boolean rewrites, ExecType et )
+	private void runEmptyMatrixTest( String testname, boolean rewrites, ExecType et ) {
+		runEmptyMatrixTest(testname, rewrites, false, et);
+	}
+	
+	private void runEmptyMatrixTest( String testname, boolean rewrites, boolean emptyRet, ExecType et )
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
@@ -196,10 +230,12 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","recompile_runtime","-args", String.valueOf(dim), output("R")};
+			programArgs = new String[]{"-explain","recompile_runtime","-args", String.valueOf(dim),
+				String.valueOf(emptyRet).toUpperCase(), output("R")};
 			
 			fullRScriptName = HOME + TEST_NAME +".R";
-			rCmd = getRCmd(String.valueOf(dim), expectedDir());
+			rCmd = getRCmd(String.valueOf(dim),
+				String.valueOf(emptyRet).toUpperCase(), expectedDir());
 	
 			//run Tests
 			runTest(true, false, null, -1); 

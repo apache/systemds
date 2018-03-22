@@ -362,10 +362,11 @@ public class MatrixCharacteristics implements Serializable
 		{
 			RemoveEmptyMRInstruction realIns=(RemoveEmptyMRInstruction)ins;
 			MatrixCharacteristics mc = dims.get(realIns.input1);
+			long min = realIns.isEmptyReturn() ? 1 : 0;
 			if( realIns.isRemoveRows() )
-				dimOut.set(realIns.getOutputLen(), mc.getCols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+				dimOut.set(Math.max(realIns.getOutputLen(),min), mc.getCols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 			else
-				dimOut.set(mc.getRows(), realIns.getOutputLen(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+				dimOut.set(mc.getRows(), Math.max(realIns.getOutputLen(), min), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 		}
 		else if(ins instanceof UaggOuterChainInstruction) //needs to be checked before binary
 		{

@@ -29,4 +29,4 @@ R = rbind(rbind(rbind(rbind(
   as.matrix(mean(X)!=mean(X))),   # NaN
   as.matrix(sd(X)!=sd(X)));       # NaN
 
-write(R, $2);
+write(R, $3);

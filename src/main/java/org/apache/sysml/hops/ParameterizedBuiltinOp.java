@@ -408,6 +408,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		Hop targetHop = getTargetHop();
 		Hop marginHop = getParameterHop("margin");
 		Hop selectHop = getParameterHop("select");
+		Hop emptyRet = getParameterHop("empty.return");
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
@@ -474,8 +475,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		else if( et == ExecType.MR )
 		{
 			//special compile for mr removeEmpty-diag 
-			if(    isTargetDiagInput() && marginHop instanceof LiteralOp 
-				&& ((LiteralOp)marginHop).getStringValue().equals("rows") )
+			if( isTargetDiagInput()
+				&& HopRewriteUtils.isLiteralOfValue(marginHop, "rows") )
 	 		{
 				//get input vector (without materializing diag())
 				Hop input = targetHop.getInput().get(0);
@@ -602,13 +603,14 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Lop rmEmpty = null;
 				
 				//a) broadcast-based PMM (permutation matrix mult)
-				if( rmRows && rlen >= 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
+				if( rmRows && rlen >= 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap()
+					&& HopRewriteUtils.isLiteralOfValue(emptyRet, false))
 				{
 					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
 					if( needPart ){ //requires partitioning
 						loffset = new DataPartition(loffset, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
 						loffset.getOutputParameters().setDimensions(rlen, 1, brlen, bclen, rlen);
-						setLineNumbers(loffset);	
+						setLineNumbers(loffset);
 					}
 					
 					rmEmpty = new PMMJ(loffset, linput, lmaxdim, getDataType(), getValueType(), needPart, true, ExecType.MR);
@@ -618,8 +620,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				//b) general case: repartition-based rmempty
 				else
 				{
-					boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
-							             || ((rlen>brlen || rlen<=0) && !rmRows);
+					boolean requiresRep = ((clen>bclen || clen<=0) &&  rmRows)
+						|| ((rlen>brlen || rlen<=0) && !rmRows);
 					
 					if( requiresRep ) {
 						Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
@@ -641,6 +643,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					inMap.put("offset", group2);
 					inMap.put("maxdim", lmaxdim);
 					inMap.put("margin", inputlops.get("margin"));
+					inMap.put("empty.return", inputlops.get("empty.return"));
 					
 					rmEmpty = new ParameterizedBuiltin(inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
 					setOutputDimensions(rmEmpty);

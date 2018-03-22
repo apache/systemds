@@ -201,6 +201,11 @@ public class HopRewriteUtils
 			&& getDoubleValueSafe((LiteralOp)hop)==val);
 	}
 	
+	public static boolean isLiteralOfValue(Hop hop, String val) {
+		return hop instanceof LiteralOp 
+			&& ((LiteralOp)hop).getStringValue().equals(val);
+	}
+	
 	public static boolean isLiteralOfValue( Hop hop, boolean val ) {
 		try {
 			return (hop instanceof LiteralOp 

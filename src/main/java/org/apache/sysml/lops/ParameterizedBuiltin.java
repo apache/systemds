@@ -288,107 +288,60 @@ public class ParameterizedBuiltin extends Lop
 	}
 
 	@Override 
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) 
-		throws LopsException
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-
-		switch(_operation) 
-		{
-			case RMEMPTY:
-			{
-				sb.append("rmempty");
-				
-				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop1 = _inputParams.get("target");
-				int pos1 = getInputs().indexOf(iLop1);
-				int index1 = (pos1==0)? input_index1 : (pos1==1)? input_index2 : (pos1==2)? input_index3 : input_index4;
-				sb.append(prepInputOperand(index1));
-				
-				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop2 = _inputParams.get("offset");
-				int pos2 = getInputs().indexOf(iLop2);
-				int index2 = (pos2==0)? input_index1 : (pos2==1)? input_index2 : (pos1==2)? input_index3 : input_index4;
-				sb.append(prepInputOperand(index2));
-				
-				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop3 = _inputParams.get("maxdim");
-				sb.append( iLop3.prepScalarLabel() );
-				
-				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop4 = _inputParams.get("margin");
-				sb.append( iLop4.prepScalarLabel() );
-				
-				sb.append( OPERAND_DELIMITOR );
-				
-				break;
-			}
-				
-			default:
-				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
-		}
-		
-		sb.append( prepOutputOperand(output_index));
-		
-		return sb.toString();
-	}
-	
-	@Override 
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) 
 		throws LopsException
 	{
+		int[] tmp = new int[]{input_index1, input_index2,
+			input_index3, input_index4, input_index5};
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-
-		switch(_operation) 
-		{
-			case REXPAND:
-			{
-				sb.append("rexpand");
-				
+		
+		switch(_operation) {
+			case RMEMPTY: {
+				sb.append("rmempty");
 				sb.append(OPERAND_DELIMITOR);
-				
 				Lop iLop1 = _inputParams.get("target");
-				int pos1 = getInputs().indexOf(iLop1);
-				int index1 = (pos1==0)? input_index1 : (pos1==1)? input_index2 : (pos1==2)? input_index3 : (pos1==3)? input_index4 : input_index5;
-				sb.append(prepInputOperand(index1));
-				
+				sb.append(prepInputOperand(tmp[getInputs().indexOf(iLop1)]));
 				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop2 = _inputParams.get("max");
-				sb.append( iLop2.prepScalarLabel() );
-				
+				Lop iLop2 = _inputParams.get("offset");
+				sb.append(prepInputOperand(tmp[getInputs().indexOf(iLop2)]));
 				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop3 = _inputParams.get("dir");
+				Lop iLop3 = _inputParams.get("maxdim");
 				sb.append( iLop3.prepScalarLabel() );
-				
 				sb.append(OPERAND_DELIMITOR);
-				
-				Lop iLop4 = _inputParams.get("cast");
+				Lop iLop4 = _inputParams.get("margin");
 				sb.append( iLop4.prepScalarLabel() );
-				
-				sb.append( OPERAND_DELIMITOR );
-				
-				Lop iLop5 = _inputParams.get("ignore");
+				sb.append(OPERAND_DELIMITOR);
+				Lop iLop5 = _inputParams.get("empty.return");
 				sb.append( iLop5.prepScalarLabel() );
-				
-				sb.append( OPERAND_DELIMITOR );
-				
 				break;
 			}
-				
+			case REXPAND: {
+				sb.append("rexpand");
+				sb.append(OPERAND_DELIMITOR);
+				Lop iLop1 = _inputParams.get("target");
+				sb.append(prepInputOperand(tmp[getInputs().indexOf(iLop1)]));
+				sb.append(OPERAND_DELIMITOR);
+				Lop iLop2 = _inputParams.get("max");
+				sb.append( iLop2.prepScalarLabel() );
+				sb.append(OPERAND_DELIMITOR);
+				Lop iLop3 = _inputParams.get("dir");
+				sb.append( iLop3.prepScalarLabel() );
+				sb.append(OPERAND_DELIMITOR);
+				Lop iLop4 = _inputParams.get("cast");
+				sb.append( iLop4.prepScalarLabel() );
+				sb.append( OPERAND_DELIMITOR );
+				Lop iLop5 = _inputParams.get("ignore");
+				sb.append( iLop5.prepScalarLabel() );
+				break;
+			}
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output_index));
 		
 		return sb.toString();

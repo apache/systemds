@@ -28,4 +28,4 @@ for( i in 1:3 ) {
 }
 R = t(R);
 
-write(R, $2);
+write(R, $3);

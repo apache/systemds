@@ -380,6 +380,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd);
 			rddhandle.setHDFSFile(fromFile);
+			rddhandle.setParallelizedRDD(!fromFile);
 			mo.setRDDHandle(rddhandle);
 		}
 		//CASE 3: non-dirty (file exists on HDFS)

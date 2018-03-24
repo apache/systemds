@@ -93,22 +93,7 @@ import org.apache.sysml.utils.Statistics;
  * </ol>
  * <p>
  * Modifications to these steps can be accomplished by subclassing
- * ScriptExecutor. For example, the following code will turn off the global data
- * flow optimization check by subclassing ScriptExecutor and overriding the
- * globalDataFlowOptimization method.
- * </p>
- *
- * <code>ScriptExecutor scriptExecutor = new ScriptExecutor() {
- * <br>&nbsp;&nbsp;// turn off global data flow optimization check
- * <br>&nbsp;&nbsp;@Override
- * <br>&nbsp;&nbsp;protected void globalDataFlowOptimization() {
- * <br>&nbsp;&nbsp;&nbsp;&nbsp;return;
- * <br>&nbsp;&nbsp;}
- * <br>};
- * <br>ml.execute(script, scriptExecutor);</code>
- * <p>
- *
- * For more information, please see the {@link #execute} method.
+ * ScriptExecutor. For more information, please see the {@link #execute} method.
  */
 public class ScriptExecutor {
 
@@ -307,7 +292,6 @@ public class ScriptExecutor {
 	 * <li>{@link #constructLops()}</li>
 	 * <li>{@link #generateRuntimeProgram()}</li>
 	 * <li>{@link #showExplanation()}</li>
-	 * <li>{@link #globalDataFlowOptimization()}</li>
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
 	 * <li>{@link #cleanupRuntimeProgram()}</li>

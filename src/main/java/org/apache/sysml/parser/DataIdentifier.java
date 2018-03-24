@@ -20,15 +20,15 @@
 package org.apache.sysml.parser;
 
 
-public class DataIdentifier extends Identifier 
+public class DataIdentifier extends Identifier
 {
 	protected String _name;
-	protected String _valueTypeString;	
+	protected String _valueTypeString;
 	
 	public DataIdentifier(DataIdentifier passed){
 		setProperties(passed);
 		_name = passed.getName();
-		_valueTypeString = passed.getValueType().toString();	
+		_valueTypeString = passed.getValueType().toString();
 		
 		// set location information
 		setParseInfo(passed);
@@ -39,7 +39,6 @@ public class DataIdentifier extends Identifier
 		DataIdentifier newId = new DataIdentifier(this);
 		String newIdName = prefix + _name;
 		newId.setName(newIdName);
-				
 		return newId;
 	}
 	
@@ -55,6 +54,7 @@ public class DataIdentifier extends Identifier
 	public String getName(){
 		return _name;
 	}
+	
 	public void setName(String name){
 		_name = name;
 	}
@@ -88,11 +88,9 @@ public class DataIdentifier extends Identifier
 	}
 	
 	@Override
-	public boolean equals(Object that) 
-	{
+	public boolean equals(Object that) {
 		if( !(that instanceof DataIdentifier) )
 			return false;
-			
 		DataIdentifier target = (DataIdentifier)that;
 		if(getName()!=null && !getName().equals(target.getName()))
 			return false;
@@ -106,14 +104,11 @@ public class DataIdentifier extends Identifier
 			return false;
 		if(!(this.getDim2() == target.getDim2()))
 			return false;
-		
 		return true;
-		
 	}
 	
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		return super.hashCode();
 	}
 }

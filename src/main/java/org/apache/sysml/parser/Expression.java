@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
 public abstract class Expression implements ParseInfo
@@ -551,51 +552,35 @@ public abstract class Expression implements ParseInfo
 	 * Returns the matrix characteristics for scalar-scalar, scalar-matrix, matrix-scalar, matrix-matrix
 	 * operations. This method is aware of potentially unknowns and matrix-vector (col/row) operations.
 	 * 
-	 * 
 	 * @param expression1 The first expression
 	 * @param expression2 The second expression
-	 * @return long array of 4 values, where [0] is the number of rows (rlen),
+	 * @return matrix characteristics
 	 * [1] is the number of columns (clen), [2] is the number of rows in a block (brlen),
 	 * and [3] is the number of columns in a block (bclen). Default (unknown) values are
 	 * -1. Scalar values are all 0.
 	 */
-	public static long[] getBinaryMatrixCharacteristics(Expression expression1, Expression expression2)
-	{
-		long[] ret = new long[]{ -1, -1, -1, -1 };
-		
+	public static MatrixCharacteristics getBinaryMatrixCharacteristics(Expression expression1, Expression expression2) {
 		Identifier idleft = expression1.getOutput();
 		Identifier idright = expression2.getOutput();
-		
 		if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.SCALAR ) {
-			ret[0] = 0; 
-			ret[1] = 0; 
-			ret[2] = 0; 
-			ret[3] = 0; 
+			return new MatrixCharacteristics(0, 0, 0, 0);
 		}
 		else if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.MATRIX ) {
-			ret[0] = idright.getDim1(); 
-			ret[1] = idright.getDim2(); 
-			ret[2] = idright.getRowsInBlock(); 
-			ret[3] = idright.getColumnsInBlock();
+			return new MatrixCharacteristics(idright.getDim1(), idright.getDim2(), idright.getRowsInBlock(), idright.getColumnsInBlock());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.SCALAR ) {
-			ret[0] = idleft.getDim1(); 
-			ret[1] = idleft.getDim2(); 
-			ret[2] = idleft.getRowsInBlock(); 
-			ret[3] = idleft.getColumnsInBlock();
+			return new MatrixCharacteristics(idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.MATRIX ) {
-			ret[0] = idleft.getDim1(); 
-			ret[1] = idleft.getDim2(); 
-			ret[2] = idleft.getRowsInBlock(); 
-			ret[3] = idleft.getColumnsInBlock();
-			if( ret[0] < 0 && idright.getDim1() > 1 ) //robustness for row vectors
-				ret[0] = idright.getDim1();
-			if( ret[1] < 0 && idright.getDim2() > 1 ) //robustness for row vectors
-				ret[1] = idright.getDim2();
+			MatrixCharacteristics mc = new MatrixCharacteristics(
+				idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
+			if( mc.getRows() < 0 && idright.getDim1() > 1 ) //robustness for row vectors
+				mc.setRows(idright.getDim1());
+			if( mc.getCols() < 0 && idright.getDim2() > 1 ) //robustness for row vectors
+				mc.setCols(idright.getDim2());
+			return mc;
 		}
-		
-		return ret;
+		return new MatrixCharacteristics(-1, -1, -1, -1);
 	}
 	
 	///////////////////////////////////////////////////////////////////////////

@@ -126,8 +126,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					long clen = c.getDim2();
 					long nnz = c.getNnz();
 					UpdateType update = c.getUpdateType();
-					long brlen = c.getRowsInBlock();
-					long bclen = c.getColsInBlock();
+					int brlen = c.getRowsInBlock();
+					int bclen = c.getColsInBlock();
 					
 					if( hasTWrites && moveTWrite) //reuse existing transient_write
 					{

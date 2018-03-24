@@ -133,12 +133,9 @@ public class LeftIndexingOp  extends Hop
 				if (isRightHandSideScalar()) {
 					//insert cast to matrix if necessary (for reuse MR runtime)
 					rightInput = new UnaryCP(getInput().get(1).constructLops(),
-							                 OperationTypes.CAST_AS_MATRIX, 
-							                 DataType.MATRIX, ValueType.DOUBLE);
-					rightInput.getOutputParameters().setDimensions( (long)1, (long)1,
-																	(long)ConfigurationManager.getBlocksize(), 
-							                                        (long)ConfigurationManager.getBlocksize(),
-							                                        (long)-1);
+						OperationTypes.CAST_AS_MATRIX, DataType.MATRIX, ValueType.DOUBLE);
+					rightInput.getOutputParameters().setDimensions(1L, 1L,
+						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), -1L);
 				} 
 				else 
 					rightInput = getInput().get(1).constructLops();

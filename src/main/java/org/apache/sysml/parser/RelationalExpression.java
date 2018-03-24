@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.util.HashMap;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class RelationalExpression extends Expression
 {
@@ -142,11 +143,10 @@ public class RelationalExpression extends Expression
 			if(isLeftMatrix && isRightMatrix) {
 				checkMatchingDimensions(_left, _right, true);
 			}
-			
-			long[] dims = getBinaryMatrixCharacteristics(_left, _right);
+			MatrixCharacteristics dims = getBinaryMatrixCharacteristics(_left, _right);
 			output.setDataType(DataType.MATRIX);
-			output.setDimensions(dims[0], dims[1]);
-			output.setBlockDimensions(dims[2], dims[3]);
+			output.setDimensions(dims.getRows(), dims.getCols());
+			output.setBlockDimensions(dims.getRowsPerBlock(), dims.getColsPerBlock());
 			
 			//since SystemML only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change

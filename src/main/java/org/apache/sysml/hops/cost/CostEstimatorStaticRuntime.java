@@ -659,8 +659,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double bytes = (double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn));
-		double mbytes = bytes / (1024*1024);  		
+		double bytes = (double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
+		double mbytes = bytes / (1024*1024);
 		
 		double ret = -1;
 		if( sparse )
@@ -679,8 +679,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double bytes = (double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn));
-		double mbytes = bytes / (1024*1024);  		
+		double bytes = (double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
+		double mbytes = bytes / (1024*1024);
 		
 		double ret = -1;
 		
@@ -719,7 +719,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn))) / (1024*1024);
 		if( sparse )
 			ret /= DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE;
 		else //dense
@@ -732,7 +732,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn))) / (1024*1024);
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE;

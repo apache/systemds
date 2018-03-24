@@ -229,8 +229,8 @@ public abstract class CostEstimator
 				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 				long rlen = mc.getRows();
 				long clen = mc.getCols();
-				long brlen = mc.getRowsPerBlock();
-				long bclen = mc.getColsPerBlock();
+				int brlen = mc.getRowsPerBlock();
+				int bclen = mc.getColsPerBlock();
 				long nnz = mc.getNonZeros();
 				boolean inmem = mo.getStatusAsString().equals("CACHED");
 				vs = new VarStats(rlen, clen, brlen, bclen, nnz, inmem);
@@ -257,8 +257,8 @@ public abstract class CostEstimator
 				String varname = parts[1];
 				long rlen = Long.parseLong(parts[6]);
 				long clen = Long.parseLong(parts[7]);
-				long brlen = Long.parseLong(parts[8]);
-				long bclen = Long.parseLong(parts[9]);
+				int brlen = Integer.parseInt(parts[8]);
+				int bclen = Integer.parseInt(parts[9]);
 				long nnz = Long.parseLong(parts[10]);
 				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
 				stats.put(varname, vs);
@@ -285,8 +285,8 @@ public abstract class CostEstimator
 			String varname = randInst.output.getName();
 			long rlen = randInst.getRows();
 			long clen = randInst.getCols();
-			long brlen = randInst.getRowsInBlock();
-			long bclen = randInst.getColsInBlock();
+			int brlen = randInst.getRowsInBlock();
+			int bclen = randInst.getColsInBlock();
 			long nnz = (long) (randInst.getSparsity() * rlen * clen);
 			VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, true);
 			stats.put(varname, vs);
@@ -335,11 +335,11 @@ public abstract class CostEstimator
 				byte outIndex = Byte.parseByte(parts[2]);
 				long rlen = parts[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[3]);
 				long clen = parts[4].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[4]);
-				long brlen = Long.parseLong(parts[5]);
-				long bclen = Long.parseLong(parts[6]);
+				int brlen = Integer.parseInt(parts[5]);
+				int bclen = Integer.parseInt(parts[6]);
 				long nnz = (long) (Double.parseDouble(parts[9]) * rlen * clen);
 				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
-				stats.put(String.valueOf(outIndex), vs);	
+				stats.put(String.valueOf(outIndex), vs);
 			}
 		}
 		
@@ -354,7 +354,7 @@ public abstract class CostEstimator
 				VarStats vs = e.getValue();
 				if( vs !=null )
 				{
-					MatrixCharacteristics mc = new MatrixCharacteristics(vs._rlen, vs._clen, (int)vs._brlen, (int)vs._bclen, (long)vs._nnz);
+					MatrixCharacteristics mc = new MatrixCharacteristics(vs._rlen, vs._clen, vs._brlen, vs._bclen, (long)vs._nnz);
 					dims.put(ix, mc);
 				}
 			}

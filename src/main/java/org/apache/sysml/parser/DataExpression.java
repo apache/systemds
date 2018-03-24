@@ -905,9 +905,10 @@ public class DataExpression extends DataIdentifier
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
 				
-					Long rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ? null : Long.valueOf(getVarParam(ROWBLOCKCOUNTPARAM).toString());
-					Long columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : Long.valueOf(getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
-		
+					Integer rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ?
+						null : Integer.valueOf(getVarParam(ROWBLOCKCOUNTPARAM).toString());
+					Integer columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ?
+						null : Integer.valueOf(getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
 					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {

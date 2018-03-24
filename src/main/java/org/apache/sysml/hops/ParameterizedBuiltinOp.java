@@ -480,8 +480,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	 		{
 				//get input vector (without materializing diag())
 				Hop input = targetHop.getInput().get(0);
-				long brlen = input.getRowsInBlock();
-				long bclen = input.getColsInBlock();
+				int brlen = input.getRowsInBlock();
+				int bclen = input.getColsInBlock();
 				MemoTable memo = new MemoTable();
 			
 				boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
@@ -545,8 +545,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop input = targetHop;
 				long rlen = input.getDim1();
 				long clen = input.getDim2();
-				long brlen = input.getRowsInBlock();
-				long bclen = input.getColsInBlock();
+				int brlen = input.getRowsInBlock();
+				int bclen = input.getColsInBlock();
 				long nnz = input.getNnz();
 				boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 				
@@ -576,7 +576,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop cumsumInput = emptyInd;
 				if( !rmRows ){
 					cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
-					HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);	
+					HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);
 				}
 			
 				UnaryOp cumsum = HopRewriteUtils.createUnary(cumsumInput, OpOp1.CUMSUM); 
@@ -673,8 +673,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			Hop input = targetHop;
 			long rlen = input.getDim1();
 			long clen = input.getDim2();
-			long brlen = input.getRowsInBlock();
-			long bclen = input.getColsInBlock();
+			int brlen = input.getRowsInBlock();
+			int bclen = input.getColsInBlock();
 			boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 			
 			//construct lops via new partial hop dag and subsequent lops construction 

@@ -274,22 +274,18 @@ public class ExecutionContext {
 		return mo.acquireRead();
 	}
 	
-	public void setMetaData(String varName, long nrows, long ncols) 
-		throws DMLRuntimeException  
-	{
+	public void setMetaData(String varName, long nrows, long ncols) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getNumRows() == nrows && mo.getNumColumns() == ncols) 
 			return;
-		
 		MetaData oldMetaData = mo.getMetaData();
 		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
-			
-		MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
-				(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols,
+			(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
 		mo.setMetaData(new MetaDataFormat(mc, 
-				((MetaDataFormat)oldMetaData).getOutputInfo(),
-				((MetaDataFormat)oldMetaData).getInputInfo()));
+			((MetaDataFormat)oldMetaData).getOutputInfo(),
+			((MetaDataFormat)oldMetaData).getInputInfo()));
 	}
 	
 	/**

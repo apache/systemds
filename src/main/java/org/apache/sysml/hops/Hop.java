@@ -80,8 +80,8 @@ public abstract class Hop implements ParseInfo
 	protected boolean _visited = false;
 	protected long _dim1 = -1;
 	protected long _dim2 = -1;
-	protected long _rows_in_block = -1;
-	protected long _cols_in_block = -1;
+	protected int _rows_in_block = -1;
+	protected int _cols_in_block = -1;
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
@@ -253,7 +253,7 @@ public abstract class Hop implements ParseInfo
 		return false;
 	}
 	
-	public void setOutputBlocksizes( long brlen, long bclen ) {
+	public void setOutputBlocksizes(int brlen, int bclen) {
 		setRowsInBlock( brlen );
 		setColsInBlock( bclen );
 	}
@@ -787,19 +787,19 @@ public abstract class Hop implements ParseInfo
 		h._parent.add(this);
 	}
 
-	public long getRowsInBlock() {
+	public int getRowsInBlock() {
 		return _rows_in_block;
 	}
 
-	public void setRowsInBlock(long rowsInBlock) {
+	public void setRowsInBlock(int rowsInBlock) {
 		_rows_in_block = rowsInBlock;
 	}
 
-	public long getColsInBlock() {
+	public int getColsInBlock() {
 		return _cols_in_block;
 	}
 
-	public void setColsInBlock(long colsInBlock) {
+	public void setColsInBlock(int colsInBlock) {
 		_cols_in_block = colsInBlock;
 	}
 

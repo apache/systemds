@@ -78,9 +78,7 @@ public class MatrixCharacteristics implements Serializable
 	private long nonZero = -1;
 	private boolean ubNnz = false;
 	
-	public MatrixCharacteristics() {
-	
-	}
+	public MatrixCharacteristics() {}
 	
 	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc) {
 		set(nr, nc, bnr, bnc);
@@ -122,9 +120,17 @@ public class MatrixCharacteristics implements Serializable
 	public long getRows(){
 		return numRows;
 	}
+	
+	public void setRows(long rlen) {
+		numRows = rlen;
+	}
 
 	public long getCols(){
 		return numColumns;
+	}
+	
+	public void setCols(long clen) {
+		numColumns = clen;
 	}
 	
 	public long getLength() {

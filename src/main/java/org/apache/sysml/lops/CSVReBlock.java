@@ -32,34 +32,30 @@ import org.apache.sysml.parser.Expression.ValueType;
  */
 public class CSVReBlock extends Lop 
 {
-	
 	public static final String OPCODE = "csvrblk"; 
 	
-	Long rows_per_block;
-	Long cols_per_block;
+	private int _rows_per_block;
+	private int _cols_per_block;
 
-	public CSVReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, ExecType et) throws LopsException 
+	public CSVReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, ExecType et) throws LopsException 
 	{
-		super(Lop.Type.CSVReBlock, dt, vt);		
-		this.addInput(input);
+		super(Lop.Type.CSVReBlock, dt, vt);
+		addInput(input);
 		input.addOutput(this);
 		
-		this.rows_per_block = rows_per_block;
-		this.cols_per_block = cols_per_block;
+		_rows_per_block = rows_per_block;
+		_cols_per_block = cols_per_block;
 		
-		/*
-		 * This lop can be executed only in CSVREBLOCK job.
-		 */
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.CSV_REBLOCK);
 		
 		if(et == ExecType.MR) {
-			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else if(et == ExecType.SPARK) {
-			this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			throw new LopsException("Incorrect execution type for CSVReblock:" + et);
@@ -67,9 +63,8 @@ public class CSVReBlock extends Lop
 	}
 
 	@Override
-	public String toString() {
-	
-		return "CSVReblock - rows per block = " + rows_per_block + " cols per block  " + cols_per_block ;
+	public String toString() {	
+		return "CSVReblock - rows per block = " + _rows_per_block + " cols per block  " + _cols_per_block ;
 	}
 	
 	private String prepCSVProperties() throws LopsException {
@@ -130,9 +125,9 @@ public class CSVReBlock extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rows_per_block );
+		sb.append( _rows_per_block );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( cols_per_block );
+		sb.append( _cols_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( prepCSVProperties() );

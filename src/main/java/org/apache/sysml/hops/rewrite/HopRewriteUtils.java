@@ -738,7 +738,7 @@ public class HopRewriteUtils
 		return dop;
 	}
 	
-	public static void setOutputParameters( Hop hop, long rlen, long clen, long brlen, long bclen, long nnz ) {
+	public static void setOutputParameters( Hop hop, long rlen, long clen, int brlen, int bclen, long nnz ) {
 		hop.setDim1( rlen );
 		hop.setDim2( clen );
 		hop.setOutputBlocksizes(brlen, bclen );
@@ -764,13 +764,11 @@ public class HopRewriteUtils
 		dest.setParseInfo(src);
 	}
 
-	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, Hop src )
-	{
+	public static void updateHopCharacteristics( Hop hop, int brlen, int bclen, Hop src ) {
 		updateHopCharacteristics(hop, brlen, bclen, new MemoTable(), src);
 	}
 	
-	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, MemoTable memo, Hop src )
-	{
+	public static void updateHopCharacteristics( Hop hop, int brlen, int bclen, MemoTable memo, Hop src ) {
 		//update block sizes and dimensions  
 		hop.setOutputBlocksizes(brlen, bclen);
 		hop.refreshSizeInformation();

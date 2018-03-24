@@ -26,6 +26,7 @@ import java.util.HashSet;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -1288,26 +1289,22 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private void setBinaryOutputProperties(DataIdentifier output) 
-		throws LanguageException 
-	{
+	private void setBinaryOutputProperties(DataIdentifier output) throws LanguageException {
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();
-		DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX) ? 
+		DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX) ?
 			DataType.MATRIX : DataType.SCALAR;				
 		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
 			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
-		long[] dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
+		MatrixCharacteristics dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
 		output.setDataType(dtOut);
-		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE : 
+		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE :
 			computeValueType(getFirstExpr(), getSecondExpr(), true));
-		output.setDimensions(dims[0], dims[1]);
-		output.setBlockDimensions (dims[2], dims[3]);
+		output.setDimensions(dims.getRows(), dims.getCols());
+		output.setBlockDimensions (dims.getRowsPerBlock(), dims.getColsPerBlock());
 	}
 	
-	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
-	{
+	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) throws LanguageException {
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();
 		DataType dt3 = getThirdExpr().getOutput().getDataType();
@@ -1319,13 +1316,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatchingDimensions(getFirstExpr(), getThirdExpr(), false, conditional);
 		if( dt2==DataType.MATRIX && dt3==DataType.MATRIX )
 			checkMatchingDimensions(getSecondExpr(), getThirdExpr(), false, conditional);
-		long[] dims1 = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
-		long[] dims2 = getBinaryMatrixCharacteristics(getSecondExpr(), getThirdExpr());
+		MatrixCharacteristics dims1 = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
+		MatrixCharacteristics dims2 = getBinaryMatrixCharacteristics(getSecondExpr(), getThirdExpr());
 		output.setDataType(dtOut);
 		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE :
 			computeValueType(getSecondExpr(), getThirdExpr(), true));
-		output.setDimensions(Math.max(dims1[0], dims2[0]), Math.max(dims1[1], dims2[1]));
-		output.setBlockDimensions (Math.max(dims1[2], dims2[2]), Math.max(dims1[3], dims2[3]));
+		output.setDimensions(Math.max(dims1.getRows(), dims2.getRows()), Math.max(dims1.getCols(), dims2.getCols()));
+		output.setBlockDimensions(Math.max(dims1.getRowsPerBlock(), dims2.getRowsPerBlock()),
+			Math.max(dims1.getColsPerBlock(), dims2.getColsPerBlock()));
 	}
 	
 	private void expandArguments() {

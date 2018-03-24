@@ -86,8 +86,8 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					long clen = reblock.getDim2();
 					long nnz = reblock.getNnz();
 					UpdateType update = reblock.getUpdateType();
-					long brlen = reblock.getRowsInBlock();
-					long bclen = reblock.getColsInBlock();
+					int brlen = reblock.getRowsInBlock();
+					int bclen = reblock.getColsInBlock();
 					
 					//replace reblock inputs to avoid dangling references across dags
 					//(otherwise, for instance, literal ops are shared across dags)

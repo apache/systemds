@@ -52,7 +52,6 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -406,25 +405,18 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( Hop hop ) 
-		throws DMLRuntimeException
-	{
+	public static String explain( Hop hop ) {
 		return explain(hop, 0);
 	}
 
-	public static String explain( Hop hop, int level ) 
-		throws DMLRuntimeException
-	{
+	public static String explain( Hop hop, int level ) {
 		hop.resetVisitStatus();
 		String ret = explainHop(hop, level);
 		hop.resetVisitStatus();
-		
 		return ret;
 	}
 	
-	public static String explainCPlan( CNodeTpl cplan ) 
-		throws DMLRuntimeException 
-	{
+	public static String explainCPlan( CNodeTpl cplan ) {
 		StringBuilder sb = new StringBuilder();
 		
 		//create template header
@@ -446,11 +438,11 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String explain( CNode node ) throws DMLRuntimeException {
+	public static String explain( CNode node ) {
 		return explain(node, 0);
 	}
 	
-	public static String explain( CNode node, int level ) throws DMLRuntimeException {
+	public static String explain( CNode node, int level ) {
 		return explainCNode(node, level);
 	}
 
@@ -691,11 +683,8 @@ public class Explain
 	 * @param hop high-level operator
 	 * @param level offset
 	 * @return string explanation of Hop DAG
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String explainHop(Hop hop, int level) 
-		throws DMLRuntimeException 
-	{
+	private static String explainHop(Hop hop, int level) {
 		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
 			return "";
 		
@@ -780,8 +769,7 @@ public class Explain
 		return isInRange;
 	}
 
-	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph)
-			throws DMLRuntimeException {
+	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph) {
 		StringBuilder sb = new StringBuilder();
 		if (hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp))
 			return sb;
@@ -901,9 +889,7 @@ public class Explain
 	//////////////
 	// internal explain CNODE
 
-	private static String explainCNode(CNode cnode, int level) 
-		throws DMLRuntimeException 
-	{
+	private static String explainCNode(CNode cnode, int level) {
 		if( cnode.isVisited() )
 			return "";
 		

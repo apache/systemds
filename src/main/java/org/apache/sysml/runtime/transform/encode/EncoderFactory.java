@@ -36,19 +36,17 @@ import org.apache.wink.json4j.JSONObject;
 
 public class EncoderFactory 
 {
-	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
+	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
 
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) throws DMLRuntimeException {
+	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) {
 		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
-		throws DMLRuntimeException 
-	{
+	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		Encoder encoder = null;
 		int clen = schema.length;
 		

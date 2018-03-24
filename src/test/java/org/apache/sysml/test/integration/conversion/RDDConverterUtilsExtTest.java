@@ -36,7 +36,6 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -77,7 +76,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testStringDataFrameToVectorDataFrame() throws DMLRuntimeException {
+	public void testStringDataFrameToVectorDataFrame() {
 		List<String> list = new ArrayList<String>();
 		list.add("((1.2, 4.3, 3.4))");
 		list.add("(1.2, 3.4, 2.2)");
@@ -105,7 +104,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testStringDataFrameToVectorDataFrameNull() throws DMLRuntimeException {
+	public void testStringDataFrameToVectorDataFrameNull() {
 		List<String> list = new ArrayList<String>();
 		list.add("[1.2, 3.4]");
 		list.add(null);
@@ -129,7 +128,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	}
 
 	@Test(expected = SparkException.class)
-	public void testStringDataFrameToVectorDataFrameNonNumbers() throws DMLRuntimeException {
+	public void testStringDataFrameToVectorDataFrameNonNumbers() {
 		List<String> list = new ArrayList<String>();
 		list.add("[cheeseburger,fries]");
 		JavaRDD<String> javaRddString = sc.parallelize(list);

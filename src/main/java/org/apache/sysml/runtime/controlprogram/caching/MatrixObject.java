@@ -229,11 +229,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param pred index range
 	 * @return matrix block
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
-	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
-		throws DMLRuntimeException
-	{
+	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire partition "+hashCode()+" "+pred);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -347,7 +344,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	}
 
 	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
-		throws DMLRuntimeException
 	{
 		if ( !_partitioned )
 			throw new DMLRuntimeException("MatrixObject not available to indexed read.");

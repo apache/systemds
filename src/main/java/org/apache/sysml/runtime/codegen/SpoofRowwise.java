@@ -108,9 +108,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	@Override
-	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) 
-		throws DMLRuntimeException 
-	{
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) {
 		MatrixBlock out = ( k > 1 ) ?
 			execute(inputs, scalarObjects, new MatrixBlock(1,1,false), k) :
 			execute(inputs, scalarObjects, new MatrixBlock(1,1,false));
@@ -118,15 +116,11 @@ public abstract class SpoofRowwise extends SpoofOperator
 	}
 	
 	@Override
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
-		throws DMLRuntimeException 
-	{
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
 		return execute(inputs, scalarObjects, out, true, false);
 	}
 	
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) 
-		throws DMLRuntimeException
-	{
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) {
 		//sanity check
 		if( inputs==null || inputs.size() < 1 || out==null )
 			throw new RuntimeException("Invalid input arguments.");
@@ -177,7 +171,6 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)
-		throws DMLRuntimeException
 	{
 		//redirect to serial execution
 		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.checkParColumnAgg(inputs.get(0), k, false))
@@ -367,7 +360,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		
 		@Override
-		public DenseBlock call() throws DMLRuntimeException {
+		public DenseBlock call() {
 			
 			//allocate vector intermediates and partial output
 			if( _reqVectMem > 0 )
@@ -413,7 +406,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException {
+		public Long call() {
 			//allocate vector intermediates
 			if( _reqVectMem > 0 )
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);

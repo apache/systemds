@@ -277,12 +277,12 @@ public class ResultMergeRemoteReducer
 		}
 		
 		@Override
-		public MatrixObject executeParallelMerge(int par) throws DMLRuntimeException {
+		public MatrixObject executeParallelMerge(int par) {
 			throw new DMLRuntimeException("Unsupported operation.");
 		}
 
 		@Override
-		public MatrixObject executeSerialMerge() throws DMLRuntimeException {
+		public MatrixObject executeSerialMerge() {
 			throw new DMLRuntimeException("Unsupported operation.");
 		}
 

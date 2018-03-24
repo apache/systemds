@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.util;
 
 import java.util.Arrays;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 
@@ -70,7 +69,7 @@ public class ConvolutionUtils {
 		return ret;
 	}
 	
-	public static void fillBias(MatrixBlock bias, double [] outputArray, int src_rl, int src_ru, int N, int K, int PQ) throws DMLRuntimeException {
+	public static void fillBias(MatrixBlock bias, double [] outputArray, int src_rl, int src_ru, int N, int K, int PQ) {
 		// bias.getNumColumns() == 1 checked outside
 		if(bias.isInSparseFormat()) {
 			for(int k = 0; k < K; k++) {

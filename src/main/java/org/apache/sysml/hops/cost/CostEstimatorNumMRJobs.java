@@ -19,24 +19,17 @@
 
 package org.apache.sysml.hops.cost;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 public class CostEstimatorNumMRJobs extends CostEstimator
 {
-
-	
 	@Override
-	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
-		throws DMLRuntimeException
-	{
+	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) {
 		return 0;
 	}
 	
 	@Override
-	protected double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
-		throws DMLRuntimeException
-	{
+	protected double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) {
 		return 1;
 	}
 }

@@ -85,16 +85,13 @@ public class ResultMergeRemoteMR extends ResultMerge
 	}
 
 	@Override
-	public MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeSerialMerge() {
 		//graceful degradation to parallel merge
 		return executeParallelMerge( _numMappers );
 	}
 	
 	@Override
 	public MatrixObject executeParallelMerge(int par) 
-		throws DMLRuntimeException 
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		if( LOG.isTraceEnabled() )
@@ -160,7 +157,6 @@ public class ResultMergeRemoteMR extends ResultMerge
 
 	@SuppressWarnings({ "unused", "deprecation" })
 	protected void executeMerge(String fname, String fnameNew, String[] srcFnames, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
-			throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-RMMR";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

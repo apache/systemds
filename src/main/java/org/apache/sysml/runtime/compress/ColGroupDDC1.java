@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
@@ -249,7 +248,6 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
@@ -272,7 +270,6 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	public static void rightMultByVector(ColGroupDDC1[] grps, MatrixBlock vector, MatrixBlock result, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
@@ -299,7 +296,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) throws DMLRuntimeException {
+	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
 		double[] a = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
@@ -317,7 +314,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	@Override
-	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) throws DMLRuntimeException {
+	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) {
 		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int numVals = getNumValues();
@@ -376,7 +373,6 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	public static void computeRowSums(ColGroupDDC1[] grps, MatrixBlock result, KahanFunction kplus, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		//note: due to corrections the output might be a large dense block
 		DenseBlock c = result.getDenseBlock();
@@ -417,7 +413,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op) throws DMLRuntimeException {
+	public ColGroup scalarOperation(ScalarOperator op) {
 		//fast path: sparse-safe and -unsafe operations
 		//as zero are represented, it is sufficient to simply apply the scalar op
 		return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data);

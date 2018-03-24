@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
@@ -68,11 +67,9 @@ public class ColGroupUncompressed extends ColGroup
 	 * @param rawblock
 	 *            the uncompressed block; uncompressed data must be present at
 	 *            the time that the constructor is called
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unused")
 	public ColGroupUncompressed(List<Integer> colIndicesList, MatrixBlock rawblock) 
-		throws DMLRuntimeException 
 	{
 		super(colIndicesList, 
 				CompressedMatrixBlock.TRANSPOSE_INPUT ? 
@@ -270,9 +267,7 @@ public class ColGroupUncompressed extends ColGroup
 	}
 	
 	@Override
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru)
-			throws DMLRuntimeException 
-	{
+	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
 		int clen = _colIndexes.length;
 		
@@ -287,9 +282,7 @@ public class ColGroupUncompressed extends ColGroup
 		LibMatrixMult.matrixMult(_data, shortVector, result, rl, ru);	
 	}
 	
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k)
-			throws DMLRuntimeException 
-	{
+	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k) {
 		// Pull out the relevant rows of the vector
 		int clen = _colIndexes.length;
 		
@@ -306,7 +299,6 @@ public class ColGroupUncompressed extends ColGroup
 	
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result)
-			throws DMLRuntimeException 
 	{
 		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
 		LibMatrixMult.matrixMult(vector, _data, pret);
@@ -321,7 +313,6 @@ public class ColGroupUncompressed extends ColGroup
 	}
 	
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int k)
-			throws DMLRuntimeException 
 	{
 		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
 		LibMatrixMult.matrixMult(vector, _data, pret, k);
@@ -336,21 +327,16 @@ public class ColGroupUncompressed extends ColGroup
 	}
 
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op)
-			throws DMLRuntimeException 
-	{
+	public ColGroup scalarOperation(ScalarOperator op) {
 		//execute scalar operations
 		MatrixBlock retContent = (MatrixBlock) _data
-				.scalarOperations(op, new MatrixBlock());
-
+			.scalarOperations(op, new MatrixBlock());
 		//construct new uncompressed column group
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
 	}
 	
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock ret)
-		throws DMLRuntimeException 
-	{
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock ret) {
 		//execute unary aggregate operations
 		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
 		

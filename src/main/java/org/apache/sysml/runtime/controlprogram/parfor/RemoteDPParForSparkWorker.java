@@ -73,7 +73,6 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar, 
 			boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo, 
 			LongAccumulator atasks, LongAccumulator aiters) 
-		throws DMLRuntimeException
 	{
 		_prog = program;
 		_clsMap = clsMap;
@@ -142,7 +141,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	}
 
 	private void configureWorker( long ID ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		_workerID = ID;
 		

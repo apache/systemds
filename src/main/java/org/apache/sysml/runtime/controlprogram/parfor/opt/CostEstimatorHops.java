@@ -48,7 +48,6 @@ public class CostEstimatorHops extends CostEstimator
 
 	@Override
 	public double getLeafNodeEstimate(TestMeasure measure, OptNode node)
-		throws DMLRuntimeException 
 	{
 		if( node.getNodeType() != NodeType.HOP )
 			return 0; //generic optnode but no childs (e.g., PB for rmvar inst)
@@ -111,7 +110,6 @@ public class CostEstimatorHops extends CostEstimator
 
 	@Override
 	public double getLeafNodeEstimate(TestMeasure measure, OptNode node, ExecType et)
-		throws DMLRuntimeException 
 	{
 		if( node.getNodeType() != NodeType.HOP )
 			return 0; //generic optnode but no childs (e.g., PB for rmvar inst)

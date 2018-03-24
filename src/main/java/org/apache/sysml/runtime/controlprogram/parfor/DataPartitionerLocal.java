@@ -91,23 +91,17 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param dpf data partitionformat
 	 * @param n ?
 	 * @param par -1 for serial otherwise number of threads, can be ignored by implementation
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DataPartitionerLocal(PartitionFormat dpf, int par) 
-		throws DMLRuntimeException 
-	{
+	public DataPartitionerLocal(PartitionFormat dpf, int par) {
 		super(dpf._dpf, dpf._N);
-		
 		if( dpf.isBlockwise() )
 			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
-		
 		_seq = new IDSequence();
 		_par = (par > 0) ? par : 1;
 	}
 	
 	@Override
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
-			throws DMLRuntimeException 
 	{
 		//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
 		in.exportData(); //written to disk iff dirty
@@ -134,7 +128,6 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 
 	private void partitionTextCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
-		throws DMLRuntimeException
 	{
 		long row = -1;
 		long col = -1;
@@ -227,7 +220,6 @@ public class DataPartitionerLocal extends DataPartitioner
 
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
-		throws DMLRuntimeException
 	{
 		long row = -1;
 		long col = -1;
@@ -315,7 +307,6 @@ public class DataPartitionerLocal extends DataPartitioner
 
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
-		throws DMLRuntimeException
 	{
 		try 
 		{	
@@ -391,7 +382,6 @@ public class DataPartitionerLocal extends DataPartitioner
 
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
-		throws DMLRuntimeException
 	{
 		try 
 		{		
@@ -495,7 +485,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 
 	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long brlen, long bclen ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
@@ -506,7 +496,7 @@ public class DataPartitionerLocal extends DataPartitioner
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			_reuseBlk.reset( 1, (int)cols, sparse, (int) (cols*sparsity) ); 			
+			_reuseBlk.reset( 1, (int)cols, sparse, (int) (cols*sparsity) );
 			for( int i=0; i<rows; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
@@ -545,7 +535,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 
 	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		HashMap<Long,LinkedList<Cell>> sortedBuffer = new HashMap<>();
 		

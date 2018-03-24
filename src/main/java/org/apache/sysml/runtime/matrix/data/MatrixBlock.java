@@ -312,11 +312,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param arr double array matrix
 	 * @param r number of rows
 	 * @param c number of columns
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void init(double[] arr, int r, int c) 
-		throws DMLRuntimeException 
-	{	
+	public void init(double[] arr, int r, int c) {
 		//input checks 
 		if ( sparse )
 			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
@@ -332,8 +329,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public boolean isAllocated() {
-		return sparse ? (sparseBlock!=null)
-			: (denseBlock!=null);
+		return sparse ? (sparseBlock!=null) : (denseBlock!=null);
 	}
 
 	public MatrixBlock allocateDenseBlock() {

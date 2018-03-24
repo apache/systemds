@@ -97,8 +97,7 @@ public class IfProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	{
 		BooleanObject predResult = executePredicate(ec); 
 	
 		//execute if statement
@@ -151,7 +150,6 @@ public class IfProgramBlock extends ProgramBlock
 	}
 
 	private BooleanObject executePredicate(ExecutionContext ec) 
-		throws DMLRuntimeException 
 	{
 		BooleanObject result = null;
 		try

@@ -354,9 +354,7 @@ public class RunMRJobs
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
-	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices ) 
-		throws DMLRuntimeException
-	{
+	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices ) {
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
 		if (!inst.getJobType().areEmptyInputsAllowed()) {
@@ -445,9 +443,7 @@ public class RunMRJobs
 	}
 
 	
-	private static long[] getNNZ( MatrixObject[] inputMatrices ) 
-		throws DMLRuntimeException
-	{
+	private static long[] getNNZ( MatrixObject[] inputMatrices ) {
 		int len = inputMatrices.length;
 		long[] ret = new long[len];
 		for( int i=0; i<len; i++ )
@@ -463,7 +459,6 @@ public class RunMRJobs
 	}
 	
 	private static JobReturn executeInMemoryReblockOperations( MRJobInstruction inst, String shuffleInst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices ) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
@@ -486,7 +481,6 @@ public class RunMRJobs
 	}
 	
 	private static JobReturn executeInMemoryDataGenOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		DataGenMRInstruction[] dgSet = MRInstructionParser.parseDataGenInstructions(randInst);

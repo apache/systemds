@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
@@ -38,9 +37,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	}
 
 	@Override
-	public MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeSerialMerge() {
 		Timing time = new Timing(true);
 		
 		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
@@ -60,9 +57,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	}
 	
 	@Override
-	public MatrixObject executeParallelMerge(int par) 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeParallelMerge(int par) {
 		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
 		long rows = mc.getRows();
 		long cols = mc.getCols();

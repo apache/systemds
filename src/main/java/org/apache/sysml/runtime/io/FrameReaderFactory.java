@@ -29,18 +29,13 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 public class FrameReaderFactory 
 {
 
-	public static FrameReader createFrameReader( InputInfo iinfo ) 
-		throws DMLRuntimeException
-	{
+	public static FrameReader createFrameReader( InputInfo iinfo ) {
 		FileFormatProperties props = (iinfo==InputInfo.CSVInputInfo) ?
-			new CSVFileFormatProperties() : null;		
-		
+			new CSVFileFormatProperties() : null;
 		return createFrameReader(iinfo, props);
 	}
 
-	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) 
-		throws DMLRuntimeException
-	{
+	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) {
 		FrameReader reader = null;
 
 		if( iinfo == InputInfo.TextCellInputInfo ) {

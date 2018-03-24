@@ -46,13 +46,11 @@ public abstract class MatrixWriter
 	 * @param brlen number of rows in block
 	 * @param bclen number of columns in block
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void writeEmptyMatrixToHDFS( String fname, long rlen, long clen, int brlen, int bclen )
-		throws IOException, DMLRuntimeException;
+		throws IOException;
 
 	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros ) 
-		throws DMLRuntimeException
 	{
 		MatrixBlock[] blocks = new MatrixBlock[4];
 		double sparsity = ((double)nonZeros)/(rlen*clen);

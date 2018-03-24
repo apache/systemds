@@ -53,7 +53,6 @@ public class ResultMergeLocalMemory extends ResultMerge
 	
 	@Override
 	public MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		
@@ -142,8 +141,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 	
 	@Override
 	public MatrixObject executeParallelMerge( int par ) 
-		throws DMLRuntimeException
-	{		
+	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		
 		if( LOG.isTraceEnabled() )
@@ -225,9 +223,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		return null;
 	}
 
-	private MatrixObject createNewMatrixObject( MatrixBlock data ) 
-		throws DMLRuntimeException
-	{
+	private MatrixObject createNewMatrixObject( MatrixBlock data ) {
 		ValueType vt = _output.getValueType();
 		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 		MatrixObject moNew = new MatrixObject( vt, _outputFName );
@@ -246,8 +242,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 		data.examSparsity();
 		
 		//release new output
-		moNew.acquireModify(data);	
-		moNew.release();	
+		moNew.acquireModify(data);
+		moNew.release();
 		
 		return moNew;
 	}
@@ -263,11 +259,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 * @param out output matrix block
 	 * @param in input matrix block
 	 * @param appendOnly ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
-		throws DMLRuntimeException
-	{
+	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) {
 		if( _compare == null )
 			mergeWithoutComp(out, in, appendOnly);
 		else

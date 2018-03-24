@@ -48,7 +48,6 @@ public class PlanningCoCoder
 	
 	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator, List<Integer> cols, 
 			CompressedSizeInfo[] colInfos, int numRows, int k) 
-		throws DMLRuntimeException 
 	{
 		// filtering out non-groupable columns as singleton groups
 		// weight is the ratio of its cardinality to the number of rows 
@@ -92,7 +91,6 @@ public class PlanningCoCoder
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
-		throws DMLRuntimeException 
 	{
 		List<int[]> retGroups = new ArrayList<>();
 		try {
@@ -226,7 +224,7 @@ public class PlanningCoCoder
 		}
 		
 		@Override
-		public PlanningCoCodingGroup[] call() throws DMLRuntimeException {
+		public PlanningCoCodingGroup[] call() {
 			// brute force co-coding	
 			return findCocodesBruteForce(_estim, _rlen, 
 					_sgroups.toArray(new PlanningCoCodingGroup[0]));

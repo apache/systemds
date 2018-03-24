@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
@@ -267,22 +266,17 @@ public abstract class ColGroupOffset extends ColGroupValue
 	 * 
 	 * @param ind row indicator vector of non zeros
 	 * @return offsets
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected int[] computeOffsets(boolean[] ind)
-		throws DMLRuntimeException 
-	{
+	protected int[] computeOffsets(boolean[] ind) {
 		//determine number of offsets
 		int numOffsets = 0;
 		for( int i=0; i<ind.length; i++ )
 			numOffsets += ind[i] ? 1 : 0;
-		
 		//create offset lists
 		int[] ret = new int[numOffsets];
 		for( int i=0, pos=0; i<ind.length; i++ )
 			if( ind[i] )
 				ret[pos++] = i;
-		
 		return ret;
 	}
 
@@ -371,7 +365,6 @@ public abstract class ColGroupOffset extends ColGroupValue
 	
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		//sum and sumsq (reduceall/reducerow over tuples and counts)
 		if( op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ) 

@@ -58,7 +58,6 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
-			throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-DPSP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

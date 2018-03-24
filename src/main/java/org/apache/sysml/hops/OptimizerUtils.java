@@ -262,12 +262,11 @@ public class OptimizerUtils
 		return (getOptLevel() == level);
 	}
 	
-	public static CompilerConfig constructCompilerConfig( DMLConfig dmlconf ) throws DMLRuntimeException {
+	public static CompilerConfig constructCompilerConfig( DMLConfig dmlconf ) {
 		return constructCompilerConfig(new CompilerConfig(), dmlconf);
 	}
 	
 	public static CompilerConfig constructCompilerConfig( CompilerConfig cconf, DMLConfig dmlconf ) 
-		throws DMLRuntimeException
 	{
 		//each script sets its own block size, opt level etc
 		cconf.set(ConfigType.BLOCK_SIZE, dmlconf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ));

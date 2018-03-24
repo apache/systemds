@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -131,7 +130,7 @@ public class LocalVariableMap implements Cloneable
 			.mapToDouble(d -> ((CacheableData<?>)d).getDataSize()).sum();
 	}
 	
-	public String serialize() throws DMLRuntimeException {
+	public String serialize() {
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
 		for (Entry <String, Data> e : localMap.entrySet ()) {
@@ -144,9 +143,7 @@ public class LocalVariableMap implements Cloneable
 		return sb.toString();
 	}
 
-	public static LocalVariableMap deserialize(String varStr) 
-		throws DMLRuntimeException
-	{
+	public static LocalVariableMap deserialize(String varStr) {
 		StringTokenizer st2 = new StringTokenizer (varStr, ELEMENT_DELIM );
 		LocalVariableMap vars = new LocalVariableMap ();
 		while( st2.hasMoreTokens() ) {

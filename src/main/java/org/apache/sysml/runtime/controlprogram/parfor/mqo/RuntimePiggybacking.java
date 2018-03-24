@@ -67,20 +67,15 @@ public class RuntimePiggybacking
 	// public interface to runtime piggybacking
 	///////
 
-	public static boolean isActive()
-	{
+	public static boolean isActive() {
 		return _active;
 	}
 
-	public static void start( int par ) 
-		throws DMLRuntimeException
-	{
+	public static void start( int par ) {
 		start( DEFAULT_WORKER_TYPE, par );
 	}
 
-	public static void start( PiggybackingType type, int par ) 
-		throws DMLRuntimeException
-	{
+	public static void start( PiggybackingType type, int par ) {
 		//activate piggybacking server
 		_active = true;
 		
@@ -104,9 +99,7 @@ public class RuntimePiggybacking
 		_worker.start();
 	}
 
-	public static void stop() 
-		throws DMLRuntimeException 
-	{
+	public static void stop() {
 		try
 		{
 			//deactivate piggybacking server
@@ -123,9 +116,7 @@ public class RuntimePiggybacking
 		}
 	}
 
-	public static JobReturn submitJob(MRJobInstruction inst) 
-		throws DMLRuntimeException 
-	{
+	public static JobReturn submitJob(MRJobInstruction inst) {
 		JobReturn ret = null;
 		
 		try

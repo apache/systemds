@@ -78,19 +78,15 @@ public class ResourceConfig
 		return ret;
 	}
 	
-	public void setMRResources( ArrayList<ProgramBlock> B, double[][] res ) 
-		throws DMLRuntimeException
-	{
+	public void setMRResources( ArrayList<ProgramBlock> B, double[][] res ) {
 		if( _mrres.size() != res.length )
 			throw new DMLRuntimeException("Memo table sizes do not match: "+_mrres.size()+" vs "+res.length);
-		
 		int len = res.length;
 		for( int i=0; i<len; i++ )
 			_mrres.set(i, (long)res[i][0]);
 	}
 
-	public long getMaxMRResource()
-	{
+	public long getMaxMRResource() {
 		double val = (double) Collections.max(_mrres);
 		return (long)val;
 	}

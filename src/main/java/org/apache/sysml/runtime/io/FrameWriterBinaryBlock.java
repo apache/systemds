@@ -82,12 +82,11 @@ public class FrameWriterBinaryBlock extends FrameWriter
 	 * @param blen block length
 	 * @param rl lower row
 	 * @param ru upper row
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	protected static void writeBinaryBlockFrameToSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int blen, int rl, int ru ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		//1) create sequence file writer 
 		SequenceFile.Writer writer = null;

@@ -69,7 +69,6 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 
 	@Override
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
-			throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-DPMR";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

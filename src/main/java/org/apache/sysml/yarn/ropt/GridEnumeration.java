@@ -21,7 +21,6 @@ package org.apache.sysml.yarn.ropt;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
@@ -32,9 +31,7 @@ public abstract class GridEnumeration
 	protected long  _min = -1;
 	protected long  _max = -1;
 
-	public GridEnumeration( ArrayList<ProgramBlock> prog, long min, long max ) 
-		throws DMLRuntimeException
-	{
+	public GridEnumeration( ArrayList<ProgramBlock> prog, long min, long max ) {
 		if( min > max )
 			throw new DMLRuntimeException("Invalid parameters: min=" + min + ", max=" + max);
 		
@@ -43,6 +40,5 @@ public abstract class GridEnumeration
 		_max = max;
 	}
 	
-	public abstract ArrayList<Long> enumerateGridPoints() 
-		throws DMLRuntimeException, HopsException; 
+	public abstract ArrayList<Long> enumerateGridPoints();
 }

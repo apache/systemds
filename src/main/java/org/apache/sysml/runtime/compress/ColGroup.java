@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -247,12 +246,11 @@ public abstract class ColGroup implements Serializable
 	 *            accumulator for holding the result
 	 * @param rl row lower
 	 * @param ru row upper
-	 * @throws DMLRuntimeException
 	 *             if the internal SystemML code that performs the
 	 *             multiplication experiences an error
 	 */
 	public abstract void rightMultByVector(MatrixBlock vector,
-			MatrixBlock result, int rl, int ru) throws DMLRuntimeException;
+			MatrixBlock result, int rl, int ru);
 
 
 	/**
@@ -262,10 +260,8 @@ public abstract class ColGroup implements Serializable
 	 * 
 	 * @param vector row vector
 	 * @param result matrix block result
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract void leftMultByRowVector(MatrixBlock vector,
-			MatrixBlock result) throws DMLRuntimeException;
+	public abstract void leftMultByRowVector(MatrixBlock vector, MatrixBlock result);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column
@@ -274,13 +270,10 @@ public abstract class ColGroup implements Serializable
 	 * @param op
 	 *            operation to perform
 	 * @return version of this column group with the operation applied
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract ColGroup scalarOperation(ScalarOperator op)
-			throws DMLRuntimeException;
+	public abstract ColGroup scalarOperation(ScalarOperator op);
 
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result)
-		throws DMLRuntimeException;
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result);
 	
 	/**
 	 * Create a column group iterator for a row index range.

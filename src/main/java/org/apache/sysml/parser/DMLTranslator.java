@@ -94,11 +94,8 @@ public class DMLTranslator
 	private static final Log LOG = LogFactory.getLog(DMLTranslator.class.getName());
 	private DMLProgram _dmlProg = null;
 	
-	public DMLTranslator(DMLProgram dmlp) 
-		throws DMLRuntimeException 
-	{
+	public DMLTranslator(DMLProgram dmlp) {
 		_dmlProg = dmlp;
-		
 		//setup default size for unknown dimensions
 		OptimizerUtils.resetDefaultSize();
 		//reinit rewriter according to opt level flags

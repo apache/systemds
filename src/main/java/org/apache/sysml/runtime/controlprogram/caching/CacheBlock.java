@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.sysml.runtime.DMLRuntimeException;
 
 
 /**
@@ -93,10 +92,8 @@ public interface CacheBlock extends Writable
 	 * @param cu column upper
 	 * @param block cache block
 	 * @return sub-block of cache block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) 
-		throws DMLRuntimeException;
+	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block);
 	
 	/**
 	 * Merge the given block into the current block. Both blocks needs to be of equal 
@@ -104,8 +101,6 @@ public interface CacheBlock extends Writable
 	 * 
 	 * @param that cache block
 	 * @param appendOnly ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void merge(CacheBlock that, boolean appendOnly) 
-		throws DMLRuntimeException;
+	public void merge(CacheBlock that, boolean appendOnly);
 }

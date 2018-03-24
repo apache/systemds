@@ -28,15 +28,11 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class FrameWriterFactory 
 {
-
-	public static FrameWriter createFrameWriter( OutputInfo oinfo ) 
-			throws DMLRuntimeException
-	{
+	public static FrameWriter createFrameWriter( OutputInfo oinfo ) {
 		return createFrameWriter(oinfo, null);
 	}
 
 	public static FrameWriter createFrameWriter( OutputInfo oinfo, FileFormatProperties props ) 
-		throws DMLRuntimeException
 	{
 		FrameWriter writer = null;
 		

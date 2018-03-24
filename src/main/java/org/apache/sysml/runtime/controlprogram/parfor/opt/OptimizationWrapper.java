@@ -99,10 +99,8 @@ public class OptimizationWrapper
 	 * @param pb parfor program block
 	 * @param ec execution context
 	 * @param monitor ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
-		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		
@@ -134,7 +132,6 @@ public class OptimizationWrapper
 
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
-		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		
@@ -273,50 +270,28 @@ public class OptimizationWrapper
 		}
 	}
 
-	private static Optimizer createOptimizer( POptMode otype ) 
-		throws DMLRuntimeException
-	{
-		Optimizer opt = null;
-		
-		switch( otype )
-		{
-			case HEURISTIC:
-				opt = new OptimizerHeuristic();
-				break;
-			case RULEBASED:
-				opt = new OptimizerRuleBased();
-				break;	
-			case CONSTRAINED:
-				opt = new OptimizerConstrained();
-				break;	
+	private static Optimizer createOptimizer( POptMode otype ) {
+		switch( otype ) {
+			case HEURISTIC:   return new OptimizerHeuristic();
+			case RULEBASED:   return new OptimizerRuleBased();
+			case CONSTRAINED: return new OptimizerConstrained();
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}
-		
-		return opt;
 	}
 
-	private static CostEstimator createCostEstimator( CostModelType cmtype, LocalVariableMap vars ) 
-		throws DMLRuntimeException
-	{
-		CostEstimator est = null;
-		
-		switch( cmtype )
-		{
+	private static CostEstimator createCostEstimator( CostModelType cmtype, LocalVariableMap vars )  {
+		switch( cmtype ) {
 			case STATIC_MEM_METRIC:
-				est = new CostEstimatorHops( 
-						OptTreeConverter.getAbstractPlanMapping() );
-				break;
+				return new CostEstimatorHops( 
+					OptTreeConverter.getAbstractPlanMapping() );
 			case RUNTIME_METRICS:
-				est = new CostEstimatorRuntime( 
-						OptTreeConverter.getAbstractPlanMapping(), 
-						(LocalVariableMap)vars.clone() );
-				break;
+				return new CostEstimatorRuntime( 
+					OptTreeConverter.getAbstractPlanMapping(), 
+					(LocalVariableMap)vars.clone() );
 			default:
 				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");
 		}
-		
-		return est;
 	}
 
 	private static ProgramRewriter createProgramRewriterWithRuleSets()

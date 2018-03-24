@@ -38,7 +38,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
@@ -90,9 +89,7 @@ public class RemoteParForUtils
 		}
 	}
 
-	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, OutputCollector<Writable, Writable> out ) 
-			throws DMLRuntimeException, IOException
-	{
+	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, OutputCollector<Writable, Writable> out ) throws IOException {
 		exportResultVariables(workerID, vars, resultVars, null, out);
 	}
 	
@@ -103,13 +100,11 @@ public class RemoteParForUtils
 	 * @param vars local variable map
 	 * @param resultVars list of result variables
 	 * @param rvarFnames ?
-	 * @param out output collector
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @param out output collectors
 	 * @throws IOException if IOException occurs
 	 */
 	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, 
-			                                  HashMap<String,String> rvarFnames, OutputCollector<Writable, Writable> out ) 
-		throws DMLRuntimeException, IOException
+			HashMap<String,String> rvarFnames, OutputCollector<Writable, Writable> out ) throws IOException
 	{
 		//create key and value for reuse
 		LongWritable okey = new LongWritable( workerID ); 
@@ -159,11 +154,10 @@ public class RemoteParForUtils
 	 * @param vars local variable map
 	 * @param resultVars list of result variables
 	 * @return list of result variables
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
 	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		ArrayList<String> ret = new ArrayList<>();
 		
@@ -218,7 +212,6 @@ public class RemoteParForUtils
 	}
 	
 	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
-		throws DMLRuntimeException
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<>();
 
@@ -228,10 +221,10 @@ public class RemoteParForUtils
 			Long key = entry._1();
 			String val = entry._2();
 			if( !tmp.containsKey( key ) )
-        		tmp.put(key, new LocalVariableMap ());	   
+				tmp.put(key, new LocalVariableMap ());	   
 			Object[] dat = ProgramConverter.parseDataObject( val );
-        	tmp.get(key).put((String)dat[0], (Data)dat[1]);
-        	countAll++;
+			tmp.get(key).put((String)dat[0], (Data)dat[1]);
+			countAll++;
 		}
 
 		if( LOG != null ) {

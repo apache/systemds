@@ -52,8 +52,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	}
 
 	@Override
-	public List<Task> createTasks() 
-		throws DMLRuntimeException 
+	public List<Task> createTasks()
 	{
 		LinkedList<Task> tasks = new LinkedList<>();
 		long lFrom = _fromVal.getLongValue();
@@ -107,8 +106,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 
 	@Override
 	public long createTasks(LocalTaskQueue<Task> queue) 
-		throws DMLRuntimeException 
-	{		
+	{
 		long numCreatedTasks = 0;
 		
 		long lFrom  = _fromVal.getLongValue();

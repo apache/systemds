@@ -97,9 +97,8 @@ public class NativeHelper {
 	 * 
 	 * @param customLibPath specified by sysml.native.blas.directory
 	 * @param userSpecifiedBLAS specified by sysml.native.blas
-	 * @throws DMLRuntimeException if error
 	 */
-	public static void initialize(String customLibPath, String userSpecifiedBLAS) throws DMLRuntimeException {
+	public static void initialize(String customLibPath, String userSpecifiedBLAS) {
 		if(isBLASLoaded() && isSupportedBLAS(userSpecifiedBLAS) && !blasType.equalsIgnoreCase(userSpecifiedBLAS)) {
 			throw new DMLRuntimeException("Cannot replace previously loaded blas \"" + blasType + "\" with \"" + userSpecifiedBLAS + "\".");
 		}

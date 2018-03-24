@@ -565,7 +565,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-	ConvolutionParameters parseInput() throws DMLRuntimeException {
+	ConvolutionParameters parseInput() {
 		
 		Hop imageHeightHop = null; Hop filterHeightHop = null;
 		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.AVG_POOLING_BACKWARD 
@@ -652,9 +652,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @param dim1 inferred shape
 	 * @param dim2 given shape
 	 * @param paramType string denoting the parameter for pretty printing of the error message
-	 * @throws DMLRuntimeException if dim1 != dim2
 	 */
-	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) throws DMLRuntimeException {
+	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) {
 		if(dim1 >= 0 && dim2 >= 0 && dim1 != dim2) {
 			throw new DMLRuntimeException("Inferred " + paramType + " from parent doesn't match with given " + paramType + ":" + dim1 + " != " + dim2);
 		}
@@ -662,10 +661,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	/**
 	 * Gets the values for the parameters C, H, W, P, Q from parent hops
-	 * 
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	private void inferCHWPQFromParentOp() throws DMLRuntimeException {
+	private void inferCHWPQFromParentOp() {
 		Hop tmp = getInput().get(0);
 		// Skip bias_add and go to its parent
 		tmp = isInputBiasAdd(tmp) ? tmp.getInput().get(0) : tmp;

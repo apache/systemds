@@ -72,7 +72,6 @@ public class WhileProgramBlock extends ProgramBlock
 	}
 	
 	private BooleanObject executePredicate(ExecutionContext ec) 
-		throws DMLRuntimeException 
 	{
 		BooleanObject result = null;
 		try
@@ -99,7 +98,7 @@ public class WhileProgramBlock extends ProgramBlock
 	}
 	
 	@Override
-	public void execute(ExecutionContext ec) throws DMLRuntimeException 
+	public void execute(ExecutionContext ec)
 	{
 		//execute while loop
 		try 

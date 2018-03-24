@@ -62,16 +62,13 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	}
 
 	@Override
-	public MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeSerialMerge() {
 		//graceful degradation to parallel merge
 		return executeParallelMerge( _numMappers );
 	}
 	
 	@Override
 	public MatrixObject executeParallelMerge(int par) 
-		throws DMLRuntimeException 
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
@@ -113,7 +110,6 @@ public class ResultMergeRemoteSpark extends ResultMerge
 
 	@SuppressWarnings("unchecked")
 	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, long rlen, long clen, int brlen, int bclen)
-		throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-RMSP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

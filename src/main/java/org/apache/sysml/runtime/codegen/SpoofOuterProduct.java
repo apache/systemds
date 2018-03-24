@@ -73,7 +73,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects)	
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 )
@@ -106,7 +105,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int numThreads)
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 )
@@ -153,7 +151,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 || out==null )
@@ -233,7 +230,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int numThreads)	
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 || out==null )
@@ -675,7 +671,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException {
+		public Long call() {
 			switch(_type)
 			{
 				case LEFT_OUTER_PRODUCT:
@@ -740,7 +736,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 		
 		@Override
-		public Double call() throws DMLRuntimeException {
+		public Double call() {
 			MatrixBlock out = new MatrixBlock(1, 1, false);
 			out.allocateDenseBlock();
 			if( _a instanceof CompressedMatrixBlock )

@@ -24,7 +24,6 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -267,7 +266,6 @@ public class ColGroupRLE extends ColGroupOffset
 	
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru)
-			throws DMLRuntimeException 
 	{
 		double[] b = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
@@ -363,8 +361,7 @@ public class ColGroupRLE extends ColGroupOffset
 
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result)
-			throws DMLRuntimeException 
-	{		
+	{
 		double[] a = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
@@ -441,7 +438,6 @@ public class ColGroupRLE extends ColGroupOffset
 
 	@Override
 	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result)
-			throws DMLRuntimeException 
 	{
 		//note: this method is only applicable for numrows < blocksize
 		double[] c = result.getDenseBlockValues();
@@ -472,7 +468,6 @@ public class ColGroupRLE extends ColGroupOffset
 	
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op)
-			throws DMLRuntimeException 
 	{
 		double val0 = op.executeScalar(0);
 		

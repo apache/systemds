@@ -307,8 +307,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getMatrixCharacteristics();
 	}
 
-	public abstract void refreshMetaData() 
-		throws DMLRuntimeException;
+	public abstract void refreshMetaData();
 
 	public RDDObject getRDDHandle() {
 		return _rddHandle;
@@ -345,7 +344,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _gpuObjects.get(gCtx);
 	}
 
-	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) throws DMLRuntimeException {
+	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) {
 		GPUObject old = _gpuObjects.put(gCtx, gObj);
 		if (old != null)
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
@@ -369,7 +368,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: READ(+1).
 	 * 
 	 * @return cacheable data
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized T acquireRead()
 	{
@@ -465,7 +463,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: MODIFY.
 	 * 
 	 * @return cacheable data
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized T acquireModify() 
 	{
@@ -525,7 +522,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param newData new data
 	 * @param opcode extended instruction opcode
 	 * @return cacheable data
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public synchronized T acquireModify(T newData, String opcode)
 	{
@@ -568,7 +564,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _data;
 	}
 	
-	public void release() throws DMLRuntimeException {
+	public void release() {
 		release(null);
 	}
 	
@@ -582,7 +578,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * In-Status:  READ, MODIFY;
 	 * Out-Status: READ(-1), EVICTABLE, EMPTY.
 	 * 
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized void release(String opcode) 
 	{
@@ -654,7 +649,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
 	 * Out-Status: EMPTY.
 	 * 
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public synchronized void clearData() 
 	{
@@ -703,7 +697,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: EMPTY, EVICTABLE, EVICTED, READ.
 	 * 
 	 * @param replication ?
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized void exportData( int replication ) {
 		exportData(_hdfsFileName, null, replication, null);
@@ -738,7 +731,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param replication ?
 	 * @param formatProperties file format properties
 	 * @param opcode instruction opcode if available
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties, String opcode) {
 		if( LOG.isTraceEnabled() )
@@ -881,7 +873,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Low-level cache I/O method that physically restores the data blob to
 	 * main memory. Must be defined by a subclass, never called by users.
 	 *
-	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	protected void restoreBlobIntoMemory() {
 		String cacheFilePathAndName = getCacheFilePathAndName();

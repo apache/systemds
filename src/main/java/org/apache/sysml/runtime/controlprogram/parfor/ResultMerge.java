@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
@@ -71,10 +70,8 @@ public abstract class ResultMerge implements Serializable
 	 * of one input matrix at a time.
 	 * 
 	 * @return output (merged) matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException;
+	public abstract MatrixObject executeSerialMerge();
 	
 	/**
 	 * Merge all given input matrices in parallel into the given output matrix.
@@ -83,10 +80,8 @@ public abstract class ResultMerge implements Serializable
 	 * 
 	 * @param par degree of parallelism
 	 * @return output (merged) matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract MatrixObject executeParallelMerge( int par ) 
-		throws DMLRuntimeException;
+	public abstract MatrixObject executeParallelMerge( int par );
 	
 	/**
 	 * ?
@@ -94,9 +89,8 @@ public abstract class ResultMerge implements Serializable
 	 * @param out initially empty block
 	 * @param in input matrix block
 	 * @param appendOnly ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) throws DMLRuntimeException {
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) {
 		//pass through to matrix block operations
 		if( _isAccum )
 			out.binaryOperationsInPlace(PLUS, in);
@@ -111,10 +105,8 @@ public abstract class ResultMerge implements Serializable
 	 * @param out output matrix block
 	 * @param in input matrix block
 	 * @param compare ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, DenseBlock compare ) 
-		throws DMLRuntimeException
 	{
 		//Notes for result correctness:
 		// * Always iterate over entire block in order to compare all values 

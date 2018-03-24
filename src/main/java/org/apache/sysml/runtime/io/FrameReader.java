@@ -94,10 +94,9 @@ public abstract class FrameReader
 	 * @param nrow number of rows
 	 * @return frame block
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static FrameBlock createOutputFrameBlock(ValueType[] schema, String[] names, long nrow)
-		throws IOException, DMLRuntimeException
+		throws IOException
 	{
 		//check schema and column names
 		if( !OptimizerUtils.isValidCPDimensions(schema, names) )

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.compress.estim;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public class SizeEstimatorFactory 
@@ -28,7 +27,7 @@ public class SizeEstimatorFactory
 	public static final boolean EXTRACT_SAMPLE_ONCE = true;
 
 	@SuppressWarnings("unused")
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, int numRows) throws DMLRuntimeException {
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, int numRows) {
 		return (SAMPLING_RATIO == 1.0) ?
 				new CompressedSizeEstimatorExact(data):
 				new CompressedSizeEstimatorSample(data, (int) (numRows*SAMPLING_RATIO));

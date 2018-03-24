@@ -100,9 +100,7 @@ public class ForProgramBlock extends ProgramBlock
 	}
 	
 	@Override	
-	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void execute(ExecutionContext ec) {
 		// evaluate from, to, incr only once (assumption: known at for entry)
 		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
 		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
@@ -155,7 +153,6 @@ public class ForProgramBlock extends ProgramBlock
 	}
 
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
-		throws DMLRuntimeException
 	{
 		ScalarObject tmp = null;
 		IntObject ret = null;

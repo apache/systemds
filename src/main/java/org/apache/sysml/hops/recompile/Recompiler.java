@@ -389,9 +389,7 @@ public class Recompiler
 		return newInst;
 	}
 	
-	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst)
-		throws DMLRuntimeException
-	{
+	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst) {
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ) {
 			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
 			Explain.explainHops(hops, 1));
@@ -402,31 +400,18 @@ public class Recompiler
 		}
 	}
 	
-	private static void logExplainPred(Hop hops, ArrayList<Instruction> inst)
-		throws DMLRuntimeException
-	{
+	private static void logExplainPred(Hop hops, ArrayList<Instruction> inst) {
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS )
 			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
 			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
 	}
 
-	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, ResetType resetRecompile ) 
-		throws DMLRuntimeException
-	{
-		try 
-		{
-			RecompileStatus status = new RecompileStatus();
-			
-			synchronized( pbs )
-			{
-				for( ProgramBlock pb : pbs )
-					rRecompileProgramBlock(pb, vars, status, tid, resetRecompile);
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException("Unable to recompile program block hierarchy.", ex);
+	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, ResetType resetRecompile ) {
+		RecompileStatus status = new RecompileStatus();
+		synchronized( pbs ) {
+			for( ProgramBlock pb : pbs )
+				rRecompileProgramBlock(pb, vars, status, tid, resetRecompile);
 		}
 	}
 	
@@ -439,22 +424,11 @@ public class Recompiler
 	 * @param tid thread id
 	 * @param fnStack function stack
 	 * @param et execution type
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void recompileProgramBlockHierarchy2Forced( ArrayList<ProgramBlock> pbs, long tid, HashSet<String> fnStack, ExecType et ) 
-		throws DMLRuntimeException
-	{
-		try 
-		{
-			synchronized( pbs )
-			{
-				for( ProgramBlock pb : pbs )
-					rRecompileProgramBlock2Forced(pb, tid, fnStack, et);
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException("Unable to recompile program block hierarchy to CP.", ex);
+	public static void recompileProgramBlockHierarchy2Forced( ArrayList<ProgramBlock> pbs, long tid, HashSet<String> fnStack, ExecType et ) {
+		synchronized( pbs ) {
+			for( ProgramBlock pb : pbs )
+				rRecompileProgramBlock2Forced(pb, tid, fnStack, et);
 		}
 	}
 	

@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
@@ -147,12 +146,9 @@ public class Matrix extends FunctionParameter
 	 * representation.
 	 * 
 	 * @return matrix as two-dimensional double array
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] getMatrixAsDoubleArray() 
-		throws DMLRuntimeException, IOException 
-	{
+	public double[][] getMatrixAsDoubleArray() throws IOException {
 		double[][] ret = null;
 		
 		if( _mo != null ) { //CP ext function
@@ -177,11 +173,8 @@ public class Matrix extends FunctionParameter
 	 * 
 	 * @param data matrix as 2-dimensional double array
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void setMatrixDoubleArray(double[][] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
-		throws IOException, DMLRuntimeException 
-	{
+	public void setMatrixDoubleArray(double[][] data) throws IOException {
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
 		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 	}
@@ -193,11 +186,8 @@ public class Matrix extends FunctionParameter
 	 * 
 	 * @param data matrix as double array
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void setMatrixDoubleArray(double[] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
-		throws IOException, DMLRuntimeException 
-	{
+	public void setMatrixDoubleArray(double[] data) throws IOException {
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data, true);
 		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 	}
